@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1776988670199,
+      "tag": "0000_luxuriant_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777133697421,
+      "tag": "0001_normal_squadron_supreme",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777134178276,
+      "tag": "0002_free_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1745532000000,
+      "tag": "0003_rss_ingests_workflow_run_id",
+      "breakpoints": true
+    }
+  ]
+}

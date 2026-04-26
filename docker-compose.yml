@@ -1,0 +1,21 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: metahunt-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: metahunt
+      POSTGRES_USER: metahunt
+      POSTGRES_PASSWORD: metahunt
+    ports:
+      - "54322:5432"
+    volumes:
+      - metahunt-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metahunt -d metahunt"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  metahunt-db-data:
