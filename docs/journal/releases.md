@@ -26,3 +26,5 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Hardened Docker build flow for Railway by running recursive workspace install in the `build` stage (after full source copy) and copying `node_modules` from `build` to `runtime`, so workspace binaries (`tsc`) resolve reliably during CI builds.
 - Fixed Railway pre-deploy migration runtime error by copying `tsconfig.base.json` into the runtime image, required by `ts-node` during `libs/database/migrate.ts`.
 - Fixed runtime module resolution for pre-deploy migration by copying workspace `node_modules` for `libs/database` (and app workspace deps for `apps/etl`) into the runtime image.
+- Added operational Railway runbook details: CLI flow for `intelligent-harmony`, Postgres wiring via Railway variable reference, deploy vs redeploy semantics, and watch-pattern caveats for root infra files.
+- Enforced Railway `watchPatterns` via `railway.json` to include root infra files (`Dockerfile`, `railway.json`, lockfile, package manifest) plus `apps/etl/**` and `libs/**`, preventing skipped deployments on infra-only commits.
