@@ -21,9 +21,11 @@ Or use the root shortcuts: `pnpm build`, `pnpm start`, `pnpm dev`.
 | GET | `/` | `{ "status": "ok", "db": "up" }` |
 
 Listens on `process.env.PORT`, default `3000`.
-Railway production deploy uses the root `Dockerfile` + `railway.json`.
-Pre-deploy migration runs from the same runtime image via `ts-node`.
-Runtime image keeps workspace `node_modules` needed by migration and app startup.
+
+Railway notes:
+- deploy config comes from root `Dockerfile` + `railway.json`
+- pre-deploy migration runs via `ts-node`
+- runtime image includes workspace `node_modules` required by migration and app startup
 
 ## Docs
 

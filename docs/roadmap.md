@@ -4,22 +4,19 @@ What's now / what's next. Stages are business-meaningful milestones, not small f
 
 ## Current stage
 
-### Stage 03 — Env & config
+### Stage 04 — First ETL job
 **Status:** in-progress · **Started:** 2026-04-26
 
-Stabilize configuration flow and runtime ergonomics now that DB core is in place.
+First pull source (DOU or Djinni), normalize → write to DB, basic dedup. Here we revisit the HTTP wrapper around etl (see ADR-0002).
 
 **Scope:**
-- server-compatible env handling (`process.env` first, local `.env` fallback at process start)
-- typed config boundaries for app/database
-- documentation cleanup for operational consistency
+- ingest a first real source end-to-end
+- normalize records into the current DB schema
+- verify dedup baseline and minimal observability for runs
 
-**Out of scope for this stage:** full Joi schema validation, CI, lint/format/tests.
+**Out of scope for this stage:** full CI pipeline and broad quality automation (Stage 05).
 
 ## Next
-
-### Stage 04 — First ETL job (planned)
-First pull source (DOU or Djinni), normalize → write to DB, basic dedup. Here we revisit the HTTP wrapper around etl (see ADR-0002).
 
 ### Stage 05 — Quality baseline (planned)
 Lint/format, unit/integration tests, and CI checks for build + migrate + seed + health smoke.
@@ -38,3 +35,10 @@ Lint/format, unit/integration tests, and CI checks for build + migrate + seed + 
 **Status:** done · **Completed:** 2026-04-26
 
 Drizzle ORM on top of `pg` in `libs/database`, schema (`sources`, `rss_ingests`, `rss_records`), migrations via `drizzle-kit`, local Postgres in Docker (port `54322`).
+
+### Stage 03 — Env & config
+**Status:** done · **Completed:** 2026-04-26
+
+- server-compatible env flow (`process.env` first, local `.env` fallback at process start)
+- Railway deployment baseline: Dockerfile build, pre-deploy migrations, and documented runbook
+- production wiring for ETL + Postgres in Railway (`DATABASE_URL`, `NODE_ENV`)

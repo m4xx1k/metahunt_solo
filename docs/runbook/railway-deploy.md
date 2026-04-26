@@ -85,18 +85,15 @@ railway logs --deployment <DEPLOYMENT_ID> --lines 200
   - Railway UI: **Deploy latest commit**
   - CLI: `railway up`
 
-## Watch patterns risk
+## Operational rules
 
-Current service has `watchPatterns: ["/apps/etl/**"]`.
-This can skip deployments for root-level infra changes (`Dockerfile`, `railway.json`, lockfile).
-
-If you keep watch patterns enabled, include at least:
-- `Dockerfile`
-- `railway.json`
-- `package.json`
-- `pnpm-lock.yaml`
-- `libs/**`
-- `apps/etl/**`
+1. Source of truth for deploy settings is `railway.json` (do not hand-tune prod settings in UI and forget to codify them).
+2. New code/config rollout is `railway up` (or UI **Deploy latest commit**), not `redeploy`.
+3. Keep `watchPatterns` in sync with infra files:
+   - `Dockerfile`, `railway.json`, `package.json`, `pnpm-lock.yaml`, `apps/etl/**`, `libs/**`
+4. Keep ETL connected to Railway Postgres via variable reference:
+   - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+5. Treat pre-deploy migration as required for schema changes; verify logs before considering rollout complete.
 
 ## Redeploy checklist
 

@@ -183,4 +183,5 @@ How to write — see `docs/README.md`.
 
 ## What's next
 
-Small changes go into `docs/journal/releases.md`. Bigger milestones into `docs/roadmap.md`. Up next: Drizzle ORM (Stage 02), Joi env config (Stage 03), first ETL job (Stage 04).
+Small changes go into `docs/journal/releases.md`. Bigger milestones go into `docs/roadmap.md`.
+Current focus: Stage 04 (first ETL job). See `docs/roadmap.md` for the latest stage status.

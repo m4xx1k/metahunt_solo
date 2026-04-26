@@ -29,3 +29,4 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Added operational Railway runbook details: CLI flow for `intelligent-harmony`, Postgres wiring via Railway variable reference, deploy vs redeploy semantics, and watch-pattern caveats for root infra files.
 - Enforced Railway `watchPatterns` via `railway.json` to include root infra files (`Dockerfile`, `railway.json`, lockfile, package manifest) plus `apps/etl/**` and `libs/**`, preventing skipped deployments on infra-only commits.
 - Added Railway healthcheck path (`/`) in `railway.json` so deployment health validation tracks the ETL HTTP endpoint explicitly.
+- Tightened docs for day-to-day usage: Railway runbook now has explicit operational rules, and roadmap moved Stage 03 (env/config + deploy baseline) to done with Stage 04 as current focus.
