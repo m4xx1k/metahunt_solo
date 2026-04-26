@@ -18,9 +18,10 @@ Or use the root shortcuts: `pnpm build`, `pnpm start`, `pnpm dev`.
 
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/` | `{ "greeting": "hello from @metahunt/database" }` |
+| GET | `/` | `{ "status": "ok", "db": "up" }` |
 
 Listens on `process.env.PORT`, default `3000`.
+Railway production deploy uses the root `Dockerfile` + `railway.json`.
 
 ## Docs
 

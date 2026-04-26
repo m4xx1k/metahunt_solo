@@ -23,3 +23,4 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Initialized a fresh git repository in `~/plan-a/metahunt`, created the root commit, and aligned local commit author with `m4xx1k` identity.
 - Configured git remote to `git@github-m4xx1k:m4xx1k/metahunt_solo.git`, pinned repo-level SSH command to `~/.ssh/id_m4xx1k`, and pushed `main`.
 - Fixed Railway Docker build failure (`tsc: not found`) by forcing recursive workspace install with dev dependencies in Docker (`pnpm install -r --frozen-lockfile --prod=false`) so package-level build tools are available during image build.
+- Hardened Docker build flow for Railway by running recursive workspace install in the `build` stage (after full source copy) and copying `node_modules` from `build` to `runtime`, so workspace binaries (`tsc`) resolve reliably during CI builds.

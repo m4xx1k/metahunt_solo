@@ -26,6 +26,7 @@ COPY --from=deps /app/apps/etl/package.json ./apps/etl/package.json
 COPY --from=deps /app/libs/database/package.json ./libs/database/package.json
 COPY . .
 
+RUN pnpm install -r --frozen-lockfile --prod=false
 RUN pnpm build
 
 
@@ -33,7 +34,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/node_modules ./node_modules
 
 COPY --from=build /app/apps/etl/dist ./apps/etl/dist
 COPY --from=build /app/libs/database/dist ./libs/database/dist
