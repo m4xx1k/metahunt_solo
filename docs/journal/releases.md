@@ -25,3 +25,4 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Fixed Railway Docker build failure (`tsc: not found`) by forcing recursive workspace install with dev dependencies in Docker (`pnpm install -r --frozen-lockfile --prod=false`) so package-level build tools are available during image build.
 - Hardened Docker build flow for Railway by running recursive workspace install in the `build` stage (after full source copy) and copying `node_modules` from `build` to `runtime`, so workspace binaries (`tsc`) resolve reliably during CI builds.
 - Fixed Railway pre-deploy migration runtime error by copying `tsconfig.base.json` into the runtime image, required by `ts-node` during `libs/database/migrate.ts`.
+- Fixed runtime module resolution for pre-deploy migration by copying workspace `node_modules` for `libs/database` (and app workspace deps for `apps/etl`) into the runtime image.

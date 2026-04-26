@@ -35,6 +35,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/etl/node_modules ./apps/etl/node_modules
+COPY --from=build /app/libs/database/node_modules ./libs/database/node_modules
 
 COPY --from=build /app/apps/etl/dist ./apps/etl/dist
 COPY --from=build /app/libs/database/dist ./libs/database/dist
