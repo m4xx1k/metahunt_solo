@@ -7,7 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base
 COPY apps/etl/package.json apps/etl/package.json
 COPY libs/database/package.json libs/database/package.json
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install -r --frozen-lockfile --prod=false
 
 
 FROM node:22-alpine AS build

@@ -20,3 +20,6 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Added Railway deployment IaC for the pnpm workspace setup: root `Dockerfile` (multi-stage build on Node 22) and `railway.json` with `DOCKERFILE` builder, pre-deploy migrations, and explicit start command.
 - Added root `.dockerignore` to keep deployment context clean and deterministic.
 - Added first runbook entry for production deploy flow and required Railway variables. → `docs/runbook/railway-deploy.md`
+- Initialized a fresh git repository in `~/plan-a/metahunt`, created the root commit, and aligned local commit author with `m4xx1k` identity.
+- Configured git remote to `git@github-m4xx1k:m4xx1k/metahunt_solo.git`, pinned repo-level SSH command to `~/.ssh/id_m4xx1k`, and pushed `main`.
+- Fixed Railway Docker build failure (`tsc: not found`) by forcing recursive workspace install with dev dependencies in Docker (`pnpm install -r --frozen-lockfile --prod=false`) so package-level build tools are available during image build.
