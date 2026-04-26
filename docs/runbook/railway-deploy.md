@@ -13,6 +13,7 @@ This runbook describes the production deploy path for this repository on Railway
 - Watch patterns: `Dockerfile`, `railway.json`, `package.json`, `pnpm-lock.yaml`, `apps/etl/**`, `libs/**`
 - Pre-deploy: `node -r ts-node/register/transpile-only libs/database/migrate.ts`
 - Start: `node apps/etl/dist/main.js`
+- Healthcheck: `GET /`
 - Runtime port: `process.env.PORT` (fallback `3000` in app code)
 - Source repo/branch: `m4xx1k/metahunt_solo` / `main`
 
