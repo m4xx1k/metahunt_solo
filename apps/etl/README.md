@@ -22,6 +22,7 @@ Or use the root shortcuts: `pnpm build`, `pnpm start`, `pnpm dev`.
 
 Listens on `process.env.PORT`, default `3000`.
 Railway production deploy uses the root `Dockerfile` + `railway.json`.
+Pre-deploy migration runs from the same runtime image via `ts-node`.
 
 ## Docs
 

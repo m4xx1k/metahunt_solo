@@ -42,6 +42,7 @@ COPY --from=build /app/libs/database/migrations ./libs/database/migrations
 COPY --from=build /app/libs/database/migrate.ts ./libs/database/migrate.ts
 COPY --from=build /app/libs/database/package.json ./libs/database/package.json
 COPY --from=build /app/tsconfig.json ./tsconfig.json
+COPY --from=build /app/tsconfig.base.json ./tsconfig.base.json
 
 EXPOSE 3000
 CMD ["node", "apps/etl/dist/main.js"]
