@@ -7,7 +7,7 @@
     "start": "pnpm --filter @metahunt/etl start",
     "start:prod": "pnpm --filter @metahunt/etl start:prod",
     "dev": "pnpm --filter @metahunt/database build && pnpm -r --parallel run dev",
-    "db:up": "docker compose up -d db",
+    "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "ts-node --project tsconfig.json libs/database/migrate.ts",

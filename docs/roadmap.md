@@ -16,6 +16,8 @@ First pull source (DOU or Djinni), normalize → write to DB, basic dedup. Here 
 
 **Out of scope for this stage:** full CI pipeline and broad quality automation (Stage 05).
 
+**Execution:** the work is broken into 14 isolated, individually testable tasks (T0–T13). Orchestration choice and the per-task tracker live in [ADR-0003](./journal/decisions/0003-temporal-orchestration.md) and [`journal/migrations/rss-temporal.md`](./journal/migrations/rss-temporal.md). **Progress: 13 / 14.** Done — T0–T9 (Jest, vacancy-filter, parser, storage+MinIO, Temporal+SDK, all 4 activities, workflow), T10 RssSchedulerService (two-method API, no boolean), T11 RssController (GET /rss → 202 + ingestAll), T12 AppModule wiring (RssModule + ExtractionModule + StorageModule, workflowsPath via assets-rule + workflows/index.ts barrel, autoStart gated on NODE_ENV!=='test'). Plus an out-of-scope but deploy-critical addition: aggregated `GET /healthz` controller (Postgres + S3 + Temporal). Next — **T13 (E2E smoke verification)**: locally green via curl + Temporal UI; production smoke happens on the first Railway deploy.
+
 ## Next
 
 ### Stage 05 — Quality baseline (planned)
