@@ -1,4 +1,4 @@
-FROM node:22-alpine AS deps
+FROM node:22-slim AS deps
 WORKDIR /app
 
 RUN npm install -g pnpm@10
@@ -10,7 +10,7 @@ COPY libs/database/package.json libs/database/package.json
 RUN pnpm install -r --frozen-lockfile --prod=false
 
 
-FROM node:22-alpine AS build
+FROM node:22-slim AS build
 WORKDIR /app
 
 RUN npm install -g pnpm@10
@@ -30,7 +30,7 @@ RUN pnpm install -r --frozen-lockfile --prod=false
 RUN pnpm build
 
 
-FROM node:22-alpine AS runtime
+FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
