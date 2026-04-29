@@ -34,6 +34,13 @@ FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# rustls-native-certs (used by @temporalio/core-bridge) reads the OS trust
+# store; node:22-slim ships without it, which breaks TLS to Temporal Cloud
+# with `NativeCertsNotFound`.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/etl/node_modules ./apps/etl/node_modules
 COPY --from=build /app/libs/database/node_modules ./libs/database/node_modules
