@@ -21,17 +21,25 @@ Package names use the `@metahunt/*` scope. Inside the monorepo they wire up to e
 
 ```bash
 pnpm install        # set up symlinks and install deps
-pnpm db:up          # start local Postgres (docker)
+pnpm db:up          # start local infra: Postgres + MinIO + Temporal + Temporal UI
 pnpm db:migrate     # apply drizzle migrations
-pnpm db:seed        # seed reference data (sources)
+pnpm db:seed        # seed reference data (sources: Djinni, DOU)
 pnpm build          # build libs/database first, then apps/etl
 pnpm start          # run etl in prod mode (loads ../../.env if present)
 pnpm dev            # dev mode: watch on the lib + nest start --watch on the app
 ```
 
-Sanity check: `curl http://localhost:3000` → `{"status":"ok","db":"up"}`.
+Sanity checks:
 
-Requires: Node ≥22, pnpm ≥10.
+```bash
+curl http://localhost:3000          # { "status":"ok","db":"up" }     — Postgres canary
+curl http://localhost:3000/healthz  # { "status":"ok", "checks":{...} } — Postgres + S3 + Temporal
+curl http://localhost:3000/rss      # 202 { "triggered":"all" }       — kicks off Temporal workflows
+```
+
+Open Temporal UI at http://localhost:8080 to see workflow runs; MinIO console at http://localhost:9001 (creds: `metahunt` / `metahunt123`).
+
+Requires: Node ≥22, pnpm ≥10, Docker.
 
 ## Scripts
 
@@ -179,7 +187,7 @@ How to write — see `docs/README.md`.
 - Use `pnpm db:generate` for schema changes so SQL and `migrations/meta/*` stay in sync.
 - Do not hand-edit/add migration `.sql` files without updating drizzle metadata in the same change.
 - If a generated migration is a known drift artifact (not a real schema change), remove both files: `migrations/<id>.sql` and `migrations/meta/<id>_snapshot.json`.
-- Before merge: run `pnpm db:migrate && pnpm db:seed` and check ETL health (`curl http://localhost:3000`).
+- Before merge: run `pnpm db:migrate && pnpm db:seed`, then check ETL health (`curl http://localhost:3000/healthz`).
 
 ## What's next
 

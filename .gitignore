@@ -4,3 +4,8 @@ dist
 .DS_Store
 .codex
 .claude
+
+# Personal notes (not engineering docs) — keep out of the project repo
+diploma.md
+docs/runbook/etl-stream-blocks-ua.md
+docs/runbook/etl-temporal-stream-demo.md

@@ -16,9 +16,11 @@ Or use the root shortcuts: `pnpm build`, `pnpm start`, `pnpm dev`.
 
 ## Public surface
 
-| Method | Path | Returns |
-|---|---|---|
-| GET | `/` | `{ "status": "ok", "db": "up" }` |
+| Method | Path | Status | Returns |
+|---|---|---|---|
+| GET | `/` | 200 | `{ "status": "ok", "db": "up" }` — Postgres canary; legacy entrypoint. |
+| GET | `/healthz` | 200 / 503 | Aggregated health: Postgres + S3 + Temporal. 503 with per-dependency `{ ok, error }` when any fails. |
+| GET | `/rss` | 202 | `{ "triggered": "all" }` — fire-and-forget; starts one `rssIngestWorkflow` per source on the configured Temporal task queue. |
 
 Listens on `process.env.PORT`, default `3000`.
 
@@ -26,6 +28,7 @@ Railway notes:
 - deploy config comes from root `Dockerfile` + `railway.json`
 - pre-deploy migration runs via `ts-node`
 - runtime image includes workspace `node_modules` required by migration and app startup
+- prod healthcheck path is `/healthz` — see [`/docs/runbook/railway-deploy.md`](../../docs/runbook/railway-deploy.md) for the full env-var matrix (Temporal Cloud + S3/R2)
 
 ## Docs
 

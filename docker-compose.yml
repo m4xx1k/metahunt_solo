@@ -17,5 +17,62 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:latest
+    container_name: metahunt-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: metahunt
+      MINIO_ROOT_PASSWORD: metahunt123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - metahunt-minio-data:/data
+
+  # one-shot: create the rss-payloads bucket on startup, then exits.
+  minio-init:
+    image: minio/mc:latest
+    container_name: metahunt-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 metahunt metahunt123 >/dev/null 2>&1; do sleep 1; done;
+      mc mb --ignore-existing local/rss-payloads;
+      "
+
+  # Temporal server (auto-setup persists schemas in the shared `db` Postgres
+  # under separate `temporal` / `temporal_visibility` databases — no app-data
+  # collision).
+  temporal:
+    image: temporalio/auto-setup:1.26
+    container_name: metahunt-temporal
+    restart: unless-stopped
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=metahunt
+      - POSTGRES_PWD=metahunt
+      - POSTGRES_SEEDS=db
+    ports:
+      - "7233:7233"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  temporal-ui:
+    image: temporalio/ui:2.34.0
+    container_name: metahunt-temporal-ui
+    restart: unless-stopped
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    ports:
+      - "8080:8080"
+    depends_on:
+      - temporal
+
 volumes:
   metahunt-db-data:
+  metahunt-minio-data:

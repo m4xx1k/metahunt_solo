@@ -2,12 +2,22 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
+import { validateEnv } from "./config/env.validation";
+import { HealthController } from "./health/health.controller";
+import { RssModule } from "./rss/rss.module";
+import { StorageModule } from "./storage/storage.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      ignoreEnvFile: true,
+      validate: validateEnv,
+    }),
     DatabaseModule.forRoot(),
+    StorageModule,
+    RssModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
 })
 export class AppModule {}

@@ -13,32 +13,45 @@ This runbook describes the production deploy path for this repository on Railway
 - Watch patterns: `Dockerfile`, `railway.json`, `package.json`, `pnpm-lock.yaml`, `apps/etl/**`, `libs/**`
 - Pre-deploy: `node -r ts-node/register/transpile-only libs/database/migrate.ts`
 - Start: `node apps/etl/dist/main.js`
-- Healthcheck: `GET /`
+- Healthcheck: `GET /healthz` (Postgres + S3 + Temporal aggregated; 200 ok / 503 degraded)
 - Runtime port: `process.env.PORT` (fallback `3000` in app code)
 - Source repo/branch: `m4xx1k/metahunt_solo` / `main`
 
 ## Required Railway variables
 
-- `DATABASE_URL` — Postgres connection string.
+**Postgres**
+- `DATABASE_URL=${{Postgres.DATABASE_URL}}` — Railway reference to the Postgres plugin.
 - `NODE_ENV=production`
+
+**Temporal Cloud (API-key mode)** — required because `RssModule` boots a worker on startup. Without these the app crashes on connect.
+- `TEMPORAL_ADDRESS=<namespace>.<account-id>.tmprl.cloud:7233`
+- `TEMPORAL_NAMESPACE=<namespace>.<account-id>`
+- `TEMPORAL_API_KEY=<key>` — when set, the app enables `tls: true` + API-key auth automatically (see `apps/etl/src/rss/rss.module.ts`). Leaving it empty falls back to plaintext (local-dev only).
+- `TEMPORAL_TASK_QUEUE=rss-ingest` (default; explicit is fine)
+
+**S3-compatible object storage** — required because `RssFetchActivity` uploads raw RSS XML on every run. Cloudflare R2 or AWS S3 both work.
+- `STORAGE_ENDPOINT` — for R2 use `https://<account-id>.r2.cloudflarestorage.com`; for AWS S3 leave default per-region URL (`https://s3.<region>.amazonaws.com`).
+- `STORAGE_REGION` — R2: `auto`. AWS S3: real region (e.g. `eu-central-1`).
+- `STORAGE_BUCKET=<bucket-name>` — must exist; pre-create in the provider's UI or CLI.
+- `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` — R2 token credentials, or AWS IAM access key with `s3:PutObject`/`GetObject`/`HeadBucket` on the bucket.
 
 Optional:
 - `PORT` — Railway usually injects this automatically.
-
-Recommended:
-- Store `DATABASE_URL` in ETL as a Railway reference to Postgres service variable:
-  - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+- `LLM_EXTRACTION_ENABLED` — leave unset / `false` for v1 deploy (placeholder extractor runs; no OpenAI calls). Set `true` + `OPENAI_API_KEY` to enable real LLM extraction later.
 
 ## First-time setup
 
 1. Push repository with root `Dockerfile` and `railway.json`.
 2. In Railway, create a project from the GitHub repository.
 3. Add Postgres service in the same project.
-4. Add required variables (`DATABASE_URL`, `NODE_ENV`) to `@metahunt/etl`.
-5. Trigger deployment and verify logs:
+4. Provision Temporal Cloud namespace + API key (https://cloud.temporal.io). Note the address (`<ns>.<acc>.tmprl.cloud:7233`) and namespace (`<ns>.<acc>`).
+5. Provision an S3-compatible bucket (Cloudflare R2 recommended for cost: 10 GB free). Create the bucket and an R2 API token scoped to it.
+6. Add all variables from "Required Railway variables" above to `@metahunt/etl`.
+7. Trigger deployment and verify logs:
    - image build completes
    - pre-deploy migrations complete
-   - app starts and listens on provided `PORT`
+   - app starts: `Worker connection established to <temporal-cloud-address>`, `Worker state changed RUNNING`, `Mapped {/healthz, GET}`
+   - `GET /healthz` → 200 with all three checks `ok: true`
 
 ## CLI flow (project `intelligent-harmony`)
 
@@ -98,7 +111,8 @@ railway logs --deployment <DEPLOYMENT_ID> --lines 200
 ## Redeploy checklist
 
 1. Confirm new migrations exist in `libs/database/migrations` when schema changed.
-2. Ensure ETL has `DATABASE_URL` + `NODE_ENV=production`.
+2. Ensure ETL has all variables from "Required Railway variables".
 3. Deploy latest commit (`railway up` or UI button).
 4. Check pre-deploy output for successful migration run.
-5. Verify health endpoint (`GET /`) responds successfully.
+5. Verify health endpoint: `curl https://<railway-domain>/healthz` → 200 with `checks.{postgres,storage,temporal}.ok = true`.
+6. Smoke the pipeline: `curl https://<railway-domain>/rss` → 202; in Temporal Cloud UI, check the `default`/configured namespace for `rssIngestWorkflow` executions completing with status `Completed`.
