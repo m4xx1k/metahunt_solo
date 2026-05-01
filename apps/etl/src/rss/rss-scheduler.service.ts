@@ -34,8 +34,12 @@ export class RssSchedulerService {
       sources.map((s) => `${s.code} - ${s.rssUrl}`).join(" <{+|+}> "),
     );
     for (const source of sources) {
+      const stamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")
+        .replace(/Z$/, "");
       await this.temporal.startWorkflow("rssIngestWorkflow", [source.id], {
-        workflowId: `rss-ingest-${source.id}-${Date.now()}`,
+        workflowId: `rss-ingest-${source.code}-${stamp}`,
         taskQueue: "rss-ingest",
       });
     }

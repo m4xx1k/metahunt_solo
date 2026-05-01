@@ -50,4 +50,4 @@ pnpm db:generate   # generate a new migration from schema changes
 
 ## Docs
 
-Engineering docs live at the repo root in `/docs/`. See [`/docs/architecture/overview.md`](../../docs/architecture/overview.md) for how this lib fits into the monorepo.
+Engineering docs live at the repo root in `/md/`. See [`/md/architecture/overview.md`](../../md/architecture/overview.md) for how this lib fits into the monorepo.

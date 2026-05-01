@@ -23,6 +23,9 @@ First pull source (DOU or Djinni), normalize → write to DB, basic dedup. Here 
 ### Stage 05 — Quality baseline (planned)
 Lint/format, unit/integration tests, and CI checks for build + migrate + seed + health smoke.
 
+### Stage 06 — Extraction quality (planned)
+Move the vacancy extractor onto BAML (started 2026-05-01, see [ADR-0004](./journal/decisions/0004-baml-vacancy-extraction.md)) and expand it: prompt iteration via `baml-cli test` fixtures, regression tests against captured vacancies, sunset of the legacy `OpenAiVacancyExtractor` once parity is proven in production.
+
 ## Done
 
 ### Stage 01 — Foundation
@@ -31,7 +34,7 @@ Lint/format, unit/integration tests, and CI checks for build + migrate + seed + 
 - pnpm workspaces (`apps/*`, `libs/*`)
 - `@metahunt/etl` + `@metahunt/database` package split
 - root and package scripts for build/dev/start
-- engineering docs baseline (`docs/`, ADRs)
+- engineering docs baseline (`md/`, ADRs)
 
 ### Stage 02 — Database core
 **Status:** done · **Completed:** 2026-04-26

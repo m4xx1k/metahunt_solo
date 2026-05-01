@@ -43,9 +43,10 @@ Why pnpm workspaces and not the Nest CLI monorepo — see ADR-0001.
 - `RssSchedulerService` — two methods, no boolean: `ingestRemote()` (sources with `rssUrl IS NOT NULL`, the future cron use-case) and `ingestAll()` (every source; the HTTP-trigger use-case). Both call `temporal.startWorkflow("rssIngestWorkflow", [source.id], ...)` per source.
 - Workflow: `apps/etl/src/rss/workflows/{rss-ingest.workflow.ts, index.ts}` — barrel pattern so the Temporal worker bundler can resolve the workflowsPath directory.
 - Activities chain: `fetchAndStore` (fetch RSS XML or read fixture fallback, write `rss_ingests` row, upload XML to S3) → `parseAndDedup` (download XML, parse, hash, dedup against existing `rss_records` by hash, insert new ones) → `extractRecord` (read each new record, delegate to `VacancyExtractor`, write `extracted_data` + `extracted_at`) → `finalizeIngest` (set `rss_ingests.status = completed | failed` + `finishedAt`).
-- `ExtractionModule` — provides the `VACANCY_EXTRACTOR` token. Factory picks `OpenAiVacancyExtractor` when `LLM_EXTRACTION_ENABLED=true`, else `PlaceholderVacancyExtractor` (static shape). Activity depends only on the token; provider swap (e.g. BAML) = drop in a new `VacancyExtractor` impl, no other changes.
+- `ExtractionModule` — provides the `VACANCY_EXTRACTOR` token. Factory switches on `EXTRACTOR_PROVIDER ∈ {baml, placeholder}`: `BamlVacancyExtractor` (BAML-typed client over OpenAI; `apps/etl/baml_src/extract-vacancy.baml` is the single source of truth for schema + prompt + per-field instructions; generated TS lives in `apps/etl/src/baml_client/`; → ADR-0004) or `PlaceholderVacancyExtractor` (static shape, default). The activity depends only on the token; the extractor returns the BAML-generated `ExtractedVacancy` type directly (no parallel Zod schema).
 - `StorageModule` / `StorageService` — S3-compatible client over `@aws-sdk/client-s3` (`forcePathStyle: true`, so MinIO / Cloudflare R2 / AWS S3 all work via `STORAGE_*` env vars). Methods: `upload`, `download`, `ping` (HeadBucket, used by `/healthz`).
 - `main.ts` — loads `.env` via explicit `dotenv` path (resolves to repo `.env` from `dist/main.js`), then `NestFactory.create(AppModule)` + `app.listen(PORT)` (default 3000).
+- `baml_src/` (sibling of `src/`) — BAML DSL: `clients.baml`, `generators.baml`, `extract-vacancy.baml`. `pnpm baml:generate` writes the typed TS client to `src/baml_client/` (committed). Consumed only by `BamlVacancyExtractor` in `src/baml-extraction/`.
 
 `libs/database` currently contains:
 
@@ -62,7 +63,7 @@ Why pnpm workspaces and not the Nest CLI monorepo — see ADR-0001.
 | Package | Runtime deps |
 |---|---|
 | `@metahunt/database` | `@nestjs/common`, `@nestjs/config`, `drizzle-orm`, `pg` |
-| `@metahunt/etl` | `@nestjs/common`, `@nestjs/config`, `@nestjs/core`, `@nestjs/platform-express`, `reflect-metadata`, `rxjs`, `@metahunt/database`, `drizzle-orm`, `fast-xml-parser`, `zod`, `@aws-sdk/client-s3`, `nestjs-temporal-core`, `@temporalio/{client,worker,workflow,activity}` |
+| `@metahunt/etl` | `@nestjs/common`, `@nestjs/config`, `@nestjs/core`, `@nestjs/platform-express`, `reflect-metadata`, `rxjs`, `@metahunt/database`, `drizzle-orm`, `fast-xml-parser`, `zod`, `@aws-sdk/client-s3`, `nestjs-temporal-core`, `@temporalio/{client,worker,workflow,activity}`, `@boundaryml/baml` |
 
 ## Runtime and env
 
@@ -71,7 +72,7 @@ Why pnpm workspaces and not the Nest CLI monorepo — see ADR-0001.
 - ETL runtime loads root `.env` two redundant ways: `node --env-file-if-exists=../../.env` in the prod start scripts (Node native) AND `dotenv.config({ path: resolve(__dirname, "../../../.env") })` in `main.ts` (works under `nest start --watch` too). Nest's `ConfigModule.forRoot({ ignoreEnvFile: true, validate })` then validates the resulting `process.env`.
 - In server environments (Railway), there is no `.env` file — `dotenv` silently no-ops and process-level env from the platform takes over. Same code path.
 - Temporal: `TEMPORAL_API_KEY` empty → plaintext to `localhost:7233` (local). `TEMPORAL_API_KEY` set → automatic `tls: true` + API-key auth (Temporal Cloud). All other `TEMPORAL_*` vars are user-supplied per environment.
-- LLM extraction off by default (`LLM_EXTRACTION_ENABLED=false` → `PlaceholderVacancyExtractor`). Set the flag + `OPENAI_API_KEY` to enable real extraction.
+- LLM extraction off by default (`EXTRACTOR_PROVIDER=placeholder` → `PlaceholderVacancyExtractor`). Set `EXTRACTOR_PROVIDER=baml` + `OPENAI_API_KEY` to enable real extraction.
 
 ## Local infra (docker-compose)
 

@@ -1,20 +1,33 @@
 import { Injectable } from "@nestjs/common";
 
-import type { ExtractedVacancy } from "./extracted-vacancy";
+import {
+  EmploymentType,
+  EnglishLevel,
+  EngagementType,
+  Seniority,
+  WorkFormat,
+} from "../baml_client";
+import type { ExtractedVacancy } from "../baml_client";
 import type { VacancyExtractor } from "./vacancy-extractor";
 
 const PLACEHOLDER: ExtractedVacancy = {
-  employment_type: "full-time",
-  english_level: "b2",
-  experience_years_max: 5,
-  experience_years_min: 3,
-  salary_currency: "USD",
-  salary_max: 8000,
-  salary_min: 6000,
-  seniority: "senior",
-  work_format: "remote",
-  skills: ["temporal"],
-  specialization: "backend",
+  role: "Backend Developer",
+  seniority: Seniority.SENIOR,
+  skills: {
+    required: ["TypeScript", "PostgreSQL"],
+    optional: ["Temporal"],
+  },
+  experienceYears: 3,
+  salary: { min: 6000, max: 8000, currency: null },
+  englishLevel: EnglishLevel.UPPER_INTERMEDIATE,
+  employmentType: EmploymentType.FULL_TIME,
+  workFormat: WorkFormat.REMOTE,
+  locations: [],
+  domain: null,
+  engagementType: EngagementType.PRODUCT,
+  companyName: null,
+  hasTestAssignment: false,
+  hasReservation: false,
 };
 
 @Injectable()

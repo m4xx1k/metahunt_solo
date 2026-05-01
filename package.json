@@ -7,6 +7,8 @@
     "start": "pnpm --filter @metahunt/etl start",
     "start:prod": "pnpm --filter @metahunt/etl start:prod",
     "dev": "pnpm --filter @metahunt/database build && pnpm -r --parallel run dev",
+    "dev:stop": "bash scripts/dev-stop.sh",
+    "dev:restart": "pnpm dev:stop && sleep 1 && pnpm dev",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",

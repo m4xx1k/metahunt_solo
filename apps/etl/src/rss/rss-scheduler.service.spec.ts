@@ -74,7 +74,9 @@ describe("RssSchedulerService", () => {
       [remoteSource.id],
       expect.objectContaining({
         workflowId: expect.stringMatching(
-          new RegExp(`^rss-ingest-${remoteSource.id}-\\d+$`),
+          new RegExp(
+            `^rss-ingest-${remoteSource.code}-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}-\\d{3}$`,
+          ),
         ),
         taskQueue: "rss-ingest",
       }),

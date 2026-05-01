@@ -1,11 +1,11 @@
 import { Test } from "@nestjs/testing";
 
 import { DRIZZLE, schema } from "@metahunt/database";
+import type { ExtractedVacancy } from "../../baml_client";
 import {
   VACANCY_EXTRACTOR,
   type VacancyExtractor,
 } from "../../extraction/vacancy-extractor";
-import type { ExtractedVacancy } from "../../extraction/extracted-vacancy";
 
 import { RssExtractActivity } from "./rss-extract.activity";
 
@@ -28,19 +28,22 @@ const baseRecord = {
   createdAt: new Date(),
 };
 
-const sampleExtract: ExtractedVacancy = {
-  salary_min: 6000,
-  salary_max: 8000,
-  salary_currency: "USD",
-  experience_years_min: 3,
-  experience_years_max: 5,
-  employment_type: "full-time",
-  work_format: "remote",
-  skills: ["Node.js"],
-  english_level: "b2",
-  seniority: "senior",
-  specialization: "backend",
-};
+const sampleExtract = {
+  role: "Backend Developer",
+  seniority: "SENIOR",
+  skills: { required: ["Node.js", "TypeScript"], optional: [] },
+  experienceYears: 3,
+  salary: { min: 6000, max: 8000, currency: "USD" },
+  englishLevel: "UPPER_INTERMEDIATE",
+  employmentType: "FULL_TIME",
+  workFormat: "REMOTE",
+  locations: [],
+  domain: null,
+  engagementType: "PRODUCT",
+  companyName: null,
+  hasTestAssignment: false,
+  hasReservation: false,
+} as unknown as ExtractedVacancy;
 
 function buildDbMocks(record: unknown) {
   const selectWhere = jest.fn().mockResolvedValue(record ? [record] : []);

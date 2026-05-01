@@ -11,15 +11,15 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Monorepo scaffold on pnpm workspaces. `apps/etl` (`@metahunt/etl`) + `libs/database` (`@metahunt/database`, a `@Global()` Nest module with a placeholder constant). The old `_metahunt/` (NestJS CLI monorepo) is archived as a read-only reference. → ADR-0001
 - `apps/etl` switched from headless `createApplicationContext` to a full HTTP server via `@nestjs/platform-express`. `GET /` returns `{ greeting }` from the lib — a canary check that DI across workspaces works. → ADR-0002
 - Added dev scripts: `pnpm dev` at the root (parallel `tsc -w` in the lib + `nest start --watch` in the app), plus `start:prod` and `start:debug`.
-- Set up engineering documentation (`docs/`) using Snapshot + Journal layout.
-- Added package-level `README.md` for `@metahunt/etl` and `@metahunt/database` as front doors (what the package is, public surface, run/build commands). Documented the rule in `docs/README.md`: packages do not get their own `docs/` folders; everything stays centralized at the repo root until a package outgrows that.
+- Set up engineering documentation (`md/`) using Snapshot + Journal layout.
+- Added package-level `README.md` for `@metahunt/etl` and `@metahunt/database` as front doors (what the package is, public surface, run/build commands). Documented the rule in `md/README.md`: packages do not get their own `md/` folders; everything stays centralized at the repo root until a package outgrows that.
 - Migrated `@metahunt/database` from placeholder token to real Drizzle + Postgres provider (`DRIZZLE`), with schema for `sources`, `rss_ingests`, `rss_records`, migrations, and seeds.
 - ETL health endpoint now verifies DB connectivity (`SELECT 1`) and returns `{ "status": "ok", "db": "up" }`.
 - Unified local/server env behavior for ETL startup: process-level env is primary; local root `.env` is loaded via `node --env-file-if-exists=../../.env`.
 - Removed migration drift artifact `0004_purple_exodus` and documented migration hygiene: schema changes must be generated with synced `migrations/meta/*`.
 - Added Railway deployment IaC for the pnpm workspace setup: root `Dockerfile` (multi-stage build on Node 22) and `railway.json` with `DOCKERFILE` builder, pre-deploy migrations, and explicit start command.
 - Added root `.dockerignore` to keep deployment context clean and deterministic.
-- Added first runbook entry for production deploy flow and required Railway variables. → `docs/runbook/railway-deploy.md`
+- Added first runbook entry for production deploy flow and required Railway variables. → `md/runbook/railway-deploy.md`
 - Initialized a fresh git repository in `~/plan-a/metahunt`, created the root commit, and aligned local commit author with `m4xx1k` identity.
 - Configured git remote to `git@github-m4xx1k:m4xx1k/metahunt_solo.git`, pinned repo-level SSH command to `~/.ssh/id_m4xx1k`, and pushed `main`.
 - Fixed Railway Docker build failure (`tsc: not found`) by forcing recursive workspace install with dev dependencies in Docker (`pnpm install -r --frozen-lockfile --prod=false`) so package-level build tools are available during image build.
@@ -57,3 +57,21 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 - Health endpoint — added aggregated `GET /healthz` (`apps/etl/src/health/health.controller.ts`). Runs Postgres `SELECT 1`, `StorageService.ping()` (new `HeadBucketCommand`), and `TemporalService.getHealth()` in parallel via `Promise.all` with per-call `try/catch` and `latencyMs` capture. Returns `200 { status:"ok", checks: {...} }` when all green, `503 { status:"degraded", checks: {...} }` otherwise. To make this work without re-registering Temporal, `TemporalModule.registerAsync({ ..., isGlobal: true })` was set in `RssModule`. `StorageModule` added to `AppModule.imports` so `HealthController` can inject `StorageService` without going through `RssModule`. Three spec cases (all-healthy / postgres-down / temporal-degraded). Switched Railway `healthcheckPath` from `/` to `/healthz`.
 - Temporal Cloud support — `env.validation.ts` gained optional `TEMPORAL_API_KEY`. When set, `RssModule` automatically enables `tls: true` + API-key auth on the connection (Temporal Cloud's API-key mode); when empty, plaintext to `localhost:7233` (local dev). No code change required for AWS S3 / Cloudflare R2 — `StorageService` already speaks generic S3 with `forcePathStyle: true`; just point `STORAGE_*` envs at the provider endpoint.
 - Suite total now 12 suites / 43 tests (was 9/37 after T9). Stage 04 is one task away from done — T13 closes when the first Railway deploy lands and a `curl /rss` produces completed `rssIngestWorkflow` runs in Temporal Cloud.
+
+---
+
+## 2026-05-01
+
+- BAML vacancy extractor lands as the **single source of truth** for extracted shape, prompt, and per-field rules. Added `@boundaryml/baml@^0.222` to `apps/etl` and a new `apps/etl/baml_src/`:
+  - `generators.baml` → output to `../src` (BAML adds the `baml_client` subfolder),
+  - `clients.baml` defining one `OpenAIClient` from `env.OPENAI_API_KEY` / `env.OPENAI_MODEL`,
+  - `extract-vacancy.baml` with six enums (`Seniority`, `WorkFormat`, `EmploymentType`, `EnglishLevel`, `Currency`, `EngagementType`), three nested classes (`ExtractedLocation`, `Skills`, `Salary`), the 14-field `ExtractedVacancy`, the `ExtractVacancy(text)` function, and a baseline `test` block. Every field carries `@description("…")` with extraction rules (yearly→monthly salary, "Architect"→PRINCIPAL, hard-skills-only, etc.) which the LLM sees via `{{ ctx.output_format }}`.
+  - Generated TS client lives in `apps/etl/src/baml_client/` (committed). New scripts: `pnpm --filter @metahunt/etl baml:generate` and `baml:check`.
+  → ADR-0004
+- **Schema redesign** — old shape (snake_case flat: `salary_min`, `work_format`, `skills: string[]`, `specialization`) replaced by the new shape (camelCase, nested: `salary.{min,max,currency}`, `skills.{required[],optional[]}`, `locations: {city,country}[]`, plus `role`, `domain`, `engagementType`, `companyName`, `hasTestAssignment`, `hasReservation`). Old rows in `rss_records.extracted_data` keep their old shape as dormant jsonb (no reader exists yet); a normalizer + re-extract job will land in Stage 06.
+- **OpenAI extractor removed.** `apps/etl/src/extraction/openai.extractor.{ts,spec.ts}` and the Zod schema `apps/etl/src/extraction/extracted-vacancy.ts` are deleted. The `openai` npm package is no longer a dependency. `EXTRACTOR_PROVIDER ∈ {baml, placeholder}` (was `{openai, baml, placeholder}`); `LLM_EXTRACTION_ENABLED` is gone. `.env.example` updated.
+- `BamlVacancyExtractor` is one line: `return b.ExtractVacancy(text)`. The Zod re-validation step that existed in the v1 wrapper is removed — BAML's Schema-Aligned Parsing already returns a structurally-validated value, and the BAML class is the contract.
+- `PlaceholderVacancyExtractor` returns the new shape with the BAML enum values (`Seniority.SENIOR`, etc.) so the activity contract is consistent across providers.
+- Tests — `baml.extractor.spec.ts` simplified to two cases (happy path, propagated client error); the schema-drift case is gone with the Zod boundary. `rss-extract.activity.spec.ts` updated for the new shape. Suite total: 12 suites / 43 tests.
+- Real-world fixture for prompt iteration — captured a DOU.ua RSS item (Senior Full Stack JS at talanovyti agency, 2026-04-24) twice: as a TS module at `apps/etl/src/baml-extraction/__fixtures__/dou-fullstack-talanovyti.ts` (importable from unit tests, mirrors the `Title: …\n\n<description>` shape `RssExtractActivity` feeds the extractor) and as a `test dou_fullstack_talanovyti { … }` block inside `extract-vacancy.baml` (runnable via `baml-cli test` or the VS Code BAML extension's inline "▶ Run test"). Smoke fixture `senior_backend_remote` kept alongside it for fast iteration.
+

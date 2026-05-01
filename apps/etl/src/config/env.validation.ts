@@ -13,14 +13,6 @@ function parsePort(value: string | undefined, fallback: number): number {
   return parsed;
 }
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
-  if (value === undefined || value === "") return fallback;
-  const normalized = value.toLowerCase();
-  if (normalized === "true") return true;
-  if (normalized === "false") return false;
-  throw new Error(`Expected boolean string "true" or "false", got "${value}"`);
-}
-
 function assertPostgresUrl(name: string, value: string): void {
   let parsed: URL;
   try {
@@ -44,9 +36,9 @@ function assertUrl(name: string, value: string): void {
 
 export function validateEnv(config: RawEnv): RawEnv {
   const nodeEnv = asString(config.NODE_ENV) ?? "development";
-  if (!["development", "test", "production"].includes(nodeEnv)) {
+  if (!["development", "test", "production", "local"].includes(nodeEnv)) {
     throw new Error(
-      `NODE_ENV must be one of development|test|production, got "${nodeEnv}"`,
+      `NODE_ENV must be one of development|test|production|local, got "${nodeEnv}"`,
     );
   }
 
@@ -58,12 +50,20 @@ export function validateEnv(config: RawEnv): RawEnv {
   }
   assertPostgresUrl("DATABASE_URL", databaseUrl);
 
-  const temporalAddress = asString(config.TEMPORAL_ADDRESS) ?? "localhost:7233";
-  const temporalNamespace = asString(config.TEMPORAL_NAMESPACE) ?? "default";
+  // NODE_ENV=local forces the Temporal client to the docker-compose stack regardless
+  // of TEMPORAL_* values in .env. Lets Cloud creds stay in .env without bleeding into
+  // local dev (which would split-brain workflows between local and Cloud workers).
+  const isLocal = nodeEnv === "local";
+  const temporalAddress = isLocal
+    ? "localhost:7233"
+    : asString(config.TEMPORAL_ADDRESS) ?? "localhost:7233";
+  const temporalNamespace = isLocal
+    ? "default"
+    : asString(config.TEMPORAL_NAMESPACE) ?? "default";
   const temporalTaskQueue = asString(config.TEMPORAL_TASK_QUEUE) ?? "rss-ingest";
   // Temporal Cloud uses API-key auth (newer mode) — when set we enable TLS automatically.
   // Empty string means "local plaintext mode" (matches the default `localhost:7233`).
-  const temporalApiKey = asString(config.TEMPORAL_API_KEY) ?? "";
+  const temporalApiKey = isLocal ? "" : asString(config.TEMPORAL_API_KEY) ?? "";
 
   const storageEndpoint =
     asString(config.STORAGE_ENDPOINT) ?? "http://localhost:9000";
@@ -75,13 +75,21 @@ export function validateEnv(config: RawEnv): RawEnv {
 
   const openaiApiKey = asString(config.OPENAI_API_KEY) ?? "";
   const openaiModel = asString(config.OPENAI_MODEL) ?? "gpt-4o-mini";
-  const llmExtractionEnabled = parseBoolean(
-    asString(config.LLM_EXTRACTION_ENABLED),
-    false,
-  );
-  if (llmExtractionEnabled && openaiApiKey.length === 0) {
+
+  const validProviders = ["baml", "placeholder"] as const;
+  const rawProvider =
+    asString(config.EXTRACTOR_PROVIDER) ?? "placeholder";
+  if (!(validProviders as readonly string[]).includes(rawProvider)) {
     throw new Error(
-      "OPENAI_API_KEY is required when LLM_EXTRACTION_ENABLED=true",
+      `EXTRACTOR_PROVIDER must be one of ${validProviders.join("|")}, got "${rawProvider}"`,
+    );
+  }
+  const extractorProvider = rawProvider as (typeof validProviders)[number];
+
+  if (extractorProvider === "baml" && openaiApiKey.length === 0) {
+    throw new Error(
+      "OPENAI_API_KEY is required when EXTRACTOR_PROVIDER=baml " +
+        "(BAML routes through the OpenAI client by default)",
     );
   }
 
@@ -101,6 +109,6 @@ export function validateEnv(config: RawEnv): RawEnv {
     STORAGE_REGION: storageRegion,
     OPENAI_API_KEY: openaiApiKey,
     OPENAI_MODEL: openaiModel,
-    LLM_EXTRACTION_ENABLED: llmExtractionEnabled,
+    EXTRACTOR_PROVIDER: extractorProvider,
   };
 }

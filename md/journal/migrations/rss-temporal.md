@@ -8,7 +8,7 @@ Migration of the working Temporal-based RSS ingestion pipeline from the legacy p
 
 **Done so far (13 / 14):** T0–T11 (see status table) · T12 RssModule wired into AppModule (12 suites / 43 tests green; build clean). Plus an out-of-scope addition driven by the deploy: aggregated `GET /healthz` controller and Temporal Cloud API-key support (`TEMPORAL_API_KEY` enables `tls: true` automatically).
 
-**Pick up next:** **T13 — End-to-end smoke verification.** Locally already verified by hand (curl /rss → 202 → workflows complete in Temporal UI, rss_ingests/rss_records populated, MinIO bucket has XML payloads). Production smoke happens on the first Railway deploy: see [`docs/runbook/railway-deploy.md`](../../runbook/railway-deploy.md) for the env-var matrix (Temporal Cloud + R2/S3) and the post-deploy curl checklist. On success: mark Stage 04 **done** in `roadmap.md`, add a release note, and refresh `architecture/overview.md` if anything drifted.
+**Pick up next:** **T13 — End-to-end smoke verification.** Locally already verified by hand (curl /rss → 202 → workflows complete in Temporal UI, rss_ingests/rss_records populated, MinIO bucket has XML payloads). Production smoke happens on the first Railway deploy: see [`md/runbook/railway-deploy.md`](../../runbook/railway-deploy.md) for the env-var matrix (Temporal Cloud + R2/S3) and the post-deploy curl checklist. On success: mark Stage 04 **done** in `roadmap.md`, add a release note, and refresh `architecture/overview.md` if anything drifted.
 
 To run the local stack while working: `pnpm db:up` (brings up Postgres + MinIO + Temporal + UI in one shot).
 

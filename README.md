@@ -63,6 +63,8 @@ Requires: Node ≥22, pnpm ≥10, Docker.
 | `pnpm --filter @metahunt/etl start` / `start:prod` | `node --env-file-if-exists=../../.env dist/main.js` |
 | `pnpm --filter @metahunt/etl start:dev` / `dev` | `nest start --watch` (recompile + restart on changes in `apps/etl/src/`) |
 | `pnpm --filter @metahunt/etl start:debug` | Same as dev, but with `--inspect` |
+| `pnpm --filter @metahunt/etl baml:generate` | Regenerates the BAML TS client (`baml_src/` → `src/baml_client/`) — run after editing any `.baml` file |
+| `pnpm --filter @metahunt/etl baml:check` | Semantic check of all `.baml` files (no codegen) |
 
 ### `libs/database`
 
@@ -173,14 +175,14 @@ No changes to the root `package.json` are needed.
 
 ## Documentation
 
-Engineering docs live in `docs/`. Architecture: **Snapshot + Journal**.
+Engineering docs live in `md/`. Architecture: **Snapshot + Journal**.
 
-- `docs/architecture/` — how the system is built **right now** (snapshot, updated alongside the code)
-- `docs/journal/decisions/` — ADRs (architectural decisions, append-only)
-- `docs/journal/releases.md` — log of features / changes
-- `docs/roadmap.md` — current stage + plans
+- `md/architecture/` — how the system is built **right now** (snapshot, updated alongside the code)
+- `md/journal/decisions/` — ADRs (architectural decisions, append-only)
+- `md/journal/releases.md` — log of features / changes
+- `md/roadmap.md` — current stage + plans
 
-How to write — see `docs/README.md`.
+How to write — see `md/README.md`.
 
 ## Migration policy
 
@@ -191,5 +193,5 @@ How to write — see `docs/README.md`.
 
 ## What's next
 
-Small changes go into `docs/journal/releases.md`. Bigger milestones go into `docs/roadmap.md`.
-Current focus: Stage 04 (first ETL job). See `docs/roadmap.md` for the latest stage status.
+Small changes go into `md/journal/releases.md`. Bigger milestones go into `md/roadmap.md`.
+Current focus: Stage 04 (first ETL job). See `md/roadmap.md` for the latest stage status.
