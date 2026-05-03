@@ -4,6 +4,7 @@ import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
 import { validateEnv } from "./config/env.validation";
 import { HealthController } from "./health/health.controller";
+import { MonitoringModule } from "./monitoring/monitoring.module";
 import { RssModule } from "./rss/rss.module";
 import { StorageModule } from "./storage/storage.module";
 
@@ -17,6 +18,7 @@ import { StorageModule } from "./storage/storage.module";
     DatabaseModule.forRoot(),
     StorageModule,
     RssModule,
+    MonitoringModule,
   ],
   controllers: [AppController, HealthController],
 })
