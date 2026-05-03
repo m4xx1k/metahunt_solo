@@ -2,13 +2,13 @@
 
 **Started:** 2026-05-03 · **Stage:** parallel (does not block Stage 04 ETL work) · **Decision:** [ADR-0005](../decisions/0005-vercel-for-frontend.md)
 
-Bring the standalone Next.js 16 client at `~/projects/metahunt-client/` into this monorepo as `@metahunt/web`, then reconnect the existing Vercel project so it builds from `apps/web/` of this repo. Backend (ETL) stays on Railway, untouched. Frontend will start calling the ETL HTTP server via CORS for any data needs; a dedicated `apps/api` is deferred until the ETL split happens.
+Bring the standalone Next.js 16 client at `~/projects/metahunt-client/` into this monorepo as `@metahunt/web`, then reconnect the existing Vercel project so it builds from `apps/web/` of this repo. Backend (ETL) stays on Railway, untouched. **Scope is intentionally narrow: move the code, get Vercel green from the new source. Anything API-related (CORS on ETL, `NEXT_PUBLIC_API_URL`, first endpoint) is a separate, future migration.**
 
 ## Resume here
 
 **Status:** T0 done (tracker landed). Next pickup is **T1 — Import client files into `apps/web/`**.
 
-Quick context: the standalone repo is a landing site (~10 commits, Next 16 + React 19 + Tailwind v4 + shadcn + Phosphor + Radix), uses npm. We do a clean file copy (no git history), rename package to `@metahunt/web`, regenerate `pnpm-lock.yaml` at the root, then verify dev/build locally before opening a PR. Old repo (`maxxik2004/metahunt-client`) stays live until Vercel is reconnected to the monorepo and the deploy is green; only then it's archived.
+Quick context: the standalone repo is a landing site (~10 commits, Next 16 + React 19 + Tailwind v4 + shadcn + Phosphor + Radix), uses npm. We do a clean file copy (no git history), rename package to `@metahunt/web`, regenerate `pnpm-lock.yaml` at the root, verify dev/build locally, open a PR, then the reviewer repoints Vercel from the old standalone repo to the monorepo (manual UI step). Old repo stays live until the new Vercel deploy is green; only then it's archived.
 
 ## Status
 
@@ -16,10 +16,9 @@ Quick context: the standalone repo is a landing site (~10 commits, Next 16 + Rea
 |---|---|---|---|
 | T0 | Tracker + ADR-0005 + Vercel runbook stub | ✅ done | 2026-05-03 |
 | T1 | Import `metahunt-client/` → `apps/web/` (clean copy, package rename, lockfile regen) | ⏳ pending | |
-| T2 | `apps/etl` — enable CORS, add `CORS_ORIGINS` env | ⏳ pending | |
-| T3 | Repo plumbing — `.dockerignore`, `.gitignore`, `architecture/overview.md`, release note | ⏳ pending | |
-| T4 | Open PR; reviewer does Vercel reconnect (manual UI step per runbook) | ⏳ pending | |
-| T5 | Verify Vercel deploy live; archive old `metahunt-client` repo on GitHub | ⏳ pending | |
+| T2 | Repo plumbing — `.dockerignore`, `.gitignore`, `architecture/overview.md`, release note | ⏳ pending | |
+| T3 | Open PR; reviewer does Vercel reconnect (manual UI step per runbook) | ⏳ pending | |
+| T4 | Verify Vercel deploy live; archive old `metahunt-client` repo on GitHub | ⏳ pending | |
 
 ## Why this migration
 
@@ -37,8 +36,7 @@ API stays in `@metahunt/etl` for now. When the API surface grows enough to warra
 | Workspace name + path | **`@metahunt/web`** at `apps/web/` | "web" is the conventional name for "the user-facing Next.js app" in pnpm monorepos and leaves room for `apps/api`, `apps/admin`, etc. without rename later. The package name uses the existing `@metahunt/*` scope. |
 | Git history of standalone repo | **Clean copy, no history transfer** | The frontend has ~10 commits, all small landing iterations ("added favicon", "layout fixes"). History value is low; the cost of `git subtree`/`filter-repo` is real noise in `git log` and merge-commit weirdness. We open a single `feat(web): import frontend into monorepo` commit. |
 | Package manager | **pnpm (matches monorepo).** Frontend's `package-lock.json` is dropped; `pnpm install` at the root regenerates `pnpm-lock.yaml`. | Mixed lockfiles in one repo are a known foot-gun. The frontend has no native deps that would be sensitive to the resolver. |
-| API path right now | **Frontend calls `@metahunt/etl` directly via CORS** (e.g. `https://<railway>/healthz`, future `/api/...`) | Avoids a new app+deployment surface for zero net benefit. Split to `apps/api` when ETL gets crowded. |
-| `NEXT_PUBLIC_API_URL` location | **Vercel project env var, not committed** | Each Vercel environment (Production/Preview) gets its own value. Default in `apps/web/.env.example` for local dev (`http://localhost:3000`). |
+| API integration | **Out of scope of this migration.** No CORS work on ETL, no `NEXT_PUBLIC_API_URL`, no fetch calls added to web. | Goal here is "move code, keep deploy alive". When the first endpoint that web actually consumes lands, that ticket adds CORS to ETL, declares the env var on Vercel, and writes the typed fetch helper. Bundling those into this migration would conflate "no-behaviour-change move" with "new feature", making rollback harder. |
 | `tsconfig.json` of `apps/web` | **Standalone, no `extends ../../tsconfig.base.json`** | Next.js's `tsconfig` has many `next`-specific bits (paths, plugins, JSX). Inheriting from a generic base creates conflicts. Re-evaluate if a second app shows up that wants to share. |
 | What from old repo gets dropped | `.claude/`, `.codex`, `.mcp.json`, `AGENTS.md`, `README.md` (boilerplate), `package-lock.json`, `.next/`, `node_modules/`, `tsconfig.tsbuildinfo` | Monorepo CLAUDE.md + agent setup already cover the whole repo. The frontend's `AGENTS.md` had one useful note ("this is not the Next.js you know"); that note moves into a short `apps/web/CLAUDE.md`. |
 | `landing.pen` (Pencil design file, 266KB) | **Move to `apps/web/design/landing.pen`** | The design source belongs next to the code that implements it. |
@@ -49,9 +47,10 @@ API stays in `@metahunt/etl` for now. When the API surface grows enough to warra
 
 ## Out of scope
 
-- Adding actual API endpoints to ETL (jobs list, search, etc.) — that's per-feature work after this migration lands.
+- **All API integration**: enabling CORS on ETL, `CORS_ORIGINS` env var, `NEXT_PUBLIC_API_URL` on Vercel, the first typed fetch helper in `apps/web/lib/api.ts` — none of this happens here. The first ticket that needs frontend → backend data does this work end-to-end.
+- Adding API endpoints to ETL (jobs list, search, etc.) — per-feature work, far after this migration lands.
 - Splitting `apps/api` from `apps/etl` — future migration when ETL gets crowded.
-- Adding a shared `libs/contracts` for types between backend and frontend — wait until there's a real type to share.
+- Shared `libs/contracts` for types between backend and frontend — wait until there's a real type to share.
 - CI pipeline (lint/test on PR) for `@metahunt/web` — Stage 05 work.
 - Custom domain configuration on Vercel — user-configured later.
 
@@ -74,22 +73,20 @@ Each task lands at a verifiable boundary. Commits are small and descriptive; the
 
 ### T1 — Import `metahunt-client/` → `apps/web/` (clean copy, package rename, lockfile regen)
 
-**Goal:** `pnpm --filter @metahunt/web dev` serves the landing on http://localhost:4000; `pnpm --filter @metahunt/web build` exits 0.
+**Goal:** `pnpm --filter @metahunt/web dev` serves the landing on http://localhost:4000; `pnpm --filter @metahunt/web build` exits 0. Behavior identical to the standalone repo.
 
 **Steps:**
 1. Create `apps/web/` and copy from `~/projects/metahunt-client/` excluding: `.git/`, `node_modules/`, `.next/`, `package-lock.json`, `tsconfig.tsbuildinfo`, `.claude/`, `.codex`, `.mcp.json`, `AGENTS.md`, `README.md`. Keep: `app/`, `components/`, `lib/`, `public/`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `components.json`, `package.json`, `.gitignore` (frontend's), `landing.pen`.
 2. Move `landing.pen` → `apps/web/design/landing.pen`.
 3. Rewrite `apps/web/package.json`: `name: "@metahunt/web"`, `private: true`, scripts unchanged (`dev: next dev --port=4000`, `build: next build`, `start: next start`, `lint: eslint`).
 4. Write `apps/web/CLAUDE.md` — short scope file: Next.js 16 caveat (link to `node_modules/next/dist/docs/`) + pointer to root CLAUDE.md.
-5. Write `apps/web/.env.example` with `NEXT_PUBLIC_API_URL=http://localhost:3000`.
-6. Append to `apps/web/.gitignore`: ensure `.vercel`, `.env*.local`, `.next/` are listed (the frontend's already covers these).
-7. From repo root: `pnpm install` — regenerates `pnpm-lock.yaml` and creates `apps/web/node_modules/` symlinked to the workspace store.
-8. Smoke: `pnpm --filter @metahunt/web dev` → open http://localhost:4000 → landing renders; `pnpm --filter @metahunt/web build` → exits 0.
+5. Append to `apps/web/.gitignore`: ensure `.vercel`, `.env*.local`, `.next/` are listed (the frontend's already covers these).
+6. From repo root: `pnpm install` — regenerates `pnpm-lock.yaml` and creates `apps/web/node_modules/` symlinked to the workspace store.
+7. Smoke: `pnpm --filter @metahunt/web dev` → open http://localhost:4000 → landing renders; `pnpm --filter @metahunt/web build` → exits 0.
 
 **Files (will be delivered):**
 - `apps/web/**` — full copy
 - `apps/web/CLAUDE.md` — new short scope file
-- `apps/web/.env.example` — new
 - `pnpm-lock.yaml` — regenerated at root
 
 **Verify:**
@@ -102,30 +99,7 @@ Each task lands at a verifiable boundary. Commits are small and descriptive; the
 
 ---
 
-### T2 — `apps/etl` CORS + `CORS_ORIGINS` env
-
-**Goal:** Frontend served by Vercel can call ETL HTTP endpoints (`/healthz`, future `/api/...`) without browser CORS errors.
-
-**Steps:**
-1. Add `CORS_ORIGINS` to `apps/etl/src/config/env.validation.ts` (Zod string, default `http://localhost:4000`, comma-separated allowed).
-2. Add `CORS_ORIGINS` to root `.env.example` with explanation comment (local dev value + Production hint).
-3. In `apps/etl/src/main.ts`, after `NestFactory.create(AppModule)`: `app.enableCors({ origin: configService.get('CORS_ORIGINS').split(',').map(s => s.trim()), credentials: true })`.
-4. Manual smoke: from `apps/web` running on `:4000`, fire a `fetch('http://localhost:3000/healthz')` from browser console — verify no CORS error.
-
-**Files (will be delivered):**
-- `apps/etl/src/main.ts` — `app.enableCors(...)` call
-- `apps/etl/src/config/env.validation.ts` — `CORS_ORIGINS` field
-- `.env.example` — new var documented
-
-**Verify:**
-- ETL still boots: `pnpm --filter @metahunt/etl start:dev` → no env-validation crash
-- Browser fetch from `:4000` to `:3000/healthz` succeeds
-
-**Commit:** `feat(etl): enable CORS for web frontend (CORS_ORIGINS env)`
-
----
-
-### T3 — Repo plumbing (Docker, gitignore, architecture, release note)
+### T2 — Repo plumbing (Docker, gitignore, architecture, release note)
 
 **Goal:** Backend Docker build still ignores `apps/web/`, repo-level docs reflect the new app, release note exists.
 
@@ -151,41 +125,40 @@ Each task lands at a verifiable boundary. Commits are small and descriptive; the
 
 ---
 
-### T4 — Open PR; reviewer does Vercel reconnect (manual UI step)
+### T3 — Open PR; reviewer does Vercel reconnect (manual UI step)
 
 **Goal:** Reviewer (the user, on phone) sees the full migration in a PR, follows `md/runbook/vercel-reconnect.md` to repoint Vercel from `maxxik2004/metahunt-client` to the monorepo with `Root Directory = apps/web`.
 
 **Steps (this side):**
 1. Push `feat/frontend-migration` to origin.
 2. Open PR titled "Frontend: import into monorepo + Vercel reconnect" — body links to this tracker, ADR-0005, and the runbook.
-3. PR is **draft** until T1–T3 are confirmed locally green; flipped to "Ready for review" once green.
+3. PR is **draft** until T1–T2 are confirmed locally green; flipped to "Ready for review" once green.
 4. Send push notification to reviewer with PR URL.
 
-**Steps (reviewer side, from phone):**
-1. Open Vercel Dashboard → metahunt-client project.
-2. Settings → Git → Disconnect from `maxxik2004/metahunt-client`.
-3. Settings → Git → Connect to monorepo (`<owner>/metahunt`), branch `main`.
-4. Settings → Build & Development Settings → Root Directory = `apps/web`.
-5. Settings → Build & Development Settings → Install Command: `cd ../.. && pnpm install --frozen-lockfile`.
-6. Settings → Git → Ignored Build Step: `bash -c "git diff HEAD^ HEAD --quiet -- ../../apps/web ../../libs ../../package.json ../../pnpm-lock.yaml; [ \$? -eq 1 ]"`.
-7. Settings → Environment Variables: add `NEXT_PUBLIC_API_URL` (Production = `https://<railway-prod-domain>`, Preview = same or staging).
-8. Trigger a new deployment from a Preview build of this PR (or merge to `main` and watch Production).
+**Steps (reviewer side, from phone — full version in [`md/runbook/vercel-reconnect.md`](../../runbook/vercel-reconnect.md)):**
+1. Vercel Dashboard → metahunt-client project → Settings → Git → Disconnect.
+2. Connect to monorepo, branch `main`.
+3. Build & Development Settings → Root Directory = `apps/web`.
+4. Build & Development Settings → Install Command: `cd ../.. && pnpm install --frozen-lockfile`.
+5. Git → Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml`.
+6. Trigger a Preview deploy from this PR.
+
+> No env vars to add. No Railway changes. The frontend is statically rendered from `landing-data.tsx` — it doesn't talk to the backend yet.
 
 **Verify:**
-- Vercel deploy on the PR succeeds and the preview URL renders the landing.
-- Backend Railway is **not** rebuilt by this PR (check Railway dashboard for no new deployment).
+- Vercel deploy on the PR succeeds; preview URL renders the landing.
+- Railway dashboard shows **no** new deployment for this PR.
 
 ---
 
-### T5 — Verify Vercel deploy live; archive old `metahunt-client` repo
+### T4 — Verify Vercel deploy live; archive old `metahunt-client` repo
 
 **Goal:** Production Vercel deploy is green from monorepo `main`; old standalone repo is archived (read-only) on GitHub.
 
 **Steps:**
-1. After PR merge: Vercel auto-deploys from `main`. Verify Production URL is healthy.
-2. Hit ETL health endpoint from the production frontend (browser fetch to `${NEXT_PUBLIC_API_URL}/healthz`) — confirm 200.
-3. On GitHub: `maxxik2004/metahunt-client` → Settings → Danger Zone → Archive repository.
-4. Update this tracker's Status table to all ✅, move to `md/journal/migrations/_done/` per project convention.
+1. After PR merge: Vercel auto-deploys from `main`. Verify Production URL serves the landing.
+2. On GitHub: `maxxik2004/metahunt-client` → Settings → Danger Zone → Archive repository.
+3. Update this tracker's Status table to all ✅, move to `md/journal/migrations/_done/` per project convention.
 
 **Verify:**
 - Production Vercel URL serves landing.
@@ -194,6 +167,6 @@ Each task lands at a verifiable boundary. Commits are small and descriptive; the
 
 ## Open items
 
-- [ ] Custom domain on Vercel — user-configured later; once it exists, add to `CORS_ORIGINS` on Railway env.
-- [ ] First real API endpoint that frontend consumes (e.g. `GET /api/v1/jobs?limit=20`) — separate ticket.
+- [ ] Custom domain on Vercel — user-configured later.
+- [ ] First API endpoint that frontend consumes (e.g. `GET /api/v1/jobs?limit=20`) — separate ticket; that ticket also adds CORS to ETL and `NEXT_PUBLIC_API_URL` to Vercel.
 - [ ] Lint/test pipeline for `@metahunt/web` — Stage 05.

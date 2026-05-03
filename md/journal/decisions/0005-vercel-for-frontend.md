@@ -39,7 +39,7 @@ We pick **Option B**.
 
 **Rationale:** the deploy-isolation concern that historically pushed teams to keep frontend and backend in separate repos is solved by tooling on both sides. Vercel's "Root Directory" + "Ignored Build Step" gives us a build that ignores backend commits; Railway's `watchPatterns` + a selective `Dockerfile` gives us a build that ignores frontend commits. The remaining benefits — single PR, single context, room to share types — all favor consolidation.
 
-We deliberately **do not** split out a dedicated `apps/api` yet. The frontend will call `@metahunt/etl` HTTP endpoints directly via CORS for any data needs. When the API surface grows enough that mixing "ingestion worker" and "user-facing API" in one Nest app becomes uncomfortable, we'll do that split as its own migration. Until then: one less moving piece.
+We deliberately **do not** wire any API integration as part of this work. The frontend ships exactly as it does today (statically-rendered landing from `landing-data.tsx`); when the first endpoint it consumes lands, that ticket will add CORS to ETL, declare `NEXT_PUBLIC_API_URL` on Vercel, and write the typed fetch helper — all in one place where it can be reviewed against actual usage. Splitting `apps/api` out of `apps/etl` is even further out, triggered only by ETL getting too crowded to mix "ingestion worker" with "user-facing API".
 
 ## Consequences
 
@@ -47,6 +47,6 @@ We deliberately **do not** split out a dedicated `apps/api` yet. The frontend wi
 - **Vercel project is repointed** from the old standalone repo to this monorepo with `Root Directory = apps/web`. The old GitHub repo is archived (read-only) once the new deploy is green.
 - **Backend (Railway) is unaffected by frontend commits.** Verified via `railway.json watchPatterns` (lists only `apps/etl/**` + `libs/**` + root configs) and Dockerfile (copies only `apps/etl/` + `libs/database/`). Defense in depth: `apps/web` added to `.dockerignore`.
 - **Frontend (Vercel) is unaffected by backend commits.** Verified via Vercel "Ignored Build Step" that diffs `apps/web/` + `libs/` + root manifests; backend-only commits skip the build.
-- **CORS becomes a real configuration surface.** ETL gets a `CORS_ORIGINS` env var (comma-separated allowlist). Local dev = `http://localhost:4000`. Production = `https://*.vercel.app` + future custom domain. Wildcards are not used — explicit list per environment.
+- **CORS, `NEXT_PUBLIC_API_URL`, fetch helpers — none of this is set up here.** This migration is a no-behaviour-change move; the moment the first endpoint becomes a thing, a follow-up ticket will (a) add `CORS_ORIGINS` env + `app.enableCors(...)` to ETL, (b) declare `NEXT_PUBLIC_API_URL` on Vercel per environment, (c) add the typed fetch helper. Doing it then keeps the diff focused on a real consumer rather than guessing at one.
 - **No shared types lib yet.** When the first endpoint is added, we evaluate: if the contract is one-off, hand-write the type on both sides; if it grows, introduce `libs/contracts` (zod or BAML or plain TS).
-- **`apps/api` is a future migration**, not promised by this ADR. Will be triggered by ETL getting too crowded, not by anything in this work.
+- **`apps/api` is a future migration**, not promised by this ADR. Triggered by ETL getting too crowded, not by anything in this work.
