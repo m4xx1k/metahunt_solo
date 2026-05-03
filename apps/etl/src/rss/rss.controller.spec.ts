@@ -1,7 +1,8 @@
 import { Test } from "@nestjs/testing";
 
+import { RssBackfillService } from "./rss-backfill.service";
+import { RssIngestService } from "./rss-ingest.service";
 import { RssController } from "./rss.controller";
-import { RssSchedulerService } from "./rss-scheduler.service";
 
 describe("RssController", () => {
   const ingestAll = jest.fn();
@@ -19,15 +20,19 @@ describe("RssController", () => {
       controllers: [RssController],
       providers: [
         {
-          provide: RssSchedulerService,
-          useValue: { ingestAll, ingestRemote, extractMissing },
+          provide: RssIngestService,
+          useValue: { ingestAll, ingestRemote },
+        },
+        {
+          provide: RssBackfillService,
+          useValue: { extractMissing },
         },
       ],
     }).compile();
     controller = moduleRef.get(RssController);
   });
 
-  it("GET /rss delegates to scheduler.ingestAll (not ingestRemote)", () => {
+  it("GET /rss delegates to ingest.ingestAll (not ingestRemote)", () => {
     const result = controller.triggerAll();
 
     expect(ingestAll).toHaveBeenCalledTimes(1);

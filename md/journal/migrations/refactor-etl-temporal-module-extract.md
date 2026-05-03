@@ -1,6 +1,6 @@
 # Refactor — ETL Temporal extract + RssScheduler split
 
-**Started:** 2026-05-03 · **Branch:** `refactor/etl-temporal-module-extract` · **Status:** in progress
+**Started:** 2026-05-03 · **Closed:** 2026-05-03 · **Branch:** `refactor/etl-temporal-module-extract` · **Status:** done
 
 `RssModule` failed SRP three ways (RSS feature wiring **and** Temporal worker bootstrap **and** webpack bundler config). `RssSchedulerService` failed SRP three ways (schedule install **and** workflow kickoff **and** in-process backfill). This branch decomposes both. Closes group **D1** of [`rss-schedule-followups.md`](./rss-schedule-followups.md).
 
@@ -9,7 +9,7 @@
 | # | Theme | Status |
 |---|---|---|
 | 1 | Extract Temporal worker config out of `RssModule` into a `TemporalInfraModule` | done |
-| 2 | Split `RssSchedulerService` into scheduler + ingest + backfill services | pending |
+| 2 | Split `RssSchedulerService` into scheduler + ingest + backfill services | done |
 
 ## Step 1 — TemporalInfraModule
 
@@ -28,19 +28,23 @@
 
 ## Step 2 — split RssSchedulerService
 
-`RssSchedulerService` (181 LOC) does three things; the spec (270 LOC) is already split by `describe` blocks, so the test split is mechanical.
+**Files added:**
+- `apps/etl/src/rss/rss-ingest.service.ts` — owns `ingestAll` / `ingestRemote` / private `startWorkflows`. Deps: `TemporalService` + `DRIZZLE`.
+- `apps/etl/src/rss/rss-backfill.service.ts` — owns `extractMissing`. Deps: `RssExtractActivity` + `DRIZZLE`.
+- `apps/etl/src/rss/rss-ingest.service.spec.ts`, `rss-backfill.service.spec.ts` — focused specs.
 
-**Plan:**
-- `RssSchedulerService` keeps `onApplicationBootstrap` + `ensureSchedule` only. Drops `RssExtractActivity` + `DRIZZLE` deps.
-- `RssIngestService` (new) — `ingestAll` / `ingestRemote` / private `startWorkflows`. Deps: `TemporalService` + `DRIZZLE`.
-- `RssBackfillService` (new) — `extractMissing`. Deps: `RssExtractActivity` + `DRIZZLE`.
-- `RssController` injects `RssIngestService` and `RssBackfillService` directly (drops `RssSchedulerService` from the controller).
-- Spec split: `rss-scheduler.service.spec.ts` keeps `ensureSchedule` only; new `rss-ingest.service.spec.ts` and `rss-backfill.service.spec.ts` take the rest.
+**Files modified:**
+- `apps/etl/src/rss/rss-scheduler.service.ts` — 181 → 102 lines, owns only `onApplicationBootstrap` + `ensureSchedule`. Dropped `RssExtractActivity` + `DRIZZLE` deps.
+- `apps/etl/src/rss/rss-scheduler.service.spec.ts` — keeps `ensureSchedule` cases only; ingest + backfill cases moved to focused specs.
+- `apps/etl/src/rss/rss.controller.ts` — injects `RssIngestService` + `RssBackfillService` directly.
+- `apps/etl/src/rss/rss.module.ts` — registers the two new providers.
 
-## Resume here
-
-If picking this up: confirm Step 1 has shipped (`git log --oneline | grep "TemporalInfraModule"`), then execute Step 2 per plan above. After Step 2, mark D1 `done` in `rss-schedule-followups.md` and close this tracker (move to `_done/`).
+**Verification:** `pnpm exec tsc --noEmit` clean; `pnpm test` 15 suites / 55 tests pass.
 
 ## Outcome
 
-_(none yet — close this section once Step 2 is verified)_
+`RssModule` and `RssSchedulerService` each pass the SRP "name without `and`" test. Adding a second ingest source no longer touches Temporal infra; adding a new backfill flow doesn't touch the scheduler. Group **D1** in [`rss-schedule-followups.md`](./rss-schedule-followups.md) is closed. The hardcoded `taskQueue: "rss-ingest"` in `RssIngestService.startWorkflows` (group **B1**) is unchanged — out of scope for this branch.
+
+## Resume here
+
+This tracker is closed. Maintainer: move to `md/journal/migrations/_done/` on merge. For the broader follow-up backlog see [`rss-schedule-followups.md`](./rss-schedule-followups.md).

@@ -1,22 +1,15 @@
 import {
   Injectable,
-  Inject,
   Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { asc, isNotNull, isNull } from "drizzle-orm";
 import { TemporalService } from "nestjs-temporal-core";
 import {
   ScheduleAlreadyRunning,
   ScheduleOverlapPolicy,
   type ScheduleOptions,
 } from "@temporalio/client";
-
-import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB, Source } from "@metahunt/database";
-
-import { RssExtractActivity } from "./activities/rss-extract.activity";
 
 const SCHEDULE_ID = "rss-ingest-hourly";
 const SCHEDULE_TIMEZONE = "Europe/Kyiv";
@@ -30,8 +23,6 @@ export class RssSchedulerService implements OnApplicationBootstrap {
   constructor(
     private readonly temporal: TemporalService,
     private readonly config: ConfigService,
-    private readonly extractActivity: RssExtractActivity,
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -107,75 +98,5 @@ export class RssSchedulerService implements OnApplicationBootstrap {
       state: prev.state,
     }));
     this.logger.log(`Updated Temporal schedule '${SCHEDULE_ID}' — ${description}`);
-  }
-
-  /**
-   * One-shot backfill: re-runs `extractAndInsert` for records that parse
-   * inserted but extraction never ran for (or failed before the activity
-   * could write `extracted_at`). Bypasses Temporal — runs in-process — so
-   * it skips the activity-level retry policy. Per-record errors are caught
-   * and counted so one bad record doesn't stop the rest.
-   */
-  async extractMissing(
-    limit: number,
-  ): Promise<{ attempted: number; succeeded: number; failed: number }> {
-    const rows = await this.db
-      .select({ id: schema.rssRecords.id })
-      .from(schema.rssRecords)
-      .where(isNull(schema.rssRecords.extractedAt))
-      .orderBy(asc(schema.rssRecords.createdAt))
-      .limit(limit)
-      .execute();
-
-    this.logger.log(`extractMissing: ${rows.length} record(s) pending`);
-    let succeeded = 0;
-    let failed = 0;
-    for (const { id } of rows) {
-      try {
-        await this.extractActivity.extractAndInsert(id);
-        succeeded += 1;
-      } catch (err) {
-        failed += 1;
-        this.logger.warn(
-          `extractMissing: record ${id} failed — ${
-            err instanceof Error ? err.message : String(err)
-          }`,
-        );
-      }
-    }
-    this.logger.log(
-      `extractMissing done — attempted=${rows.length} succeeded=${succeeded} failed=${failed}`,
-    );
-    return { attempted: rows.length, succeeded, failed };
-  }
-
-  async ingestRemote(): Promise<void> {
-    const sources = await this.db
-      .select()
-      .from(schema.sources)
-      .where(isNotNull(schema.sources.rssUrl))
-      .execute();
-    await this.startWorkflows(sources);
-  }
-
-  async ingestAll(): Promise<void> {
-    const sources = await this.db.select().from(schema.sources).execute();
-    await this.startWorkflows(sources);
-  }
-
-  private async startWorkflows(sources: Source[]): Promise<void> {
-    this.logger.log(
-      sources.map((s) => `${s.code} - ${s.rssUrl}`).join(" <{+|+}> "),
-    );
-    for (const source of sources) {
-      const stamp = new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .replace(/Z$/, "");
-      await this.temporal.startWorkflow("rssIngestWorkflow", [source.id], {
-        workflowId: `rss-ingest-${source.code}-${stamp}`,
-        taskQueue: "rss-ingest",
-      });
-    }
   }
 }

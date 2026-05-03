@@ -11,7 +11,7 @@ Catalog of improvements deferred from the schedule + extract-missing landing on 
 | A | Production hardening (auth, concurrency, rate limit) | high | pending |
 | B | Code quality cleanups | low | pending |
 | C | Schema semantics (`rss_ingests.error_message` overload) | medium | pending |
-| D | Service decomposition | medium | D1 in progress (`refactor/etl-temporal-module-extract`) |
+| D | Service decomposition | medium | D1 done (`refactor/etl-temporal-module-extract`); D2 pending |
 | E | Workflow test coverage | low | pending |
 | F | Promote `extract-missing` HTTP endpoint to a Temporal workflow | medium | pending |
 | G | Runbook tweak — schedule pause preservation | low | pending |
@@ -58,9 +58,7 @@ Pick one. C1 is the right shape long-term.
 
 ## D — Service decomposition
 
-`RssSchedulerService` now owns: schedule install + `ingestRemote` + `ingestAll` + `extractMissing`. The class name no longer reflects the surface.
-
-- **D1. Split `RssBackfillService`.** Move `extractMissing` (and the future Stage 06 backfill workflow trigger from F) into a dedicated service. Controller depends on both. Smaller blast radius for changes.
+- **D1. Split `RssBackfillService`. _Done 2026-05-03_ on `refactor/etl-temporal-module-extract`** — `RssSchedulerService` now owns only schedule install; `RssIngestService` owns `ingestAll` / `ingestRemote`; `RssBackfillService` owns `extractMissing`. See [tracker](./refactor-etl-temporal-module-extract.md). Same branch also extracted Temporal worker config out of `RssModule` into `TemporalInfraModule`.
 - **D2. Extract activity body into a pure service.** `extractMissing` calls `RssExtractActivity.extractAndInsert` directly via Nest DI even though it's an `@Activity()`-decorated class. Works because that activity has no `activityInfo()` dependency, but it's a leaky abstraction. Refactor: pure `VacancyExtractionService.extractRecord(id)` that both `RssExtractActivity` and the backfill consume.
 
 ---
