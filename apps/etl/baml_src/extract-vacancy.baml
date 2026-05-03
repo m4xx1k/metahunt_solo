@@ -215,7 +215,7 @@ test senior_backend_remote {
 // Real DOU.ua RSS item, captured 2026-04-24. Mirrors the input shape that
 // RssExtractActivity feeds the extractor: "Title: <title>\n\n<description>"
 // with HTML entities decoded. Used both here for `baml-cli test` and
-// re-exported as a TS fixture in src/baml-extraction/__fixtures__/.
+// re-exported as a TS fixture in src/extraction/__fixtures__/.
 test dou_fullstack_talanovyti {
   functions [ExtractVacancy]
   args {

@@ -6,19 +6,23 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
-import { RssSchedulerService } from "./rss-scheduler.service";
+import { RssBackfillService } from "./rss-backfill.service";
+import { RssIngestService } from "./rss-ingest.service";
 
 const EXTRACT_MISSING_DEFAULT = 100;
 const EXTRACT_MISSING_MAX = 500;
 
 @Controller("rss")
 export class RssController {
-  constructor(private readonly scheduler: RssSchedulerService) {}
+  constructor(
+    private readonly ingest: RssIngestService,
+    private readonly backfill: RssBackfillService,
+  ) {}
 
   @Get()
   @HttpCode(202)
   triggerAll(): { triggered: "all" } {
-    void this.scheduler.ingestAll();
+    void this.ingest.ingestAll();
     return { triggered: "all" };
   }
 
@@ -33,7 +37,7 @@ export class RssController {
     @Query("limit") rawLimit?: string,
   ): Promise<{ attempted: number; succeeded: number; failed: number }> {
     const limit = parseLimit(rawLimit);
-    return this.scheduler.extractMissing(limit);
+    return this.backfill.extractMissing(limit);
   }
 }
 
