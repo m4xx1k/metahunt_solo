@@ -120,6 +120,7 @@ export class MonitoringService {
         externalId: rssRecords.externalId,
         hash: rssRecords.hash,
         title: rssRecords.title,
+        description: rssRecords.description,
         link: rssRecords.link,
         category: rssRecords.category,
         publishedAt: rssRecords.publishedAt,
