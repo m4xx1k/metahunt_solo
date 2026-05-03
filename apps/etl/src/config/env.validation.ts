@@ -13,6 +13,23 @@ function parsePort(value: string | undefined, fallback: number): number {
   return parsed;
 }
 
+function parseIntInRange(
+  name: string,
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new Error(
+      `${name} must be an integer in range ${min}..${max}, got "${value}"`,
+    );
+  }
+  return parsed;
+}
+
 function assertPostgresUrl(name: string, value: string): void {
   let parsed: URL;
   try {
@@ -65,6 +82,16 @@ export function validateEnv(config: RawEnv): RawEnv {
   // Empty string means "local plaintext mode" (matches the default `localhost:7233`).
   const temporalApiKey = isLocal ? "" : asString(config.TEMPORAL_API_KEY) ?? "";
 
+  // Hourly RSS ingest schedule cadence (within the 06:00–22:00 Europe/Kyiv window).
+  // 1..16 keeps at least two firings/day inside the window (start=6, end=22).
+  const rssIngestIntervalHours = parseIntInRange(
+    "RSS_INGEST_INTERVAL_HOURS",
+    asString(config.RSS_INGEST_INTERVAL_HOURS),
+    1,
+    1,
+    16,
+  );
+
   const storageEndpoint =
     asString(config.STORAGE_ENDPOINT) ?? "http://localhost:9000";
   const storageBucket = asString(config.STORAGE_BUCKET) ?? "rss-payloads";
@@ -102,6 +129,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     TEMPORAL_NAMESPACE: temporalNamespace,
     TEMPORAL_TASK_QUEUE: temporalTaskQueue,
     TEMPORAL_API_KEY: temporalApiKey,
+    RSS_INGEST_INTERVAL_HOURS: rssIngestIntervalHours,
     STORAGE_ENDPOINT: storageEndpoint,
     STORAGE_BUCKET: storageBucket,
     STORAGE_ACCESS_KEY: storageAccessKey,

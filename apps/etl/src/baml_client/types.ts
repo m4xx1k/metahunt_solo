@@ -112,8 +112,8 @@ export interface ExtractedVacancy {
   domain?: string | null
   engagementType?: EngagementType | null
   companyName?: string | null
-  hasTestAssignment: boolean
-  hasReservation: boolean
+  hasTestAssignment?: boolean | null
+  hasReservation?: boolean | null
   
 }
 
