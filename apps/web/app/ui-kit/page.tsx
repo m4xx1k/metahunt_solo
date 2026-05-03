@@ -2,21 +2,17 @@ import {
   Badge,
   Body,
   Button,
+  Card,
   Divider,
   EmailInput,
-  FeatureCard,
   Heading,
   IconBox,
   IconButton,
   Logo,
   Mono,
   NavLink,
-  PricingCard,
-  ProblemCard,
   SearchInput,
   Small,
-  StepCard,
-  SuccessCard,
   Tag,
 } from "@/components/ui-kit";
 
@@ -72,9 +68,9 @@ export default function UiKitPage() {
           Neo-brutalist UI Kit.
         </Heading>
         <Body className="max-w-[60ch] text-text-secondary">
-          Ізольовані компоненти витягнуті з <Mono>landing.pen</Mono>. Жорсткі
-          краї, суцільні тіні, акцент{" "}
-          <span className="text-accent">#FFB380</span>.
+          Ізольовані примітиви. Жорсткі краї, суцільні тіні, акцент{" "}
+          <span className="text-accent">#FFB380</span>. Композити для лендингу
+          живуть у <Mono>app/(landing)/_components/</Mono>.
         </Body>
         <div className="flex gap-4">
           <Button variant="primary">Explore kit</Button>
@@ -136,26 +132,14 @@ export default function UiKitPage() {
         </div>
       </KitSection>
 
-      <KitSection tag="// 06" title="Cards">
-        <div className="flex flex-wrap gap-8">
-          <ProblemCard
-            icon="◆"
-            title="Chaos in Hiring"
-            description="Recruiters drown in CVs while real talent stays invisible."
-          />
-          <FeatureCard
-            icon="⟐"
-            title="Smart Matching"
-            description="AI-assisted signal from public data."
-          />
-          <PricingCard />
-          <SuccessCard />
-          <StepCard
-            number="01"
-            title="01 · агрегація"
-            description="збираємо вакансії з усіх джерел щогодини."
-          />
-        </div>
+      <KitSection tag="// 06" title="Card (base)">
+        <Card className="w-[320px]">
+          <Heading level="h3">Card primitive</Heading>
+          <Body className="text-text-secondary">
+            Compose page-specific cards on top of this. Section-bound molecules
+            (Problem/Step/Feature/etc) live next to their section, not here.
+          </Body>
+        </Card>
       </KitSection>
 
       <KitSection tag="// 07" title="Icons">

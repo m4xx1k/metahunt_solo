@@ -1,5 +1,5 @@
 import { EmailInput, Heading } from "@/components/ui-kit";
-import { hero } from "@/lib/landing-data";
+import { hero } from "./data";
 
 export function Hero() {
   return (

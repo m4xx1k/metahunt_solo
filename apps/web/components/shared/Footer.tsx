@@ -1,8 +1,7 @@
 import {
   CrosshairIcon,
   GithubLogoIcon,
-  PaperPlaneTiltIcon  ,
-  TwitterLogoIcon,
+  PaperPlaneTiltIcon,
 } from "@phosphor-icons/react/dist/ssr";
 
 export function Footer() {
@@ -42,7 +41,6 @@ export function Footer() {
         </nav>
 
         <div className="flex items-center gap-[18px]">
-         
           <a
             href="https://github.com/m4xx1k"
             aria-label="GitHub"
@@ -55,7 +53,7 @@ export function Footer() {
             aria-label="Telegram"
             className="text-text-secondary transition-colors hover:text-text-primary"
           >
-            <PaperPlaneTiltIcon   weight="bold" className="h-4 w-4" />
+            <PaperPlaneTiltIcon weight="bold" className="h-4 w-4" />
           </a>
         </div>
       </div>

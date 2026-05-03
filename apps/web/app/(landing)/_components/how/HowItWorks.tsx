@@ -1,7 +1,6 @@
-import { StepCard } from "@/components/ui-kit";
-import { howSection, steps } from "@/lib/landing-data";
-import { Section } from "./Section";
-import { SectionHeader } from "./SectionHeader";
+import { Section, SectionHeader } from "@/components/ui-kit";
+import { StepCard } from "./StepCard";
+import { howSection, steps } from "./data";
 
 export function HowItWorks() {
   return (

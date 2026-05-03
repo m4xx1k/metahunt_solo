@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui-kit";
 import { cn } from "@/lib/utils";
-import { ctaSection } from "@/lib/landing-data";
+import { ctaSection } from "./data";
 
 const EMAIL_LOCK_TTL_MS = 24 * 60 * 60 * 1000;
 const EMAIL_LOCK_KEY = "web3forms:final-cta:email-lock";
@@ -93,10 +93,8 @@ export function FinalCTAForm() {
           className="w-full bg-transparent px-4 font-body text-[15px] text-text-primary outline-none placeholder:text-text-muted"
         />
         <Button type="submit" variant="primary" size="md" className="rounded-xl px-6" disabled={isSubmitting}>
-          <span className='sm:hidden'>let{"'"}s go</span>
-          <span className='hidden sm:block'>
-            {ctaSection.cta}
-          </span>
+          <span className="sm:hidden">let{"'"}s go</span>
+          <span className="hidden sm:block">{ctaSection.cta}</span>
         </Button>
       </form>
       {toast ? (

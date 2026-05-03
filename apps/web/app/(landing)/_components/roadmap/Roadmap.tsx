@@ -1,7 +1,6 @@
-import { roadmapItems, roadmapSection } from "@/lib/landing-data";
+import { Section, SectionHeader } from "@/components/ui-kit";
 import { cn } from "@/lib/utils";
-import { Section } from "./Section";
-import { SectionHeader } from "./SectionHeader";
+import { roadmapItems, roadmapSection } from "./data";
 
 export function Roadmap() {
   return (
@@ -9,7 +8,10 @@ export function Roadmap() {
       <SectionHeader {...roadmapSection} />
       <div className="flex w-full flex-col md:flex-row">
         {roadmapItems.map((item, idx) => (
-          <div key={item.title} className="group relative flex flex-1 flex-col gap-3.5 pr-0 md:pr-3">
+          <div
+            key={item.title}
+            className="group relative flex flex-1 flex-col gap-3.5 pr-0 md:pr-3"
+          >
             <div className="flex items-center gap-2">
               <div
                 className={cn(
