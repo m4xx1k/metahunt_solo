@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { b } from "../baml_client";
 import type { ExtractedVacancy } from "../baml_client";
-import type { VacancyExtractor } from "../extraction/vacancy-extractor";
+import type { VacancyExtractor } from "./vacancy-extractor";
 
 @Injectable()
 export class BamlVacancyExtractor implements VacancyExtractor {

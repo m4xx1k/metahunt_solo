@@ -1,8 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
-import { BamlExtractionModule } from "../baml-extraction/baml-extraction.module";
-import { BamlVacancyExtractor } from "../baml-extraction/baml.extractor";
+import { BamlVacancyExtractor } from "./baml.extractor";
 import { PlaceholderVacancyExtractor } from "./placeholder.extractor";
 import { VACANCY_EXTRACTOR } from "./vacancy-extractor";
 
@@ -10,8 +9,8 @@ type Provider = "baml" | "placeholder";
 const VALID_PROVIDERS: readonly Provider[] = ["baml", "placeholder"] as const;
 
 @Module({
-  imports: [BamlExtractionModule],
   providers: [
+    BamlVacancyExtractor,
     PlaceholderVacancyExtractor,
     {
       provide: VACANCY_EXTRACTOR,
