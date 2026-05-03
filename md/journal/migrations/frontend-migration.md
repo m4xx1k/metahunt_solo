@@ -2,23 +2,25 @@
 
 **Started:** 2026-05-03 · **Stage:** parallel (does not block Stage 04 ETL work) · **Decision:** [ADR-0005](../decisions/0005-vercel-for-frontend.md)
 
-Bring the standalone Next.js 16 client at `~/projects/metahunt-client/` into this monorepo as `@metahunt/web`, then reconnect the existing Vercel project so it builds from `apps/web/` of this repo. Backend (ETL) stays on Railway, untouched. **Scope is intentionally narrow: move the code, get Vercel green from the new source. Anything API-related (CORS on ETL, `NEXT_PUBLIC_API_URL`, first endpoint) is a separate, future migration.**
+Bring the standalone Next.js 16 client at `~/projects/metahunt-client/` into this monorepo as `@metahunt/web`, then deploy it on Vercel from `apps/web/` of this repo. Backend (ETL) stays on Railway, untouched. **Scope is intentionally narrow: move the code, get Vercel green from the new source. Anything API-related (CORS on ETL, `NEXT_PUBLIC_API_URL`, first endpoint) is a separate, future migration.**
 
 ## Resume here
 
-**Status:** T0 done (tracker landed). Next pickup is **T1 — Import client files into `apps/web/`**.
+**Status:** code import + PR merged (T0..T3 done). Open items: T4a (create new Vercel project), T4b (migrate custom domain), T4c (archive old repo + optionally delete old Vercel project). All three are manual UI steps in Vercel/GitHub — covered by [`md/runbook/vercel-deploy.md`](../../runbook/vercel-deploy.md).
 
-Quick context: the standalone repo is a landing site (~10 commits, Next 16 + React 19 + Tailwind v4 + shadcn + Phosphor + Radix), uses npm. We do a clean file copy (no git history), rename package to `@metahunt/web`, regenerate `pnpm-lock.yaml` at the root, verify dev/build locally, open a PR, then the reviewer repoints Vercel from the old standalone repo to the monorepo (manual UI step). Old repo stays live until the new Vercel deploy is green; only then it's archived.
+> **Course correction on the Vercel side (2026-05-03):** original plan was to *reconnect* the existing `metahunt-client` Vercel project to the monorepo. Switched to **new Vercel project + domain migration** — cleaner separation, old project's deployment history preserved untouched, no risk of Vercel caching outdated repo tree from the reconnect operation. ADR-0005 consequences updated to match.
 
 ## Status
 
 | # | Task | Status | Done in |
 |---|---|---|---|
-| T0 | Tracker + ADR-0005 + Vercel runbook stub | ✅ done | 2026-05-03 |
-| T1 | Import `metahunt-client/` → `apps/web/` (clean copy, package rename, lockfile regen) | ✅ done | 2026-05-03 |
-| T2 | Repo plumbing — `.dockerignore`, `.gitignore`, `architecture/overview.md`, release note | ✅ done | 2026-05-03 |
-| T3 | Open PR; reviewer does Vercel reconnect (manual UI step per runbook) | ⏳ pending | |
-| T4 | Verify Vercel deploy live; archive old `metahunt-client` repo on GitHub | ⏳ pending | |
+| T0  | Tracker + ADR-0005 + Vercel runbook | ✅ done | 2026-05-03 |
+| T1  | Import `metahunt-client/` → `apps/web/` (clean copy, package rename, lockfile regen) | ✅ done | 2026-05-03 |
+| T2  | Repo plumbing — `.dockerignore`, `.gitignore`, `architecture/overview.md`, release note | ✅ done | 2026-05-03 |
+| T3  | Open PR; merged to `main` (PR #4) | ✅ done | 2026-05-03 |
+| T4a | Create new Vercel project from `apps/web/` (Root Directory + Install Command + Ignored Build Step) | ⏳ pending | |
+| T4b | Migrate custom domain from old Vercel project to the new one (sequential cutover) | ⏳ pending | |
+| T4c | Archive `maxxik2004/metahunt-client` on GitHub; optionally delete the old Vercel project | ⏳ pending | |
 
 ## Why this migration
 
@@ -42,7 +44,9 @@ API stays in `@metahunt/etl` for now. When the API surface grows enough to warra
 | `landing.pen` (Pencil design file, 266KB) | **Move to `apps/web/design/landing.pen`** | The design source belongs next to the code that implements it. |
 | Vercel build command | **Default Next preset** with **Install Command = `cd ../.. && pnpm install --frozen-lockfile`** and **Root Directory = `apps/web`** | Vercel auto-detects Next; install happens at root so workspaces resolve correctly. |
 | Skip Vercel rebuilds on backend-only changes | **Ignored Build Step** runs `git diff HEAD^ HEAD --quiet -- ../../apps/web ../../libs ../../package.json ../../pnpm-lock.yaml` and skips when no relevant change | Saves CI minutes; backend-only commits (`apps/etl/**`, `Dockerfile`, `railway.json`) won't trigger a Vercel build. |
-| Old repo lifecycle | **Archive on GitHub only after Vercel reconnect deploy is green** | If reconnect fails, we can flip Vercel back to the old repo with zero downtime. |
+| Vercel project shape | **New Vercel project from monorepo, not a reconnect of the old one.** Course-corrected from the original plan. | Cleaner separation, old project's deployment history preserved untouched, no risk of Vercel caching an outdated repo file tree from the reconnect operation. Procedure in [`md/runbook/vercel-deploy.md`](../../runbook/vercel-deploy.md). |
+| Domain cutover | **Sequential: remove from old → add to new.** ~30s downtime, no DNS propagation. | A custom domain can only be active on one Vercel project at a time. DNS records at the registrar (or Vercel nameservers) don't change — they keep pointing at Vercel's edge; Vercel routes internally based on which project owns the domain. |
+| Old repo lifecycle | **Archive on GitHub only after the new Vercel project is live and the domain has been migrated** | If anything in the new setup fails, we can revert the domain to the old project (still pointing at the old repo) with ~30s downtime. |
 | Branch name | **`feat/frontend-migration`** off `main` | Per project convention (branch = task ID = tracker slug). Does not touch `feat/workflow-scheduler`. |
 
 ## Out of scope
@@ -125,43 +129,60 @@ Each task lands at a verifiable boundary. Commits are small and descriptive; the
 
 ---
 
-### T3 — Open PR; reviewer does Vercel reconnect (manual UI step)
+### T3 — Open PR; merged to `main` ✅
 
-**Goal:** Reviewer (the user, on phone) sees the full migration in a PR, follows `md/runbook/vercel-reconnect.md` to repoint Vercel from `maxxik2004/metahunt-client` to the monorepo with `Root Directory = apps/web`.
-
-**Steps (this side):**
-1. Push `feat/frontend-migration` to origin.
-2. Open PR titled "Frontend: import into monorepo + Vercel reconnect" — body links to this tracker, ADR-0005, and the runbook.
-3. PR is **draft** until T1–T2 are confirmed locally green; flipped to "Ready for review" once green.
-4. Send push notification to reviewer with PR URL.
-
-**Steps (reviewer side, from phone — full version in [`md/runbook/vercel-reconnect.md`](../../runbook/vercel-reconnect.md)):**
-1. Vercel Dashboard → metahunt-client project → Settings → Git → Disconnect.
-2. Connect to monorepo, branch `main`.
-3. Build & Development Settings → Root Directory = `apps/web`.
-4. Build & Development Settings → Install Command: `cd ../.. && pnpm install --frozen-lockfile`.
-5. Git → Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml`.
-6. Trigger a Preview deploy from this PR.
-
-> No env vars to add. No Railway changes. The frontend is statically rendered from `landing-data.tsx` — it doesn't talk to the backend yet.
-
-**Verify:**
-- Vercel deploy on the PR succeeds; preview URL renders the landing.
-- Railway dashboard shows **no** new deployment for this PR.
+PR #4 ("Frontend: import metahunt-client into monorepo + Vercel reconnect") opened from `feat/frontend-migration` and merged to `main` on 2026-05-03 (commit `bc41010`). PR title still says "reconnect" — the actual deploy approach was course-corrected to "new Vercel project + domain migration" after merge; ADR-0005 and this tracker reflect the new direction.
 
 ---
 
-### T4 — Verify Vercel deploy live; archive old `metahunt-client` repo
+### T4a — Create new Vercel project from `apps/web/`
 
-**Goal:** Production Vercel deploy is green from monorepo `main`; old standalone repo is archived (read-only) on GitHub.
+**Goal:** A new Vercel project ships `apps/web/` from `m4xx1k/metahunt_solo@main`, deployed at `<project-name>.vercel.app`. Old `metahunt-client` Vercel project untouched and still serves the custom domain.
+
+**Steps (full version in [`md/runbook/vercel-deploy.md`](../../runbook/vercel-deploy.md) §1–3):**
+1. Vercel → Add New → Project → Import `m4xx1k/metahunt_solo`.
+2. Configure: Root Directory `apps/web`, Install Command `cd ../.. && pnpm install --frozen-lockfile`, Framework auto-detected as Next.js. No env vars.
+3. Deploy. Wait for green.
+4. Settings → Git → Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml`.
+
+**Verify:**
+- `<new-project-name>.vercel.app` renders the landing identically to the old `metahunt-client.vercel.app`.
+- A backend-only commit (e.g. `apps/etl/**`) shows "Build Skipped — Ignored Build Step" in the Deployments tab.
+- Railway dashboard: no new deployment was triggered.
+
+> Common gotcha: if the file browser on the Configure screen doesn't list `apps/web`, Vercel cached the repo tree before the merge. Fix by refreshing GitHub App permissions or by typing `apps/web` into the Root Directory text field directly. See runbook §1 note.
+
+---
+
+### T4b — Migrate custom domain from old Vercel project to the new one
+
+**Goal:** The custom domain that today serves the old `metahunt-client` Vercel project moves to the new project. ~30s downtime, no DNS propagation wait.
+
+**Steps (full version in [`md/runbook/vercel-deploy.md`](../../runbook/vercel-deploy.md) §4):**
+1. Old project → Settings → Domains → Remove the custom domain.
+2. New project → Settings → Domains → Add Domain → enter the same domain → Add.
+3. Wait for SSL re-issue (~10–60 sec).
+4. Open the custom domain in incognito → confirm it serves the new project.
+
+**Verify:**
+- Custom domain serves the new project's landing.
+- `dig <domain> +short` still returns Vercel's edge (`cname.vercel-dns.com` or `76.76.21.21`) — no DNS records changed, only Vercel's internal routing.
+- HTTPS cert is valid (browser shows green padlock).
+
+**Rollback:** remove from new, re-add on old. ~30s downtime, no data loss.
+
+---
+
+### T4c — Archive `maxxik2004/metahunt-client` on GitHub
+
+**Goal:** Old standalone repo is archived (read-only); old Vercel project optionally deleted.
 
 **Steps:**
-1. After PR merge: Vercel auto-deploys from `main`. Verify Production URL serves the landing.
-2. On GitHub: `maxxik2004/metahunt-client` → Settings → Danger Zone → Archive repository.
+1. GitHub → `maxxik2004/metahunt-client` → Settings → Danger Zone → Archive repository.
+2. (Optional) Vercel → old `metahunt-client` project → Settings → Advanced → Delete Project. Or just leave it for the deployment history.
 3. Update this tracker's Status table to all ✅, move to `md/journal/migrations/_done/` per project convention.
 
 **Verify:**
-- Production Vercel URL serves landing.
 - Old GitHub repo shows "Archived" badge.
 - Tracker filed under `_done/`.
 
