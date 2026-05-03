@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #0D0F12;
+  --color-bg-card: #14171C;
+  --color-bg-elev: #1A1D24;
+  --color-border: #2A2F38;
+  --color-border-strong: #3B424F;
+  --color-text-primary: #E6EDF3;
+  --color-text-secondary: #8B949E;
+  --color-text-muted: #5D6570;
+  --color-accent: #FFB380;
+  --color-accent-soft: #FFB67A;
+  --color-accent-secondary: #6B9EFA;
+  --color-success: #3DD68C;
+  --color-danger: #FF5C5C;
+
+  --font-display: var(--font-jetbrains-mono), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --shadow-brut-xs: 2px 2px 0 0 #000;
+  --shadow-brut-sm: 3px 3px 0 0 #000;
+  --shadow-brut: 4px 4px 0 0 #000;
+  --shadow-brut-md: 6px 6px 0 0 #000;
+  --shadow-brut-lg: 8px 8px 0 0 #000;
+
+  --radius: 0rem;
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+  --radius-xl: 0rem;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+  }
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-bg-card) inset;
+  -webkit-text-fill-color: var(--color-text-primary); /* щоб текст не став чорним */
+  transition: background-color 5000s ease-in-out 0s; /* ще один костиль */
+}

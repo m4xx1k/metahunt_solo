@@ -9,3 +9,8 @@ README.md
 docs
 .claude
 .codex
+
+# Frontend lives in this repo but does not belong in the backend image.
+# The Dockerfile already COPYs selectively, this is defense in depth and
+# keeps the build context upload to Railway smaller.
+apps/web
