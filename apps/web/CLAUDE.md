@@ -12,16 +12,21 @@ This version (16.2.3 + React 19.2.4) has breaking changes — APIs, conventions,
 
 ## Local dev
 
+From repo root (preferred — sets up everything via the workspace):
+
 ```bash
-pnpm --filter @metahunt/web dev    # http://localhost:4000
-pnpm --filter @metahunt/web build
+pnpm dev:web     # web only
+pnpm dev:etl     # etl only (also rebuilds @metahunt/database first)
+pnpm dev         # both in parallel; needs `pnpm db:up` first for etl
+pnpm build:web   # production build of web
+pnpm lint:web    # lint web
 ```
 
-Or from root: `pnpm dev` runs every workspace's `dev` script in parallel — etl on `:3000`, web on `:4000`.
+The dev port for web is set in this package's `dev` script (currently `next dev --port=4000`); change it there if it conflicts. ETL listens on `PORT` from `.env` (default 3000).
 
 ## Deploy
 
-Vercel builds from `apps/web/` of this monorepo (Root Directory setting). The Ignored Build Step skips Vercel when a commit doesn't touch `apps/web/`, `libs/`, or root manifests. See [`md/runbook/vercel-reconnect.md`](../../md/runbook/vercel-reconnect.md).
+Vercel builds from `apps/web/` of this monorepo (Root Directory setting). The Ignored Build Step skips Vercel when a commit doesn't touch `apps/web/`, `libs/`, or root manifests. Setup + domain-migration procedure: [`md/runbook/vercel-deploy.md`](../../md/runbook/vercel-deploy.md).
 
 ## API integration
 

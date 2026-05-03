@@ -9,6 +9,8 @@ patterns=(
   "apps/etl/dist/main"
   "@nestjs/cli/bin/nest.js start"
   "libs/database/.*tsc .*-w"
+  "next dev --port"
+  "next-server"
 )
 
 killed_any=0
