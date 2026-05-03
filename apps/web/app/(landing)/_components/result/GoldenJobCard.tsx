@@ -37,6 +37,26 @@ function MatchBar({ percent }: { percent: number }) {
   );
 }
 
+function Fact({ fact }: { fact: GoldenFact }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+        {fact.label}
+      </span>
+      <span
+        className={cn(
+          "font-mono text-[13px]",
+          fact.highlight
+            ? "text-success text-base font-bold"
+            : "text-text-primary",
+        )}
+      >
+        {fact.value}
+      </span>
+    </div>
+  );
+}
+
 export function GoldenJobCard({
   job,
   className,
@@ -59,56 +79,34 @@ export function GoldenJobCard({
                 {m}
               </span>
             ))}
-            
           </div>
           <div className="flex flex-col gap-1">
             <h3 className="font-mono text-lg font-bold text-text-primary">
               {job.title}
             </h3>
             <div className="flex items-center gap-2">
-<div className="font-body text-sm text-text-secondary">
-              {job.company}
-            </div>
-            {job.productTag && (
-              <div className="font-mono text-xs text-text-muted">
-                {job.productTag}
+              <div className="font-body text-sm text-text-secondary">
+                {job.company}
               </div>
-            )}
+              {job.productTag && (
+                <div className="font-mono text-xs text-text-muted">
+                  {job.productTag}
+                </div>
+              )}
             </div>
-            
           </div>
           <div className="flex flex-col gap-4">
-            {job.facts.map((f) => {
-              const Fact = ({f}: {f:GoldenFact}) => (
-                <div className="flex flex-col gap-1">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                  {f.label}
-                </span>
-                <span
-                  className={cn(
-                    "font-mono text-[13px]",
-                    f.highlight
-                      ? "text-success text-base font-bold"
-                      : "text-text-primary",
-                  )}
-                >
-                  {f.value}
-                </span>
-              </div>
-              )
-              const isArray = Array.isArray(f);
-              
-              return (
-              isArray ? (
-                <div className="flex gap-12">
+            {job.facts.map((f, i) =>
+              Array.isArray(f) ? (
+                <div key={i} className="flex gap-12">
                   {f.map((fact) => (
-                    <Fact key={fact.label} f={fact} />
+                    <Fact key={fact.label} fact={fact} />
                   ))}
                 </div>
               ) : (
-                <Fact key={f.label} f={f} />
-              )
-            )})}
+                <Fact key={f.label} fact={f} />
+              ),
+            )}
           </div>
         </div>
 

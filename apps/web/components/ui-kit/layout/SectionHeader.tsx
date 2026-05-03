@@ -1,4 +1,5 @@
-import { Heading, Tag } from "@/components/ui-kit";
+import { Heading } from "../typography/Heading";
+import { Tag } from "../typography/Tag";
 import { cn } from "@/lib/utils";
 
 export function SectionHeader({

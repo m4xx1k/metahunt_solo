@@ -1,8 +1,8 @@
 import { ArrowDown } from "@phosphor-icons/react/dist/ssr";
-import { GoldenJobCard, RawJobCard } from "@/components/ui-kit";
-import { goldenJob, rawJobs, resultSection } from "@/lib/landing-data";
-import { Section } from "./Section";
-import { SectionHeader } from "./SectionHeader";
+import { Section, SectionHeader } from "@/components/ui-kit";
+import { GoldenJobCard } from "./GoldenJobCard";
+import { RawJobCard } from "./RawJobCard";
+import { goldenJob, rawJobs, resultSection } from "./data";
 
 export function Result() {
   return (

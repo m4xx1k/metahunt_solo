@@ -1,9 +1,7 @@
-import { Card, Divider } from "@/components/ui-kit";
-import { aboutMeSection } from "@/lib/landing-data";
-import { Section } from "./Section";
-import { SectionHeader } from "./SectionHeader";
-import Image from 'next/image';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "next/link";
+import { Card, Divider, Section, SectionHeader } from "@/components/ui-kit";
+import { aboutMeSection } from "./data";
 
 export function AboutMe() {
   return (
@@ -18,10 +16,12 @@ export function AboutMe() {
         <div className="flex flex-col md:flex-row">
           <div className="flex flex-col justify-center gap-5 border-b border-border px-8 py-10 md:w-[360px] md:border-r md:border-b-0 md:px-10">
             <div className="relative flex h-[320px] items-center justify-center rounded-[12px] border border-border-strong bg-bg-card">
-              {/* <div className="font-mono text-[13px] text-text-muted">
-                {"// photo.jpg"}
-              </div> */}
-              <Image src={'/me.jpg'} alt="me" fill className="rounded-[12px] object-contain bg-black/50" />
+              <Image
+                src={"/me.jpg"}
+                alt="me"
+                fill
+                className="rounded-[12px] object-contain bg-black/50"
+              />
             </div>
 
             <div className="rounded-[10px] border border-border bg-bg-elev p-4">
@@ -31,9 +31,7 @@ export function AboutMe() {
               <div className="mt-3 flex flex-wrap gap-2">
                 {aboutMeSection.socialData.map((social) => (
                   <Link
-                    style={{
-                      backgroundColor: `#${social.bg}`
-                    }}
+                    style={{ backgroundColor: `#${social.bg}` }}
                     href={social.link}
                     key={social.name}
                     target="_blank"
@@ -65,7 +63,10 @@ export function AboutMe() {
               </p>
               <div className="space-y-1">
                 {aboutMeSection.profile.map((line) => (
-                  <p key={line} className="font-mono text-[13px] text-text-primary">
+                  <p
+                    key={line}
+                    className="font-mono text-[13px] text-text-primary"
+                  >
                     {line}
                   </p>
                 ))}
@@ -87,7 +88,10 @@ export function AboutMe() {
               </p>
               <div className="space-y-1">
                 {aboutMeSection.achievements.map((line) => (
-                  <p key={line} className="font-mono text-[13px] text-text-primary">
+                  <p
+                    key={line}
+                    className="font-mono text-[13px] text-text-primary"
+                  >
                     {line}
                   </p>
                 ))}

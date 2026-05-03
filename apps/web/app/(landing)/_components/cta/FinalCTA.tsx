@@ -1,6 +1,6 @@
-import { ctaSection } from "@/lib/landing-data";
-import { Section } from "./Section";
+import { Section } from "@/components/ui-kit";
 import { FinalCTAForm } from "./FinalCTAForm";
+import { ctaSection } from "./data";
 
 export function FinalCTA() {
   return (
@@ -20,8 +20,6 @@ export function FinalCTA() {
           </div>
 
           <FinalCTAForm />
-
-         
         </div>
       </div>
     </Section>

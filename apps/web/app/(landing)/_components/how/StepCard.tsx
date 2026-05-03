@@ -1,4 +1,4 @@
-import { Card } from "./Card";
+import { Card } from "@/components/ui-kit";
 import { cn } from "@/lib/utils";
 
 export function StepCard({

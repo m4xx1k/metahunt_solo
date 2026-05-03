@@ -1,7 +1,6 @@
-import { ProblemCard } from "@/components/ui-kit";
-import { problemSection, problems } from "@/lib/landing-data";
-import { Section } from "./Section";
-import { SectionHeader } from "./SectionHeader";
+import { Section, SectionHeader } from "@/components/ui-kit";
+import { ProblemCard } from "./ProblemCard";
+import { problemSection, problems } from "./data";
 
 export function Problem() {
   return (
