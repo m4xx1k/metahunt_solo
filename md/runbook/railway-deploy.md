@@ -30,6 +30,8 @@ Edit only these — Railway UI is read-only mirror.
 
 **Optional** — `PORT` (Railway injects), `LLM_EXTRACTION_ENABLED=false` for v1.
 
+**Logging** — `BAML_LOG=OFF` in prod. Defaults (INFO/WARN) dump the full prompt + raw LLM response on every call/error, which torches Railway's log quota fast. The extractor wrapper still re-throws a one-line error so Temporal logs the failure reason; flip to `DEBUG` locally if you need prompt drift visibility.
+
 ## Decide: `up` vs `redeploy`
 
 - New code or env change → `railway up` (or UI **Deploy latest commit**).
