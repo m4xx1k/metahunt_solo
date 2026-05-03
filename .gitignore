@@ -5,6 +5,15 @@ dist
 .codex
 .claude
 
+# Vercel CLI artifacts (created by `vercel link` / `vercel pull`)
+.vercel
+
+# Next.js build output (apps/web/.gitignore covers this too — belt and suspenders)
+apps/*/.next
+apps/*/next-env.d.ts
+apps/*/tsconfig.tsbuildinfo
+apps/*/.env*.local
+
 # Personal notes (not engineering docs) — keep out of the project repo
 diploma.md
 docs/runbook/etl-stream-blocks-ua.md

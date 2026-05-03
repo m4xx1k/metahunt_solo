@@ -20,10 +20,11 @@ Each package has its own `package.json` and its own dependencies. Local deps are
 
 | Package | Type | Path | Purpose |
 |---|---|---|---|
-| `@metahunt/etl` | app | `apps/etl/` | NestJS HTTP app, process entry point |
+| `@metahunt/etl` | app | `apps/etl/` | NestJS HTTP app, process entry point. Deployed to Railway. |
+| `@metahunt/web` | app | `apps/web/` | Next.js 16 frontend (landing, future app shell). Deployed to Vercel. |
 | `@metahunt/database` | lib | `libs/database/` | Shared Drizzle/Postgres module and schema |
 
-Why pnpm workspaces and not the Nest CLI monorepo — see ADR-0001.
+Why pnpm workspaces and not the Nest CLI monorepo — see ADR-0001. Why frontend lives here too — see ADR-0005.
 
 ## Build model
 
@@ -88,6 +89,24 @@ Why pnpm workspaces and not the Nest CLI monorepo — see ADR-0001.
 | `temporal-ui` | `temporalio/ui:2.34.0` | `8080` | Workflow UI |
 
 Default credentials live in `.env.example` and match container env (`metahunt`/`metahunt`/`metahunt123` for db/MinIO root creds). Temporal namespace is `default`; task queue is `rss-ingest`.
+
+## Deployment
+
+Two independent surfaces, both built from a subset of this monorepo. Neither rebuilds when only the other's files change.
+
+### `@metahunt/etl` → Railway
+
+- Builder: Dockerfile (multi-stage, Node 22). The runtime image copies **only** `apps/etl/dist/`, `libs/database/dist/`, migrations, and the workspace `node_modules` it needs. `apps/web/` is excluded by both selective `COPY` lines and `.dockerignore`.
+- `railway.json` `watchPatterns` lists root infra files + `apps/etl/**` + `libs/**`. Frontend-only commits don't trigger a Railway build.
+- Pre-deploy: `node -r ts-node/register/transpile-only libs/database/migrate.ts` runs Drizzle migrations.
+- Healthcheck: `GET /healthz` (Postgres + S3 + Temporal aggregated).
+
+### `@metahunt/web` → Vercel
+
+- Builder: Vercel's Next.js preset, `Root Directory = apps/web`, `Install Command = cd ../.. && pnpm install --frozen-lockfile` (so workspace resolution happens at the monorepo root).
+- Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml` — Vercel skips a build when only backend files (`apps/etl/**`, `Dockerfile`, etc.) changed.
+- No env vars required at this stage (landing is static, no API calls). When the first endpoint is consumed, that follow-up adds CORS to ETL + `NEXT_PUBLIC_API_URL` to Vercel — see ADR-0005 consequences.
+- Manual repointing procedure (one-time, owner-only): [`md/runbook/vercel-reconnect.md`](../runbook/vercel-reconnect.md).
 
 ## Current gaps
 

@@ -15,8 +15,8 @@ Quick context: the standalone repo is a landing site (~10 commits, Next 16 + Rea
 | # | Task | Status | Done in |
 |---|---|---|---|
 | T0 | Tracker + ADR-0005 + Vercel runbook stub | ✅ done | 2026-05-03 |
-| T1 | Import `metahunt-client/` → `apps/web/` (clean copy, package rename, lockfile regen) | ⏳ pending | |
-| T2 | Repo plumbing — `.dockerignore`, `.gitignore`, `architecture/overview.md`, release note | ⏳ pending | |
+| T1 | Import `metahunt-client/` → `apps/web/` (clean copy, package rename, lockfile regen) | ✅ done | 2026-05-03 |
+| T2 | Repo plumbing — `.dockerignore`, `.gitignore`, `architecture/overview.md`, release note | ✅ done | 2026-05-03 |
 | T3 | Open PR; reviewer does Vercel reconnect (manual UI step per runbook) | ⏳ pending | |
 | T4 | Verify Vercel deploy live; archive old `metahunt-client` repo on GitHub | ⏳ pending | |
 
