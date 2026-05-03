@@ -11,7 +11,7 @@ Catalog of improvements deferred from the schedule + extract-missing landing on 
 | A | Production hardening (auth, concurrency, rate limit) | high | pending |
 | B | Code quality cleanups | low | pending |
 | C | Schema semantics (`rss_ingests.error_message` overload) | medium | pending |
-| D | Service decomposition | medium | pending |
+| D | Service decomposition | medium | D1 in progress (`refactor/etl-temporal-module-extract`) |
 | E | Workflow test coverage | low | pending |
 | F | Promote `extract-missing` HTTP endpoint to a Temporal workflow | medium | pending |
 | G | Runbook tweak — schedule pause preservation | low | pending |

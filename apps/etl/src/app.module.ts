@@ -6,6 +6,7 @@ import { validateEnv } from "./config/env.validation";
 import { HealthController } from "./health/health.controller";
 import { RssModule } from "./rss/rss.module";
 import { StorageModule } from "./storage/storage.module";
+import { TemporalInfraModule } from "./temporal/temporal.module";
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { StorageModule } from "./storage/storage.module";
       validate: validateEnv,
     }),
     DatabaseModule.forRoot(),
+    TemporalInfraModule,
     StorageModule,
     RssModule,
   ],
