@@ -170,16 +170,16 @@ class ExtractedVacancy {
     Company name as posted. null if not stated or anonymized.
   "#)
 
-  hasTestAssignment bool @description(#"
+  hasTestAssignment bool? @description(#"
     True if the posting mentions a test task, technical assignment,
     take-home, or coding challenge during the interview process.
-    False otherwise.
+    False if it explicitly says no test. null if not addressed at all.
   "#)
 
-  hasReservation bool @description(#"
+  hasReservation bool? @description(#"
     True if the posting explicitly mentions "бронь" / "бронювання" /
     military reservation as an employer benefit (UA-specific).
-    False if not mentioned.
+    null if not mentioned.
   "#)
 }
 

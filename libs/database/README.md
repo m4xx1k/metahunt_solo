@@ -35,7 +35,7 @@ Because `DatabaseModule` is `@Global()`, import it once in your app root module.
 ## DB workflow from repo root
 
 ```bash
-pnpm db:up         # docker compose up -d db
+pnpm db:up         # docker compose up -d (postgres + minio + temporal + ui)
 pnpm db:migrate    # apply migrations from libs/database/migrations
 pnpm db:seed       # seed reference rows
 pnpm db:generate   # generate a new migration from schema changes

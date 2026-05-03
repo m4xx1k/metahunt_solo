@@ -9,6 +9,7 @@ import { RssFetchActivity } from "./activities/rss-fetch.activity";
 import { RssParseActivity } from "./activities/rss-parse.activity";
 import { RssExtractActivity } from "./activities/rss-extract.activity";
 import { RssFinalizeActivity } from "./activities/rss-finalize.activity";
+import { RssListSourcesActivity } from "./activities/rss-list-sources.activity";
 import { RssParserService } from "./rss-parser.service";
 import { RssSchedulerService } from "./rss-scheduler.service";
 import { RssController } from "./rss.controller";
@@ -69,6 +70,7 @@ import { RssController } from "./rss.controller";
               RssParseActivity,
               RssExtractActivity,
               RssFinalizeActivity,
+              RssListSourcesActivity,
             ],
             // Worker spawns a Temporal connection; in `NODE_ENV=test` the
             // AppModule smoke spec compiles the graph without a running server.
@@ -85,6 +87,7 @@ import { RssController } from "./rss.controller";
     RssParseActivity,
     RssExtractActivity,
     RssFinalizeActivity,
+    RssListSourcesActivity,
     RssSchedulerService,
   ],
   controllers: [RssController],
