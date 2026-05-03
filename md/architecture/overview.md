@@ -104,10 +104,9 @@ Two independent surfaces, both built from a subset of this monorepo. Neither reb
 ### `@metahunt/web` → Vercel
 
 - Builder: Vercel's Next.js preset, `Root Directory = apps/web`, `Install Command = cd ../.. && pnpm install --frozen-lockfile` (so workspace resolution happens at the monorepo root).
-- Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml` — Vercel skips a build when only backend files (`apps/etl/**`, `Dockerfile`, etc.) changed.
-- No env vars required at this stage (landing is static, no API calls). When the first endpoint is consumed, that follow-up adds CORS to ETL + `NEXT_PUBLIC_API_URL` to Vercel — see ADR-0005 consequences.
-- Created on Vercel as a fresh project (not a reconnect of the old standalone-repo project) — domain migrated from the old project to the new one in a sequential cutover (~30s downtime, no DNS propagation since records keep pointing at Vercel's edge).
-- Step-by-step UI procedure: [`md/runbook/vercel-deploy.md`](../runbook/vercel-deploy.md).
+- Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml` — Vercel skips a build when only backend files changed.
+- No env vars required (landing is static). When the first endpoint is consumed, that ticket adds CORS to ETL + `NEXT_PUBLIC_API_URL` to Vercel — see ADR-0005.
+- Setup procedure: [`md/runbook/vercel-deploy.md`](../runbook/vercel-deploy.md).
 
 ## Current gaps
 
