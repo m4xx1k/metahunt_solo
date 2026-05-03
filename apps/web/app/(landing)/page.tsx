@@ -16,6 +16,7 @@ const landingNav: NavItem[] = [
   { label: "фічі", href: "#ai" },
   { label: "роадмапа", href: "#roadmap" },
   { label: "хто я", href: "#about" },
+  { label: "моніторинг", href: "/monitoring" },
 ];
 
 export default function LandingPage() {
