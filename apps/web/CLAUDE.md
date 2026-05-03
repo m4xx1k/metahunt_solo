@@ -1,8 +1,6 @@
 # `@metahunt/web` — Next.js 16 frontend
 
-Imported from the standalone `metahunt-client` repo on 2026-05-03 — see [migration tracker](../../md/journal/migrations/frontend-migration.md) and [ADR-0005](../../md/journal/decisions/0005-vercel-for-frontend.md).
-
-Routing & full project conventions: root [`/CLAUDE.md`](../../CLAUDE.md). This file only adds frontend-specific notes.
+Routing & full project conventions: root [`/CLAUDE.md`](../../CLAUDE.md). This file only adds frontend-specific notes. Why this app lives in the monorepo: [ADR-0005](../../md/journal/decisions/0005-vercel-for-frontend.md).
 
 <!-- BEGIN:nextjs-agent-rules -->
 ## This is NOT the Next.js you know
