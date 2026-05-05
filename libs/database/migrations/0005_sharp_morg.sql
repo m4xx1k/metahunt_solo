@@ -1,0 +1,1 @@
+ALTER TABLE "rss_records" ALTER COLUMN "external_id" SET NOT NULL;
