@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TemporalModule } from "nestjs-temporal-core";
 
+import { LOADER_ACTIVITIES } from "../loader/activities";
 import { RSS_ACTIVITIES } from "../rss/activities";
 import { appendTsLoaderRule } from "./webpack-workflow.hook";
 
@@ -29,12 +30,12 @@ import { appendTsLoaderRule } from "./webpack-workflow.hook";
           },
           taskQueue: config.get<string>("TEMPORAL_TASK_QUEUE"),
           worker: {
-            // Workflows live alongside the only feature that owns them today
-            // (RSS). When a second feature module starts contributing
-            // workflows, generalize this into a registration parameter.
-            workflowsPath: resolve(__dirname, "../rss/workflows"),
+            // Aggregated barrel: each feature module re-exports its workflows
+            // from src/workflows/index.ts so the worker bundles everything
+            // from one entry point.
+            workflowsPath: resolve(__dirname, "../workflows"),
             bundlerOptions: { webpackConfigHook: appendTsLoaderRule },
-            activityClasses: [...RSS_ACTIVITIES],
+            activityClasses: [...RSS_ACTIVITIES, ...LOADER_ACTIVITIES],
             // Worker spawns a Temporal connection; in `NODE_ENV=test` the
             // AppModule smoke spec compiles the graph without a running server.
             autoStart: config.get<string>("NODE_ENV") !== "test",

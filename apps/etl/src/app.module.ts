@@ -4,6 +4,7 @@ import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
 import { validateEnv } from "./config/env.validation";
 import { HealthController } from "./health/health.controller";
+import { LoaderModule } from "./loader/loader.module";
 import { MonitoringModule } from "./monitoring/monitoring.module";
 import { RssModule } from "./rss/rss.module";
 import { StorageModule } from "./storage/storage.module";
@@ -20,6 +21,7 @@ import { TemporalInfraModule } from "./temporal/temporal.module";
     TemporalInfraModule,
     StorageModule,
     RssModule,
+    LoaderModule,
     MonitoringModule,
   ],
   controllers: [AppController, HealthController],
