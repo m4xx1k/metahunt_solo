@@ -1,6 +1,10 @@
 # loader-pipeline — silver vacancies from RSS records
 
-> Status: spec / not started. Branch: `feat/loader-pipeline`.
+> Status: done. Branch: `feat/loader-pipeline`.
+
+## Outcome
+
+T1–T18 shipped on `feat/loader-pipeline`. Six new tables (companies, company_identifiers, nodes, node_aliases, vacancies, vacancy_nodes) + seven enums; `rss_records.external_id` now derived per-source (Djinni/DOU) at parse time and locked NOT NULL; `vacancyPipelineWorkflow` fans out from `rssIngestWorkflow` (`ABANDON` child, deterministic id); `POST /loader/backfill` recovers stuck records. 99 unit tests + a self-contained smoke (`apps/etl/scripts/loader-smoke.ts`) green.
 
 ## Goal
 
@@ -364,26 +368,26 @@ Run `loadFromRecord` in-process per id. Return `{ attempted, succeeded, failed }
 
 Tests-first per project convention (TDD). Each task is its own commit on `feat/loader-pipeline`; PR opens after T18.
 
-| # | Task | Test gate |
+| # | Task | Status |
 |---|---|---|
-| T1 | Drizzle schema files + barrel export (companies, company_identifiers, nodes, node_aliases, vacancies, vacancy_nodes) | TS compiles; Drizzle introspect clean |
-| T2 | Generate migration; verify SQL diff | Migration runs against fresh DB without errors |
-| T3 | `extractors/djinni.ts` + spec (real fixture URLs from existing `__fixtures__/`) | Spec passes for valid + invalid URLs |
-| T4 | `extractors/dou.ts` + spec | Same |
-| T5 | `source-external-id.ts` registry + spec | Spec passes for known + unknown source codes |
-| T6 | Modify `RssParseActivity` to call extractor per item; skip-on-throw with `logger.warn`; spec extension | Existing spec extended; new test verifies `external_id` populated on inserted rows |
-| T7 | Backfill script (`libs/database/scripts/backfill-rss-external-id.ts`): populate `rss_records.external_id` for existing rows; report unparseable | Run against local DB; manual verify counts |
-| T8 | Migration: `ALTER rss_records.external_id SET NOT NULL` | Migration runs after T7 backfill |
-| T9 | `NodeResolver` service + spec (race-safe alias resolution) | Spec covers exact hit, miss-create, concurrent-insert race |
-| T10 | `CompanyResolver` service + spec | Spec covers identifier-hit, slug-hit-add-identifier, full-create |
-| T11 | `VacancyLoaderService` + spec (transactional upsert + `vacancy_nodes` rewrite) | Spec covers create, update, skill set replacement, null-companyName |
-| T12 | `LoadVacancyActivity` + spec (Nest activity decorator wiring) | Activity resolves loader; spec covers the happy path |
-| T13 | `vacancyPipelineWorkflow` (loader-only stage today) | Workflow bundles via webpack; smoke test via local Temporal |
-| T14 | `LoaderModule` + register in `AppModule`; activities exported | `AppModule` smoke spec extended; all DI resolves |
-| T15 | Generalize `workflowsPath` to multi-feature barrel; update worker config | Worker boots; both workflows visible in Temporal UI |
-| T16 | Modify `rssIngestWorkflow` to fan out `vacancyPipelineWorkflow` per successful extraction (`ABANDON` child) | Existing `rss-ingest` spec extended |
-| T17 | `LoaderController` + backfill endpoint + spec | E2E: stuck record loads via `POST /loader/backfill`; counts correct |
-| T18 | E2E smoke: `curl /rss` → wait → verify `vacancies` populated, `nodes WHERE status='NEW'` accumulating | Manual; document in `md/runbook/` |
+| T1 | Drizzle schema files + barrel export (companies, company_identifiers, nodes, node_aliases, vacancies, vacancy_nodes) | ✅ `c8b79db` |
+| T2 | Generate migration; verify SQL diff | ✅ `c8b79db` (migration `0004_chemical_shen.sql`; manually stripped a duplicate `ADD COLUMN workflow_run_id` re-emitted from a stale 0003 baseline) |
+| T3 | `extractors/djinni.ts` + spec (real fixture URLs from existing `__fixtures__/`) | ✅ `57d42ea` |
+| T4 | `extractors/dou.ts` + spec | ✅ `57d42ea` |
+| T5 | `source-external-id.ts` registry + spec | ✅ `57d42ea` |
+| T6 | Modify `RssParseActivity` to call extractor per item; skip-on-throw with `logger.warn`; spec extension | ✅ `6adbea9` |
+| T7 | Backfill script: populate `rss_records.external_id` for existing rows | ✅ `834f27b` (lives in `apps/etl/scripts/`, not `libs/database/scripts/`, so it can import the extractor without inverting the dep direction) |
+| T8 | Migration: `ALTER rss_records.external_id SET NOT NULL` | ✅ `834f27b` (`0005_sharp_morg.sql`) |
+| T9 | `NodeResolver` service + spec | ✅ `6ecd876` |
+| T10 | `CompanyResolver` service + spec | ✅ `4cf2b97` |
+| T11 | `VacancyLoaderService` + spec | ✅ done |
+| T12 | `LoadVacancyActivity` + spec | ✅ done |
+| T13 | `vacancyPipelineWorkflow` | ✅ done |
+| T14 | `LoaderModule` + register in `AppModule`; AppModule spec extended | ✅ done |
+| T15 | Generalize `workflowsPath` to multi-feature barrel; update worker config | ✅ done (`apps/etl/src/workflows/index.ts` aggregates `rss/workflows` + `loader/workflows`) |
+| T16 | Modify `rssIngestWorkflow` to fan out `vacancyPipelineWorkflow` per successful extraction (`ABANDON` child) | ✅ done (also adds `WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY` so a failed pipeline can retry on the next ingest) |
+| T17 | `LoaderController` + `POST /loader/backfill` + spec | ✅ done (mirrors `RssBackfillService`/`/rss/extract-missing` pattern) |
+| T18 | E2E smoke + runbook | ✅ done (`apps/etl/scripts/loader-smoke.ts` against an isolated `metahunt_loader_smoke` DB; runbook at `md/runbook/loader-pipeline-smoke.md`) |
 
 ## Future stages (out of scope)
 
