@@ -1,4 +1,10 @@
-import { log, proxyActivities } from "@temporalio/workflow";
+import {
+  log,
+  ParentClosePolicy,
+  proxyActivities,
+  startChild,
+  WorkflowIdReusePolicy,
+} from "@temporalio/workflow";
 import type { RssFetchActivity } from "../activities/rss-fetch.activity";
 import type { RssParseActivity } from "../activities/rss-parse.activity";
 import type { RssExtractActivity } from "../activities/rss-extract.activity";
@@ -47,6 +53,37 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
       log.warn(
         `Extraction failed for ${failures.length}/${newItemIds.length} record(s); ingest still finalizing as completed.`,
         { firstError: String(failures[0].reason) },
+      );
+    }
+
+    // Fan out the silver-layer pipeline per successfully extracted record.
+    // Children run with ABANDON parent-close so this ingest workflow can
+    // finish without waiting on (potentially slow) per-vacancy load chains.
+    // Deterministic workflowId per rss_record_id makes a re-fired ingest
+    // safe — Temporal rejects duplicates by default. ALLOW_DUPLICATE_FAILED_ONLY
+    // lets a failed pipeline be retried by the next ingest pass without
+    // blocking the happy path.
+    const successfulIds = newItemIds.filter(
+      (_, i) => results[i].status === "fulfilled",
+    );
+    const childResults = await Promise.allSettled(
+      successfulIds.map((rssRecordId) =>
+        startChild("vacancyPipelineWorkflow", {
+          args: [rssRecordId],
+          workflowId: `vacancy-pipeline-${rssRecordId}`,
+          parentClosePolicy: ParentClosePolicy.ABANDON,
+          workflowIdReusePolicy:
+            WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+        }),
+      ),
+    );
+    const childFailures = childResults.filter(
+      (r): r is PromiseRejectedResult => r.status === "rejected",
+    );
+    if (childFailures.length > 0) {
+      log.warn(
+        `Failed to start ${childFailures.length}/${successfulIds.length} pipeline child workflow(s); ingest finalizing.`,
+        { firstError: String(childFailures[0].reason) },
       );
     }
 
