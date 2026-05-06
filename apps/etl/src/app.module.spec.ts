@@ -13,6 +13,8 @@ import { RssFinalizeActivity } from "./rss/activities/rss-finalize.activity";
 import { RssParserService } from "./rss/rss-parser.service";
 import { RssSchedulerService } from "./rss/rss-scheduler.service";
 import { RssController } from "./rss/rss.controller";
+import { VacanciesController } from "./vacancies/vacancies.controller";
+import { VacanciesService } from "./vacancies/vacancies.service";
 
 describe("AppModule", () => {
   it("compiles the dependency graph and resolves RSS + health providers", async () => {
@@ -40,6 +42,11 @@ describe("AppModule", () => {
     );
     expect(moduleRef.get(LoadVacancyActivity)).toBeInstanceOf(
       LoadVacancyActivity,
+    );
+
+    expect(moduleRef.get(VacanciesService)).toBeInstanceOf(VacanciesService);
+    expect(moduleRef.get(VacanciesController)).toBeInstanceOf(
+      VacanciesController,
     );
 
     await moduleRef.close();
