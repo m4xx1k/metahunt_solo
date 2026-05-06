@@ -16,7 +16,12 @@ export class NodeResolverService {
     const aliasHits = await this.db
       .select({ nodeId: schema.nodeAliases.nodeId })
       .from(schema.nodeAliases)
-      .where(eq(schema.nodeAliases.name, normalized));
+      .where(
+        and(
+          eq(schema.nodeAliases.name, normalized),
+          eq(schema.nodeAliases.type, type),
+        ),
+      );
     if (aliasHits.length > 0) return aliasHits[0].nodeId;
 
     const inserted = await this.db
@@ -43,7 +48,7 @@ export class NodeResolverService {
 
     await this.db
       .insert(schema.nodeAliases)
-      .values({ name: normalized, nodeId })
+      .values({ name: normalized, type, nodeId })
       .onConflictDoNothing();
 
     return nodeId;

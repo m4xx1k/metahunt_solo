@@ -1,0 +1,2299 @@
+{
+  "skills": [
+    {
+      "name": "GIT",
+      "aliases": [
+        "Git VCS",
+        "Version Control System",
+        "GitHub",
+        "GitLab",
+        "Bitbucket",
+        "Git Flow",
+        "Git CLI",
+        "Git Bash",
+        "Distributed Version Control",
+        "Source Control",
+        "Version Control",
+        "Commit Management",
+        "Code Versioning"
+      ]
+    },
+    {
+      "name": "Java",
+      "aliases": ["java", "jdk", "java se", "java ee"]
+    },
+    {
+      "name": "Python",
+      "aliases": ["python", "python3", "py"]
+    },
+    {
+      "name": "C++",
+      "aliases": ["c++", "cpp", "c plus plus"]
+    },
+    {
+      "name": "JavaScript",
+      "aliases": ["javascript", "js", "es6", "es2015", "ecmascript"]
+    },
+    {
+      "name": "TypeScript",
+      "aliases": ["typescript", "ts"]
+    },
+    {
+      "name": "Go",
+      "aliases": ["go", "golang"]
+    },
+    {
+      "name": "Rust",
+      "aliases": ["rust", "rust-lang"]
+    },
+    {
+      "name": "Solidity",
+      "aliases": ["solidity", "sol"]
+    },
+    {
+      "name": "SQL",
+      "aliases": ["sql", "t-sql", "pl/sql", "pl sql", "structured query"]
+    },
+    {
+      "name": "C#",
+      "aliases": ["c#", "csharp", "c sharp"]
+    },
+    {
+      "name": "PHP",
+      "aliases": ["php", "php7", "php8"]
+    },
+    {
+      "name": "Ruby",
+      "aliases": ["ruby", "ruby on rails", "ror"]
+    },
+    {
+      "name": "Kotlin",
+      "aliases": ["kotlin", "kt"]
+    },
+    {
+      "name": "Swift",
+      "aliases": ["swift", "swift ui", "swiftui"]
+    },
+    {
+      "name": "Scala",
+      "aliases": ["scala"]
+    },
+    {
+      "name": "R",
+      "aliases": ["r", "r-lang", "r programming"]
+    },
+    {
+      "name": "React",
+      "aliases": ["react", "reactjs", "react.js"]
+    },
+    {
+      "name": "Angular",
+      "aliases": ["angular", "angularjs", "angular 2+"]
+    },
+    {
+      "name": "Vue.js",
+      "aliases": ["vue", "vuejs", "vue.js", "vue 3"]
+    },
+    {
+      "name": "HTML/CSS",
+      "aliases": ["html", "css", "html5", "css3"]
+    },
+    {
+      "name": "Tailwind CSS",
+      "aliases": ["tailwind", "tailwindcss", "tailwind css"]
+    },
+    {
+      "name": "Redux",
+      "aliases": ["redux", "redux toolkit", "rtk"]
+    },
+    {
+      "name": "Next.js",
+      "aliases": ["next", "nextjs", "next.js"]
+    },
+    {
+      "name": "Webpack",
+      "aliases": ["webpack", "webpack 5"]
+    },
+    {
+      "name": "Sass",
+      "aliases": ["sass", "scss"]
+    },
+    {
+      "name": "Svelte",
+      "aliases": ["svelte", "sveltekit"]
+    },
+    {
+      "name": "Nuxt.js",
+      "aliases": ["nuxt", "nuxtjs", "nuxt.js"]
+    },
+    {
+      "name": "RxJS",
+      "aliases": ["rxjs", "reactive extensions"]
+    },
+    {
+      "name": "Vite",
+      "aliases": ["vite", "vitejs"]
+    },
+    {
+      "name": "Three.js",
+      "aliases": ["three.js", "threejs", "webgl"]
+    },
+    {
+      "name": "PWA",
+      "aliases": ["pwa", "progressive web app"]
+    },
+    {
+      "name": "Storybook",
+      "aliases": ["storybook"]
+    },
+    {
+      "name": "Node.js",
+      "aliases": ["node", "nodejs", "node.js"]
+    },
+    {
+      "name": ".NET",
+      "aliases": [".net", "dotnet", "asp.net", "asp net"]
+    },
+    {
+      "name": "Spring Boot",
+      "aliases": ["spring", "spring boot", "spring framework"]
+    },
+    {
+      "name": "Django",
+      "aliases": ["django", "django rest"]
+    },
+    {
+      "name": "NestJS",
+      "aliases": ["nest", "nestjs", "nest.js"]
+    },
+    {
+      "name": "Kafka",
+      "aliases": ["kafka", "apache kafka"]
+    },
+    {
+      "name": "RabbitMQ",
+      "aliases": ["rabbitmq", "rabbit mq", "amqp"]
+    },
+    {
+      "name": "GraphQL",
+      "aliases": ["graphql", "gql"]
+    },
+    {
+      "name": "Microservices",
+      "aliases": ["microservices", "microservice architecture"]
+    },
+    {
+      "name": "Express.js",
+      "aliases": ["express", "expressjs", "express.js"]
+    },
+    {
+      "name": "FastAPI",
+      "aliases": ["fastapi", "fast api"]
+    },
+    {
+      "name": "Flask",
+      "aliases": ["flask"]
+    },
+    {
+      "name": "gRPC",
+      "aliases": ["grpc", "grpc-web"]
+    },
+    {
+      "name": "REST API",
+      "aliases": ["rest", "restful", "rest api"]
+    },
+    {
+      "name": "Laravel",
+      "aliases": ["laravel", "laravel framework"]
+    },
+    {
+      "name": "Symfony",
+      "aliases": ["symfony", "symfony framework"]
+    },
+    {
+      "name": "Magento",
+      "aliases": ["magento", "magento 2", "adobe commerce"]
+    },
+    {
+      "name": "WordPress",
+      "aliases": ["wordpress", "wp", "woocommerce"]
+    },
+    {
+      "name": "Yii",
+      "aliases": ["yii", "yii2", "yii framework"]
+    },
+    {
+      "name": "Hibernate",
+      "aliases": ["hibernate", "jpa", "java persistence api"]
+    },
+    {
+      "name": "Spring Cloud",
+      "aliases": ["spring cloud"]
+    },
+    {
+      "name": "Maven",
+      "aliases": ["maven", "mvn"]
+    },
+    {
+      "name": "Gradle",
+      "aliases": ["gradle"]
+    },
+    {
+      "name": "WebSockets",
+      "aliases": ["websockets", "socket.io", "ws"]
+    },
+    {
+      "name": "Elastic Stack",
+      "aliases": ["elk", "elk stack", "kibana", "logstash"]
+    },
+    {
+      "name": "Web3.js",
+      "aliases": ["web3.js", "web3js", "ethers.js", "ethers"]
+    },
+    {
+      "name": "Smart Contracts",
+      "aliases": ["smart contracts", "erc20", "erc721"]
+    },
+    {
+      "name": "Hardhat",
+      "aliases": ["hardhat", "truffle"]
+    },
+    {
+      "name": "Swift",
+      "aliases": ["swift", "swiftui", "swift ui"]
+    },
+    {
+      "name": "Kotlin",
+      "aliases": ["kotlin", "kotlin multiplatform"]
+    },
+    {
+      "name": "Flutter",
+      "aliases": ["flutter", "dart"]
+    },
+    {
+      "name": "React Native",
+      "aliases": ["react native", "react-native", "rn"]
+    },
+    {
+      "name": "Jetpack Compose",
+      "aliases": ["jetpack compose", "compose", "jetpack"]
+    },
+    {
+      "name": "iOS SDK",
+      "aliases": ["ios", "ios sdk", "uikit"]
+    },
+    {
+      "name": "Android SDK",
+      "aliases": ["android", "android sdk"]
+    },
+    {
+      "name": "Expo",
+      "aliases": ["expo", "expo go"]
+    },
+    {
+      "name": "Xamarin",
+      "aliases": ["xamarin", "xamarin forms"]
+    },
+    {
+      "name": "Unity",
+      "aliases": ["unity", "unity3d", "unity 3d"]
+    },
+    {
+      "name": "Unreal Engine",
+      "aliases": ["unreal", "unreal engine", "ue4", "ue5"]
+    },
+    {
+      "name": "Godot",
+      "aliases": ["godot", "godot engine"]
+    },
+    {
+      "name": "3D Math",
+      "aliases": ["3d math", "linear algebra", "vectors"]
+    },
+    {
+      "name": "Shaders",
+      "aliases": ["shaders", "hlsl", "glsl", "shader"]
+    },
+    {
+      "name": "OpenGL",
+      "aliases": ["opengl", "webgl"]
+    },
+    {
+      "name": "Selenium",
+      "aliases": ["selenium", "selenium webdriver"]
+    },
+    {
+      "name": "Cypress",
+      "aliases": ["cypress", "cypress.io"]
+    },
+    {
+      "name": "Playwright",
+      "aliases": ["playwright"]
+    },
+    {
+      "name": "Postman",
+      "aliases": ["postman", "postman api"]
+    },
+    {
+      "name": "Jest",
+      "aliases": ["jest", "jest testing"]
+    },
+    {
+      "name": "Manual Testing",
+      "aliases": ["manual testing", "qa manual", "manual qa"]
+    },
+    {
+      "name": "Test Automation",
+      "aliases": ["test automation", "qa automation", "automated testing"]
+    },
+    {
+      "name": "JMeter",
+      "aliases": ["jmeter", "apache jmeter"]
+    },
+    {
+      "name": "TestNG",
+      "aliases": ["testng", "test ng"]
+    },
+    {
+      "name": "Appium",
+      "aliases": ["appium", "mobile testing"]
+    },
+    {
+      "name": "Cucumber",
+      "aliases": ["cucumber", "bdd", "gherkin"]
+    },
+    {
+      "name": "JUnit",
+      "aliases": ["junit"]
+    },
+    {
+      "name": "PyTest",
+      "aliases": ["pytest"]
+    },
+    {
+      "name": "Charles Proxy",
+      "aliases": ["charles", "charles proxy"]
+    },
+    {
+      "name": "XCTest",
+      "aliases": ["xctest", "xcuitest"]
+    },
+    {
+      "name": "Espresso",
+      "aliases": ["espresso"]
+    },
+    {
+      "name": "RTOS",
+      "aliases": ["rtos", "freertos", "real-time os"]
+    },
+    {
+      "name": "STM32",
+      "aliases": ["stm32", "stm", "stm32f4"]
+    },
+    {
+      "name": "Arduino",
+      "aliases": ["arduino", "arduino uno"]
+    },
+    {
+      "name": "Verilog",
+      "aliases": ["verilog", "vhdl"]
+    },
+    {
+      "name": "Raspberry Pi",
+      "aliases": ["raspberry pi", "rpi", "raspberry"]
+    },
+    {
+      "name": "Assembly",
+      "aliases": ["assembly", "asm", "assembler"]
+    },
+    {
+      "name": "Altium Designer",
+      "aliases": ["altium", "altium designer", "pcb design"]
+    },
+    {
+      "name": "AWS",
+      "aliases": ["aws", "amazon web services", "ec2", "s3"]
+    },
+    {
+      "name": "Docker",
+      "aliases": ["docker", "docker compose", "containers"]
+    },
+    {
+      "name": "Kubernetes",
+      "aliases": ["kubernetes", "k8s", "kubectl", "helm"]
+    },
+    {
+      "name": "Terraform",
+      "aliases": ["terraform", "tf", "iac"]
+    },
+    {
+      "name": "Azure",
+      "aliases": ["azure", "microsoft azure"]
+    },
+    {
+      "name": "CI/CD",
+      "aliases": ["ci/cd", "ci cd", "jenkins", "gitlab ci", "github actions"]
+    },
+    {
+      "name": "Linux",
+      "aliases": ["linux", "unix", "bash", "shell"]
+    },
+    {
+      "name": "Google Cloud",
+      "aliases": ["gcp", "google cloud", "google cloud platform"]
+    },
+    {
+      "name": "Network Security",
+      "aliases": ["network security", "firewall", "vpn"]
+    },
+    {
+      "name": "Ansible",
+      "aliases": ["ansible", "ansible playbook"]
+    },
+    {
+      "name": "GitLab CI",
+      "aliases": ["gitlab", "gitlab ci", "gitlab-ci"]
+    },
+    {
+      "name": "GitHub Actions",
+      "aliases": ["github actions", "gh actions"]
+    },
+    {
+      "name": "Grafana",
+      "aliases": ["grafana"]
+    },
+    {
+      "name": "Prometheus",
+      "aliases": ["prometheus"]
+    },
+    {
+      "name": "Datadog",
+      "aliases": ["datadog"]
+    },
+    {
+      "name": "Splunk",
+      "aliases": ["splunk"]
+    },
+    {
+      "name": "CircleCI",
+      "aliases": ["circleci", "circle ci"]
+    },
+    {
+      "name": "ArgoCD",
+      "aliases": ["argocd", "argo cd"]
+    },
+    {
+      "name": "Helm",
+      "aliases": ["helm", "helm charts"]
+    },
+    {
+      "name": "Nginx",
+      "aliases": ["nginx"]
+    },
+    {
+      "name": "PostgreSQL",
+      "aliases": ["postgresql", "postgres", "psql", "pg"]
+    },
+    {
+      "name": "MongoDB",
+      "aliases": ["mongodb", "mongo", "nosql"]
+    },
+    {
+      "name": "Redis",
+      "aliases": ["redis", "redis cache"]
+    },
+    {
+      "name": "MySQL",
+      "aliases": ["mysql", "mariadb"]
+    },
+    {
+      "name": "ElasticSearch",
+      "aliases": ["elasticsearch", "elastic", "es", "elk"]
+    },
+    {
+      "name": "NoSQL",
+      "aliases": ["nosql", "document db"]
+    },
+    {
+      "name": "Cassandra",
+      "aliases": ["cassandra", "apache cassandra"]
+    },
+    {
+      "name": "DynamoDB",
+      "aliases": ["dynamodb", "dynamo db"]
+    },
+    {
+      "name": "ClickHouse",
+      "aliases": ["clickhouse", "click house"]
+    },
+    {
+      "name": "Snowflake",
+      "aliases": ["snowflake", "snowflake db"]
+    },
+    {
+      "name": "PyTorch",
+      "aliases": ["pytorch", "torch"]
+    },
+    {
+      "name": "TensorFlow",
+      "aliases": ["tensorflow", "tf", "keras"]
+    },
+    {
+      "name": "Pandas",
+      "aliases": ["pandas", "pd"]
+    },
+    {
+      "name": "Scikit-learn",
+      "aliases": ["scikit-learn", "sklearn", "scikit learn"]
+    },
+    {
+      "name": "OpenAI API",
+      "aliases": ["openai", "gpt", "chatgpt api"]
+    },
+    {
+      "name": "Computer Vision",
+      "aliases": ["computer vision", "cv", "opencv", "image processing"]
+    },
+    {
+      "name": "NLP",
+      "aliases": ["nlp", "natural language processing", "text mining"]
+    },
+    {
+      "name": "Jupyter",
+      "aliases": ["jupyter", "jupyter notebook", "ipynb"]
+    },
+    {
+      "name": "LangChain",
+      "aliases": ["langchain"]
+    },
+    {
+      "name": "Hugging Face",
+      "aliases": ["hugging face", "transformers"]
+    },
+    {
+      "name": "Pinecone",
+      "aliases": ["pinecone", "vector db"]
+    },
+    {
+      "name": "Matplotlib",
+      "aliases": ["matplotlib", "seaborn", "plotly"]
+    },
+    {
+      "name": "MLflow",
+      "aliases": ["mlflow"]
+    },
+    {
+      "name": "Apache Spark",
+      "aliases": ["spark", "apache spark", "pyspark"]
+    },
+    {
+      "name": "Airflow",
+      "aliases": ["airflow", "apache airflow"]
+    },
+    {
+      "name": "Power BI",
+      "aliases": ["power bi", "powerbi", "pbi"]
+    },
+    {
+      "name": "Tableau",
+      "aliases": ["tableau"]
+    },
+    {
+      "name": "dbt",
+      "aliases": ["dbt", "data build tool"]
+    },
+    {
+      "name": "BigQuery",
+      "aliases": ["bigquery", "big query", "bq"]
+    },
+    {
+      "name": "ETL",
+      "aliases": ["etl", "data pipeline", "data integration"]
+    },
+    {
+      "name": "Databricks",
+      "aliases": ["databricks", "delta lake"]
+    },
+    {
+      "name": "Looker",
+      "aliases": ["looker", "looker studio"]
+    },
+    {
+      "name": "Figma",
+      "aliases": ["figma", "figma design"]
+    },
+    {
+      "name": "Adobe Photoshop",
+      "aliases": ["photoshop", "ps", "adobe photoshop"]
+    },
+    {
+      "name": "Adobe Illustrator",
+      "aliases": ["illustrator", "ai", "adobe illustrator"]
+    },
+    {
+      "name": "UI/UX Principles",
+      "aliases": ["ui/ux", "ui ux", "user experience", "user interface"]
+    },
+    {
+      "name": "After Effects",
+      "aliases": ["after effects", "ae", "adobe after effects"]
+    },
+    {
+      "name": "Prototyping",
+      "aliases": ["prototyping", "wireframing"]
+    },
+    {
+      "name": "Sketch",
+      "aliases": ["sketch", "sketch app"]
+    },
+    {
+      "name": "Blender",
+      "aliases": ["blender", "3d modeling"]
+    },
+    {
+      "name": "Adobe XD",
+      "aliases": ["xd", "adobe xd"]
+    },
+    {
+      "name": "InVision",
+      "aliases": ["invision", "invision studio"]
+    },
+    {
+      "name": "Miro",
+      "aliases": ["miro"]
+    },
+    {
+      "name": "Zeplin",
+      "aliases": ["zeplin"]
+    },
+    {
+      "name": "Principle",
+      "aliases": ["principle"]
+    },
+    {
+      "name": "Cinema 4D",
+      "aliases": ["cinema 4d", "c4d"]
+    },
+    {
+      "name": "Jira",
+      "aliases": ["jira", "atlassian jira"]
+    },
+    {
+      "name": "Confluence",
+      "aliases": ["confluence", "atlassian confluence"]
+    },
+    {
+      "name": "Agile",
+      "aliases": ["agile", "agile methodology"]
+    },
+    {
+      "name": "Scrum",
+      "aliases": ["scrum", "scrum master"]
+    },
+    {
+      "name": "Kanban",
+      "aliases": ["kanban", "kanban board"]
+    },
+    {
+      "name": "Product Roadmap",
+      "aliases": ["roadmap", "product roadmap", "product planning"]
+    },
+    {
+      "name": "User Stories",
+      "aliases": ["user stories", "user story", "requirements"]
+    },
+    {
+      "name": "Asana",
+      "aliases": ["asana", "asana project"]
+    },
+    {
+      "name": "Trello",
+      "aliases": ["trello", "trello board"]
+    },
+    {
+      "name": "Monday.com",
+      "aliases": ["monday", "monday.com"]
+    },
+    {
+      "name": "Team Leadership",
+      "aliases": ["leadership", "team leadership", "team management"]
+    },
+    {
+      "name": "Mentoring",
+      "aliases": ["mentoring", "coaching", "mentorship"]
+    },
+    {
+      "name": "Hiring",
+      "aliases": ["hiring", "recruitment", "talent acquisition"]
+    },
+    {
+      "name": "Performance Review",
+      "aliases": ["performance review", "performance management", "1-on-1"]
+    },
+    {
+      "name": "Strategic Planning",
+      "aliases": ["strategic planning", "strategy", "business strategy"]
+    },
+    {
+      "name": "People Management",
+      "aliases": ["people management", "hr management"]
+    },
+    {
+      "name": "Budgeting",
+      "aliases": ["budgeting", "budget planning"]
+    },
+    {
+      "name": "Google Analytics",
+      "aliases": ["google analytics", "ga", "ga4", "analytics"]
+    },
+    {
+      "name": "SEO",
+      "aliases": ["seo", "search engine optimization"]
+    },
+    {
+      "name": "Copywriting",
+      "aliases": ["copywriting", "content writing"]
+    },
+    {
+      "name": "Social Media Marketing",
+      "aliases": ["smm", "social media", "social media marketing"]
+    },
+    {
+      "name": "Google Ads",
+      "aliases": ["google ads", "adwords", "google adwords"]
+    },
+    {
+      "name": "Content Marketing",
+      "aliases": ["content marketing", "content strategy"]
+    },
+    {
+      "name": "Email Marketing",
+      "aliases": ["email marketing", "email campaigns"]
+    },
+    {
+      "name": "Facebook Ads",
+      "aliases": ["facebook ads", "fb ads", "meta ads"]
+    },
+    {
+      "name": "LinkedIn Marketing",
+      "aliases": ["linkedin", "linkedin ads"]
+    },
+    {
+      "name": "B2B Sales",
+      "aliases": ["b2b", "b2b sales", "enterprise sales"]
+    },
+    {
+      "name": "Salesforce",
+      "aliases": ["salesforce", "sfdc", "crm"]
+    },
+    {
+      "name": "HubSpot",
+      "aliases": ["hubspot", "hubspot crm"]
+    },
+    {
+      "name": "Lead Generation",
+      "aliases": ["lead generation", "lead gen", "prospecting"]
+    },
+    {
+      "name": "Negotiation",
+      "aliases": ["negotiation", "sales negotiation"]
+    },
+    {
+      "name": "Cold Calling",
+      "aliases": ["cold calling", "cold outreach"]
+    },
+    {
+      "name": "Account Management",
+      "aliases": ["account management", "customer success"]
+    },
+    {
+      "name": "Technical Recruiting",
+      "aliases": ["technical recruiting", "tech recruiting", "it recruiting"]
+    },
+    {
+      "name": "Sourcing",
+      "aliases": ["sourcing", "candidate sourcing"]
+    },
+    {
+      "name": "Interviewing",
+      "aliases": ["interviewing", "interviews"]
+    },
+    {
+      "name": "HR Management",
+      "aliases": ["hr", "human resources", "hr management"]
+    },
+    {
+      "name": "LinkedIn Recruiter",
+      "aliases": ["linkedin recruiter", "linkedin", "li recruiter"]
+    },
+    {
+      "name": "Talent Acquisition",
+      "aliases": ["talent acquisition", "ta", "recruitment"]
+    },
+    {
+      "name": "TurboHiring",
+      "aliases": ["turbohiring", "turbo hiring"]
+    },
+    {
+      "name": "GDPR",
+      "aliases": ["gdpr", "data protection", "privacy"]
+    },
+    {
+      "name": "Contract Law",
+      "aliases": ["contract law", "contracts"]
+    },
+    {
+      "name": "Intellectual Property",
+      "aliases": ["ip", "intellectual property", "patents"]
+    },
+    {
+      "name": "Compliance",
+      "aliases": ["compliance", "regulatory compliance"]
+    },
+    {
+      "name": "Corporate Law",
+      "aliases": ["corporate law", "business law"]
+    },
+    {
+      "name": "ISO 27001",
+      "aliases": ["iso 27001", "iso27001", "isms"]
+    },
+    {
+      "name": "Diia City",
+      "aliases": ["diia city", "diia", "дія сіті"]
+    },
+    {
+      "name": "Business Communication",
+      "aliases": ["communication", "business communication"]
+    },
+    {
+      "name": "Problem Solving",
+      "aliases": ["problem solving", "analytical thinking"]
+    },
+    {
+      "name": "Microsoft Excel",
+      "aliases": ["excel", "microsoft excel", "spreadsheets"]
+    },
+    {
+      "name": "Google Workspace",
+      "aliases": ["google workspace", "g suite", "google docs"]
+    },
+    {
+      "name": "Time Management",
+      "aliases": ["time management", "productivity"]
+    },
+    {
+      "name": "Notion",
+      "aliases": ["notion", "notion app"]
+    }
+  ],
+  "domains": [
+    {
+      "name": "Fintech",
+      "aliases": [
+        "Finance",
+        "Banking",
+        "InsurTech",
+        "Payments",
+        "Trading",
+        "WealthTech",
+        "Open Banking",
+        "Neobank"
+      ]
+    },
+    {
+      "name": "Crypto",
+      "aliases": [
+        "Web3",
+        "Blockchain",
+        "DeFi",
+        "NFT",
+        "Smart Contracts",
+        "DApp",
+        "Tokenomics",
+        "Exchange"
+      ]
+    },
+    {
+      "name": "Defense",
+      "aliases": [
+        "MilTech",
+        "Military",
+        "DefTech",
+        "Aerospace",
+        "DroneTech",
+        "UAV",
+        "GovTech"
+      ]
+    },
+    {
+      "name": "Cybersecurity",
+      "aliases": [
+        "Security",
+        "InfoSec",
+        "SecOps",
+        "Network Security",
+        "Penetration Testing",
+        "Privacy"
+      ]
+    },
+    {
+      "name": "iGaming",
+      "aliases": [
+        "Gambling",
+        "Betting",
+        "Casino",
+        "Sportsbook",
+        "Lottery",
+        "Poker"
+      ]
+    },
+    {
+      "name": "GameDev",
+      "aliases": [
+        "Gaming",
+        "Games",
+        "Mobile Games",
+        "Esports",
+        "Unity",
+        "Unreal Engine",
+        "Console"
+      ]
+    },
+    {
+      "name": "Adult",
+      "aliases": ["Adult Entertainment", "Dating", "Camming", "NSFW"]
+    },
+    {
+      "name": "Media",
+      "aliases": [
+        "Streaming",
+        "Video",
+        "News",
+        "Publishing",
+        "Entertainment",
+        "Broadcasting",
+        "Podcast"
+      ]
+    },
+    {
+      "name": "Ecommerce",
+      "aliases": [
+        "E-commerce",
+        "Retail",
+        "Marketplace",
+        "Fashion",
+        "Shopify",
+        "Magento",
+        "DTC"
+      ]
+    },
+    {
+      "name": "Logistics",
+      "aliases": [
+        "Supply Chain",
+        "Delivery",
+        "Transportation",
+        "Automotive",
+        "Fleet Management",
+        "Shipping"
+      ]
+    },
+    {
+      "name": "Travel",
+      "aliases": [
+        "Hospitality",
+        "Booking",
+        "Tourism",
+        "Aviation",
+        "OTA",
+        "Hotels"
+      ]
+    },
+    {
+      "name": "EdTech",
+      "aliases": ["Education", "E-learning", "LMS", "Training", "Coaching"]
+    },
+    {
+      "name": "HealthTech",
+      "aliases": [
+        "Healthcare",
+        "MedTech",
+        "Biotech",
+        "Pharmaceuticals",
+        "Wellness",
+        "Telemedicine",
+        "Life Sciences"
+      ]
+    },
+    {
+      "name": "GreenTech",
+      "aliases": [
+        "CleanTech",
+        "Energy",
+        "Solar",
+        "Sustainability",
+        "Climate Tech",
+        "AgriTech"
+      ]
+    },
+    {
+      "name": "AdTech",
+      "aliases": [
+        "Marketing",
+        "Digital Marketing",
+        "MarTech",
+        "Advertising",
+        "SEO",
+        "Affiliate",
+        "Programmatic",
+        "CRM"
+      ]
+    },
+    {
+      "name": "AI",
+      "aliases": [
+        "Artificial Intelligence",
+        "Machine Learning",
+        "ML",
+        "Data Science",
+        "Computer Vision",
+        "NLP",
+        "LLM",
+        "Generative AI"
+      ]
+    },
+    {
+      "name": "SaaS",
+      "aliases": [
+        "Software as a Service",
+        "B2B",
+        "Enterprise Software",
+        "Product Company"
+      ]
+    },
+    {
+      "name": "IoT",
+      "aliases": [
+        "Internet of Things",
+        "Smart Home",
+        "Connected Devices",
+        "Wearables"
+      ]
+    },
+    {
+      "name": "Hardware",
+      "aliases": [
+        "Electronics",
+        "Robotics",
+        "Embedded",
+        "Semiconductors",
+        "Microchips",
+        "Chip Design"
+      ]
+    },
+    {
+      "name": "Telecom",
+      "aliases": ["Telecommunications", "ISP", "5G", "VoIP", "Networks"]
+    },
+    {
+      "name": "Consulting",
+      "aliases": [
+        "IT",
+        "IT Services",
+        "Outsourcing",
+        "Outstaffing",
+        "Technology",
+        "Tech",
+        "Software Development",
+        "Agency",
+        "BPO",
+        "System Integrator"
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "name": "Full Stack Developer",
+      "aliases": [],
+      "skills": [
+        "JavaScript",
+        "TypeScript",
+        "React",
+        "Node.js",
+        "PostgreSQL",
+        "Docker",
+        "AWS",
+        "REST API",
+        "GraphQL",
+        "MongoDB"
+      ],
+      "descriptions": "End-to-end feature development (FE + BE)"
+    },
+    {
+      "name": "Backend Developer",
+      "aliases": [],
+      "skills": [
+        "Node.js",
+        "Python",
+        "Java",
+        "PostgreSQL",
+        "MongoDB",
+        "REST API",
+        "GraphQL",
+        "Docker",
+        "Redis",
+        "Kafka",
+        "Microservices"
+      ],
+      "descriptions": "Server-side logic, APIs, & database interaction"
+    },
+    {
+      "name": "Frontend Developer",
+      "aliases": [],
+      "skills": [
+        "JavaScript",
+        "TypeScript",
+        "React",
+        "Vue.js",
+        "HTML/CSS",
+        "Webpack",
+        "Redux",
+        "Next.js",
+        "Tailwind CSS",
+        "REST API"
+      ],
+      "descriptions": "Client-side UI implementation & state management"
+    },
+    {
+      "name": "Software Engineer",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "Java",
+        "C++",
+        "JavaScript",
+        "SQL",
+        "Docker",
+        "Linux",
+        "REST API",
+        "PostgreSQL",
+        "AWS"
+      ],
+      "descriptions": "Generalist software development, algorithms, data structures & computer science fundamentals"
+    },
+    {
+      "name": "Mobile Developer (iOS)",
+      "aliases": [],
+      "skills": [
+        "Swift",
+        "iOS SDK",
+        "Xcode",
+        "SwiftUI",
+        "REST API",
+        "Core Data",
+        "XCTest",
+        "Git"
+      ],
+      "descriptions": "iOS native application development"
+    },
+    {
+      "name": "Mobile Developer (Android)",
+      "aliases": [],
+      "skills": [
+        "Kotlin",
+        "Android SDK",
+        "Jetpack Compose",
+        "REST API",
+        "Room",
+        "Gradle",
+        "Espresso",
+        "Git"
+      ],
+      "descriptions": "Android native application development"
+    },
+    {
+      "name": "Mobile Developer (Cross-platform)",
+      "aliases": [],
+      "skills": [
+        "Flutter",
+        "React Native",
+        "JavaScript",
+        "TypeScript",
+        "REST API",
+        "Firebase",
+        "Expo",
+        "Git"
+      ],
+      "descriptions": "Cross-platform mobile development using Flutter, React Native or Ionic"
+    },
+    {
+      "name": "Embedded Software Engineer",
+      "aliases": [],
+      "skills": [
+        "C",
+        "C++",
+        "RTOS",
+        "STM32",
+        "Arduino",
+        "Assembly",
+        "Verilog",
+        "Linux",
+        "Raspberry Pi"
+      ],
+      "descriptions": "Low-level firmware development, RTOS, microcontrollers & hardware interaction"
+    },
+    {
+      "name": "Game Developer",
+      "aliases": [],
+      "skills": [
+        "Unity",
+        "Unreal Engine",
+        "C++",
+        "C#",
+        "3D Math",
+        "Shaders",
+        "OpenGL",
+        "Godot"
+      ],
+      "descriptions": "Game mechanics, physics, & real-time rendering"
+    },
+    {
+      "name": "CRM Developer",
+      "aliases": [],
+      "skills": [
+        "Salesforce",
+        "Apex",
+        "JavaScript",
+        "REST API",
+        "SQL",
+        "Lightning Web Components",
+        "SOQL"
+      ],
+      "descriptions": "CRM customization (Salesforce/Dynamics)"
+    },
+    {
+      "name": "Blockchain Engineer",
+      "aliases": [],
+      "skills": [
+        "Solidity",
+        "Web3.js",
+        "Smart Contracts",
+        "Ethereum",
+        "Hardhat",
+        "JavaScript",
+        "TypeScript",
+        "Rust"
+      ],
+      "descriptions": "Decentralized app (dApp) & smart contract dev"
+    },
+    {
+      "name": "Software Architect",
+      "aliases": [],
+      "skills": [
+        "Microservices",
+        "System Design",
+        "AWS",
+        "Kubernetes",
+        "Docker",
+        "PostgreSQL",
+        "MongoDB",
+        "REST API",
+        "GraphQL",
+        "Kafka"
+      ],
+      "descriptions": "High-level system design, technology standards, & technical strategy"
+    },
+    {
+      "name": "ERP Developer (SAP/ABAP/Odoo)",
+      "aliases": [],
+      "skills": [
+        "SAP",
+        "ABAP",
+        "Python",
+        "PostgreSQL",
+        "XML",
+        "SQL",
+        "JavaScript",
+        "Odoo"
+      ],
+      "descriptions": "Development and customization of enterprise resource planning systems"
+    },
+    {
+      "name": "Systems Analyst",
+      "aliases": [],
+      "skills": [
+        "SQL",
+        "UML",
+        "Business Analysis",
+        "Jira",
+        "Confluence",
+        "REST API",
+        "System Design"
+      ],
+      "descriptions": "Technical specification & system design"
+    },
+    {
+      "name": "Solutions Architect",
+      "aliases": [],
+      "skills": [
+        "AWS",
+        "Azure",
+        "Microservices",
+        "Docker",
+        "Kubernetes",
+        "System Design",
+        "PostgreSQL",
+        "REST API",
+        "Terraform"
+      ],
+      "descriptions": "Solution design & technical integration"
+    },
+    {
+      "name": "FPGA Engineer",
+      "aliases": [],
+      "skills": [
+        "Verilog",
+        "VHDL",
+        "FPGA",
+        "Altium Designer",
+        "C",
+        "C++",
+        "Assembly",
+        "SystemVerilog"
+      ],
+      "descriptions": "Programming hardware logic (Verilog/VHDL) for defense & telecom"
+    },
+    {
+      "name": "DevOps Engineer",
+      "aliases": [],
+      "skills": [
+        "Docker",
+        "Kubernetes",
+        "CI/CD",
+        "Jenkins",
+        "GitLab CI",
+        "Terraform",
+        "AWS",
+        "Linux",
+        "Ansible",
+        "Prometheus"
+      ],
+      "descriptions": "CI/CD automation & release process management"
+    },
+    {
+      "name": "Cloud Engineer",
+      "aliases": [],
+      "skills": [
+        "AWS",
+        "Azure",
+        "Google Cloud",
+        "Terraform",
+        "Docker",
+        "Kubernetes",
+        "Linux",
+        "Python",
+        "CI/CD"
+      ],
+      "descriptions": "Implementation of cloud resources (AWS/Azure/GCP)"
+    },
+    {
+      "name": "Site Reliability Engineer",
+      "aliases": [],
+      "skills": [
+        "Kubernetes",
+        "Docker",
+        "Terraform",
+        "Prometheus",
+        "Grafana",
+        "Linux",
+        "Python",
+        "AWS",
+        "CI/CD",
+        "Ansible"
+      ],
+      "descriptions": "Ensuring scalability, observability, SLOs/SLAs & infrastructure as code"
+    },
+    {
+      "name": "Systems Administrator",
+      "aliases": [],
+      "skills": [
+        "Linux",
+        "Windows Server",
+        "Bash",
+        "PowerShell",
+        "Nginx",
+        "Docker",
+        "Network Security",
+        "SQL"
+      ],
+      "descriptions": "On-premise server & OS maintenance"
+    },
+    {
+      "name": "Platform Engineer",
+      "aliases": [],
+      "skills": [
+        "Kubernetes",
+        "Docker",
+        "Terraform",
+        "AWS",
+        "CI/CD",
+        "Python",
+        "Linux",
+        "Helm",
+        "ArgoCD"
+      ],
+      "descriptions": "Building Internal Developer Platforms (IDP), infrastructure abstraction & self-service tooling"
+    },
+    {
+      "name": "Database Administrator",
+      "aliases": [],
+      "skills": [
+        "PostgreSQL",
+        "MySQL",
+        "MongoDB",
+        "Redis",
+        "SQL",
+        "Backup & Recovery",
+        "Performance Tuning",
+        "Linux"
+      ],
+      "descriptions": "Database health, security, & performance tuning"
+    },
+    {
+      "name": "Cloud Architect",
+      "aliases": [],
+      "skills": [
+        "AWS",
+        "Azure",
+        "Google Cloud",
+        "Terraform",
+        "Kubernetes",
+        "Microservices",
+        "Network Security",
+        "System Design",
+        "Docker"
+      ],
+      "descriptions": "Strategic cloud design & governance"
+    },
+    {
+      "name": "Network Engineer",
+      "aliases": [],
+      "skills": [
+        "Cisco",
+        "TCP/IP",
+        "Network Security",
+        "VPN",
+        "Firewall",
+        "Linux",
+        "Routing & Switching"
+      ],
+      "descriptions": "Connectivity, routing, & network infrastructure"
+    },
+    {
+      "name": "IT Support Specialist",
+      "aliases": [],
+      "skills": [
+        "Windows",
+        "Linux",
+        "Active Directory",
+        "Troubleshooting",
+        "Hardware Support",
+        "Networking"
+      ],
+      "descriptions": "Helpdesk, hardware support, & user assistance"
+    },
+    {
+      "name": "Data Engineer",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "SQL",
+        "Apache Spark",
+        "Airflow",
+        "Kafka",
+        "PostgreSQL",
+        "AWS",
+        "ETL",
+        "Snowflake",
+        "dbt"
+      ],
+      "descriptions": "Building data pipelines & warehousing infrastructure"
+    },
+    {
+      "name": "Data Analyst",
+      "aliases": [],
+      "skills": [
+        "SQL",
+        "Python",
+        "Power BI",
+        "Tableau",
+        "Excel",
+        "Pandas",
+        "Data Visualization",
+        "Statistics"
+      ],
+      "descriptions": "Descriptive analysis, dashboarding, & reporting"
+    },
+    {
+      "name": "Data Scientist",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "R",
+        "SQL",
+        "Machine Learning",
+        "Pandas",
+        "Scikit-learn",
+        "TensorFlow",
+        "Jupyter",
+        "Statistics",
+        "PyTorch"
+      ],
+      "descriptions": "Predictive modeling, ML algorithms, & experimentation"
+    },
+    {
+      "name": "Machine Learning Engineer",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "TensorFlow",
+        "PyTorch",
+        "Scikit-learn",
+        "Docker",
+        "Kubernetes",
+        "AWS",
+        "MLflow",
+        "SQL",
+        "REST API"
+      ],
+      "descriptions": "Deploying & scaling ML models in production"
+    },
+    {
+      "name": "Analytics Engineer",
+      "aliases": [],
+      "skills": [
+        "SQL",
+        "dbt",
+        "Python",
+        "Snowflake",
+        "BigQuery",
+        "Airflow",
+        "PostgreSQL",
+        "Data Modeling"
+      ],
+      "descriptions": "Transforming raw data into usable models (dbt/SQL)"
+    },
+    {
+      "name": "BI Developer",
+      "aliases": [],
+      "skills": [
+        "SQL",
+        "Power BI",
+        "Tableau",
+        "DAX",
+        "ETL",
+        "Data Modeling",
+        "PostgreSQL",
+        "Python"
+      ],
+      "descriptions": "Designing visualization layers & BI reporting tools"
+    },
+    {
+      "name": "AI Engineer",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "TensorFlow",
+        "PyTorch",
+        "OpenAI API",
+        "LangChain",
+        "NLP",
+        "REST API",
+        "Docker",
+        "AWS"
+      ],
+      "descriptions": "AI model integration & application logic"
+    },
+    {
+      "name": "Computer Vision Engineer",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "OpenCV",
+        "TensorFlow",
+        "PyTorch",
+        "Computer Vision",
+        "C++",
+        "CUDA",
+        "Image Processing"
+      ],
+      "descriptions": "Image recognition algorithms (drones, surveillance, AR) - Critical for MilTech"
+    },
+    {
+      "name": "Security Engineer",
+      "aliases": [],
+      "skills": [
+        "Linux",
+        "Network Security",
+        "Python",
+        "Firewall",
+        "IDS/IPS",
+        "SIEM",
+        "Penetration Testing",
+        "AWS"
+      ],
+      "descriptions": "Implementing security tools & hardening systems"
+    },
+    {
+      "name": "Information Security Analyst",
+      "aliases": [],
+      "skills": [
+        "SIEM",
+        "Splunk",
+        "Network Security",
+        "Incident Response",
+        "Threat Intelligence",
+        "Linux",
+        "Python"
+      ],
+      "descriptions": "Monitoring, detection, & incident response"
+    },
+    {
+      "name": "Penetration Tester",
+      "aliases": [],
+      "skills": [
+        "Kali Linux",
+        "Metasploit",
+        "Burp Suite",
+        "Python",
+        "Network Security",
+        "Web Application Security",
+        "OWASP"
+      ],
+      "descriptions": "Ethical hacking & vulnerability assessment"
+    },
+    {
+      "name": "Security Architect",
+      "aliases": [],
+      "skills": [
+        "Network Security",
+        "IAM",
+        "Zero Trust",
+        "AWS",
+        "Azure",
+        "Compliance",
+        "ISO 27001",
+        "GDPR",
+        "System Design"
+      ],
+      "descriptions": "Enterprise security strategy & framework design"
+    },
+    {
+      "name": "IAM Specialist",
+      "aliases": [],
+      "skills": [
+        "Active Directory",
+        "LDAP",
+        "OAuth",
+        "SAML",
+        "Azure AD",
+        "Okta",
+        "IAM",
+        "SSO"
+      ],
+      "descriptions": "Identity & access management protocols"
+    },
+    {
+      "name": "Product Owner",
+      "aliases": [],
+      "skills": [
+        "Jira",
+        "Agile",
+        "Scrum",
+        "User Stories",
+        "Product Roadmap",
+        "Confluence",
+        "Backlog Management"
+      ],
+      "descriptions": "Backlog management & execution (Agile)"
+    },
+    {
+      "name": "Project Manager",
+      "aliases": [],
+      "skills": [
+        "Jira",
+        "Agile",
+        "Scrum",
+        "Kanban",
+        "MS Project",
+        "Risk Management",
+        "Budgeting",
+        "Confluence"
+      ],
+      "descriptions": "Project execution, timeline, & resource planning"
+    },
+    {
+      "name": "Product Manager",
+      "aliases": [],
+      "skills": [
+        "Product Roadmap",
+        "User Stories",
+        "Jira",
+        "Agile",
+        "Google Analytics",
+        "A/B Testing",
+        "Figma",
+        "SQL"
+      ],
+      "descriptions": "Product strategy, roadmap, & user needs"
+    },
+    {
+      "name": "Business Analyst",
+      "aliases": [],
+      "skills": [
+        "SQL",
+        "Jira",
+        "Confluence",
+        "UML",
+        "Business Process Modeling",
+        "User Stories",
+        "Requirements Gathering"
+      ],
+      "descriptions": "Requirement gathering, documentation, and bridging tech/business"
+    },
+    {
+      "name": "Scrum Master",
+      "aliases": [],
+      "skills": [
+        "Scrum",
+        "Agile",
+        "Jira",
+        "Confluence",
+        "Kanban",
+        "Facilitation",
+        "Team Coaching"
+      ],
+      "descriptions": "Agile process facilitation and team coaching"
+    },
+    {
+      "name": "Game Designer",
+      "aliases": [],
+      "skills": [
+        "Game Design",
+        "Unity",
+        "Balancing",
+        "Prototyping",
+        "UX Design",
+        "Analytics",
+        "Documentation"
+      ],
+      "descriptions": "Core gameplay mechanics, economy balance, system logic & GDD documentation"
+    },
+    {
+      "name": "SDET",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "Java",
+        "Selenium",
+        "Cypress",
+        "Playwright",
+        "CI/CD",
+        "Docker",
+        "REST API",
+        "Jenkins",
+        "TestNG"
+      ],
+      "descriptions": "Building testing infrastructure, frameworks & CI/CD integration quality gates"
+    },
+    {
+      "name": "Manual QA Engineer",
+      "aliases": [],
+      "skills": [
+        "Manual Testing",
+        "Test Cases",
+        "Bug Tracking",
+        "Jira",
+        "Postman",
+        "SQL",
+        "API Testing"
+      ],
+      "descriptions": "Functional, regression, and exploratory testing (non-coding)"
+    },
+    {
+      "name": "Automation QA Engineer",
+      "aliases": [],
+      "skills": [
+        "Python",
+        "Java",
+        "Selenium",
+        "Cypress",
+        "Playwright",
+        "REST API",
+        "Postman",
+        "CI/CD",
+        "TestNG"
+      ],
+      "descriptions": "Writing scripts for automated testing (Python, Java, JS)"
+    },
+    {
+      "name": "Engineering Manager",
+      "aliases": [],
+      "skills": [
+        "Team Leadership",
+        "Mentoring",
+        "Agile",
+        "Jira",
+        "Performance Review",
+        "Hiring",
+        "Strategic Planning",
+        "Budgeting"
+      ],
+      "descriptions": "People management, career growth, & team delivery"
+    },
+    {
+      "name": "Team Lead",
+      "aliases": [],
+      "skills": [
+        "Team Leadership",
+        "Code Review",
+        "Mentoring",
+        "Agile",
+        "System Design",
+        "Jira",
+        "Technical Architecture"
+      ],
+      "descriptions": "Technical leadership mixed with team management"
+    },
+    {
+      "name": "Delivery Manager",
+      "aliases": [],
+      "skills": [
+        "Project Management",
+        "Agile",
+        "Jira",
+        "Budgeting",
+        "Risk Management",
+        "Client Management",
+        "Resource Planning"
+      ],
+      "descriptions": "Responsible for project delivery, P&L, and client satisfaction"
+    },
+    {
+      "name": "IT Recruiter",
+      "aliases": [],
+      "skills": [
+        "Technical Recruiting",
+        "LinkedIn Recruiter",
+        "Sourcing",
+        "Interviewing",
+        "Boolean Search",
+        "ATS"
+      ],
+      "descriptions": "Sourcing, screening, & hiring technical talent"
+    },
+    {
+      "name": "HR Manager / People Partner",
+      "aliases": [],
+      "skills": [
+        "HR Management",
+        "People Management",
+        "Performance Review",
+        "Conflict Resolution",
+        "Employee Relations",
+        "Hiring"
+      ],
+      "descriptions": "Employee relations, retention, & culture"
+    },
+    {
+      "name": "Talent Sourcer",
+      "aliases": [],
+      "skills": [
+        "Sourcing",
+        "LinkedIn Recruiter",
+        "Boolean Search",
+        "Cold Outreach",
+        "X-Ray Search",
+        "GitHub Search"
+      ],
+      "descriptions": "Active candidate search, boolean search, scraping & cold outreach"
+    },
+    {
+      "name": "Developer Advocate",
+      "aliases": [],
+      "skills": [
+        "Technical Writing",
+        "Public Speaking",
+        "Content Creation",
+        "Community Management",
+        "Documentation",
+        "Social Media"
+      ],
+      "descriptions": "Community relations & technical evangelism"
+    },
+    {
+      "name": "Media Buyer",
+      "aliases": [],
+      "skills": [
+        "Facebook Ads",
+        "Google Ads",
+        "TikTok Ads",
+        "Google Analytics",
+        "A/B Testing",
+        "ROI Analysis",
+        "Conversion Optimization"
+      ],
+      "descriptions": "Traffic arbitrage, ad campaign management (Facebook/Google/TikTok Ads) & ROI optimization."
+    },
+    {
+      "name": "Affiliate Manager",
+      "aliases": [],
+      "skills": [
+        "Affiliate Marketing",
+        "Partnership Management",
+        "Google Analytics",
+        "CRM",
+        "Negotiation",
+        "Performance Tracking"
+      ],
+      "descriptions": "Managing affiliate partnerships, networks, and publisher relations."
+    },
+    {
+      "name": "SEO Specialist",
+      "aliases": [],
+      "skills": [
+        "SEO",
+        "Google Analytics",
+        "Google Search Console",
+        "Keyword Research",
+        "Link Building",
+        "Technical SEO",
+        "Content Optimization"
+      ],
+      "descriptions": "Search engine optimization & traffic growth"
+    },
+    {
+      "name": "Digital Marketer / PPC",
+      "aliases": [],
+      "skills": [
+        "Google Ads",
+        "Facebook Ads",
+        "PPC",
+        "Google Analytics",
+        "Conversion Optimization",
+        "A/B Testing",
+        "Landing Pages"
+      ],
+      "descriptions": "Paid advertising & digital campaigns"
+    },
+    {
+      "name": "Copywriter / Content Manager",
+      "aliases": [],
+      "skills": [
+        "Copywriting",
+        "Content Marketing",
+        "SEO",
+        "WordPress",
+        "Content Strategy",
+        "Editing",
+        "Technical Writing"
+      ],
+      "descriptions": "Creating tech content, articles, & documentation"
+    },
+    {
+      "name": "SMM Specialist",
+      "aliases": [],
+      "skills": [
+        "Social Media Marketing",
+        "Facebook Ads",
+        "Instagram",
+        "Content Creation",
+        "Analytics",
+        "Community Management",
+        "Canva"
+      ],
+      "descriptions": "Social media strategy & community engagement"
+    },
+    {
+      "name": "PR Manager",
+      "aliases": [],
+      "skills": [
+        "Public Relations",
+        "Media Relations",
+        "Press Releases",
+        "Crisis Management",
+        "Content Strategy",
+        "Networking"
+      ],
+      "descriptions": "Public relations, media communication, and brand awareness"
+    },
+    {
+      "name": "Sales Manager",
+      "aliases": [],
+      "skills": [
+        "B2B Sales",
+        "Negotiation",
+        "CRM",
+        "Salesforce",
+        "Lead Generation",
+        "Cold Calling",
+        "Pipeline Management"
+      ],
+      "descriptions": "Closing deals, negotiation, & client acquisition"
+    },
+    {
+      "name": "Lead Generation Specialist",
+      "aliases": [],
+      "skills": [
+        "Lead Generation",
+        "LinkedIn",
+        "Cold Outreach",
+        "Email Marketing",
+        "CRM",
+        "Prospecting",
+        "Sales Navigator"
+      ],
+      "descriptions": "Outbound prospecting & pipeline building"
+    },
+    {
+      "name": "Account Manager / CSM",
+      "aliases": [],
+      "skills": [
+        "Account Management",
+        "CRM",
+        "Salesforce",
+        "Customer Success",
+        "Upselling",
+        "Relationship Management",
+        "Negotiation"
+      ],
+      "descriptions": "Client retention, upselling, & relationship management"
+    },
+    {
+      "name": "Sales Engineer",
+      "aliases": [],
+      "skills": [
+        "Technical Demos",
+        "Solution Architecture",
+        "REST API",
+        "CRM",
+        "Salesforce",
+        "Presentation Skills",
+        "Technical Writing"
+      ],
+      "descriptions": "Technical demos, POCs, and translating business needs into technical requirements"
+    },
+    {
+      "name": "Customer Support Representative",
+      "aliases": [],
+      "skills": [
+        "Customer Support",
+        "Zendesk",
+        "Intercom",
+        "CRM",
+        "Troubleshooting",
+        "Communication",
+        "Ticketing Systems"
+      ],
+      "descriptions": "L1/L2 user assistance via chat/email (B2C/B2B)"
+    },
+    {
+      "name": "Technical Support Engineer",
+      "aliases": [],
+      "skills": [
+        "Technical Support",
+        "Troubleshooting",
+        "Linux",
+        "SQL",
+        "REST API",
+        "Networking",
+        "Log Analysis",
+        "Zendesk"
+      ],
+      "descriptions": "Deep technical troubleshooting for complex products"
+    },
+    {
+      "name": "UI/UX Designer",
+      "aliases": [],
+      "skills": [
+        "Figma",
+        "Adobe XD",
+        "Sketch",
+        "UI/UX Principles",
+        "Prototyping",
+        "User Research",
+        "Wireframing",
+        "Design Systems"
+      ],
+      "descriptions": "Designing user interfaces and user experiences for web/mobile"
+    },
+    {
+      "name": "Graphic Designer",
+      "aliases": [],
+      "skills": [
+        "Adobe Photoshop",
+        "Adobe Illustrator",
+        "Figma",
+        "Canva",
+        "Branding",
+        "Typography",
+        "Layout Design"
+      ],
+      "descriptions": "Creating marketing visuals, social media graphics, banners & branding materials (Not UI/UX)"
+    },
+    {
+      "name": "Product Designer",
+      "aliases": [],
+      "skills": [
+        "Figma",
+        "UI/UX Principles",
+        "Prototyping",
+        "User Research",
+        "Design Systems",
+        "Wireframing",
+        "Adobe XD",
+        "Sketch"
+      ],
+      "descriptions": "End-to-end design aligned with business goals"
+    },
+    {
+      "name": "Motion Designer",
+      "aliases": [],
+      "skills": [
+        "After Effects",
+        "Adobe Premiere",
+        "Cinema 4D",
+        "Animation",
+        "Video Editing",
+        "Motion Graphics",
+        "Illustrator"
+      ],
+      "descriptions": "Animation and video production for products/marketing"
+    },
+    {
+      "name": "Game Artist (2D/3D)",
+      "aliases": [],
+      "skills": [
+        "Blender",
+        "Maya",
+        "3ds Max",
+        "Photoshop",
+        "Substance Painter",
+        "Unity",
+        "Unreal Engine",
+        "ZBrush"
+      ],
+      "descriptions": "Creating visual assets, characters, and environments for games"
+    },
+    {
+      "name": "IT Lawyer / Legal Counsel",
+      "aliases": [],
+      "skills": [
+        "Contract Law",
+        "GDPR",
+        "Intellectual Property",
+        "Compliance",
+        "Corporate Law",
+        "Diia City",
+        "Data Protection"
+      ],
+      "descriptions": "Contracts, IP protection, GDPR, and Diia City compliance"
+    },
+    {
+      "name": "Accountant (FOP Support)",
+      "aliases": [],
+      "skills": [
+        "Accounting",
+        "Tax Reporting",
+        "Payroll",
+        "Excel",
+        "Ukrainian Tax Law",
+        "1C",
+        "Financial Reporting"
+      ],
+      "descriptions": "Financial management, payroll, and tax reporting for IT specialists"
+    },
+    {
+      "name": "Office Manager",
+      "aliases": [],
+      "skills": [
+        "Office Administration",
+        "Event Planning",
+        "Procurement",
+        "Vendor Management",
+        "Google Workspace",
+        "Communication"
+      ],
+      "descriptions": "Office administration, procurement, and event organization"
+    },
+    {
+      "name": "Finance Manager",
+      "aliases": [],
+      "skills": [
+        "Budgeting",
+        "Financial Planning",
+        "Excel",
+        "Financial Reporting",
+        "Cash Flow Management",
+        "Forecasting",
+        "Accounting"
+      ],
+      "descriptions": "Budgeting, financial planning, and cash flow management"
+    },
+    {
+      "name": "CEO / General Manager",
+      "aliases": [],
+      "skills": [
+        "Strategic Planning",
+        "Team Leadership",
+        "Budgeting",
+        "Business Development",
+        "P&L Management",
+        "Negotiation"
+      ],
+      "descriptions": "Chief Executive Officer or Country Manager"
+    },
+    {
+      "name": "COO (Chief Operating Officer)",
+      "aliases": [],
+      "skills": [
+        "Operations Management",
+        "Strategic Planning",
+        "Process Optimization",
+        "Budgeting",
+        "Team Leadership",
+        "Project Management"
+      ],
+      "descriptions": "Operational leadership and business efficiency"
+    },
+    {
+      "name": "CTO (Chief Technology Officer)",
+      "aliases": [],
+      "skills": [
+        "Technical Strategy",
+        "System Design",
+        "Team Leadership",
+        "Cloud Architecture",
+        "Microservices",
+        "AWS",
+        "Mentoring"
+      ],
+      "descriptions": "Technical strategy and engineering leadership"
+    },
+    {
+      "name": "CMO (Chief Marketing Officer)",
+      "aliases": [],
+      "skills": [
+        "Marketing Strategy",
+        "Brand Management",
+        "Google Analytics",
+        "SEO",
+        "Content Marketing",
+        "Team Leadership",
+        "Budgeting"
+      ],
+      "descriptions": "Head of Marketing strategy"
+    }
+  ]
+}

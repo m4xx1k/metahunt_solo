@@ -43,6 +43,13 @@
       "when": 1778019913653,
       "tag": "0005_sharp_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778100009383,
+      "tag": "0006_boring_gamora",
+      "breakpoints": true
     }
   ]
 }
