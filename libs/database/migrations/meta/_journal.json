@@ -50,6 +50,13 @@
       "when": 1778100009383,
       "tag": "0006_boring_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778120000000,
+      "tag": "0007_enable_pg_trgm",
+      "breakpoints": true
     }
   ]
 }

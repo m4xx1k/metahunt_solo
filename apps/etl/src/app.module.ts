@@ -8,6 +8,7 @@ import { LoaderModule } from "./loader/loader.module";
 import { MonitoringModule } from "./monitoring/monitoring.module";
 import { RssModule } from "./rss/rss.module";
 import { StorageModule } from "./storage/storage.module";
+import { TaxonomyModule } from "./taxonomy/taxonomy.module";
 import { TemporalInfraModule } from "./temporal/temporal.module";
 
 @Module({
@@ -22,6 +23,7 @@ import { TemporalInfraModule } from "./temporal/temporal.module";
     StorageModule,
     RssModule,
     LoaderModule,
+    TaxonomyModule,
     MonitoringModule,
   ],
   controllers: [AppController, HealthController],
