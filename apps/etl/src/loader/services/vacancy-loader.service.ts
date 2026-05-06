@@ -52,19 +52,22 @@ export class VacancyLoaderService {
 
     const requiredSkills = extracted.skills?.required ?? [];
     const optionalSkills = extracted.skills?.optional ?? [];
-    const skillLinks: SkillLink[] = [];
+    // Dedup by nodeId — distinct spellings of the same skill (e.g. "react"
+    // and "react.js") collapse to one alias-resolved node, and vacancy_nodes
+    // PKs on (vacancy_id, node_id). When a node appears as both required
+    // and optional, required wins.
+    const byNode = new Map<string, SkillLink>();
     for (const name of requiredSkills) {
-      skillLinks.push({
-        nodeId: await this.nodeResolver.resolve("SKILL", name),
-        isRequired: true,
-      });
+      const nodeId = await this.nodeResolver.resolve("SKILL", name);
+      byNode.set(nodeId, { nodeId, isRequired: true });
     }
     for (const name of optionalSkills) {
-      skillLinks.push({
-        nodeId: await this.nodeResolver.resolve("SKILL", name),
-        isRequired: false,
-      });
+      const nodeId = await this.nodeResolver.resolve("SKILL", name);
+      if (!byNode.has(nodeId)) {
+        byNode.set(nodeId, { nodeId, isRequired: false });
+      }
     }
+    const skillLinks: SkillLink[] = Array.from(byNode.values());
 
     const vacancyValues = {
       sourceId: record.sourceId,
