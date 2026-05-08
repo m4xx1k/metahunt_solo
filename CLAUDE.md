@@ -10,7 +10,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 
 - `md/` — all written documentation:
   - `md/architecture/`, `md/journal/`, `md/runbook/`, `md/roadmap.md`, `md/README.md` — metahunt-specific source of truth (snapshot + journal).
-  - `md/engineering/` — general engineering reference (style, design, errors, security, testing, review).
+  - `md/engineering/` — general engineering reference (style, design, errors, security, testing, review, frontend, frontend-composition).
 - `product/` — product / business / UX context (user flow, pain, economics, market).
 - `apps/`, `libs/` — code.
 
@@ -35,6 +35,8 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 | Active multi-step initiative | `md/journal/migrations/<branch-slug>.md` |
 | Operational how-to (deploy, debug, env) | `md/runbook/` |
 | Code style / pattern question | `md/engineering/STYLE.md` or `md/engineering/DESIGN.md` |
+| Frontend patterns (handlers, fetching, state, forms) | `md/engineering/FRONTEND.md` |
+| Frontend composition (tokens, variants, tiers, reuse) | `md/engineering/FRONTEND-COMPOSITION.md` |
 | Errors / logging / security / testing / review | `md/engineering/<TOPIC>.md` |
 | Product / UX / pricing / market | `product/README.md` |
 | Stage status / what's next | `md/roadmap.md` |
