@@ -58,7 +58,7 @@ Pick one. C1 is the right shape long-term.
 
 ## D — Service decomposition
 
-- **D1. Split `RssBackfillService`. _Done 2026-05-03_ on `refactor/etl-temporal-module-extract`** — `RssSchedulerService` now owns only schedule install; `RssIngestService` owns `ingestAll` / `ingestRemote`; `RssBackfillService` owns `extractMissing`. See [tracker](./refactor-etl-temporal-module-extract.md). Same branch also extracted Temporal worker config out of `RssModule` into `TemporalInfraModule`.
+- **D1. Split `RssBackfillService`. _Done 2026-05-03_ on `refactor/etl-temporal-module-extract`** — `RssSchedulerService` now owns only schedule install; `RssIngestService` owns `ingestAll` / `ingestRemote`; `RssBackfillService` owns `extractMissing`. See [tracker](./_done/refactor-etl-temporal-module-extract.md). Same branch also extracted Temporal worker config out of `RssModule` into `TemporalInfraModule`.
 - **D2. Extract activity body into a pure service.** `extractMissing` calls `RssExtractActivity.extractAndInsert` directly via Nest DI even though it's an `@Activity()`-decorated class. Works because that activity has no `activityInfo()` dependency, but it's a leaky abstraction. Refactor: pure `VacancyExtractionService.extractRecord(id)` that both `RssExtractActivity` and the backfill consume.
 
 ---

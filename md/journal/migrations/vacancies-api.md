@@ -33,33 +33,24 @@ Web (`apps/web/app/(investigation)/vacancies/`):
 
 - **F1 — Service spec.** `vacancies.service.spec.ts` covering: pagination, `q` ILIKE, multi-skill filter, salary floor + currency match, empty result. Equivalent to `monitoring.service.spec.ts` style.
 - **F2 — Controller spec.** Default pagination, query parsing errors, forwarding.
-- **F3 — Detail endpoint.** `GET /vacancies/:id` returning a `VacancyDetailDto` that ships full `description` (list responses currently send `description: null` — see D2 below).
-- **F4 — Filters not yet implemented.** Contract declares `sourceId`, `companyId`, `roleId`, `skillIds[]`, `seniority`, `workFormat`, `employmentType`, `englishLevel`, `engagementType`, `experienceMin/Max`, `salaryFloor`, `currency` — none are wired. Add as the FE asks.
-- **F5 — Cursor pagination.** Replace offset/limit with `(loaded_at, id)` cursor — the silver feed is streamed (loader writes mid-session) so offset paging duplicates rows. See D4.
+- **F3 — Detail endpoint.** `GET /vacancies/:id` → `VacancyDetailDto` with full `description` (list ships `description: null` to keep payload small).
+- **F4 — Filters not yet implemented.** Contract declares `sourceId`, `companyId`, `roleId`, `skillIds[]`, `seniority`, `workFormat`, `employmentType`, `englishLevel`, `engagementType`, `experienceMin/Max`, `salaryFloor`, `currency`, plus future `location` / `hasReservation` / `hasTestAssignment` / `loadedSince`. None are wired. Add as the FE asks.
+- **F5 — Cursor pagination.** See D3.
 
-### Open contract decisions (carried over from the earlier review)
+### Open contract decisions
 
-These were never resolved before the MVP shipped. Locked semantics today; revisit when the FE pushes back:
+Pick before the FE saves filter URLs:
 
-- **D1.** `skillIds[]` match mode — currently AND in the contract type. Likely OR by default for "jobs matching my skills" UX, or split into `skillIdsAll` + `skillIdsAny`. Pick before any FE filter URL is saved.
-- **D2.** `description` in list responses — currently shipped as `null` on every item (cheap fix). Either keep that and add `VacancyDetailDto` for the detail endpoint (F3), or ship a `descriptionSnippet` (~280 chars) in list + full on detail.
-- **D3.** Sort param + default — no `sort` field declared. Add `sort?: "newest" | "oldest" | "salary_desc" | "relevance"` and document the default (`newest` = `loaded_at DESC`, which is what the service already does).
-- **D4.** Pagination model — see F5.
-- **D5.** `total` cost — mandatory `COUNT(*)` on every keystroke. Make optional via `?withTotal=1`, or replace with `hasMore: boolean`.
-- **D6.** Location filter — `locations` is in the DTO but not filterable. Add `location?: string` (ILIKE) or `locations?: string[]` (any-of).
-- **D7.** UA-market filters — `hasReservation?: boolean`, `hasTestAssignment?: boolean`. Reservation status is a critical UA-market dealbreaker.
-- **D8.** Future-proof `link`/`source` — cross-source dedup isn't in the schema today, but `GoldenJob.appliesOn[]` shape suggests the right pre-emptive shape is `applyOn: Array<{ source: SourceRef; link: string|null; publishedAt: string|null }>`. Length 1 today, grows with dedup.
-- **D9.** Salary filter currency semantics — document in JSDoc that "matches only vacancies whose `currency` equals the filter; rows with null currency are excluded". Backend has no FX rates.
-- **D10.** `loadedSince?: string` filter for "new in last 24h" badge.
-- **D11.** Typed `ApiError { statusCode, message, code? }` so FE has typed catch blocks.
-- **D12.** Verify `locations` runtime shape — declared as `string[]`, but column is `jsonb` and BAML extraction may emit objects. Loader currently writes objects; service flattens `{city, country}` → `"city, country"`. Confirm by reading one extracted row in production.
-- **D13.** `englishLevel` is misnamed long-term (UA market also cares about Ukrainian/Polish). Schema-level concern; out of scope here.
+- **D1 — `skillIds[]` match mode.** Type currently AND. UX likely wants OR ("jobs matching my skills") or a `skillIdsAll` + `skillIdsAny` split.
+- **D2 — Sort param.** No `sort` declared; service already orders by `loaded_at DESC`. Need `sort?: "newest" | "oldest" | "salary_desc"` + documented default.
+- **D3 — Pagination model.** Offset paging duplicates rows on a streaming feed (loader writes mid-session). Move to `(loaded_at, id)` cursor (same as F5).
+- **D4 — `total` cost.** Mandatory `COUNT(*)` on every keystroke is wasteful. Either `?withTotal=1` opt-in or replace with `hasMore: boolean`.
 
 ### Web
 
 - **F6 — Landing nav link.** `/vacancies` isn't linked from the landing page yet. Add when this becomes user-visible (currently still under the `(investigation)` group breadcrumbs).
 - **F7 — Empty-state copy + `loading.tsx` / `error.tsx`.** Page renders an inline "no vacancies match the filters" message; add the Next.js boundary files for streamed fallback + error display per `md/engineering/FRONTEND.md`.
-- **F8 — More filter UI.** Once the backend supports any of D6/D7/D10/F4, add a corresponding filter chip / control next to `FilterToggles`.
+- **F8 — More filter UI.** Once F4 lands, add corresponding filter chips next to `FilterToggles`.
 
 ## Decisions (locked from loader-pipeline)
 
