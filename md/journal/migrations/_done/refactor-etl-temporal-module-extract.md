@@ -2,7 +2,7 @@
 
 **Started:** 2026-05-03 · **Closed:** 2026-05-03 · **Branch:** `refactor/etl-temporal-module-extract` · **Status:** done
 
-`RssModule` failed SRP three ways (RSS feature wiring **and** Temporal worker bootstrap **and** webpack bundler config). `RssSchedulerService` failed SRP three ways (schedule install **and** workflow kickoff **and** in-process backfill). This branch decomposes both. Closes group **D1** of [`rss-schedule-followups.md`](./rss-schedule-followups.md).
+`RssModule` failed SRP three ways (RSS feature wiring **and** Temporal worker bootstrap **and** webpack bundler config). `RssSchedulerService` failed SRP three ways (schedule install **and** workflow kickoff **and** in-process backfill). This branch decomposes both. Closes group **D1** of [`rss-schedule-followups.md`](../rss-schedule-followups.md).
 
 ## Steps
 
@@ -43,8 +43,8 @@
 
 ## Outcome
 
-`RssModule` and `RssSchedulerService` each pass the SRP "name without `and`" test. Adding a second ingest source no longer touches Temporal infra; adding a new backfill flow doesn't touch the scheduler. Group **D1** in [`rss-schedule-followups.md`](./rss-schedule-followups.md) is closed. The hardcoded `taskQueue: "rss-ingest"` in `RssIngestService.startWorkflows` (group **B1**) is unchanged — out of scope for this branch.
+`RssModule` and `RssSchedulerService` each pass the SRP "name without `and`" test. Adding a second ingest source no longer touches Temporal infra; adding a new backfill flow doesn't touch the scheduler. Group **D1** in [`rss-schedule-followups.md`](../rss-schedule-followups.md) is closed. The hardcoded `taskQueue: "rss-ingest"` in `RssIngestService.startWorkflows` (group **B1**) is unchanged — out of scope for this branch.
 
 ## Resume here
 
-This tracker is closed. Maintainer: move to `md/journal/migrations/_done/` on merge. For the broader follow-up backlog see [`rss-schedule-followups.md`](./rss-schedule-followups.md).
+This tracker is closed. Maintainer: move to `md/journal/migrations/_done/` on merge. For the broader follow-up backlog see [`rss-schedule-followups.md`](../rss-schedule-followups.md).

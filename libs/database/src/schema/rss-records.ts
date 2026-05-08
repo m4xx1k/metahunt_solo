@@ -6,7 +6,7 @@ export const rssRecords = pgTable('rss_records', {
   id: uuid('id').primaryKey().defaultRandom(),
   sourceId: uuid('source_id').notNull().references(() => sources.id),
   rssIngestId: uuid('rss_ingest_id').notNull().references(() => rssIngests.id),
-  externalId: text('external_id'),
+  externalId: text('external_id').notNull(),
   hash: text('hash').notNull(),
   publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
   title: text('title').notNull(),

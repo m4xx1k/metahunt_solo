@@ -4,29 +4,51 @@ What's now / what's next. Stages are business-meaningful milestones, not small f
 
 ## Current stage
 
-### Stage 04 — First ETL job
-**Status:** in-progress · **Started:** 2026-04-26
+### Stage 05 — Silver layer (loader + `/vacancies` + curated taxonomy)
+**Status:** in-progress · **Started:** 2026-05-05
 
-First pull source (DOU or Djinni), normalize → write to DB, basic dedup. Here we revisit the HTTP wrapper around etl (see ADR-0002).
+Bronze (`rss_records`) → silver (`vacancies` + `companies` + `nodes`). Vacancies surfaced via a public read API and a web feed. Taxonomy seeded and instrumented for moderator-driven curation.
 
 **Scope:**
-- ingest a first real source end-to-end
-- normalize records into the current DB schema
-- verify dedup baseline and minimal observability for runs
+- Per-vacancy pipeline workflow that loads silver from each extracted bronze record (loader-pipeline) — **done**.
+- `GET /vacancies` API + `apps/web` `/vacancies` page reading the silver feed — **MVP shipped**, contract followups carried forward.
+- Curated `nodes` taxonomy: type-scoped aliases, gap-driven iteration on `nodes.json`, read-only admin endpoints under `/admin/taxonomy/*` — **Phase 1 backend in**, Tier 1 nodes.json iteration in; further iterations gated on extraction prompt tuning (Stage 06).
 
-**Out of scope for this stage:** full CI pipeline and broad quality automation (Stage 05).
+**Out of scope for this stage:** moderator write-path API, admin UI in `apps/web`, cross-source / fingerprint dedup, embeddings.
 
-**Execution:** the work is broken into 14 isolated, individually testable tasks (T0–T13). Orchestration choice and the per-task tracker live in [ADR-0003](./journal/decisions/0003-temporal-orchestration.md) and [`journal/migrations/rss-temporal.md`](./journal/migrations/rss-temporal.md). **Progress: 13 / 14.** Done — T0–T9 (Jest, vacancy-filter, parser, storage+MinIO, Temporal+SDK, all 4 activities, workflow), T10 RssSchedulerService (two-method API, no boolean), T11 RssController (GET /rss → 202 + ingestAll), T12 AppModule wiring (RssModule + ExtractionModule + StorageModule, workflowsPath via assets-rule + workflows/index.ts barrel, autoStart gated on NODE_ENV!=='test'). Plus an out-of-scope but deploy-critical addition: aggregated `GET /healthz` controller (Postgres + S3 + Temporal). Next — **T13 (E2E smoke verification)**: locally green via curl + Temporal UI; production smoke happens on the first Railway deploy.
+**Trackers:**
+- [`journal/migrations/_done/loader-pipeline.md`](./journal/migrations/_done/loader-pipeline.md)
+- [`journal/migrations/vacancies-api.md`](./journal/migrations/vacancies-api.md)
+- [`journal/migrations/taxonomy-curation.md`](./journal/migrations/taxonomy-curation.md)
 
 ## Next
 
-### Stage 05 — Quality baseline (planned)
-Lint/format, unit/integration tests, and CI checks for build + migrate + seed + health smoke.
-
 ### Stage 06 — Extraction quality (planned)
-Move the vacancy extractor onto BAML (started 2026-05-01, see [ADR-0004](./journal/decisions/0004-baml-vacancy-extraction.md)) and expand it: prompt iteration via `baml-cli test` fixtures, regression tests against captured vacancies, sunset of the legacy `OpenAiVacancyExtractor` once parity is proven in production.
+The BAML migration shipped 2026-05-01 ([ADR-0004](./journal/decisions/0004-baml-vacancy-extraction.md)); what's left is closing the prompt-quality loop. Inject the live taxonomy as soft constraints, add anti-extraction rules + UA-market context, regression-test against captured fixtures, and re-measure delta via `fill-vacancies` coverage. Brief: [`todo/baml-extraction-prompt-tuning.md`](../todo/baml-extraction-prompt-tuning.md). Unblocks further `nodes.json` iterations on the SKILL axis.
+
+### Stage 07 — Quality baseline (planned)
+Lint/format, unit + integration tests, and CI checks for build + migrate + seed + healthz smoke. Sequenced after Stage 06 — prompt quality drives the extraction signal that the silver layer depends on, which the CI in turn protects.
 
 ## Done
+
+### Stage 04 — First ETL job
+**Status:** done · **Completed:** 2026-05-03
+
+First pull source (DOU + Djinni) end-to-end through the RSS+Temporal pipeline, BAML-typed extraction, scheduled hourly via Temporal Schedule (06:00–22:00 Europe/Kyiv, overlap `SKIP`), aggregated `/healthz` (Postgres + S3 + Temporal), deployed on Railway. Frontend imported into the monorepo and first read-only `/monitoring` UI shipped late in the stage.
+
+Trackers — [`journal/migrations/_done/rss-temporal.md`](./journal/migrations/_done/rss-temporal.md), [`journal/migrations/rss-schedule-followups.md`](./journal/migrations/rss-schedule-followups.md), [`journal/migrations/_done/frontend-migration.md`](./journal/migrations/_done/frontend-migration.md). Decisions — [ADR-0003 Temporal](./journal/decisions/0003-temporal-orchestration.md), [ADR-0004 BAML](./journal/decisions/0004-baml-vacancy-extraction.md), [ADR-0005 Vercel](./journal/decisions/0005-vercel-for-frontend.md).
+
+### Stage 03 — Env & config
+**Status:** done · **Completed:** 2026-04-26
+
+- server-compatible env flow (`process.env` first, local `.env` fallback at process start)
+- Railway deployment baseline: Dockerfile build, pre-deploy migrations, and documented runbook
+- production wiring for ETL + Postgres in Railway (`DATABASE_URL`, `NODE_ENV`)
+
+### Stage 02 — Database core
+**Status:** done · **Completed:** 2026-04-26
+
+Drizzle ORM on top of `pg` in `libs/database`, schema (`sources`, `rss_ingests`, `rss_records`), migrations via `drizzle-kit`, local Postgres in Docker (port `54322`).
 
 ### Stage 01 — Foundation
 **Status:** done · **Completed:** 2026-04-26
@@ -35,15 +57,3 @@ Move the vacancy extractor onto BAML (started 2026-05-01, see [ADR-0004](./journ
 - `@metahunt/etl` + `@metahunt/database` package split
 - root and package scripts for build/dev/start
 - engineering docs baseline (`md/`, ADRs)
-
-### Stage 02 — Database core
-**Status:** done · **Completed:** 2026-04-26
-
-Drizzle ORM on top of `pg` in `libs/database`, schema (`sources`, `rss_ingests`, `rss_records`), migrations via `drizzle-kit`, local Postgres in Docker (port `54322`).
-
-### Stage 03 — Env & config
-**Status:** done · **Completed:** 2026-04-26
-
-- server-compatible env flow (`process.env` first, local `.env` fallback at process start)
-- Railway deployment baseline: Dockerfile build, pre-deploy migrations, and documented runbook
-- production wiring for ETL + Postgres in Railway (`DATABASE_URL`, `NODE_ENV`)

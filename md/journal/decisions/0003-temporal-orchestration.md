@@ -42,4 +42,4 @@ We accept the docker-compose footprint and the workflow-bundler quirk as the pri
 - `docker-compose.yml` grows two services: a Temporal server (e.g. `temporalio/auto-setup`) and the Temporal Web UI.
 - Workflows live at a fixed path — `apps/etl/src/rss/workflows/*.ts` — bundled by webpack with `ts-loader` (`transpileOnly: true`).
 - The "ETL inside the HTTP app" scaffold from ADR-0002 stays as-is: the worker auto-starts inside the same Nest process. If load grows, we split into a `apps/worker` later — that future ADR will supersede this one.
-- Concrete migration steps and current progress are tracked in [`journal/migrations/rss-temporal.md`](../migrations/rss-temporal.md).
+- Concrete migration steps and current progress are tracked in [`journal/migrations/_done/rss-temporal.md`](../migrations/_done/rss-temporal.md).

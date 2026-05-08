@@ -26,32 +26,32 @@ const itemFixtures = [
   {
     title: "Senior Backend Engineer",
     description: "Backend role with Node.js",
-    link: "https://example.com/jobs/1",
+    link: "https://djinni.co/jobs/100001-senior-backend/",
     pubDate: "Mon, 27 Apr 2026 09:00:00 +0000",
-    guid: "job-1",
+    guid: "https://djinni.co/jobs/100001-senior-backend/",
     category: ["Backend", "Node.js"],
   },
   {
     title: "Frontend Developer",
     description: "React + TypeScript",
-    link: "https://example.com/jobs/2",
+    link: "https://djinni.co/jobs/100002-frontend-dev/",
     pubDate: "Mon, 27 Apr 2026 10:00:00 +0000",
-    guid: "job-2",
+    guid: "https://djinni.co/jobs/100002-frontend-dev/",
     category: "Frontend",
   },
   {
     title: "Python Developer",
     description: "Django backend",
-    link: "https://example.com/jobs/3",
+    link: "https://djinni.co/jobs/100003-python-dev/",
     pubDate: "Mon, 27 Apr 2026 11:00:00 +0000",
-    guid: "job-3",
+    guid: "https://djinni.co/jobs/100003-python-dev/",
   },
   {
     title: "Senior Recruiter", // blacklisted — must be filtered out
     description: "HR role",
-    link: "https://example.com/jobs/4",
+    link: "https://djinni.co/jobs/100004-recruiter/",
     pubDate: "Mon, 27 Apr 2026 12:00:00 +0000",
-    guid: "job-4",
+    guid: "https://djinni.co/jobs/100004-recruiter/",
   },
 ];
 
@@ -91,12 +91,14 @@ type ChainedDbMocks = {
 
 function buildDbMocks(
   ingest: unknown,
+  sourceCode: string,
   existingHashes: { hash: string }[],
   insertedIds: { id: string }[],
 ): ChainedDbMocks {
   const selectWhere = jest
     .fn()
     .mockResolvedValueOnce([ingest])
+    .mockResolvedValueOnce([{ code: sourceCode }])
     .mockResolvedValueOnce(existingHashes);
   const selectFrom = jest.fn().mockReturnValue({ where: selectWhere });
   const select = jest.fn().mockReturnValue({ from: selectFrom });
@@ -152,7 +154,7 @@ describe("RssParseActivity", () => {
       { id: "rec-2" },
       { id: "rec-3" },
     ];
-    const mocks = buildDbMocks(baseIngest, [], expectedIds);
+    const mocks = buildDbMocks(baseIngest, "djinni", [], expectedIds);
     await bootstrap(mocks);
 
     const result = await activity.parseAndDedup(INGEST_ID);
@@ -166,6 +168,7 @@ describe("RssParseActivity", () => {
       rssIngestId: string;
       hash: string;
       title: string;
+      externalId: string;
     }>;
     expect(valuesArg).toHaveLength(3);
     expect(valuesArg.map((v) => v.title)).toEqual([
@@ -176,6 +179,11 @@ describe("RssParseActivity", () => {
     expect(valuesArg.every((v) => v.sourceId === SOURCE_ID)).toBe(true);
     expect(valuesArg.every((v) => v.rssIngestId === INGEST_ID)).toBe(true);
     expect(valuesArg[0].hash).toBe(parser.computeHash(itItems[0]));
+    expect(valuesArg.map((v) => v.externalId)).toEqual([
+      "100001",
+      "100002",
+      "100003",
+    ]);
   });
 
   it("skips items whose hash already exists", async () => {
@@ -188,6 +196,7 @@ describe("RssParseActivity", () => {
     const expectedIds = [{ id: "rec-2" }, { id: "rec-3" }];
     const mocks = buildDbMocks(
       baseIngest,
+      "djinni",
       [{ hash: existingHash }],
       expectedIds,
     );
@@ -206,5 +215,39 @@ describe("RssParseActivity", () => {
       "Python Developer",
     ]);
     expect(valuesArg.find((v) => v.hash === existingHash)).toBeUndefined();
+  });
+
+  it("skips items whose external_id cannot be derived", async () => {
+    const goodAndBad = [
+      itemFixtures[0],
+      {
+        title: "Backend Developer",
+        description: "Go role",
+        link: "https://djinni.co/companies/acme/", // no /jobs/<id>
+        pubDate: "Mon, 27 Apr 2026 13:00:00 +0000",
+        guid: "https://djinni.co/companies/acme/",
+      },
+      itemFixtures[2],
+    ];
+    const xml = buildXml(goodAndBad);
+    download.mockResolvedValue(Buffer.from(xml, "utf8"));
+
+    const expectedIds = [{ id: "rec-1" }, { id: "rec-3" }];
+    const mocks = buildDbMocks(baseIngest, "djinni", [], expectedIds);
+    await bootstrap(mocks);
+
+    const result = await activity.parseAndDedup(INGEST_ID);
+
+    expect(result).toEqual(["rec-1", "rec-3"]);
+    const valuesArg = mocks.insertValues.mock.calls[0][0] as Array<{
+      title: string;
+      externalId: string;
+    }>;
+    expect(valuesArg).toHaveLength(2);
+    expect(valuesArg.map((v) => v.title)).toEqual([
+      "Senior Backend Engineer",
+      "Python Developer",
+    ]);
+    expect(valuesArg.map((v) => v.externalId)).toEqual(["100001", "100003"]);
   });
 });
