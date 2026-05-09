@@ -200,11 +200,14 @@ export interface AggregateSkillCount {
   count: number;
 }
 
-export interface VacancyAggregatesResponse {
+/**
+ * Same shape regardless of whether it's the global aggregate or scoped
+ * to a single source. Omits `sources` (which is a global-only directory).
+ */
+export interface AggregatesPerSource {
   total: number;
   /** ISO-8601. max(loaded_at) over the eligible set. Null if empty. */
   lastSyncAt: string | null;
-  sources: AggregateSourceCount[];
   /** Up to 10 entries; consumer renders top 8. VERIFIED skills only. */
   topSkills: AggregateSkillCount[];
   /** Up to 6 entries. Roles are always VERIFIED via the eligibility rule. */
@@ -218,4 +221,14 @@ export interface VacancyAggregatesResponse {
   reservationTrueCount: number;
   /** Count where salary_min OR salary_max is present. */
   salaryDisclosedCount: number;
+}
+
+export interface VacancyAggregatesResponse extends AggregatesPerSource {
+  sources: AggregateSourceCount[];
+  /**
+   * Per-source breakdown keyed by `sources[].code` (e.g. `djinni`, `dou`).
+   * Each value carries the same shape as the global aggregate so the UI
+   * can swap data slices without changing widget contracts.
+   */
+  bySource: Record<string, AggregatesPerSource>;
 }

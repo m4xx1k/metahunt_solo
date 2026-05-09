@@ -17,14 +17,11 @@ export interface AggregateSkillCount {
   count: number;
 }
 
-export interface VacancyAggregates {
+/** Same shape for the global aggregate and any per-source slice. */
+export interface AggregatesPerSource {
   total: number;
-  /** ISO-8601. max(loaded_at) over the eligible set. Null if empty. */
   lastSyncAt: string | null;
-  sources: AggregateSourceCount[];
-  /** Up to 10; the snapshot UI renders top 8. */
   topSkills: AggregateSkillCount[];
-  /** Up to 6 entries. */
   topRoles: AggregateSkillCount[];
   seniorityDist: Record<Seniority, number>;
   workFormatDist: Record<WorkFormat, number>;
@@ -32,6 +29,12 @@ export interface VacancyAggregates {
   reservationKnownCount: number;
   reservationTrueCount: number;
   salaryDisclosedCount: number;
+}
+
+export interface VacancyAggregates extends AggregatesPerSource {
+  sources: AggregateSourceCount[];
+  /** Keyed by `sources[].code`. */
+  bySource: Record<string, AggregatesPerSource>;
 }
 
 async function get<T>(path: string, init?: RequestInit): Promise<T> {
@@ -42,7 +45,12 @@ async function get<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   const url = `${base.replace(/\/+$/, "")}${path}`;
-  const res = await fetch(url, init ?? { cache: "no-store" });
+  // Default: ISR-cache aggregates for 60s. The snapshot data only changes
+  // every hour (RSS schedule) so per-request fetches were wasted work.
+  const res = await fetch(
+    url,
+    init ?? ({ next: { revalidate: 60 } } as RequestInit),
+  );
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`aggregates api ${res.status} ${path}: ${body}`);

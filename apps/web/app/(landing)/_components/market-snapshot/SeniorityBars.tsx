@@ -91,6 +91,36 @@ export function SeniorityBars({ dist }: Props) {
               </div>
             );
           })}
+          <div
+                
+                className="flex min-w-0 flex-1 flex-col items-center gap-1"
+                title={`${FULL['C_LEVEL']}: C_LEVEL`}
+              >
+                <span className="font-mono text-[10px] tabular-nums text-text-muted">
+                  123
+                </span>
+                <div className="flex h-10 w-full items-end">
+                  <motion.div
+                    className="w-full rounded-t bg-accent"
+                    initial={
+                      reduced
+                        ? { height: `${45}%` }
+                        : { height: 0 }
+                    }
+                    whileInView={{ height: `${45}%` }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{
+                      duration: reduced ? 0 : 0.6,
+                      ease: "easeOut",
+                      delay: reduced ? 0 : 6 * 0.04,
+                    }}
+                    style={{ minHeight: 2 }}
+                  />
+                </div>
+                <span className="w-full truncate text-center font-mono text-[9px] uppercase tracking-wide text-text-muted">
+                  {SHORT['C_LEVEL']}
+                </span>
+              </div>
         </div>
       )}
     </div>

@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 
-import type { VacancyAggregates } from "@/lib/api/aggregates";
+import type { AggregatesPerSource, VacancyAggregates } from "@/lib/api/aggregates";
 import { TotalCounter } from "./TotalCounter";
 import { TopSkills } from "./TopSkills";
 import { SeniorityBars } from "./SeniorityBars";
 import { TopRoles } from "./TopRoles";
 import { FormatDonut } from "./FormatDonut";
+import { SourceTabs, SOURCE_TABS_ALL } from "./SourceTabs";
 
 type Props = {
   aggregates: VacancyAggregates;
@@ -15,6 +17,13 @@ type Props = {
 
 export function Snapshot({ aggregates: a }: Props) {
   const reduced = useReducedMotion();
+  const [selectedSource, setSelectedSource] = useState<string>(SOURCE_TABS_ALL);
+  // Tabs swap the lower widget grid; the hero counter stays global so it
+  // still answers "how big is the index in total".
+  const view: AggregatesPerSource =
+    selectedSource === SOURCE_TABS_ALL
+      ? a
+      : (a.bySource[selectedSource] ?? a);
   const tileVariants: Variants = reduced
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
     : {
@@ -44,24 +53,30 @@ export function Snapshot({ aggregates: a }: Props) {
           sources={a.sources}
         />
       </div>
+      <SourceTabs
+        sources={a.sources}
+        selected={selectedSource}
+        onSelect={setSelectedSource}
+      />
       <motion.div
+        key={selectedSource}
         className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3"
         initial="hidden"
         animate="show"
         transition={reduced ? undefined : { staggerChildren: 0.08 }}
       >
         <motion.div variants={tileVariants}>
-          <TopSkills skills={a.topSkills} totalVacancies={a.total} />
+          <TopSkills skills={view.topSkills} totalVacancies={view.total} />
         </motion.div>
         <motion.div variants={tileVariants} className="flex flex-col gap-4">
-          <SeniorityBars dist={a.seniorityDist} />
-          <TopRoles roles={a.topRoles} totalVacancies={a.total} />
+          <SeniorityBars dist={view.seniorityDist} />
+          <TopRoles roles={view.topRoles} totalVacancies={view.total} />
         </motion.div>
         <motion.div variants={tileVariants}>
           <FormatDonut
-            dist={a.workFormatDist}
-            reservationTrueCount={a.reservationTrueCount}
-            total={a.total}
+            dist={view.workFormatDist}
+            reservationTrueCount={view.reservationTrueCount}
+            total={view.total}
           />
         </motion.div>
       </motion.div>
