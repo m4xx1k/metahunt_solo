@@ -26,6 +26,11 @@ export class VacanciesController {
       includeAllSkills: parseBool("includeAllSkills", rawIncludeAllSkills),
     });
   }
+
+  @Get("aggregates")
+  aggregates() {
+    return this.vacancies.getAggregates();
+  }
 }
 
 function parsePage(raw: string | undefined): number {
