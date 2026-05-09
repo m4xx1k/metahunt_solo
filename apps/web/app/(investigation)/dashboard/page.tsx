@@ -1,82 +1,94 @@
-import { monitoringApi, type IngestStatus } from "@/lib/api/monitoring";
+import Link from "next/link";
+import {
+  monitoringApi,
+  type IngestListItem,
+  type IngestStatus,
+} from "@/lib/api/monitoring";
+import { taxonomyApi } from "@/lib/api/taxonomy";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
-import { Pagination } from "../_components/Pagination";
-import { RssRecordCard } from "../_components/RssRecordCard";
-import { StatsOverview } from "./_components/StatsOverview";
-import { LatestPerSource } from "./_components/LatestPerSource";
-import { IngestsTable } from "./_components/IngestsTable";
-import { RecordsFilters } from "./_components/RecordsFilters";
 import { Tag } from "@/components/ui-kit";
+import { Sparkline } from "@/components/data/Sparkline";
+import { cn } from "@/lib/utils";
+import { formatCount } from "@/lib/format";
+import { KpiCard } from "./_components/KpiCard";
+import { LatestPerSource } from "./_components/LatestPerSource";
+import { ActivityStream } from "./_components/ActivityStream";
+import { FailedIngestsDrawer } from "./_components/FailedIngestsDrawer";
 
 export const dynamic = "force-dynamic";
 
-const RECORDS_LIMIT = 20;
-const VALID_STATUSES: ReadonlySet<IngestStatus> = new Set([
-  "running",
-  "completed",
-  "failed",
-]);
+const STATUS_VALUE: Record<IngestStatus, number> = {
+  completed: 1,
+  running: 0.5,
+  failed: 0,
+};
 
-function asString(v: string | string[] | undefined): string | undefined {
-  if (Array.isArray(v)) return v[0];
-  return v;
-}
+const ONE_DAY_MS = 24 * 3600 * 1000;
+const SKILL_AMBER = 1000;
+const SKILL_RED = 5000;
 
-function asInt(v: string | string[] | undefined, fallback: number): number {
-  const s = asString(v);
-  if (!s) return fallback;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
-}
-
-export default async function MonitoringPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const sp = await searchParams;
-  const sourceId = asString(sp.sourceId);
-  const extractedRaw = asString(sp.extracted);
-  const extracted =
-    extractedRaw === "true"
-      ? true
-      : extractedRaw === "false"
-        ? false
-        : undefined;
-  const q = asString(sp.q);
-  const offset = asInt(sp.offset, 0);
-  const status = (() => {
-    const s = asString(sp.status);
-    return s && VALID_STATUSES.has(s as IngestStatus)
-      ? (s as IngestStatus)
-      : undefined;
-  })();
-
-  const [stats, sources, ingests, records] = await Promise.all([
+export default async function DashboardPage() {
+  const [stats, sources, recent, failedAll, coverage] = await Promise.all([
     monitoringApi.stats(),
     monitoringApi.sources(),
-    monitoringApi.listIngests({ limit: 10, status }),
-    monitoringApi.listRecords({
-      sourceId,
-      extracted,
-      q,
-      limit: RECORDS_LIMIT,
-      offset,
-    }),
+    monitoringApi.listIngests({ limit: 10 }),
+    monitoringApi.listIngests({ status: "failed", limit: 20 }),
+    taxonomyApi.coverage().catch(() => null),
   ]);
 
-  const flatSearchParams: Record<string, string | undefined> = {};
-  for (const [k, v] of Object.entries(sp)) {
-    flatSearchParams[k] = asString(v);
-  }
+  const perSourceLast7 = await Promise.all(
+    sources.map(async (s) => {
+      const list = await monitoringApi.listIngests({
+        sourceId: s.id,
+        limit: 7,
+      });
+      return [s.id, list.items.map((i) => i.status).reverse()] as const;
+    }),
+  );
+  const recentBySource: Record<string, IngestStatus[]> = Object.fromEntries(
+    perSourceLast7,
+  );
+
+  const last7 = recent.items.slice(0, 7).reverse();
+  const ingestsSparkline = last7.map((i) => STATUS_VALUE[i.status]);
+  const recordsSparkline = last7.map((i) => i.recordCount);
+
+  // eslint-disable-next-line react-hooks/purity -- per-request snapshot in a server component
+  const cutoff = Date.now() - ONE_DAY_MS;
+  const failed24h = failedAll.items.filter((i) => {
+    const t = new Date(i.startedAt).getTime();
+    return Number.isFinite(t) && t >= cutoff;
+  });
+
+  const taxRole = coverage?.byAxis.role.new ?? 0;
+  const taxSkill = coverage?.byAxis.skill.new ?? 0;
+  const taxDomain = coverage?.byAxis.domain.new ?? 0;
+  const taxTotal = taxRole + taxSkill + taxDomain;
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="ETL monitoring" />
+      <InvestigationHeader title="dashboard" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <Section tag="> overview" title="pipeline at a glance">
-          <StatsOverview stats={stats} />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <IngestsKpi
+              value={stats.ingests.last24h}
+              sparkline={ingestsSparkline}
+            />
+            <RecordsKpi
+              value={stats.records.last24h}
+              sparkline={recordsSparkline}
+            />
+            <FailedKpi count={failed24h.length} failedIngests={failed24h} />
+            <TaxonomyKpi
+              role={taxRole}
+              skill={taxSkill}
+              domain={taxDomain}
+              total={taxTotal}
+              available={coverage !== null}
+            />
+          </div>
         </Section>
 
         <Section
@@ -84,39 +96,17 @@ export default async function MonitoringPage({
           title="latest run per source"
           subtitle="click a card to open the ingest detail"
         >
-          <LatestPerSource items={stats.latestPerSource} />
-        </Section>
-
-        <Section tag="> ingests" title="last 10 ingest runs">
-          <IngestsTable items={ingests.items} />
+          <LatestPerSource
+            items={stats.latestPerSource}
+            recentBySource={recentBySource}
+          />
         </Section>
 
         <Section
-          tag="> records"
-          title="rss records"
-          subtitle={`${records.total} total · sorted by published date`}
+          tag="> activity"
+          title="recent ingests · click to drill in"
         >
-          <div className="flex flex-col gap-6">
-            <RecordsFilters sources={sources} />
-            {records.items.length === 0 ? (
-              <p className="font-mono text-sm text-text-muted">
-                no records match the filters
-              </p>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {records.items.map((r) => (
-                  <RssRecordCard key={r.id} record={r} />
-                ))}
-              </div>
-            )}
-            <Pagination
-              total={records.total}
-              limit={records.limit}
-              offset={records.offset}
-              basePath="/dashboard"
-              searchParams={flatSearchParams}
-            />
-          </div>
+          <ActivityStream items={recent.items} />
         </Section>
       </div>
     </main>
@@ -147,5 +137,163 @@ function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+function IngestsKpi({
+  value,
+  sparkline,
+}: {
+  value: number;
+  sparkline: number[];
+}) {
+  return (
+    <KpiCard label="ingests · last 24h">
+      <span className="font-display text-4xl font-bold leading-none text-text-primary">
+        {formatCount(value)}
+      </span>
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          last {sparkline.length} runs · status
+        </span>
+        <Sparkline
+          points={sparkline}
+          width={180}
+          height={28}
+          ariaLabel="Recent ingest run statuses"
+        />
+      </div>
+    </KpiCard>
+  );
+}
+
+function RecordsKpi({
+  value,
+  sparkline,
+}: {
+  value: number;
+  sparkline: number[];
+}) {
+  return (
+    <KpiCard label="records · last 24h">
+      <span className="font-display text-4xl font-bold leading-none text-accent">
+        {formatCount(value)}
+      </span>
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          last {sparkline.length} runs · volume
+        </span>
+        <Sparkline
+          points={sparkline}
+          width={180}
+          height={28}
+          ariaLabel="Records per recent ingest"
+        />
+      </div>
+    </KpiCard>
+  );
+}
+
+function FailedKpi({
+  count,
+  failedIngests,
+}: {
+  count: number;
+  failedIngests: IngestListItem[];
+}) {
+  const tone = count > 0 ? "danger" : "default";
+  return (
+    <FailedIngestsDrawer
+      count={count}
+      failedIngests={failedIngests}
+      trigger={
+        <KpiCard label="failed · last 24h" tone={tone}>
+          <span
+            className={cn(
+              "font-display text-4xl font-bold leading-none",
+              count > 0 ? "text-danger" : "text-text-primary",
+            )}
+          >
+            {count}
+          </span>
+          <span className="font-mono text-xs text-text-secondary">
+            {count > 0 ? "click to inspect" : "all clear"}
+          </span>
+        </KpiCard>
+      }
+    />
+  );
+}
+
+function TaxonomyKpi({
+  role,
+  skill,
+  domain,
+  total,
+  available,
+}: {
+  role: number;
+  skill: number;
+  domain: number;
+  total: number;
+  available: boolean;
+}) {
+  if (!available) {
+    return (
+      <KpiCard label="taxonomy queue · NEW">
+        <span className="font-mono text-sm text-text-muted">
+          coverage api unavailable
+        </span>
+      </KpiCard>
+    );
+  }
+  const skillClass =
+    skill >= SKILL_RED
+      ? "text-danger"
+      : skill >= SKILL_AMBER
+        ? "text-accent"
+        : "text-text-primary";
+  return (
+    <KpiCard label="taxonomy queue · NEW">
+      <ul className="flex flex-col gap-1 font-mono">
+        <AxisRow axis="ROLE" count={role} />
+        <AxisRow axis="SKILL" count={skill} valueClassName={skillClass} />
+        <AxisRow axis="DOMAIN" count={domain} />
+      </ul>
+      <span className="font-mono text-xs text-text-secondary">
+        total · {formatCount(total)}
+      </span>
+    </KpiCard>
+  );
+}
+
+function AxisRow({
+  axis,
+  count,
+  valueClassName,
+}: {
+  axis: "ROLE" | "SKILL" | "DOMAIN";
+  count: number;
+  valueClassName?: string;
+}) {
+  return (
+    <li>
+      <Link
+        href={`/taxonomy?tab=${axis.toLowerCase()}`}
+        className="flex items-baseline justify-between gap-3 hover:text-accent"
+      >
+        <span className="text-[10px] uppercase tracking-wider text-text-muted">
+          {axis}
+        </span>
+        <span
+          className={cn(
+            "text-base font-bold",
+            valueClassName ?? "text-text-primary",
+          )}
+        >
+          {formatCount(count)}
+        </span>
+      </Link>
+    </li>
   );
 }
