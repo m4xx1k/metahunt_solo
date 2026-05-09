@@ -181,3 +181,39 @@ export interface ListVacanciesResponse {
   /** Total matching rows across all pages. */
   total: number;
 }
+
+// ─────────────────────── Aggregates endpoint ───────────────────────
+// Global market aggregates over the eligible vacancy set (same default
+// as `list`: only vacancies with a VERIFIED role node). Powers the
+// public market-snapshot hero — see md/journal/migrations/market-snapshot.md.
+
+export interface AggregateSourceCount {
+  id: string;
+  code: string;
+  displayName: string;
+  count: number;
+}
+
+export interface AggregateSkillCount {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface VacancyAggregatesResponse {
+  total: number;
+  /** ISO-8601. max(loaded_at) over the eligible set. Null if empty. */
+  lastSyncAt: string | null;
+  sources: AggregateSourceCount[];
+  /** Up to 10 entries; consumer renders top 8. VERIFIED skills only. */
+  topSkills: AggregateSkillCount[];
+  seniorityDist: Record<Seniority, number>;
+  workFormatDist: Record<WorkFormat, number>;
+  engagementDist: Record<EngagementType, number>;
+  /** Count where `has_reservation IS NOT NULL` — denominator for the share. */
+  reservationKnownCount: number;
+  /** Count where `has_reservation = true`. */
+  reservationTrueCount: number;
+  /** Count where salary_min OR salary_max is present. */
+  salaryDisclosedCount: number;
+}
