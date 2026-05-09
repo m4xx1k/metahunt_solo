@@ -17,21 +17,38 @@ function parseTab(raw: string | null): NodeType {
 
 export function QueueTabs({
   queues,
+  pageSize,
 }: {
   queues: Record<NodeType, NodeQueue>;
+  pageSize: number;
 }) {
   const searchParams = useSearchParams();
   const [active, setActive] = useState<NodeType>(() =>
     parseTab(searchParams.get("tab")),
   );
   const [openNodeId, setOpenNodeId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const queue = queues[active];
+
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return queue.items;
+    return queue.items.filter((it) =>
+      it.canonicalName.toLowerCase().includes(needle),
+    );
+  }, [queue, search]);
+
   const maxBlocked = useMemo(
-    () =>
-      queue.items.reduce((m, it) => Math.max(m, it.vacanciesBlocked), 0),
-    [queue],
+    () => filtered.reduce((m, it) => Math.max(m, it.vacanciesBlocked), 0),
+    [filtered],
   );
+
+  const onTabSwitch = (t: NodeType) => {
+    setActive(t);
+    setSearch("");
+    setOpenNodeId(null);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -40,7 +57,7 @@ export function QueueTabs({
           <button
             key={t}
             type="button"
-            onClick={() => setActive(t)}
+            onClick={() => onTabSwitch(t)}
             className={cn(
               "border-b-2 px-3 pb-2 font-mono text-xs uppercase tracking-wider",
               t === active
@@ -56,13 +73,32 @@ export function QueueTabs({
         ))}
       </div>
 
-      {queue.items.length === 0 ? (
+      <div className="flex flex-col gap-2">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={`filter ${active.toLowerCase()} by name…`}
+          aria-label={`filter ${active.toLowerCase()} queue by name`}
+          className="border border-border bg-bg-card px-3 py-2 font-mono text-sm text-text-primary outline-none focus:border-accent"
+        />
+        <span className="font-mono text-[11px] text-text-muted">
+          showing {filtered.length} of {queue.items.length}
+          {queue.items.length >= pageSize
+            ? ` · top ${pageSize} by impact (backend cap: load more lands when phase-2 ships)`
+            : " · all NEW nodes for this axis"}
+        </span>
+      </div>
+
+      {filtered.length === 0 ? (
         <p className="font-mono text-sm text-text-muted">
-          no NEW {active.toLowerCase()} nodes — queue is clear
+          {queue.items.length === 0
+            ? `no NEW ${active.toLowerCase()} nodes — queue is clear`
+            : `no ${active.toLowerCase()} matches "${search}"`}
         </p>
       ) : (
         <ul className="flex flex-col gap-[2px] border border-border bg-bg-card">
-          {queue.items.map((item) => (
+          {filtered.map((item) => (
             <QueueRow
               key={item.id}
               item={item}

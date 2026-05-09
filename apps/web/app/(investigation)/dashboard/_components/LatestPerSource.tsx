@@ -25,7 +25,7 @@ export function LatestPerSource({ items, recentBySource }: Props) {
   }
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <section className="grid auto-rows-fr gap-4 md:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => {
         const recent = recentBySource[item.sourceId] ?? [];
         const sparkPoints = recent.map((s) => STATUS_VALUE[s]);
@@ -34,7 +34,7 @@ export function LatestPerSource({ items, recentBySource }: Props) {
           <Link
             key={item.sourceId}
             href={`/dashboard/ingests/${item.lastIngestId}`}
-            className="flex flex-col gap-3 border border-border bg-bg-card p-5 shadow-[4px_4px_0_0_#000] transition-shadow hover:shadow-[6px_6px_0_0_#000]"
+            className="flex h-full flex-col gap-3 border border-border bg-bg-card p-5 shadow-[4px_4px_0_0_#000] transition-shadow hover:shadow-[6px_6px_0_0_#000]"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="font-display text-lg font-bold text-text-primary">
@@ -50,11 +50,11 @@ export function LatestPerSource({ items, recentBySource }: Props) {
                 finished · {formatRelative(item.lastFinishedAt)}
               </span>
             </div>
-            {sparkPoints.length >= 2 ? (
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                  last {sparkPoints.length} runs
-                </span>
+            <div className="mt-auto flex items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+                last {sparkPoints.length || 0} runs
+              </span>
+              {sparkPoints.length >= 2 ? (
                 <Sparkline
                   points={sparkPoints}
                   width={120}
@@ -66,8 +66,12 @@ export function LatestPerSource({ items, recentBySource }: Props) {
                   }
                   ariaLabel={`Last ${sparkPoints.length} ingest statuses`}
                 />
-              </div>
-            ) : null}
+              ) : (
+                <span className="font-mono text-[10px] text-text-muted">
+                  insufficient data
+                </span>
+              )}
+            </div>
           </Link>
         );
       })}

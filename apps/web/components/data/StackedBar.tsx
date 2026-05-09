@@ -55,19 +55,26 @@ export function StackedBar({
 
   const laidOut = layout(segments, sum, showLabels);
 
+  // Rectangles render in SVG (viewBox-stretched horizontally). Numeric labels
+  // overlay as absolutely-positioned HTML so the font stays at native size
+  // even though the SVG itself uses preserveAspectRatio="none".
   return (
-    <svg
-      width="100%"
-      height={height}
-      viewBox={`0 0 100 ${height}`}
-      preserveAspectRatio="none"
+    <div
+      className={className}
       role={ariaLabel ? "img" : undefined}
       aria-label={ariaLabel}
-      className={className}
+      style={{ position: "relative", width: "100%", height }}
     >
-      {laidOut.map((s, i) => (
-        <g key={`${s.label}-${i}`}>
+      <svg
+        width="100%"
+        height={height}
+        viewBox={`0 0 100 ${height}`}
+        preserveAspectRatio="none"
+        className="block"
+      >
+        {laidOut.map((s, i) => (
           <rect
+            key={`rect-${s.label}-${i}`}
             x={s.x}
             y={0}
             width={s.widthPct}
@@ -76,21 +83,21 @@ export function StackedBar({
           >
             <title>{`${s.label}: ${s.value}`}</title>
           </rect>
-          {s.showLabel ? (
-            <text
-              x={s.x + s.widthPct / 2}
-              y={height / 2}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="var(--color-bg)"
-              fontSize={11}
-              fontFamily="var(--font-mono)"
+        ))}
+      </svg>
+      <div className="pointer-events-none absolute inset-0">
+        {laidOut.map((s, i) =>
+          s.showLabel ? (
+            <span
+              key={`label-${s.label}-${i}`}
+              className="absolute top-0 flex h-full items-center justify-center font-mono text-[11px] font-bold text-bg"
+              style={{ left: `${s.x}%`, width: `${s.widthPct}%` }}
             >
               {s.value}
-            </text>
-          ) : null}
-        </g>
-      ))}
-    </svg>
+            </span>
+          ) : null,
+        )}
+      </div>
+    </div>
   );
 }

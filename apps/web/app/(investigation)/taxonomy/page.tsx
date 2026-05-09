@@ -10,7 +10,9 @@ import { QueueTabs } from "./_components/QueueTabs";
 
 export const dynamic = "force-dynamic";
 
-const QUEUE_LIMIT = 50;
+// Backend caps at QUEUE_MAX=200; we ask for 100 per axis to give the
+// client-side filter useful headroom without inflating page weight.
+const QUEUE_LIMIT = 100;
 
 const EMPTY_QUEUE = (type: NodeType): NodeQueue => ({ type, items: [] });
 
@@ -67,7 +69,7 @@ export default async function TaxonomyPage() {
             <h3 className="font-display text-xl font-bold text-text-primary">
               NEW nodes · sorted by vacancies blocked
             </h3>
-            <QueueTabs queues={queues} />
+            <QueueTabs queues={queues} pageSize={QUEUE_LIMIT} />
           </div>
         </div>
       </div>

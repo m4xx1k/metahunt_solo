@@ -71,7 +71,7 @@ export default async function DashboardPage() {
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <Section tag="> overview" title="pipeline at a glance">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid auto-rows-fr gap-4 md:grid-cols-2 lg:grid-cols-4">
             <IngestsKpi
               value={stats.ingests.last24h}
               sparkline={ingestsSparkline}
@@ -152,7 +152,7 @@ function IngestsKpi({
       <span className="font-display text-4xl font-bold leading-none text-text-primary">
         {formatCount(value)}
       </span>
-      <div className="flex flex-col gap-1">
+      <div className="mt-auto flex flex-col gap-1">
         <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
           last {sparkline.length} runs · status
         </span>
@@ -179,7 +179,7 @@ function RecordsKpi({
       <span className="font-display text-4xl font-bold leading-none text-accent">
         {formatCount(value)}
       </span>
-      <div className="flex flex-col gap-1">
+      <div className="mt-auto flex flex-col gap-1">
         <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
           last {sparkline.length} runs · volume
         </span>
@@ -216,7 +216,7 @@ function FailedKpi({
           >
             {count}
           </span>
-          <span className="font-mono text-xs text-text-secondary">
+          <span className="mt-auto font-mono text-xs text-text-secondary">
             {count > 0 ? "click to inspect" : "all clear"}
           </span>
         </KpiCard>
@@ -260,7 +260,7 @@ function TaxonomyKpi({
         <AxisRow axis="SKILL" count={skill} valueClassName={skillClass} />
         <AxisRow axis="DOMAIN" count={domain} />
       </ul>
-      <span className="font-mono text-xs text-text-secondary">
+      <span className="mt-auto font-mono text-xs text-text-secondary">
         total · {formatCount(total)}
       </span>
     </KpiCard>
