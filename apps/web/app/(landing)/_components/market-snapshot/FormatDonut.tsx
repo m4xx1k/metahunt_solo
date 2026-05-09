@@ -6,6 +6,10 @@ import type { WorkFormat } from "@/lib/api/vacancies";
 
 type Props = {
   dist: Record<WorkFormat, number>;
+  /** Numerator: vacancies where has_reservation = true. */
+  reservationTrueCount: number;
+  /** Denominator: all eligible vacancies (matches list/total). */
+  total: number;
 };
 
 const FMT_LABEL: Record<WorkFormat, string> = {
@@ -75,10 +79,17 @@ function DonutArc({ pct, label }: { pct: number; label: string }) {
   );
 }
 
-export function FormatDonut({ dist }: Props) {
-  const total = dist.REMOTE + dist.HYBRID + dist.OFFICE;
-  const remoteShare = total > 0 ? Math.round((dist.REMOTE / total) * 100) : 0;
-  const remotePct = total > 0 ? dist.REMOTE / total : 0;
+export function FormatDonut({
+  dist,
+  reservationTrueCount,
+  total,
+}: Props) {
+  const formatTotal = dist.REMOTE + dist.HYBRID + dist.OFFICE;
+  const remoteShare =
+    formatTotal > 0 ? Math.round((dist.REMOTE / formatTotal) * 100) : 0;
+  const remotePct = formatTotal > 0 ? dist.REMOTE / formatTotal : 0;
+  const reservationShare =
+    total > 0 ? Math.round((reservationTrueCount / total) * 100) : 0;
 
   return (
     <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
@@ -91,7 +102,8 @@ export function FormatDonut({ dist }: Props) {
       </div>
       <ul className="flex flex-col gap-1 font-mono text-xs text-text-muted">
         {(["REMOTE", "HYBRID", "OFFICE"] as WorkFormat[]).map((k) => {
-          const pct = total > 0 ? Math.round((dist[k] / total) * 100) : 0;
+          const pct =
+            formatTotal > 0 ? Math.round((dist[k] / formatTotal) * 100) : 0;
           return (
             <li key={k} className="flex items-center justify-between">
               <span className="lowercase">{FMT_LABEL[k]}</span>
@@ -100,6 +112,12 @@ export function FormatDonut({ dist }: Props) {
           );
         })}
       </ul>
+      <div className="border-t border-border pt-3">
+        <span className="font-body text-sm text-text-primary">
+          <span className="font-display font-bold">{reservationShare}%</span>{" "}
+          з бронюванням
+        </span>
+      </div>
     </div>
   );
 }
