@@ -34,27 +34,27 @@ export function SeniorityBars({ dist }: Props) {
   const max = Math.max(0, ...visible.map((k) => dist[k] ?? 0));
 
   return (
-    <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
+    <div className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
       <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
         seniority
       </span>
       {visible.length === 0 ? (
         <span className="font-mono text-xs text-text-muted">no data</span>
       ) : (
-        <div className="flex flex-1 items-end justify-between gap-3 pt-2">
+        <div className="flex flex-1 items-end justify-between gap-3">
           {visible.map((k, idx) => {
             const v = dist[k] ?? 0;
             const heightPct = max > 0 ? (v / max) * 100 : 0;
             return (
               <div
                 key={k}
-                className="flex flex-1 flex-col items-center gap-2"
+                className="flex flex-1 flex-col items-center gap-1.5"
                 title={`${SHORT[k]}: ${v}`}
               >
                 <span className="font-mono text-[10px] tabular-nums text-text-muted">
                   {v}
                 </span>
-                <div className="flex h-24 w-full items-end">
+                <div className="flex h-14 w-full items-end">
                   <motion.div
                     className="w-full rounded-t bg-accent"
                     initial={

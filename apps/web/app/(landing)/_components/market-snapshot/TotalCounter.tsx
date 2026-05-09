@@ -67,7 +67,7 @@ export function TotalCounter({ total, lastSyncAt, sources }: Props) {
         <CountUp value={total} />
       </span>
       <span className="font-body text-sm text-text-secondary">
-        вакансій зараз на ринку UA
+        вакансій у базі
       </span>
       <span className="flex items-center gap-2 font-mono text-xs text-text-muted">
         <StatusDot />

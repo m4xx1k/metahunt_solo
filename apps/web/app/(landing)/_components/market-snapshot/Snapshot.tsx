@@ -6,6 +6,7 @@ import type { VacancyAggregates } from "@/lib/api/aggregates";
 import { TotalCounter } from "./TotalCounter";
 import { TopSkills } from "./TopSkills";
 import { SeniorityBars } from "./SeniorityBars";
+import { ReservationStat } from "./ReservationStat";
 import { FormatDonut } from "./FormatDonut";
 
 type Props = {
@@ -52,15 +53,15 @@ export function Snapshot({ aggregates: a }: Props) {
         <motion.div variants={tileVariants}>
           <TopSkills skills={a.topSkills} totalVacancies={a.total} />
         </motion.div>
-        <motion.div variants={tileVariants}>
+        <motion.div variants={tileVariants} className="flex flex-col gap-4">
           <SeniorityBars dist={a.seniorityDist} />
+          <ReservationStat
+            reservationTrueCount={a.reservationTrueCount}
+            total={a.total}
+          />
         </motion.div>
         <motion.div variants={tileVariants}>
-          <FormatDonut
-            dist={a.workFormatDist}
-            reservationKnownCount={a.reservationKnownCount}
-            reservationTrueCount={a.reservationTrueCount}
-          />
+          <FormatDonut dist={a.workFormatDist} />
         </motion.div>
       </motion.div>
     </section>

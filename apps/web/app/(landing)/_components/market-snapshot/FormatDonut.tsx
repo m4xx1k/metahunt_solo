@@ -6,8 +6,6 @@ import type { WorkFormat } from "@/lib/api/vacancies";
 
 type Props = {
   dist: Record<WorkFormat, number>;
-  reservationKnownCount: number;
-  reservationTrueCount: number;
 };
 
 const FMT_LABEL: Record<WorkFormat, string> = {
@@ -77,18 +75,10 @@ function DonutArc({ pct, label }: { pct: number; label: string }) {
   );
 }
 
-export function FormatDonut({
-  dist,
-  reservationKnownCount,
-  reservationTrueCount,
-}: Props) {
+export function FormatDonut({ dist }: Props) {
   const total = dist.REMOTE + dist.HYBRID + dist.OFFICE;
   const remoteShare = total > 0 ? Math.round((dist.REMOTE / total) * 100) : 0;
   const remotePct = total > 0 ? dist.REMOTE / total : 0;
-  const reservationShare =
-    reservationKnownCount > 0
-      ? Math.round((reservationTrueCount / reservationKnownCount) * 100)
-      : null;
 
   return (
     <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
@@ -110,14 +100,6 @@ export function FormatDonut({
           );
         })}
       </ul>
-      {reservationShare !== null && (
-        <div className="border-t border-border pt-3">
-          <span className="font-body text-sm text-text-primary">
-            <span className="font-display font-bold">{reservationShare}%</span>
-            {" "}з бронюванням
-          </span>
-        </div>
-      )}
     </div>
   );
 }
