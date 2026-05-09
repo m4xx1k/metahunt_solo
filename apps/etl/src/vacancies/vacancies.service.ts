@@ -253,7 +253,7 @@ export class VacanciesService {
       JOIN sources s ON s.id = v.source_id
       WHERE ${ELIGIBLE}
       GROUP BY s.id, s.code, s.display_name
-      ORDER BY count DESC
+      ORDER BY COUNT(*) DESC
     `);
 
     const skillRows = await this.db.execute<{
@@ -271,7 +271,7 @@ export class VacanciesService {
         AND n.status = 'VERIFIED'
         AND ${ELIGIBLE}
       GROUP BY n.id, n.canonical_name
-      ORDER BY count DESC
+      ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC
       LIMIT 10
     `);
 
@@ -288,7 +288,7 @@ export class VacanciesService {
       WHERE n.type = 'ROLE'
         AND ${ELIGIBLE}
       GROUP BY n.id, n.canonical_name
-      ORDER BY count DESC
+      ORDER BY COUNT(*) DESC
       LIMIT 6
     `);
 
