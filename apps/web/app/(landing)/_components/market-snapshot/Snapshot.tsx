@@ -45,7 +45,7 @@ export function Snapshot({ aggregates: a }: Props) {
         />
       </div>
       <motion.div
-        className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3"
         initial="hidden"
         animate="show"
         transition={reduced ? undefined : { staggerChildren: 0.08 }}

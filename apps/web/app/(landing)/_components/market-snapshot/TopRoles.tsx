@@ -9,7 +9,7 @@ type Props = {
   totalVacancies: number;
 };
 
-const DISPLAY_COUNT = 6;
+const DISPLAY_COUNT = 5;
 
 export function TopRoles({ roles, totalVacancies }: Props) {
   const reduced = useReducedMotion();
@@ -17,7 +17,7 @@ export function TopRoles({ roles, totalVacancies }: Props) {
   const max = top[0]?.count ?? 0;
 
   return (
-    <div className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
       <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
         top roles
       </span>

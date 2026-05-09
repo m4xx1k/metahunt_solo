@@ -20,7 +20,7 @@ const FMT_LABEL: Record<WorkFormat, string> = {
 // rather than hard-coding hex.
 const FMT_STROKE: Record<WorkFormat, string> = {
   REMOTE: "var(--color-accent)",
-  HYBRID: "var(--color-accent-secondary)",
+  HYBRID: "var(--color-text-secondary)",
   OFFICE: "var(--color-text-muted)",
 };
 
