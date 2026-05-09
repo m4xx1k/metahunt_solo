@@ -207,6 +207,8 @@ export interface VacancyAggregatesResponse {
   sources: AggregateSourceCount[];
   /** Up to 10 entries; consumer renders top 8. VERIFIED skills only. */
   topSkills: AggregateSkillCount[];
+  /** Up to 6 entries. Roles are always VERIFIED via the eligibility rule. */
+  topRoles: AggregateSkillCount[];
   seniorityDist: Record<Seniority, number>;
   workFormatDist: Record<WorkFormat, number>;
   engagementDist: Record<EngagementType, number>;

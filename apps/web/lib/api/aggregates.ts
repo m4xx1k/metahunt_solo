@@ -24,6 +24,8 @@ export interface VacancyAggregates {
   sources: AggregateSourceCount[];
   /** Up to 10; the snapshot UI renders top 8. */
   topSkills: AggregateSkillCount[];
+  /** Up to 6 entries. */
+  topRoles: AggregateSkillCount[];
   seniorityDist: Record<Seniority, number>;
   workFormatDist: Record<WorkFormat, number>;
   engagementDist: Record<EngagementType, number>;

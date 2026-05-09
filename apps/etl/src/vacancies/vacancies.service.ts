@@ -275,6 +275,23 @@ export class VacanciesService {
       LIMIT 10
     `);
 
+    const roleRows = await this.db.execute<{
+      id: string;
+      name: string;
+      count: string;
+    }>(sql`
+      SELECT n.id::text AS id,
+             n.canonical_name AS name,
+             COUNT(*)::text AS count
+      FROM vacancies v
+      JOIN nodes n ON n.id = v.role_node_id
+      WHERE n.type = 'ROLE'
+        AND ${ELIGIBLE}
+      GROUP BY n.id, n.canonical_name
+      ORDER BY count DESC
+      LIMIT 6
+    `);
+
     return {
       total: Number(s.total),
       lastSyncAt: s.last_sync_at ? new Date(s.last_sync_at).toISOString() : null,
@@ -285,6 +302,11 @@ export class VacanciesService {
         count: Number(r.count),
       })),
       topSkills: skillRows.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        count: Number(r.count),
+      })),
+      topRoles: roleRows.rows.map((r) => ({
         id: r.id,
         name: r.name,
         count: Number(r.count),
