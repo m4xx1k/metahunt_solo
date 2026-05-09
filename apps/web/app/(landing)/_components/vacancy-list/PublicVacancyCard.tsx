@@ -111,7 +111,7 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
     <article className="flex w-full flex-col gap-4 border border-border bg-bg-card p-6 transition-colors hover:border-accent md:flex-row md:gap-8">
       {/* MAIN — role / meta / salary / skills / footer */}
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <div className="flex flex-wrap items-baseline gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {v.seniority ? (
             <SeniorityBadge
               seniority={v.seniority}
@@ -214,7 +214,7 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
           <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
             posted {formatRelative(v.publishedAt)}
           </span>
@@ -240,7 +240,7 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
       </div>
 
       {/* DESKTOP-ONLY ASIDE — source / company / domain / pills */}
-      <aside className="hidden md:flex md:w-[220px] md:flex-shrink-0 md:flex-col md:gap-4 md:border-l md:border-border md:pl-6">
+      <aside className="hidden md:flex md:w-[160px] md:flex-shrink-0 md:flex-col md:gap-4 md:border-l md:border-border md:pl-6">
         <SidebarFact label="on" value={sourceName} valueClass="font-bold text-accent" />
         {company ? (
           <SidebarFact label="company" value={company} valueClass="font-body text-text-primary" />
