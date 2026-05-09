@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import Link from "next/link";
 
 import { SeniorityBadge } from "@/components/data/SeniorityBadge";
@@ -18,12 +20,35 @@ const LOCATIONS_MAX = 2;
 const SKILLS_REQUIRED_SHOWN = 6;
 const SKILLS_OPTIONAL_SHOWN = 5;
 
+// Backend ships locations as strings like "Kyiv, Ukraine" (BAML splits city
+// and country, but the wire contract collapses them). When every location
+// shares the same country, render the country once at the end so we don't
+// shout "Україна" five times for an all-UA posting.
 function formatLocationsCapped(locations: string[]): string | null {
   if (locations.length === 0) return null;
-  if (locations.length <= LOCATIONS_MAX) return locations.join(" · ");
-  return `${locations.slice(0, LOCATIONS_MAX).join(" · ")} · +${
-    locations.length - LOCATIONS_MAX
-  }`;
+  const parsed = locations.map((raw) => {
+    const idx = raw.indexOf(",");
+    if (idx === -1) return { city: raw.trim(), country: null as string | null };
+    return { city: raw.slice(0, idx).trim(), country: raw.slice(idx + 1).trim() };
+  });
+
+  const sharedCountry =
+    parsed.every((p) => p.country) &&
+    new Set(parsed.map((p) => p.country)).size === 1
+      ? parsed[0].country
+      : null;
+
+  const renderableItems = sharedCountry
+    ? parsed.map((p) => p.city)
+    : parsed.map((p) => (p.country ? `${p.city}, ${p.country}` : p.city));
+
+  const head = renderableItems.slice(0, LOCATIONS_MAX).join(" · ");
+  const overflow =
+    renderableItems.length > LOCATIONS_MAX
+      ? ` +${renderableItems.length - LOCATIONS_MAX}`
+      : "";
+  const suffix = sharedCountry ? `, ${sharedCountry}` : "";
+  return `${head}${overflow}${suffix}`;
 }
 
 export function PublicVacancyCard({ vacancy: v }: Props) {
@@ -39,6 +64,25 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
     currency: v.salary.currency,
   });
   const loc = formatLocationsCapped(v.locations);
+
+  const metaItems: React.ReactNode[] = [];
+  if (v.workFormat)
+    metaItems.push(
+      <span key="format">{WORK_FORMAT_LABELS[v.workFormat]}</span>,
+    );
+  if (v.employmentType)
+    metaItems.push(
+      <span key="employment">{EMPLOYMENT_LABELS[v.employmentType]}</span>,
+    );
+  if (loc)
+    metaItems.push(
+      <span key="loc" className="inline-flex items-center gap-1">
+        <span aria-hidden>📍</span>
+        {loc}
+      </span>,
+    );
+  if (english) metaItems.push(<span key="english">{english}</span>);
+  if (experience) metaItems.push(<span key="experience">{experience}</span>);
 
   const requiredSkills = v.skills.required.slice(0, SKILLS_REQUIRED_SHOWN);
   const extraRequired = Math.max(
@@ -100,22 +144,20 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-text-muted">
-          {v.workFormat ? (
-            <span>[{WORK_FORMAT_LABELS[v.workFormat]}]</span>
-          ) : null}
-          {v.employmentType ? (
-            <span>[{EMPLOYMENT_LABELS[v.employmentType]}]</span>
-          ) : null}
-          {loc ? (
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden>📍</span>
-              {loc}
-            </span>
-          ) : null}
-          {english ? <span>{english}</span> : null}
-          {experience ? <span>{experience}</span> : null}
-        </div>
+        {metaItems.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+            {metaItems.map((item, i) => (
+              <Fragment key={i}>
+                {i > 0 ? (
+                  <span aria-hidden className="text-text-muted/60">
+                    ·
+                  </span>
+                ) : null}
+                {item}
+              </Fragment>
+            ))}
+          </div>
+        ) : null}
 
         {salary ? (
           <span className="inline-flex items-center gap-2 font-mono text-base font-bold text-success">
