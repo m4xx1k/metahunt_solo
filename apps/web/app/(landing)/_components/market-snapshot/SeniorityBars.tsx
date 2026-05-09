@@ -34,7 +34,7 @@ export function SeniorityBars({ dist }: Props) {
   const max = Math.max(0, ...visible.map((k) => dist[k] ?? 0));
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4">
+    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-bg-card p-4">
       <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
         seniority
       </span>

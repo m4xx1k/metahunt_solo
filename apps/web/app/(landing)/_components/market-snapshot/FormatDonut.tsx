@@ -110,7 +110,7 @@ export function FormatDonut({
     total > 0 ? Math.round((reservationTrueCount / total) * 100) : 0;
 
   return (
-    <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
+    <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-bg-card p-6">
       <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
         format
       </span>
