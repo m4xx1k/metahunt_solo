@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
 import type { AggregateSkillCount } from "@/lib/api/aggregates";
 
 type Props = {
@@ -8,6 +12,7 @@ type Props = {
 const DISPLAY_COUNT = 8;
 
 export function TopSkills({ skills, totalVacancies }: Props) {
+  const reduced = useReducedMotion();
   const top = skills.slice(0, DISPLAY_COUNT);
   const max = top[0]?.count ?? 0;
 
@@ -20,7 +25,7 @@ export function TopSkills({ skills, totalVacancies }: Props) {
         <span className="font-mono text-xs text-text-muted">no skills yet</span>
       ) : (
         <ul className="flex flex-col gap-2.5">
-          {top.map((skill) => {
+          {top.map((skill, idx) => {
             const widthPct = max > 0 ? (skill.count / max) * 100 : 0;
             const sharePct =
               totalVacancies > 0
@@ -36,9 +41,16 @@ export function TopSkills({ skills, totalVacancies }: Props) {
                     {skill.name}
                   </span>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/50">
-                    <div
+                    <motion.div
                       className="h-full origin-left rounded-full bg-accent"
-                      style={{ width: `${widthPct}%` }}
+                      initial={reduced ? { width: `${widthPct}%` } : { width: 0 }}
+                      whileInView={{ width: `${widthPct}%` }}
+                      viewport={{ once: true, margin: "-40px" }}
+                      transition={{
+                        duration: reduced ? 0 : 0.7,
+                        ease: "easeOut",
+                        delay: reduced ? 0 : idx * 0.04,
+                      }}
                     />
                   </div>
                 </div>

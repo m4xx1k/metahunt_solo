@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
 import type { Seniority } from "@/lib/api/vacancies";
 
 type Props = {
@@ -25,6 +29,7 @@ const SHORT: Record<Seniority, string> = {
 };
 
 export function SeniorityBars({ dist }: Props) {
+  const reduced = useReducedMotion();
   const visible = ORDER.filter((k) => (dist[k] ?? 0) > 0);
   const max = Math.max(0, ...visible.map((k) => dist[k] ?? 0));
 
@@ -37,7 +42,7 @@ export function SeniorityBars({ dist }: Props) {
         <span className="font-mono text-xs text-text-muted">no data</span>
       ) : (
         <div className="flex flex-1 items-end justify-between gap-3 pt-2">
-          {visible.map((k) => {
+          {visible.map((k, idx) => {
             const v = dist[k] ?? 0;
             const heightPct = max > 0 ? (v / max) * 100 : 0;
             return (
@@ -50,9 +55,21 @@ export function SeniorityBars({ dist }: Props) {
                   {v}
                 </span>
                 <div className="flex h-24 w-full items-end">
-                  <div
+                  <motion.div
                     className="w-full rounded-t bg-accent"
-                    style={{ height: `${heightPct}%`, minHeight: 2 }}
+                    initial={
+                      reduced
+                        ? { height: `${heightPct}%` }
+                        : { height: 0 }
+                    }
+                    whileInView={{ height: `${heightPct}%` }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{
+                      duration: reduced ? 0 : 0.6,
+                      ease: "easeOut",
+                      delay: reduced ? 0 : idx * 0.04,
+                    }}
+                    style={{ minHeight: 2 }}
                   />
                 </div>
                 <span className="font-mono text-[10px] uppercase tracking-wide text-text-muted">

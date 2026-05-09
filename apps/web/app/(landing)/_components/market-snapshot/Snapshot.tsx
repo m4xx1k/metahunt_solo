@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useReducedMotion, type Variants } from "framer-motion";
+
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import { TotalCounter } from "./TotalCounter";
 import { TopSkills } from "./TopSkills";
@@ -9,6 +13,18 @@ type Props = {
 };
 
 export function Snapshot({ aggregates: a }: Props) {
+  const reduced = useReducedMotion();
+  const tileVariants: Variants = reduced
+    ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
+    : {
+        hidden: { opacity: 0, y: 12 },
+        show: {
+          opacity: 1,
+          y: 0,
+          transition: { duration: 0.35, ease: "easeOut" },
+        },
+      };
+
   return (
     <section className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-6 pt-16 pb-12 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
@@ -27,15 +43,26 @@ export function Snapshot({ aggregates: a }: Props) {
           sources={a.sources}
         />
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <TopSkills skills={a.topSkills} totalVacancies={a.total} />
-        <SeniorityBars dist={a.seniorityDist} />
-        <FormatDonut
-          dist={a.workFormatDist}
-          reservationKnownCount={a.reservationKnownCount}
-          reservationTrueCount={a.reservationTrueCount}
-        />
-      </div>
+      <motion.div
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        initial="hidden"
+        animate="show"
+        transition={reduced ? undefined : { staggerChildren: 0.08 }}
+      >
+        <motion.div variants={tileVariants}>
+          <TopSkills skills={a.topSkills} totalVacancies={a.total} />
+        </motion.div>
+        <motion.div variants={tileVariants}>
+          <SeniorityBars dist={a.seniorityDist} />
+        </motion.div>
+        <motion.div variants={tileVariants}>
+          <FormatDonut
+            dist={a.workFormatDist}
+            reservationKnownCount={a.reservationKnownCount}
+            reservationTrueCount={a.reservationTrueCount}
+          />
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
