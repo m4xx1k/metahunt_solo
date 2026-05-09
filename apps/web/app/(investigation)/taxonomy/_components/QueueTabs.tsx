@@ -97,7 +97,7 @@ export function QueueTabs({
             : `no ${active.toLowerCase()} matches "${search}"`}
         </p>
       ) : (
-        <ul className="flex flex-col gap-[2px] border border-border bg-bg-card">
+        <ul className="flex max-h-[640px] flex-col gap-[2px] overflow-y-auto border border-border bg-bg-card">
           {filtered.map((item) => (
             <QueueRow
               key={item.id}

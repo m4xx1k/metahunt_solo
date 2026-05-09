@@ -1,15 +1,17 @@
+import Link from "next/link";
 import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
 import {
   EMPLOYMENT_LABELS,
   ENGAGEMENT_LABELS,
   ENGLISH_LABELS,
-  SENIORITY_LABELS,
   WORK_FORMAT_LABELS,
   formatExperience,
   formatSalary,
 } from "@/lib/extracted-vacancy";
-import { formatDateTime, formatRelative } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { CopyButton } from "@/components/ui-kit";
+import { SeniorityBadge } from "@/components/data/SeniorityBadge";
 
 export function VacancyCard({
   vacancy,
@@ -69,22 +71,23 @@ function MetaTags({ vacancy }: { vacancy: VacancyDto }) {
 // ─── title ───────────────────────────────────────────────────────────────
 
 function Title({ vacancy }: { vacancy: VacancyDto }) {
-  const seniorityPrefix = vacancy.seniority
-    ? SENIORITY_LABELS[vacancy.seniority].toUpperCase()
-    : null;
   const role = vacancy.role?.name ?? "untitled role";
-  const headline = seniorityPrefix ? `${seniorityPrefix} · ${role}` : role;
   const subtitle = vacancy.company?.name ?? vacancy.source.displayName;
   const domain = vacancy.domain?.name ?? null;
 
   return (
-    <div className="flex flex-col gap-1">
-      <h3
-        className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl"
-        title={vacancy.title}
-      >
-        {headline}
-      </h3>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline gap-3">
+        {vacancy.seniority ? (
+          <SeniorityBadge seniority={vacancy.seniority} />
+        ) : null}
+        <h3
+          className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl"
+          title={vacancy.title}
+        >
+          {role}
+        </h3>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-body text-sm text-text-secondary">
           {subtitle}
@@ -280,6 +283,12 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
           link unavailable
         </span>
       )}
+      <Link
+        href={`/dashboard/records/${vacancy.rssRecordId}`}
+        className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:border-accent hover:text-text-primary hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
+      >
+        <span className="text-text-muted">⌥</span> view source record
+      </Link>
     </div>
   );
 }
@@ -290,16 +299,25 @@ function Footer({ vacancy }: { vacancy: VacancyDto }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider">
       <span className="font-bold text-accent">&gt; ids:</span>
-      <span className="text-text-muted">
-        vacancy · <span className="text-text-secondary">{vacancy.id}</span>
+      <span className="inline-flex items-center gap-2 text-text-muted">
+        vacancy
+        <CopyButton value={vacancy.id} ariaLabel="copy vacancy id" />
       </span>
-      <span className="text-text-muted">·</span>
-      <span className="text-text-muted">
-        external ·{" "}
-        <span className="text-text-secondary">{vacancy.externalId}</span>
+      <span className="inline-flex items-center gap-2 text-text-muted">
+        external
+        <CopyButton
+          value={vacancy.externalId}
+          ariaLabel="copy external id"
+        />
       </span>
+      <Link
+        href={`/dashboard/records/${vacancy.rssRecordId}`}
+        className="inline-flex items-center gap-1 text-text-secondary hover:text-accent"
+      >
+        <span className="text-accent">↗</span> rss record
+      </Link>
       <span className="ml-auto text-text-muted">
-        published · {formatDateTime(vacancy.publishedAt)}
+        loaded · {formatRelative(vacancy.loadedAt)}
       </span>
     </div>
   );
@@ -307,7 +325,10 @@ function Footer({ vacancy }: { vacancy: VacancyDto }) {
 
 // ─── helpers ─────────────────────────────────────────────────────────────
 
+const LOCATIONS_MAX = 2;
+
 function formatLocations(locations: string[]): string | null {
   if (locations.length === 0) return null;
-  return locations.join(" · ");
+  if (locations.length <= LOCATIONS_MAX) return locations.join(" · ");
+  return `${locations.slice(0, LOCATIONS_MAX).join(" · ")} · +${locations.length - LOCATIONS_MAX}`;
 }

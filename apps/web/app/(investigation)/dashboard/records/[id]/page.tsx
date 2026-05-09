@@ -5,7 +5,8 @@ import { InvestigationHeader } from "../../../_components/InvestigationHeader";
 import { ExtractedDataView } from "./_components/ExtractedDataView";
 import { Badge, Tag } from "@/components/ui-kit";
 import { formatDateTime, formatRelative } from "@/lib/format";
-import { displayTitle } from "@/lib/extracted-vacancy";
+import { displayTitle, extractedSeniority } from "@/lib/extracted-vacancy";
+import { SeniorityBadge } from "@/components/data/SeniorityBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -30,12 +31,18 @@ export default async function RecordDetailPage({
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <header className="flex flex-col gap-4">
           <Tag>{record.sourceDisplayName ?? record.sourceCode ?? "source"}</Tag>
-          <h1
-            className="font-display text-3xl font-bold leading-tight text-text-primary md:text-4xl"
-            title={record.title}
-          >
-            {displayTitle(record)}
-          </h1>
+          <div className="flex flex-wrap items-baseline gap-3">
+            {(() => {
+              const sen = extractedSeniority(record);
+              return sen ? <SeniorityBadge seniority={sen} /> : null;
+            })()}
+            <h1
+              className="font-display text-3xl font-bold leading-tight text-text-primary md:text-4xl"
+              title={record.title}
+            >
+              {displayTitle(record)}
+            </h1>
+          </div>
           {displayTitle(record) !== record.title ? (
             <p className="font-mono text-xs text-text-muted">
               raw title · {record.title}

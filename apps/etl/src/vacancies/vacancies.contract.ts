@@ -89,6 +89,11 @@ export interface VacancyDto {
   id: string;
   /** Source-scoped id (slug/url path on the origin site). Useful for debugging + dedupe. */
   externalId: string;
+  /**
+   * `rss_records.id` of the most recent record this vacancy was loaded from.
+   * Drives the operator-facing "view source record" link on the vacancy card.
+   */
+  rssRecordId: string;
 
   source: SourceRef;
   /** Origin URL — drives the "apply on" CTA. May be null on legacy rows. */
