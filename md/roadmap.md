@@ -4,8 +4,28 @@ What's now / what's next. Stages are business-meaningful milestones, not small f
 
 ## Current stage
 
+### Stage 06 — Extraction quality + operator surface
+**Status:** in-progress · **Started:** 2026-05-08
+
+Stage 05 closed 2026-05-08 with the silver pipeline stable; Stage 06 has two threads.
+
+**(1) Extraction quality.** Close the prompt-quality loop on BAML — inject the live taxonomy as soft constraints, add anti-extraction rules + UA-market context, regression-test against captured fixtures, re-measure delta via `fill-vacancies` coverage. Brief: [`todo/baml-extraction-prompt-tuning.md`](../todo/baml-extraction-prompt-tuning.md). Unblocks further `nodes.json` iterations on the SKILL axis.
+
+**(2) Operator surface.** Read-only sidebar-driven dashboard inside `apps/web` (KPI strip · sources health · taxonomy coverage + queue) so pipeline + curation are observable without `psql`. **P1–P3 + polish shipped 2026-05-09** ([`operator-dashboard`](./journal/migrations/_done/operator-dashboard.md)). Builds atop the Stage 05 silver feed; the taxonomy SKILL backlog is visible only because Stage 05 wired `taxonomy.service.getCoverage()`.
+
+**Trackers:**
+- [`journal/migrations/_done/operator-dashboard.md`](./journal/migrations/_done/operator-dashboard.md) — done 2026-05-09
+- [`journal/migrations/vacancy-lineage.md`](./journal/migrations/vacancy-lineage.md) — public drill-down (vacancy → record → ingest); spec only, not started
+
+## Next
+
+### Stage 07 — Quality baseline (planned)
+Lint/format, unit + integration tests, and CI checks for build + migrate + seed + healthz smoke. Sequenced after Stage 06 — prompt quality drives the extraction signal that the silver layer depends on, which the CI in turn protects.
+
+## Done
+
 ### Stage 05 — Silver layer (loader + `/vacancies` + curated taxonomy)
-**Status:** in-progress · **Started:** 2026-05-05
+**Status:** done · **Completed:** 2026-05-08
 
 Bronze (`rss_records`) → silver (`vacancies` + `companies` + `nodes`). Vacancies surfaced via a public read API and a web feed. Taxonomy seeded and instrumented for moderator-driven curation.
 
@@ -14,22 +34,12 @@ Bronze (`rss_records`) → silver (`vacancies` + `companies` + `nodes`). Vacanci
 - `GET /vacancies` API + `apps/web` `/vacancies` page reading the silver feed — **MVP shipped**, contract followups carried forward.
 - Curated `nodes` taxonomy: type-scoped aliases, gap-driven iteration on `nodes.json`, read-only admin endpoints under `/admin/taxonomy/*` — **Phase 1 backend in**, Tier 1 nodes.json iteration in; further iterations gated on extraction prompt tuning (Stage 06).
 
-**Out of scope for this stage:** moderator write-path API, admin UI in `apps/web`, cross-source / fingerprint dedup, embeddings.
+**Out of scope for this stage:** moderator write-path API, cross-source / fingerprint dedup, embeddings. Read-only operator dashboard ([`operator-dashboard`](./journal/migrations/_done/operator-dashboard.md)) shipped under Stage 06 as Phase 1.5 of taxonomy-curation.
 
 **Trackers:**
 - [`journal/migrations/_done/loader-pipeline.md`](./journal/migrations/_done/loader-pipeline.md)
 - [`journal/migrations/vacancies-api.md`](./journal/migrations/vacancies-api.md)
 - [`journal/migrations/taxonomy-curation.md`](./journal/migrations/taxonomy-curation.md)
-
-## Next
-
-### Stage 06 — Extraction quality (planned)
-The BAML migration shipped 2026-05-01 ([ADR-0004](./journal/decisions/0004-baml-vacancy-extraction.md)); what's left is closing the prompt-quality loop. Inject the live taxonomy as soft constraints, add anti-extraction rules + UA-market context, regression-test against captured fixtures, and re-measure delta via `fill-vacancies` coverage. Brief: [`todo/baml-extraction-prompt-tuning.md`](../todo/baml-extraction-prompt-tuning.md). Unblocks further `nodes.json` iterations on the SKILL axis.
-
-### Stage 07 — Quality baseline (planned)
-Lint/format, unit + integration tests, and CI checks for build + migrate + seed + healthz smoke. Sequenced after Stage 06 — prompt quality drives the extraction signal that the silver layer depends on, which the CI in turn protects.
-
-## Done
 
 ### Stage 04 — First ETL job
 **Status:** done · **Completed:** 2026-05-03

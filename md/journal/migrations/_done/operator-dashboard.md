@@ -1,24 +1,27 @@
 # operator-dashboard — internal dashboard for `apps/web`
 
-**Branch:** `feat/operator-dashboard` (to be cut from `main`)
-**Status:** P1 + P2 in review (2026-05-09) · P3 next
-**Started:** 2026-05-08
-**Context:** Stage 05 closed 2026-05-08 (silver layer + taxonomy curation Phase 1 + `/vacancies` API all green; pipeline 180 ingests / 0 failed / 100% extraction at the time of writing). This tracker is the Stage 06 surface — the single operator entry point that turns the now-stable pipeline into something observable and curatable without `psql`.
+**Branch:** `feat/operator-dashboard-p3` (stacked over `feat/operator-dashboard` + `-p2`) · **Closed:** 2026-05-09 · **Status:** done
+
+## Outcome
+
+P1+P2+P3 plus two polish rounds shipped via PR #12 (2026-05-09). `/dashboard` recomposed (KPI strip · activity stream · latest-per-source), `/sources` table added with client-side coverage join, `/taxonomy` ships coverage panel + queue tabs + node drawer. SVG primitives (Sparkline · StackedBar · Donut) at `components/data/`. D1 lean (a) shipped; D2/D3 omit the `→ N vacancies` segment until backend extends; D7 unblocked client-side; D4 mobile drawer landed in polish round 1. Backend touched only for `VacancyDto.rssRecordId` (one column on the existing join).
+
+**Context:** Stage 05 closed 2026-05-08 (silver layer + taxonomy curation Phase 1 + `/vacancies` API all green; pipeline 180 ingests / 0 failed / 100% extraction at the time of writing). This tracker was the Stage 06 entry surface — the single operator entry point that turns the now-stable pipeline into something observable and curatable without `psql`.
 
 ## Goal
 
 Replace the single kitchen-sink `/monitoring` page with a sidebar-driven operator dashboard inside the existing `(investigation)` route group, and add the missing taxonomy curation UI on top of the read-only `/admin/taxonomy/*` API.
 
-The dashboard surfaces **health and curation** (KPIs, source health, taxonomy coverage + queue), not browsable lists of vacancies / records / ingests — those lists live in the public drill-down ([`vacancy-lineage.md`](./vacancy-lineage.md)). The dashboard's "activity stream" widget visualises the full ingest → records → vacancies chain inline and links INTO the public detail pages on click, so the flow stays one click away without duplicating list views.
+The dashboard surfaces **health and curation** (KPIs, source health, taxonomy coverage + queue), not browsable lists of vacancies / records / ingests — those lists live in the public drill-down ([`vacancy-lineage.md`](../vacancy-lineage.md)). The dashboard's "activity stream" widget visualises the full ingest → records → vacancies chain inline and links INTO the public detail pages on click, so the flow stays one click away without duplicating list views.
 
-This is a **read-only** operator dashboard (Phase 1.5 of [taxonomy-curation](./taxonomy-curation.md)). It is **not** the moderator write-path UI, which Stage 05 keeps explicitly out of scope.
+This is a **read-only** operator dashboard (Phase 1.5 of [taxonomy-curation](../taxonomy-curation.md)). It is **not** the moderator write-path UI, which Stage 05 keeps explicitly out of scope.
 
 ## Audience & non-goals
 
 **Audience:** internal operators (founder + future team) inspecting pipeline health and curating taxonomy.
 
 **Out of scope:**
-- Public-facing detail pages for vacancies / records / ingests — handled by [`vacancy-lineage.md`](./vacancy-lineage.md).
+- Public-facing detail pages for vacancies / records / ingests — handled by [`vacancy-lineage.md`](../vacancy-lineage.md).
 - Flat operator-only `/ingests` and `/records` list pages — drill-in is enough; revisit only if filtering needs (failed-last-24h queries, etc.) actually surface.
 - Moderator write actions (status changes, alias edits, merges) — Phase 2.
 - Public-facing market explorer (salary heatmaps, role trends, company directory).
@@ -39,7 +42,7 @@ app/(investigation)/                  internal operator UI
   monitoring/                         [removed; replaced by 308 redirect → /dashboard]
 ```
 
-`(investigation)/vacancies` moves to `(public)/vacancies` per [`vacancy-lineage.md`](./vacancy-lineage.md). The sidebar still **links** to `/vacancies` and to `/vacancies/:id` from the activity stream — those are public URLs, just not under operator chrome.
+`(investigation)/vacancies` moves to `(public)/vacancies` per [`vacancy-lineage.md`](../vacancy-lineage.md). The sidebar still **links** to `/vacancies` and to `/vacancies/:id` from the activity stream — those are public URLs, just not under operator chrome.
 
 `next.config.ts` adds:
 
@@ -89,7 +92,7 @@ async redirects() {
 - Ingests · last 24h · 7-day sparkline of run statuses.
 - Records · last 24h · 7-day sparkline.
 - Failed ingests · last 24h · count badge (red if > 0). Click → opens a drawer listing the failures with deep-links to `/ingests/:id` (public).
-- Taxonomy queue · NEW-node count broken down by axis. The card renders one number per axis stacked (`ROLE 85 · SKILL 6662 · DOMAIN 210`), each segment linking to `/taxonomy?tab=<axis>`. SKILL is the load-bearing number — at one extraction-pass-of-the-corpus it sat at ~6.6k vs ROLE at <100 — so a single aggregate hides the backlog shape. Show "Total: N" beneath; color the SKILL number amber when ≥ 1k, red when ≥ 5k. ([baml-extraction-prompt-tuning](../../../todo/baml-extraction-prompt-tuning.md) is the lever that bends this curve.)
+- Taxonomy queue · NEW-node count broken down by axis. The card renders one number per axis stacked (`ROLE 85 · SKILL 6662 · DOMAIN 210`), each segment linking to `/taxonomy?tab=<axis>`. SKILL is the load-bearing number — at one extraction-pass-of-the-corpus it sat at ~6.6k vs ROLE at <100 — so a single aggregate hides the backlog shape. Show "Total: N" beneath; color the SKILL number amber when ≥ 1k, red when ≥ 5k. ([baml-extraction-prompt-tuning](../../../../todo/baml-extraction-prompt-tuning.md) is the lever that bends this curve.)
 
 **Section 2 — Latest per source.** Existing `LatestPerSource` widget, enriched with inline 7-run status sparkline.
 
@@ -156,9 +159,9 @@ Two-pane layout (40 / 60).
 2. **Row.** node name · type · usage count (with bar) · aliases preview (truncated).
 3. **Click → drawer.** `node detail` (id, name, type, status, aliases full list, created/updated) + **Fuzzy matches** list (other nodes with `pg_trgm.similarity ≥ threshold`, with score). Drawer also shows "this node is used by N vacancies" with a link to `/vacancies?roleId=…` (or `skillIds`, or none for DOMAIN — see D2).
 
-**Data:** new `lib/api/taxonomy.ts` mirroring `apps/etl/src/taxonomy/taxonomy.service.ts` shape (hand-mirrored per [ADR-0005](../decisions/0005-vercel-for-frontend.md)). Endpoints used: `coverage()`, `queue(type, limit)`, `node(id)`, `fuzzyMatches(id)`.
+**Data:** new `lib/api/taxonomy.ts` mirroring `apps/etl/src/taxonomy/taxonomy.service.ts` shape (hand-mirrored per [ADR-0005](../../decisions/0005-vercel-for-frontend.md)). Endpoints used: `coverage()`, `queue(type, limit)`, `node(id)`, `fuzzyMatches(id)`.
 
-Read-only: no status / alias edit actions. Drawer footer reads "moderation actions land in Phase 2 — see [taxonomy-curation](./taxonomy-curation.md)".
+Read-only: no status / alias edit actions. Drawer footer reads "moderation actions land in Phase 2 — see [taxonomy-curation](../taxonomy-curation.md)".
 
 ## Data viz primitives
 
@@ -168,7 +171,7 @@ Three custom SVG components, no chart library:
 - `<StackedBar segments={[{value, label, color}]} total? showLabels />` — horizontal stacked bar; segments below 4% width drop their label to avoid overflow.
 - `<Donut value total label />` — small SVG donut for "fully verified" KPI; centered numeric label.
 
-All three live at `components/data/` (tier 2, see [`apps/web/CLAUDE.md`](../../../apps/web/CLAUDE.md)). All accept theme tokens (`var(--color-accent)` etc.) — no hard-coded colors. No client JS unless tooltip is hovered (use CSS `:hover` + native `<title>` for v1).
+All three live at `components/data/` (tier 2, see [`apps/web/CLAUDE.md`](../../../../apps/web/CLAUDE.md)). All accept theme tokens (`var(--color-accent)` etc.) — no hard-coded colors. No client JS unless tooltip is hovered (use CSS `:hover` + native `<title>` for v1).
 
 If we later want brush/zoom/heatmap, swap in `visx` per chart, not as a global dependency.
 
@@ -227,7 +230,7 @@ apps/web/
 
 The work splits into 3 deliverable PRs (each shippable on its own):
 
-**P1 — Shell.** Sidebar, group `layout.tsx`, route rename + redirect, header trim. No new pages yet — `/dashboard` is the existing monitoring contents under the new shell. `/vacancies` is left in `(investigation)` until [`vacancy-lineage.md`](./vacancy-lineage.md) P1 picks it up.
+**P1 — Shell.** Sidebar, group `layout.tsx`, route rename + redirect, header trim. No new pages yet — `/dashboard` is the existing monitoring contents under the new shell. `/vacancies` is left in `(investigation)` until [`vacancy-lineage.md`](../vacancy-lineage.md) P1 picks it up.
 
 **P2 — Dashboard recompose + sources page + viz primitives.** Replace the kitchen-sink dashboard with KPI strip + Latest-per-source + Activity stream. Add `/sources` table. Ship `Sparkline` + `StackedBar` + `Donut` primitives. Drop the old `IngestsTable` / `RecordsFilters` components (git-remove).
 
@@ -235,7 +238,7 @@ The work splits into 3 deliverable PRs (each shippable on its own):
 
 Each PR is reviewable in <60 minutes.
 
-**Sequencing with [`vacancy-lineage.md`](./vacancy-lineage.md):** lineage P1 (lift `/vacancies` to public) should land before this tracker's P2, so the activity stream's `→ N vacancies` link points to a page already living under the public chrome. If lineage P1 slips, ship P2 with the link pointing to the still-investigation `/vacancies` and rewire when lineage P1 lands.
+**Sequencing with [`vacancy-lineage.md`](../vacancy-lineage.md):** lineage P1 (lift `/vacancies` to public) should land before this tracker's P2, so the activity stream's `→ N vacancies` link points to a page already living under the public chrome. If lineage P1 slips, ship P2 with the link pointing to the still-investigation `/vacancies` and rewire when lineage P1 lands.
 
 ## Open questions / decisions
 
@@ -270,10 +273,10 @@ Each PR is reviewable in <60 minutes.
 
 ## Cross-links
 
-- ADR-0005 — [`Vercel for frontend`](../decisions/0005-vercel-for-frontend.md) (no shared `libs/contracts/` until 2nd consumer; web hand-mirrors backend types).
-- [`roadmap`](../../roadmap.md) — Stage 05 closed 2026-05-08; this tracker is the Stage 06 entry surface. Update the roadmap copy when P1 ships.
-- [`vacancy-lineage`](./vacancy-lineage.md) — sibling tracker. Public detail pages for `/vacancies/:id`, `/records/:id`, `/ingests/:id` live there. The activity stream and KPI drawers in this tracker link INTO those pages.
-- [`taxonomy-curation`](./taxonomy-curation.md) — backend Phase 1; this tracker is its Phase 1.5 frontend.
-- [`vacancies-api`](./vacancies-api.md) — F4 backend filter gap drives D2 above; F8 facet UI item is fulfilled by [`vacancy-lineage`](./vacancy-lineage.md) P5, not here.
-- [`baml-extraction-prompt-tuning`](../../../todo/baml-extraction-prompt-tuning.md) — the Stage 06 lever that bends the SKILL-backlog KPI down; surfaced from the taxonomy-queue card in `/dashboard`.
-- Frontend conventions — [`apps/web/CLAUDE.md`](../../../apps/web/CLAUDE.md) (3-tier rule, layout, dev scripts).
+- ADR-0005 — [`Vercel for frontend`](../../decisions/0005-vercel-for-frontend.md) (no shared `libs/contracts/` until 2nd consumer; web hand-mirrors backend types).
+- [`roadmap`](../../../roadmap.md) — Stage 05 closed 2026-05-08; this tracker is the Stage 06 entry surface. Update the roadmap copy when P1 ships.
+- [`vacancy-lineage`](../vacancy-lineage.md) — sibling tracker. Public detail pages for `/vacancies/:id`, `/records/:id`, `/ingests/:id` live there. The activity stream and KPI drawers in this tracker link INTO those pages.
+- [`taxonomy-curation`](../taxonomy-curation.md) — backend Phase 1; this tracker is its Phase 1.5 frontend.
+- [`vacancies-api`](../vacancies-api.md) — F4 backend filter gap drives D2 above; F8 facet UI item is fulfilled by [`vacancy-lineage`](../vacancy-lineage.md) P5, not here.
+- [`baml-extraction-prompt-tuning`](../../../../todo/baml-extraction-prompt-tuning.md) — the Stage 06 lever that bends the SKILL-backlog KPI down; surfaced from the taxonomy-queue card in `/dashboard`.
+- Frontend conventions — [`apps/web/CLAUDE.md`](../../../../apps/web/CLAUDE.md) (3-tier rule, layout, dev scripts).
