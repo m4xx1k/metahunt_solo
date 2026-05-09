@@ -14,12 +14,15 @@ export class VacanciesController {
     @Query("q") q?: string,
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
+    @Query("sourceId") rawSourceId?: string,
     @Query("includeRoleless") rawIncludeRoleless?: string,
     @Query("includeAllSkills") rawIncludeAllSkills?: string,
   ) {
     const trimmed = q?.trim();
+    const sourceId = rawSourceId?.trim();
     return this.vacancies.list({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
+      sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       page: parsePage(rawPage),
       pageSize: parsePageSize(rawPageSize),
       includeRoleless: parseBool("includeRoleless", rawIncludeRoleless),

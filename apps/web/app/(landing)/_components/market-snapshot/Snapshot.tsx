@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 import type { AggregatesPerSource, VacancyAggregates } from "@/lib/api/aggregates";
@@ -13,11 +12,12 @@ import { SourceTabs, SOURCE_TABS_ALL } from "./SourceTabs";
 
 type Props = {
   aggregates: VacancyAggregates;
+  /** Either a source code or SOURCE_TABS_ALL — comes from URL searchParams. */
+  selectedSource: string;
 };
 
-export function Snapshot({ aggregates: a }: Props) {
+export function Snapshot({ aggregates: a, selectedSource }: Props) {
   const reduced = useReducedMotion();
-  const [selectedSource, setSelectedSource] = useState<string>(SOURCE_TABS_ALL);
   // Tabs swap the lower widget grid; the hero counter stays global so it
   // still answers "how big is the index in total".
   const view: AggregatesPerSource =
@@ -53,11 +53,7 @@ export function Snapshot({ aggregates: a }: Props) {
           sources={a.sources}
         />
       </div>
-      <SourceTabs
-        sources={a.sources}
-        selected={selectedSource}
-        onSelect={setSelectedSource}
-      />
+      <SourceTabs sources={a.sources} selected={selectedSource} />
       <motion.div
         key={selectedSource}
         className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3"

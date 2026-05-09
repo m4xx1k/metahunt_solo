@@ -3,6 +3,7 @@ import { Footer } from "@/components/shared/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { vacanciesApi } from "@/lib/api/vacancies";
 import { Snapshot } from "./_components/market-snapshot/Snapshot";
+import { SOURCE_TABS_ALL } from "./_components/market-snapshot/SourceTabs";
 import { VacancyList } from "./_components/vacancy-list/VacancyList";
 
 export const dynamic = "force-dynamic";
@@ -38,11 +39,24 @@ export default async function HomePage({
   const sp = await searchParams;
   const offset = asNonNegativeInt(sp.offset, 0);
   const page = Math.floor(offset / PAGE_SIZE) + 1;
+  const sourceCode = asString(sp.source);
 
-  const [aggregates, list] = await Promise.all([
-    aggregatesApi.get(),
-    vacanciesApi.list({ page, pageSize: PAGE_SIZE }),
-  ]);
+  // Resolve source code → UUID via aggregates.sources before fanning out
+  // the list query. The aggregates response is small + ISR-cached for 60s,
+  // so a sequential await is cheap.
+  const aggregates = await aggregatesApi.get();
+  const sourceId =
+    sourceCode != null
+      ? (aggregates.sources.find((s) => s.code === sourceCode)?.id ?? null)
+      : null;
+  const selectedSource =
+    sourceCode != null && sourceId != null ? sourceCode : SOURCE_TABS_ALL;
+
+  const list = await vacanciesApi.list({
+    page,
+    pageSize: PAGE_SIZE,
+    sourceId: sourceId ?? undefined,
+  });
 
   const flatSearchParams: Record<string, string | undefined> = {};
   for (const [k, v] of Object.entries(sp)) {
@@ -53,7 +67,10 @@ export default async function HomePage({
     <>
       <Header links={snapshotNav} />
       <main className="flex min-h-screen flex-col bg-bg">
-        <Snapshot aggregates={aggregates} />
+        <Snapshot
+          aggregates={aggregates}
+          selectedSource={selectedSource}
+        />
         <VacancyList
           result={list}
           offset={offset}

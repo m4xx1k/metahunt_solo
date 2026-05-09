@@ -36,6 +36,8 @@ export interface ListVacanciesParams {
   page: number;
   pageSize: number;
   q?: string;
+  /** Filter by sources.id (UUID). */
+  sourceId?: string;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
 }
@@ -407,6 +409,7 @@ export class VacanciesService {
 function buildWhere(params: ListVacanciesParams): SQL | undefined {
   const conds: SQL[] = [];
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
+  if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
   // When includeRoleless is off (default), require the verified role-node
   // join to have matched. The join itself enforces VERIFIED, so this also
   // excludes vacancies whose role is unverified.
