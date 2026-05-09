@@ -16,6 +16,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import type {
+  AggregatesPerSource,
   ListVacanciesResponse,
   NodeRef,
   VacancyAggregatesResponse,
@@ -35,6 +36,8 @@ export interface ListVacanciesParams {
   page: number;
   pageSize: number;
   q?: string;
+  /** Filter by sources.id (UUID). */
+  sourceId?: string;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
 }
@@ -174,71 +177,8 @@ export class VacanciesService {
   }
 
   async getAggregates(): Promise<VacancyAggregatesResponse> {
-    const ELIGIBLE = sql`
-      v.role_node_id IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM nodes rn
-        WHERE rn.id = v.role_node_id AND rn.status = 'VERIFIED'
-      )
-    `;
-
-    const scalarRows = await this.db.execute<{
-      total: string;
-      last_sync_at: Date | null;
-
-      sen_intern: string;
-      sen_junior: string;
-      sen_middle: string;
-      sen_senior: string;
-      sen_lead: string;
-      sen_principal: string;
-      sen_clevel: string;
-
-      wf_remote: string;
-      wf_office: string;
-      wf_hybrid: string;
-
-      eng_product: string;
-      eng_outsource: string;
-      eng_outstaff: string;
-      eng_startup: string;
-      eng_agency: string;
-
-      reservation_known: string;
-      reservation_true: string;
-      salary_disclosed: string;
-    }>(sql`
-      SELECT
-        COUNT(*)::text                                                                  AS total,
-        MAX(v.loaded_at)                                                                AS last_sync_at,
-
-        COUNT(*) FILTER (WHERE v.seniority = 'INTERN')::text                            AS sen_intern,
-        COUNT(*) FILTER (WHERE v.seniority = 'JUNIOR')::text                            AS sen_junior,
-        COUNT(*) FILTER (WHERE v.seniority = 'MIDDLE')::text                            AS sen_middle,
-        COUNT(*) FILTER (WHERE v.seniority = 'SENIOR')::text                            AS sen_senior,
-        COUNT(*) FILTER (WHERE v.seniority = 'LEAD')::text                              AS sen_lead,
-        COUNT(*) FILTER (WHERE v.seniority = 'PRINCIPAL')::text                         AS sen_principal,
-        COUNT(*) FILTER (WHERE v.seniority = 'C_LEVEL')::text                           AS sen_clevel,
-
-        COUNT(*) FILTER (WHERE v.work_format = 'REMOTE')::text                          AS wf_remote,
-        COUNT(*) FILTER (WHERE v.work_format = 'OFFICE')::text                          AS wf_office,
-        COUNT(*) FILTER (WHERE v.work_format = 'HYBRID')::text                          AS wf_hybrid,
-
-        COUNT(*) FILTER (WHERE v.engagement_type = 'PRODUCT')::text                     AS eng_product,
-        COUNT(*) FILTER (WHERE v.engagement_type = 'OUTSOURCE')::text                   AS eng_outsource,
-        COUNT(*) FILTER (WHERE v.engagement_type = 'OUTSTAFF')::text                    AS eng_outstaff,
-        COUNT(*) FILTER (WHERE v.engagement_type = 'STARTUP')::text                     AS eng_startup,
-        COUNT(*) FILTER (WHERE v.engagement_type = 'AGENCY')::text                      AS eng_agency,
-
-        COUNT(*) FILTER (WHERE v.has_reservation IS NOT NULL)::text                     AS reservation_known,
-        COUNT(*) FILTER (WHERE v.has_reservation = true)::text                          AS reservation_true,
-        COUNT(*) FILTER (WHERE v.salary_min IS NOT NULL OR v.salary_max IS NOT NULL)::text
-                                                                                        AS salary_disclosed
-      FROM vacancies v
-      WHERE ${ELIGIBLE}
-    `);
-    const s = scalarRows.rows[0];
-
+    // Source directory + counts is global-only; per-source slices skip
+    // this query by design.
     const sourceRows = await this.db.execute<{
       id: string;
       code: string;
@@ -251,56 +191,150 @@ export class VacanciesService {
              COUNT(*)::text AS count
       FROM vacancies v
       JOIN sources s ON s.id = v.source_id
-      WHERE ${ELIGIBLE}
+      WHERE
+        v.role_node_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM nodes rn
+          WHERE rn.id = v.role_node_id AND rn.status = 'VERIFIED'
+        )
       GROUP BY s.id, s.code, s.display_name
       ORDER BY COUNT(*) DESC
     `);
 
-    const skillRows = await this.db.execute<{
-      id: string;
-      name: string;
-      count: string;
-    }>(sql`
-      SELECT n.id::text AS id,
-             n.canonical_name AS name,
-             COUNT(DISTINCT vn.vacancy_id)::text AS count
-      FROM vacancy_nodes vn
-      JOIN nodes n ON n.id = vn.node_id
-      JOIN vacancies v ON v.id = vn.vacancy_id
-      WHERE n.type = 'SKILL'
-        AND n.status = 'VERIFIED'
-        AND ${ELIGIBLE}
-      GROUP BY n.id, n.canonical_name
-      ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC
-      LIMIT 10
-    `);
+    const sources = sourceRows.rows.map((r) => ({
+      id: r.id,
+      code: r.code,
+      displayName: r.display_name,
+      count: Number(r.count),
+    }));
 
-    const roleRows = await this.db.execute<{
-      id: string;
-      name: string;
-      count: string;
-    }>(sql`
-      SELECT n.id::text AS id,
-             n.canonical_name AS name,
-             COUNT(*)::text AS count
-      FROM vacancies v
-      JOIN nodes n ON n.id = v.role_node_id
-      WHERE n.type = 'ROLE'
-        AND ${ELIGIBLE}
-      GROUP BY n.id, n.canonical_name
-      ORDER BY COUNT(*) DESC
-      LIMIT 6
-    `);
+    // Compute global + per-source aggregates in parallel. With N sources
+    // this fans out 3*(N+1) round-trips; at N=2 (Djinni/DOU) it's 9
+    // round-trips, all parallel — ~50ms on the dev set.
+    const [global, ...perSourceArr] = await Promise.all([
+      this.computeAggregates(),
+      ...sources.map((s) => this.computeAggregates(s.id)),
+    ]);
 
+    const bySource: Record<string, AggregatesPerSource> = {};
+    sources.forEach((s, idx) => {
+      bySource[s.code] = perSourceArr[idx];
+    });
+
+    return { ...global, sources, bySource };
+  }
+
+  private async computeAggregates(
+    sourceId?: string,
+  ): Promise<AggregatesPerSource> {
+    const sourceFilter = sourceId
+      ? sql`AND v.source_id = ${sourceId}::uuid`
+      : sql``;
+    const ELIGIBLE = sql`
+      v.role_node_id IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM nodes rn
+        WHERE rn.id = v.role_node_id AND rn.status = 'VERIFIED'
+      )
+      ${sourceFilter}
+    `;
+
+    const [scalarRows, skillRows, roleRows] = await Promise.all([
+      this.db.execute<{
+        total: string;
+        last_sync_at: Date | null;
+
+        sen_intern: string;
+        sen_junior: string;
+        sen_middle: string;
+        sen_senior: string;
+        sen_lead: string;
+        sen_principal: string;
+        sen_clevel: string;
+
+        wf_remote: string;
+        wf_office: string;
+        wf_hybrid: string;
+
+        eng_product: string;
+        eng_outsource: string;
+        eng_outstaff: string;
+        eng_startup: string;
+        eng_agency: string;
+
+        reservation_known: string;
+        reservation_true: string;
+        salary_disclosed: string;
+      }>(sql`
+        SELECT
+          COUNT(*)::text                                                                  AS total,
+          MAX(v.loaded_at)                                                                AS last_sync_at,
+
+          COUNT(*) FILTER (WHERE v.seniority = 'INTERN')::text                            AS sen_intern,
+          COUNT(*) FILTER (WHERE v.seniority = 'JUNIOR')::text                            AS sen_junior,
+          COUNT(*) FILTER (WHERE v.seniority = 'MIDDLE')::text                            AS sen_middle,
+          COUNT(*) FILTER (WHERE v.seniority = 'SENIOR')::text                            AS sen_senior,
+          COUNT(*) FILTER (WHERE v.seniority = 'LEAD')::text                              AS sen_lead,
+          COUNT(*) FILTER (WHERE v.seniority = 'PRINCIPAL')::text                         AS sen_principal,
+          COUNT(*) FILTER (WHERE v.seniority = 'C_LEVEL')::text                           AS sen_clevel,
+
+          COUNT(*) FILTER (WHERE v.work_format = 'REMOTE')::text                          AS wf_remote,
+          COUNT(*) FILTER (WHERE v.work_format = 'OFFICE')::text                          AS wf_office,
+          COUNT(*) FILTER (WHERE v.work_format = 'HYBRID')::text                          AS wf_hybrid,
+
+          COUNT(*) FILTER (WHERE v.engagement_type = 'PRODUCT')::text                     AS eng_product,
+          COUNT(*) FILTER (WHERE v.engagement_type = 'OUTSOURCE')::text                   AS eng_outsource,
+          COUNT(*) FILTER (WHERE v.engagement_type = 'OUTSTAFF')::text                    AS eng_outstaff,
+          COUNT(*) FILTER (WHERE v.engagement_type = 'STARTUP')::text                     AS eng_startup,
+          COUNT(*) FILTER (WHERE v.engagement_type = 'AGENCY')::text                      AS eng_agency,
+
+          COUNT(*) FILTER (WHERE v.has_reservation IS NOT NULL)::text                     AS reservation_known,
+          COUNT(*) FILTER (WHERE v.has_reservation = true)::text                          AS reservation_true,
+          COUNT(*) FILTER (WHERE v.salary_min IS NOT NULL OR v.salary_max IS NOT NULL)::text
+                                                                                          AS salary_disclosed
+        FROM vacancies v
+        WHERE ${ELIGIBLE}
+      `),
+      this.db.execute<{
+        id: string;
+        name: string;
+        count: string;
+      }>(sql`
+        SELECT n.id::text AS id,
+               n.canonical_name AS name,
+               COUNT(DISTINCT vn.vacancy_id)::text AS count
+        FROM vacancy_nodes vn
+        JOIN nodes n ON n.id = vn.node_id
+        JOIN vacancies v ON v.id = vn.vacancy_id
+        WHERE n.type = 'SKILL'
+          AND n.status = 'VERIFIED'
+          AND ${ELIGIBLE}
+        GROUP BY n.id, n.canonical_name
+        ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC
+        LIMIT 10
+      `),
+      this.db.execute<{
+        id: string;
+        name: string;
+        count: string;
+      }>(sql`
+        SELECT n.id::text AS id,
+               n.canonical_name AS name,
+               COUNT(*)::text AS count
+        FROM vacancies v
+        JOIN nodes n ON n.id = v.role_node_id
+        WHERE n.type = 'ROLE'
+          AND ${ELIGIBLE}
+        GROUP BY n.id, n.canonical_name
+        ORDER BY COUNT(*) DESC
+        LIMIT 6
+      `),
+    ]);
+
+    const s = scalarRows.rows[0];
     return {
       total: Number(s.total),
       lastSyncAt: s.last_sync_at ? new Date(s.last_sync_at).toISOString() : null,
-      sources: sourceRows.rows.map((r) => ({
-        id: r.id,
-        code: r.code,
-        displayName: r.display_name,
-        count: Number(r.count),
-      })),
       topSkills: skillRows.rows.map((r) => ({
         id: r.id,
         name: r.name,
@@ -375,6 +409,7 @@ export class VacanciesService {
 function buildWhere(params: ListVacanciesParams): SQL | undefined {
   const conds: SQL[] = [];
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
+  if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
   // When includeRoleless is off (default), require the verified role-node
   // join to have matched. The join itself enforces VERIFIED, so this also
   // excludes vacancies whose role is unverified.
