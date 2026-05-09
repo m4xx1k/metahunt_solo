@@ -21,7 +21,7 @@ export function LatestPerSource({
       {items.map((item) => (
         <Link
           key={item.sourceId}
-          href={`/monitoring/ingests/${item.lastIngestId}`}
+          href={`/dashboard/ingests/${item.lastIngestId}`}
           className="flex flex-col gap-3 border border-border bg-bg-card p-5 shadow-[4px_4px_0_0_#000] transition-shadow hover:shadow-[6px_6px_0_0_#000]"
         >
           <div className="flex items-center justify-between gap-3">

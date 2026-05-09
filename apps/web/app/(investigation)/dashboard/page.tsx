@@ -113,7 +113,7 @@ export default async function MonitoringPage({
               total={records.total}
               limit={records.limit}
               offset={records.offset}
-              basePath="/monitoring"
+              basePath="/dashboard"
               searchParams={flatSearchParams}
             />
           </div>

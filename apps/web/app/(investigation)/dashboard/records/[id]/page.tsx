@@ -25,13 +25,7 @@ export default async function RecordDetailPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader
-        title="record"
-        breadcrumbs={[
-          { label: "records" },
-          { label: record.id.slice(0, 8) },
-        ]}
-      />
+      <InvestigationHeader title="record" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <header className="flex flex-col gap-4">
@@ -87,7 +81,7 @@ export default async function RecordDetailPage({
             label="ingest"
             value={
               <Link
-                href={`/monitoring/ingests/${record.rssIngestId}`}
+                href={`/dashboard/ingests/${record.rssIngestId}`}
                 className="text-accent hover:underline"
               >
                 {record.rssIngestId.slice(0, 8)}…

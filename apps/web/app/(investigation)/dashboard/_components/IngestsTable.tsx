@@ -34,7 +34,7 @@ export function IngestsTable({ items }: { items: IngestListItem[] }) {
             className="border-b border-border last:border-b-0 hover:bg-bg-elev"
           >
             <Link
-              href={`/monitoring/ingests/${it.id}`}
+              href={`/dashboard/ingests/${it.id}`}
               className={`${COLS} px-5 py-3 font-mono text-sm`}
             >
               <span className="truncate text-text-primary">

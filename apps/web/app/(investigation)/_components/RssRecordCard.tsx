@@ -337,13 +337,13 @@ function Sidebar({
       </div>
 
       <Link
-        href={`/monitoring/records/${record.id}`}
+        href={`/dashboard/records/${record.id}`}
         className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
       >
         <span className="text-accent">→</span> full detail
       </Link>
       <Link
-        href={`/monitoring/ingests/${record.rssIngestId}`}
+        href={`/dashboard/ingests/${record.rssIngestId}`}
         className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:text-text-primary"
       >
         <span className="text-text-muted">⌥</span> open ingest
@@ -365,7 +365,7 @@ function Footer({ record }: { record: RecordListItem }) {
       <span className="text-text-muted">
         ingest ·{" "}
         <Link
-          href={`/monitoring/ingests/${record.rssIngestId}`}
+          href={`/dashboard/ingests/${record.rssIngestId}`}
           className="text-text-secondary hover:text-accent"
         >
           {record.rssIngestId.slice(0, 12)}…

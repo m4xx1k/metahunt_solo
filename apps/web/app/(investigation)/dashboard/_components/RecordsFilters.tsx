@@ -21,7 +21,7 @@ export function RecordsFilters({ sources }: { sources: Source[] }) {
     }
     const qs = params.toString();
     startTransition(() => {
-      router.push(qs ? `/monitoring?${qs}` : "/monitoring");
+      router.push(qs ? `/dashboard?${qs}` : "/dashboard");
     });
   }
 
