@@ -18,7 +18,20 @@ const ORDER: Seniority[] = [
   "C_LEVEL",
 ];
 
+// Keep short, screen-friendly aliases for the two longest labels so all
+// seven buckets fit on one row at the col-2 tile width. The full name
+// stays available on hover via the FULL map.
 const SHORT: Record<Seniority, string> = {
+  INTERN: "intern",
+  JUNIOR: "junior",
+  MIDDLE: "middle",
+  SENIOR: "senior",
+  LEAD: "lead",
+  PRINCIPAL: "princ",
+  C_LEVEL: "c-lvl",
+};
+
+const FULL: Record<Seniority, string> = {
   INTERN: "intern",
   JUNIOR: "junior",
   MIDDLE: "middle",
@@ -41,15 +54,15 @@ export function SeniorityBars({ dist }: Props) {
       {visible.length === 0 ? (
         <span className="font-mono text-xs text-text-muted">no data</span>
       ) : (
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex items-end justify-between gap-2">
           {visible.map((k, idx) => {
             const v = dist[k] ?? 0;
             const heightPct = max > 0 ? (v / max) * 100 : 0;
             return (
               <div
                 key={k}
-                className="flex flex-1 flex-col items-center gap-1"
-                title={`${SHORT[k]}: ${v}`}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1"
+                title={`${FULL[k]}: ${v}`}
               >
                 <span className="font-mono text-[10px] tabular-nums text-text-muted">
                   {v}
@@ -72,7 +85,7 @@ export function SeniorityBars({ dist }: Props) {
                     style={{ minHeight: 2 }}
                   />
                 </div>
-                <span className="font-mono text-[10px] uppercase tracking-wide text-text-muted">
+                <span className="w-full truncate text-center font-mono text-[9px] uppercase tracking-wide text-text-muted">
                   {SHORT[k]}
                 </span>
               </div>
