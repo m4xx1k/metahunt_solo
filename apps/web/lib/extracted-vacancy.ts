@@ -124,13 +124,16 @@ export function displayTitle(input: {
   extractedData: unknown;
 }): string {
   const ex = safeExtracted(input.extractedData);
-  if (ex?.role) {
-    const sen = ex.seniority ? SENIORITY_LABELS[ex.seniority].toUpperCase() : null;
-    return sen ? `${sen} · ${ex.role}` : ex.role;
-  }
+  if (ex?.role) return ex.role;
   return input.title.length <= TITLE_FALLBACK_MAX
     ? input.title
     : `${input.title.slice(0, TITLE_FALLBACK_MAX)}…`;
+}
+
+export function extractedSeniority(input: {
+  extractedData: unknown;
+}): Seniority | null {
+  return safeExtracted(input.extractedData)?.seniority ?? null;
 }
 
 export function formatSalary(salary: ExtractedSalary | null): string | null {
@@ -159,12 +162,15 @@ export function formatSalary(salary: ExtractedSalary | null): string | null {
 
 export function formatLocations(
   locations: ExtractedLocation[] | undefined,
+  max = 2,
 ): string | null {
   if (!locations || locations.length === 0) return null;
-  return locations
+  const cities = locations
     .map((l) => l.city)
-    .filter((c): c is string => Boolean(c))
-    .join(" · ");
+    .filter((c): c is string => Boolean(c));
+  if (cities.length === 0) return null;
+  if (cities.length <= max) return cities.join(" · ");
+  return `${cities.slice(0, max).join(" · ")} · +${cities.length - max}`;
 }
 
 export function formatExperience(years: number | null): string | null {

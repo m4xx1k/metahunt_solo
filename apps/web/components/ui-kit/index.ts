@@ -5,6 +5,7 @@ export * from "./typography/Text";
 export * from "./typography/Tag";
 export * from "./buttons/Button";
 export * from "./buttons/IconButton";
+export * from "./buttons/CopyButton";
 export * from "./badges/Badge";
 export * from "./inputs/SearchInput";
 export * from "./inputs/EmailInput";

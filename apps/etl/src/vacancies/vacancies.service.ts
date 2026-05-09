@@ -75,6 +75,8 @@ interface VacancyRow {
 
   link: string | null;
   publishedAt: Date | null;
+
+  rssRecordId: string;
 }
 
 const roleNode = alias(nodes, "role_node");
@@ -136,6 +138,7 @@ export class VacanciesService {
 
         link: rssRecords.link,
         publishedAt: rssRecords.publishedAt,
+        rssRecordId: rssRecords.id,
       })
       .from(vacancies)
       .innerJoin(sources, eq(sources.id, vacancies.sourceId))
@@ -221,6 +224,7 @@ function toDto(
   return {
     id: row.id,
     externalId: row.externalId,
+    rssRecordId: row.rssRecordId,
 
     source: {
       id: row.sourceId,

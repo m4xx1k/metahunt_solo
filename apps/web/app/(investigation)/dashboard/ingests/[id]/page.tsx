@@ -53,13 +53,7 @@ export default async function IngestDetailPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader
-        title="ingest"
-        breadcrumbs={[
-          { label: "ingests" },
-          { label: ingest.id.slice(0, 8) },
-        ]}
-      />
+      <InvestigationHeader title="ingest" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <header className="flex flex-col gap-4">
@@ -123,7 +117,7 @@ export default async function IngestDetailPage({
             total={records.total}
             limit={records.limit}
             offset={records.offset}
-            basePath={`/monitoring/ingests/${ingest.id}`}
+            basePath={`/dashboard/ingests/${ingest.id}`}
             searchParams={{ offset: offset > 0 ? String(offset) : undefined }}
           />
         </section>

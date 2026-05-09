@@ -55,10 +55,7 @@ export default async function VacanciesPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader
-        title="silver vacancies"
-        breadcrumbs={[{ label: "vacancies" }]}
-      />
+      <InvestigationHeader title="silver vacancies" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <section className="flex flex-col gap-6">

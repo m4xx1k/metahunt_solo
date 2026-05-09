@@ -73,6 +73,8 @@ export interface VacancySalary {
 export interface VacancyDto {
   id: string;
   externalId: string;
+  /** rss_records.id of the most recent record this vacancy was loaded from. */
+  rssRecordId: string;
 
   source: SourceRef;
   link: string | null;

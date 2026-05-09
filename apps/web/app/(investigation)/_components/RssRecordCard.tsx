@@ -14,6 +14,8 @@ import {
 } from "@/lib/extracted-vacancy";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatRelative } from "@/lib/format";
+import { CopyButton } from "@/components/ui-kit";
+import { SeniorityBadge } from "@/components/data/SeniorityBadge";
 
 export function RssRecordCard({
   record,
@@ -99,15 +101,19 @@ function Title({
   const title = displayTitle(record);
   const subtitle = ex?.companyName ?? record.sourceDisplayName ?? null;
   const domain = ex?.domain ?? null;
+  const seniority = ex?.seniority ?? null;
 
   return (
-    <div className="flex flex-col gap-1">
-      <h3
-        className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl"
-        title={record.title}
-      >
-        {title}
-      </h3>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline gap-3">
+        {seniority ? <SeniorityBadge seniority={seniority} /> : null}
+        <h3
+          className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl"
+          title={record.title}
+        >
+          {title}
+        </h3>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         {subtitle ? (
           <span className="font-body text-sm text-text-secondary">
@@ -337,13 +343,13 @@ function Sidebar({
       </div>
 
       <Link
-        href={`/monitoring/records/${record.id}`}
+        href={`/dashboard/records/${record.id}`}
         className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
       >
         <span className="text-accent">→</span> full detail
       </Link>
       <Link
-        href={`/monitoring/ingests/${record.rssIngestId}`}
+        href={`/dashboard/ingests/${record.rssIngestId}`}
         className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:text-text-primary"
       >
         <span className="text-text-muted">⌥</span> open ingest
@@ -358,19 +364,16 @@ function Footer({ record }: { record: RecordListItem }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider">
       <span className="font-bold text-accent">&gt; ids:</span>
-      <span className="text-text-muted">
-        record · <span className="text-text-secondary">{record.id}</span>
+      <span className="inline-flex items-center gap-2 text-text-muted">
+        record
+        <CopyButton value={record.id} ariaLabel="copy record id" />
       </span>
-      <span className="text-text-muted">·</span>
-      <span className="text-text-muted">
-        ingest ·{" "}
-        <Link
-          href={`/monitoring/ingests/${record.rssIngestId}`}
-          className="text-text-secondary hover:text-accent"
-        >
-          {record.rssIngestId.slice(0, 12)}…
-        </Link>
-      </span>
+      <Link
+        href={`/dashboard/ingests/${record.rssIngestId}`}
+        className="inline-flex items-center gap-1 text-text-secondary hover:text-accent"
+      >
+        <span className="text-accent">↗</span> ingest
+      </Link>
       <span className="ml-auto text-text-muted">
         published · {formatDateTime(record.publishedAt)}
       </span>
