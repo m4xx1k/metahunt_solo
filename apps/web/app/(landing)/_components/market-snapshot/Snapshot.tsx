@@ -1,0 +1,41 @@
+import type { VacancyAggregates } from "@/lib/api/aggregates";
+import { TotalCounter } from "./TotalCounter";
+import { TopSkills } from "./TopSkills";
+import { SeniorityBars } from "./SeniorityBars";
+import { FormatDonut } from "./FormatDonut";
+
+type Props = {
+  aggregates: VacancyAggregates;
+};
+
+export function Snapshot({ aggregates: a }: Props) {
+  return (
+    <section className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-6 pt-16 pb-12 md:px-12">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
+        <div className="flex flex-col justify-center gap-5">
+          <h1 className="font-display text-4xl font-bold leading-tight text-text-primary md:text-5xl">
+            Метахант
+          </h1>
+          <p className="max-w-[520px] font-body text-base leading-[1.55] text-text-secondary md:text-lg">
+            агрегує IT-вакансії з DOU та Джині, нормалізує роль / стек / формат
+            і викладає одним списком.
+          </p>
+        </div>
+        <TotalCounter
+          total={a.total}
+          lastSyncAt={a.lastSyncAt}
+          sources={a.sources}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <TopSkills skills={a.topSkills} totalVacancies={a.total} />
+        <SeniorityBars dist={a.seniorityDist} />
+        <FormatDonut
+          dist={a.workFormatDist}
+          reservationKnownCount={a.reservationKnownCount}
+          reservationTrueCount={a.reservationTrueCount}
+        />
+      </div>
+    </section>
+  );
+}
