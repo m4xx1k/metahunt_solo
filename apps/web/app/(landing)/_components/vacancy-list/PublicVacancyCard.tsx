@@ -111,11 +111,17 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
     <article className="flex w-full flex-col gap-4 border border-border bg-bg-card p-6 transition-colors hover:border-accent md:flex-row md:gap-8">
       {/* MAIN — role / meta / salary / skills / footer */}
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        {v.seniority ? <SeniorityBadge seniority={v.seniority} /> : null}
-
-        <h3 className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl">
-          {role}
-        </h3>
+        <div className="flex flex-wrap items-baseline gap-3">
+          {v.seniority ? (
+            <SeniorityBadge
+              seniority={v.seniority}
+              className="text-xs px-3 py-1 tracking-[0.15em]"
+            />
+          ) : null}
+          <h3 className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl">
+            {role}
+          </h3>
+        </div>
 
         {/* Mobile-only inline aside strip — replaces the desktop right column */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs md:hidden">
