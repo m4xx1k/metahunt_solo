@@ -63,6 +63,7 @@ describe("BamlVacancyExtractor", () => {
   }
 
   it("passes alphabetised canonical roles + domains to BAML and returns usage meta", async () => {
+    process.env.OPENAI_MODEL = "gpt-5.4-mini";
     const { extractor } = await bootstrap();
     extractVacancy.mockResolvedValue(sampleVacancy);
 
@@ -71,7 +72,12 @@ describe("BamlVacancyExtractor", () => {
     expect(result.data).toEqual(sampleVacancy);
     expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
     expect(result.meta.error).toBeUndefined();
-    expect(result.meta.usage).toMatchObject({ in: 0, out: 0, cached: 0 });
+    expect(result.meta.usage).toMatchObject({
+      in: 0,
+      out: 0,
+      cached: 0,
+      model: "gpt-5.4-mini",
+    });
 
     expect(extractVacancy).toHaveBeenCalledTimes(1);
     const [text, roles, domains, options] = extractVacancy.mock.calls[0];

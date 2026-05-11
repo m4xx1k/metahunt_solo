@@ -53,6 +53,7 @@ const sampleUsage: ExtractionUsage = {
   cached: 0,
   client: "OpenAIClient",
   provider: "openai",
+  model: "gpt-5.4-mini",
   ms: 1800,
 };
 

@@ -47,6 +47,7 @@ export class PlaceholderVacancyExtractor implements VacancyExtractor {
           cached: 0,
           client: "placeholder",
           provider: "none",
+          model: "none",
           ms: 0,
         },
       },

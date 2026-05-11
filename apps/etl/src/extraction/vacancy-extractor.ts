@@ -6,8 +6,9 @@ export type ExtractionUsage = {
   in: number;
   out: number;
   cached: number;
-  client: string;
-  provider: string;
+  client: string;       // BAML client name (e.g. "OpenAIClient")
+  provider: string;     // BAML provider (e.g. "openai")
+  model: string;        // Actual model name (e.g. "gpt-5.4-mini"), from env at call time
   ms: number | null;
 };
 

@@ -64,6 +64,13 @@
       "when": 1778518798647,
       "tag": "0008_extraction_cost_view",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778524000000,
+      "tag": "0009_extraction_cost_view_pricing_fix",
+      "breakpoints": true
     }
   ]
 }
