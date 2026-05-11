@@ -5,6 +5,7 @@ jest.mock("../baml_client", () => ({
   b: { ExtractVacancy: jest.fn() },
 }));
 
+import { DRIZZLE } from "@metahunt/database";
 import { b } from "../baml_client";
 import type { ExtractedVacancy } from "../baml_client";
 
@@ -34,17 +35,35 @@ const sampleVacancy = {
   hasReservation: true,
 } as unknown as ExtractedVacancy;
 
+function buildDbMock(rows: Array<{ type: string; name: string }>) {
+  const where = jest.fn().mockResolvedValue(rows);
+  const from = jest.fn().mockReturnValue({ where });
+  const select = jest.fn().mockReturnValue({ from });
+  return { select, where, from };
+}
+
 describe("BamlVacancyExtractor", () => {
-  async function bootstrap() {
+  async function bootstrap(
+    rows: Array<{ type: string; name: string }> = [
+      { type: "ROLE", name: "Backend Developer" },
+      { type: "ROLE", name: "Frontend Developer" },
+      { type: "DOMAIN", name: "Fintech" },
+      { type: "SKILL", name: "TypeScript" }, // should be filtered out
+    ],
+  ) {
     extractVacancy.mockReset();
+    const db = buildDbMock(rows);
     const moduleRef = await Test.createTestingModule({
-      providers: [BamlVacancyExtractor],
+      providers: [
+        BamlVacancyExtractor,
+        { provide: DRIZZLE, useValue: db },
+      ],
     }).compile();
-    return moduleRef.get(BamlVacancyExtractor);
+    return { extractor: moduleRef.get(BamlVacancyExtractor), db };
   }
 
-  it("returns the BAML-parsed structure with usage metadata on success", async () => {
-    const extractor = await bootstrap();
+  it("passes alphabetised canonical roles + domains to BAML and returns usage meta", async () => {
+    const { extractor } = await bootstrap();
     extractVacancy.mockResolvedValue(sampleVacancy);
 
     const result = await extractor.extract("Senior Backend Developer ...");
@@ -52,22 +71,28 @@ describe("BamlVacancyExtractor", () => {
     expect(result.data).toEqual(sampleVacancy);
     expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
     expect(result.meta.error).toBeUndefined();
-    // No real LLM call in tests → all token counters are 0.
-    expect(result.meta.usage).toMatchObject({
-      in: 0,
-      out: 0,
-      cached: 0,
-    });
+    expect(result.meta.usage).toMatchObject({ in: 0, out: 0, cached: 0 });
 
     expect(extractVacancy).toHaveBeenCalledTimes(1);
-    // First positional arg is the input text; second is the BAML call options
-    // bag carrying the collector — we don't assert the collector identity.
-    expect(extractVacancy.mock.calls[0][0]).toBe("Senior Backend Developer ...");
-    expect(extractVacancy.mock.calls[0][1]).toHaveProperty("collector");
+    const [text, roles, domains, options] = extractVacancy.mock.calls[0];
+    expect(text).toBe("Senior Backend Developer ...");
+    expect(roles).toBe("Backend Developer, Frontend Developer");
+    expect(domains).toBe("Fintech");
+    expect(options).toHaveProperty("collector");
   });
 
-  it("returns a null data + error meta when the BAML client throws", async () => {
-    const extractor = await bootstrap();
+  it("caches the taxonomy between calls (one DB query per TTL window)", async () => {
+    const { extractor, db } = await bootstrap();
+    extractVacancy.mockResolvedValue(sampleVacancy);
+
+    await extractor.extract("first");
+    await extractor.extract("second");
+
+    expect(db.select).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns null data + error meta when BAML throws", async () => {
+    const { extractor } = await bootstrap();
     extractVacancy.mockRejectedValue(new Error("LLM call failed"));
 
     const result = await extractor.extract("…");
@@ -76,5 +101,15 @@ describe("BamlVacancyExtractor", () => {
     expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
     expect(result.meta.error).toBe("BAML extraction: LLM call failed");
     expect(result.meta.usage).toMatchObject({ in: 0, out: 0, cached: 0 });
+  });
+
+  it("emits empty hint strings when no verified nodes exist", async () => {
+    const { extractor } = await bootstrap([]);
+    extractVacancy.mockResolvedValue(sampleVacancy);
+
+    await extractor.extract("…");
+    const [, roles, domains] = extractVacancy.mock.calls[0];
+    expect(roles).toBe("");
+    expect(domains).toBe("");
   });
 });

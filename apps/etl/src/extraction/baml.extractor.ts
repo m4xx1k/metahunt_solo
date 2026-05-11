@@ -1,5 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Collector } from "@boundaryml/baml";
+import { eq } from "drizzle-orm";
+
+import { DRIZZLE, schema } from "@metahunt/database";
+import type { DrizzleDB } from "@metahunt/database";
 
 import { b } from "../baml_client";
 import type {
@@ -10,13 +14,24 @@ import type {
 
 export const PROMPT_VERSION = 2;
 
+const TAXONOMY_CACHE_TTL_MS = 60_000;
+
 @Injectable()
 export class BamlVacancyExtractor implements VacancyExtractor {
+  private taxonomyCache: {
+    roles: string;
+    domains: string;
+    expiresAt: number;
+  } | null = null;
+
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+
   async extract(text: string): Promise<ExtractionResult> {
     const collector = new Collector("vacancy-extract");
+    const { roles, domains } = await this.loadTaxonomy();
 
     try {
-      const data = await b.ExtractVacancy(text, { collector });
+      const data = await b.ExtractVacancy(text, roles, domains, { collector });
       return {
         data,
         meta: { promptVersion: PROMPT_VERSION, usage: readUsage(collector) },
@@ -36,6 +51,42 @@ export class BamlVacancyExtractor implements VacancyExtractor {
         },
       };
     }
+  }
+
+  private async loadTaxonomy(): Promise<{ roles: string; domains: string }> {
+    const now = Date.now();
+    if (this.taxonomyCache && this.taxonomyCache.expiresAt > now) {
+      return {
+        roles: this.taxonomyCache.roles,
+        domains: this.taxonomyCache.domains,
+      };
+    }
+
+    const verified = await this.db
+      .select({
+        type: schema.nodes.type,
+        name: schema.nodes.canonicalName,
+      })
+      .from(schema.nodes)
+      .where(eq(schema.nodes.status, "VERIFIED"));
+
+    const roles = verified
+      .filter((n) => n.type === "ROLE")
+      .map((n) => n.name)
+      .sort((a, b) => a.localeCompare(b))
+      .join(", ");
+    const domains = verified
+      .filter((n) => n.type === "DOMAIN")
+      .map((n) => n.name)
+      .sort((a, b) => a.localeCompare(b))
+      .join(", ");
+
+    this.taxonomyCache = {
+      roles,
+      domains,
+      expiresAt: now + TAXONOMY_CACHE_TTL_MS,
+    };
+    return { roles, domains };
   }
 }
 
