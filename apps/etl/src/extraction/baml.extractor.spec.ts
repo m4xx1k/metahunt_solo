@@ -8,7 +8,7 @@ jest.mock("../baml_client", () => ({
 import { b } from "../baml_client";
 import type { ExtractedVacancy } from "../baml_client";
 
-import { BamlVacancyExtractor } from "./baml.extractor";
+import { BamlVacancyExtractor, PROMPT_VERSION } from "./baml.extractor";
 
 const extractVacancy = b.ExtractVacancy as unknown as jest.Mock;
 
@@ -43,21 +43,38 @@ describe("BamlVacancyExtractor", () => {
     return moduleRef.get(BamlVacancyExtractor);
   }
 
-  it("returns the BAML-parsed structure verbatim", async () => {
+  it("returns the BAML-parsed structure with usage metadata on success", async () => {
     const extractor = await bootstrap();
     extractVacancy.mockResolvedValue(sampleVacancy);
 
     const result = await extractor.extract("Senior Backend Developer ...");
 
-    expect(result).toEqual(sampleVacancy);
-    expect(extractVacancy).toHaveBeenCalledWith("Senior Backend Developer ...");
+    expect(result.data).toEqual(sampleVacancy);
+    expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
+    expect(result.meta.error).toBeUndefined();
+    // No real LLM call in tests → all token counters are 0.
+    expect(result.meta.usage).toMatchObject({
+      in: 0,
+      out: 0,
+      cached: 0,
+    });
+
     expect(extractVacancy).toHaveBeenCalledTimes(1);
+    // First positional arg is the input text; second is the BAML call options
+    // bag carrying the collector — we don't assert the collector identity.
+    expect(extractVacancy.mock.calls[0][0]).toBe("Senior Backend Developer ...");
+    expect(extractVacancy.mock.calls[0][1]).toHaveProperty("collector");
   });
 
-  it("propagates errors from the BAML client", async () => {
+  it("returns a null data + error meta when the BAML client throws", async () => {
     const extractor = await bootstrap();
     extractVacancy.mockRejectedValue(new Error("LLM call failed"));
 
-    await expect(extractor.extract("…")).rejects.toThrow("LLM call failed");
+    const result = await extractor.extract("…");
+
+    expect(result.data).toBeNull();
+    expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
+    expect(result.meta.error).toBe("BAML extraction: LLM call failed");
+    expect(result.meta.usage).toMatchObject({ in: 0, out: 0, cached: 0 });
   });
 });

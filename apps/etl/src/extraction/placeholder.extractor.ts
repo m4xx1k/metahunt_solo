@@ -8,7 +8,10 @@ import {
   WorkFormat,
 } from "../baml_client";
 import type { ExtractedVacancy } from "../baml_client";
-import type { VacancyExtractor } from "./vacancy-extractor";
+import type {
+  ExtractionResult,
+  VacancyExtractor,
+} from "./vacancy-extractor";
 
 const PLACEHOLDER: ExtractedVacancy = {
   role: "Backend Developer",
@@ -32,7 +35,21 @@ const PLACEHOLDER: ExtractedVacancy = {
 
 @Injectable()
 export class PlaceholderVacancyExtractor implements VacancyExtractor {
-  async extract(): Promise<ExtractedVacancy> {
-    return PLACEHOLDER;
+  async extract(): Promise<ExtractionResult> {
+    return {
+      data: PLACEHOLDER,
+      meta: {
+        // 0 = no real prompt; only the BAML extractor reports a real version.
+        promptVersion: 0,
+        usage: {
+          in: 0,
+          out: 0,
+          cached: 0,
+          client: "placeholder",
+          provider: "none",
+          ms: 0,
+        },
+      },
+    };
   }
 }

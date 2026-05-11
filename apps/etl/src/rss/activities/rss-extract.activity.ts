@@ -27,11 +27,33 @@ export class RssExtractActivity {
     if (!record) throw new Error(`Record ${recordId} not found`);
 
     const text = `Title: ${record.title}\n\n${record.description ?? ""}`;
-    const extracted = await this.extractor.extract(text);
+    const result = await this.extractor.extract(text);
+    const sidecar = {
+      _v: result.meta.promptVersion,
+      _usage: result.meta.usage,
+    };
+
+    if (!result.data) {
+      // Persist usage of the failed attempt so its tokens are not lost from
+      // cost analysis, then re-throw so Temporal can retry. If a retry
+      // succeeds, this row is overwritten with the success payload — for now
+      // we accept that approximation (see plan: typed-dazzling-quail.md).
+      await this.db
+        .update(schema.rssRecords)
+        .set({
+          extractedData: { ...sidecar, _error: result.meta.error },
+          extractedAt: new Date(),
+        })
+        .where(eq(schema.rssRecords.id, recordId));
+      throw new Error(result.meta.error ?? "extraction failed");
+    }
 
     await this.db
       .update(schema.rssRecords)
-      .set({ extractedData: extracted, extractedAt: new Date() })
+      .set({
+        extractedData: { ...result.data, ...sidecar },
+        extractedAt: new Date(),
+      })
       .where(eq(schema.rssRecords.id, recordId));
   }
 }

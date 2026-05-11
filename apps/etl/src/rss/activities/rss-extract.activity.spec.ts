@@ -4,6 +4,8 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { ExtractedVacancy } from "../../baml_client";
 import {
   VACANCY_EXTRACTOR,
+  type ExtractionResult,
+  type ExtractionUsage,
   type VacancyExtractor,
 } from "../../extraction/vacancy-extractor";
 
@@ -45,6 +47,29 @@ const sampleExtract = {
   hasReservation: false,
 } as unknown as ExtractedVacancy;
 
+const sampleUsage: ExtractionUsage = {
+  in: 1200,
+  out: 350,
+  cached: 0,
+  client: "OpenAIClient",
+  provider: "openai",
+  ms: 1800,
+};
+
+const successResult: ExtractionResult = {
+  data: sampleExtract,
+  meta: { promptVersion: 2, usage: sampleUsage },
+};
+
+const failureResult: ExtractionResult = {
+  data: null,
+  meta: {
+    promptVersion: 2,
+    usage: { ...sampleUsage, out: 0 },
+    error: "BAML extraction: boom",
+  },
+};
+
 function buildDbMocks(record: unknown) {
   const selectWhere = jest.fn().mockResolvedValue(record ? [record] : []);
   const selectFrom = jest.fn().mockReturnValue({ where: selectWhere });
@@ -83,8 +108,8 @@ describe("RssExtractActivity", () => {
     extractor.extract.mockReset();
   });
 
-  it("delegates to extractor and writes the result to rss_records", async () => {
-    extractor.extract.mockResolvedValue(sampleExtract);
+  it("writes the extracted vacancy + _v/_usage sidecar on success", async () => {
+    extractor.extract.mockResolvedValue(successResult);
     const { activity, mocks } = await bootstrap(baseRecord);
 
     await activity.extractAndInsert(RECORD_ID);
@@ -96,7 +121,31 @@ describe("RssExtractActivity", () => {
 
     expect(mocks.db.update).toHaveBeenCalledWith(schema.rssRecords);
     const setArg = mocks.updateSet.mock.calls[0][0];
-    expect(setArg.extractedData).toEqual(sampleExtract);
+    expect(setArg.extractedData).toEqual({
+      ...sampleExtract,
+      _v: 2,
+      _usage: sampleUsage,
+    });
+    expect(setArg.extractedAt).toBeInstanceOf(Date);
+  });
+
+  it("writes _v/_usage/_error and re-throws on failure", async () => {
+    extractor.extract.mockResolvedValue(failureResult);
+    const { activity, mocks } = await bootstrap(baseRecord);
+
+    await expect(activity.extractAndInsert(RECORD_ID)).rejects.toThrow(
+      "BAML extraction: boom",
+    );
+
+    // Failure-row written BEFORE the throw — Temporal retries get fresh data,
+    // but the cost of this specific attempt is captured.
+    expect(mocks.db.update).toHaveBeenCalledWith(schema.rssRecords);
+    const setArg = mocks.updateSet.mock.calls[0][0];
+    expect(setArg.extractedData).toEqual({
+      _v: 2,
+      _usage: failureResult.meta.usage,
+      _error: "BAML extraction: boom",
+    });
     expect(setArg.extractedAt).toBeInstanceOf(Date);
   });
 
