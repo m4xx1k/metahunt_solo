@@ -5,10 +5,11 @@ jest.mock("../baml_client", () => ({
   b: { ExtractVacancy: jest.fn() },
 }));
 
+import { DRIZZLE } from "@metahunt/database";
 import { b } from "../baml_client";
 import type { ExtractedVacancy } from "../baml_client";
 
-import { BamlVacancyExtractor } from "./baml.extractor";
+import { BamlVacancyExtractor, PROMPT_VERSION } from "./baml.extractor";
 
 const extractVacancy = b.ExtractVacancy as unknown as jest.Mock;
 
@@ -34,30 +35,87 @@ const sampleVacancy = {
   hasReservation: true,
 } as unknown as ExtractedVacancy;
 
+function buildDbMock(rows: Array<{ type: string; name: string }>) {
+  const where = jest.fn().mockResolvedValue(rows);
+  const from = jest.fn().mockReturnValue({ where });
+  const select = jest.fn().mockReturnValue({ from });
+  return { select, where, from };
+}
+
 describe("BamlVacancyExtractor", () => {
-  async function bootstrap() {
+  async function bootstrap(
+    rows: Array<{ type: string; name: string }> = [
+      { type: "ROLE", name: "Backend Developer" },
+      { type: "ROLE", name: "Frontend Developer" },
+      { type: "DOMAIN", name: "Fintech" },
+      { type: "SKILL", name: "TypeScript" }, // should be filtered out
+    ],
+  ) {
     extractVacancy.mockReset();
+    const db = buildDbMock(rows);
     const moduleRef = await Test.createTestingModule({
-      providers: [BamlVacancyExtractor],
+      providers: [
+        BamlVacancyExtractor,
+        { provide: DRIZZLE, useValue: db },
+      ],
     }).compile();
-    return moduleRef.get(BamlVacancyExtractor);
+    return { extractor: moduleRef.get(BamlVacancyExtractor), db };
   }
 
-  it("returns the BAML-parsed structure verbatim", async () => {
-    const extractor = await bootstrap();
+  it("passes alphabetised canonical roles + domains to BAML and returns usage meta", async () => {
+    process.env.OPENAI_MODEL = "gpt-5.4-mini";
+    const { extractor } = await bootstrap();
     extractVacancy.mockResolvedValue(sampleVacancy);
 
     const result = await extractor.extract("Senior Backend Developer ...");
 
-    expect(result).toEqual(sampleVacancy);
-    expect(extractVacancy).toHaveBeenCalledWith("Senior Backend Developer ...");
+    expect(result.data).toEqual(sampleVacancy);
+    expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
+    expect(result.meta.error).toBeUndefined();
+    expect(result.meta.usage).toMatchObject({
+      in: 0,
+      out: 0,
+      cached: 0,
+      model: "gpt-5.4-mini",
+    });
+
     expect(extractVacancy).toHaveBeenCalledTimes(1);
+    const [text, roles, domains, options] = extractVacancy.mock.calls[0];
+    expect(text).toBe("Senior Backend Developer ...");
+    expect(roles).toBe("Backend Developer, Frontend Developer");
+    expect(domains).toBe("Fintech");
+    expect(options).toHaveProperty("collector");
   });
 
-  it("propagates errors from the BAML client", async () => {
-    const extractor = await bootstrap();
+  it("caches the taxonomy between calls (one DB query per TTL window)", async () => {
+    const { extractor, db } = await bootstrap();
+    extractVacancy.mockResolvedValue(sampleVacancy);
+
+    await extractor.extract("first");
+    await extractor.extract("second");
+
+    expect(db.select).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns null data + error meta when BAML throws", async () => {
+    const { extractor } = await bootstrap();
     extractVacancy.mockRejectedValue(new Error("LLM call failed"));
 
-    await expect(extractor.extract("…")).rejects.toThrow("LLM call failed");
+    const result = await extractor.extract("…");
+
+    expect(result.data).toBeNull();
+    expect(result.meta.promptVersion).toBe(PROMPT_VERSION);
+    expect(result.meta.error).toBe("BAML extraction: LLM call failed");
+    expect(result.meta.usage).toMatchObject({ in: 0, out: 0, cached: 0 });
+  });
+
+  it("emits empty hint strings when no verified nodes exist", async () => {
+    const { extractor } = await bootstrap([]);
+    extractVacancy.mockResolvedValue(sampleVacancy);
+
+    await extractor.extract("…");
+    const [, roles, domains] = extractVacancy.mock.calls[0];
+    expect(roles).toBe("");
+    expect(domains).toBe("");
   });
 });

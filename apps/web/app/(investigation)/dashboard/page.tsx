@@ -70,6 +70,14 @@ export default async function DashboardPage() {
       <InvestigationHeader title="dashboard" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
+        <nav className="flex flex-wrap items-center gap-4 font-mono text-xs uppercase tracking-wider">
+          <Link
+            href="/dashboard/extraction"
+            className="text-text-muted hover:text-accent"
+          >
+            → extraction cost
+          </Link>
+        </nav>
         <Section tag="> overview" title="pipeline at a glance">
           <div className="grid auto-rows-fr gap-4 md:grid-cols-2 lg:grid-cols-4">
             <IngestsKpi

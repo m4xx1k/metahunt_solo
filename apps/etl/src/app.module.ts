@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
 import { validateEnv } from "./config/env.validation";
+import { ExtractionCostModule } from "./extraction-cost/extraction-cost.module";
 import { HealthController } from "./health/health.controller";
 import { LoaderModule } from "./loader/loader.module";
 import { MonitoringModule } from "./monitoring/monitoring.module";
@@ -27,6 +28,7 @@ import { VacanciesModule } from "./vacancies/vacancies.module";
     TaxonomyModule,
     MonitoringModule,
     VacanciesModule,
+    ExtractionCostModule,
   ],
   controllers: [AppController, HealthController],
 })
