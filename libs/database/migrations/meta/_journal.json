@@ -71,6 +71,13 @@
       "when": 1778524000000,
       "tag": "0009_extraction_cost_view_pricing_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778702096816,
+      "tag": "0010_petite_meggan",
+      "breakpoints": true
     }
   ]
 }
