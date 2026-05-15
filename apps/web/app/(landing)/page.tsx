@@ -2,6 +2,7 @@ import { Header, type NavItem } from "@/components/shared/Header";
 import { Footer } from "@/components/shared/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { vacanciesApi } from "@/lib/api/vacancies";
+import { FinalCTA } from "./_components/cta/FinalCTA";
 import { Snapshot } from "./_components/market-snapshot/Snapshot";
 import { SOURCE_TABS_ALL } from "./_components/market-snapshot/SourceTabs";
 import { VacancyList } from "./_components/vacancy-list/VacancyList";
@@ -76,6 +77,7 @@ export default async function HomePage({
           offset={offset}
           flatSearchParams={flatSearchParams}
         />
+        <FinalCTA />
       </main>
       <Footer />
     </>

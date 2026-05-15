@@ -1,4 +1,5 @@
-import { EmailInput, Heading } from "@/components/ui-kit";
+import { Heading } from "@/components/ui-kit";
+import { HeroWaitlist } from "./HeroWaitlist";
 import { hero } from "./data";
 
 export function Hero() {
@@ -17,7 +18,7 @@ export function Hero() {
             {hero.subtitle}
           </p>
         </div>
-        <EmailInput cta={hero.cta} />
+        <HeroWaitlist cta={hero.cta} />
         <p className="font-body text-[13px] text-text-muted">
           {hero.microCopy}
         </p>

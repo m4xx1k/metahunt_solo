@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { AppToaster } from "@/components/shared/AppToaster";
 import { VercelAnalytics } from '@/lib/vercel-analytics';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -36,6 +37,7 @@ export default function RootLayout({
         <VercelAnalytics>
         {children}
         </VercelAnalytics>
+        <AppToaster />
       </body>
     </html>
   );
