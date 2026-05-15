@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { LabAggregates } from "./types";
+import type { FilterAggregates } from "./types";
 import type { FiltersApi } from "./useFilters";
 
 interface Chip {
@@ -16,7 +16,7 @@ export function ActiveFiltersBar({
   agg,
 }: {
   api: FiltersApi;
-  agg: LabAggregates;
+  agg: FilterAggregates;
 }) {
   const chips = buildChips(api, agg);
 
@@ -61,7 +61,7 @@ export function ActiveFiltersBar({
   );
 }
 
-function buildChips(api: FiltersApi, agg: LabAggregates): Chip[] {
+function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
   const { filters } = api;
   const chips: Chip[] = [];
 

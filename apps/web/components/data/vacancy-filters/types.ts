@@ -1,6 +1,7 @@
-// Local lab types — kept here, not in lib/api, because the lab page is
-// an isolated UI sandbox. The shapes mirror VacancyAggregates fields but
-// project only what the 5 filter categories need.
+// Shared filter-widget types. Decoupled from lib/api/aggregates on
+// purpose: the widgets project only what the filter categories need, so
+// any consumer (lab mock, landing real API) maps its own source into
+// these shapes via an adapter.
 //
 // Skills are filtered as must-have only. We don't expose nice-to-have to
 // users: it's noise — people search for what they need (must), not what's
@@ -25,7 +26,7 @@ export interface FlagDistribution {
   unknown: number;
 }
 
-export interface LabAggregates {
+export interface FilterAggregates {
   total: number;
   roles: OptionRow[];
   skills: SkillStat[];

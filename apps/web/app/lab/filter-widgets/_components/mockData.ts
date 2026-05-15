@@ -5,9 +5,9 @@
 //
 // skill.count = number of vacancies where this skill is required (must-have).
 
-import type { LabAggregates } from "./types";
+import type { FilterAggregates } from "@/components/data/vacancy-filters";
 
-export const MOCK_AGGREGATES: LabAggregates = {
+export const MOCK_AGGREGATES: FilterAggregates = {
   total: 8124,
   roles: [
     { id: "r-fe", label: "Frontend Engineer", count: 1240 },

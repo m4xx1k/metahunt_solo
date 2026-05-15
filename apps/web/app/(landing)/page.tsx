@@ -3,7 +3,7 @@ import { Footer } from "@/components/shared/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { vacanciesApi } from "@/lib/api/vacancies";
 import { Snapshot } from "./_components/market-snapshot/Snapshot";
-import { SOURCE_TABS_ALL } from "./_components/market-snapshot/SourceTabs";
+import { MarketFilters } from "./_components/market-snapshot/MarketFilters";
 import { VacancyList } from "./_components/vacancy-list/VacancyList";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,11 @@ const snapshotNav: NavItem[] = [
 function asString(v: string | string[] | undefined): string | undefined {
   if (Array.isArray(v)) return v[0];
   return v;
+}
+
+function asCsv(v: string | string[] | undefined): string[] {
+  const s = asString(v);
+  return s ? s.split(",").filter(Boolean) : [];
 }
 
 function asNonNegativeInt(
@@ -39,22 +44,24 @@ export default async function HomePage({
   const sp = await searchParams;
   const offset = asNonNegativeInt(sp.offset, 0);
   const page = Math.floor(offset / PAGE_SIZE) + 1;
+
+  const roleId = asString(sp.role);
+  const skillIds = asCsv(sp.skills);
   const sourceCode = asString(sp.source);
 
-  // Resolve source code → UUID via aggregates.sources before fanning out
-  // the list query. The aggregates response is small + ISR-cached for 60s,
-  // so a sequential await is cheap.
+  // The sidebar drives source by code; the list query needs the UUID.
+  // Aggregates is small + ISR-cached, so the sequential await is cheap.
   const aggregates = await aggregatesApi.get();
   const sourceId =
     sourceCode != null
       ? (aggregates.sources.find((s) => s.code === sourceCode)?.id ?? null)
       : null;
-  const selectedSource =
-    sourceCode != null && sourceId != null ? sourceCode : SOURCE_TABS_ALL;
 
   const list = await vacanciesApi.list({
     page,
     pageSize: PAGE_SIZE,
+    roleId: roleId ?? undefined,
+    skillIds: skillIds.length > 0 ? skillIds : undefined,
     sourceId: sourceId ?? undefined,
   });
 
@@ -67,15 +74,17 @@ export default async function HomePage({
     <>
       <Header links={snapshotNav} />
       <main className="flex min-h-screen flex-col bg-bg">
-        <Snapshot
-          aggregates={aggregates}
-          selectedSource={selectedSource}
-        />
-        <VacancyList
-          result={list}
-          offset={offset}
-          flatSearchParams={flatSearchParams}
-        />
+        <Snapshot aggregates={aggregates} />
+        <div className="mx-auto w-full max-w-[1200px] px-6 pb-20 lg:px-12">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+            <MarketFilters aggregates={aggregates} />
+            <VacancyList
+              result={list}
+              offset={offset}
+              flatSearchParams={flatSearchParams}
+            />
+          </div>
+        </div>
       </main>
       <Footer />
     </>

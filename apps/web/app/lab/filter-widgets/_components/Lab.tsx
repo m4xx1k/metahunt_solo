@@ -1,10 +1,12 @@
 "use client";
 
-import { ActiveFiltersBar } from "./ActiveFiltersBar";
-import { FilterSidebar } from "./FilterSidebar";
+import {
+  ActiveFiltersBar,
+  FilterSidebar,
+  useFilters,
+} from "@/components/data/vacancy-filters";
 import { MOCK_AGGREGATES } from "./mockData";
 import { ResultsPlaceholder } from "./ResultsPlaceholder";
-import { useFilters } from "./useFilters";
 
 export function Lab() {
   const api = useFilters();

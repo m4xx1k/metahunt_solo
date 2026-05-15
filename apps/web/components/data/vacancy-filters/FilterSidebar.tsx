@@ -4,7 +4,7 @@ import { FlagSection } from "./FlagSection";
 import { RoleSection } from "./RoleSection";
 import { SkillsSection } from "./SkillsSection";
 import { SourceSection } from "./SourceSection";
-import type { LabAggregates } from "./types";
+import type { FilterAggregates } from "./types";
 import type { FiltersApi } from "./useFilters";
 
 // Thin composer. Maps the filter API + aggregates into the primitive
@@ -15,7 +15,7 @@ export function FilterSidebar({
   agg,
 }: {
   api: FiltersApi;
-  agg: LabAggregates;
+  agg: FilterAggregates;
 }) {
   return (
     <aside className="flex flex-col border border-border bg-bg-card">
