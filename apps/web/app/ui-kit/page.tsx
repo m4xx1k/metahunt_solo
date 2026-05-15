@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Divider,
-  EmailInput,
   Heading,
   IconBox,
   IconButton,
@@ -15,6 +14,7 @@ import {
   Small,
   Tag,
 } from "@/components/ui-kit";
+import { EmailInputPreview } from "./_components/EmailInputPreview";
 
 const swatches = [
   { name: "bg", token: "bg-bg", hex: "#0D0F12" },
@@ -128,7 +128,7 @@ export default function UiKitPage() {
       <KitSection tag="// 05" title="Inputs">
         <div className="flex flex-col gap-8">
           <SearchInput />
-          <EmailInput />
+          <EmailInputPreview />
         </div>
       </KitSection>
 

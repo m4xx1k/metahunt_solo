@@ -16,6 +16,7 @@ Scope is intentionally minimal — just email + source + created_at. No auth, no
 - [x] T4 — Web side: `lib/api/users.ts` typed fetcher; `FinalCTAForm.tsx` rewritten to call `usersApi.subscribe` (web3forms hidden inputs + `action` removed), localStorage lock key renamed `metahunt:waitlist:email-lock`, tri-state toast (`success` / `info` for `already_subscribed` / `error`) — *done when:* `pnpm build:web` clean.
 - [x] T5 — Mount `<FinalCTA />` on `app/(landing)/page.tsx` after `<VacancyList />`; `/welcome` keeps using the same component and so flips to the new backend automatically — *done when:* homepage renders the CTA in `pnpm build:web` output.
 - [ ] T6 — Apply migration `0010_petite_meggan.sql` to local + Railway db, smoke-test `POST /users/subscribe` end-to-end (curl + browser).
+- [x] T7 — Migrate Hero off web3forms. T4 only rewrote `FinalCTAForm`; the ui-kit primitive `EmailInput` still posted to `api.web3forms.com`, so the hero signup on `/` was bypassing `/users/subscribe`. Extracted `useWaitlistSignup` hook + `WaitlistToast` under `app/(landing)/_components/waitlist/`; stripped `EmailInput` back to a controlled primitive (no fetch/localStorage/toast); added `HeroWaitlist` client wrapper so `Hero` stays a server component. Both Hero and FinalCTA now share one submit path. — *done when:* `pnpm --filter @metahunt/web build` passes and `grep -r 'web3forms' apps/web` returns empty.
 
 ## Decisions
 
@@ -24,6 +25,9 @@ Scope is intentionally minimal — just email + source + created_at. No auth, no
 - **`source` as plain text, not enum.** A pg enum would require a migration per new signup surface (`pricing-page`, `footer`, partner referrals). Validated by the controller against `ALLOWED_SIGNUP_SOURCES` so we still gate what's accepted.
 - **No rate limit in this PR.** DB unique constraint is the baseline. If we see abuse on the open `POST /users/subscribe`, add IP-keyed throttling at the controller — out of scope here.
 - **Hand-mirrored types.** `apps/web/lib/api/users.ts` duplicates the contract types from `apps/etl/src/users/users.contract.ts` per ADR-0005 (no shared `libs/contracts/` until the second web consumer).
+- **Submit logic lives in one hook, not in a tier-1 primitive.** `components/ui-kit/inputs/EmailInput.tsx` is a controlled primitive (input + Button + form shell); the fetch flow is `useWaitlistSignup` under `_components/waitlist/`. Both Hero and FinalCTA call the same hook with their own JSX shells — keeps the primitive truly reusable and avoids hidden duplication of the submit pipeline.
+- **No client-side dedup; trust the DB unique constraint.** The original `localStorage` 24h-lock was a hold-over from the web3forms era (no server-side dedup possible). Now that `users.email` is unique-lowercased and the controller returns `already_subscribed` instead of 409, the client doesn't need its own lock — a repeat submit is cheap (one indexed roundtrip) and the user gets the "Ви вже у waitlist" toast either way.
+- **Sonner for toasts.** Global `<AppToaster />` mounted in root layout, fully unstyled-by-default + `classNames` overrides so it inherits the neo-brutalist palette (square-ish card, solid `4px` shadow, success → accent border, error → danger border, info → border). Hooks call `toast.success/info/error` directly; the per-component toast state machine is gone.
 
 ## Links
 
