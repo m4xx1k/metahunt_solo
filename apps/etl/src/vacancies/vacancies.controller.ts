@@ -15,14 +15,20 @@ export class VacanciesController {
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
     @Query("sourceId") rawSourceId?: string,
+    @Query("roleId") rawRoleId?: string,
+    @Query("skillIds") rawSkillIds?: string | string[],
     @Query("includeRoleless") rawIncludeRoleless?: string,
     @Query("includeAllSkills") rawIncludeAllSkills?: string,
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
+    const roleId = rawRoleId?.trim();
+    const skillIds = parseIdList(rawSkillIds);
     return this.vacancies.list({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
+      roleId: roleId && roleId.length > 0 ? roleId : undefined,
+      skillIds: skillIds.length > 0 ? skillIds : undefined,
       page: parsePage(rawPage),
       pageSize: parsePageSize(rawPageSize),
       includeRoleless: parseBool("includeRoleless", rawIncludeRoleless),
@@ -56,6 +62,14 @@ function parsePageSize(raw: string | undefined): number {
     );
   }
   return n;
+}
+
+// The web fetcher serialises arrays as repeated params (?skillIds=a&skillIds=b),
+// which Nest gives us as string[]; a single value arrives as a plain string.
+function parseIdList(raw: string | string[] | undefined): string[] {
+  if (raw === undefined) return [];
+  const arr = Array.isArray(raw) ? raw : [raw];
+  return arr.map((s) => s.trim()).filter((s) => s.length > 0);
 }
 
 function parseBool(name: string, raw: string | undefined): boolean | undefined {
