@@ -4,7 +4,7 @@ import { ctaSection } from "./data";
 
 export function FinalCTA() {
   return (
-    <Section id="cta" variant="elevated">
+    <Section id="cta" variant="base">
       <div className="relative flex w-full max-w-[1080px] flex-col items-center gap-8 overflow-hidden rounded-[24px] border border-accent bg-linear-to-br from-[#1A1209] to-[#0A0A0B] p-10 py-20 text-center shadow-[0_80px_80px_-40px_rgba(255,122,26,0.2)] md:p-20">
         <div className="flex flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-4">

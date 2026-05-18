@@ -11,6 +11,7 @@ import { RssModule } from "./rss/rss.module";
 import { StorageModule } from "./storage/storage.module";
 import { TaxonomyModule } from "./taxonomy/taxonomy.module";
 import { TemporalInfraModule } from "./temporal/temporal.module";
+import { UsersModule } from "./users/users.module";
 import { VacanciesModule } from "./vacancies/vacancies.module";
 
 @Module({
@@ -29,6 +30,7 @@ import { VacanciesModule } from "./vacancies/vacancies.module";
     MonitoringModule,
     VacanciesModule,
     ExtractionCostModule,
+    UsersModule,
   ],
   controllers: [AppController, HealthController],
 })

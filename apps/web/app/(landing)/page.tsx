@@ -2,6 +2,7 @@ import { Header, type NavItem } from "@/components/shared/Header";
 import { Footer } from "@/components/shared/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { vacanciesApi } from "@/lib/api/vacancies";
+import { FinalCTA } from "./_components/cta/FinalCTA";
 import { Snapshot } from "./_components/market-snapshot/Snapshot";
 import { MarketFilters } from "./_components/market-snapshot/MarketFilters";
 import { VacancyList } from "./_components/vacancy-list/VacancyList";
