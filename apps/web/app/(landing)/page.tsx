@@ -1,7 +1,12 @@
 import { Header, type NavItem } from "@/components/shared/Header";
 import { Footer } from "@/components/shared/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
-import { vacanciesApi } from "@/lib/api/vacancies";
+import {
+  coerceBool,
+  coerceSeniority,
+  coerceWorkFormat,
+  vacanciesApi,
+} from "@/lib/api/vacancies";
 import { FinalCTA } from "./_components/cta/FinalCTA";
 import { Snapshot } from "./_components/market-snapshot/Snapshot";
 import { MarketFilters } from "./_components/market-snapshot/MarketFilters";
@@ -49,6 +54,10 @@ export default async function HomePage({
   const roleId = asString(sp.role);
   const skillIds = asCsv(sp.skills);
   const sourceCode = asString(sp.source);
+  const seniority = coerceSeniority(asString(sp.seniority));
+  const workFormat = coerceWorkFormat(asString(sp.workFormat));
+  const hasTestAssignment = coerceBool(asString(sp.test));
+  const hasReservation = coerceBool(asString(sp.reservation));
 
   // The sidebar drives source by code; the list query needs the UUID.
   // Aggregates is small + ISR-cached, so the sequential await is cheap.
@@ -64,6 +73,10 @@ export default async function HomePage({
     roleId: roleId ?? undefined,
     skillIds: skillIds.length > 0 ? skillIds : undefined,
     sourceId: sourceId ?? undefined,
+    seniority,
+    workFormat,
+    hasTestAssignment,
+    hasReservation,
   });
 
   const flatSearchParams: Record<string, string | undefined> = {};
@@ -76,7 +89,7 @@ export default async function HomePage({
       <Header links={snapshotNav} />
       <main className="flex min-h-screen flex-col bg-bg">
         <Snapshot aggregates={aggregates} />
-        <div className="mx-auto w-full max-w-[1200px] px-6 pb-20 lg:px-12">
+        <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
             <MarketFilters aggregates={aggregates} />
             <VacancyList

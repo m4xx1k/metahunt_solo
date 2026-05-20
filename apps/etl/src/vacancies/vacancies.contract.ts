@@ -14,16 +14,21 @@
 // ───────────────────────────── Enums ─────────────────────────────
 // Mirror the pgEnums in libs/database/src/schema/vacancies.ts.
 
-export type Seniority =
-  | "INTERN"
-  | "JUNIOR"
-  | "MIDDLE"
-  | "SENIOR"
-  | "LEAD"
-  | "PRINCIPAL"
-  | "C_LEVEL";
+// Value arrays are the single runtime source of truth so the controller
+// can validate query params at the boundary without redeclaring the set.
+export const SENIORITY_VALUES = [
+  "INTERN",
+  "JUNIOR",
+  "MIDDLE",
+  "SENIOR",
+  "LEAD",
+  "PRINCIPAL",
+  "C_LEVEL",
+] as const;
+export type Seniority = (typeof SENIORITY_VALUES)[number];
 
-export type WorkFormat = "REMOTE" | "OFFICE" | "HYBRID";
+export const WORK_FORMAT_VALUES = ["REMOTE", "OFFICE", "HYBRID"] as const;
+export type WorkFormat = (typeof WORK_FORMAT_VALUES)[number];
 
 export type EmploymentType =
   | "FULL_TIME"
@@ -159,6 +164,10 @@ export interface ListVacanciesQuery {
   /** Vacancies whose `salaryMax` >= this (in `currency`). */
   salaryFloor?: number;
   currency?: Currency;
+
+  /** Tri-state: true/false filters on a known value; undefined = no filter. */
+  hasTestAssignment?: boolean;
+  hasReservation?: boolean;
 
   /**
    * When false (default), exclude vacancies that lack a VERIFIED role.

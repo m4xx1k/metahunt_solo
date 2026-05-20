@@ -51,7 +51,7 @@ function KitSection({
 
 export default function UiKitPage() {
   return (
-    <main className="mx-auto w-full max-w-[1200px] px-10 py-16">
+    <main className="mx-auto w-full max-w-7xl px-10 py-16">
       <header className="flex items-center justify-between pb-12">
         <Logo />
         <nav className="flex items-center gap-8">

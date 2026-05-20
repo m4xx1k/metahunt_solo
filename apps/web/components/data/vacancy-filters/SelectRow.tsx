@@ -2,19 +2,17 @@
 
 import { cn } from "@/lib/utils";
 
-// SelectRow — a clickable list row with a marker on the left, label in
-// the middle and count on the right. The marker style switches between
-// radio (single-select, e.g. role) and check (multi-select, e.g. skills).
+// SelectRow — a clickable list row with a marker on the left and a label.
+// The marker style switches between radio (single-select, e.g. role) and
+// check (multi-select, e.g. skills).
 
 export function SelectRow({
   label,
-  count,
   active,
   marker,
   onClick,
 }: {
   label: string;
-  count: number;
   active: boolean;
   marker: "radio" | "check";
   onClick: () => void;
@@ -25,7 +23,7 @@ export function SelectRow({
         type="button"
         aria-pressed={active}
         onClick={onClick}
-        className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 py-1.5 text-left"
+        className="group grid w-full grid-cols-[auto_1fr] items-center gap-3 py-1 text-left"
       >
         <Marker active={active} kind={marker} />
         <span
@@ -37,14 +35,6 @@ export function SelectRow({
           )}
         >
           {label}
-        </span>
-        <span
-          className={cn(
-            "font-mono text-[11px] tabular-nums",
-            active ? "text-accent" : "text-text-muted",
-          )}
-        >
-          {count.toLocaleString("en-US")}
         </span>
       </button>
     </li>

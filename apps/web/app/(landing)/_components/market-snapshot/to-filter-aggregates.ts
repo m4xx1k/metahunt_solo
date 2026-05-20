@@ -1,16 +1,31 @@
 import type { VacancyAggregates } from "@/lib/api/aggregates";
-import type { FilterAggregates } from "@/components/data/vacancy-filters";
+import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "@/lib/api/vacancies";
+import {
+  SENIORITY_LABELS,
+  WORK_FORMAT_LABELS,
+} from "@/lib/extracted-vacancy";
+import type {
+  FilterAggregates,
+  OptionRow,
+} from "@/components/data/vacancy-filters";
 
 // Maps the real /vacancies/aggregates response into the shape the filter
-// widgets expect. Only role / skills / source are surfaced on the landing
-// page because those are the only filters the list endpoint accepts
-// (ListVacanciesQuery has no has_test_assignment / has_reservation params).
-//
-// `test` / `reservation` are zeroed — the shared FilterAggregates type
-// carries them for the lab's 5-section sandbox, but the landing sidebar
-// never renders those sections, so no fake numbers leak to users.
+// widgets expect. Counts are intentionally dropped — the widgets render
+// labels only; the count field is kept solely so skills can sort by
+// popularity in SkillsSection.
 
-const EMPTY_FLAG = { yes: 0, no: 0, unknown: 0 } as const;
+// Distribution → option rows in canonical enum order (not by count:
+// seniority has an inherent progression), dropping empty buckets so the
+// sidebar never offers a filter that yields zero results.
+function distToOptions<T extends string>(
+  order: readonly T[],
+  labels: Record<T, string>,
+  dist: Record<T, number>,
+): OptionRow[] {
+  return order
+    .filter((v) => dist[v] > 0)
+    .map((v) => ({ id: v, label: labels[v], count: dist[v] }));
+}
 
 export function toFilterAggregates(a: VacancyAggregates): FilterAggregates {
   return {
@@ -31,7 +46,15 @@ export function toFilterAggregates(a: VacancyAggregates): FilterAggregates {
       label: s.displayName,
       count: s.count,
     })),
-    test: { ...EMPTY_FLAG },
-    reservation: { ...EMPTY_FLAG },
+    seniorities: distToOptions(
+      SENIORITY_VALUES,
+      SENIORITY_LABELS,
+      a.seniorityDist,
+    ),
+    workFormats: distToOptions(
+      WORK_FORMAT_VALUES,
+      WORK_FORMAT_LABELS,
+      a.workFormatDist,
+    ),
   };
 }

@@ -60,7 +60,6 @@ export function SkillsSection({
             <SelectRow
               key={s.id}
               label={s.label}
-              count={s.count}
               active
               marker="check"
               onClick={() => onToggle(s.id)}
@@ -73,7 +72,6 @@ export function SkillsSection({
             <SelectRow
               key={s.id}
               label={s.label}
-              count={s.count}
               active={false}
               marker="check"
               onClick={() => onToggle(s.id)}

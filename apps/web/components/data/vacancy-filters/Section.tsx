@@ -26,7 +26,7 @@ export function Section({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-baseline justify-between gap-3 px-5 py-4 text-left md:cursor-default md:pointer-events-none"
+        className="flex w-full items-baseline justify-between gap-3 px-4 py-3 text-left md:cursor-default md:pointer-events-none"
       >
         <span className="flex items-baseline gap-2">
           <span
@@ -44,7 +44,7 @@ export function Section({
         </span>
       </button>
       <div className={cn("md:block", open ? "block" : "hidden")}>
-        <div className="px-5 pb-5">{children}</div>
+        <div className="px-4 pb-4">{children}</div>
       </div>
     </div>
   );

@@ -19,20 +19,15 @@ export interface SourceOption extends OptionRow {
 
 export type SkillStat = OptionRow;
 
-/** Distribution of a boolean flag across vacancies (e.g. has_test_assignment). */
-export interface FlagDistribution {
-  yes: number;
-  no: number;
-  unknown: number;
-}
-
 export interface FilterAggregates {
   total: number;
   roles: OptionRow[];
   skills: SkillStat[];
   sources: SourceOption[];
-  test: FlagDistribution;
-  reservation: FlagDistribution;
+  /** Enum-keyed: `id` is the raw API value (e.g. `SENIOR`). */
+  seniorities: OptionRow[];
+  /** Enum-keyed: `id` is the raw API value (e.g. `REMOTE`). */
+  workFormats: OptionRow[];
 }
 
 export interface FilterState {
@@ -40,6 +35,10 @@ export interface FilterState {
   /** IDs of required (must-have) skills. */
   skillIds: string[];
   sourceCode: string | null;
+  /** Raw API enum value or null. The widget layer stays string-typed; the
+   *  API client narrows it before the request. */
+  seniority: string | null;
+  workFormat: string | null;
   test: boolean | null;
   reservation: boolean | null;
 }
@@ -48,6 +47,8 @@ export const EMPTY_FILTERS: FilterState = {
   roleId: null,
   skillIds: [],
   sourceCode: null,
+  seniority: null,
+  workFormat: null,
   test: null,
   reservation: null,
 };

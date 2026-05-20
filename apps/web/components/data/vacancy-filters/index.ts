@@ -7,7 +7,6 @@ export type {
   OptionRow,
   SourceOption,
   SkillStat,
-  FlagDistribution,
   FilterAggregates,
   FilterState,
 } from "./types";
@@ -20,6 +19,7 @@ export { SelectRow } from "./SelectRow";
 export { RoleSection } from "./RoleSection";
 export { SkillsSection } from "./SkillsSection";
 export { SourceSection } from "./SourceSection";
+export { EnumSection } from "./EnumSection";
 export { FlagSection } from "./FlagSection";
 export { ActiveFiltersBar } from "./ActiveFiltersBar";
 export { FilterSidebar } from "./FilterSidebar";

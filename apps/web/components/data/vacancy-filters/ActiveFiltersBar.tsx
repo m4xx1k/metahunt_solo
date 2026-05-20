@@ -23,7 +23,7 @@ export function ActiveFiltersBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 border border-border bg-bg-card px-4 py-3 transition-opacity",
+        "flex flex-wrap items-center gap-2 border border-border bg-bg-card px-3 py-2.5 transition-opacity",
         api.activeCount === 0 && "opacity-50",
       )}
     >
@@ -95,6 +95,28 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
         label: `source: ${s.label}`,
         tone: "border-accent text-accent",
         onRemove: () => api.setSource(null),
+      });
+    }
+  }
+  if (filters.seniority) {
+    const o = agg.seniorities.find((x) => x.id === filters.seniority);
+    if (o) {
+      chips.push({
+        key: `seniority-${o.id}`,
+        label: `seniority: ${o.label}`,
+        tone: "border-accent text-accent",
+        onRemove: () => api.setSeniority(null),
+      });
+    }
+  }
+  if (filters.workFormat) {
+    const o = agg.workFormats.find((x) => x.id === filters.workFormat);
+    if (o) {
+      chips.push({
+        key: `format-${o.id}`,
+        label: `format: ${o.label}`,
+        tone: "border-accent text-accent",
+        onRemove: () => api.setWorkFormat(null),
       });
     }
   }

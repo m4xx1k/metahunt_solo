@@ -8,6 +8,8 @@ export interface FiltersApi {
   setRole: (id: string | null) => void;
   toggleSkill: (id: string) => void;
   setSource: (code: string | null) => void;
+  setSeniority: (v: string | null) => void;
+  setWorkFormat: (v: string | null) => void;
   setTest: (v: boolean | null) => void;
   setReservation: (v: boolean | null) => void;
   clear: () => void;
@@ -35,6 +37,14 @@ export function useFilters(): FiltersApi {
     (code: string | null) => setFilters((f) => ({ ...f, sourceCode: code })),
     [],
   );
+  const setSeniority = useCallback(
+    (v: string | null) => setFilters((f) => ({ ...f, seniority: v })),
+    [],
+  );
+  const setWorkFormat = useCallback(
+    (v: string | null) => setFilters((f) => ({ ...f, workFormat: v })),
+    [],
+  );
   const setTest = useCallback(
     (v: boolean | null) => setFilters((f) => ({ ...f, test: v })),
     [],
@@ -50,6 +60,8 @@ export function useFilters(): FiltersApi {
     if (filters.roleId) n += 1;
     n += filters.skillIds.length;
     if (filters.sourceCode) n += 1;
+    if (filters.seniority) n += 1;
+    if (filters.workFormat) n += 1;
     if (filters.test !== null) n += 1;
     if (filters.reservation !== null) n += 1;
     return n;
@@ -60,6 +72,8 @@ export function useFilters(): FiltersApi {
     setRole,
     toggleSkill,
     setSource,
+    setSeniority,
+    setWorkFormat,
     setTest,
     setReservation,
     clear,

@@ -38,13 +38,11 @@ export function FilterSidebar({
         title="test task"
         value={api.filters.test}
         onChange={api.setTest}
-        agg={agg.test}
       />
       <FlagSection
         title="reservation"
         value={api.filters.reservation}
         onChange={api.setReservation}
-        agg={agg.reservation}
       />
     </aside>
   );

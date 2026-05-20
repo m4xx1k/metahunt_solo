@@ -32,7 +32,6 @@ export function RoleSection({
             <SelectRow
               key={r.id}
               label={r.label}
-              count={r.count}
               active={activeId === r.id}
               marker="radio"
               onClick={() => onChange(activeId === r.id ? null : r.id)}

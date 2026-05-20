@@ -51,6 +51,15 @@ export const MOCK_AGGREGATES: FilterAggregates = {
     { id: "src-djinni", code: "djinni", label: "Djinni", count: 4610 },
     { id: "src-dou", code: "dou", label: "DOU", count: 3514 },
   ],
-  test: { yes: 1820, no: 5180, unknown: 1124 },
-  reservation: { yes: 720, no: 6200, unknown: 1204 },
+  seniorities: [
+    { id: "JUNIOR", label: "junior", count: 1180 },
+    { id: "MIDDLE", label: "middle", count: 3420 },
+    { id: "SENIOR", label: "senior", count: 2740 },
+    { id: "LEAD", label: "lead", count: 560 },
+  ],
+  workFormats: [
+    { id: "REMOTE", label: "remote", count: 4180 },
+    { id: "OFFICE", label: "office", count: 1620 },
+    { id: "HYBRID", label: "hybrid", count: 2324 },
+  ],
 };

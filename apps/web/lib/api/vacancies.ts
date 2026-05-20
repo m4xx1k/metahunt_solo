@@ -4,16 +4,38 @@
 
 // ───────────────────────────── Enums ─────────────────────────────
 
-export type Seniority =
-  | "INTERN"
-  | "JUNIOR"
-  | "MIDDLE"
-  | "SENIOR"
-  | "LEAD"
-  | "PRINCIPAL"
-  | "C_LEVEL";
+export const SENIORITY_VALUES = [
+  "INTERN",
+  "JUNIOR",
+  "MIDDLE",
+  "SENIOR",
+  "LEAD",
+  "PRINCIPAL",
+  "C_LEVEL",
+] as const;
+export type Seniority = (typeof SENIORITY_VALUES)[number];
 
-export type WorkFormat = "REMOTE" | "OFFICE" | "HYBRID";
+export const WORK_FORMAT_VALUES = ["REMOTE", "OFFICE", "HYBRID"] as const;
+export type WorkFormat = (typeof WORK_FORMAT_VALUES)[number];
+
+// URL/query params are user-controlled, so a bad ?seniority=foo must
+// degrade to "no filter", not a 400 that blanks the page. The backend
+// still validates as defense in depth.
+export function coerceSeniority(v: string | undefined): Seniority | undefined {
+  return SENIORITY_VALUES.find((s) => s === v);
+}
+
+export function coerceWorkFormat(
+  v: string | undefined,
+): WorkFormat | undefined {
+  return WORK_FORMAT_VALUES.find((w) => w === v);
+}
+
+export function coerceBool(v: string | undefined): boolean | undefined {
+  if (v === "true") return true;
+  if (v === "false") return false;
+  return undefined;
+}
 
 export type EmploymentType =
   | "FULL_TIME"
@@ -123,6 +145,8 @@ export interface ListVacanciesQuery {
   experienceMax?: number;
   salaryFloor?: number;
   currency?: Currency;
+  hasTestAssignment?: boolean;
+  hasReservation?: boolean;
 
   /** When false (default), exclude vacancies that lack a VERIFIED role. */
   includeRoleless?: boolean;

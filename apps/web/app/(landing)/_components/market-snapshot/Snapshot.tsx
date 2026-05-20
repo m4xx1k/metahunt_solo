@@ -14,7 +14,7 @@ type Props = {
 
 export function Snapshot({ aggregates: a }: Props) {
   return (
-    <section className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-6 pt-16 pb-10 md:px-12">
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
         <div className="flex flex-col justify-center gap-5">
           <h1 className="font-display text-4xl font-bold leading-tight text-text-primary md:text-5xl">

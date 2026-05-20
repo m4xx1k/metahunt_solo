@@ -19,8 +19,10 @@ import type {
   AggregatesPerSource,
   ListVacanciesResponse,
   NodeRef,
+  Seniority,
   VacancyAggregatesResponse,
   VacancyDto,
+  WorkFormat,
 } from "./vacancies.contract";
 
 const {
@@ -42,6 +44,10 @@ export interface ListVacanciesParams {
   roleId?: string;
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
+  seniority?: Seniority;
+  workFormat?: WorkFormat;
+  hasTestAssignment?: boolean;
+  hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
 }
@@ -415,6 +421,16 @@ function buildWhere(params: ListVacanciesParams): SQL | undefined {
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
   if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
   if (params.roleId) conds.push(eq(vacancies.roleNodeId, params.roleId));
+  if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
+  if (params.workFormat) {
+    conds.push(eq(vacancies.workFormat, params.workFormat));
+  }
+  if (params.hasTestAssignment !== undefined) {
+    conds.push(eq(vacancies.hasTestAssignment, params.hasTestAssignment));
+  }
+  if (params.hasReservation !== undefined) {
+    conds.push(eq(vacancies.hasReservation, params.hasReservation));
+  }
   if (params.skillIds && params.skillIds.length > 0) {
     // AND semantics: keep only vacancies whose vacancy_nodes set covers
     // every requested skill. One subquery (not N joins) keeps both the
