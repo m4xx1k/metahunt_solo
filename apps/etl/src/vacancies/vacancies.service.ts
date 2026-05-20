@@ -19,8 +19,10 @@ import type {
   AggregatesPerSource,
   ListVacanciesResponse,
   NodeRef,
+  Seniority,
   VacancyAggregatesResponse,
   VacancyDto,
+  WorkFormat,
 } from "./vacancies.contract";
 
 const {
@@ -38,6 +40,14 @@ export interface ListVacanciesParams {
   q?: string;
   /** Filter by sources.id (UUID). */
   sourceId?: string;
+  /** Filter by vacancies.roleNodeId (a ROLE node UUID). */
+  roleId?: string;
+  /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
+  skillIds?: string[];
+  seniority?: Seniority;
+  workFormat?: WorkFormat;
+  hasTestAssignment?: boolean;
+  hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
 }
@@ -410,6 +420,33 @@ function buildWhere(params: ListVacanciesParams): SQL | undefined {
   const conds: SQL[] = [];
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
   if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
+  if (params.roleId) conds.push(eq(vacancies.roleNodeId, params.roleId));
+  if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
+  if (params.workFormat) {
+    conds.push(eq(vacancies.workFormat, params.workFormat));
+  }
+  if (params.hasTestAssignment !== undefined) {
+    conds.push(eq(vacancies.hasTestAssignment, params.hasTestAssignment));
+  }
+  if (params.hasReservation !== undefined) {
+    conds.push(eq(vacancies.hasReservation, params.hasReservation));
+  }
+  if (params.skillIds && params.skillIds.length > 0) {
+    // AND semantics: keep only vacancies whose vacancy_nodes set covers
+    // every requested skill. One subquery (not N joins) keeps both the
+    // list and the count query — which share buildWhere — single-pass.
+    const ids = params.skillIds;
+    conds.push(sql`${vacancies.id} IN (
+      SELECT vn.vacancy_id
+      FROM vacancy_nodes vn
+      WHERE vn.node_id IN (${sql.join(
+        ids.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})
+      GROUP BY vn.vacancy_id
+      HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
+    )`);
+  }
   // When includeRoleless is off (default), require the verified role-node
   // join to have matched. The join itself enforces VERIFIED, so this also
   // excludes vacancies whose role is unverified.

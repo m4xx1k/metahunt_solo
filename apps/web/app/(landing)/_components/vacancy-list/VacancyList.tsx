@@ -10,10 +10,7 @@ type Props = {
 
 export function VacancyList({ result, offset, flatSearchParams }: Props) {
   return (
-    <section
-      id="list"
-      className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-6 pb-20 md:px-12"
-    >
+    <section id="list" className="flex w-full min-w-0 flex-col gap-6">
       <div className="flex items-baseline justify-between">
         <h2 className="font-display text-2xl font-semibold text-text-primary md:text-3xl">
           вакансії
