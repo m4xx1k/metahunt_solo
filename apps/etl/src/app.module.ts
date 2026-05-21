@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
 import { validateEnv } from "./config/env.validation";
+import { DedupModule } from "./dedup/dedup.module";
 import { ExtractionCostModule } from "./extraction-cost/extraction-cost.module";
 import { HealthController } from "./health/health.controller";
 import { LoaderModule } from "./loader/loader.module";
@@ -29,6 +30,7 @@ import { VacanciesModule } from "./vacancies/vacancies.module";
     TaxonomyModule,
     MonitoringModule,
     VacanciesModule,
+    DedupModule,
     ExtractionCostModule,
     UsersModule,
   ],

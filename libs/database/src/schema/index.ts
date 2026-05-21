@@ -7,4 +7,5 @@ export * from './nodes';
 export * from './node-aliases';
 export * from './vacancies';
 export * from './vacancy-nodes';
+export * from './unique-vacancies';
 export * from './users';

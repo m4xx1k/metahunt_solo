@@ -99,6 +99,8 @@ export class VacancyLoaderService {
       hasTestAssignment: extracted.hasTestAssignment ?? null,
       hasReservation: extracted.hasReservation ?? null,
       locations: extracted.locations ?? [],
+      // Denormalized for dedup pre-filter — see vacancies.published_at note.
+      publishedAt: record.publishedAt,
     };
 
     return this.db.transaction(async (tx) => {
@@ -126,6 +128,7 @@ export class VacancyLoaderService {
             hasTestAssignment: vacancyValues.hasTestAssignment,
             hasReservation: vacancyValues.hasReservation,
             locations: vacancyValues.locations,
+            publishedAt: vacancyValues.publishedAt,
             updatedAt: sql`now()`,
           },
         })

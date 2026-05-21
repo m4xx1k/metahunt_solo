@@ -32,6 +32,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Silver",
     items: [
       { href: "/vacancies", label: "vacancies", external: true },
+      { href: "/unique-vacancies", label: "unique vacancies" },
       { href: "/taxonomy", label: "taxonomy" },
     ],
   },
