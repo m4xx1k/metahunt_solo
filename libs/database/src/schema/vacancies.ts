@@ -9,11 +9,14 @@ import {
   boolean,
   unique,
   index,
+  vector,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { sources } from './sources';
 import { rssRecords } from './rss-records';
 import { companies } from './companies';
 import { nodes } from './nodes';
+import { uniqueVacancies } from './unique-vacancies';
 
 // Match BAML enums in apps/etl/baml_src/extract-vacancy.baml
 export const seniority = pgEnum('seniority', [
@@ -89,6 +92,33 @@ export const vacancies = pgTable(
 
     locations: jsonb('locations'),
 
+    // Denormalized from `rss_records.published_at` so dedup pre-filter
+    // queries don't need to join on every ANN call. Backfilled by the
+    // dedup migration; new loads set it via VacancyLoaderService.
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+
+    // Semantic embedding of the role + description (post-LLM-sanitized).
+    // Null until the dedup pipeline has processed this row.
+    embedding: vector('embedding', { dimensions: 1536 }),
+    embeddingModel: text('embedding_model'),
+    // sha256 of the canonical text used to generate `embedding`. Re-embed
+    // only when this changes — guarantees idempotency without touching
+    // OpenAI on no-op updates.
+    embeddingSourceHash: text('embedding_source_hash'),
+
+    // Current group membership. Null = unresolved (not yet processed) OR
+    // explicitly unlinked by operator. SET NULL on group delete so cleanup
+    // doesn't cascade-delete real vacancies.
+    uniqueVacancyId: uuid('unique_vacancy_id').references(
+      (): AnyPgColumn => uniqueVacancies.id,
+      { onDelete: 'set null' },
+    ),
+    // Why this vacancy ended up in this group. Same shape as the
+    // `DedupReason` interface in apps/etl/src/dedup/dedup.contract.ts —
+    // intentionally no DB-side mapping, the JSON is served verbatim.
+    // Null for canonical members and for unresolved vacancies.
+    dedupReason: jsonb('dedup_reason'),
+
     loadedAt: timestamp('loaded_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -101,6 +131,15 @@ export const vacancies = pgTable(
     index('vacancies_company_id_idx').on(t.companyId),
     index('vacancies_role_node_id_idx').on(t.roleNodeId),
     index('vacancies_loaded_at_idx').on(t.loadedAt.desc()),
+    index('vacancies_source_published_idx').on(t.sourceId, t.publishedAt),
+    index('vacancies_unique_vacancy_id_idx').on(t.uniqueVacancyId),
+    // HNSW on cosine distance — drives the second-stage ANN ranking.
+    // Defaults (m=16, ef_construction=64) are pgvector's recommended
+    // starting point and work well at our 3-4k row scale.
+    index('vacancies_embedding_hnsw_idx').using(
+      'hnsw',
+      t.embedding.op('vector_cosine_ops'),
+    ),
   ],
 );
 

@@ -39,7 +39,7 @@ export function MarketFilters({
     <div
       className={cn(
         "flex flex-col gap-3 transition-opacity",
-        "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto",
+        // "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto",
         api.isPending && "pointer-events-none opacity-50",
       )}
     >

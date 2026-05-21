@@ -8,6 +8,8 @@ import {
   Query,
 } from "@nestjs/common";
 
+import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
+import type { ExternalIdCleanupResult } from "./external-id/external-id-cleanup.service";
 import { LoaderBackfillService } from "./services/loader-backfill.service";
 
 const BACKFILL_DEFAULT = 100;
@@ -15,7 +17,10 @@ const BACKFILL_MAX = 500;
 
 @Controller("loader")
 export class LoaderController {
-  constructor(private readonly backfillService: LoaderBackfillService) {}
+  constructor(
+    private readonly backfillService: LoaderBackfillService,
+    private readonly externalIdCleanup: ExternalIdCleanupService,
+  ) {}
 
   /**
    * One-shot bounded backfill for rss_records that were extracted but
@@ -58,6 +63,21 @@ export class LoaderController {
     const pending = await this.backfillService.countPending();
     void this.backfillService.loadAllInBackground(batchSize);
     return { accepted: true, pending, batchSize };
+  }
+
+  /**
+   * One-off cleanup: normalize URL-form `external_id` values left behind by
+   * commit 57d42ea (extractor switched to numeric ids without a data
+   * migration). Rewrites stale rows in `vacancies` (update, or delete when a
+   * numeric twin already exists) and `rss_records` (plain update). Wrapped in
+   * a single transaction. Pass `?dryRun=true` to get the counts without
+   * writing. Idempotent once everything is numeric.
+   */
+  @Post("external-id/cleanup")
+  async cleanupExternalIds(
+    @Query("dryRun") rawDryRun?: string,
+  ): Promise<ExternalIdCleanupResult> {
+    return this.externalIdCleanup.run(rawDryRun === "true");
   }
 }
 
