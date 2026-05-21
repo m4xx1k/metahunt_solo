@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 
 import { LOADER_ACTIVITIES } from "./activities";
+import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
 import { LoaderController } from "./loader.controller";
 import { CompanyResolverService } from "./services/company-resolver.service";
 import { LoaderBackfillService } from "./services/loader-backfill.service";
@@ -16,6 +17,7 @@ import { VacancyLoaderService } from "./services/vacancy-loader.service";
     NodeResolverService,
     VacancyLoaderService,
     LoaderBackfillService,
+    ExternalIdCleanupService,
     ...LOADER_ACTIVITIES,
   ],
   controllers: [LoaderController],
