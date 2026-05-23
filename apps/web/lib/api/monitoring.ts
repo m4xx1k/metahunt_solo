@@ -65,18 +65,33 @@ export interface LatestPerSourceItem {
   lastStatus: IngestStatus;
 }
 
+export type StatsPeriod = "24h" | "week" | "all";
+
+export interface StatsFunnel {
+  bronze: number;
+  silver: number;
+  gold: number;
+  duplicatesMerged: number;
+}
+
+export interface StatsLlmCost {
+  count: number;
+  failures: number;
+  tokensIn: number;
+  tokensOut: number;
+  costUsd: number;
+}
+
 export interface Stats {
+  period: StatsPeriod;
+  funnel: StatsFunnel;
   ingests: {
     total: number;
-    last24h: number;
-    byStatus: Partial<Record<IngestStatus, number>>;
+    completed: number;
+    failed: number;
+    running: number;
   };
-  records: {
-    total: number;
-    extracted: number;
-    notExtracted: number;
-    last24h: number;
-  };
+  llmCost: StatsLlmCost;
   latestPerSource: LatestPerSourceItem[];
 }
 
@@ -141,7 +156,8 @@ async function get<T>(path: string, params?: unknown): Promise<T> {
 }
 
 export const monitoringApi = {
-  stats: () => get<Stats>("/monitoring/stats"),
+  stats: (period: StatsPeriod = "24h") =>
+    get<Stats>("/monitoring/stats", { period }),
   sources: () => get<Source[]>("/monitoring/sources"),
   listIngests: (q: ListIngestsQuery = {}) =>
     get<Paginated<IngestListItem>>("/monitoring/ingests", q),

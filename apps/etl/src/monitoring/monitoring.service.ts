@@ -16,9 +16,23 @@ import {
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-const { rssIngests, rssRecords, sources } = schema;
+const { rssIngests, rssRecords, sources, vacancies, uniqueVacancies } = schema;
 
 export type IngestStatus = "running" | "completed" | "failed";
+
+// Periods the operator dashboard can pivot on. `all` = no since-filter.
+export type StatsPeriod = "24h" | "week" | "all";
+
+export function periodSince(period: StatsPeriod): Date | null {
+  switch (period) {
+    case "24h":
+      return new Date(Date.now() - 24 * 60 * 60 * 1000);
+    case "week":
+      return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    case "all":
+      return null;
+  }
+}
 
 export interface ListIngestsParams {
   sourceId?: string;
@@ -180,36 +194,64 @@ export class MonitoringService {
     return { ...r, extracted: r.extractedAt !== null };
   }
 
-  async stats() {
-    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // Period-scoped operator stats. The dashboard funnel reads Bronze →
+  // Silver → Gold counts within `period`; duplicatesMerged = silver
+  // records that joined a pre-existing group (silver − newGoldGroups).
+  async stats(period: StatsPeriod = "24h") {
+    const since = periodSince(period);
+    const bronzeFilter = since ? gte(rssRecords.createdAt, since) : undefined;
+    const silverFilter = since ? gte(vacancies.loadedAt, since) : undefined;
+    const goldFilter = since
+      ? gte(uniqueVacancies.createdAt, since)
+      : undefined;
+    const ingestFilter = since ? gte(rssIngests.startedAt, since) : undefined;
 
     const [
+      bronzeRow,
+      silverRow,
+      goldRow,
       ingestTotalRow,
-      ingestLast24hRow,
       ingestByStatusRows,
-      recordTotalRow,
-      recordExtractedRow,
-      recordLast24hRow,
+      llmCostRow,
       latestPerSource,
     ] = await Promise.all([
-      this.db.select({ value: count() }).from(rssIngests),
+      // Bronze — raw rss_records collected in period.
+      this.db.select({ value: count() }).from(rssRecords).where(bronzeFilter),
+      // Silver — structured vacancies loaded in period.
+      this.db.select({ value: count() }).from(vacancies).where(silverFilter),
+      // Gold — NEW Golden Record groups born in period.
       this.db
         .select({ value: count() })
-        .from(rssIngests)
-        .where(gte(rssIngests.startedAt, since24h)),
+        .from(uniqueVacancies)
+        .where(goldFilter),
+      // Ingest total in period (used for header context).
+      this.db.select({ value: count() }).from(rssIngests).where(ingestFilter),
+      // Ingest status breakdown in period.
       this.db
         .select({ status: rssIngests.status, value: count() })
         .from(rssIngests)
+        .where(ingestFilter)
         .groupBy(rssIngests.status),
-      this.db.select({ value: count() }).from(rssRecords),
-      this.db
-        .select({ value: count() })
-        .from(rssRecords)
-        .where(isNotNull(rssRecords.extractedAt)),
-      this.db
-        .select({ value: count() })
-        .from(rssRecords)
-        .where(gte(rssRecords.createdAt, since24h)),
+      // LLM extraction cost in period (reads the extraction_cost view).
+      this.db.execute<{
+        count: string;
+        failures: string;
+        tokens_in: string | null;
+        tokens_out: string | null;
+        cost_usd: string | null;
+      }>(sql`
+        SELECT
+          COUNT(*)                                  AS count,
+          COUNT(*) FILTER (WHERE is_failure)        AS failures,
+          COALESCE(SUM(tokens_in), 0)               AS tokens_in,
+          COALESCE(SUM(tokens_out), 0)              AS tokens_out,
+          COALESCE(SUM(cost_usd), 0)                AS cost_usd
+        FROM extraction_cost
+        ${since ? sql`WHERE extracted_at >= ${since}` : sql``}
+      `),
+      // latestPerSource stays period-agnostic — operators always want
+      // "current freshness of each source", regardless of which period
+      // is selected for the funnel.
       this.db
         .selectDistinctOn([rssIngests.sourceId], {
           sourceId: rssIngests.sourceId,
@@ -225,24 +267,43 @@ export class MonitoringService {
         .orderBy(rssIngests.sourceId, desc(rssIngests.startedAt)),
     ]);
 
-    const byStatus: Record<string, number> = {};
-    for (const r of ingestByStatusRows) byStatus[r.status] = r.value;
+    const ingestStatus: Record<IngestStatus, number> = {
+      completed: 0,
+      running: 0,
+      failed: 0,
+    };
+    for (const r of ingestByStatusRows) {
+      if (r.status in ingestStatus) {
+        ingestStatus[r.status as IngestStatus] = r.value;
+      }
+    }
 
-    const ingestTotal = ingestTotalRow[0]?.value ?? 0;
-    const recordTotal = recordTotalRow[0]?.value ?? 0;
-    const recordExtracted = recordExtractedRow[0]?.value ?? 0;
+    const bronze = bronzeRow[0]?.value ?? 0;
+    const silver = silverRow[0]?.value ?? 0;
+    const gold = goldRow[0]?.value ?? 0;
+    const duplicatesMerged = Math.max(silver - gold, 0);
 
+    const cost = llmCostRow.rows[0];
     return {
-      ingests: {
-        total: ingestTotal,
-        last24h: ingestLast24hRow[0]?.value ?? 0,
-        byStatus,
+      period,
+      funnel: {
+        bronze,
+        silver,
+        gold,
+        duplicatesMerged,
       },
-      records: {
-        total: recordTotal,
-        extracted: recordExtracted,
-        notExtracted: recordTotal - recordExtracted,
-        last24h: recordLast24hRow[0]?.value ?? 0,
+      ingests: {
+        total: ingestTotalRow[0]?.value ?? 0,
+        completed: ingestStatus.completed,
+        failed: ingestStatus.failed,
+        running: ingestStatus.running,
+      },
+      llmCost: {
+        count: Number(cost?.count ?? 0),
+        failures: Number(cost?.failures ?? 0),
+        tokensIn: Number(cost?.tokens_in ?? 0),
+        tokensOut: Number(cost?.tokens_out ?? 0),
+        costUsd: Number(cost?.cost_usd ?? 0),
       },
       latestPerSource,
     };

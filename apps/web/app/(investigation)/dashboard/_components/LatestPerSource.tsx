@@ -19,7 +19,7 @@ export function LatestPerSource({ items, recentBySource }: Props) {
   if (items.length === 0) {
     return (
       <p className="font-mono text-sm text-text-muted">
-        no ingests yet — trigger one from the ETL backend
+        запусків ще не було — запустіть збір з ETL бекенду
       </p>
     );
   }
@@ -44,15 +44,15 @@ export function LatestPerSource({ items, recentBySource }: Props) {
             </div>
             <div className="flex flex-col gap-1 font-mono text-xs">
               <span className="text-text-muted">
-                started · {formatRelative(item.lastIngestAt)}
+                старт · {formatRelative(item.lastIngestAt)}
               </span>
               <span className="text-text-muted">
-                finished · {formatRelative(item.lastFinishedAt)}
+                завершення · {formatRelative(item.lastFinishedAt)}
               </span>
             </div>
             <div className="mt-auto flex items-center gap-2">
               <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                last {sparkPoints.length || 0} runs
+                останні {sparkPoints.length || 0} запусків
               </span>
               {sparkPoints.length >= 2 ? (
                 <Sparkline
@@ -64,11 +64,11 @@ export function LatestPerSource({ items, recentBySource }: Props) {
                       ? "var(--color-danger)"
                       : "var(--color-accent)"
                   }
-                  ariaLabel={`Last ${sparkPoints.length} ingest statuses`}
+                  ariaLabel={`Останні ${sparkPoints.length} запусків`}
                 />
               ) : (
                 <span className="font-mono text-[10px] text-text-muted">
-                  insufficient data
+                  недостатньо даних
                 </span>
               )}
             </div>

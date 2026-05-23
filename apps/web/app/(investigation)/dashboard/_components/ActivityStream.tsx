@@ -5,7 +5,7 @@ export function ActivityStream({ items }: { items: IngestListItem[] }) {
   if (items.length === 0) {
     return (
       <p className="font-mono text-sm text-text-muted">
-        no activity yet — trigger an ingest from the ETL backend
+        активності ще немає — запустіть збір з ETL бекенду
       </p>
     );
   }

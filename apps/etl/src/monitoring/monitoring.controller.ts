@@ -12,14 +12,16 @@ import {
 } from "./query-parsing";
 
 const INGEST_STATUSES = ["running", "completed", "failed"] as const;
+const STATS_PERIODS = ["24h", "week", "all"] as const;
 
 @Controller("monitoring")
 export class MonitoringController {
   constructor(private readonly monitoring: MonitoringService) {}
 
   @Get("stats")
-  stats() {
-    return this.monitoring.stats();
+  stats(@Query("period") rawPeriod?: string) {
+    const period = parseEnum("period", rawPeriod, STATS_PERIODS) ?? "24h";
+    return this.monitoring.stats(period);
   }
 
   @Get("sources")
