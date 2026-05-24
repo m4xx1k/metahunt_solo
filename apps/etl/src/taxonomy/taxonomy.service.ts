@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
@@ -9,6 +10,36 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 export type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
+export type NodeStatusValue = "NEW" | "VERIFIED" | "HIDDEN";
+
+const RENAME_MIN_LEN = 2;
+export const TAXONOMY_LIST_DEFAULT = 50;
+export const TAXONOMY_LIST_MAX = 200;
+
+export interface NodeListFilters {
+  type?: NodeTypeValue;
+  statuses: NodeStatusValue[];
+  q?: string;
+  minBlocked: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface NodeListItem {
+  id: string;
+  type: NodeTypeValue;
+  canonicalName: string;
+  status: NodeStatusValue;
+  vacanciesBlocked: number;
+  aliasCount: number;
+}
+
+export interface NodeListResult {
+  items: NodeListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
 
 type FuzzyThreshold = {
   minLen: number;
@@ -174,57 +205,120 @@ export class TaxonomyService {
     };
   }
 
-  // Moderation queue: NEW nodes ranked by how many vacancies they "block"
-  // from being fully VERIFIED. SKILL counts via vacancy_nodes; ROLE/DOMAIN
-  // count via the column on vacancies. When type is omitted, returns all
-  // three types interleaved by impact.
-  async getQueue(type: NodeTypeValue | undefined, limit: number) {
+  // Unified moderation list. Per-node `vacanciesBlocked` is the number of
+  // vacancies referencing this node: SKILL via vacancy_nodes, ROLE/DOMAIN
+  // via the column on vacancies. Result is the same shape across types so
+  // the UI can render them interleaved when no type filter is applied.
+  async listNodes(filters: NodeListFilters): Promise<NodeListResult> {
+    const offset = (filters.page - 1) * filters.pageSize;
+    const trimmedQ = filters.q?.trim() ?? "";
+    const like =
+      trimmedQ.length > 0
+        ? `%${trimmedQ.replace(/[\\%_]/g, "\\$&")}%`
+        : null;
+
+    // Drizzle binds `${array}` as a row literal `($1, $2, $3)` — Postgres
+    // can't cast that to `text[]`. `sql.join` keeps each value as its own
+    // bind so we get a regular comma-separated parameter list for `IN`.
+    const statusList = sql.join(
+      filters.statuses.map((s) => sql`${s}`),
+      sql`, `,
+    );
+    // Optional clauses are composed conditionally rather than via
+    // `(NULL OR ...)` short-circuits — that pattern needs explicit casts
+    // for the bound NULLs, which is more friction than just not emitting
+    // the clause at all.
+    const typeClause = filters.type
+      ? sql`AND n.type = ${filters.type}`
+      : sql``;
+    const searchClause = like
+      ? sql`AND (
+          n.canonical_name ILIKE ${like}
+          OR EXISTS (
+            SELECT 1 FROM node_aliases na
+            WHERE na.node_id = n.id AND na.name ILIKE ${like}
+          )
+        )`
+      : sql``;
+
+    // ORDER BY columns are qualified with the `filtered` CTE name so they
+    // resolve to the underlying bigint, not the same-named text column we
+    // project in the SELECT — Postgres prefers output names and would sort
+    // lexicographically (11 before 9) otherwise.
     const rows = await this.db.execute<{
       id: string;
-      type: string;
+      type: NodeTypeValue;
       canonical_name: string;
+      status: NodeStatusValue;
       vacancies_blocked: string;
+      alias_count: string;
+      total: string;
     }>(sql`
-      WITH skill_counts AS (
-        SELECT n.id, n.type::text AS type, n.canonical_name,
-               COUNT(DISTINCT vn.vacancy_id) AS vacancies_blocked
-        FROM nodes n JOIN vacancy_nodes vn ON vn.node_id = n.id
-        WHERE n.status = 'NEW' AND n.type = 'SKILL'
-        GROUP BY n.id
+      WITH skill_blocked AS (
+        SELECT vn.node_id, COUNT(DISTINCT vn.vacancy_id) AS blocked
+        FROM vacancy_nodes vn
+        GROUP BY vn.node_id
       ),
-      role_counts AS (
-        SELECT n.id, n.type::text AS type, n.canonical_name,
-               COUNT(DISTINCT v.id) AS vacancies_blocked
-        FROM nodes n JOIN vacancies v ON v.role_node_id = n.id
-        WHERE n.status = 'NEW' AND n.type = 'ROLE'
-        GROUP BY n.id
+      role_blocked AS (
+        SELECT role_node_id AS node_id, COUNT(*) AS blocked
+        FROM vacancies WHERE role_node_id IS NOT NULL
+        GROUP BY role_node_id
       ),
-      domain_counts AS (
-        SELECT n.id, n.type::text AS type, n.canonical_name,
-               COUNT(DISTINCT v.id) AS vacancies_blocked
-        FROM nodes n JOIN vacancies v ON v.domain_node_id = n.id
-        WHERE n.status = 'NEW' AND n.type = 'DOMAIN'
-        GROUP BY n.id
+      domain_blocked AS (
+        SELECT domain_node_id AS node_id, COUNT(*) AS blocked
+        FROM vacancies WHERE domain_node_id IS NOT NULL
+        GROUP BY domain_node_id
       ),
-      all_counts AS (
-        SELECT * FROM skill_counts
-        UNION ALL SELECT * FROM role_counts
-        UNION ALL SELECT * FROM domain_counts
+      alias_counts AS (
+        SELECT node_id, COUNT(*) AS c FROM node_aliases GROUP BY node_id
+      ),
+      nodes_enriched AS (
+        SELECT n.id,
+               n.type::text AS type,
+               n.canonical_name,
+               n.status::text AS status,
+               COALESCE(
+                 CASE n.type
+                   WHEN 'SKILL'  THEN sb.blocked
+                   WHEN 'ROLE'   THEN rb.blocked
+                   WHEN 'DOMAIN' THEN db.blocked
+                 END, 0
+               ) AS vacancies_blocked,
+               COALESCE(a.c, 0) AS alias_count
+        FROM nodes n
+        LEFT JOIN skill_blocked  sb ON sb.node_id = n.id
+        LEFT JOIN role_blocked   rb ON rb.node_id = n.id
+        LEFT JOIN domain_blocked db ON db.node_id = n.id
+        LEFT JOIN alias_counts   a  ON a.node_id  = n.id
+      ),
+      filtered AS (
+        SELECT * FROM nodes_enriched n
+        WHERE n.status IN (${statusList})
+          AND n.vacancies_blocked >= ${filters.minBlocked}
+          ${typeClause}
+          ${searchClause}
       )
-      SELECT id, type, canonical_name, vacancies_blocked
-      FROM all_counts
-      WHERE ${type ? sql`type = ${type}` : sql`TRUE`}
-      ORDER BY vacancies_blocked DESC, canonical_name ASC
-      LIMIT ${limit}
+      SELECT id, type, canonical_name, status,
+             vacancies_blocked::text,
+             alias_count::text,
+             (COUNT(*) OVER ())::text AS total
+      FROM filtered
+      ORDER BY filtered.vacancies_blocked DESC, filtered.canonical_name ASC
+      LIMIT ${filters.pageSize} OFFSET ${offset}
     `);
 
+    const total = rows.rows.length > 0 ? Number(rows.rows[0].total) : 0;
     return {
-      type: type ?? "ALL",
+      page: filters.page,
+      pageSize: filters.pageSize,
+      total,
       items: rows.rows.map((r) => ({
         id: r.id,
         type: r.type,
         canonicalName: r.canonical_name,
+        status: r.status,
         vacanciesBlocked: Number(r.vacancies_blocked),
+        aliasCount: Number(r.alias_count),
       })),
     };
   }
@@ -298,6 +392,7 @@ export class TaxonomyService {
       FROM nodes
       WHERE type = ${node.type}
         AND id <> ${id}
+        AND status = 'VERIFIED'
         AND LENGTH(canonical_name) >= ${cfg.minLen}
         AND similarity(LOWER(${name}), LOWER(canonical_name)) >= ${cfg.minSim}
         ${wordSimClause}
@@ -317,6 +412,53 @@ export class TaxonomyService {
     };
   }
 
+  // Free-text search across VERIFIED nodes of a given type. Used by the
+  // detail panel to find a merge target when fuzzy didn't surface it
+  // (short names, novel phrasing). ILIKE finds substring hits even when
+  // trigram similarity is below the fuzzy threshold; trigram only ranks.
+  async searchVerifiedNodes(type: NodeTypeValue, q: string, limit: number) {
+    const trimmed = q.trim();
+    const like = `%${trimmed.replace(/[\\%_]/g, "\\$&")}%`;
+    const rows = await this.db.execute<{
+      id: string;
+      canonical_name: string;
+      status: string;
+      similarity: string;
+    }>(sql`
+      SELECT n.id,
+             n.canonical_name,
+             n.status::text AS status,
+             similarity(LOWER(${trimmed}), LOWER(n.canonical_name))::text AS similarity
+      FROM nodes n
+      WHERE n.type = ${type}
+        AND n.status = 'VERIFIED'
+        AND (
+          n.canonical_name ILIKE ${like}
+          OR EXISTS (
+            SELECT 1 FROM node_aliases a
+            WHERE a.node_id = n.id
+              AND a.type = ${type}
+              AND a.name ILIKE ${like}
+          )
+        )
+      ORDER BY similarity(LOWER(${trimmed}), LOWER(n.canonical_name)) DESC,
+               n.canonical_name ASC
+      LIMIT ${limit}
+    `);
+
+    return {
+      type,
+      query: trimmed,
+      matches: rows.rows.map((r) => ({
+        id: r.id,
+        canonicalName: r.canonical_name,
+        status: r.status as "VERIFIED",
+        similarity: Number(Number(r.similarity).toFixed(3)),
+        wordSimilarity: 0,
+      })),
+    };
+  }
+
   async setStatus(id: string, status: "VERIFIED" | "HIDDEN") {
     const [updated] = await this.db
       .update(schema.nodes)
@@ -325,6 +467,79 @@ export class TaxonomyService {
       .returning();
     if (!updated) throw new NotFoundException(`Node ${id} not found`);
     return trimNode(updated);
+  }
+
+  // Rename a node's canonical name. The old canonical becomes an alias so
+  // historical extractions still resolve. Conflicts surface as 409 with a
+  // mergeTargetId suggestion — the UI uses it to route the operator into
+  // the merge flow instead of dead-ending them with an error.
+  async renameNode(id: string, rawName: string) {
+    const newName = rawName.trim();
+    if (newName.length < RENAME_MIN_LEN) {
+      throw new BadRequestException(
+        `name must be at least ${RENAME_MIN_LEN} characters`,
+      );
+    }
+
+    return this.db.transaction(async (tx) => {
+      const [node] = await tx
+        .select()
+        .from(schema.nodes)
+        .where(eq(schema.nodes.id, id));
+      if (!node) throw new NotFoundException(`Node ${id} not found`);
+
+      if (newName === node.canonicalName) {
+        throw new BadRequestException("name is the same as current canonical");
+      }
+
+      const conflicts = await tx.execute<{ id: string; source: string }>(sql`
+        SELECT id, 'canonical'::text AS source
+        FROM nodes
+        WHERE type = ${node.type}
+          AND id <> ${id}
+          AND LOWER(canonical_name) = LOWER(${newName})
+        UNION ALL
+        SELECT node_id AS id, 'alias'::text AS source
+        FROM node_aliases
+        WHERE type = ${node.type}
+          AND node_id <> ${id}
+          AND LOWER(name) = LOWER(${newName})
+        LIMIT 1
+      `);
+
+      if (conflicts.rows.length > 0) {
+        const c = conflicts.rows[0];
+        throw new ConflictException({
+          message: `name "${newName}" already exists as ${c.source} of another ${node.type} node`,
+          suggestion: { mergeTargetId: c.id },
+        });
+      }
+
+      // If newName is already an alias of THIS node, drop it — same string
+      // can't live in both the canonical and alias tables for the same node.
+      await tx.execute(sql`
+        DELETE FROM node_aliases
+        WHERE node_id = ${id}
+          AND type = ${node.type}
+          AND LOWER(name) = LOWER(${newName})
+      `);
+
+      // Old canonical becomes an alias. ON CONFLICT guards against the rare
+      // case where it was already an alias of this node (would otherwise
+      // trip the unique (name, type) constraint).
+      await tx.execute(sql`
+        INSERT INTO node_aliases (name, type, node_id)
+        VALUES (${node.canonicalName}, ${node.type}, ${id})
+        ON CONFLICT (name, type) DO NOTHING
+      `);
+
+      const [updated] = await tx
+        .update(schema.nodes)
+        .set({ canonicalName: newName })
+        .where(eq(schema.nodes.id, id))
+        .returning();
+      return trimNode(updated);
+    });
   }
 
   // Merge sourceId into targetId: keep target as canonical, fold the source's
@@ -347,6 +562,11 @@ export class TaxonomyService {
       if (source.type !== target.type) {
         throw new BadRequestException(
           `cannot merge across types: ${source.type} → ${target.type}`,
+        );
+      }
+      if (source.status === "NEW" && target.status !== "VERIFIED") {
+        throw new BadRequestException(
+          `NEW node can only be merged into a VERIFIED target; target status is ${target.status}`,
         );
       }
 
