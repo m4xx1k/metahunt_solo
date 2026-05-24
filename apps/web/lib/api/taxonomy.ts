@@ -46,16 +46,29 @@ export interface TaxonomyCoverage {
   bySource: SourceCoverage[];
 }
 
-export interface NodeQueueItem {
+export interface NodeListFilters {
+  type?: NodeType;
+  statuses?: NodeStatus[];
+  q?: string;
+  blocked?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface NodeListItem {
   id: string;
   type: NodeType;
   canonicalName: string;
+  status: NodeStatus;
   vacanciesBlocked: number;
+  aliasCount: number;
 }
 
-export interface NodeQueue {
-  type: NodeType | "ALL";
-  items: NodeQueueItem[];
+export interface NodeListResult {
+  items: NodeListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
 }
 
 export interface NodeAlias {
@@ -99,7 +112,44 @@ export interface FuzzyMatchResult {
   skippedReason?: string;
 }
 
-function buildQs(params?: Record<string, string | number | undefined>): string {
+export interface SearchResult {
+  type: NodeType;
+  query: string;
+  matches: FuzzyMatch[];
+}
+
+export interface TrimmedNode {
+  id: string;
+  canonicalName: string;
+  type: NodeType;
+  status: NodeStatus;
+}
+
+// 409 from PATCH /nodes/:id/rename includes a merge suggestion the UI uses
+// to route the operator into the merge flow instead of dead-ending them.
+export interface RenameConflict {
+  status: 409;
+  message: string;
+  suggestion?: { mergeTargetId: string };
+}
+
+// Thrown by mutate() so callers can `instanceof TaxonomyApiError` and
+// inspect `.status` / `.body` for typed conflicts instead of parsing
+// stringified responses.
+export class TaxonomyApiError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+  constructor(status: number, body: unknown, message: string) {
+    super(message);
+    this.name = "TaxonomyApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
+function buildQs(
+  params?: Record<string, string | number | undefined>,
+): string {
   if (!params) return "";
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -133,35 +183,75 @@ async function get<T>(
   return (await res.json()) as T;
 }
 
-async function mutate<T>(method: "PATCH" | "POST", path: string): Promise<T> {
+async function mutate<T>(
+  method: "PATCH" | "POST",
+  path: string,
+  body?: unknown,
+): Promise<T> {
   const url = `${apiBase()}${path}`;
-  const res = await fetch(url, { method, cache: "no-store" });
+  const init: RequestInit = { method, cache: "no-store" };
+  if (body !== undefined) {
+    init.headers = { "content-type": "application/json" };
+    init.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, init);
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`taxonomy api ${res.status} ${path}: ${body}`);
+    const raw = await res.text().catch(() => "");
+    let parsed: unknown = raw;
+    try {
+      parsed = raw ? JSON.parse(raw) : raw;
+    } catch {
+      // keep raw text
+    }
+    throw new TaxonomyApiError(
+      res.status,
+      parsed,
+      `taxonomy api ${res.status} ${path}`,
+    );
   }
   return (await res.json()) as T;
 }
 
+function listParams(
+  filters: NodeListFilters,
+): Record<string, string | number | undefined> {
+  return {
+    type: filters.type,
+    status: filters.statuses?.join(","),
+    q: filters.q,
+    blocked: filters.blocked,
+    page: filters.page,
+    pageSize: filters.pageSize,
+  };
+}
+
 export const taxonomyApi = {
   coverage: () => get<TaxonomyCoverage>("/admin/taxonomy/coverage"),
-  queue: (type?: NodeType, limit?: number) =>
-    get<NodeQueue>("/admin/taxonomy/queue", { type, limit }),
+  list: (filters: NodeListFilters = {}) =>
+    get<NodeListResult>("/admin/taxonomy/nodes", listParams(filters)),
   node: (id: string) =>
     get<NodeDetail>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}`),
   fuzzyMatches: (id: string) =>
     get<FuzzyMatchResult>(
       `/admin/taxonomy/nodes/${encodeURIComponent(id)}/fuzzy-matches`,
     ),
+  searchVerified: (type: NodeType, q: string, limit?: number) =>
+    get<SearchResult>("/admin/taxonomy/nodes/search", { type, q, limit }),
   verify: (id: string) =>
-    mutate<{ id: string; canonicalName: string; status: NodeStatus }>(
+    mutate<TrimmedNode>(
       "PATCH",
       `/admin/taxonomy/nodes/${encodeURIComponent(id)}/verify`,
     ),
   hide: (id: string) =>
-    mutate<{ id: string; canonicalName: string; status: NodeStatus }>(
+    mutate<TrimmedNode>(
       "PATCH",
       `/admin/taxonomy/nodes/${encodeURIComponent(id)}/hide`,
+    ),
+  rename: (id: string, name: string) =>
+    mutate<TrimmedNode>(
+      "PATCH",
+      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/rename`,
+      { name },
     ),
   mergeInto: (sourceId: string, targetId: string) =>
     mutate<{ mergedInto: string; source: string; target: string }>(

@@ -16,6 +16,7 @@ Stage 05 closed 2026-05-08 with the silver pipeline stable; Stage 06 has two thr
 **Trackers:**
 - [`journal/migrations/_done/operator-dashboard.md`](./journal/migrations/_done/operator-dashboard.md) — done 2026-05-09
 - [`journal/migrations/vacancy-lineage.md`](./journal/migrations/vacancy-lineage.md) — public drill-down (vacancy → record → ingest); spec only, not started
+- [`journal/migrations/taxonomy-workspace.md`](./journal/migrations/taxonomy-workspace.md) — split-pane curation surface (list + always-on detail, rename, unified list endpoint) — done 2026-05-24
 
 ## Next
 
