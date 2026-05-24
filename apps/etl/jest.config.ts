@@ -4,6 +4,7 @@ const config: Config = {
   preset: "ts-jest",
   testEnvironment: "node",
   setupFiles: ["<rootDir>/jest.setup.ts"],
+  globalTeardown: "<rootDir>/jest.teardown.ts",
   testMatch: ["<rootDir>/src/**/*.spec.ts"],
   moduleNameMapper: {
     "^@metahunt/database$": "<rootDir>/../../libs/database/src/index.ts",
