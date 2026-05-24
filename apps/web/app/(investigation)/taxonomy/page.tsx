@@ -47,7 +47,7 @@ export default async function TaxonomyPage() {
             покриття та черга курації
           </h2>
           <p className="font-mono text-xs text-text-muted">
-            підтвердження нових понять і об'єднання дублікатів через
+            підтвердження нових понять і об&apos;єднання дублікатів через
             псевдоніми
           </p>
         </div>

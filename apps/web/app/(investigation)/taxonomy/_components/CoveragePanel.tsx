@@ -36,7 +36,7 @@ export function CoveragePanel({ coverage }: { coverage: TaxonomyCoverage }) {
             <tr className="border-b border-border bg-bg-elev text-[11px] uppercase tracking-wider text-text-muted">
               <th className="px-3 py-2 text-left">джерело</th>
               <th className="px-3 py-2 text-right">вакансій</th>
-              <th className="px-3 py-2 text-right">зв'язків</th>
+              <th className="px-3 py-2 text-right">зв&apos;язків</th>
               <th className="px-3 py-2 text-right">% підтверджено</th>
             </tr>
           </thead>
