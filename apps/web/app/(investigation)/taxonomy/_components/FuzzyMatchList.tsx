@@ -82,7 +82,7 @@ export function FuzzyMatchList({
                   : "border-accent text-accent hover:bg-accent hover:text-bg",
               )}
             >
-              об'єднати →
+              об&apos;єднати →
             </button>
           ) : null}
         </li>

@@ -9,7 +9,7 @@ export function WhyMerged({ reason }: { reason: DedupReason }) {
   return (
     <div className="flex flex-col gap-2 border-l-2 border-accent bg-bg/50 px-4 py-3">
       <div className="font-mono text-[11px] text-text-muted">
-        чому об'єднано —{" "}
+        чому об&apos;єднано —{" "}
         <span className="font-bold text-text-primary">схожість опису {simPct}%</span>
       </div>
       <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">

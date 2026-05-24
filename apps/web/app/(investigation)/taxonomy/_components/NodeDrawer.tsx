@@ -186,7 +186,7 @@ function ModerationBar({
           приховати
         </button>
         <span className="ml-auto self-center font-mono text-[11px] text-text-muted">
-          об'єднати → оберіть кандидата нижче
+          об&apos;єднати → оберіть кандидата нижче
         </span>
       </div>
       {error ? (
