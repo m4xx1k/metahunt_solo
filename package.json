@@ -11,6 +11,7 @@
     "start:web": "pnpm --filter @metahunt/web start",
     "dev": "pnpm --filter @metahunt/database build && pnpm -r --parallel run dev",
     "dev:etl": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl dev",
+    "test:etl": "pnpm --filter @metahunt/etl test",
     "dev:web": "pnpm --filter @metahunt/web dev",
     "dev:stop": "bash scripts/dev-stop.sh",
     "dev:restart": "pnpm dev:stop && sleep 1 && pnpm dev",

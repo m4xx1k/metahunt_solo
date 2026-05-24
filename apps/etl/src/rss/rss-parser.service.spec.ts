@@ -12,7 +12,6 @@ describe('RssParserService', () => {
     );
     const all = svc.parseXml(xml);
     const it = svc.filterItItems(all);
-    console.log(`Djinni — total: ${all.length}, IT: ${it.length}`);
     expect(all.length).toBeGreaterThan(0);
     expect(it.length).toBeGreaterThan(0);
   });
@@ -23,8 +22,7 @@ describe('RssParserService', () => {
       'utf-8',
     );
     const all = svc.parseXml(xml);
-    const it = svc.filterItItems(all);
-    console.log(`DOU — total: ${all.length}, IT: ${it.length}`);
+    svc.filterItItems(all);
     expect(all.length).toBeGreaterThan(0);
   });
 

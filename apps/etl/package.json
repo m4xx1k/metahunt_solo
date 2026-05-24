@@ -9,7 +9,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "dev": "nest start --watch",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "baml:generate": "baml-cli generate --from baml_src",
     "baml:check": "baml-cli check --from baml_src"

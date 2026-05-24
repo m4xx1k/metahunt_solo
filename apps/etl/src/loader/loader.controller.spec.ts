@@ -1,6 +1,7 @@
 import { ConflictException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
 import { LoaderController } from "./loader.controller";
 import { LoaderBackfillService } from "./services/loader-backfill.service";
 
@@ -30,6 +31,10 @@ describe("LoaderController", () => {
             countPending,
             loadAllInBackground,
           },
+        },
+        {
+          provide: ExternalIdCleanupService,
+          useValue: { run: jest.fn() },
         },
       ],
     }).compile();
