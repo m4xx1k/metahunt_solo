@@ -18,6 +18,7 @@ apps/*/.env*.local
 diploma.md
 docs/runbook/etl-stream-blocks-ua.md
 docs/runbook/etl-temporal-stream-demo.md
+THESIS_TODO.md
 
 # Stale Prisma-era artifacts kept locally for reference, not committed
 offy-db/

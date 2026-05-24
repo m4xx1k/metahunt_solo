@@ -21,7 +21,7 @@ export function RefreshButton() {
       onClick={onRefresh}
       disabled={pending}
     >
-      {pending ? "refreshing…" : "↻ refresh"}
+      {pending ? "оновлюється…" : "↻ оновити"}
     </Button>
   );
 }

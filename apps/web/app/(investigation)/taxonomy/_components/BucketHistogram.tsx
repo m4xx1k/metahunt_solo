@@ -25,7 +25,7 @@ export function BucketHistogram({ buckets }: { buckets: SkillBucket[] }) {
   return (
     <div className="flex flex-col gap-2">
       <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
-        verified-skill buckets · vacancies per %verified-skill share
+        розподіл вакансій за часткою підтверджених навичок
       </span>
       <ul className="flex flex-col gap-1 border border-border bg-bg-card p-4">
         {ORDER.map((label) => {
@@ -45,7 +45,7 @@ export function BucketHistogram({ buckets }: { buckets: SkillBucket[] }) {
                     width: `${widthPct}%`,
                     backgroundColor: BUCKET_COLOR[label],
                   }}
-                  title={`${label}% verified · ${count} vacancies`}
+                  title={`${label}% підтверджено · ${count} вакансій`}
                 />
               </div>
               <span className="text-right text-text-primary">{count}</span>

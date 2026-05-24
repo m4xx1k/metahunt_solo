@@ -6,9 +6,9 @@ const HEALTH_AMBER_PCT = 10;
 const HEALTH_RED_PCT = 30;
 
 const AXIS_LABEL: Record<AxisKey, string> = {
-  role: "ROLE",
-  skill: "SKILL",
-  domain: "DOMAIN",
+  role: "ролі",
+  skill: "навички",
+  domain: "напрями",
 };
 
 type Health = "green" | "amber" | "red";
@@ -21,8 +21,8 @@ function healthFor(missingPct: number): Health {
 
 const HEALTH_LABEL: Record<Health, string> = {
   green: "ok",
-  amber: "watch",
-  red: "drift",
+  amber: "увага",
+  red: "критично",
 };
 
 const HEALTH_PILL: Record<Health, string> = {
@@ -46,17 +46,17 @@ export function AxisBar({
   const segments = [
     {
       value: coverage.verified,
-      label: "verified",
+      label: "підтверджено",
       color: "var(--color-success)",
     },
     {
       value: coverage.new,
-      label: "new",
+      label: "нові",
       color: "var(--color-accent)",
     },
     {
       value: coverage.missing,
-      label: "missing",
+      label: "не вказано",
       color: "var(--color-border-strong)",
     },
   ];
@@ -68,9 +68,9 @@ export function AxisBar({
           {AXIS_LABEL[axis]}
         </span>
         <div className="flex items-baseline gap-3 font-mono text-xs text-text-muted">
-          <span>verified · {coverage.verified}</span>
-          <span>new · {coverage.new}</span>
-          <span>missing · {coverage.missing}</span>
+          <span>підтверджено · {coverage.verified}</span>
+          <span>нові · {coverage.new}</span>
+          <span>не вказано · {coverage.missing}</span>
           <span
             className={cn(
               "border px-2 py-[2px] text-[10px] uppercase tracking-wider",
@@ -85,7 +85,7 @@ export function AxisBar({
         segments={segments}
         total={total}
         height={20}
-        ariaLabel={`${axis} coverage`}
+        ariaLabel={`покриття для ${AXIS_LABEL[axis]}`}
       />
     </div>
   );

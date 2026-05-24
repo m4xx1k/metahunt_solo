@@ -46,7 +46,7 @@ export function FailedIngestsDrawer({ count, failedIngests, trigger }: Props) {
           className="fixed inset-0 z-50 flex justify-end bg-black/60"
           role="dialog"
           aria-modal="true"
-          aria-label="failed ingests · last 24h"
+          aria-label="невдалі запуски за період"
           onClick={() => setOpen(false)}
         >
           <div
@@ -56,10 +56,10 @@ export function FailedIngestsDrawer({ count, failedIngests, trigger }: Props) {
             <header className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
-                  failed · last 24h
+                  помилки · поточний період
                 </span>
                 <h2 className="font-display text-2xl font-bold text-danger">
-                  {count} ingest{count === 1 ? "" : "s"} failed
+                  {count} {count === 1 ? "невдалий запуск" : "невдалих запусків"}
                 </h2>
               </div>
               <button
@@ -67,7 +67,7 @@ export function FailedIngestsDrawer({ count, failedIngests, trigger }: Props) {
                 onClick={() => setOpen(false)}
                 className="border border-border px-3 py-1 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent"
               >
-                close [esc]
+                закрити [esc]
               </button>
             </header>
 
@@ -89,7 +89,7 @@ export function FailedIngestsDrawer({ count, failedIngests, trigger }: Props) {
                       href={`/dashboard/ingests/${it.id}`}
                       className="font-mono text-sm text-accent hover:underline"
                     >
-                      ingest #{it.id.slice(0, 8)}…
+                      запуск #{it.id.slice(0, 8)}…
                     </Link>
                     {it.errorMessage ? (
                       <pre className="overflow-x-auto whitespace-pre-wrap border border-danger bg-bg p-3 font-mono text-xs leading-relaxed text-danger">

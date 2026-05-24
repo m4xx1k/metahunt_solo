@@ -21,19 +21,22 @@ type NavGroup = {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Overview",
-    items: [{ href: "/dashboard", label: "dashboard" }],
-  },
-  {
-    label: "Pipeline",
-    items: [{ href: "/sources", label: "sources" }],
-  },
-  {
-    label: "Silver",
+    label: "огляд",
     items: [
-      { href: "/vacancies", label: "vacancies", external: true },
-      { href: "/unique-vacancies", label: "unique vacancies" },
-      { href: "/taxonomy", label: "taxonomy" },
+      { href: "/dashboard", label: "дашборд" },
+      { href: "/dashboard/extraction", label: "витрати на екстракцію" },
+    ],
+  },
+  {
+    label: "пайплайн",
+    items: [{ href: "/sources", label: "джерела" }],
+  },
+  {
+    label: "вакансії",
+    items: [
+      { href: "/vacancies", label: "silver", external: true },
+      { href: "/unique-vacancies", label: "gold (унікальні)" },
+      { href: "/taxonomy", label: "довідник понять" },
     ],
   },
 ];
@@ -66,7 +69,7 @@ export function Sidebar({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        aria-label={open ? "close sidebar" : "open sidebar"}
+        aria-label={open ? "закрити меню" : "відкрити меню"}
         aria-expanded={open}
         className="fixed left-3 top-3 z-50 flex h-10 w-10 items-center justify-center border border-border bg-bg-card font-mono text-lg text-text-primary shadow-[3px_3px_0_0_#000] md:hidden"
       >
@@ -76,7 +79,7 @@ export function Sidebar({
       {open ? (
         <button
           type="button"
-          aria-label="close sidebar"
+          aria-label="закрити меню"
           onClick={closeMobile}
           className="fixed inset-0 z-30 bg-black/60 md:hidden"
         />
@@ -94,14 +97,14 @@ export function Sidebar({
         <div className="flex flex-col gap-1 border-b border-border px-5 py-6">
           <Link
             href="/dashboard"
-            aria-label="MetaHunt operator home"
+            aria-label="MetaHunt — головна оператора"
             className="block"
             onClick={closeMobile}
           >
             <Logo label="metahunt" />
           </Link>
           <span className="pl-[44px] font-mono text-[11px] uppercase tracking-wider text-text-muted">
-            operator
+            оператор
           </span>
         </div>
 
@@ -153,7 +156,7 @@ export function Sidebar({
 
         <div className="flex flex-col gap-3 border-t border-border px-5 py-5">
           <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
-            as of {formatTime(asOf)}
+            станом на {formatTime(asOf)}
           </span>
           <RefreshButton />
           <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">

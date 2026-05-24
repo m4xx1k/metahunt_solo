@@ -56,17 +56,17 @@ export default async function SourcesPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="sources" />
+      <InvestigationHeader title="джерела даних" activePath="/sources" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <Tag>&gt; sources</Tag>
+            <Tag>&gt; джерела</Tag>
             <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
-              configured sources · health and coverage
+              налаштовані джерела · стан і покриття
             </h2>
             <p className="font-mono text-xs text-text-muted">
-              {rows.length} source{rows.length === 1 ? "" : "s"} · % skill-verified joined from taxonomy coverage
+              {rows.length} {rows.length === 1 ? "джерело" : "джерел(а)"} · частка вакансій з повністю підтвердженими навичками
             </p>
           </div>
           <SourcesTable rows={rows} />

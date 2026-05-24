@@ -19,65 +19,65 @@ export default async function ExtractionCostPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="dashboard / extraction cost" />
+      <InvestigationHeader title="облік витрат на екстракцію" activePath="/dashboard/extraction" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <Section
-          tag="> spend"
-          title="how much we burned on LLM extraction"
-          subtitle="reads from the extraction_cost SQL view (rss_records._usage sidecar). cost_usd is NULL for rows extracted before the model field landed."
+          tag="> витрати"
+          title="вартість роботи мовної моделі"
+          subtitle="облік ведеться за метаданими кожного виклику (модель, токени вхід/вихід, кешовані токени, час, помилка)."
         >
           <div className="grid auto-rows-fr gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <KpiCard label="cost · all time">
+            <KpiCard label="за весь час">
               <span className="font-display text-4xl font-bold leading-none text-accent">
                 {formatUsd(total.costUsd)}
               </span>
               <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                {formatCount(total.count)} extractions · {formatCount(total.failures)} failed
+                {formatCount(total.count)} викликів · {formatCount(total.failures)} помилок
               </span>
             </KpiCard>
-            <KpiCard label="cost · last 24h">
+            <KpiCard label="за 24 години">
               <span className="font-display text-4xl font-bold leading-none text-text-primary">
                 {formatUsd(last24h.costUsd)}
               </span>
               <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                {formatCount(last24h.count)} extractions · {formatCount(last24h.failures)} failed
+                {formatCount(last24h.count)} викликів · {formatCount(last24h.failures)} помилок
               </span>
             </KpiCard>
-            <KpiCard label="tokens in · all time">
+            <KpiCard label="вхідних токенів · всього">
               <span className="font-display text-4xl font-bold leading-none text-text-primary">
                 {formatTokens(total.tokensIn)}
               </span>
               <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                cached {formatTokens(total.tokensCached)} ·{" "}
-                {formatPercent(total.tokensCached, total.tokensIn)} hit rate
+                кешовано {formatTokens(total.tokensCached)} ·{" "}
+                {formatPercent(total.tokensCached, total.tokensIn)} попадань
               </span>
             </KpiCard>
-            <KpiCard label="tokens out · all time">
+            <KpiCard label="вихідних токенів · всього">
               <span className="font-display text-4xl font-bold leading-none text-text-primary">
                 {formatTokens(total.tokensOut)}
               </span>
               <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                avg{" "}
+                у середньому{" "}
                 {total.count > 0
                   ? formatCount(Math.round(total.tokensOut / total.count))
                   : "—"}
-                {" "}/ extraction
+                {" "}на виклик
               </span>
             </KpiCard>
           </div>
         </Section>
 
         <Section
-          tag="> by prompt version"
-          title="which prompt cost what"
-          subtitle="bump apps/etl/src/extraction/baml.extractor.ts:PROMPT_VERSION when you edit baml_src/extract-vacancy.baml."
+          tag="> за версією промпта"
+          title="витрати в розрізі версій промпта"
+          subtitle="кожна суттєва зміна шаблону запиту до моделі підвищує номер версії; це дає змогу відстежувати витрати й якість у часі."
         >
           {byPromptVersion.length === 0 ? (
-            <EmptyState message="No extractions recorded yet." />
+            <EmptyState message="Викликів ще не зафіксовано." />
           ) : (
             <BreakdownTable
-              headers={["version", "count", "fails", "tokens in", "tokens out", "cached", "cost"]}
+              headers={["версія", "викликів", "помилок", "токенів·вхід", "токенів·вихід", "кеш", "витрати"]}
               rows={byPromptVersion.map((r) => ({
                 key: String(r.promptVersion ?? "n/a"),
                 cells: [
@@ -96,19 +96,19 @@ export default async function ExtractionCostPage() {
         </Section>
 
         <Section
-          tag="> by model"
-          title="model breakdown"
-          subtitle="pricing comes from MODEL_PRICING_USD_PER_MTOK; rows with unknown model show NULL cost."
+          tag="> за моделлю"
+          title="розподіл за моделями"
+          subtitle="прайс моделей зафіксовано у вихідному коді; вартість для невідомої моделі не обчислюється."
         >
           {byModel.length === 0 ? (
-            <EmptyState message="No extractions recorded yet." />
+            <EmptyState message="Викликів ще не зафіксовано." />
           ) : (
             <BreakdownTable
-              headers={["model", "count", "fails", "tokens in", "tokens out", "cached", "cost"]}
+              headers={["модель", "викликів", "помилок", "токенів·вхід", "токенів·вихід", "кеш", "витрати"]}
               rows={byModel.map((r) => ({
                 key: r.model ?? "unknown",
                 cells: [
-                  r.model ?? "unknown",
+                  r.model ?? "невідомо",
                   formatCount(r.count),
                   r.failures > 0 ? formatCount(r.failures) : "0",
                   formatTokens(r.tokensIn),
@@ -123,15 +123,15 @@ export default async function ExtractionCostPage() {
         </Section>
 
         <Section
-          tag="> recent"
-          title="last 50 extractions"
-          subtitle="newest first. failures highlighted in red."
+          tag="> останні"
+          title="останні 50 викликів"
+          subtitle="у зворотному хронологічному порядку; помилки підсвічені червоним."
         >
           {recent.length === 0 ? (
-            <EmptyState message="No recent extractions." />
+            <EmptyState message="Нещодавніх викликів немає." />
           ) : (
             <BreakdownTable
-              headers={["when", "v", "model", "in", "out", "cached", "cost", "status"]}
+              headers={["коли", "версія", "модель", "вхід", "вихід", "кеш", "витрати", "статус"]}
               rows={recent.map((r) => ({
                 key: r.id,
                 cells: [
@@ -142,7 +142,7 @@ export default async function ExtractionCostPage() {
                   formatTokens(r.tokensOut),
                   formatTokens(r.tokensCached),
                   formatUsd(r.costUsd),
-                  r.isFailure ? "fail" : "ok",
+                  r.isFailure ? "помилка" : "ok",
                 ],
                 danger: r.isFailure,
               }))}

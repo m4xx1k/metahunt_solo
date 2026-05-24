@@ -6,7 +6,7 @@ export type AxisKey = "role" | "skill" | "domain";
 
 export type NodeType = "ROLE" | "SKILL" | "DOMAIN";
 
-export type NodeStatus = "NEW" | "VERIFIED" | "REJECTED";
+export type NodeStatus = "NEW" | "VERIFIED" | "HIDDEN";
 
 export interface AxisCoverage {
   verified: number;
@@ -110,18 +110,32 @@ function buildQs(params?: Record<string, string | number | undefined>): string {
   return s ? `?${s}` : "";
 }
 
-async function get<T>(
-  path: string,
-  params?: Record<string, string | number | undefined>,
-): Promise<T> {
+function apiBase(): string {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) {
     throw new Error(
       "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",
     );
   }
-  const url = `${base.replace(/\/+$/, "")}${path}${buildQs(params)}`;
+  return base.replace(/\/+$/, "");
+}
+
+async function get<T>(
+  path: string,
+  params?: Record<string, string | number | undefined>,
+): Promise<T> {
+  const url = `${apiBase()}${path}${buildQs(params)}`;
   const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`taxonomy api ${res.status} ${path}: ${body}`);
+  }
+  return (await res.json()) as T;
+}
+
+async function mutate<T>(method: "PATCH" | "POST", path: string): Promise<T> {
+  const url = `${apiBase()}${path}`;
+  const res = await fetch(url, { method, cache: "no-store" });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`taxonomy api ${res.status} ${path}: ${body}`);
@@ -138,5 +152,20 @@ export const taxonomyApi = {
   fuzzyMatches: (id: string) =>
     get<FuzzyMatchResult>(
       `/admin/taxonomy/nodes/${encodeURIComponent(id)}/fuzzy-matches`,
+    ),
+  verify: (id: string) =>
+    mutate<{ id: string; canonicalName: string; status: NodeStatus }>(
+      "PATCH",
+      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/verify`,
+    ),
+  hide: (id: string) =>
+    mutate<{ id: string; canonicalName: string; status: NodeStatus }>(
+      "PATCH",
+      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/hide`,
+    ),
+  mergeInto: (sourceId: string, targetId: string) =>
+    mutate<{ mergedInto: string; source: string; target: string }>(
+      "POST",
+      `/admin/taxonomy/nodes/${encodeURIComponent(sourceId)}/merge-into/${encodeURIComponent(targetId)}`,
     ),
 };

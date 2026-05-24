@@ -15,6 +15,12 @@ const styles = cva(
   },
 );
 
+const LABEL: Record<IngestStatus, string> = {
+  running: "виконується",
+  completed: "успішно",
+  failed: "помилка",
+};
+
 export function StatusBadge({
   status,
   className,
@@ -34,7 +40,7 @@ export function StatusBadge({
         className,
       )}
     >
-      {status}
+      {known ? LABEL[status as IngestStatus] : status}
     </span>
   );
 }

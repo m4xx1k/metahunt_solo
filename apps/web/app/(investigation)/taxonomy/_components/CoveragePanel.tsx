@@ -8,9 +8,9 @@ export function CoveragePanel({ coverage }: { coverage: TaxonomyCoverage }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <Tag>&gt; coverage</Tag>
+        <Tag>&gt; покриття</Tag>
         <h3 className="font-display text-xl font-bold text-text-primary">
-          axis coverage
+          покриття за осями довідника
         </h3>
       </div>
 
@@ -29,15 +29,15 @@ export function CoveragePanel({ coverage }: { coverage: TaxonomyCoverage }) {
 
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
-          per-source breakdown · skill links
+          у розрізі джерел · підтверджені навички
         </span>
         <table className="w-full border border-border bg-bg-card font-mono text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-elev text-[11px] uppercase tracking-wider text-text-muted">
-              <th className="px-3 py-2 text-left">code</th>
-              <th className="px-3 py-2 text-right">vacancies</th>
-              <th className="px-3 py-2 text-right">links</th>
-              <th className="px-3 py-2 text-right">% verified</th>
+              <th className="px-3 py-2 text-left">джерело</th>
+              <th className="px-3 py-2 text-right">вакансій</th>
+              <th className="px-3 py-2 text-right">зв'язків</th>
+              <th className="px-3 py-2 text-right">% підтверджено</th>
             </tr>
           </thead>
           <tbody>

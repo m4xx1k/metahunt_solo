@@ -38,14 +38,14 @@ export function ActivityRow({ item }: { item: IngestListItem }) {
       <span className="truncate text-text-secondary">{source}</span>
       <span className="flex flex-wrap items-baseline gap-x-2">
         <Link href={ingestHref} className="text-accent hover:underline">
-          ingest #{shortId}
+          запуск #{shortId}
         </Link>
         <span className="text-text-muted">→</span>
         <Link
           href={ingestHref}
           className="text-text-secondary hover:text-text-primary"
         >
-          {formatCount(item.recordCount)} records
+          {formatCount(item.recordCount)} записів
         </Link>
         {failed && item.errorMessage ? (
           <span className="ml-2 truncate text-xs text-danger">

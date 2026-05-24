@@ -55,17 +55,17 @@ export default async function VacanciesPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="silver vacancies" />
+      <InvestigationHeader title="вакансії (silver)" activePath="/vacancies" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <Tag>&gt; silver feed</Tag>
+            <Tag>&gt; рівень silver</Tag>
             <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
-              extracted vacancies
+              структуровані вакансії
             </h2>
             <p className="font-mono text-xs text-text-muted">
-              {result.total} total · page {result.page}
+              усього {result.total} · сторінка {result.page}
             </p>
           </div>
 
@@ -75,14 +75,14 @@ export default async function VacanciesPage({
             toggles={[
               {
                 key: "includeRoleless",
-                offLabel: "verified role only",
-                onLabel: "incl. roleless",
+                offLabel: "лише з підтвердженою роллю",
+                onLabel: "враховуючи без ролі",
                 active: includeRoleless,
               },
               {
                 key: "includeAllSkills",
-                offLabel: "verified skills only",
-                onLabel: "all skills",
+                offLabel: "лише підтверджені навички",
+                onLabel: "усі навички",
                 active: includeAllSkills,
               },
             ]}
@@ -90,7 +90,7 @@ export default async function VacanciesPage({
 
           {result.items.length === 0 ? (
             <p className="font-mono text-sm text-text-muted">
-              no vacancies match the filters
+              за обраними фільтрами вакансій не знайдено
             </p>
           ) : (
             <div className="flex flex-col gap-5">
