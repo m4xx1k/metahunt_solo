@@ -71,7 +71,7 @@ function MetaTags({ vacancy }: { vacancy: VacancyDto }) {
 // ─── title ───────────────────────────────────────────────────────────────
 
 function Title({ vacancy }: { vacancy: VacancyDto }) {
-  const role = vacancy.role?.name ?? "untitled role";
+  const role = vacancy.role?.name ?? "роль не визначено";
   const subtitle = vacancy.company?.name ?? vacancy.source.displayName;
   const domain = vacancy.domain?.name ?? null;
 
@@ -102,7 +102,7 @@ function Title({ vacancy }: { vacancy: VacancyDto }) {
             rel="noreferrer noopener"
             className="font-mono text-xs text-accent hover:underline"
           >
-            ↗ open
+            ↗ відкрити
           </a>
         ) : null}
       </div>
@@ -123,9 +123,9 @@ function KeyFacts({ vacancy }: { vacancy: VacancyDto }) {
 
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-      {salary ? <Fact label="salary" value={salary} highlight /> : null}
-      {english ? <Fact label="english" value={english} /> : null}
-      {exp ? <Fact label="experience" value={exp} /> : null}
+      {salary ? <Fact label="зарплата" value={salary} highlight /> : null}
+      {english ? <Fact label="англійська" value={english} /> : null}
+      {exp ? <Fact label="досвід" value={exp} /> : null}
     </div>
   );
 }
@@ -166,11 +166,11 @@ function SkillsList({ skills }: { skills: VacancyDto["skills"] }) {
   return (
     <div className="flex flex-col gap-2">
       {skills.required.length > 0 ? (
-        <SkillsRow label="must-have" items={skills.required} tone="required" />
+        <SkillsRow label="обов'язкові" items={skills.required} tone="required" />
       ) : null}
       {skills.optional.length > 0 ? (
         <SkillsRow
-          label="nice-to-have"
+          label="бажані"
           items={skills.optional}
           tone="optional"
         />
@@ -220,12 +220,12 @@ function FlagPills({ vacancy }: { vacancy: VacancyDto }) {
   }> = [];
 
   if (vacancy.hasTestAssignment === true) {
-    pills.push({ label: "test task", value: "yes", tone: "no" });
+    pills.push({ label: "тестове", value: "так", tone: "no" });
   } else if (vacancy.hasTestAssignment === false) {
-    pills.push({ label: "test task", value: "no", tone: "ok" });
+    pills.push({ label: "тестове", value: "ні", tone: "ok" });
   }
   if (vacancy.hasReservation === true) {
-    pills.push({ label: "бронь", value: "так", tone: "ok" });
+    pills.push({ label: "бронювання", value: "так", tone: "ok" });
   }
 
   if (pills.length === 0) return null;
@@ -259,13 +259,13 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
     <div className="flex w-full flex-col gap-3 md:w-[240px] md:flex-shrink-0">
       <div className="flex flex-col gap-2 border border-accent bg-bg-elev p-4">
         <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-accent">
-          &gt; apply on
+          &gt; джерело
         </span>
         <span className="font-mono text-sm font-bold text-text-primary">
           {vacancy.source.displayName}
         </span>
         <span className="font-mono text-[11px] text-text-muted">
-          loaded {formatRelative(vacancy.loadedAt)}
+          завантажено {formatRelative(vacancy.loadedAt)}
         </span>
       </div>
 
@@ -276,18 +276,18 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
           rel="noreferrer noopener"
           className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
         >
-          <span className="text-accent">↗</span> open original
+          <span className="text-accent">↗</span> відкрити оригінал
         </a>
       ) : (
         <span className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-muted">
-          link unavailable
+          посилання недоступне
         </span>
       )}
       <Link
         href={`/dashboard/records/${vacancy.rssRecordId}`}
         className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:border-accent hover:text-text-primary hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
       >
-        <span className="text-text-muted">⌥</span> view source record
+        <span className="text-text-muted">⌥</span> вихідний запис
       </Link>
     </div>
   );
@@ -298,23 +298,23 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
 function Footer({ vacancy }: { vacancy: VacancyDto }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider">
-      <span className="font-bold text-accent">&gt; ids:</span>
+      <span className="font-bold text-accent">&gt; ідентифікатори:</span>
       <span className="inline-flex items-center gap-2 text-text-muted">
-        vacancy
-        <CopyButton value={vacancy.id} ariaLabel="copy vacancy id" />
+        внутрішній
+        <CopyButton value={vacancy.id} ariaLabel="скопіювати ідентифікатор вакансії" />
       </span>
       <span className="inline-flex items-center gap-2 text-text-muted">
-        external
+        зовнішній
         <CopyButton
           value={vacancy.externalId}
-          ariaLabel="copy external id"
+          ariaLabel="скопіювати зовнішній ідентифікатор"
         />
       </span>
       <Link
         href={`/dashboard/records/${vacancy.rssRecordId}`}
         className="inline-flex items-center gap-1 text-text-secondary hover:text-accent"
       >
-        <span className="text-accent">↗</span> rss record
+        <span className="text-accent">↗</span> сирий RSS-запис
       </Link>
       <span className="ml-auto text-text-muted">
         loaded · {formatRelative(vacancy.loadedAt)}

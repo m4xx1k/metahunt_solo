@@ -16,15 +16,15 @@ export function ConfidenceFilter({
   active: Confidence;
 }) {
   const options: Array<{ key: Confidence; label: string }> = [
-    { key: "all", label: "all" },
-    { key: "gold", label: "gold only" },
-    { key: "confirmed", label: "confirmed only" },
+    { key: "all", label: "усі" },
+    { key: "gold", label: "лише gold" },
+    { key: "confirmed", label: "лише confirmed" },
   ];
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-        &gt; confidence:
+        &gt; впевненість:
       </span>
       {options.map((o) => (
         <Link

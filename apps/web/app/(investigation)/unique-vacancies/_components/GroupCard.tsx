@@ -26,7 +26,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
               <Badge key={s.id}>{s.displayName}</Badge>
             ))}
             <Badge variant="dark">
-              {group.vacancyCount} {group.vacancyCount === 1 ? "post" : "posts"}
+              {group.vacancyCount} {pluralize(group.vacancyCount, "оголошення", "оголошення", "оголошень")}
             </Badge>
             {tier ? (
               <span
@@ -42,17 +42,17 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
           </div>
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-text-muted">
-          {group.companyName ? <span>company: {group.companyName}</span> : null}
-          {group.role ? <span>role: {group.role}</span> : null}
-          {group.seniority ? <span>seniority: {group.seniority}</span> : null}
-          {group.workFormat ? <span>format: {group.workFormat}</span> : null}
+          {group.companyName ? <span>компанія: {group.companyName}</span> : null}
+          {group.role ? <span>роль: {group.role}</span> : null}
+          {group.seniority ? <span>рівень: {group.seniority}</span> : null}
+          {group.workFormat ? <span>формат: {group.workFormat}</span> : null}
           {group.salaryRange &&
           (group.salaryRange.min !== null || group.salaryRange.max !== null) ? (
             <span>
-              salary: {fmtSalary(group.salaryRange)}
+              зарплата: {fmtSalary(group.salaryRange)}
             </span>
           ) : null}
-          <span>posted: {fmtDateRange(group.firstSeenAt, group.lastSeenAt)}</span>
+          <span>опубліковано: {fmtDateRange(group.firstSeenAt, group.lastSeenAt)}</span>
         </div>
       </header>
 
@@ -60,8 +60,8 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
         <summary className="flex cursor-pointer list-none items-center justify-between border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider text-text-muted hover:text-text-primary">
           <span>
             {group.vacancyCount === 1
-              ? "view canonical →"
-              : `view ${group.vacancyCount} members + why merged →`}
+              ? "переглянути канонічний запис →"
+              : `${group.vacancyCount} ${pluralize(group.vacancyCount, "учасник", "учасники", "учасників")} + причини об'єднання →`}
           </span>
           <span className="font-mono text-base group-open/details:rotate-90">›</span>
         </summary>
@@ -79,7 +79,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
                   </Badge>
                   {m.isCanonical ? (
                     <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
-                      canonical
+                      канонічний
                     </span>
                   ) : null}
                   <span className="text-sm text-text-primary">{m.title}</span>
@@ -95,7 +95,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
                       rel="noreferrer"
                       className="text-accent underline-offset-2 hover:underline"
                     >
-                      open original ↗
+                      відкрити оригінал ↗
                     </a>
                   ) : null}
                 </div>
@@ -120,9 +120,22 @@ function fmtSalary({
 }): string {
   const c = currency ?? "";
   if (min !== null && max !== null) return `${min}-${max} ${c}`.trim();
-  if (min !== null) return `from ${min} ${c}`.trim();
-  if (max !== null) return `up to ${max} ${c}`.trim();
+  if (min !== null) return `від ${min} ${c}`.trim();
+  if (max !== null) return `до ${max} ${c}`.trim();
   return "—";
+}
+
+function pluralize(
+  n: number,
+  one: string,
+  few: string,
+  many: string,
+): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
 }
 
 function fmtDate(iso: string): string {

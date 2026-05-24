@@ -47,17 +47,17 @@ export default async function UniqueVacanciesPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="unique vacancies" />
+      <InvestigationHeader title="унікальні вакансії (gold)" activePath="/unique-vacancies" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <section className="flex flex-col gap-3">
-          <Tag>&gt; dedup</Tag>
+          <Tag>&gt; дедуплікація</Tag>
           <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
-            cross-source duplicates
+            крос-джерельні дублікати
           </h2>
           <p className="font-mono text-xs text-text-muted">
-            the same opening posted on more than one platform ·{" "}
-            {data.pagination.total} groups
+            одна позиція, опублікована більш ніж на одному джерелі ·{" "}
+            {data.pagination.total} груп
           </p>
         </section>
 
@@ -71,8 +71,8 @@ export default async function UniqueVacanciesPage({
               toggles={[
                 {
                   key: "crossSource",
-                  offLabel: "all groups",
-                  onLabel: "cross-source only",
+                  offLabel: "усі групи",
+                  onLabel: "лише крос-джерельні",
                   active: crossSource,
                 },
               ]}
@@ -86,7 +86,7 @@ export default async function UniqueVacanciesPage({
 
           {data.items.length === 0 ? (
             <div className="border border-border bg-bg-card p-8 font-mono text-xs text-text-muted">
-              no groups match the current filters.
+              за обраними фільтрами груп не знайдено.
             </div>
           ) : (
             <div className="flex flex-col gap-5">

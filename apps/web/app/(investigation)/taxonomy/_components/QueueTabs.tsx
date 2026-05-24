@@ -9,6 +9,18 @@ import { NodeDrawer } from "./NodeDrawer";
 
 const TABS: NodeType[] = ["ROLE", "SKILL", "DOMAIN"];
 
+const TAB_LABEL: Record<NodeType, string> = {
+  ROLE: "ролі",
+  SKILL: "навички",
+  DOMAIN: "напрями",
+};
+
+const TAB_LABEL_GEN: Record<NodeType, string> = {
+  ROLE: "ролей",
+  SKILL: "навичок",
+  DOMAIN: "напрямів",
+};
+
 function parseTab(raw: string | null): NodeType {
   const upper = (raw ?? "").toUpperCase();
   if (upper === "SKILL" || upper === "DOMAIN") return upper;
@@ -65,7 +77,7 @@ export function QueueTabs({
                 : "border-transparent text-text-muted hover:text-text-secondary",
             )}
           >
-            {t}
+            {TAB_LABEL[t]}
             <span className="ml-2 text-[10px] text-text-muted">
               {queues[t].items.length}
             </span>
@@ -78,23 +90,23 @@ export function QueueTabs({
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={`filter ${active.toLowerCase()} by name…`}
-          aria-label={`filter ${active.toLowerCase()} queue by name`}
+          placeholder={`пошук серед ${TAB_LABEL_GEN[active]}…`}
+          aria-label={`пошук у черзі ${TAB_LABEL_GEN[active]}`}
           className="border border-border bg-bg-card px-3 py-2 font-mono text-sm text-text-primary outline-none focus:border-accent"
         />
         <span className="font-mono text-[11px] text-text-muted">
-          showing {filtered.length} of {queue.items.length}
+          показано {filtered.length} з {queue.items.length}
           {queue.items.length >= pageSize
-            ? ` · top ${pageSize} by impact (backend cap: load more lands when phase-2 ships)`
-            : " · all NEW nodes for this axis"}
+            ? ` · топ ${pageSize} за впливом`
+            : " · усі нові поняття цього типу"}
         </span>
       </div>
 
       {filtered.length === 0 ? (
         <p className="font-mono text-sm text-text-muted">
           {queue.items.length === 0
-            ? `no NEW ${active.toLowerCase()} nodes — queue is clear`
-            : `no ${active.toLowerCase()} matches "${search}"`}
+            ? `нових ${TAB_LABEL_GEN[active]} немає — черга порожня`
+            : `за запитом «${search}» збігів немає`}
         </p>
       ) : (
         <ul className="flex max-h-[640px] flex-col gap-[2px] overflow-y-auto border border-border bg-bg-card">

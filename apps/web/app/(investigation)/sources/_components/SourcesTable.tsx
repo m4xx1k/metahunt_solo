@@ -27,7 +27,7 @@ export function SourcesTable({ rows }: { rows: SourceRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="font-mono text-sm text-text-muted">
-        no sources configured
+        джерела не налаштовано
       </p>
     );
   }
@@ -37,14 +37,14 @@ export function SourcesTable({ rows }: { rows: SourceRow[] }) {
       <table className="min-w-full font-mono text-sm">
         <thead>
           <tr className="border-b border-border bg-bg-elev text-[11px] uppercase tracking-wider text-text-muted">
-            <Th>code</Th>
-            <Th>display name</Th>
-            <Th>last ingest</Th>
-            <Th>status</Th>
-            <Th>7-run trend</Th>
-            <Th align="right">24h records</Th>
-            <Th align="right">% skill-verified</Th>
-            <Th>open</Th>
+            <Th>код</Th>
+            <Th>назва</Th>
+            <Th>останній збір</Th>
+            <Th>статус</Th>
+            <Th>останні 7 запусків</Th>
+            <Th align="right">записів за 24 год</Th>
+            <Th align="right">% з підтвердженими навичками</Th>
+            <Th>сайт</Th>
           </tr>
         </thead>
         <tbody>
@@ -97,7 +97,7 @@ function SourceRowView({ row }: { row: SourceRow }) {
             stroke={
               anyFailed ? "var(--color-danger)" : "var(--color-accent)"
             }
-            ariaLabel={`Last ${sparkPoints.length} run statuses`}
+            ariaLabel={`статуси останніх ${sparkPoints.length} запусків`}
           />
         ) : (
           <span className="text-text-muted">—</span>
@@ -119,7 +119,7 @@ function SourceRowView({ row }: { row: SourceRow }) {
           target="_blank"
           rel="noreferrer noopener"
           className="text-accent hover:underline"
-          aria-label={`Open ${source.displayName} in new tab`}
+          aria-label={`відкрити ${source.displayName} у новій вкладці`}
         >
           ↗
         </a>

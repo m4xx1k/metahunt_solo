@@ -53,44 +53,44 @@ export default async function IngestDetailPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="ingest" />
+      <InvestigationHeader title="запуск збору" activePath="/dashboard" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <header className="flex flex-col gap-4">
           <Tag>{ingest.sourceDisplayName ?? ingest.sourceCode ?? "source"}</Tag>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="font-display text-3xl font-bold text-text-primary md:text-4xl">
-              ingest {ingest.id.slice(0, 8)}…
+              запуск {ingest.id.slice(0, 8)}…
             </h1>
             <StatusBadge status={ingest.status} />
           </div>
           <p className="font-mono text-xs text-text-muted">
-            triggered by · {ingest.triggeredBy}
+            ініційовано · {ingest.triggeredBy}
           </p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Stat label="started" value={formatDateTime(ingest.startedAt)} />
+          <Stat label="початок" value={formatDateTime(ingest.startedAt)} />
           <Stat
-            label="finished"
+            label="завершення"
             value={formatRelative(ingest.finishedAt)}
             sub={
               ingest.finishedAt
                 ? formatDateTime(ingest.finishedAt)
-                : "still running"
+                : "ще виконується"
             }
           />
-          <Stat label="duration" value={formatDuration(ingest.durationMs)} />
+          <Stat label="тривалість" value={formatDuration(ingest.durationMs)} />
           <Stat
-            label="records"
+            label="записів"
             value={formatCount(ingest.recordCount)}
-            sub={`${formatCount(ingest.extractedCount)} extracted`}
+            sub={`${formatCount(ingest.extractedCount)} структуровано`}
           />
         </section>
 
         {ingest.errorMessage ? (
           <section className="flex flex-col gap-3">
-            <Tag>{"> error"}</Tag>
+            <Tag>{"> помилка"}</Tag>
             <pre className="overflow-x-auto border border-danger bg-bg-card p-4 font-mono text-xs leading-relaxed text-danger">
               {ingest.errorMessage}
             </pre>
@@ -98,13 +98,13 @@ export default async function IngestDetailPage({
         ) : null}
 
         <section className="flex flex-col gap-4">
-          <Tag>{"> records"}</Tag>
+          <Tag>{"> оголошення"}</Tag>
           <p className="font-mono text-xs text-text-muted">
-            {records.total} records produced by this ingest
+            цей запуск сформував {records.total} {records.total === 1 ? "запис" : "записів"}
           </p>
           {records.items.length === 0 ? (
             <p className="font-mono text-sm text-text-muted">
-              no records produced by this ingest
+              запуск не сформував жодного запису
             </p>
           ) : (
             <div className="flex flex-col gap-5">
@@ -124,14 +124,14 @@ export default async function IngestDetailPage({
 
         {ingest.workflowRunId || ingest.payloadStorageKey ? (
           <section className="flex flex-col gap-3">
-            <Tag>{"> meta"}</Tag>
+            <Tag>{"> службові дані"}</Tag>
             <dl className="grid gap-2 border border-border bg-bg-card p-4 font-mono text-xs">
               {ingest.workflowRunId ? (
-                <Row label="workflow run id" value={ingest.workflowRunId} />
+                <Row label="ідентифікатор процесу" value={ingest.workflowRunId} />
               ) : null}
               {ingest.payloadStorageKey ? (
                 <Row
-                  label="payload storage"
+                  label="ключ у сховищі"
                   value={ingest.payloadStorageKey}
                 />
               ) : null}

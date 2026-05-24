@@ -1,5 +1,10 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { sql, eq } from "drizzle-orm";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { sql, eq, and, inArray } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
@@ -310,6 +315,95 @@ export class TaxonomyService {
         wordSimilarity: Number(Number(r.word_similarity).toFixed(3)),
       })),
     };
+  }
+
+  async setStatus(id: string, status: "VERIFIED" | "HIDDEN") {
+    const [updated] = await this.db
+      .update(schema.nodes)
+      .set({ status })
+      .where(eq(schema.nodes.id, id))
+      .returning();
+    if (!updated) throw new NotFoundException(`Node ${id} not found`);
+    return trimNode(updated);
+  }
+
+  // Merge sourceId into targetId: keep target as canonical, fold the source's
+  // name + aliases into target's alias list, repoint all vacancy references,
+  // delete source. One transaction so partial state is impossible.
+  async mergeInto(sourceId: string, targetId: string) {
+    if (sourceId === targetId) {
+      throw new BadRequestException("source and target must differ");
+    }
+
+    return this.db.transaction(async (tx) => {
+      const both = await tx
+        .select()
+        .from(schema.nodes)
+        .where(inArray(schema.nodes.id, [sourceId, targetId]));
+      const source = both.find((n) => n.id === sourceId);
+      const target = both.find((n) => n.id === targetId);
+      if (!source) throw new NotFoundException(`Source node ${sourceId} not found`);
+      if (!target) throw new NotFoundException(`Target node ${targetId} not found`);
+      if (source.type !== target.type) {
+        throw new BadRequestException(
+          `cannot merge across types: ${source.type} → ${target.type}`,
+        );
+      }
+
+      // 1) Move source's existing aliases to target (skip duplicates by unique key).
+      await tx.execute(sql`
+        UPDATE node_aliases
+        SET node_id = ${targetId}
+        WHERE node_id = ${sourceId}
+          AND NOT EXISTS (
+            SELECT 1 FROM node_aliases a2
+            WHERE a2.type = node_aliases.type AND a2.name = node_aliases.name
+              AND a2.node_id = ${targetId}
+          )
+      `);
+
+      // 2) Source's canonical name becomes an alias of target (if not already one).
+      await tx.execute(sql`
+        INSERT INTO node_aliases (name, type, node_id)
+        VALUES (${source.canonicalName}, ${source.type}, ${targetId})
+        ON CONFLICT (name, type) DO NOTHING
+      `);
+
+      // 3) Re-point vacancy_nodes (composite PK collision: drop dupes first).
+      await tx.execute(sql`
+        DELETE FROM vacancy_nodes
+        WHERE node_id = ${sourceId}
+          AND vacancy_id IN (
+            SELECT vacancy_id FROM vacancy_nodes WHERE node_id = ${targetId}
+          )
+      `);
+      await tx
+        .update(schema.vacancyNodes)
+        .set({ nodeId: targetId })
+        .where(eq(schema.vacancyNodes.nodeId, sourceId));
+
+      // 4) Re-point vacancies.role_node_id / domain_node_id.
+      await tx
+        .update(schema.vacancies)
+        .set({ roleNodeId: targetId })
+        .where(eq(schema.vacancies.roleNodeId, sourceId));
+      await tx
+        .update(schema.vacancies)
+        .set({ domainNodeId: targetId })
+        .where(eq(schema.vacancies.domainNodeId, sourceId));
+
+      // 5) Delete source. Any lingering aliases cascade automatically.
+      await tx
+        .delete(schema.nodeAliases)
+        .where(
+          and(
+            eq(schema.nodeAliases.nodeId, sourceId),
+          ),
+        );
+      await tx.delete(schema.nodes).where(eq(schema.nodes.id, sourceId));
+
+      return { mergedInto: targetId, source: source.canonicalName, target: target.canonicalName };
+    });
   }
 }
 

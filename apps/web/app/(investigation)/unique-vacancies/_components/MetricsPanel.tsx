@@ -8,15 +8,15 @@ export function MetricsPanel({ metrics }: { metrics: DedupMetrics }) {
     <Card>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <Stat
-          label="vacancies analysed"
+          label="проаналізовано вакансій"
           value={metrics.totalVacancies.toString()}
         />
         <Stat
-          label="unique positions"
+          label="унікальних позицій"
           value={metrics.totalGroups.toString()}
         />
         <Stat
-          label="duplicates across platforms"
+          label="дублікатів між джерелами"
           value={metrics.crossSourceGroups.toString()}
           highlight
         />

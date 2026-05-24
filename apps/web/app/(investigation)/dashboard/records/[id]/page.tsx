@@ -26,7 +26,7 @@ export default async function RecordDetailPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="record" />
+      <InvestigationHeader title="запис оголошення" activePath="/dashboard" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <header className="flex flex-col gap-4">
@@ -45,14 +45,14 @@ export default async function RecordDetailPage({
           </div>
           {displayTitle(record) !== record.title ? (
             <p className="font-mono text-xs text-text-muted">
-              raw title · {record.title}
+              сирий заголовок · {record.title}
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
             {record.extracted ? (
-              <Badge variant="accent">extracted</Badge>
+              <Badge variant="accent">структуровано</Badge>
             ) : (
-              <Badge variant="dark">pending extraction</Badge>
+              <Badge variant="dark">очікує екстракції</Badge>
             )}
             {record.category ? (
               <Badge variant="dark">{record.category}</Badge>
@@ -64,28 +64,28 @@ export default async function RecordDetailPage({
                 rel="noreferrer noopener"
                 className="font-mono text-xs uppercase tracking-wider text-accent hover:underline"
               >
-                ↗ source link
+                ↗ оригінал
               </a>
             ) : null}
           </div>
         </header>
 
         <section className="grid gap-6 md:grid-cols-3">
-          <Field label="published" value={formatDateTime(record.publishedAt)} />
-          <Field label="created" value={formatRelative(record.createdAt)} />
+          <Field label="опубліковано" value={formatDateTime(record.publishedAt)} />
+          <Field label="створено" value={formatRelative(record.createdAt)} />
           <Field
-            label="extracted at"
+            label="структуровано"
             value={formatRelative(record.extractedAt)}
           />
-          <Field label="external id" value={record.externalId ?? "—"} />
+          <Field label="зовнішній id" value={record.externalId ?? "—"} />
           <Field
-            label="hash"
+            label="контрольна сума"
             value={record.hash}
             mono
             className="md:col-span-2"
           />
           <Field
-            label="ingest"
+            label="запуск збору"
             value={
               <Link
                 href={`/dashboard/ingests/${record.rssIngestId}`}
@@ -99,7 +99,7 @@ export default async function RecordDetailPage({
 
         {record.description ? (
           <section className="flex flex-col gap-3">
-            <Tag>{"> description"}</Tag>
+            <Tag>{"> опис"}</Tag>
             <div className="border border-border bg-bg-card p-6 shadow-[6px_6px_0_0_#000]">
               <p className="whitespace-pre-wrap font-body text-base leading-relaxed text-text-primary">
                 {record.description}
@@ -109,7 +109,7 @@ export default async function RecordDetailPage({
         ) : null}
 
         <section className="flex flex-col gap-3">
-          <Tag>{"> extracted data"}</Tag>
+          <Tag>{"> структуровані поля"}</Tag>
           <ExtractedDataView data={record.extractedData} />
         </section>
       </div>

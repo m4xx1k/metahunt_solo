@@ -38,22 +38,23 @@ export default async function TaxonomyPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="taxonomy" />
+      <InvestigationHeader title="довідник понять" activePath="/taxonomy" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <div className="flex flex-col gap-2">
-          <Tag>&gt; taxonomy</Tag>
+          <Tag>&gt; довідник понять</Tag>
           <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
-            coverage and curation queue
+            покриття та черга курації
           </h2>
           <p className="font-mono text-xs text-text-muted">
-            read-only · phase 2 lands the moderation actions
+            підтвердження нових понять і об'єднання дублікатів через
+            псевдоніми
           </p>
         </div>
 
         {coverage === null ? (
           <p className="border border-danger bg-bg-card p-4 font-mono text-sm text-danger">
-            taxonomy coverage api is unavailable — left pane empty
+            показники покриття довідника тимчасово недоступні
           </p>
         ) : null}
 
@@ -61,13 +62,13 @@ export default async function TaxonomyPage() {
           {coverage ? (
             <CoveragePanel coverage={coverage} />
           ) : (
-            <div className="font-mono text-sm text-text-muted">no data</div>
+            <div className="font-mono text-sm text-text-muted">даних немає</div>
           )}
 
           <div className="flex flex-col gap-2">
-            <Tag>&gt; queue</Tag>
+            <Tag>&gt; черга</Tag>
             <h3 className="font-display text-xl font-bold text-text-primary">
-              NEW nodes · sorted by vacancies blocked
+              нові поняття · за кількістю заблокованих вакансій
             </h3>
             <QueueTabs queues={queues} pageSize={QUEUE_LIMIT} />
           </div>

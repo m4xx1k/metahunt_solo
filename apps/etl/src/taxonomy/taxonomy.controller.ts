@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
+  Post,
   Query,
 } from "@nestjs/common";
 
@@ -15,8 +17,6 @@ const QUEUE_DEFAULT = 25;
 const QUEUE_MAX = 200;
 const VALID_TYPES = new Set<NodeTypeValue>(["ROLE", "SKILL", "DOMAIN"]);
 
-// All routes are read-only Phase 1 moderation endpoints. No auth yet —
-// gate behind a guard once the admin UI is in place.
 @Controller("admin/taxonomy")
 export class TaxonomyController {
   constructor(private readonly service: TaxonomyService) {}
@@ -46,6 +46,28 @@ export class TaxonomyController {
   getFuzzyMatches(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.getFuzzyMatches(id);
+  }
+
+  @Patch("nodes/:id/verify")
+  verifyNode(@Param("id") id: string) {
+    assertUuid(id, "id");
+    return this.service.setStatus(id, "VERIFIED");
+  }
+
+  @Patch("nodes/:id/hide")
+  hideNode(@Param("id") id: string) {
+    assertUuid(id, "id");
+    return this.service.setStatus(id, "HIDDEN");
+  }
+
+  @Post("nodes/:id/merge-into/:targetId")
+  mergeNode(
+    @Param("id") id: string,
+    @Param("targetId") targetId: string,
+  ) {
+    assertUuid(id, "id");
+    assertUuid(targetId, "targetId");
+    return this.service.mergeInto(id, targetId);
   }
 }
 

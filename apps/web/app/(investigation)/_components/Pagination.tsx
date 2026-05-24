@@ -39,7 +39,7 @@ export function Pagination({
   return (
     <div className="flex items-center justify-between gap-4">
       <p className="font-mono text-xs text-text-muted">
-        showing {from}–{to} of {total}
+        показано {from}–{to} з {total}
       </p>
       <div className="flex items-center gap-2">
         <Link
@@ -47,14 +47,14 @@ export function Pagination({
           className={cn(linkBase, hasPrev ? enabled : disabled)}
           aria-disabled={!hasPrev}
         >
-          ← prev
+          ← попер.
         </Link>
         <Link
           href={buildHref(offset + limit)}
           className={cn(linkBase, hasNext ? enabled : disabled)}
           aria-disabled={!hasNext}
         >
-          next →
+          наст. →
         </Link>
       </div>
     </div>

@@ -16,17 +16,17 @@ export function VerifiedDonut({
         label={formatPercent(fullyVerified, total)}
         size={104}
         thickness={14}
-        ariaLabel="fully-verified vacancies"
+        ariaLabel="вакансії з повністю підтвердженою таксономією"
       />
       <div className="flex flex-col gap-1">
         <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
-          fully verified
+          повністю підтверджено
         </span>
         <span className="font-display text-2xl font-bold text-text-primary">
           {fullyVerified} <span className="text-text-muted">/ {total}</span>
         </span>
         <span className="font-mono text-xs text-text-secondary">
-          vacancies with role + skills + domain VERIFIED
+          вакансії з підтвердженими роллю, навичками й напрямом
         </span>
       </div>
     </div>

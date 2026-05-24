@@ -132,7 +132,7 @@ function Title({
             rel="noreferrer noopener"
             className="font-mono text-xs text-accent hover:underline"
           >
-            ↗ open
+            ↗ відкрити
           </a>
         ) : null}
       </div>
@@ -151,9 +151,9 @@ function KeyFacts({ ex }: { ex: ExtractedVacancy }) {
 
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-      {salary ? <Fact label="salary" value={salary} highlight /> : null}
-      {english ? <Fact label="english" value={english} /> : null}
-      {exp ? <Fact label="experience" value={exp} /> : null}
+      {salary ? <Fact label="зарплата" value={salary} highlight /> : null}
+      {english ? <Fact label="англійська" value={english} /> : null}
+      {exp ? <Fact label="досвід" value={exp} /> : null}
     </div>
   );
 }
@@ -196,10 +196,10 @@ function SkillsList({ skills }: { skills: ExtractedVacancy["skills"] }) {
   return (
     <div className="flex flex-col gap-2">
       {required.length > 0 ? (
-        <SkillsRow label="must-have" items={required} tone="required" />
+        <SkillsRow label="обов'язкові" items={required} tone="required" />
       ) : null}
       {optional.length > 0 ? (
-        <SkillsRow label="nice-to-have" items={optional} tone="optional" />
+        <SkillsRow label="бажані" items={optional} tone="optional" />
       ) : null}
     </div>
   );
@@ -243,13 +243,13 @@ function FlagPills({ ex }: { ex: ExtractedVacancy }) {
     [];
 
   if (ex.hasTestAssignment === true) {
-    pills.push({ label: "test task", value: "yes", tone: "no" });
+    pills.push({ label: "тестове", value: "так", tone: "no" });
   } else if (ex.hasTestAssignment === false) {
-    pills.push({ label: "test task", value: "no", tone: "ok" });
+    pills.push({ label: "тестове", value: "ні", tone: "ok" });
   }
 
   if (ex.hasReservation === true) {
-    pills.push({ label: "бронь", value: "так", tone: "ok" });
+    pills.push({ label: "бронювання", value: "так", tone: "ok" });
   }
 
   if (pills.length === 0) return null;
@@ -283,9 +283,9 @@ function DescriptionDetails({ text }: { text: string }) {
     <details className="group flex flex-col gap-2 border-l-2 border-border pl-3 hover:border-accent">
       <summary className="cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-text-muted hover:text-accent">
         <span className="group-open:hidden">
-          ▸ description ({text.length} chars)
+          ▸ опис ({text.length} символів)
         </span>
-        <span className="hidden group-open:inline">▾ description</span>
+        <span className="hidden group-open:inline">▾ опис</span>
       </summary>
       <p className="mt-1 max-h-[320px] overflow-auto whitespace-pre-wrap font-body text-sm leading-relaxed text-text-secondary">
         {text}
@@ -317,7 +317,7 @@ function Sidebar({
             ex ? "text-accent" : "text-text-muted",
           )}
         >
-          &gt; extraction
+          &gt; екстракція
         </span>
         <span
           className={cn(
@@ -327,13 +327,13 @@ function Sidebar({
         >
           {ex
             ? `✓ ${formatRelative(record.extractedAt)}`
-            : "· pending extraction"}
+            : "· очікує екстракції"}
         </span>
         {ex ? (
           <details className="group">
             <summary className="cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-text-muted hover:text-accent">
-              <span className="group-open:hidden">▸ raw json</span>
-              <span className="hidden group-open:inline">▾ raw json</span>
+              <span className="group-open:hidden">▸ сирий JSON</span>
+              <span className="hidden group-open:inline">▾ сирий JSON</span>
             </summary>
             <pre className="mt-2 max-h-[260px] overflow-auto border border-border bg-bg p-2 font-mono text-[11px] leading-relaxed text-text-primary">
               {JSON.stringify(ex, null, 2)}
@@ -346,13 +346,13 @@ function Sidebar({
         href={`/dashboard/records/${record.id}`}
         className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
       >
-        <span className="text-accent">→</span> full detail
+        <span className="text-accent">→</span> детально
       </Link>
       <Link
         href={`/dashboard/ingests/${record.rssIngestId}`}
         className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:text-text-primary"
       >
-        <span className="text-text-muted">⌥</span> open ingest
+        <span className="text-text-muted">⌥</span> відкрити запуск
       </Link>
     </div>
   );
@@ -363,19 +363,19 @@ function Sidebar({
 function Footer({ record }: { record: RecordListItem }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider">
-      <span className="font-bold text-accent">&gt; ids:</span>
+      <span className="font-bold text-accent">&gt; ідентифікатори:</span>
       <span className="inline-flex items-center gap-2 text-text-muted">
-        record
-        <CopyButton value={record.id} ariaLabel="copy record id" />
+        запис
+        <CopyButton value={record.id} ariaLabel="скопіювати ідентифікатор запису" />
       </span>
       <Link
         href={`/dashboard/ingests/${record.rssIngestId}`}
         className="inline-flex items-center gap-1 text-text-secondary hover:text-accent"
       >
-        <span className="text-accent">↗</span> ingest
+        <span className="text-accent">↗</span> запуск збору
       </Link>
       <span className="ml-auto text-text-muted">
-        published · {formatDateTime(record.publishedAt)}
+        опубліковано · {formatDateTime(record.publishedAt)}
       </span>
     </div>
   );
