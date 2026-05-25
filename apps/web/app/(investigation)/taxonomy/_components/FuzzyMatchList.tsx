@@ -76,23 +76,25 @@ export function FuzzyMatchList({
           return (
             <li
               key={m.id}
-              className="grid grid-cols-[1fr_56px_auto] items-center gap-3 px-3 py-2 font-mono text-xs"
+              className="flex flex-col gap-2 px-3 py-2 font-mono text-xs sm:grid sm:grid-cols-[1fr_56px_auto] sm:items-center sm:gap-3"
             >
-              <span
-                className="truncate text-text-primary"
-                title={m.canonicalName}
-              >
-                {m.canonicalName}
-              </span>
-              <span className="text-right text-text-muted">
-                {m.similarity.toFixed(2)}
-              </span>
+              <div className="flex items-center justify-between gap-3 sm:contents">
+                <span
+                  className="truncate text-text-primary"
+                  title={m.canonicalName}
+                >
+                  {m.canonicalName}
+                </span>
+                <span className="shrink-0 text-text-muted sm:text-right">
+                  {m.similarity.toFixed(2)}
+                </span>
+              </div>
               <button
                 type="button"
                 disabled={disabled}
                 onClick={handleMerge(m.id, m.canonicalName)}
                 className={cn(
-                  "border px-2 py-1 text-[10px] uppercase tracking-wider transition-colors",
+                  "border px-3 py-2 text-[10px] uppercase tracking-wider transition-colors sm:px-2 sm:py-1",
                   disabled
                     ? "border-border text-text-muted"
                     : "border-accent text-accent hover:bg-accent hover:text-bg",

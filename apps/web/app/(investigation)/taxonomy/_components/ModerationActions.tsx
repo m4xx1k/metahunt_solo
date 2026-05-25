@@ -114,7 +114,7 @@ export function ModerationActions({ node }: { node: NodeDetail }) {
           disabled={action.busy || node.status === "VERIFIED"}
           onClick={handleVerify}
           className={cn(
-            "border px-3 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+            "border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:py-1",
             node.status === "VERIFIED" || action.busy
               ? "border-border text-text-muted"
               : "border-success text-success hover:bg-success hover:text-bg",
@@ -127,7 +127,7 @@ export function ModerationActions({ node }: { node: NodeDetail }) {
           disabled={action.busy || node.status === "HIDDEN"}
           onClick={handleHide}
           className={cn(
-            "border px-3 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+            "border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:py-1",
             node.status === "HIDDEN" || action.busy
               ? "border-border text-text-muted"
               : "border-danger text-danger hover:bg-danger hover:text-bg",
@@ -140,7 +140,7 @@ export function ModerationActions({ node }: { node: NodeDetail }) {
           disabled={action.busy}
           onClick={handleRenameToggle}
           className={cn(
-            "border px-3 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+            "border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:py-1",
             action.busy
               ? "border-border text-text-muted"
               : renaming
@@ -153,19 +153,22 @@ export function ModerationActions({ node }: { node: NodeDetail }) {
       </div>
 
       {renaming ? (
-        <form onSubmit={handleRenameSubmit} className="flex items-center gap-2">
+        <form
+          onSubmit={handleRenameSubmit}
+          className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        >
           <input
             type="text"
             value={renameDraft}
             onChange={handleRenameDraft}
             aria-label="нова назва поняття"
             autoFocus
-            className="flex-1 border border-border bg-bg-card px-2 py-1 font-mono text-sm text-text-primary outline-none focus:border-accent"
+            className="flex-1 border border-border bg-bg-card px-2 py-2 font-mono text-sm text-text-primary outline-none focus:border-accent sm:py-1"
           />
           <button
             type="submit"
             disabled={action.busy}
-            className="border border-accent px-3 py-1 font-mono text-xs uppercase tracking-wider text-accent hover:bg-accent hover:text-bg disabled:border-border disabled:text-text-muted"
+            className="border border-accent px-3 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:bg-accent hover:text-bg disabled:border-border disabled:text-text-muted sm:py-1"
           >
             зберегти
           </button>
