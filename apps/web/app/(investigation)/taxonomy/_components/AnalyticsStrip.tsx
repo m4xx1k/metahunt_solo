@@ -25,7 +25,7 @@ export function AnalyticsStrip({
         <span>покриття довідника · {coverage.byAxis.role.total} вакансій</span>
         <span className="text-text-secondary">розгорнути / згорнути</span>
       </summary>
-      <div className="grid gap-5 p-4 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-4 p-3 sm:gap-5 sm:p-4 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-4">
           <AxisBar axis="role" coverage={coverage.byAxis.role} />
           <AxisBar axis="skill" coverage={coverage.byAxis.skill} />

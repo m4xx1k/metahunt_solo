@@ -31,11 +31,11 @@ export function ListPagination({ page, pageSize, total }: Props) {
   const hasNext = page < lastPage;
 
   const linkBase =
-    "inline-flex items-center px-3 py-1 font-mono text-xs uppercase tracking-wider border border-border bg-bg-card";
+    "inline-flex items-center px-3 py-2 font-mono text-xs uppercase tracking-wider border border-border bg-bg-card sm:py-1";
 
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="font-mono text-[11px] text-text-muted">
+      <span className="font-mono text-xs text-text-muted sm:text-[11px]">
         показано {from}–{to} з {total}
       </span>
       <div className="flex items-center gap-2">

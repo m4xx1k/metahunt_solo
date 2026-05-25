@@ -12,6 +12,7 @@ import { AnalyticsStrip } from "./_components/AnalyticsStrip";
 import { Filters } from "./_components/Filters";
 import { NodeList } from "./_components/NodeList";
 import { DetailPanel, EmptyDetailPanel } from "./_components/DetailPanel";
+import { DetailPanelShell } from "./_components/DetailPanelShell";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export default async function TaxonomyPage({
     <main className="flex min-h-screen flex-col bg-bg">
       <InvestigationHeader title="довідник понять" activePath="/taxonomy" />
 
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-6 py-8 md:px-12">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 md:px-12">
         <div className="flex flex-col gap-2">
           <Tag>&gt; робоче місце куратора</Tag>
           <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
@@ -87,7 +88,7 @@ export default async function TaxonomyPage({
             />
           </div>
 
-          <div className="lg:sticky lg:top-4 lg:self-start">
+          <DetailPanelShell selected={selected}>
             {selected ? (
               <Suspense fallback={<EmptyDetailPanel />}>
                 <DetailPanel key={selected} nodeId={selected} />
@@ -95,7 +96,7 @@ export default async function TaxonomyPage({
             ) : (
               <EmptyDetailPanel />
             )}
-          </div>
+          </DetailPanelShell>
         </div>
       </div>
     </main>

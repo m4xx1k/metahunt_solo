@@ -26,7 +26,7 @@ export function NodeList({ items, selectedId, page, pageSize, total }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <ul className="flex max-h-[640px] flex-col gap-[2px] overflow-y-auto border border-border bg-bg-card">
+      <ul className="flex max-h-[60dvh] flex-col gap-[2px] overflow-y-auto border border-border bg-bg-card sm:max-h-[640px]">
         {items.map((item) => (
           <NodeRow
             key={item.id}

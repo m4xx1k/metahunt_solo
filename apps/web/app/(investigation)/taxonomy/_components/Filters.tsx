@@ -102,7 +102,7 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
               type="button"
               onClick={handleStatusClick(s)}
               className={cn(
-                "border px-2 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+                "border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:px-2 sm:py-1",
                 active
                   ? STATUS_PILL_ACTIVE[s]
                   : "border-border text-text-muted hover:text-text-secondary",
@@ -122,7 +122,7 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
           type="button"
           onClick={handleTypeClick(undefined)}
           className={cn(
-            "border px-2 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+            "border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:px-2 sm:py-1",
             type === undefined
               ? "border-accent text-accent"
               : "border-border text-text-muted hover:text-text-secondary",
@@ -136,7 +136,7 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
             type="button"
             onClick={handleTypeClick(t)}
             className={cn(
-              "border px-2 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+              "border px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:px-2 sm:py-1",
               type === t
                 ? "border-accent text-accent"
                 : "border-border text-text-muted hover:text-text-secondary",
@@ -147,14 +147,14 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input
           type="search"
           value={searchDraft}
           onChange={handleSearchChange}
           placeholder="пошук за назвою чи псевдонімом…"
           aria-label="пошук у довіднику"
-          className="min-w-[240px] flex-1 border border-border bg-bg-elev px-3 py-2 font-mono text-sm text-text-primary outline-none focus:border-accent"
+          className="w-full border border-border bg-bg-elev px-3 py-2 font-mono text-sm text-text-primary outline-none focus:border-accent sm:min-w-[240px] sm:flex-1"
         />
         <label className="flex items-center gap-2 font-mono text-xs text-text-muted">
           блокує ≥
@@ -166,10 +166,10 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
             onChange={handleBlockedChange}
             placeholder="0"
             aria-label="мінімум заблокованих вакансій"
-            className="w-16 border border-border bg-bg-elev px-2 py-1 text-right text-text-primary outline-none focus:border-accent"
+            className="w-16 border border-border bg-bg-elev px-2 py-2 text-right text-text-primary outline-none focus:border-accent sm:py-1"
           />
         </label>
-        <span className="ml-auto font-mono text-[11px] text-text-muted">
+        <span className="font-mono text-[11px] text-text-muted sm:ml-auto">
           знайдено · {total}
         </span>
       </div>
