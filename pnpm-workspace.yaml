@@ -5,8 +5,10 @@ allowBuilds:
   '@nestjs/core': true
   '@scarf/scarf': true
   '@swc/core': true
+  cpu-features: false
   esbuild: true
   msw: true
   protobufjs: true
   sharp: true
+  ssh2: false
   unrs-resolver: true
