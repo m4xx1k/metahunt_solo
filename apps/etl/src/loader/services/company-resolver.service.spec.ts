@@ -1,170 +1,98 @@
-import { Test } from "@nestjs/testing";
-
-import { DRIZZLE } from "@metahunt/database";
-
 import { CompanyResolverService } from "./company-resolver.service";
+import { CompanyRepository } from "../repositories/company.repository";
 
 const SOURCE_ID = "11111111-1111-1111-1111-111111111111";
 const COMPANY_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const EXISTING_COMPANY_ID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 
-type Mocks = {
-  db: { select: jest.Mock; insert: jest.Mock };
-  selectWhere: jest.Mock;
-  insertReturning: jest.Mock;
-  insertOnConflictNoReturn: jest.Mock;
-  insertOnConflictWithReturn: jest.Mock;
-  insertValues: jest.Mock;
-};
-
-function buildMocks(opts: {
-  identifierHits: { companyId: string }[];
-  slugHits: { id: string }[];
-  companyInsertReturned: { id: string }[];
-}): Mocks {
-  // The order of selectWhere calls in the resolver is fixed:
-  //   1. company_identifiers WHERE (source_id, source_company_name) = ...
-  //   2. companies WHERE slug = ...                          (only on identifier miss)
-  const selectWhere = jest
-    .fn()
-    .mockResolvedValueOnce(opts.identifierHits)
-    .mockResolvedValueOnce(opts.slugHits);
-  const selectFrom = jest.fn().mockReturnValue({ where: selectWhere });
-  const select = jest.fn().mockReturnValue({ from: selectFrom });
-
-  // The resolver may insert: companies (with returning) and/or
-  // company_identifiers (no returning). Set up both shapes; only the
-  // ones used will be observed.
-  const insertReturning = jest
-    .fn()
-    .mockResolvedValue(opts.companyInsertReturned);
-  const insertOnConflictWithReturn = jest
-    .fn()
-    .mockReturnValue({ returning: insertReturning });
-  const insertOnConflictNoReturn = jest.fn().mockResolvedValue(undefined);
-
-  // First insert call may be companies (returning) OR identifiers (no returning).
-  // We give each call its own onConflict shape based on call order:
-  //  - full create: companies (returning) -> identifier (no returning)
-  //  - slug-hit:    identifier (no returning) only
-  const insertValues = jest
-    .fn()
-    .mockReturnValueOnce({ onConflictDoNothing: insertOnConflictWithReturn })
-    .mockReturnValueOnce({ onConflictDoNothing: insertOnConflictNoReturn });
-  const insert = jest.fn().mockReturnValue({ values: insertValues });
-
+// The repository boundary lets us mock plain intention-revealing methods and
+// assert on their real arguments — no Drizzle query-builder chain to fake.
+function makeRepo(): jest.Mocked<CompanyRepository> {
   return {
-    db: { select, insert },
-    selectWhere,
-    insertReturning,
-    insertOnConflictNoReturn,
-    insertOnConflictWithReturn,
-    insertValues,
-  };
-}
-
-async function bootstrap(mocks: Mocks): Promise<CompanyResolverService> {
-  const moduleRef = await Test.createTestingModule({
-    providers: [
-      CompanyResolverService,
-      { provide: DRIZZLE, useValue: mocks.db },
-    ],
-  }).compile();
-  return moduleRef.get(CompanyResolverService);
+    findIdByIdentifier: jest.fn().mockResolvedValue(null),
+    findIdBySlug: jest.fn().mockResolvedValue(null),
+    insertReturningId: jest.fn().mockResolvedValue(null),
+    linkIdentifier: jest.fn().mockResolvedValue(undefined),
+  } as unknown as jest.Mocked<CompanyRepository>;
 }
 
 describe("CompanyResolverService.resolve", () => {
-  it("returns existing company id on company_identifiers hit (no inserts)", async () => {
-    const mocks = buildMocks({
-      identifierHits: [{ companyId: EXISTING_COMPANY_ID }],
-      slugHits: [],
-      companyInsertReturned: [],
-    });
-    const svc = await bootstrap(mocks);
+  it("returns existing id on identifier hit (no slug lookup, no inserts)", async () => {
+    const repo = makeRepo();
+    repo.findIdByIdentifier.mockResolvedValue(EXISTING_COMPANY_ID);
+    const svc = new CompanyResolverService(repo);
 
     const result = await svc.resolve(SOURCE_ID, "Acme Corp");
 
     expect(result).toBe(EXISTING_COMPANY_ID);
-    expect(mocks.db.insert).not.toHaveBeenCalled();
-    expect(mocks.selectWhere).toHaveBeenCalledTimes(1);
+    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp");
+    expect(repo.findIdBySlug).not.toHaveBeenCalled();
+    expect(repo.insertReturningId).not.toHaveBeenCalled();
+    expect(repo.linkIdentifier).not.toHaveBeenCalled();
   });
 
-  it("links existing slug-matched company on identifier miss", async () => {
-    // Slug-hit path: insert order is identifier-only (no companies insert)
-    const mocks: Mocks = (() => {
-      const selectWhere = jest
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: EXISTING_COMPANY_ID }]);
-      const selectFrom = jest.fn().mockReturnValue({ where: selectWhere });
-      const select = jest.fn().mockReturnValue({ from: selectFrom });
-
-      const insertOnConflictNoReturn = jest.fn().mockResolvedValue(undefined);
-      const insertValues = jest
-        .fn()
-        .mockReturnValue({ onConflictDoNothing: insertOnConflictNoReturn });
-      const insert = jest.fn().mockReturnValue({ values: insertValues });
-
-      return {
-        db: { select, insert },
-        selectWhere,
-        insertReturning: jest.fn(),
-        insertOnConflictNoReturn,
-        insertOnConflictWithReturn: jest.fn(),
-        insertValues,
-      };
-    })();
-    const svc = await bootstrap(mocks);
+  it("links existing slug-matched company on identifier miss (no company insert)", async () => {
+    const repo = makeRepo();
+    repo.findIdBySlug.mockResolvedValue(EXISTING_COMPANY_ID);
+    const svc = new CompanyResolverService(repo);
 
     const result = await svc.resolve(SOURCE_ID, "Acme Corp");
 
     expect(result).toBe(EXISTING_COMPANY_ID);
-    expect(mocks.db.insert).toHaveBeenCalledTimes(1); // only the identifier insert
-    const idArg = mocks.insertValues.mock.calls[0][0];
-    expect(idArg).toMatchObject({
-      sourceId: SOURCE_ID,
-      sourceCompanyName: "Acme Corp",
-      companyId: EXISTING_COMPANY_ID,
-    });
+    expect(repo.findIdBySlug).toHaveBeenCalledWith("acme-corp");
+    expect(repo.insertReturningId).not.toHaveBeenCalled();
+    expect(repo.linkIdentifier).toHaveBeenCalledWith(
+      SOURCE_ID,
+      "Acme Corp",
+      EXISTING_COMPANY_ID,
+    );
   });
 
   it("creates company + identifier when both are missing", async () => {
-    const mocks = buildMocks({
-      identifierHits: [],
-      slugHits: [],
-      companyInsertReturned: [{ id: COMPANY_ID }],
-    });
-    const svc = await bootstrap(mocks);
+    const repo = makeRepo();
+    repo.insertReturningId.mockResolvedValue(COMPANY_ID);
+    const svc = new CompanyResolverService(repo);
 
     const result = await svc.resolve(SOURCE_ID, "Acme Corp");
 
     expect(result).toBe(COMPANY_ID);
-    expect(mocks.db.insert).toHaveBeenCalledTimes(2);
-    const companyArg = mocks.insertValues.mock.calls[0][0];
-    expect(companyArg).toMatchObject({
-      name: "Acme Corp",
-      slug: "acme-corp",
-    });
-    const idArg = mocks.insertValues.mock.calls[1][0];
-    expect(idArg).toMatchObject({
-      sourceId: SOURCE_ID,
-      sourceCompanyName: "Acme Corp",
-      companyId: COMPANY_ID,
-    });
+    expect(repo.insertReturningId).toHaveBeenCalledWith("Acme Corp", "acme-corp");
+    expect(repo.linkIdentifier).toHaveBeenCalledWith(
+      SOURCE_ID,
+      "Acme Corp",
+      COMPANY_ID,
+    );
   });
 
-  it("slugifies the name (lowercase, hyphens, strips punctuation)", async () => {
-    const mocks = buildMocks({
-      identifierHits: [],
-      slugHits: [],
-      companyInsertReturned: [{ id: COMPANY_ID }],
-    });
-    const svc = await bootstrap(mocks);
+  it("slugifies the name and preserves the raw display name", async () => {
+    const repo = makeRepo();
+    repo.insertReturningId.mockResolvedValue(COMPANY_ID);
+    const svc = new CompanyResolverService(repo);
 
     await svc.resolve(SOURCE_ID, "  Hello World, Inc!  ");
 
-    const companyArg = mocks.insertValues.mock.calls[0][0];
-    expect(companyArg.slug).toBe("hello-world-inc");
-    expect(companyArg.name).toBe("Hello World, Inc!");
+    expect(repo.insertReturningId).toHaveBeenCalledWith(
+      "Hello World, Inc!",
+      "hello-world-inc",
+    );
+  });
+
+  it("recovers via re-read when a concurrent insert wins the race", async () => {
+    const repo = makeRepo();
+    repo.findIdBySlug
+      .mockResolvedValueOnce(null) // initial slug miss
+      .mockResolvedValueOnce(EXISTING_COMPANY_ID); // re-read finds the winner
+    repo.insertReturningId.mockResolvedValue(null); // race lost
+    const svc = new CompanyResolverService(repo);
+
+    const result = await svc.resolve(SOURCE_ID, "Acme Corp");
+
+    expect(result).toBe(EXISTING_COMPANY_ID);
+    expect(repo.findIdBySlug).toHaveBeenCalledTimes(2);
+    expect(repo.linkIdentifier).toHaveBeenCalledWith(
+      SOURCE_ID,
+      "Acme Corp",
+      EXISTING_COMPANY_ID,
+    );
   });
 });
