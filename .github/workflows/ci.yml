@@ -28,6 +28,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # test:etl builds @metahunt/database first (its gitignored dist/.d.ts is
+      # needed for ts-jest to type-check specs that import it).
       - run: pnpm test:etl
 
   test-etl-int:
@@ -47,7 +49,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Testcontainers boots its own pgvector Postgres via the runner's Docker.
+      # test:etl:int also builds @metahunt/database first; Testcontainers boots
+      # its own pgvector Postgres via the runner's Docker.
       - run: pnpm test:etl:int
 
   lint-web:

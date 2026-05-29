@@ -14,6 +14,9 @@ const config: Config = {
   moduleNameMapper: {
     "^@metahunt/database$": "<rootDir>/../../libs/database/src/index.ts",
   },
+  // Exit with the real status code even if the pg pool keeps a handle open;
+  // global-teardown still runs first to stop the container.
+  forceExit: true,
   testTimeout: 60_000,
 };
 
