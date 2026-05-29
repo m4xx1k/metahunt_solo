@@ -3,6 +3,8 @@ import { eq, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import type { Executor } from "./executor";
+
 export type SkillLink = { nodeId: string; isRequired: boolean };
 
 type RssRecordRow = typeof schema.rssRecords.$inferSelect;
@@ -21,16 +23,22 @@ function omit<T extends object, K extends keyof T>(
   return clone;
 }
 
-// Thin DB gateway for the silver vacancy upsert. Owns the transaction so the
-// vacancy row and its vacancy_nodes skill links commit atomically; the
-// VacancyLoaderService just maps extracted data to values + skill links.
+// Thin DB gateway for the silver vacancy upsert. `runInTransaction` lets the
+// loader run company/node resolution AND the vacancy write in one atomic unit
+// of work; `upsertWithSkills` performs the row upsert + vacancy_nodes rewrite
+// on whatever executor (tx) it's handed. The VacancyLoaderService just maps
+// extracted data to values + skill links.
 export abstract class VacancyRepository {
+  abstract runInTransaction<T>(
+    work: (tx: Executor) => Promise<T>,
+  ): Promise<T>;
   abstract findRecord(rssRecordId: string): Promise<RssRecordRow | null>;
-  // Atomic: insert-or-update the vacancy, then fully rewrite its skill links.
-  // Returns the vacancy id.
+  // Insert-or-update the vacancy, then fully rewrite its skill links, all on
+  // the supplied executor. Returns the vacancy id.
   abstract upsertWithSkills(
     values: VacancyUpsertValues,
     skillLinks: SkillLink[],
+    executor: Executor,
   ): Promise<string>;
 }
 
@@ -38,6 +46,10 @@ export abstract class VacancyRepository {
 export class DrizzleVacancyRepository extends VacancyRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {
     super();
+  }
+
+  runInTransaction<T>(work: (tx: Executor) => Promise<T>): Promise<T> {
+    return this.db.transaction((tx) => work(tx));
   }
 
   async findRecord(rssRecordId: string): Promise<RssRecordRow | null> {
@@ -51,36 +63,35 @@ export class DrizzleVacancyRepository extends VacancyRepository {
   async upsertWithSkills(
     values: VacancyUpsertValues,
     skillLinks: SkillLink[],
+    executor: Executor,
   ): Promise<string> {
-    return this.db.transaction(async (tx) => {
-      // Derive the update SET from the insert values so insert and update can
-      // never drift — add a field once and both branches pick it up.
-      const [upserted] = await tx
-        .insert(schema.vacancies)
-        .values(values)
-        .onConflictDoUpdate({
-          target: [schema.vacancies.sourceId, schema.vacancies.externalId],
-          set: { ...omit(values, IMMUTABLE_ON_UPDATE), updatedAt: sql`now()` },
-        })
-        .returning({ id: schema.vacancies.id });
+    // Derive the update SET from the insert values so insert and update can
+    // never drift — add a field once and both branches pick it up.
+    const [upserted] = await executor
+      .insert(schema.vacancies)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [schema.vacancies.sourceId, schema.vacancies.externalId],
+        set: { ...omit(values, IMMUTABLE_ON_UPDATE), updatedAt: sql`now()` },
+      })
+      .returning({ id: schema.vacancies.id });
 
-      const vacancyId = upserted.id;
+    const vacancyId = upserted.id;
 
-      await tx
-        .delete(schema.vacancyNodes)
-        .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
+    await executor
+      .delete(schema.vacancyNodes)
+      .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
 
-      if (skillLinks.length > 0) {
-        await tx.insert(schema.vacancyNodes).values(
-          skillLinks.map((link) => ({
-            vacancyId,
-            nodeId: link.nodeId,
-            isRequired: link.isRequired,
-          })),
-        );
-      }
+    if (skillLinks.length > 0) {
+      await executor.insert(schema.vacancyNodes).values(
+        skillLinks.map((link) => ({
+          vacancyId,
+          nodeId: link.nodeId,
+          isRequired: link.isRequired,
+        })),
+      );
+    }
 
-      return vacancyId;
-    });
+    return vacancyId;
   }
 }

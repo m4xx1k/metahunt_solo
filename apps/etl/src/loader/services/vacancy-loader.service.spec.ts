@@ -1,6 +1,7 @@
 import { VacancyLoaderService } from "./vacancy-loader.service";
 import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
+import type { Executor } from "../repositories/executor";
 import {
   VacancyRepository,
   type SkillLink,
@@ -14,6 +15,9 @@ const COMPANY_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
 const ROLE_NODE_ID = "rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr";
 const DOMAIN_NODE_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 const PUBLISHED_AT = new Date("2026-04-24T10:00:00.000Z");
+// Sentinel tx handed to runInTransaction's callback — asserts resolution and
+// the upsert all run on the SAME executor (one atomic unit of work).
+const TX = { __tx: true } as unknown as Executor;
 
 const fullExtracted = {
   role: "Backend Engineer",
@@ -43,9 +47,12 @@ const baseRecord = {
 };
 
 // The repository boundary makes the loader unit-testable with no DB and no tx
-// chain to fake — we assert the values + skill links it hands to the repo.
+// chain to fake — runInTransaction just runs the callback with a sentinel tx.
 function makeRepo(): jest.Mocked<VacancyRepository> {
   return {
+    runInTransaction: jest.fn((work: (tx: Executor) => Promise<unknown>) =>
+      work(TX),
+    ),
     findRecord: jest.fn().mockResolvedValue(null),
     upsertWithSkills: jest.fn().mockResolvedValue(VACANCY_ID),
   } as unknown as jest.Mocked<VacancyRepository>;
@@ -70,7 +77,7 @@ function skillsArg(repo: jest.Mocked<VacancyRepository>): SkillLink[] {
 }
 
 describe("VacancyLoaderService.loadFromRecord", () => {
-  it("maps a full extracted payload to vacancy values + skill links", async () => {
+  it("maps a full payload and runs resolution + upsert on one tx", async () => {
     const repo = makeRepo();
     repo.findRecord.mockResolvedValue(baseRecord as never);
     const { service, companyResolve, nodeResolve } = makeService(repo);
@@ -84,9 +91,17 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     const result = await service.loadFromRecord(RECORD_ID);
 
     expect(result).toBe(VACANCY_ID);
-    expect(companyResolve).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp");
-    expect(nodeResolve).toHaveBeenCalledWith("ROLE", "Backend Engineer");
-    expect(nodeResolve).toHaveBeenCalledWith("DOMAIN", "FinTech");
+    // every write joins the same transaction
+    expect(repo.runInTransaction).toHaveBeenCalledTimes(1);
+    expect(companyResolve).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp", TX);
+    expect(nodeResolve).toHaveBeenCalledWith("ROLE", "Backend Engineer", TX);
+    expect(nodeResolve).toHaveBeenCalledWith("DOMAIN", "FinTech", TX);
+    expect(nodeResolve).toHaveBeenCalledWith("SKILL", "Go", TX);
+    expect(repo.upsertWithSkills).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      TX,
+    );
 
     expect(valuesArg(repo)).toMatchObject({
       sourceId: SOURCE_ID,
@@ -129,7 +144,6 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     } as never);
     const { service, companyResolve, nodeResolve } = makeService(repo);
     companyResolve.mockResolvedValue(COMPANY_ID);
-    // Same name -> same node id, so "Go" required must not be downgraded.
     nodeResolve.mockImplementation((_type: string, name: string) =>
       Promise.resolve(`skill:${name}`),
     );
@@ -169,8 +183,16 @@ describe("VacancyLoaderService.loadFromRecord", () => {
 
     await service.loadFromRecord(RECORD_ID);
 
-    expect(nodeResolve).not.toHaveBeenCalledWith("ROLE", expect.anything());
-    expect(nodeResolve).not.toHaveBeenCalledWith("DOMAIN", expect.anything());
+    expect(nodeResolve).not.toHaveBeenCalledWith(
+      "ROLE",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(nodeResolve).not.toHaveBeenCalledWith(
+      "DOMAIN",
+      expect.anything(),
+      expect.anything(),
+    );
     expect(valuesArg(repo).roleNodeId).toBeNull();
     expect(valuesArg(repo).domainNodeId).toBeNull();
   });
@@ -190,7 +212,7 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     expect(skillsArg(repo)).toEqual([]);
   });
 
-  it("throws when the rss_record is not found", async () => {
+  it("throws before opening a transaction when the rss_record is missing", async () => {
     const repo = makeRepo();
     repo.findRecord.mockResolvedValue(null);
     const { service } = makeService(repo);
@@ -198,6 +220,7 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     await expect(service.loadFromRecord(RECORD_ID)).rejects.toThrow(
       /rss_record/,
     );
+    expect(repo.runInTransaction).not.toHaveBeenCalled();
     expect(repo.upsertWithSkills).not.toHaveBeenCalled();
   });
 });
