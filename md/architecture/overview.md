@@ -116,11 +116,12 @@ Two independent surfaces, both built from a subset of this monorepo. Neither reb
 - Ignored Build Step: `git diff --quiet HEAD^ HEAD -- . ../../libs ../../package.json ../../pnpm-lock.yaml` — Vercel skips a build when only backend files changed.
 - `NEXT_PUBLIC_API_URL` (declared in `apps/web/.env.example`) points at the ETL base URL. Used by Server-Component fetches in `apps/web/lib/api/` — must be set on the Vercel project per environment.
 - Setup procedure: [`md/runbook/vercel-deploy.md`](../runbook/vercel-deploy.md).
+- Auth: Clerk fronts the entire `app/(investigation)` route group via `apps/web/proxy.ts` (`clerkMiddleware` + `createRouteMatcher` for `/dashboard`, `/sources`, `/vacancies`, `/unique-vacancies`, `/taxonomy`). Landing stays public. `<ClerkProvider>` wraps `app/layout.tsx`; a `<UserButton />` lives in the operator Sidebar footer. Single-operator gating is done via the Clerk Dashboard **Allowlist** (one email), not a code-side role check. Env: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY`. First-time setup: [`md/runbook/clerk-auth.md`](../runbook/clerk-auth.md).
 
 ## Current gaps
 
 - BAML prompt v2 shipped (canonical-taxonomy injection + anti-fluff per-field rules + few-shot examples — see [migration tracker](../journal/migrations/extraction-prompt-v2.md) and [runbook](../runbook/extraction-cost.md)); empirical v1→v2 SKILL-coverage delta was deferred and remains the open question for the next Stage 06 iteration.
 - Moderator write-path on `/admin/taxonomy/*` shipped (verify, hide, rename, merge) — see [`taxonomy-workspace`](../journal/migrations/taxonomy-workspace.md). No bulk operations yet.
-- No auth on `/admin/taxonomy/*` or `/rss` admin endpoints — gate before exposing beyond localhost. See [`rss-schedule-followups.md#a--production-hardening`](../journal/migrations/rss-schedule-followups.md#a--production-hardening) (A1).
+- Operator UI (`(investigation)` group) is now gated by Clerk via `apps/web/proxy.ts` — see Deployment → `@metahunt/web` above. The ETL admin endpoints (`/admin/taxonomy/*`, `/rss` triggers) are still wide open at the Nest layer — Clerk only protects the Next.js pages. Gate the API directly before exposing it beyond localhost. See [`rss-schedule-followups.md#a--production-hardening`](../journal/migrations/rss-schedule-followups.md#a--production-hardening) (A1).
 - No lint/format pipeline or CI yet (Stage 07).
 - LLM extraction defaults to `EXTRACTOR_PROVIDER=placeholder` (static stub, no LLM call). Switching to `EXTRACTOR_PROVIDER=baml` requires a valid `OPENAI_API_KEY` (BAML routes through OpenAI by default).

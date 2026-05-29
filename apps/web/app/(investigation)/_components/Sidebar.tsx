@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 import { Logo } from "@/components/ui-kit";
 import { cn } from "@/lib/utils";
 import { RefreshButton } from "./RefreshButton";
@@ -159,6 +160,12 @@ export function Sidebar({
             станом на {formatTime(asOf)}
           </span>
           <RefreshButton />
+          <div className="flex items-center gap-2">
+            <UserButton />
+            <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+              оператор
+            </span>
+          </div>
           <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
             {VERSION_LABEL}
           </span>
