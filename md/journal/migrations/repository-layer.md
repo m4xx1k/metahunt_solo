@@ -22,21 +22,35 @@ not on `DRIZZLE`. Pragmatic, incremental — not a big-bang rewrite.
 - Service holds only orchestration (resolve-or-create, race recovery, normalize/slugify) and is
   constructed with the repo directly in tests — no Nest `TestingModule`, no DB.
 
-## Done (first slice — loader resolvers)
+## Done (slice 1 — loader resolvers)
 
 - `loader/repositories/company.repository.ts`, `loader/repositories/node.repository.ts` — new.
 - `CompanyResolverService`, `NodeResolverService` — now inject the repository, pure orchestration.
 - Both specs rewritten to mock the repository and assert on **real arguments** (normalization,
   slugify, race recovery) — previously impossible.
 - `loader.module.ts` wires the two repository providers.
-- Verified: full `src/loader` suite 54/54 green, `tsc --noEmit` clean.
+
+## Done (slice 2 — vacancy loader)
+
+- `loader/repositories/vacancy.repository.ts` — new. `findRecord` + `upsertWithSkills` (owns the
+  `db.transaction`, so the vacancy row + `vacancy_nodes` rewrite stay atomic).
+- **Killed the `vacancyValues` insert/update duplication** (audit §2.5): the `onConflictDoUpdate`
+  SET is now derived from the insert values via `omit(IMMUTABLE_ON_UPDATE)` — add a field once.
+- `VacancyLoaderService` — no more `DRIZZLE`; pure mapping + a `resolveSkillLinks` private method
+  (was a ~135-line god-method). Spec rewritten to mock the repo, asserts mapping + skill links;
+  added a "required wins over optional" case.
+- Verified: full `src/loader` suite 54/54 green, `tsc --noEmit` clean (both slices).
+
+> Still open from §2.5: company/node **resolution runs before** `upsertWithSkills`, so a crash
+> mid-resolve can still leave orphan company/node rows (the *vacancy* write is atomic now, the
+> end-to-end load is not). Full fix needs threading the tx executor through the resolver repos —
+> deferred as its own slice (see #1 below).
 
 ## Remaining candidates (not started — pick up here)
 
 Same pattern, in rough value order:
-1. **`VacancyLoaderService`** — biggest win but needs a repo that accepts a transaction context
-   (the upsert + `vacancy_nodes` rewrite run inside `db.transaction`). Resolve the audit's §2.5
-   "resolution outside the transaction" non-atomicity at the same time.
+1. **End-to-end load atomicity** — thread a tx executor through Company/Node repositories so
+   resolution + vacancy upsert commit in one transaction (closes the §2.5 orphan-rows gap).
 2. **`MonitoringService` / `VacanciesService` / `ExtractionCostService`** — read-side raw-SQL
    aggregates → query repositories.
 3. **`dedup.service.ts`** — highest audit priority (§2.4) but largest; extract the candidate
