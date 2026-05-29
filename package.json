@@ -25,7 +25,7 @@
     "dedup:embed": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js embed",
     "dedup:resolve": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js resolve",
     "dedup:reset": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js reset",
-    "test:etl:int": "pnpm --filter @metahunt/etl test:int"
+    "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int"
   },
   "engines": {
     "node": ">=22"
