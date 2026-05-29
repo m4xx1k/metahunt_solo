@@ -55,6 +55,27 @@ not on `DRIZZLE`. Pragmatic, incremental — not a big-bang rewrite.
 - Specs assert the executor is threaded to every repo/resolver call (sentinel tx) + that the
   record-missing path throws *before* opening a tx. Full `src/etl` suite 148/148 green, tsc clean.
 
+## Done (slice 4 — integration test harness)
+
+The repository refactor made the loader unit-of-work Temporal-agnostic, so it's
+testable against a real DB with no Temporal/S3.
+
+- **Testcontainers** (`@testcontainers/postgresql` + `pgvector/pgvector:pg17`): one ephemeral
+  Postgres per run, migrations applied in `test/int/global-setup.ts`, stopped in
+  `global-teardown.ts`. Same code path locally and in CI — no manual `db:up`, no dev-DB pollution.
+- Separate `jest.int.config.ts` (`test/int/**/*.int.spec.ts`) so `pnpm test` stays fast and
+  Docker-free; `pnpm test:int` / root `pnpm test:etl:int` opt in.
+- `test/int/vacancy-loader.int.spec.ts` — real repos + services vs live PG: happy-path load,
+  upsert idempotency (skills rewritten), and the **headline rollback test** (vacancy write throws
+  after resolution → 0 orphan company/node rows = slice-3 atomicity proven on a real DB).
+- CI: new `test-etl-int` job runs `pnpm test:etl:int` on the runner's Docker. Near-zero cost
+  (~1–3 min, no separate DB billing).
+- `pnpm-workspace.yaml`: acknowledged ssh2/cpu-features build scripts as `false` (testcontainers'
+  optional remote-Docker SSH deps; unused with the local socket).
+
+> Not covered (deliberately): the RSS/extract activities (S3 + not yet repo-fied → slice 7) and
+> Temporal workflow replay (would use `@temporalio/testing`, separate effort).
+
 ## Remaining candidates (not started — pick up here)
 
 Same pattern, in rough value order:
