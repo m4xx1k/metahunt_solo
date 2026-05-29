@@ -3,30 +3,36 @@ import { and, eq } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import type { Executor } from "./executor";
 import type { NodeTypeValue } from "../services/node-resolver.service";
 
 // Thin DB gateway for taxonomy-node resolution. Mirrors CompanyRepository:
 // the resolve-or-create + race-recovery logic lives in NodeResolverService,
-// the SQL lives here. Abstract class doubles as the Nest DI token.
+// the SQL lives here. Abstract class doubles as the Nest DI token. Methods
+// take an optional Executor so resolution can join the vacancy-load tx.
 export abstract class NodeRepository {
   abstract findIdByAlias(
     type: NodeTypeValue,
     normalizedName: string,
+    executor?: Executor,
   ): Promise<string | null>;
   // Insert with ON CONFLICT DO NOTHING; returns the new id, or null when a
   // concurrent insert won the race (RETURNING yields no row).
   abstract insertReturningId(
     type: NodeTypeValue,
     canonicalName: string,
+    executor?: Executor,
   ): Promise<string | null>;
   abstract findIdByCanonical(
     type: NodeTypeValue,
     canonicalName: string,
+    executor?: Executor,
   ): Promise<string | null>;
   abstract linkAlias(
     name: string,
     type: NodeTypeValue,
     nodeId: string,
+    executor?: Executor,
   ): Promise<void>;
 }
 
@@ -39,8 +45,9 @@ export class DrizzleNodeRepository extends NodeRepository {
   async findIdByAlias(
     type: NodeTypeValue,
     normalizedName: string,
+    executor: Executor = this.db,
   ): Promise<string | null> {
-    const hits = await this.db
+    const hits = await executor
       .select({ nodeId: schema.nodeAliases.nodeId })
       .from(schema.nodeAliases)
       .where(
@@ -55,8 +62,9 @@ export class DrizzleNodeRepository extends NodeRepository {
   async insertReturningId(
     type: NodeTypeValue,
     canonicalName: string,
+    executor: Executor = this.db,
   ): Promise<string | null> {
-    const inserted = await this.db
+    const inserted = await executor
       .insert(schema.nodes)
       .values({ type, canonicalName, status: "NEW" })
       .onConflictDoNothing()
@@ -67,8 +75,9 @@ export class DrizzleNodeRepository extends NodeRepository {
   async findIdByCanonical(
     type: NodeTypeValue,
     canonicalName: string,
+    executor: Executor = this.db,
   ): Promise<string | null> {
-    const hits = await this.db
+    const hits = await executor
       .select({ id: schema.nodes.id })
       .from(schema.nodes)
       .where(
@@ -84,8 +93,9 @@ export class DrizzleNodeRepository extends NodeRepository {
     name: string,
     type: NodeTypeValue,
     nodeId: string,
+    executor: Executor = this.db,
   ): Promise<void> {
-    await this.db
+    await executor
       .insert(schema.nodeAliases)
       .values({ name, type, nodeId })
       .onConflictDoNothing();

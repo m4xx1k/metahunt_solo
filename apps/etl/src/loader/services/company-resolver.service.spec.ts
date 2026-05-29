@@ -1,9 +1,13 @@
 import { CompanyResolverService } from "./company-resolver.service";
 import { CompanyRepository } from "../repositories/company.repository";
+import type { Executor } from "../repositories/executor";
 
 const SOURCE_ID = "11111111-1111-1111-1111-111111111111";
 const COMPANY_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const EXISTING_COMPANY_ID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+// Sentinel transaction handle — we assert the resolver threads it to every
+// repository call so resolution can join the vacancy-load transaction.
+const TX = { __tx: true } as unknown as Executor;
 
 // The repository boundary lets us mock plain intention-revealing methods and
 // assert on their real arguments — no Drizzle query-builder chain to fake.
@@ -22,10 +26,14 @@ describe("CompanyResolverService.resolve", () => {
     repo.findIdByIdentifier.mockResolvedValue(EXISTING_COMPANY_ID);
     const svc = new CompanyResolverService(repo);
 
-    const result = await svc.resolve(SOURCE_ID, "Acme Corp");
+    const result = await svc.resolve(SOURCE_ID, "Acme Corp", TX);
 
     expect(result).toBe(EXISTING_COMPANY_ID);
-    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp");
+    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(
+      SOURCE_ID,
+      "Acme Corp",
+      TX,
+    );
     expect(repo.findIdBySlug).not.toHaveBeenCalled();
     expect(repo.insertReturningId).not.toHaveBeenCalled();
     expect(repo.linkIdentifier).not.toHaveBeenCalled();
@@ -36,15 +44,16 @@ describe("CompanyResolverService.resolve", () => {
     repo.findIdBySlug.mockResolvedValue(EXISTING_COMPANY_ID);
     const svc = new CompanyResolverService(repo);
 
-    const result = await svc.resolve(SOURCE_ID, "Acme Corp");
+    const result = await svc.resolve(SOURCE_ID, "Acme Corp", TX);
 
     expect(result).toBe(EXISTING_COMPANY_ID);
-    expect(repo.findIdBySlug).toHaveBeenCalledWith("acme-corp");
+    expect(repo.findIdBySlug).toHaveBeenCalledWith("acme-corp", TX);
     expect(repo.insertReturningId).not.toHaveBeenCalled();
     expect(repo.linkIdentifier).toHaveBeenCalledWith(
       SOURCE_ID,
       "Acme Corp",
       EXISTING_COMPANY_ID,
+      TX,
     );
   });
 
@@ -53,14 +62,19 @@ describe("CompanyResolverService.resolve", () => {
     repo.insertReturningId.mockResolvedValue(COMPANY_ID);
     const svc = new CompanyResolverService(repo);
 
-    const result = await svc.resolve(SOURCE_ID, "Acme Corp");
+    const result = await svc.resolve(SOURCE_ID, "Acme Corp", TX);
 
     expect(result).toBe(COMPANY_ID);
-    expect(repo.insertReturningId).toHaveBeenCalledWith("Acme Corp", "acme-corp");
+    expect(repo.insertReturningId).toHaveBeenCalledWith(
+      "Acme Corp",
+      "acme-corp",
+      TX,
+    );
     expect(repo.linkIdentifier).toHaveBeenCalledWith(
       SOURCE_ID,
       "Acme Corp",
       COMPANY_ID,
+      TX,
     );
   });
 
@@ -69,11 +83,12 @@ describe("CompanyResolverService.resolve", () => {
     repo.insertReturningId.mockResolvedValue(COMPANY_ID);
     const svc = new CompanyResolverService(repo);
 
-    await svc.resolve(SOURCE_ID, "  Hello World, Inc!  ");
+    await svc.resolve(SOURCE_ID, "  Hello World, Inc!  ", TX);
 
     expect(repo.insertReturningId).toHaveBeenCalledWith(
       "Hello World, Inc!",
       "hello-world-inc",
+      TX,
     );
   });
 
@@ -85,7 +100,7 @@ describe("CompanyResolverService.resolve", () => {
     repo.insertReturningId.mockResolvedValue(null); // race lost
     const svc = new CompanyResolverService(repo);
 
-    const result = await svc.resolve(SOURCE_ID, "Acme Corp");
+    const result = await svc.resolve(SOURCE_ID, "Acme Corp", TX);
 
     expect(result).toBe(EXISTING_COMPANY_ID);
     expect(repo.findIdBySlug).toHaveBeenCalledTimes(2);
@@ -93,6 +108,22 @@ describe("CompanyResolverService.resolve", () => {
       SOURCE_ID,
       "Acme Corp",
       EXISTING_COMPANY_ID,
+      TX,
+    );
+  });
+
+  it("works without an executor (defaults handled by the repository)", async () => {
+    const repo = makeRepo();
+    repo.findIdByIdentifier.mockResolvedValue(EXISTING_COMPANY_ID);
+    const svc = new CompanyResolverService(repo);
+
+    const result = await svc.resolve(SOURCE_ID, "Acme Corp");
+
+    expect(result).toBe(EXISTING_COMPANY_ID);
+    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(
+      SOURCE_ID,
+      "Acme Corp",
+      undefined,
     );
   });
 });

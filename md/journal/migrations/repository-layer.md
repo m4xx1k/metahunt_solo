@@ -41,17 +41,24 @@ not on `DRIZZLE`. Pragmatic, incremental — not a big-bang rewrite.
   added a "required wins over optional" case.
 - Verified: full `src/loader` suite 54/54 green, `tsc --noEmit` clean (both slices).
 
-> Still open from §2.5: company/node **resolution runs before** `upsertWithSkills`, so a crash
-> mid-resolve can still leave orphan company/node rows (the *vacancy* write is atomic now, the
-> end-to-end load is not). Full fix needs threading the tx executor through the resolver repos —
-> deferred as its own slice (see #1 below).
+## Done (slice 3 — end-to-end load atomicity)
+
+- `loader/repositories/executor.ts` — `Executor = DrizzleDB | <tx>` type, derived from the
+  transaction callback so it tracks the Drizzle version.
+- Company/Node repository methods take an optional `executor` (defaults to `this.db`); the two
+  resolver services thread it through.
+- `VacancyRepository` gains `runInTransaction(work)`; `upsertWithSkills` now runs on the passed
+  executor instead of opening its own tx.
+- `VacancyLoaderService.loadFromRecord` opens **one** transaction and runs company/node
+  resolution AND the vacancy upsert on it — closes the §2.5 orphan-rows gap (a crash mid-resolve
+  no longer commits company/node rows behind a vacancy that never landed).
+- Specs assert the executor is threaded to every repo/resolver call (sentinel tx) + that the
+  record-missing path throws *before* opening a tx. Full `src/etl` suite 148/148 green, tsc clean.
 
 ## Remaining candidates (not started — pick up here)
 
 Same pattern, in rough value order:
-1. **End-to-end load atomicity** — thread a tx executor through Company/Node repositories so
-   resolution + vacancy upsert commit in one transaction (closes the §2.5 orphan-rows gap).
-2. **`MonitoringService` / `VacanciesService` / `ExtractionCostService`** — read-side raw-SQL
+1. **`MonitoringService` / `VacanciesService` / `ExtractionCostService`** — read-side raw-SQL
    aggregates → query repositories.
 3. **`dedup.service.ts`** — highest audit priority (§2.4) but largest; extract the candidate
    SQL + scoring into a repository + pure scoring functions there.
