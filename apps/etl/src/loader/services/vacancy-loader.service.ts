@@ -1,28 +1,24 @@
-import { Injectable, Inject } from "@nestjs/common";
-import { eq, sql } from "drizzle-orm";
-import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
+import { Injectable } from "@nestjs/common";
 
 import type { ExtractedVacancy } from "../../baml_client/types";
+import {
+  VacancyRepository,
+  type SkillLink,
+  type VacancyUpsertValues,
+} from "../repositories/vacancy.repository";
 import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
-
-type SkillLink = { nodeId: string; isRequired: boolean };
 
 @Injectable()
 export class VacancyLoaderService {
   constructor(
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly repo: VacancyRepository,
     private readonly companyResolver: CompanyResolverService,
     private readonly nodeResolver: NodeResolverService,
   ) {}
 
   async loadFromRecord(rssRecordId: string): Promise<string> {
-    const [record] = await this.db
-      .select()
-      .from(schema.rssRecords)
-      .where(eq(schema.rssRecords.id, rssRecordId));
-
+    const record = await this.repo.findRecord(rssRecordId);
     if (!record) {
       throw new Error(`rss_record ${rssRecordId} not found`);
     }
@@ -42,7 +38,6 @@ export class VacancyLoaderService {
           extracted.companyName,
         )
       : null;
-
     const roleNodeId = extracted.role
       ? await this.nodeResolver.resolve("ROLE", extracted.role)
       : null;
@@ -50,26 +45,9 @@ export class VacancyLoaderService {
       ? await this.nodeResolver.resolve("DOMAIN", extracted.domain)
       : null;
 
-    const requiredSkills = extracted.skills?.required ?? [];
-    const optionalSkills = extracted.skills?.optional ?? [];
-    // Dedup by nodeId — distinct spellings of the same skill (e.g. "react"
-    // and "react.js") collapse to one alias-resolved node, and vacancy_nodes
-    // PKs on (vacancy_id, node_id). When a node appears as both required
-    // and optional, required wins.
-    const byNode = new Map<string, SkillLink>();
-    for (const name of requiredSkills) {
-      const nodeId = await this.nodeResolver.resolve("SKILL", name);
-      byNode.set(nodeId, { nodeId, isRequired: true });
-    }
-    for (const name of optionalSkills) {
-      const nodeId = await this.nodeResolver.resolve("SKILL", name);
-      if (!byNode.has(nodeId)) {
-        byNode.set(nodeId, { nodeId, isRequired: false });
-      }
-    }
-    const skillLinks: SkillLink[] = Array.from(byNode.values());
+    const skillLinks = await this.resolveSkillLinks(extracted);
 
-    const vacancyValues = {
+    const values: VacancyUpsertValues = {
       sourceId: record.sourceId,
       externalId: record.externalId,
       lastRssRecordId: record.id,
@@ -103,54 +81,27 @@ export class VacancyLoaderService {
       publishedAt: record.publishedAt,
     };
 
-    return this.db.transaction(async (tx) => {
-      const [upserted] = await tx
-        .insert(schema.vacancies)
-        .values(vacancyValues)
-        .onConflictDoUpdate({
-          target: [schema.vacancies.sourceId, schema.vacancies.externalId],
-          set: {
-            lastRssRecordId: vacancyValues.lastRssRecordId,
-            title: vacancyValues.title,
-            description: vacancyValues.description,
-            companyId: vacancyValues.companyId,
-            roleNodeId: vacancyValues.roleNodeId,
-            domainNodeId: vacancyValues.domainNodeId,
-            seniority: vacancyValues.seniority,
-            workFormat: vacancyValues.workFormat,
-            employmentType: vacancyValues.employmentType,
-            englishLevel: vacancyValues.englishLevel,
-            experienceYears: vacancyValues.experienceYears,
-            salaryMin: vacancyValues.salaryMin,
-            salaryMax: vacancyValues.salaryMax,
-            currency: vacancyValues.currency,
-            engagementType: vacancyValues.engagementType,
-            hasTestAssignment: vacancyValues.hasTestAssignment,
-            hasReservation: vacancyValues.hasReservation,
-            locations: vacancyValues.locations,
-            publishedAt: vacancyValues.publishedAt,
-            updatedAt: sql`now()`,
-          },
-        })
-        .returning({ id: schema.vacancies.id });
+    return this.repo.upsertWithSkills(values, skillLinks);
+  }
 
-      const vacancyId = upserted.id;
-
-      await tx
-        .delete(schema.vacancyNodes)
-        .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
-
-      if (skillLinks.length > 0) {
-        await tx.insert(schema.vacancyNodes).values(
-          skillLinks.map((link) => ({
-            vacancyId,
-            nodeId: link.nodeId,
-            isRequired: link.isRequired,
-          })),
-        );
+  // Resolve skill names to taxonomy node ids, deduped by node. Distinct
+  // spellings of the same skill (e.g. "react" / "react.js") collapse to one
+  // alias-resolved node; when a node appears as both required and optional,
+  // required wins.
+  private async resolveSkillLinks(
+    extracted: ExtractedVacancy,
+  ): Promise<SkillLink[]> {
+    const byNode = new Map<string, SkillLink>();
+    for (const name of extracted.skills?.required ?? []) {
+      const nodeId = await this.nodeResolver.resolve("SKILL", name);
+      byNode.set(nodeId, { nodeId, isRequired: true });
+    }
+    for (const name of extracted.skills?.optional ?? []) {
+      const nodeId = await this.nodeResolver.resolve("SKILL", name);
+      if (!byNode.has(nodeId)) {
+        byNode.set(nodeId, { nodeId, isRequired: false });
       }
-
-      return vacancyId;
-    });
+    }
+    return Array.from(byNode.values());
   }
 }

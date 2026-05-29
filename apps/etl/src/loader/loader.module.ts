@@ -11,6 +11,10 @@ import {
   NodeRepository,
   DrizzleNodeRepository,
 } from "./repositories/node.repository";
+import {
+  VacancyRepository,
+  DrizzleVacancyRepository,
+} from "./repositories/vacancy.repository";
 import { CompanyResolverService } from "./services/company-resolver.service";
 import { LoaderBackfillService } from "./services/loader-backfill.service";
 import { NodeResolverService } from "./services/node-resolver.service";
@@ -26,6 +30,7 @@ import { VacancyLoaderService } from "./services/vacancy-loader.service";
   providers: [
     { provide: CompanyRepository, useClass: DrizzleCompanyRepository },
     { provide: NodeRepository, useClass: DrizzleNodeRepository },
+    { provide: VacancyRepository, useClass: DrizzleVacancyRepository },
     CompanyResolverService,
     NodeResolverService,
     VacancyLoaderService,
