@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AppToaster } from "@/components/shared/AppToaster";
@@ -34,10 +35,12 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col bg-bg text-text-primary">
-        <VercelAnalytics>
-        {children}
-        </VercelAnalytics>
-        <AppToaster />
+        <ClerkProvider afterSignOutUrl="/">
+          <VercelAnalytics>
+          {children}
+          </VercelAnalytics>
+          <AppToaster />
+        </ClerkProvider>
       </body>
     </html>
   );

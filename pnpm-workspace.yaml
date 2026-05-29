@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "libs/*"
 allowBuilds:
+  '@clerk/shared': true
   '@nestjs/core': true
   '@scarf/scarf': true
   '@swc/core': true
