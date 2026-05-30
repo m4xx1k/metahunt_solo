@@ -52,3 +52,19 @@ export const EMPTY_FILTERS: FilterState = {
   test: null,
   reservation: null,
 };
+
+// The contract every filter-state backend satisfies (URL-backed today;
+// a local-useState backend could implement the same shape). Sections are
+// driven through this, never through a concrete hook.
+export interface FiltersApi {
+  filters: FilterState;
+  setRole: (id: string | null) => void;
+  toggleSkill: (id: string) => void;
+  setSource: (code: string | null) => void;
+  setSeniority: (v: string | null) => void;
+  setWorkFormat: (v: string | null) => void;
+  setTest: (v: boolean | null) => void;
+  setReservation: (v: boolean | null) => void;
+  clear: () => void;
+  activeCount: number;
+}
