@@ -2,7 +2,7 @@ import { Tag } from "@/components/ui-kit";
 import { vacanciesApi } from "@/lib/api/vacancies";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
 import { Pagination } from "../_components/Pagination";
-import { FilterToggles } from "./_components/FilterToggles";
+import { FilterToggles } from "../_components/FilterToggles";
 import { VacancyCard } from "./_components/VacancyCard";
 
 export const dynamic = "force-dynamic";

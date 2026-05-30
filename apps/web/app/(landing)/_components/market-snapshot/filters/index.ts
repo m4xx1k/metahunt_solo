@@ -1,4 +1,4 @@
-// Tier-2 vacancy filter widgets. Consumers map their own aggregate source
+// Market-snapshot filter widgets (landing page-private). Consumers map
 // into FilterAggregates and drive the sections with a FiltersApi
 // implementation (currently the URL-backed useUrlFilters on landing).
 
