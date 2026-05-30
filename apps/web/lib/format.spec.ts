@@ -1,11 +1,15 @@
 import {
   formatCount,
+  formatDateOnly,
+  formatDateRange,
   formatDateTime,
   formatDuration,
   formatPercent,
   formatRelative,
+  formatSalaryRange,
   formatTokens,
   formatUsd,
+  pluralizeUa,
 } from "@/lib/format";
 
 describe("formatDateTime", () => {
@@ -130,5 +134,75 @@ describe("formatTokens", () => {
 
   it("renders millions with an 'M' suffix", () => {
     expect(formatTokens(2_500_000)).toBe("2.50M");
+  });
+});
+
+describe("formatDateOnly", () => {
+  it("keeps only the calendar date", () => {
+    expect(formatDateOnly("2026-05-30T12:34:56.000Z")).toBe("2026-05-30");
+  });
+});
+
+describe("formatDateRange", () => {
+  it("collapses to one date when both ends are the same day", () => {
+    expect(
+      formatDateRange("2026-05-30T01:00:00Z", "2026-05-30T20:00:00Z"),
+    ).toBe("2026-05-30");
+  });
+
+  it("shows an arrow range across different days", () => {
+    expect(
+      formatDateRange("2026-05-01T00:00:00Z", "2026-05-30T00:00:00Z"),
+    ).toBe("2026-05-01 → 2026-05-30");
+  });
+});
+
+describe("formatSalaryRange", () => {
+  it("renders both bounds", () => {
+    expect(formatSalaryRange({ min: 100, max: 200, currency: "USD" })).toBe(
+      "100-200 USD",
+    );
+  });
+
+  it("renders a single open bound with a prefix", () => {
+    expect(formatSalaryRange({ min: 100, max: null, currency: "USD" })).toBe(
+      "від 100 USD",
+    );
+    expect(formatSalaryRange({ min: null, max: 200, currency: "USD" })).toBe(
+      "до 200 USD",
+    );
+  });
+
+  it("trims the trailing space when currency is missing", () => {
+    expect(formatSalaryRange({ min: 100, max: 200, currency: null })).toBe(
+      "100-200",
+    );
+  });
+
+  it("renders an em dash when both bounds are absent", () => {
+    expect(formatSalaryRange({ min: null, max: null, currency: "USD" })).toBe(
+      "—",
+    );
+  });
+});
+
+describe("pluralizeUa", () => {
+  const p = (n: number) => pluralizeUa(n, "оголошення", "оголошення", "оголошень");
+
+  it("selects the 'one' form for n ending in 1 (except 11)", () => {
+    expect(pluralizeUa(1, "one", "few", "many")).toBe("one");
+    expect(pluralizeUa(21, "one", "few", "many")).toBe("one");
+    expect(pluralizeUa(11, "one", "few", "many")).toBe("many");
+  });
+
+  it("selects the 'few' form for n ending in 2-4 (except teens)", () => {
+    expect(pluralizeUa(2, "one", "few", "many")).toBe("few");
+    expect(pluralizeUa(24, "one", "few", "many")).toBe("few");
+    expect(pluralizeUa(12, "one", "few", "many")).toBe("many");
+  });
+
+  it("selects the 'many' form otherwise", () => {
+    expect(p(5)).toBe("оголошень");
+    expect(p(100)).toBe("оголошень");
   });
 });
