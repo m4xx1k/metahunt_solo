@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import type { NodeStatus, NodeType } from "@/lib/api/taxonomy";
 import { cn } from "@/lib/utils";
-import { useUrlState } from "../_hooks/useUrlState";
+import { useUrlState } from "../_hooks/use-url-state";
 
 const TYPES: NodeType[] = ["ROLE", "SKILL", "DOMAIN"];
 

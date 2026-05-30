@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import type { NodeListItem, NodeStatus } from "@/lib/api/taxonomy";
 import { cn } from "@/lib/utils";
-import { useUrlState } from "../_hooks/useUrlState";
+import { useUrlState } from "../_hooks/use-url-state";
 
 const STATUS_PILL: Record<NodeStatus, string> = {
   NEW: "border-accent text-accent",
