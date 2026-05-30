@@ -2,6 +2,8 @@
 // Source of truth: apps/etl/src/taxonomy/taxonomy.{controller,service}.ts.
 // Hand-mirrored per ADR-0005 — same posture as lib/api/monitoring.ts.
 
+import { apiBase, apiGet, buildQs } from "./client";
+
 export type AxisKey = "role" | "skill" | "domain";
 
 export type NodeType = "ROLE" | "SKILL" | "DOMAIN";
@@ -147,40 +149,11 @@ export class TaxonomyApiError extends Error {
   }
 }
 
-function buildQs(
-  params?: Record<string, string | number | undefined>,
-): string {
-  if (!params) return "";
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null || v === "") continue;
-    sp.set(k, String(v));
-  }
-  const s = sp.toString();
-  return s ? `?${s}` : "";
-}
-
-function apiBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) {
-    throw new Error(
-      "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",
-    );
-  }
-  return base.replace(/\/+$/, "");
-}
-
-async function get<T>(
+function get<T>(
   path: string,
   params?: Record<string, string | number | undefined>,
 ): Promise<T> {
-  const url = `${apiBase()}${path}${buildQs(params)}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`taxonomy api ${res.status} ${path}: ${body}`);
-  }
-  return (await res.json()) as T;
+  return apiGet<T>(`${path}${buildQs(params)}`);
 }
 
 async function mutate<T>(

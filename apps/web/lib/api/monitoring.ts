@@ -5,6 +5,8 @@
 //
 // All Date columns become ISO 8601 strings on the wire.
 
+import { apiGet, buildQs } from "./client";
+
 export type IngestStatus = "running" | "completed" | "failed";
 
 export interface Source {
@@ -121,50 +123,16 @@ export interface ListRecordsQuery {
   offset?: number;
 }
 
-function buildQs(params?: unknown): string {
-  if (!params || typeof params !== "object") return "";
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params as Record<string, unknown>)) {
-    if (v === undefined || v === null || v === "") continue;
-    if (
-      typeof v !== "string" &&
-      typeof v !== "number" &&
-      typeof v !== "boolean"
-    ) {
-      continue;
-    }
-    sp.set(k, String(v));
-  }
-  const s = sp.toString();
-  return s ? `?${s}` : "";
-}
-
-async function get<T>(path: string, params?: unknown): Promise<T> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) {
-    throw new Error(
-      "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",
-    );
-  }
-  const url = `${base.replace(/\/+$/, "")}${path}${buildQs(params)}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`monitoring api ${res.status} ${path}: ${body}`);
-  }
-  return (await res.json()) as T;
-}
-
 export const monitoringApi = {
   stats: (period: StatsPeriod = "24h") =>
-    get<Stats>("/monitoring/stats", { period }),
-  sources: () => get<Source[]>("/monitoring/sources"),
+    apiGet<Stats>(`/monitoring/stats${buildQs({ period })}`),
+  sources: () => apiGet<Source[]>("/monitoring/sources"),
   listIngests: (q: ListIngestsQuery = {}) =>
-    get<Paginated<IngestListItem>>("/monitoring/ingests", q),
+    apiGet<Paginated<IngestListItem>>(`/monitoring/ingests${buildQs(q)}`),
   getIngest: (id: string) =>
-    get<IngestListItem>(`/monitoring/ingests/${encodeURIComponent(id)}`),
+    apiGet<IngestListItem>(`/monitoring/ingests/${encodeURIComponent(id)}`),
   listRecords: (q: ListRecordsQuery = {}) =>
-    get<Paginated<RecordListItem>>("/monitoring/records", q),
+    apiGet<Paginated<RecordListItem>>(`/monitoring/records${buildQs(q)}`),
   getRecord: (id: string) =>
-    get<RecordDetail>(`/monitoring/records/${encodeURIComponent(id)}`),
+    apiGet<RecordDetail>(`/monitoring/records/${encodeURIComponent(id)}`),
 };
