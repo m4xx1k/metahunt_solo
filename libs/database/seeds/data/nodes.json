@@ -44,6 +44,16 @@
       ]
     },
     {
+      "name": "C",
+      "aliases": [
+        "c",
+        "c lang",
+        "c language",
+        "ansi c",
+        "embedded c"
+      ]
+    },
+    {
       "name": "JavaScript",
       "aliases": [
         "javascript",
@@ -3370,6 +3380,15 @@
       "aliases": [
         ".net developer",
         "dotnet developer"
+      ]
+    },
+    {
+      "name": "Hardware Engineer",
+      "aliases": [
+        "hardware engineer",
+        "hardware developer",
+        "pcb engineer",
+        "electronics engineer"
       ]
     }
   ]
