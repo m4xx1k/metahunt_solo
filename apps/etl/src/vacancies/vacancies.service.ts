@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   and,
   count,
@@ -17,9 +17,11 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import type {
   AggregatesPerSource,
+  ContextualSkillsResponse,
   ListVacanciesResponse,
   NodeRef,
   Seniority,
+  TracksResponse,
   VacancyAggregatesResponse,
   VacancyDto,
   WorkFormat,
@@ -44,6 +46,15 @@ export interface ListVacanciesParams {
   roleId?: string;
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
+  /** Browse-tree slug; resolved to the two arrays below before buildWhere. */
+  trackSlug?: string;
+  /**
+   * Effective ROLE/SKILL node ids resolved from `trackSlug` (per-axis
+   * override-else-inherit). Internal — set by `list`, consumed by
+   * `buildWhere`; mirrors the track_counts view so count == click.
+   */
+  trackRoleIds?: string[];
+  trackSkillIds?: string[];
   seniority?: Seniority;
   workFormat?: WorkFormat;
   hasTestAssignment?: boolean;
@@ -102,6 +113,18 @@ export class VacanciesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async list(params: ListVacanciesParams): Promise<ListVacanciesResponse> {
+    if (params.trackSlug) {
+      const resolved = await this.resolveTrackFilter(params.trackSlug);
+      if (!resolved) {
+        throw new NotFoundException(`Unknown trackSlug "${params.trackSlug}"`);
+      }
+      params = {
+        ...params,
+        trackRoleIds: resolved.roleIds,
+        trackSkillIds: resolved.skillIds,
+      };
+    }
+
     const offset = (params.page - 1) * params.pageSize;
 
     const roleJoin = and(
@@ -232,6 +255,147 @@ export class VacanciesService {
     });
 
     return { ...global, sources, bySource };
+  }
+
+  // The browse tree: every active track plus its inherited vacancy count.
+  // Returned flat; the web nests by parentSlug and applies the hide-zero rule
+  // (a node is hidden only if count===0 AND it has no visible child, so
+  // grouping parents like "By Language" survive on their children's counts).
+  async getTracks(): Promise<TracksResponse> {
+    const rows = await this.db.execute<{
+      slug: string;
+      label: string;
+      parent_slug: string | null;
+      count: number;
+      sort_order: number;
+    }>(sql`
+      SELECT t.slug AS slug,
+             t.label AS label,
+             pt.slug AS parent_slug,
+             COALESCE(tc.vacancy_count, 0)::int AS count,
+             t.sort_order AS sort_order
+      FROM tracks t
+      LEFT JOIN tracks pt ON pt.id = t.parent_id
+      LEFT JOIN track_counts tc ON tc.track_id = t.id
+      WHERE t.is_active
+      ORDER BY t.sort_order, t.slug
+    `);
+    return {
+      tracks: rows.rows.map((r) => ({
+        slug: r.slug,
+        label: r.label,
+        parentSlug: r.parent_slug,
+        count: r.count,
+        sortOrder: r.sort_order,
+      })),
+    };
+  }
+
+  // Contextual skill facet under an active track: the skills most common in
+  // the track's matched vacancies, excluding the track's own skill criteria
+  // (those are already applied). Recomputed per track only — stable while the
+  // user toggles individual skill chips.
+  async getContextualSkills(slug: string): Promise<ContextualSkillsResponse> {
+    const resolved = await this.resolveTrackFilter(slug);
+    if (!resolved) throw new NotFoundException(`Unknown trackSlug "${slug}"`);
+
+    const roleCond =
+      resolved.roleIds.length > 0
+        ? sql`v.role_node_id IN (${sql.join(
+            resolved.roleIds.map((id) => sql`${id}::uuid`),
+            sql`, `,
+          )})`
+        : sql`true`;
+    const skillCond =
+      resolved.skillIds.length > 0
+        ? sql`EXISTS (
+            SELECT 1 FROM vacancy_nodes vn
+            WHERE vn.vacancy_id = v.id
+              AND vn.node_id IN (${sql.join(
+                resolved.skillIds.map((id) => sql`${id}::uuid`),
+                sql`, `,
+              )})
+          )`
+        : sql`true`;
+    // Grouping track with no effective criteria → empty facet (matches the 0 count).
+    if (resolved.roleIds.length === 0 && resolved.skillIds.length === 0) {
+      return { skills: [] };
+    }
+    const excludeOwn =
+      resolved.skillIds.length > 0
+        ? sql`AND n.id NOT IN (${sql.join(
+            resolved.skillIds.map((id) => sql`${id}::uuid`),
+            sql`, `,
+          )})`
+        : sql``;
+
+    const rows = await this.db.execute<{
+      id: string;
+      name: string;
+      count: number;
+    }>(sql`
+      SELECT n.id::text AS id,
+             n.canonical_name AS name,
+             COUNT(DISTINCT vn.vacancy_id)::int AS count
+      FROM vacancy_nodes vn
+      JOIN nodes n ON n.id = vn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
+      WHERE vn.vacancy_id IN (
+        SELECT v.id FROM vacancies v
+        JOIN nodes rn ON rn.id = v.role_node_id AND rn.status = 'VERIFIED'
+        WHERE ${roleCond} AND ${skillCond}
+      )
+      ${excludeOwn}
+      GROUP BY n.id, n.canonical_name
+      ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC
+      LIMIT 12
+    `);
+    return {
+      skills: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
+    };
+  }
+
+  // Resolve a track slug to its effective ROLE/SKILL node ids: per axis, the
+  // track's own nodes of that type, or — if it has none — its parent's (one
+  // hop). Returns null for an unknown/inactive slug. Both arrays empty means a
+  // pure grouping track (no criteria on either axis).
+  private async resolveTrackFilter(
+    slug: string,
+  ): Promise<{ roleIds: string[]; skillIds: string[] } | null> {
+    const rows = await this.db.execute<{
+      track_id: string | null;
+      role_ids: string[] | null;
+      skill_ids: string[] | null;
+    }>(sql`
+      WITH t AS (
+        SELECT id, parent_id FROM tracks WHERE slug = ${slug} AND is_active
+      ),
+      own AS (
+        SELECT n.type AS ntype, array_agg(tn.node_id::text) AS ids
+        FROM track_nodes tn
+        JOIN nodes n ON n.id = tn.node_id
+        WHERE tn.track_id = (SELECT id FROM t)
+        GROUP BY n.type
+      ),
+      par AS (
+        SELECT n.type AS ntype, array_agg(tn.node_id::text) AS ids
+        FROM track_nodes tn
+        JOIN nodes n ON n.id = tn.node_id
+        WHERE tn.track_id = (SELECT parent_id FROM t)
+        GROUP BY n.type
+      )
+      SELECT
+        (SELECT id::text FROM t) AS track_id,
+        COALESCE((SELECT ids FROM own WHERE ntype = 'ROLE'),
+                 (SELECT ids FROM par WHERE ntype = 'ROLE'))  AS role_ids,
+        COALESCE((SELECT ids FROM own WHERE ntype = 'SKILL'),
+                 (SELECT ids FROM par WHERE ntype = 'SKILL')) AS skill_ids
+    `);
+    const row = rows.rows[0];
+    if (!row || row.track_id === null) return null;
+    return {
+      roleIds: row.role_ids ?? [],
+      skillIds: row.skill_ids ?? [],
+    };
   }
 
   private async computeAggregates(
@@ -446,6 +610,32 @@ function buildWhere(params: ListVacanciesParams): SQL | undefined {
       GROUP BY vn.vacancy_id
       HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
     )`);
+  }
+  if (params.trackSlug) {
+    // Effective ROLE/SKILL sets were resolved from the slug (override-else-
+    // inherit). Apply them exactly as the track_counts view does so a track's
+    // shown count equals what this filter returns. A grouping track with no
+    // criteria on either axis (e.g. "By Language") matches nothing — the view
+    // counts it 0, so the click must too.
+    const trackRoleIds = params.trackRoleIds ?? [];
+    const trackSkillIds = params.trackSkillIds ?? [];
+    if (trackRoleIds.length === 0 && trackSkillIds.length === 0) {
+      conds.push(sql`false`);
+    } else {
+      if (trackRoleIds.length > 0) {
+        conds.push(inArray(vacancies.roleNodeId, trackRoleIds));
+      }
+      if (trackSkillIds.length > 0) {
+        conds.push(sql`EXISTS (
+          SELECT 1 FROM vacancy_nodes vn
+          WHERE vn.vacancy_id = ${vacancies.id}
+            AND vn.node_id IN (${sql.join(
+              trackSkillIds.map((id) => sql`${id}::uuid`),
+              sql`, `,
+            )})
+        )`);
+      }
+    }
   }
   // When includeRoleless is off (default), require the verified role-node
   // join to have matched. The join itself enforces VERIFIED, so this also

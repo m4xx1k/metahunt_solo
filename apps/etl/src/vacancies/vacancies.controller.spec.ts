@@ -34,6 +34,7 @@ describe("VacanciesController", () => {
         sourceId: undefined,
         roleId: undefined,
         skillIds: undefined,
+        trackSlug: undefined,
         seniority: undefined,
         workFormat: undefined,
         hasTestAssignment: undefined,

@@ -1,4 +1,10 @@
-import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Query,
+} from "@nestjs/common";
 
 import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./vacancies.contract";
 import { VacanciesService } from "./vacancies.service";
@@ -24,16 +30,19 @@ export class VacanciesController {
     @Query("hasReservation") rawHasReservation?: string,
     @Query("includeRoleless") rawIncludeRoleless?: string,
     @Query("includeAllSkills") rawIncludeAllSkills?: string,
+    @Query("trackSlug") rawTrackSlug?: string,
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
     const roleId = rawRoleId?.trim();
     const skillIds = parseIdList(rawSkillIds);
+    const trackSlug = rawTrackSlug?.trim();
     return this.vacancies.list({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       roleId: roleId && roleId.length > 0 ? roleId : undefined,
       skillIds: skillIds.length > 0 ? skillIds : undefined,
+      trackSlug: trackSlug && trackSlug.length > 0 ? trackSlug : undefined,
       seniority: parseEnum("seniority", rawSeniority, SENIORITY_VALUES),
       workFormat: parseEnum("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
       hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),
@@ -48,6 +57,16 @@ export class VacanciesController {
   @Get("aggregates")
   aggregates() {
     return this.vacancies.getAggregates();
+  }
+
+  @Get("tracks")
+  tracks() {
+    return this.vacancies.getTracks();
+  }
+
+  @Get("tracks/:slug/skills")
+  trackSkills(@Param("slug") slug: string) {
+    return this.vacancies.getContextualSkills(slug);
   }
 }
 

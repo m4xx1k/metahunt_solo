@@ -149,6 +149,13 @@ export interface ListVacanciesQuery {
   roleId?: string;
   /** Match vacancies that have ALL listed skills (AND semantics). */
   skillIds?: string[];
+  /**
+   * Browse-tree slug (e.g. `backend`, `backend-go`, `data-analyst`). The
+   * comfortable default door: resolves server-side to effective ROLE/SKILL
+   * node filters (per-axis override-else-inherit) and ANDs with everything
+   * else. Coexists with the raw `roleId` / `skillIds` power-user fallback.
+   */
+  trackSlug?: string;
 
   seniority?: Seniority;
   workFormat?: WorkFormat;
@@ -189,6 +196,38 @@ export interface ListVacanciesResponse {
   pageSize: number;
   /** Total matching rows across all pages. */
   total: number;
+}
+
+// ───────────────────────── Tracks endpoint ─────────────────────────
+// The single user-facing browse tree (disciplines + stack/sub-discipline
+// children). One flat list the web nests by `parentSlug`. Counts are per
+// track and inherited (a child's count == what clicking it returns); never
+// sum them. See md/journal/migrations/taxonomy-navigation.md.
+
+export interface TrackDto {
+  slug: string;
+  label: string;
+  /** Null for top-level disciplines; the discipline's slug for children. */
+  parentSlug: string | null;
+  /** Eligible vacancies matched by this track (from the track_counts view). */
+  count: number;
+  sortOrder: number;
+}
+
+export interface TracksResponse {
+  tracks: TrackDto[];
+}
+
+// Contextual skill facet shown under an active track selection: the skills
+// most common in the matched vacancies, excluding the track's own criteria.
+export interface ContextualSkill {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface ContextualSkillsResponse {
+  skills: ContextualSkill[];
 }
 
 // ─────────────────────── Aggregates endpoint ───────────────────────
