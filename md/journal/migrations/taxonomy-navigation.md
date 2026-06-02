@@ -1,7 +1,9 @@
 # taxonomy-navigation — single browse tree (`tracks`) over a two-axis feed
 
 **Branch:** feat/taxonomy-navigation
-**Status:** implementing — schema + migration (0012) landed, seed variant TBD; 2026-06-02
+**Status:** backend complete — schema+migrations (0012 tables, 0013 `track_counts`
+view), seed run, and all three API endpoints landed & verified vs dev DB; frontend
+next; 2026-06-02
 **Started:** 2026-05-29
 
 > **TL;DR (whole doc).** Feed navigation becomes ONE nested list the user browses
@@ -411,10 +413,14 @@ type ContextualSkill = { id: string; name: string; count: number };  // { skills
 - **tree = single-select** (one active node), **counts inherited + per-track
   independent** (never sum).
 
-**Backend steps:** 1) apply migration 0012 · 2) `track_counts` VIEW (per-axis
-override-else-inherit) · 3) wire `seedTracks` into `run.ts` · 4) `GET /tracks` ·
-5) `trackSlug` resolution in `buildWhere` · 6) `GET /tracks/:slug/skills` (scoped
-top-skills, exclude generic later).
+**Backend steps:** ✅ all done (2026-06-02). 1) migration 0012 applied · 2)
+`track_counts` VIEW (migration 0013, per-axis override-else-inherit) · 3) `seedTracks`
+wired into `run.ts` (run standalone vs dev DB — full `db:seed` skipped to avoid
+`seedNodes` reverting moderated statuses to VERIFIED) · 4) `GET /vacancies/tracks` ·
+5) `trackSlug` resolution in `buildWhere` (grouping tracks → match nothing) · 6)
+`GET /vacancies/tracks/:slug/skills` (scoped top-skills, own criteria excluded).
+Verified: `list(trackSlug).total` == view count (backend 1134, backend-go 104,
+lang-go 164, languages 0). DTOs: `TrackDto`/`ContextualSkill` in `vacancies.contract.ts`.
 
 **Frontend steps:** 1) freeze types above, mock responses · 2) nested track-tree
 (replaces flat `RoleSection`) · 3) `trackSlug` into `useFilters`, drop raw `roleId` ·
