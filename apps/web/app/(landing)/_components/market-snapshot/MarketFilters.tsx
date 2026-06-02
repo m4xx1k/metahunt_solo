@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import {
@@ -10,8 +11,10 @@ import {
   RoleSection,
   SkillsSection,
   SourceSection,
+  TrackTree,
 } from "./filters";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
+import type { TrackDto } from "@/lib/api/tracks";
 import { toFilterAggregates } from "./to-filter-aggregates";
 import { useUrlFilters } from "./use-url-filters";
 
@@ -21,14 +24,30 @@ import { useUrlFilters } from "./use-url-filters";
 // it never pushes the list off the first screen; on lg+ it is a sticky
 // always-visible column.
 
+// When `tracks` is passed (the /track prototype route) the sidebar leads
+// with the browse tree and selecting a node navigates to that track's page;
+// the flat RoleSection is dropped in that mode. Without it, the landing
+// keeps its current flat-role behavior untouched.
 export function MarketFilters({
   aggregates,
+  tracks,
+  activeTrackSlug,
 }: {
   aggregates: VacancyAggregates;
+  tracks?: TrackDto[];
+  activeTrackSlug?: string | null;
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   const api = useUrlFilters();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Picking a track is a fresh context: navigate to its route and drop any
+  // prior refine query (lazy-refine starts from the track's own criteria).
+  const handleSelectTrack = useCallback(
+    (slug: string) => router.push(`/track/${encodeURIComponent(slug)}`),
+    [router],
+  );
 
   const handleToggleMobile = useCallback(
     () => setMobileOpen((v) => !v),
@@ -64,11 +83,19 @@ export function MarketFilters({
       >
         <ActiveFiltersBar api={api} agg={agg} />
         <aside className="flex flex-col border border-border bg-bg-card">
-          <RoleSection
-            roles={agg.roles}
-            activeId={api.filters.roleId}
-            onChange={api.setRole}
-          />
+          {tracks ? (
+            <TrackTree
+              tracks={tracks}
+              activeSlug={activeTrackSlug ?? null}
+              onSelect={handleSelectTrack}
+            />
+          ) : (
+            <RoleSection
+              roles={agg.roles}
+              activeId={api.filters.roleId}
+              onChange={api.setRole}
+            />
+          )}
           <SkillsSection
             skills={agg.skills}
             selectedIds={api.filters.skillIds}
