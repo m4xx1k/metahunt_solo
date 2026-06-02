@@ -1,5 +1,11 @@
 import { Badge, Card } from "@/components/ui-kit";
 import type { UniqueVacancyListItem } from "@/lib/api/dedup";
+import {
+  formatDateOnly,
+  formatDateRange,
+  formatSalaryRange,
+  pluralizeUa,
+} from "@/lib/format";
 import { WhyMerged } from "./WhyMerged";
 
 // One unique-vacancy group, with collapsible member list. Uses native
@@ -26,7 +32,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
               <Badge key={s.id}>{s.displayName}</Badge>
             ))}
             <Badge variant="dark">
-              {group.vacancyCount} {pluralize(group.vacancyCount, "оголошення", "оголошення", "оголошень")}
+              {group.vacancyCount} {pluralizeUa(group.vacancyCount, "оголошення", "оголошення", "оголошень")}
             </Badge>
             {tier ? (
               <span
@@ -49,10 +55,10 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
           {group.salaryRange &&
           (group.salaryRange.min !== null || group.salaryRange.max !== null) ? (
             <span>
-              зарплата: {fmtSalary(group.salaryRange)}
+              зарплата: {formatSalaryRange(group.salaryRange)}
             </span>
           ) : null}
-          <span>опубліковано: {fmtDateRange(group.firstSeenAt, group.lastSeenAt)}</span>
+          <span>опубліковано: {formatDateRange(group.firstSeenAt, group.lastSeenAt)}</span>
         </div>
       </header>
 
@@ -61,7 +67,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
           <span>
             {group.vacancyCount === 1
               ? "переглянути канонічний запис →"
-              : `${group.vacancyCount} ${pluralize(group.vacancyCount, "учасник", "учасники", "учасників")} + причини об'єднання →`}
+              : `${group.vacancyCount} ${pluralizeUa(group.vacancyCount, "учасник", "учасники", "учасників")} + причини об'єднання →`}
           </span>
           <span className="font-mono text-base group-open/details:rotate-90">›</span>
         </summary>
@@ -86,7 +92,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
                 </div>
                 <div className="flex items-center gap-3 font-mono text-[11px] text-text-muted">
                   {m.publishedAt ? (
-                    <span>{fmtDate(m.publishedAt)}</span>
+                    <span>{formatDateOnly(m.publishedAt)}</span>
                   ) : null}
                   {m.externalUrl ? (
                     <a
@@ -107,43 +113,4 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
       </details>
     </Card>
   );
-}
-
-function fmtSalary({
-  min,
-  max,
-  currency,
-}: {
-  min: number | null;
-  max: number | null;
-  currency: string | null;
-}): string {
-  const c = currency ?? "";
-  if (min !== null && max !== null) return `${min}-${max} ${c}`.trim();
-  if (min !== null) return `від ${min} ${c}`.trim();
-  if (max !== null) return `до ${max} ${c}`.trim();
-  return "—";
-}
-
-function pluralize(
-  n: number,
-  one: string,
-  few: string,
-  many: string,
-): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
-  return many;
-}
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toISOString().slice(0, 10);
-}
-
-function fmtDateRange(firstIso: string, lastIso: string): string {
-  const first = fmtDate(firstIso);
-  const last = fmtDate(lastIso);
-  return first === last ? first : `${first} → ${last}`;
 }

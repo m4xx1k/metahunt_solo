@@ -3,6 +3,7 @@
 // types here until a second consumer justifies extracting libs/contracts.
 
 import type { EngagementType, Seniority, WorkFormat } from "./vacancies";
+import { apiGet } from "./client";
 
 export interface AggregateSourceCount {
   id: string;
@@ -37,28 +38,12 @@ export interface VacancyAggregates extends AggregatesPerSource {
   bySource: Record<string, AggregatesPerSource>;
 }
 
-async function get<T>(path: string, init?: RequestInit): Promise<T> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) {
-    throw new Error(
-      "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",
-    );
-  }
-  const url = `${base.replace(/\/+$/, "")}${path}`;
-  // Default: ISR-cache aggregates for 60s. The snapshot data only changes
-  // every hour (RSS schedule) so per-request fetches were wasted work.
-  const res = await fetch(
-    url,
-    init ?? ({ next: { revalidate: 60 } } as RequestInit),
-  );
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`aggregates api ${res.status} ${path}: ${body}`);
-  }
-  return (await res.json()) as T;
-}
-
 export const aggregatesApi = {
+  // ISR-cache aggregates for 60s by default: the snapshot only changes on
+  // the hourly RSS schedule, so per-request fetches were wasted work.
   get: (init?: RequestInit) =>
-    get<VacancyAggregates>("/vacancies/aggregates", init),
+    apiGet<VacancyAggregates>(
+      "/vacancies/aggregates",
+      init ?? { next: { revalidate: 60 } },
+    ),
 };

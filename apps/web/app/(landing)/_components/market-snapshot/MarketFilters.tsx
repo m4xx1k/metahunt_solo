@@ -10,7 +10,7 @@ import {
   RoleSection,
   SkillsSection,
   SourceSection,
-} from "@/components/data/vacancy-filters";
+} from "./filters";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import { toFilterAggregates } from "./to-filter-aggregates";
 import { useUrlFilters } from "./use-url-filters";

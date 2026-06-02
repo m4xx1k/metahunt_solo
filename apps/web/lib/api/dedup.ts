@@ -3,6 +3,7 @@
 // Hand-mirrored per ADR-0005 (no shared libs/contracts/ until 2nd consumer).
 
 import type { Currency, Seniority, WorkFormat } from "./vacancies";
+import { apiGet, buildQs } from "./client";
 
 // ───────────────────────── Confidence ─────────────────────────
 
@@ -126,41 +127,9 @@ export interface UniqueVacanciesResponse {
 
 // ─────────────────────────── Fetcher ────────────────────────────
 
-function buildQs(params?: UniqueVacanciesQuery): string {
-  if (!params) return "";
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null || v === "") continue;
-    if (
-      typeof v !== "string" &&
-      typeof v !== "number" &&
-      typeof v !== "boolean"
-    ) {
-      continue;
-    }
-    sp.set(k, String(v));
-  }
-  const s = sp.toString();
-  return s ? `?${s}` : "";
-}
-
-async function get<T>(path: string): Promise<T> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) {
-    throw new Error(
-      "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",
-    );
-  }
-  const url = `${base.replace(/\/+$/, "")}${path}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`dedup api ${res.status} ${path}: ${body}`);
-  }
-  return (await res.json()) as T;
-}
-
 export const dedupApi = {
   list: (q: UniqueVacanciesQuery = {}) =>
-    get<UniqueVacanciesResponse>(`/operator/unique-vacancies${buildQs(q)}`),
+    apiGet<UniqueVacanciesResponse>(
+      `/operator/unique-vacancies${buildQs(q)}`,
+    ),
 };

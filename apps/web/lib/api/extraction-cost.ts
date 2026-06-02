@@ -3,6 +3,8 @@
 // Per ADR-0005 we duplicate types here until a second consumer justifies
 // extracting libs/contracts.
 
+import { apiGet } from "./client";
+
 export interface ExtractionCostTotals {
   count: number;
   failures: number;
@@ -41,22 +43,6 @@ export interface ExtractionCostSummary {
   recent: ExtractionCostRecent[];
 }
 
-async function get<T>(path: string): Promise<T> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) {
-    throw new Error(
-      "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:4567).",
-    );
-  }
-  const url = `${base.replace(/\/+$/, "")}${path}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`extraction-cost api ${res.status} ${path}: ${body}`);
-  }
-  return (await res.json()) as T;
-}
-
 export const extractionCostApi = {
-  summary: () => get<ExtractionCostSummary>("/extraction-cost/summary"),
+  summary: () => apiGet<ExtractionCostSummary>("/extraction-cost/summary"),
 };

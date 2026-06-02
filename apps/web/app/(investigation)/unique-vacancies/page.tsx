@@ -1,7 +1,7 @@
 import { Tag } from "@/components/ui-kit";
 import { dedupApi, type DedupConfidence } from "@/lib/api/dedup";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
-import { FilterToggles } from "../vacancies/_components/FilterToggles";
+import { FilterToggles } from "../_components/FilterToggles";
 import { ConfidenceFilter } from "./_components/ConfidenceFilter";
 import { GroupCard } from "./_components/GroupCard";
 import { MetricsPanel } from "./_components/MetricsPanel";

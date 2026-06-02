@@ -13,7 +13,7 @@ import {
   type NodeDetail,
 } from "@/lib/api/taxonomy";
 import { cn } from "@/lib/utils";
-import { useUrlState } from "../_hooks/useUrlState";
+import { useUrlState } from "../_hooks/use-url-state";
 
 type ActionState = {
   busy: boolean;

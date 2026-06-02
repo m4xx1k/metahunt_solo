@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { CopyButton } from "@/components/ui-kit";
 import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { Fact } from "./Fact";
+import { FlagPills } from "./FlagPills";
 
 export function RssRecordCard({
   record,
@@ -43,7 +45,12 @@ export function RssRecordCard({
           <Title record={record} ex={ex} />
           {ex ? <KeyFacts ex={ex} /> : null}
           {ex ? <SkillsList skills={ex.skills} /> : null}
-          {ex ? <FlagPills ex={ex} /> : null}
+          {ex ? (
+            <FlagPills
+              hasTestAssignment={ex.hasTestAssignment}
+              hasReservation={ex.hasReservation}
+            />
+          ) : null}
           {record.description ? (
             <DescriptionDetails text={record.description} />
           ) : null}
@@ -158,34 +165,6 @@ function KeyFacts({ ex }: { ex: ExtractedVacancy }) {
   );
 }
 
-function Fact({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "font-mono",
-          highlight
-            ? "text-success text-base font-bold"
-            : "text-text-primary text-[13px]",
-        )}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
 // ─── skills ──────────────────────────────────────────────────────────────
 
 function SkillsList({ skills }: { skills: ExtractedVacancy["skills"] }) {
@@ -230,46 +209,6 @@ function SkillsRow({
           )}
         >
           #{s.toLowerCase()}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// ─── flag pills (test / бронь / domain) ──────────────────────────────────
-
-function FlagPills({ ex }: { ex: ExtractedVacancy }) {
-  const pills: Array<{ label: string; value: string; tone: "ok" | "no" | "muted" }> =
-    [];
-
-  if (ex.hasTestAssignment === true) {
-    pills.push({ label: "тестове", value: "так", tone: "no" });
-  } else if (ex.hasTestAssignment === false) {
-    pills.push({ label: "тестове", value: "ні", tone: "ok" });
-  }
-
-  if (ex.hasReservation === true) {
-    pills.push({ label: "бронювання", value: "так", tone: "ok" });
-  }
-
-  if (pills.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {pills.map((p) => (
-        <span
-          key={p.label}
-          className={cn(
-            "inline-flex items-center gap-2 border px-3 py-1 font-mono text-xs",
-            p.tone === "ok" && "border-success text-success",
-            p.tone === "no" && "border-danger text-danger",
-            p.tone === "muted" && "border-border text-text-secondary",
-          )}
-        >
-          <span className="uppercase tracking-wider text-[10px] text-text-muted">
-            {p.label}:
-          </span>
-          <span className="font-bold">{p.value}</span>
         </span>
       ))}
     </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { useUrlState } from "../_hooks/useUrlState";
+import { useUrlState } from "../_hooks/use-url-state";
 
 const MOBILE_MEDIA_QUERY = "(max-width: 1023px)";
 

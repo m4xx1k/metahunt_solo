@@ -16,6 +16,7 @@
     "dev:stop": "bash scripts/dev-stop.sh",
     "dev:restart": "pnpm dev:stop && sleep 1 && pnpm dev",
     "lint:web": "pnpm --filter @metahunt/web lint",
+    "test:web": "pnpm --filter @metahunt/web test",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",

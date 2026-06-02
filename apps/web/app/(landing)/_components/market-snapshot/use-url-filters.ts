@@ -6,7 +6,7 @@ import { useCallback, useMemo, useTransition } from "react";
 import type {
   FiltersApi,
   FilterState,
-} from "@/components/data/vacancy-filters";
+} from "./filters";
 
 export type UrlFiltersApi = FiltersApi & { isPending: boolean };
 

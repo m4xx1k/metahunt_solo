@@ -57,3 +57,47 @@ export function formatTokens(n: number | null | undefined): string {
   if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`;
   return `${(n / 1_000_000).toFixed(2)}M`;
 }
+
+// Date-only (YYYY-MM-DD), and a collapsing range that shows a single date
+// when both ends fall on the same day.
+export function formatDateOnly(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+export function formatDateRange(firstIso: string, lastIso: string): string {
+  const first = formatDateOnly(firstIso);
+  const last = formatDateOnly(lastIso);
+  return first === last ? first : `${first} → ${last}`;
+}
+
+// Salary band where either bound may be missing: "min-max c" / "від min c"
+// / "до max c" / "—".
+export function formatSalaryRange({
+  min,
+  max,
+  currency,
+}: {
+  min: number | null;
+  max: number | null;
+  currency: string | null;
+}): string {
+  const c = currency ?? "";
+  if (min !== null && max !== null) return `${min}-${max} ${c}`.trim();
+  if (min !== null) return `від ${min} ${c}`.trim();
+  if (max !== null) return `до ${max} ${c}`.trim();
+  return "—";
+}
+
+// Ukrainian plural selection (one / few / many) for a count.
+export function pluralizeUa(
+  n: number,
+  one: string,
+  few: string,
+  many: string,
+): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}

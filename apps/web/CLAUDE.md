@@ -20,7 +20,9 @@ This version (16.2.3 + React 19.2.4) has breaking changes — APIs, conventions,
 
 **Demotion:** if a tier-2 component loses its second consumer, move it back into the surviving page's `_components/` or delete it.
 
-**API:** `lib/api/` is the only place that talks to the backend. Pages call typed fetchers; components stay dumb and receive data via props.
+**API:** `lib/api/` is the only place that talks to the backend, all through `lib/api/client.ts` (`apiBase`/`buildQs`/`apiGet`/`apiPost`). Pages call typed fetchers; components stay dumb and receive data via props.
+
+**Hooks:** file names are kebab-case `use-x.ts`; the export stays camelCase `useX`. Page-private hooks live in `<route>/_hooks/`; a landing section's private hook co-locates in the section folder; a hook shared across routes goes in `lib/hooks/`.
 
 ## Layout
 
@@ -75,4 +77,4 @@ Vercel builds from `apps/web/` of this monorepo (Root Directory setting). The Ig
 
 ## API integration
 
-Currently none — the landing is fully static, sourced from per-section `data.tsx` files under `app/(landing)/_components/`. When the first endpoint is consumed, that ticket adds CORS to `@metahunt/etl`, declares `NEXT_PUBLIC_API_URL` on Vercel, creates `lib/api/client.ts` + a typed fetcher per resource, and the consuming page calls it. See ADR-0005 consequences.
+`lib/api/` is the single backend boundary: one typed fetcher per resource, all going through the shared `lib/api/client.ts` (`apiBase` + `apiFetch` + `buildQs`). Pages (server components) call the fetchers and pass data as props; components stay dumb. `NEXT_PUBLIC_API_URL` must point at `@metahunt/etl` (set in `.env.local` locally, on Vercel for deploys). The landing is static apart from the live market-snapshot + vacancy-list sections; investigation pages are fully API-driven. See ADR-0005 consequences.

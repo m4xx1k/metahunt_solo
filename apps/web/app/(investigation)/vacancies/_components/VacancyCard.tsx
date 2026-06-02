@@ -12,6 +12,8 @@ import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui-kit";
 import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { Fact } from "../../_components/Fact";
+import { FlagPills } from "../../_components/FlagPills";
 
 export function VacancyCard({
   vacancy,
@@ -33,7 +35,10 @@ export function VacancyCard({
           <Title vacancy={vacancy} />
           <KeyFacts vacancy={vacancy} />
           <SkillsList skills={vacancy.skills} />
-          <FlagPills vacancy={vacancy} />
+          <FlagPills
+            hasTestAssignment={vacancy.hasTestAssignment}
+            hasReservation={vacancy.hasReservation}
+          />
         </div>
 
         <Sidebar vacancy={vacancy} />
@@ -130,34 +135,6 @@ function KeyFacts({ vacancy }: { vacancy: VacancyDto }) {
   );
 }
 
-function Fact({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "font-mono",
-          highlight
-            ? "text-success text-base font-bold"
-            : "text-text-primary text-[13px]",
-        )}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
 // ─── skills ──────────────────────────────────────────────────────────────
 
 function SkillsList({ skills }: { skills: VacancyDto["skills"] }) {
@@ -204,48 +181,6 @@ function SkillsRow({
           )}
         >
           #{s.name.toLowerCase()}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// ─── flag pills (test / бронь) ──────────────────────────────────────────
-
-function FlagPills({ vacancy }: { vacancy: VacancyDto }) {
-  const pills: Array<{
-    label: string;
-    value: string;
-    tone: "ok" | "no" | "muted";
-  }> = [];
-
-  if (vacancy.hasTestAssignment === true) {
-    pills.push({ label: "тестове", value: "так", tone: "no" });
-  } else if (vacancy.hasTestAssignment === false) {
-    pills.push({ label: "тестове", value: "ні", tone: "ok" });
-  }
-  if (vacancy.hasReservation === true) {
-    pills.push({ label: "бронювання", value: "так", tone: "ok" });
-  }
-
-  if (pills.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {pills.map((p) => (
-        <span
-          key={p.label}
-          className={cn(
-            "inline-flex items-center gap-2 border px-3 py-1 font-mono text-xs",
-            p.tone === "ok" && "border-success text-success",
-            p.tone === "no" && "border-danger text-danger",
-            p.tone === "muted" && "border-border text-text-secondary",
-          )}
-        >
-          <span className="text-[10px] uppercase tracking-wider text-text-muted">
-            {p.label}:
-          </span>
-          <span className="font-bold">{p.value}</span>
         </span>
       ))}
     </div>
