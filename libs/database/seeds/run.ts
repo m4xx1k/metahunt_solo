@@ -4,6 +4,8 @@ import { Pool } from 'pg';
 import * as schema from '../src/schema';
 import { seedSources } from './sources.seed';
 import { seedNodes } from './nodes.seed';
+import { seedTracks, type TrackSeed } from './tracks.seed';
+import tracksData from './data/tracks.json';
 
 async function main(): Promise<void> {
   const connectionString =
@@ -16,6 +18,8 @@ async function main(): Promise<void> {
     console.log('Seed: sources — done');
     await seedNodes(db);
     console.log('Seed: nodes — done');
+    await seedTracks(db, tracksData as TrackSeed[]);
+    console.log('Seed: tracks — done');
   } finally {
     await pool.end();
   }
