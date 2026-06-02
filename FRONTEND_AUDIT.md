@@ -157,3 +157,23 @@
 | E | `refactor(web)` | tier-ізоляція: `FilterToggles` ↑, `vacancy-filters` → landing (P0-1, P0-2) |
 | F | `refactor(web)` | дедуп карток через слоти (P1-1, P1-2) + форматери в `lib/format` |
 | G | `refactor(web)` | конвенція хуків (P1-4) |
+
+✅ **A–G зроблено** на гілці `refactor/web-frontend-hygiene`. Кожен коміт пройшов гейт `tsc` + `jest` (40 тестів) + `eslint` (0 помилок) + `next build`.
+
+## 9. Залишилось зробити
+
+### Перед мерджем цієї гілки
+- [ ] **Візуальний smoke** (автогейти рендер не покривають). `pnpm db:up && pnpm dev:etl` + `pnpm dev:web` → пройти `/vacancies`, `/dashboard/ingests/[id]`, `/unique-vacancies`, лендінг. Після — `pnpm dev:stop` / `pnpm db:down`. Фокус: картки вакансій (дедуп `Fact`/`FlagPills`) і group-картки (форматери).
+- [ ] **PR** з гілки (опис = розкладка A–G). Опційно `/code-review` на дифі.
+- [ ] **Доля цього файлу**: `FRONTEND_AUDIT.md` лежить у корені (як `BACKEND_AUDIT.md`). Рішення — лишити / перенести в `md/` / видалити (бест-практіси вже в `apps/web/CLAUDE.md`).
+
+### Наступна гілка (відкладене за домовленістю)
+- [ ] **P1-3** — дубльовані search-params коерсери (`asString`/`asNonNegativeInt`/`asBool`) у `vacancies/page.tsx` + `unique-vacancies/page.tsx` → спільний хелпер у `lib/`.
+- [ ] **P2-1** — графіки `Donut`/`StackedBar`/`Sparkline` (generic, 0 домену) → `components/ui-kit/charts/`.
+- [ ] **P2-2** — доменний placeholder «Search for skills…» у tier-1 `SearchInput.tsx:18` → проп.
+- [ ] **P2-3** — `<EmptyState/>` (6 інлайн-копій: extraction, unique-vacancies, vacancies, NodeList, SourcesTable, ActivityStream).
+- [ ] **P2-4** — папка `app/(landing)/_components/waitlist/` тримає лише хук → перенести хук до споживачів / `lib/`, прибрати оманливу папку.
+
+### Можливі майбутні (не терміново)
+- [ ] eslint `no-restricted-imports` для enforce односпрямованих імпортів (заборона cross-route reach-in).
+- [ ] Якщо investigation-фільтри з'являться 2-м консюмером — формалізувати slot/compound-обгортку (зараз `MarketFilters` компонує секції руками; god-композер не відроджувати).
