@@ -22,7 +22,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
-  onModuleInit(): void {
+  async onModuleInit(): Promise<void> {
     const token = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
     if (token.length === 0) {
       this.logger.warn(
@@ -33,6 +33,16 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
     const bot = new Bot(token);
     this.registerHandlers(bot);
+
+    // init() runs getMe so `botInfo.username` is available to the subscribe
+    // endpoint without a separate env var. A bad token fails here — log and
+    // stay dormant rather than crashing bootstrap.
+    try {
+      await bot.init();
+    } catch (err) {
+      this.logger.error("Telegram bot init failed — bot dormant", err);
+      return;
+    }
     this.bot = bot;
 
     // bot.start() resolves only when the bot stops, so we deliberately don't
@@ -40,6 +50,11 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     void bot.start({
       onStart: (me) => this.logger.log(`Telegram bot @${me.username} polling`),
     });
+  }
+
+  /** Bot @username (from getMe), once initialized. Undefined while dormant. */
+  get botUsername(): string | undefined {
+    return this.bot?.botInfo.username;
   }
 
   async onModuleDestroy(): Promise<void> {

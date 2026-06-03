@@ -1,17 +1,17 @@
 import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 
 import type {
   CreateSubscriptionRequest,
   CreateSubscriptionResponse,
 } from "./subscriptions.contract";
 import { SubscriptionsService } from "./subscriptions.service";
+import { TelegramService } from "./telegram.service";
 
 @Controller("subscriptions")
 export class SubscriptionsController {
   constructor(
     private readonly subscriptions: SubscriptionsService,
-    private readonly config: ConfigService,
+    private readonly telegram: TelegramService,
   ) {}
 
   @Post()
@@ -23,10 +23,12 @@ export class SubscriptionsController {
       throw new BadRequestException("params must be an object");
     }
 
-    const username = this.config.get<string>("TELEGRAM_BOT_USERNAME") ?? "";
-    if (username.length === 0) {
+    // Username comes from the live bot (getMe at startup). Missing → the poller
+    // is dormant (no/invalid TELEGRAM_BOT_TOKEN), so a deep link is useless.
+    const username = this.telegram.botUsername;
+    if (!username) {
       throw new BadRequestException(
-        "TELEGRAM_BOT_USERNAME is not configured — cannot build the deep link",
+        "Telegram bot is not available — check TELEGRAM_BOT_TOKEN",
       );
     }
 

@@ -29,8 +29,9 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
       query as `params`, inactive) → returns `t.me/<bot>?start=<id>`; web shows "Відкрити
       Telegram". Endpoint + `SubscriptionsService.create` in the telegram module;
       `SubscribeButton` (tier-3) in the feed sidebar, hidden when the query matches nothing
-      (`trackSlug && !hasPreset`). Needs `TELEGRAM_BOT_USERNAME`. — *done when:* clicking
-      Subscribe yields a working deep link. ✅ commit pending.
+      (`trackSlug && !hasPreset`). Bot @username is derived from the token via `getMe` at
+      startup — no extra env var. — *done when:* clicking Subscribe yields a working deep
+      link. ✅ verified live (`https://t.me/<bot>?start=<id>`).
 - [ ] T4 — `buildWhere` extension: `loadedAfter` + `excludeIds` — *done when:* `list()` accepts both.
 - [ ] T5 — `matchNewVacancies` + `sendDigest` activities (HTML-escaped, capped) — *done when:* a seeded sub gets a digest.
 - [ ] T6 — `notifySubscribersWorkflow` + Schedule @:15 (register like `RssSchedulerService.ensureSchedule`) — *done when:* live digests fire.
@@ -67,9 +68,10 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
 
 ## Test `/start` locally (after this session)
 
-1. `pnpm db:up` then `pnpm db:migrate` — applies `0014`.
-2. Create a bot via @BotFather; in repo-root `.env` set `TELEGRAM_BOT_TOKEN=...` and
-   `TELEGRAM_BOT_USERNAME=<bot_username_no_@>`.
+1. `pnpm db:up` then **`pnpm db:migrate`** — applies `0014` (without it, `POST /subscriptions`
+   500s: no `subscriptions` table).
+2. Create a bot via @BotFather; in repo-root `.env` set `TELEGRAM_BOT_TOKEN=...`. The bot
+   @username is auto-derived via `getMe` — no other var needed.
 3. `pnpm --filter @metahunt/etl build && pnpm --filter @metahunt/etl start`
    (log shows `Telegram bot @<name> polling`).
 4. **Bot only:** DM `/start` → greeting; `/help`; `/stop`.
