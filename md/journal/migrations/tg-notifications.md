@@ -22,6 +22,15 @@ piece before it's a real product.
 - ⏳ **Not built yet:** the scheduled engine — `matchNewVacancies`/`sendDigestPage`,
   `notifySubscribersWorkflow` + Schedule @:15, `sent_notifications` writes, paging,
   `created_at` floor, `excludeIds` (T4 remainder, T6). **Nothing auto-sends — `/preview` only.**
+  Step-by-step build playbook: [#t6-build-guide](#t6-build-guide).
+
+**Update — later 2026-06-03 (`0f461b0`):** digest card reworked (seniority-led headline,
+raw title dropped, EN flag, reservation/test perks with reservation accented, domain +
+relative-time footer, salary bold, company removed, per-sub label in header); apply links
+now route through `GET /go/:id` (`RedirectController` + `FeedService.getApplyLink`, new
+`PUBLIC_BASE_URL` env) as the click-tracking seam; one-tap `SubscribeButton` (each tap mints
+a fresh sub + opens Telegram); orphan-pending GC (`SubscriptionsService.purgeStalePending`,
+scheduled from `TelegramService`). T6 (auto-send) + T4 remainder still open.
 
 **Live DB state:** 1 active subscription — role *Full Stack Developer*, linked to a chat,
 `is_active=true`, `sent_notifications` empty.
@@ -72,7 +81,7 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
       3 cards + "N new in 14d" count, `DIGEST_WINDOW_DAYS`/`DIGEST_PREVIEW_SIZE` consts).
       Verified on real data. Still pending: `matchNewVacancies`/`sendDigestPage` activities +
       paging + `sent_notifications` writes for the scheduled (non-preview) path.
-- [ ] T6 — `notifySubscribersWorkflow` + Schedule @:15 (register like `RssSchedulerService.ensureSchedule`) — *done when:* live digests fire.
+- [ ] T6 — `notifySubscribersWorkflow` + Schedule (register like `RssSchedulerService.ensureSchedule`) — *done when:* live digests fire. **Step-by-step:** [#t6-build-guide](#t6-build-guide).
 - [ ] T7 — pre-launch gate (see `weekend-launch-plan.md`): 1 replica, `/stop`, dedup re-run, grouping-track guard, dry-run.
 
 ## Decisions
@@ -131,6 +140,111 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
    активовано"; the row now has your `chat_id`, `is_active=true`. `/stop` → deactivates.
    (Manual alt: `INSERT INTO subscriptions (params) VALUES ('{}'::jsonb) RETURNING id;` then
    `/start <id>`.)
+
+## T6 build guide
+
+**Goal:** a Temporal schedule fires a few times a day, and for **each active
+subscription** pushes one digest of vacancies that appeared *since the user
+subscribed* and *haven't been sent before*. **If a subscription has zero new
+matches, nothing is sent** — no empty digests.
+
+It mirrors the RSS pipeline one-for-one, so copy that shape:
+
+| RSS (reference) | Telegram T6 (build this) |
+|---|---|
+| `rss/workflows/rss-ingest-all.workflow.ts` | `telegram/workflows/notify-subscribers.workflow.ts` |
+| `rss/activities/*.activity.ts` + `activities/index.ts` (`RSS_ACTIVITIES`) | `telegram/activities/notify.activity.ts` + `activities/index.ts` (`TELEGRAM_ACTIVITIES`) |
+| `rss/rss-scheduler.service.ts` (`OnApplicationBootstrap`) | `telegram/notify-scheduler.service.ts` |
+
+**Mental model:** workflows are *sandboxed orchestration* — no DB, no
+`Date.now()`, no Nest DI. They only call activities via `proxyActivities`.
+Activities are normal `@Injectable() @Activity()` Nest classes that do all IO
+(DB, Telegram). Keep that split.
+
+### 1 · Activity — `NotifyActivity` (`telegram/activities/notify.activity.ts`)
+
+Decorate `@Injectable() @Activity()` like `RssListSourcesActivity`; inject
+`SubscriptionsService`, `FeedService`, `TelegramService`, `ConfigService`,
+`DRIZZLE`. `@ActivityMethod()` methods:
+
+- `listActiveSubscriptions()` → `{ id, chatId, params, createdAt }[]`. Add a
+  `SubscriptionsService.listAllActive()` (all active rows, not chat-scoped).
+- `matchNewVacancies(sub)` → run `FeedService.search` with `loadedAfter` (already
+  wired) **plus the T4 remainder** (see §4): the per-sub `created_at` floor and the
+  `excludeIds` anti-join against `sent_notifications`. Return `{ items, total }`.
+  Page size = `MAX_PER_MESSAGE` (~8). **If `total === 0`, the workflow skips it.**
+- `sendDigestPage(chatId, subscriptionId, vacancyIds, html)` → `TelegramService.sendMessage`
+  then insert one `sent_notifications` row per `vacancyId` (`onConflictDoNothing` — the
+  composite PK is the double-send guard). Write **per page, after a successful send**, so
+  a retried page never re-sends earlier pages.
+
+Register in **both** `telegram/activities/index.ts` (`export const TELEGRAM_ACTIVITIES = [NotifyActivity] as const;`),
+the `TelegramModule` providers, and `temporal.module.ts` `activityClasses`
+(`...TELEGRAM_ACTIVITIES`) — exactly how `RSS_ACTIVITIES`/`LOADER_ACTIVITIES` are wired.
+
+### 2 · Workflow — `notifySubscribersWorkflow` (`telegram/workflows/notify-subscribers.workflow.ts`)
+
+```
+const a = proxyActivities<typeof NotifyActivity.prototype>({
+  startToCloseTimeout: "60s", retry: { maximumAttempts: 3 },
+});
+export async function notifySubscribersWorkflow() {
+  const subs = await a.listActiveSubscriptions();
+  for (const sub of subs) {                 // sequential: Telegram is rate-limited
+    const { items, total } = await a.matchNewVacancies(sub);
+    if (total === 0) continue;              // ← the "skip empty" rule
+    for (const page of chunk(items, MAX_PER_MESSAGE)) {   // chunk() is a pure helper
+      const html = renderDigest(page, { totalNew: total, windowDays, applyBaseUrl, label });
+      await a.sendDigestPage(sub.chatId, sub.id, page.map(v => v.id), html);
+    }
+  }
+}
+```
+
+Re-export from `telegram/workflows/index.ts`, then add
+`export * from "../telegram/workflows";` to `apps/etl/src/workflows/index.ts`
+(the worker's single `workflowsPath`). Rendering (`renderDigest`) is pure and
+sandbox-safe; the `applyBaseUrl`/`label` it needs are computed inside the
+activity (which has `ConfigService` + `SubscriptionsService.describe`) and passed
+in, **not** read in the workflow.
+
+### 3 · Scheduler — `NotifySchedulerService` (`telegram/notify-scheduler.service.ts`)
+
+Copy `RssSchedulerService` verbatim, changing: `SCHEDULE_ID = "tg-digest-daily"`,
+`workflowType: "notifySubscribersWorkflow"`, `workflowId: "tg-digest"`, and a
+calendar spec for a few daytime firings (e.g. `hour: { start: 9, end: 21, step: 4 }`,
+`minute: 0`, `Europe/Kyiv`). Keep `ScheduleOverlapPolicy.SKIP`. Register in
+`TelegramModule` providers. It installs the schedule on bootstrap; idempotent
+create-or-update.
+
+### 4 · T4 remainder — extend `buildWhere` (`feed/feed.service.ts`)
+
+`loadedAfter` exists. Add to `FeedSearchParams` + `buildWhere`:
+- **`createdFloor?: Date`** → candidate floor is `loaded_at > GREATEST(sub.createdAt, now() - SCAN_WINDOW)`.
+  Compute `GREATEST` in the activity (it has both dates) and pass the result as `loadedAfter`;
+  no SQL change needed if you fold it there. This stops a brand-new subscriber getting the
+  whole pre-subscription backlog.
+- **`excludeIds?: string[]`** → `NOT IN (already-sent vacancy ids for this sub)`. Source the
+  ids via an anti-join/sub-select on `sent_notifications` (`subscription_id = sub.id`).
+  This — not a stored watermark — is what makes matching correct and idempotent.
+
+### 5 · Single-replica caveat
+
+`sendDigestPage` calls `TelegramService.sendMessage`, which needs an **initialized
+bot** (token present). Today the poller initializes the bot in every replica with
+a token and the service is pinned to 1 replica (T7), so the send activity and the
+bot are co-located — fine. **Before scaling the worker past 1 replica**, decouple
+sending (stateless `bot.api.sendMessage`) from polling, or the activity may land on
+a replica whose bot is dormant.
+
+### 6 · Verify
+
+1. Seed: an active subscription + a vacancy with `loaded_at > created_at` matching its filter.
+2. Trigger the workflow by hand (Temporal UI "start workflow", type `notifySubscribersWorkflow`,
+   task queue from `TEMPORAL_TASK_QUEUE`) — don't wait for the schedule.
+3. Assert: digest arrives, `sent_notifications` has the rows.
+4. Re-run immediately → **nothing sends** (anti-join), proving idempotency.
+5. A subscription with no new matches → no message.
 
 ## Links
 
