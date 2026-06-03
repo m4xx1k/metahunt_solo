@@ -496,11 +496,55 @@ deselect any of them".
 - Framework / cloud stack children (languages-only to start).
 - Embedding-based node clustering. "Lift"-based contextual ranking.
 
+## Read-API module split + follow-ups (2026-06-03)
+
+After Variant C landed, the read side was refactored from one god `vacancies`
+module into bounded modules. **Done this pass:**
+
+- `vacancies` service → 3 services, then 3 **modules**: `feed` (search + role/skill
+  facets), `tracks` (browse tree + preset), `market` (aggregates). Routes moved:
+  `/vacancies`→`/feed`, `/vacancies/roles|skills`→`/feed/roles|skills`,
+  `/vacancies/tracks*`→`/tracks*`, `/vacancies/aggregates`→`/market/aggregates`.
+- Pure, unit-tested core: `feed/`+`tracks/track-preset.ts` (override-else-inherit
+  resolver + `presetCondition` predicate), `TracksRepository` (raw track SQL out of
+  the service). Shared `src/shared/contract.ts` (NodeRef + enums) + `eligible.ts`
+  (one `ELIGIBLE_VACANCY` predicate, was copy-pasted ×4).
+- Renamed `criteria`→`preset` end to end; `FeedQuery`/`FeedResponse` first-class.
+- **Integration test locks count==click**: `apps/etl/test/int/tracks.int.spec.ts`
+  (Testcontainers) asserts `track_counts` == feed total for every active track.
+- Web: feed is now the **home** route — `(landing)`→`(feed)` group, page promoted to
+  the group-root optional catch-all serving `/` and `/<trackSlug>` (clean URLs, no
+  `/track`); old flat home deleted; unknown slug → `notFound()`; catalog fetches
+  gated on an active track.
+
+**Still smells / to do (future):**
+
+1. **Snapshot drift** — `md/architecture/overview.md` still describes the old
+   `vacancies` module. Update to feed/tracks/market. (HIGH — snapshot lies.)
+2. **Web tier** — `MarketFilters`/`Snapshot`/`VacancyList` are still tier-3 in
+   `(feed)/_components/` but are the only feed UI now; promote to tier-2
+   `components/`. The `../_components` reach-up is the tell.
+3. **Dead branch** — `MarketFilters` non-trackMode path (`RoleSection`/
+   `SkillsSection`/`ActiveFiltersBar`) is unreachable now the flat home is gone
+   (`trackMode` always true). Remove it + any orphaned filter components.
+4. **count==click is single-skill-only** — feed applies `skillIds` as AND, the view
+   as EXISTS-any; equal only while each stack child has ≤1 skill. A 2-skill preset
+   would diverge — the int test catches it; real fix is [ADR-0006](../decisions/0006-skills-as-ranking-signal.md).
+5. **Pre-merge** — dry-run `pnpm db:seed:tracks` against prod (local vs prod VERIFIED
+   node divergence — see the 2026-06-02 pre-merge TODO above).
+6. **FE naming** — `lib/api/vacancies.ts` (`vacanciesApi`/`ListVacanciesQuery`) kept
+   the old names while backend moved to feed/`FeedQuery`; left to avoid churning 9
+   importers. Cosmetic; align if a second consumer appears.
+7. **Root scratch** — `BACKEND_AUDIT.md`, `TRACKS_AUDIT.md`, `tracks-mvp-plan.md`,
+   `tg-notifications-todo.md`, `graphql-track-page-draft.md` are untracked drafts;
+   decide keep/move-into-md/delete.
+
 ## Links
 
 - Schema: `libs/database/src/schema/nodes.ts`, `vacancies.ts`, `vacancy-nodes.ts`,
   seed `libs/database/seeds/data/nodes.json`
-- Feed filter / aggregates: `apps/etl/src/vacancies/vacancies.service.ts`
+- Feed search / facets: `apps/etl/src/feed/feed.service.ts`, `facets.service.ts`;
+  tracks: `apps/etl/src/tracks/`; aggregates: `apps/etl/src/market/`
 - Filter UI: `apps/web/components/data/vacancy-filters/`
 - Prior taxonomy work: `taxonomy-curation.md`, `taxonomy-workspace.md`
 - Ingest crutch: `apps/etl/src/rss/utils/vacancy-filter.ts`
