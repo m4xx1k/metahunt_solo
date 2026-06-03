@@ -8,13 +8,19 @@ import {
 
 import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./vacancies.contract";
 import { VacanciesService } from "./vacancies.service";
+import { AggregatesService } from "./aggregates.service";
+import { TracksService } from "./tracks.service";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
 @Controller("vacancies")
 export class VacanciesController {
-  constructor(private readonly vacancies: VacanciesService) {}
+  constructor(
+    private readonly vacancies: VacanciesService,
+    private readonly aggregates: AggregatesService,
+    private readonly tracks: TracksService,
+  ) {}
 
   @Get()
   list(
@@ -57,33 +63,33 @@ export class VacanciesController {
   }
 
   @Get("aggregates")
-  aggregates() {
-    return this.vacancies.getAggregates();
+  aggregatesSummary() {
+    return this.aggregates.getAggregates();
   }
 
   @Get("tracks")
-  tracks() {
-    return this.vacancies.getTracks();
+  trackTree() {
+    return this.tracks.getTracks();
   }
 
   @Get("skills")
   skills() {
-    return this.vacancies.getSkillFacets();
+    return this.aggregates.getSkillFacets();
   }
 
   @Get("roles")
   roles() {
-    return this.vacancies.getRoleFacets();
+    return this.aggregates.getRoleFacets();
   }
 
   @Get("tracks/:slug/skills")
   trackSkills(@Param("slug") slug: string) {
-    return this.vacancies.getContextualSkills(slug);
+    return this.tracks.getContextualSkills(slug);
   }
 
   @Get("tracks/:slug/preset")
   trackPreset(@Param("slug") slug: string) {
-    return this.vacancies.getTrackPreset(slug);
+    return this.tracks.getTrackPreset(slug);
   }
 }
 

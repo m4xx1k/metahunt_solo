@@ -4,6 +4,8 @@ import { Test } from "@nestjs/testing";
 import type { ListVacanciesResponse } from "./vacancies.contract";
 import { VacanciesController } from "./vacancies.controller";
 import { VacanciesService } from "./vacancies.service";
+import { AggregatesService } from "./aggregates.service";
+import { TracksService } from "./tracks.service";
 
 const EMPTY: ListVacanciesResponse = {
   items: [],
@@ -20,7 +22,11 @@ describe("VacanciesController", () => {
     list.mockReset().mockResolvedValue(EMPTY);
     const moduleRef = await Test.createTestingModule({
       controllers: [VacanciesController],
-      providers: [{ provide: VacanciesService, useValue: { list } }],
+      providers: [
+        { provide: VacanciesService, useValue: { list } },
+        { provide: AggregatesService, useValue: {} },
+        { provide: TracksService, useValue: {} },
+      ],
     }).compile();
     controller = moduleRef.get(VacanciesController);
   });

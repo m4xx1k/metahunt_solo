@@ -105,7 +105,7 @@ async function makeTrack(
 beforeAll(() => {
   ({ db, pool } = makeTestDb());
   repo = new TracksRepository(db);
-  service = new VacanciesService(db, repo);
+  service = new VacanciesService(db);
 });
 
 afterAll(async () => {
