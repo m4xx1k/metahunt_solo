@@ -1,21 +1,21 @@
 import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
 
-import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./vacancies.contract";
-import { VacanciesService } from "./vacancies.service";
+import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./feed.contract";
+import { FeedService } from "./feed.service";
 import { FacetsService } from "./facets.service";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
-@Controller("vacancies")
-export class VacanciesController {
+@Controller("feed")
+export class FeedController {
   constructor(
-    private readonly vacancies: VacanciesService,
+    private readonly feed: FeedService,
     private readonly facets: FacetsService,
   ) {}
 
   @Get()
-  list(
+  search(
     @Query("q") q?: string,
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
@@ -37,7 +37,7 @@ export class VacanciesController {
     const roleId = rawRoleId?.trim();
     const roleIds = parseIdList(rawRoleIds);
     const skillIds = parseIdList(rawSkillIds);
-    return this.vacancies.list({
+    return this.feed.search({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       roleId: roleId && roleId.length > 0 ? roleId : undefined,

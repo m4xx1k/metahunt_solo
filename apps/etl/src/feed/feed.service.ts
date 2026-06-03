@@ -16,12 +16,12 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import type {
-  ListVacanciesResponse,
+  FeedResponse,
   NodeRef,
   Seniority,
   VacancyDto,
   WorkFormat,
-} from "./vacancies.contract";
+} from "./feed.contract";
 
 const {
   vacancies,
@@ -32,7 +32,7 @@ const {
   rssRecords,
 } = schema;
 
-export interface ListVacanciesParams {
+export interface FeedSearchParams {
   page: number;
   pageSize: number;
   q?: string;
@@ -40,11 +40,7 @@ export interface ListVacanciesParams {
   sourceId?: string;
   /** Filter by vacancies.roleNodeId (a ROLE node UUID). */
   roleId?: string;
-  /**
-   * Match vacancies whose role is ANY of these ROLE node UUIDs (OR). With
-   * `trackSlug`, overrides the track's role axis (refine to specific roles)
-   * while the track's skill axis still applies.
-   */
+  /** Match vacancies whose role is ANY of these ROLE node UUIDs (OR). */
   roleIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
@@ -102,10 +98,10 @@ const roleNode = alias(nodes, "role_node");
 const domainNode = alias(nodes, "domain_node");
 
 @Injectable()
-export class VacanciesService {
+export class FeedService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async list(params: ListVacanciesParams): Promise<ListVacanciesResponse> {
+  async search(params: FeedSearchParams): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
 
     const roleJoin = and(
@@ -224,7 +220,7 @@ export class VacanciesService {
   }
 }
 
-function buildWhere(params: ListVacanciesParams): SQL | undefined {
+function buildWhere(params: FeedSearchParams): SQL | undefined {
   const conds: SQL[] = [];
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
   if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));

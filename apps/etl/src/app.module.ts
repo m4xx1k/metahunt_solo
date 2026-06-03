@@ -11,11 +11,11 @@ import { MonitoringModule } from "./monitoring/monitoring.module";
 import { RssModule } from "./rss/rss.module";
 import { StorageModule } from "./storage/storage.module";
 import { TaxonomyModule } from "./taxonomy/taxonomy.module";
+import { FeedModule } from "./feed/feed.module";
 import { MarketModule } from "./market/market.module";
 import { TemporalInfraModule } from "./temporal/temporal.module";
 import { TracksModule } from "./tracks/tracks.module";
 import { UsersModule } from "./users/users.module";
-import { VacanciesModule } from "./vacancies/vacancies.module";
 
 @Module({
   imports: [
@@ -31,7 +31,7 @@ import { VacanciesModule } from "./vacancies/vacancies.module";
     LoaderModule,
     TaxonomyModule,
     MonitoringModule,
-    VacanciesModule,
+    FeedModule,
     TracksModule,
     MarketModule,
     DedupModule,

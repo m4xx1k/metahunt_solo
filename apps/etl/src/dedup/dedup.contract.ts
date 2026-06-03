@@ -3,7 +3,7 @@
  *
  * Kept free of NestJS / Drizzle / runtime imports so the web client can
  * import these types directly. Mirrors the style of
- * `apps/etl/src/vacancies/vacancies.contract.ts`.
+ * `apps/etl/src/feed/feed.contract.ts`.
  *
  * Design rule: the `dedup_reason` JSON column on `vacancies` stores
  * exactly the `DedupReason` shape below — no DB↔API mapping layer. When
@@ -11,11 +11,7 @@
  * any contract or controller changes.
  */
 
-import type {
-  Currency,
-  Seniority,
-  WorkFormat,
-} from "../vacancies/vacancies.contract";
+import type { Currency, Seniority, WorkFormat } from "../shared/contract";
 
 // ───────────────────────── Confidence ─────────────────────────
 

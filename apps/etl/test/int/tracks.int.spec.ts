@@ -3,7 +3,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
 import { TracksRepository } from "../../src/tracks/tracks.repository";
-import { VacanciesService } from "../../src/vacancies/vacancies.service";
+import { FeedService } from "../../src/feed/feed.service";
 import {
   resolveTrackPreset,
   presetMatchesNothing,
@@ -19,7 +19,7 @@ import { makeTestDb, truncateAll } from "./db";
 let db: DrizzleDB;
 let pool: Pool;
 let repo: TracksRepository;
-let service: VacanciesService;
+let service: FeedService;
 
 let seq = 0;
 const PUBLISHED_AT = new Date("2026-04-24T10:00:00.000Z");
@@ -108,7 +108,7 @@ async function makeTrack(
 beforeAll(() => {
   ({ db, pool } = makeTestDb());
   repo = new TracksRepository(db);
-  service = new VacanciesService(db);
+  service = new FeedService(db);
 });
 
 afterAll(async () => {
@@ -159,7 +159,7 @@ describe("track count == click (integration)", () => {
       const feedTotal = presetMatchesNothing(preset)
         ? 0
         : (
-            await service.list({
+            await service.search({
               page: 1,
               pageSize: 1,
               roleIds: preset.roleIds.length > 0 ? preset.roleIds : undefined,

@@ -15,7 +15,7 @@ import {
 
 // Thin DB gateway for the browse-tree (tracks) read side: the SQL lives here,
 // the preset resolution and predicate logic stay pure in track-preset.ts. Keeps
-// VacanciesService free of raw track SQL and makes the rules unit-testable.
+// TracksService free of raw track SQL and makes the rules unit-testable.
 @Injectable()
 export class TracksRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}

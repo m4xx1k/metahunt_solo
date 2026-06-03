@@ -1,18 +1,16 @@
 /**
- * Wire contract for the vacancies HTTP API.
+ * Wire contract for the feed (vacancy search) HTTP API.
  *
- * Kept free of NestJS / Drizzle / runtime imports so the web client can
- * import these types directly without pulling in server dependencies.
+ * Kept free of NestJS / Drizzle / runtime imports so the web client can import
+ * these types directly without pulling in server dependencies.
  *
- * Shape rationale: the consumer is the silver vacancy card (sibling of
- * `apps/web/app/(landing)/_components/result/GoldenJobCard.tsx`). That UI
- * needs *resolved* values (company name, role name, skill names, source
- * display name, source URL) — not opaque FK ids — so the API joins them
- * server-side and ships refs.
+ * Shape rationale: the consumer is the silver vacancy card. It needs *resolved*
+ * values (company name, role name, skill names, source display name, source
+ * URL) — not opaque FK ids — so the API joins them server-side and ships refs.
  */
 
 // Enums + NodeRef live in shared/contract (used by feed, market, tracks).
-// Re-exported here so existing importers of ./vacancies.contract keep resolving.
+// Re-exported so the web client can mirror the full feed contract from here.
 import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "../shared/contract";
 import type {
   Currency,
@@ -36,8 +34,6 @@ export type {
 };
 
 // ───────────────────────── Resolved refs ─────────────────────────
-// Server resolves FKs to {id, name}-shaped refs so the UI never has to
-// do a second round-trip just to render a label.
 
 export interface CompanyRef {
   id: string;
@@ -109,9 +105,12 @@ export interface VacancyDto {
   locations: string[];
 }
 
-// ───────────────────────── List endpoint ─────────────────────────
+// ─────────────────────── Search endpoint ───────────────────────
+// The single feed query: filters + pagination. The reusable language every
+// consumer speaks — HTTP, and (in-process) future TG bot / alerts / saved
+// searches that inject FeedService directly.
 
-export interface ListVacanciesQuery {
+export interface FeedQuery {
   /** 1-based page index. Defaults to 1. */
   page?: number;
   /** Page size. Defaults to 20, max 100. */
@@ -161,7 +160,7 @@ export interface ListVacanciesQuery {
   includeAllSkills?: boolean;
 }
 
-export interface ListVacanciesResponse {
+export interface FeedResponse {
   items: VacancyDto[];
   page: number;
   pageSize: number;
@@ -169,9 +168,11 @@ export interface ListVacanciesResponse {
   total: number;
 }
 
-// Full verified facet lists for the filter sidebar's search — every
-// VERIFIED ROLE / SKILL node over the eligible vacancy set (not the topN
-// the aggregates snapshot ships), so search/add covers the whole catalog.
+// ─────────────────────────── Facets ───────────────────────────
+// Full verified facet lists for the filter sidebar's search — every VERIFIED
+// ROLE / SKILL node over the eligible vacancy set (not the topN the market
+// snapshot ships), so search/add covers the whole catalog.
+
 export interface NodeFacet {
   id: string;
   name: string;

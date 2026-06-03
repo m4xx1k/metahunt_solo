@@ -1,7 +1,7 @@
 // Full verified ROLE / SKILL catalogs for the filter sidebar's search.
-// The aggregates snapshot only ships a topN (for the headline widgets);
+// The market snapshot only ships a topN (for the headline widgets);
 // search/add needs the whole list. Source of truth:
-// apps/etl/src/vacancies/vacancies.contract.ts. Hand-mirrored per ADR-0005.
+// apps/etl/src/feed/feed.contract.ts. Hand-mirrored per ADR-0005.
 
 import { apiGet } from "./client";
 
@@ -25,6 +25,6 @@ export interface SkillFacetsResponse {
 const ISR = { next: { revalidate: 60 } } satisfies RequestInit;
 
 export const facetsApi = {
-  roles: () => apiGet<RoleFacetsResponse>("/vacancies/roles", ISR),
-  skills: () => apiGet<SkillFacetsResponse>("/vacancies/skills", ISR),
+  roles: () => apiGet<RoleFacetsResponse>("/feed/roles", ISR),
+  skills: () => apiGet<SkillFacetsResponse>("/feed/skills", ISR),
 };

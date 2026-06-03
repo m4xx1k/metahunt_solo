@@ -1,39 +1,39 @@
 import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
-import type { ListVacanciesResponse } from "./vacancies.contract";
-import { VacanciesController } from "./vacancies.controller";
-import { VacanciesService } from "./vacancies.service";
+import type { FeedResponse } from "./feed.contract";
+import { FeedController } from "./feed.controller";
+import { FeedService } from "./feed.service";
 import { FacetsService } from "./facets.service";
 
-const EMPTY: ListVacanciesResponse = {
+const EMPTY: FeedResponse = {
   items: [],
   page: 1,
   pageSize: 20,
   total: 0,
 };
 
-describe("VacanciesController", () => {
-  const list = jest.fn();
-  let controller: VacanciesController;
+describe("FeedController", () => {
+  const search = jest.fn();
+  let controller: FeedController;
 
   beforeEach(async () => {
-    list.mockReset().mockResolvedValue(EMPTY);
+    search.mockReset().mockResolvedValue(EMPTY);
     const moduleRef = await Test.createTestingModule({
-      controllers: [VacanciesController],
+      controllers: [FeedController],
       providers: [
-        { provide: VacanciesService, useValue: { list } },
+        { provide: FeedService, useValue: { search } },
         { provide: FacetsService, useValue: {} },
       ],
     }).compile();
-    controller = moduleRef.get(VacanciesController);
+    controller = moduleRef.get(FeedController);
   });
 
-  describe("GET /vacancies — param parsing", () => {
+  describe("GET /feed — param parsing", () => {
     it("forwards undefined for every optional filter when no params are given", async () => {
-      await controller.list();
+      await controller.search();
 
-      expect(list).toHaveBeenCalledWith({
+      expect(search).toHaveBeenCalledWith({
         q: undefined,
         sourceId: undefined,
         roleId: undefined,
@@ -51,7 +51,7 @@ describe("VacanciesController", () => {
     });
 
     it("forwards a valid seniority value", async () => {
-      await controller.list(
+      await controller.search(
         undefined,
         undefined,
         undefined,
@@ -61,14 +61,14 @@ describe("VacanciesController", () => {
         "SENIOR",
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({ seniority: "SENIOR" }),
       );
     });
 
     it("rejects an unknown seniority value with 400", () => {
       expect(() =>
-        controller.list(
+        controller.search(
           undefined,
           undefined,
           undefined,
@@ -78,11 +78,11 @@ describe("VacanciesController", () => {
           "BOGUS",
         ),
       ).toThrow(BadRequestException);
-      expect(list).not.toHaveBeenCalled();
+      expect(search).not.toHaveBeenCalled();
     });
 
     it("treats a blank seniority as no filter", async () => {
-      await controller.list(
+      await controller.search(
         undefined,
         undefined,
         undefined,
@@ -92,13 +92,13 @@ describe("VacanciesController", () => {
         "   ",
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({ seniority: undefined }),
       );
     });
 
     it("forwards a valid workFormat value", async () => {
-      await controller.list(
+      await controller.search(
         undefined,
         undefined,
         undefined,
@@ -109,14 +109,14 @@ describe("VacanciesController", () => {
         "REMOTE",
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({ workFormat: "REMOTE" }),
       );
     });
 
     it("rejects an unknown workFormat value with 400", () => {
       expect(() =>
-        controller.list(
+        controller.search(
           undefined,
           undefined,
           undefined,
@@ -127,11 +127,11 @@ describe("VacanciesController", () => {
           "ONSITE",
         ),
       ).toThrow(BadRequestException);
-      expect(list).not.toHaveBeenCalled();
+      expect(search).not.toHaveBeenCalled();
     });
 
     it("forwards hasTestAssignment / hasReservation booleans", async () => {
-      await controller.list(
+      await controller.search(
         undefined,
         undefined,
         undefined,
@@ -144,7 +144,7 @@ describe("VacanciesController", () => {
         "false",
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({
           hasTestAssignment: true,
           hasReservation: false,
@@ -154,7 +154,7 @@ describe("VacanciesController", () => {
 
     it("rejects a non-boolean hasTestAssignment with 400", () => {
       expect(() =>
-        controller.list(
+        controller.search(
           undefined,
           undefined,
           undefined,
@@ -166,12 +166,12 @@ describe("VacanciesController", () => {
           "maybe",
         ),
       ).toThrow(BadRequestException);
-      expect(list).not.toHaveBeenCalled();
+      expect(search).not.toHaveBeenCalled();
     });
 
     it("parses roleIds from repeated params (array) into a trimmed list", async () => {
       // roleIds is the 13th positional arg (appended after includeAllSkills).
-      await controller.list(
+      await controller.search(
         undefined, // q
         undefined, // page
         undefined, // pageSize
@@ -187,13 +187,13 @@ describe("VacanciesController", () => {
         [" a ", "b", "  "], // roleIds — repeated query params
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({ roleIds: ["a", "b"] }),
       );
     });
 
     it("treats an all-blank roleIds list as no filter (undefined)", async () => {
-      await controller.list(
+      await controller.search(
         undefined,
         undefined,
         undefined,
@@ -209,13 +209,13 @@ describe("VacanciesController", () => {
         ["", "   "],
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({ roleIds: undefined }),
       );
     });
 
     it("composes seniority and workFormat with the existing filters", async () => {
-      await controller.list(
+      await controller.search(
         "react",
         undefined,
         undefined,
@@ -226,7 +226,7 @@ describe("VacanciesController", () => {
         "HYBRID",
       );
 
-      expect(list).toHaveBeenCalledWith(
+      expect(search).toHaveBeenCalledWith(
         expect.objectContaining({
           q: "react",
           seniority: "MIDDLE",

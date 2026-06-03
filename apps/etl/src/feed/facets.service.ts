@@ -8,7 +8,7 @@ import { ELIGIBLE_VACANCY } from "../shared/eligible";
 import type {
   RoleFacetsResponse,
   SkillFacetsResponse,
-} from "./vacancies.contract";
+} from "./feed.contract";
 
 // The full role/skill catalogs the filter sidebar searches — every VERIFIED
 // node over the eligible vacancy set, with its vacancy count.
