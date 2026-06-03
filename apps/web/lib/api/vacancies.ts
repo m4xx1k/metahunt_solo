@@ -140,7 +140,7 @@ export interface ListVacanciesQuery {
   /**
    * Match ANY of these ROLE node ids (OR). With `trackSlug` it overrides the
    * track's role axis (lazy-refine to specific roles) while the track's skill
-   * criteria still apply. Serialized as repeated ?roleIds= params.
+   * preset still applies. Serialized as repeated ?roleIds= params.
    */
   roleIds?: string[];
   skillIds?: string[];

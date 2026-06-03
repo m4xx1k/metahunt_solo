@@ -24,7 +24,7 @@ export interface TracksResponse {
 
 // ─────────────────── Contextual skills (PR#2) ───────────────────
 // Skills most common in a track's matched vacancies, excluding the
-// track's own criteria.
+// track's own preset.
 
 export interface ContextualSkill {
   id: string;
@@ -36,7 +36,7 @@ export interface ContextualSkillsResponse {
   skills: ContextualSkill[];
 }
 
-// ─────────────────── Track criteria (both axes) ───────────────────
+// ─────────────────── Track preset (both axes) ───────────────────
 // The ROLE + SKILL nodes a track resolves to (own axis, else inherited
 // one hop). Both render as the unified facet panels' preset chips — on by
 // default; toggle to narrow, search to widen. Empty arrays = pure grouping.
@@ -46,14 +46,14 @@ export interface TrackNode {
   name: string;
 }
 
-export interface TrackCriteriaResponse {
+export interface TrackPresetResponse {
   roles: TrackNode[];
   skills: TrackNode[];
 }
 
 // ─────────────────────────── Fetcher ────────────────────────────
 
-// ISR-cache: the track tree + per-track criteria/contextual-skills change only
+// ISR-cache: the track tree + per-track preset/contextual-skills change only
 // on the hourly RSS ingest, never on a skill/role toggle. The page re-runs on
 // every toggle (URL change), so without this each chip click recomputes the
 // tracks count view (~340ms) and re-hits the backend for data that didn't move.
@@ -66,9 +66,9 @@ export const tracksApi = {
       `/vacancies/tracks/${encodeURIComponent(slug)}/skills`,
       ISR,
     ),
-  criteria: (slug: string) =>
-    apiGet<TrackCriteriaResponse>(
-      `/vacancies/tracks/${encodeURIComponent(slug)}/criteria`,
+  preset: (slug: string) =>
+    apiGet<TrackPresetResponse>(
+      `/vacancies/tracks/${encodeURIComponent(slug)}/preset`,
       ISR,
     ),
 };

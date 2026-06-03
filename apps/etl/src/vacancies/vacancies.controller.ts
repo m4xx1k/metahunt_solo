@@ -84,9 +84,9 @@ export class VacanciesController {
     return this.vacancies.getContextualSkills(slug);
   }
 
-  @Get("tracks/:slug/criteria")
-  trackCriteria(@Param("slug") slug: string) {
-    return this.vacancies.getTrackCriteria(slug);
+  @Get("tracks/:slug/preset")
+  trackPreset(@Param("slug") slug: string) {
+    return this.vacancies.getTrackPreset(slug);
   }
 }
 

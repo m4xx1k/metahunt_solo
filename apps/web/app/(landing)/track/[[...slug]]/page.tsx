@@ -3,11 +3,11 @@
 // /track/backend-go); /track with no segment is the all-disciplines index.
 //
 // Feed model (Variant C): the track is a *preset*, not the feed driver. Its
-// criteria endpoint resolves the effective ROLE + SKILL nodes; the page reads
-// ?roles / ?skills (absent → the track's criteria, present → the explicit
+// preset endpoint resolves the effective ROLE + SKILL nodes; the page reads
+// ?roles / ?skills (absent → the track's preset, present → the explicit
 // set) and queries the feed by those two explicit axes — never trackSlug. So
-// removing a preset (drop Go) honestly broadens the feed, and both axes share
-// one unified facet UI. See md/journal/migrations/taxonomy-navigation.md.
+// removing a preset node (drop Go) honestly broadens the feed, and both axes
+// share one unified facet UI. See md/journal/migrations/taxonomy-navigation.md.
 
 import { Header, type NavItem } from "@/components/shared/Header";
 import { Footer } from "@/components/shared/Footer";
@@ -39,7 +39,7 @@ function asString(v: string | string[] | undefined): string | undefined {
   return v;
 }
 
-// An axis param: absent (undefined) → fall back to the track's preset ids;
+// An axis param: absent (undefined) → fall back to the track's preset node ids;
 // present (even "") → the explicit comma-joined set. Mirrors FacetSection's
 // URL model so a fully-removed preset (?skills=) yields an empty axis.
 function axisOr(
@@ -87,7 +87,7 @@ export default async function TrackPage({
   const [
     aggregates,
     { tracks },
-    criteria,
+    preset,
     { skills: contextualSkills },
     { roles: roleCatalog },
     { skills: skillCatalog },
@@ -95,21 +95,21 @@ export default async function TrackPage({
     aggregatesApi.get(),
     tracksApi.get(),
     trackSlug
-      ? tracksApi.criteria(trackSlug)
+      ? tracksApi.preset(trackSlug)
       : Promise.resolve({ roles: [], skills: [] }),
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
     facetsApi.roles(),
     facetsApi.skills(),
   ]);
 
-  // Effective axes: the URL overrides the track's criteria per axis.
+  // Effective axes: the URL overrides the track's preset per axis.
   const roleIds = axisOr(
     sp.roles,
-    criteria.roles.map((r) => r.id),
+    preset.roles.map((r) => r.id),
   );
   const skillIds = axisOr(
     sp.skills,
-    criteria.skills.map((s) => s.id),
+    preset.skills.map((s) => s.id),
   );
 
   const sourceId =
@@ -117,13 +117,13 @@ export default async function TrackPage({
       ? (aggregates.sources.find((s) => s.code === sourceCode)?.id ?? null)
       : null;
 
-  // An active track whose effective axes are both empty (every preset removed,
-  // or a pure-grouping track) matches nothing — mirror the count, don't fall
-  // through to the unfiltered set. The bare /track index (no track) does show
-  // everything eligible.
-  const hasCriteria = roleIds.length > 0 || skillIds.length > 0;
+  // An active track whose effective axes are both empty (every preset node
+  // removed, or a pure-grouping track) matches nothing — mirror the count,
+  // don't fall through to the unfiltered set. The bare /track index (no track)
+  // does show everything eligible.
+  const hasPreset = roleIds.length > 0 || skillIds.length > 0;
   const list =
-    !trackSlug || hasCriteria
+    !trackSlug || hasPreset
       ? await vacanciesApi.list({
           page,
           pageSize: PAGE_SIZE,
@@ -153,8 +153,8 @@ export default async function TrackPage({
               aggregates={aggregates}
               tracks={tracks}
               activeTrackSlug={trackSlug ?? null}
-              roleCriteria={criteria.roles}
-              skillCriteria={criteria.skills}
+              presetRoles={preset.roles}
+              presetSkills={preset.skills}
               contextualSkills={contextualSkills}
               roleCatalog={roleCatalog}
               skillCatalog={skillCatalog}

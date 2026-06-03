@@ -20,7 +20,7 @@ import { chipClass } from "./pill";
 // URL on a fresh track pick); a PRESENT value — even empty (`?skills=`) — is
 // the explicit set, which is what lets a preset be fully removed (drop Go to
 // broaden backend-go to all backend). The page reads the same param: absent →
-// the track's criteria, present → the listed ids.
+// the track's preset, present → the listed ids.
 
 const SEP = ",";
 const MAX_MATCHES = 8;

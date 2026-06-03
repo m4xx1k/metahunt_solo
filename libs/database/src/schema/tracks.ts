@@ -37,7 +37,7 @@ export const tracks = pgTable(
   ],
 );
 
-// Each track's OWN criteria; the axis is decided by the referenced node.type —
+// Each track's OWN preset nodes; the axis is decided by the referenced node.type —
 // a ROLE ref filters vacancies.role_node_id, a SKILL ref filters via
 // vacancy_nodes. No axis enum: node.type already encodes it.
 export const trackNodes = pgTable(
@@ -59,7 +59,7 @@ export const trackNodes = pgTable(
 // Per-track eligible-vacancy count, computed so a track's displayed number
 // equals exactly what clicking it returns (per-axis override-else-inherit):
 // effective ROLE/SKILL = the track's OWN nodes of that type, or — if it has
-// none — its parent's (one hop). A track with no effective criteria on either
+// none — its parent's (one hop). A track with no effective preset on either
 // axis (pure-grouping parent like "By Language") counts 0; the feed's VERIFIED
 // eligibility is mirrored so the count never overstates a click. Counts are
 // per-track independent (child ⊆ parent overlaps) — never sum them to a total.

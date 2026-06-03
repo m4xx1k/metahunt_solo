@@ -38,8 +38,8 @@ export function MarketFilters({
   aggregates,
   tracks,
   activeTrackSlug,
-  roleCriteria,
-  skillCriteria,
+  presetRoles,
+  presetSkills,
   contextualSkills,
   roleCatalog,
   skillCatalog,
@@ -48,9 +48,9 @@ export function MarketFilters({
   tracks?: TrackDto[];
   activeTrackSlug?: string | null;
   /** The active track's preset ROLE nodes (on by default in the facet). */
-  roleCriteria?: Facet[];
+  presetRoles?: Facet[];
   /** The active track's preset SKILL nodes. */
-  skillCriteria?: Facet[];
+  presetSkills?: Facet[];
   /** Contextual skills ranked for the active track (facet suggestions). */
   contextualSkills?: Facet[];
   /** Full verified-role catalog — search-and-add in the role facet. */
@@ -67,7 +67,7 @@ export function MarketFilters({
   const showFacets = trackMode && activeTrackSlug != null;
 
   // Picking a track is a fresh context: navigate to its route and drop any
-  // prior refine query (the new track's own criteria become the defaults).
+  // prior refine query (the new track's own preset becomes the defaults).
   const handleSelectTrack = useCallback(
     (slug: string) => router.push(`/track/${encodeURIComponent(slug)}`),
     [router],
@@ -111,14 +111,14 @@ export function MarketFilters({
                     title="refine · roles"
                     urlKey="roles"
                     addLabel="add role…"
-                    presets={roleCriteria ?? []}
+                    presets={presetRoles ?? []}
                     catalog={roleCatalog ?? []}
                   />
                   <FacetSection
                     title="skills"
                     urlKey="skills"
                     addLabel="add skill…"
-                    presets={skillCriteria ?? []}
+                    presets={presetSkills ?? []}
                     catalog={skillCatalog ?? []}
                     suggestions={contextualSkills ?? []}
                   />
