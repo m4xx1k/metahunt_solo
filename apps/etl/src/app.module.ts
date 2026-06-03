@@ -16,6 +16,7 @@ import { MarketModule } from "./market/market.module";
 import { TemporalInfraModule } from "./temporal/temporal.module";
 import { TracksModule } from "./tracks/tracks.module";
 import { UsersModule } from "./users/users.module";
+import { TelegramModule } from "./telegram/telegram.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UsersModule } from "./users/users.module";
     DedupModule,
     ExtractionCostModule,
     UsersModule,
+    TelegramModule,
   ],
   controllers: [AppController, HealthController],
 })
