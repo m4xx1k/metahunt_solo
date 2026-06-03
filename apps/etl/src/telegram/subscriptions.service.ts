@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -24,7 +24,7 @@ function asStringArray(value: unknown): string[] {
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type LinkResult = "linked" | "not_found";
+export type LinkResult = "linked" | "duplicate" | "not_found";
 
 /**
  * Thin persistence layer for the Telegram bot — link/unlink only. All vacancy
@@ -56,17 +56,42 @@ export class SubscriptionsService {
     return created.id;
   }
 
-  /** Bind a chat to a pending subscription (the `/start <token>` payload) and activate it. */
+  /**
+   * Bind a chat to a pending subscription (the `/start <token>` payload) and
+   * activate it. If the chat already has an active subscription with identical
+   * params, drop this pending row instead of creating a duplicate — dedup
+   * happens here because the chat is unknown at web-create time.
+   */
   async linkChat(token: string, chatId: string): Promise<LinkResult> {
     if (!UUID_REGEX.test(token)) return "not_found";
 
-    const linked = await this.db
+    const [pending] = await this.db
+      .select({ params: subscriptions.params })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, token));
+    if (!pending) return "not_found";
+
+    const [duplicate] = await this.db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.chatId, chatId),
+          eq(subscriptions.isActive, true),
+          ne(subscriptions.id, token),
+          sql`${subscriptions.params} = ${JSON.stringify(pending.params)}::jsonb`,
+        ),
+      );
+    if (duplicate) {
+      await this.db.delete(subscriptions).where(eq(subscriptions.id, token));
+      return "duplicate";
+    }
+
+    await this.db
       .update(subscriptions)
       .set({ chatId, isActive: true })
-      .where(eq(subscriptions.id, token))
-      .returning({ id: subscriptions.id });
-
-    return linked.length > 0 ? "linked" : "not_found";
+      .where(eq(subscriptions.id, token));
+    return "linked";
   }
 
   /** Active subscriptions for a chat — id + stored feed-query params. */

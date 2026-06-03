@@ -57,6 +57,13 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
   first run from dumping the whole pre-subscription backlog on a new subscriber — they only
   get vacancies that appeared *after* they subscribed. Future: a separate "active vacancies"
   view can show the backlog in-app on demand instead of via notifications.
+- **Dedup at link time, not create time.** The row is created before the chat is known
+  (web-create → `chat_id` null), so we can't dedup on create. `linkChat` (`/start`) checks
+  whether the chat already has an active sub with identical `params` (jsonb `=`, key-order
+  independent) and, if so, deletes the just-tapped pending row → "already subscribed". Orphan
+  pending rows from re-clicks (never `/start`-ed) linger inert (null chat); a TTL cleanup is a
+  future nicety. A concurrent double-`/start` of two same-param tokens can still race past the
+  check (no unique index yet) — acceptable for MVP.
 - **Analytics deferred.** Ship TG first. PostHog is purely additive later (no schema change) —
   `subscriptions.id` is already the future `distinct_id`. See `analytics-posthog-plan.md`.
 - **Digest rendering (T5).** Render from `VacancyDto` (`FeedService.list()`). Per-vacancy

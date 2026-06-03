@@ -88,11 +88,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       const result = await this.subscriptions.linkChat(token, chatId);
-      await ctx.reply(
+      const reply =
         result === "linked"
           ? "✅ Підписку активовано. Надсилатиму нові вакансії за твоїм фільтром."
-          : "⚠️ Це посилання недійсне або застаріле. Створи підписку на сайті ще раз.",
-      );
+          : result === "duplicate"
+            ? "ℹ️ Ти вже підписаний на цей фільтр — нову підписку не створював."
+            : "⚠️ Це посилання недійсне або застаріле. Створи підписку на сайті ще раз.";
+      await ctx.reply(reply);
     });
 
     bot.command("preview", async (ctx) => {
