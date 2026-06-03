@@ -16,12 +16,17 @@ export function VacancyList({ result, offset, flatSearchParams }: Props) {
           вакансії
         </h2>
         <span className="font-mono text-xs text-text-muted">
-          {result.total} total · page {result.page}
+          <span className="text-text-secondary">{result.total}</span> знайдено ·
+          стор. {result.page}
         </span>
       </div>
 
       {result.items.length === 0 ? (
-        <p className="font-mono text-sm text-text-muted">no vacancies yet</p>
+        <p className="font-mono text-sm text-text-muted">
+          {result.total === 0
+            ? "Нічого не знайдено за поточними фільтрами — спробуй прибрати частину."
+            : "Ця сторінка порожня — повернись на попередню."}
+        </p>
       ) : (
         <div className="flex flex-col gap-4">
           {result.items.map((v) => (

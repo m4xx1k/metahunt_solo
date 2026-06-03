@@ -1,5 +1,5 @@
-// Web-side wire types + fetcher for the silver vacancies API.
-// Source of truth: apps/etl/src/vacancies/vacancies.contract.ts.
+// Web-side wire types + fetcher for the silver vacancy feed (GET /feed).
+// Source of truth: apps/etl/src/feed/feed.contract.ts.
 // Hand-mirrored per ADR-0005 (no shared libs/contracts/ until 2nd consumer).
 
 import { apiGet, buildQs } from "./client";
@@ -137,6 +137,12 @@ export interface ListVacanciesQuery {
   sourceId?: string;
   companyId?: string;
   roleId?: string;
+  /**
+   * Match ANY of these ROLE node ids (OR). With `trackSlug` it overrides the
+   * track's role axis (lazy-refine to specific roles) while the track's skill
+   * preset still applies. Serialized as repeated ?roleIds= params.
+   */
+  roleIds?: string[];
   skillIds?: string[];
   seniority?: Seniority;
   workFormat?: WorkFormat;
@@ -167,5 +173,5 @@ export interface ListVacanciesResponse {
 
 export const vacanciesApi = {
   list: (q: ListVacanciesQuery = {}) =>
-    apiGet<ListVacanciesResponse>(`/vacancies${buildQs(q)}`),
+    apiGet<ListVacanciesResponse>(`/feed${buildQs(q)}`),
 };

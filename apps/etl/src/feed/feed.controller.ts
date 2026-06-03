@@ -1,17 +1,21 @@
 import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
 
-import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./vacancies.contract";
-import { VacanciesService } from "./vacancies.service";
+import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./feed.contract";
+import { FeedService } from "./feed.service";
+import { FacetsService } from "./facets.service";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
-@Controller("vacancies")
-export class VacanciesController {
-  constructor(private readonly vacancies: VacanciesService) {}
+@Controller("feed")
+export class FeedController {
+  constructor(
+    private readonly feed: FeedService,
+    private readonly facets: FacetsService,
+  ) {}
 
   @Get()
-  list(
+  search(
     @Query("q") q?: string,
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
@@ -24,15 +28,20 @@ export class VacanciesController {
     @Query("hasReservation") rawHasReservation?: string,
     @Query("includeRoleless") rawIncludeRoleless?: string,
     @Query("includeAllSkills") rawIncludeAllSkills?: string,
+    // Appended (not grouped with roleId) to keep the positional argument
+    // order stable for existing callers/tests.
+    @Query("roleIds") rawRoleIds?: string | string[],
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
     const roleId = rawRoleId?.trim();
+    const roleIds = parseIdList(rawRoleIds);
     const skillIds = parseIdList(rawSkillIds);
-    return this.vacancies.list({
+    return this.feed.search({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       roleId: roleId && roleId.length > 0 ? roleId : undefined,
+      roleIds: roleIds.length > 0 ? roleIds : undefined,
       skillIds: skillIds.length > 0 ? skillIds : undefined,
       seniority: parseEnum("seniority", rawSeniority, SENIORITY_VALUES),
       workFormat: parseEnum("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
@@ -45,9 +54,14 @@ export class VacanciesController {
     });
   }
 
-  @Get("aggregates")
-  aggregates() {
-    return this.vacancies.getAggregates();
+  @Get("skills")
+  skills() {
+    return this.facets.getSkillFacets();
+  }
+
+  @Get("roles")
+  roles() {
+    return this.facets.getRoleFacets();
   }
 }
 

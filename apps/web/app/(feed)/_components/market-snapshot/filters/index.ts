@@ -15,6 +15,8 @@ export { EMPTY_FILTERS } from "./types";
 export { Section } from "./Section";
 export { SelectRow } from "./SelectRow";
 export { RoleSection } from "./RoleSection";
+export { TrackTree } from "./TrackTree";
+export { FacetSection, type Facet } from "./FacetSection";
 export { SkillsSection } from "./SkillsSection";
 export { SourceSection } from "./SourceSection";
 export { EnumSection } from "./EnumSection";

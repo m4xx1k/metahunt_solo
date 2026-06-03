@@ -85,6 +85,20 @@
       "when": 1779308433532,
       "tag": "0011_curious_surge",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780435738219,
+      "tag": "0012_vengeful_vance_astro",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1780441247076,
+      "tag": "0013_brave_thunderbolts",
+      "breakpoints": true
     }
   ]
 }
