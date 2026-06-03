@@ -4,9 +4,36 @@
 **Status:** in-progress
 **Started:** 2026-06-03 · **Closed:** —
 
-## Outcome
+## Status snapshot — 2026-06-03
 
-*(fill in when closing)*
+**Shipped & working on `feat/tg-notifications` (8 commits, not merged):** subscribe → link →
+manage → preview the digest is a complete loop. Auto-send on a schedule is the one remaining
+piece before it's a real product.
+
+- ✅ **Schema + migration** `0014` (`subscriptions`, `sent_notifications`) — applied to local DB.
+- ✅ **Isolated grammy bot module** (`apps/etl/src/telegram/`), long-polling, dormant without a
+  token, @username auto-derived via `getMe`. Commands: `/start` (link + dedup +
+  already-active), `/list` (per-sub inline ❌ unsub), `/preview`, `/stop`, `/help`.
+- ✅ **Web "Subscribe"** — `POST /subscriptions` stores the effective feed query; `SubscribeButton`
+  in the feed sidebar returns a working `t.me/<bot>?start=<id>` deep link. **Verified live.**
+- ✅ **Digest renderer** — role-led card, trimmed italic subtitle, minimal CLI glyphs
+  (`⌖`/`◆`/`→`), one meta line; `/preview` sends 3 cards + "N new in 14d" (reuses
+  `FeedService.search`; `loadedAfter` added to feed). Verified on real data.
+- ⏳ **Not built yet:** the scheduled engine — `matchNewVacancies`/`sendDigestPage`,
+  `notifySubscribersWorkflow` + Schedule @:15, `sent_notifications` writes, paging,
+  `created_at` floor, `excludeIds` (T4 remainder, T6). **Nothing auto-sends — `/preview` only.**
+
+**Live DB state:** 1 active subscription — role *Full Stack Developer*, linked to a chat,
+`is_active=true`, `sent_notifications` empty.
+
+**Commits:** `cae4f27` schema+module · `f9d5f5e` web subscribe · `322bee5` getMe username ·
+`a84f07a` digest+/preview · `a1e7573` /list unsub · `7cddbe1` dedup · `648c3c3` already-active ·
+`bba423a` role-led minimal cards.
+
+**Open decisions (not blocking):** subscription semantics *snapshot vs follow-track* (see below,
+leaning snapshot); final digest glyph set (current `⌖`/`◆`/`→` is provisional).
+
+**Next:** T6 (scheduled auto-send) + T4 remainder; then T7 pre-launch gate.
 
 ## Context
 
@@ -72,14 +99,16 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
   check (no unique index yet) — acceptable for MVP.
 - **Analytics deferred.** Ship TG first. PostHog is purely additive later (no schema change) —
   `subscriptions.id` is already the future `distinct_id`. See `analytics-posthog-plan.md`.
-- **Digest rendering (T5).** Render from `VacancyDto` (`FeedService.list()`). Per-vacancy
-  "rich card": title (link) → company → skills → location/format → salary/english → apply.
-  Rules: (a) **graceful degradation** — render a field only when present, no empty rows;
-  (b) **no seniority dup** — show the seniority chip only if the title doesn't already
-  contain that level; (c) **english as CEFR** — BEGINNER→A1, INTERMEDIATE→B1,
-  UPPER_INTERMEDIATE→B2, ADVANCED→C1, NATIVE→C2; (d) salary: both→`$min–max`, min-only→
-  `from $min`, max-only→`up to $max`, currency symbol $/€/₴; (e) skills: required first,
-  cap ~5 + `+N`. Card style preferred (pending final confirm). HTML `parse_mode`, escape.
+- **Digest rendering (T5) — as shipped.** Render from `VacancyDto` (`FeedService.list()`).
+  Card lines: `◆ <b>role</b> · Seniority` → trimmed italic raw-title subtitle (skipped when it
+  equals the role) → skills line → one meta line (`company · format · place · $salary · EN level`)
+  → `→ <a>source</a>`. Headline is the **canonical role**, not the noisy scraped title — that
+  fix also removed the old seniority-in-title dup, so seniority is always shown on the headline.
+  Rules: graceful degradation (render a field only when present); english CEFR
+  (BEGINNER→A1, INTERMEDIATE→B1, UPPER_INTERMEDIATE→B2, ADVANCED→C1, NATIVE→C2); salary
+  both→`$min–max`, min→`from $min`, max→`up to $max`, symbol $/€/₴; skills required, cap 5 +`+N`;
+  locations cap 2 +`+N`. Monochrome CLI-vibe glyphs (`⌖`/`◆`/`→`), cards split by a blank line.
+  HTML `parse_mode`, escaped, link preview disabled on send.
 - **Digest paging (T5/T6).** No truncation — page instead. Order newest-first; cap each
   message by `MAX_PER_MESSAGE` (~8) AND a ~3500-char budget (under Telegram's 4096); header
   shows `(i/n)`. Sequential sends, ~1 msg/s per chat, honor `retry_after` on 429. Write
