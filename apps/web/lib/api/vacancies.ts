@@ -156,13 +156,6 @@ export interface ListVacanciesQuery {
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
 
-  /**
-   * Browse-tree selection. Resolves to the track's criteria server-side and
-   * coexists with raw roleId/skillIds (lazy-refine: once the user edits, the
-   * page sends explicit ids instead). See taxonomy-navigation.md.
-   */
-  trackSlug?: string;
-
   /** When false (default), exclude vacancies that lack a VERIFIED role. */
   includeRoleless?: boolean;
   /** When false (default), only VERIFIED skills appear in `skills`. */

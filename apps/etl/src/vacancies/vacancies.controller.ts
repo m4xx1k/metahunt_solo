@@ -30,7 +30,6 @@ export class VacanciesController {
     @Query("hasReservation") rawHasReservation?: string,
     @Query("includeRoleless") rawIncludeRoleless?: string,
     @Query("includeAllSkills") rawIncludeAllSkills?: string,
-    @Query("trackSlug") rawTrackSlug?: string,
     // Appended (not grouped with roleId) to keep the positional argument
     // order stable for existing callers/tests.
     @Query("roleIds") rawRoleIds?: string | string[],
@@ -40,14 +39,12 @@ export class VacanciesController {
     const roleId = rawRoleId?.trim();
     const roleIds = parseIdList(rawRoleIds);
     const skillIds = parseIdList(rawSkillIds);
-    const trackSlug = rawTrackSlug?.trim();
     return this.vacancies.list({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       roleId: roleId && roleId.length > 0 ? roleId : undefined,
       roleIds: roleIds.length > 0 ? roleIds : undefined,
       skillIds: skillIds.length > 0 ? skillIds : undefined,
-      trackSlug: trackSlug && trackSlug.length > 0 ? trackSlug : undefined,
       seniority: parseEnum("seniority", rawSeniority, SENIORITY_VALUES),
       workFormat: parseEnum("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
       hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),

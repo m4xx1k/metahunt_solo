@@ -35,7 +35,6 @@ describe("VacanciesController", () => {
         roleId: undefined,
         roleIds: undefined,
         skillIds: undefined,
-        trackSlug: undefined,
         seniority: undefined,
         workFormat: undefined,
         hasTestAssignment: undefined,
@@ -167,7 +166,7 @@ describe("VacanciesController", () => {
     });
 
     it("parses roleIds from repeated params (array) into a trimmed list", async () => {
-      // roleIds is the 14th positional arg (appended after trackSlug).
+      // roleIds is the 13th positional arg (appended after includeAllSkills).
       await controller.list(
         undefined, // q
         undefined, // page
@@ -181,7 +180,6 @@ describe("VacanciesController", () => {
         undefined, // hasReservation
         undefined, // includeRoleless
         undefined, // includeAllSkills
-        undefined, // trackSlug
         [" a ", "b", "  "], // roleIds — repeated query params
       );
 
@@ -192,7 +190,6 @@ describe("VacanciesController", () => {
 
     it("treats an all-blank roleIds list as no filter (undefined)", async () => {
       await controller.list(
-        undefined,
         undefined,
         undefined,
         undefined,

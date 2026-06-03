@@ -30,7 +30,6 @@ import type {
   WorkFormat,
 } from "./vacancies.contract";
 import {
-  presetCondition,
   presetMatchesNothing,
   resolveTrackPreset,
   type TrackPreset,
@@ -62,14 +61,6 @@ export interface ListVacanciesParams {
   roleIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
-  /** Browse-tree slug; resolved to `trackPreset` below before buildWhere. */
-  trackSlug?: string;
-  /**
-   * Effective ROLE/SKILL node ids resolved from `trackSlug` (per-axis
-   * override-else-inherit). Internal — set by `list`, consumed by
-   * `buildWhere`; mirrors the track_counts view so count == click.
-   */
-  trackPreset?: TrackPreset;
   seniority?: Seniority;
   workFormat?: WorkFormat;
   hasTestAssignment?: boolean;
@@ -131,26 +122,6 @@ export class VacanciesService {
   ) {}
 
   async list(params: ListVacanciesParams): Promise<ListVacanciesResponse> {
-    if (params.trackSlug) {
-      const preset = await this.resolvePreset(params.trackSlug);
-      if (!preset) {
-        throw new NotFoundException(`Unknown trackSlug "${params.trackSlug}"`);
-      }
-      // Lazy-refine: explicit roleIds narrow the track's role axis (a subset
-      // the user kept on), but the track's own skill preset still binds. The
-      // explicit roleIds branch in buildWhere is then suppressed to avoid a
-      // redundant duplicate of the same condition.
-      const roleIds =
-        params.roleIds && params.roleIds.length > 0
-          ? params.roleIds
-          : preset.roleIds;
-      params = {
-        ...params,
-        roleIds: undefined,
-        trackPreset: { roleIds, skillIds: preset.skillIds },
-      };
-    }
-
     const offset = (params.page - 1) * params.pageSize;
 
     const roleJoin = and(
@@ -588,11 +559,6 @@ function buildWhere(params: ListVacanciesParams): SQL | undefined {
       GROUP BY vn.vacancy_id
       HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
     )`);
-  }
-  if (params.trackPreset) {
-    // Apply the resolved preset exactly as the track_counts view does, so a
-    // track's shown count equals what this filter returns.
-    conds.push(presetCondition(params.trackPreset));
   }
   // When includeRoleless is off (default), require the verified role-node
   // join to have matched. The join itself enforces VERIFIED, so this also

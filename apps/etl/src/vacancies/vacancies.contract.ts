@@ -147,22 +147,10 @@ export interface ListVacanciesQuery {
   sourceId?: string;
   companyId?: string;
   roleId?: string;
-  /**
-   * Match vacancies whose role is ANY of these ROLE node ids (OR semantics).
-   * The lazy-refine power axis: when paired with `trackSlug` it overrides the
-   * track's role set (the user narrowing a track to specific roles) while the
-   * track's skill preset still applies. Standalone, it filters by role alone.
-   */
+  /** Match vacancies whose role is ANY of these ROLE node ids (OR semantics). */
   roleIds?: string[];
   /** Match vacancies that have ALL listed skills (AND semantics). */
   skillIds?: string[];
-  /**
-   * Browse-tree slug (e.g. `backend`, `backend-go`, `data-analyst`). The
-   * comfortable default door: resolves server-side to effective ROLE/SKILL
-   * node filters (per-axis override-else-inherit) and ANDs with everything
-   * else. Coexists with the raw `roleId` / `skillIds` power-user fallback.
-   */
-  trackSlug?: string;
 
   seniority?: Seniority;
   workFormat?: WorkFormat;
