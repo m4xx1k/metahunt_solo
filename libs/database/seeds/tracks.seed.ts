@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, notInArray } from 'drizzle-orm';
 import type { DrizzleDB } from '../src/tokens';
 import { tracks, trackNodes, nodes } from '../src/schema';
 
@@ -20,6 +20,16 @@ export async function seedTracks(
   db: DrizzleDB,
   data: TrackSeed[],
 ): Promise<void> {
+  // Pass 0 — prune tracks no longer in the seed so the JSON is the full source
+  // of truth (track_nodes cascade on delete). Children go before parents would
+  // matter for ON DELETE, but parent_id is ON DELETE no-action, so delete leaves
+  // first; doing it in one statement is fine because we only ever drop whole
+  // subtrees together here. Empty seed is treated as a no-op guard.
+  const keepSlugs = data.map((t) => t.slug);
+  if (keepSlugs.length > 0) {
+    await db.delete(tracks).where(notInArray(tracks.slug, keepSlugs));
+  }
+
   // Pass 1 — upsert every track row first, so parent links in pass 2 resolve
   // regardless of declaration order.
   const idBySlug = new Map<string, string>();

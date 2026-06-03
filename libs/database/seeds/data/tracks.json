@@ -3,12 +3,7 @@
     "slug": "backend",
     "label": "Backend",
     "sortOrder": 1,
-    "nodes": [
-      { "type": "ROLE", "canonicalName": "Backend Developer" },
-      { "type": "ROLE", "canonicalName": "Software Engineer" },
-      { "type": "ROLE", "canonicalName": ".NET Developer" },
-      { "type": "ROLE", "canonicalName": "Software Architect" }
-    ]
+    "nodes": [{ "type": "ROLE", "canonicalName": "Backend Developer" }]
   },
   { "slug": "backend-go", "label": "Go", "parentSlug": "backend", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Go" }] },
   { "slug": "backend-python", "label": "Python", "parentSlug": "backend", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Python" }] },
@@ -44,47 +39,34 @@
   { "slug": "frontend-react", "label": "React", "parentSlug": "frontend", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "React" }] },
   { "slug": "frontend-vue", "label": "Vue.js", "parentSlug": "frontend", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Vue.js" }] },
   { "slug": "frontend-angular", "label": "Angular", "parentSlug": "frontend", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "Angular" }] },
-  { "slug": "frontend-ts", "label": "TypeScript", "parentSlug": "frontend", "sortOrder": 4, "nodes": [{ "type": "SKILL", "canonicalName": "TypeScript" }] },
-
-  {
-    "slug": "mobile",
-    "label": "Mobile",
-    "sortOrder": 4,
-    "nodes": [
-      { "type": "ROLE", "canonicalName": "Mobile Developer" },
-      { "type": "ROLE", "canonicalName": "Mobile Developer (iOS)" },
-      { "type": "ROLE", "canonicalName": "Mobile Developer (Android)" },
-      { "type": "ROLE", "canonicalName": "Mobile Developer (Cross-platform)" }
-    ]
-  },
-  { "slug": "mobile-swift", "label": "Swift", "parentSlug": "mobile", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Swift" }] },
-  { "slug": "mobile-kotlin", "label": "Kotlin", "parentSlug": "mobile", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Kotlin" }] },
-  { "slug": "mobile-flutter", "label": "Flutter", "parentSlug": "mobile", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "Flutter" }] },
-  { "slug": "mobile-react-native", "label": "React Native", "parentSlug": "mobile", "sortOrder": 4, "nodes": [{ "type": "SKILL", "canonicalName": "React Native" }] },
 
   {
     "slug": "data-ai",
     "label": "Data & AI",
-    "sortOrder": 5,
+    "sortOrder": 4,
     "nodes": [
       { "type": "ROLE", "canonicalName": "Data Engineer" },
+      { "type": "ROLE", "canonicalName": "Analytics Engineer" },
       { "type": "ROLE", "canonicalName": "Data Analyst" },
+      { "type": "ROLE", "canonicalName": "BI Developer" },
       { "type": "ROLE", "canonicalName": "Data Scientist" },
       { "type": "ROLE", "canonicalName": "Machine Learning Engineer" },
       { "type": "ROLE", "canonicalName": "AI Engineer" },
-      { "type": "ROLE", "canonicalName": "Analytics Engineer" },
-      { "type": "ROLE", "canonicalName": "BI Developer" },
       { "type": "ROLE", "canonicalName": "Computer Vision Engineer" }
     ]
   },
-  { "slug": "data-python", "label": "Python", "parentSlug": "data-ai", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Python" }] },
-  { "slug": "data-sql", "label": "SQL", "parentSlug": "data-ai", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "SQL" }] },
-  { "slug": "data-r", "label": "R", "parentSlug": "data-ai", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "R" }] },
+  { "slug": "data-engineering", "label": "Data Engineering", "parentSlug": "data-ai", "sortOrder": 1, "nodes": [{ "type": "ROLE", "canonicalName": "Data Engineer" }, { "type": "ROLE", "canonicalName": "Analytics Engineer" }] },
+  { "slug": "data-analytics", "label": "Data Analytics", "parentSlug": "data-ai", "sortOrder": 2, "nodes": [{ "type": "ROLE", "canonicalName": "Data Analyst" }] },
+  { "slug": "data-bi", "label": "BI", "parentSlug": "data-ai", "sortOrder": 3, "nodes": [{ "type": "ROLE", "canonicalName": "BI Developer" }] },
+  { "slug": "data-science", "label": "Data Science", "parentSlug": "data-ai", "sortOrder": 4, "nodes": [{ "type": "ROLE", "canonicalName": "Data Scientist" }] },
+  { "slug": "data-ml", "label": "ML Engineering", "parentSlug": "data-ai", "sortOrder": 5, "nodes": [{ "type": "ROLE", "canonicalName": "Machine Learning Engineer" }] },
+  { "slug": "data-ai-eng", "label": "AI Engineering", "parentSlug": "data-ai", "sortOrder": 6, "nodes": [{ "type": "ROLE", "canonicalName": "AI Engineer" }] },
+  { "slug": "data-cv", "label": "Computer Vision", "parentSlug": "data-ai", "sortOrder": 7, "nodes": [{ "type": "ROLE", "canonicalName": "Computer Vision Engineer" }] },
 
   {
     "slug": "qa",
     "label": "QA",
-    "sortOrder": 6,
+    "sortOrder": 5,
     "nodes": [
       { "type": "ROLE", "canonicalName": "QA Engineer" },
       { "type": "ROLE", "canonicalName": "Manual QA Engineer" },
@@ -98,7 +80,7 @@
   {
     "slug": "devops",
     "label": "DevOps & Infrastructure",
-    "sortOrder": 7,
+    "sortOrder": 6,
     "nodes": [
       { "type": "ROLE", "canonicalName": "DevOps Engineer" },
       { "type": "ROLE", "canonicalName": "Cloud Engineer" },
@@ -112,11 +94,44 @@
       { "type": "ROLE", "canonicalName": "IT Support Specialist" }
     ]
   },
+  { "slug": "devops-aws", "label": "AWS", "parentSlug": "devops", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "AWS" }] },
+  { "slug": "devops-azure", "label": "Azure", "parentSlug": "devops", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Azure" }] },
+  { "slug": "devops-gcp", "label": "Google Cloud", "parentSlug": "devops", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "Google Cloud" }] },
+
+  {
+    "slug": "mobile",
+    "label": "Mobile",
+    "sortOrder": 7,
+    "nodes": [
+      { "type": "ROLE", "canonicalName": "Mobile Developer" },
+      { "type": "ROLE", "canonicalName": "Mobile Developer (iOS)" },
+      { "type": "ROLE", "canonicalName": "Mobile Developer (Android)" },
+      { "type": "ROLE", "canonicalName": "Mobile Developer (Cross-platform)" }
+    ]
+  },
+  { "slug": "mobile-swift", "label": "Swift", "parentSlug": "mobile", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Swift" }] },
+  { "slug": "mobile-kotlin", "label": "Kotlin", "parentSlug": "mobile", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Kotlin" }] },
+  { "slug": "mobile-flutter", "label": "Flutter", "parentSlug": "mobile", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "Flutter" }] },
+  { "slug": "mobile-react-native", "label": "React Native", "parentSlug": "mobile", "sortOrder": 4, "nodes": [{ "type": "SKILL", "canonicalName": "React Native" }] },
+
+  {
+    "slug": "hardware",
+    "label": "Hardware",
+    "sortOrder": 8,
+    "nodes": [
+      { "type": "ROLE", "canonicalName": "Embedded Software Engineer" },
+      { "type": "ROLE", "canonicalName": "Hardware Engineer" },
+      { "type": "ROLE", "canonicalName": "FPGA Engineer" }
+    ]
+  },
+  { "slug": "hw-embedded", "label": "Embedded Software", "parentSlug": "hardware", "sortOrder": 1, "nodes": [{ "type": "ROLE", "canonicalName": "Embedded Software Engineer" }] },
+  { "slug": "hw-hardware", "label": "Hardware Engineering", "parentSlug": "hardware", "sortOrder": 2, "nodes": [{ "type": "ROLE", "canonicalName": "Hardware Engineer" }] },
+  { "slug": "hw-fpga", "label": "FPGA", "parentSlug": "hardware", "sortOrder": 3, "nodes": [{ "type": "ROLE", "canonicalName": "FPGA Engineer" }] },
 
   {
     "slug": "security",
     "label": "Security",
-    "sortOrder": 8,
+    "sortOrder": 9,
     "nodes": [
       { "type": "ROLE", "canonicalName": "Security Engineer" },
       { "type": "ROLE", "canonicalName": "Information Security Analyst" },
@@ -125,19 +140,6 @@
       { "type": "ROLE", "canonicalName": "IAM Specialist" }
     ]
   },
-
-  {
-    "slug": "embedded",
-    "label": "Embedded & Hardware",
-    "sortOrder": 9,
-    "nodes": [
-      { "type": "ROLE", "canonicalName": "Embedded Software Engineer" },
-      { "type": "ROLE", "canonicalName": "Hardware Engineer" },
-      { "type": "ROLE", "canonicalName": "FPGA Engineer" }
-    ]
-  },
-  { "slug": "embedded-c", "label": "C", "parentSlug": "embedded", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "C" }] },
-  { "slug": "embedded-cpp", "label": "C++", "parentSlug": "embedded", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "C++" }] },
 
   {
     "slug": "gamedev",
@@ -149,8 +151,10 @@
       { "type": "ROLE", "canonicalName": "Game Artist (2D/3D)" }
     ]
   },
-  { "slug": "gamedev-cpp", "label": "C++", "parentSlug": "gamedev", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "C++" }] },
-  { "slug": "gamedev-csharp", "label": "C#", "parentSlug": "gamedev", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "C#" }] },
+  { "slug": "gamedev-unity", "label": "Unity", "parentSlug": "gamedev", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Unity" }] },
+  { "slug": "gamedev-unreal", "label": "Unreal Engine", "parentSlug": "gamedev", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Unreal Engine" }] },
+  { "slug": "gamedev-csharp", "label": "C#", "parentSlug": "gamedev", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "C#" }] },
+  { "slug": "gamedev-cpp", "label": "C++", "parentSlug": "gamedev", "sortOrder": 4, "nodes": [{ "type": "SKILL", "canonicalName": "C++" }] },
 
   {
     "slug": "blockchain",
@@ -159,18 +163,5 @@
     "nodes": [{ "type": "ROLE", "canonicalName": "Blockchain Engineer" }]
   },
   { "slug": "blockchain-solidity", "label": "Solidity", "parentSlug": "blockchain", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Solidity" }] },
-  { "slug": "blockchain-rust", "label": "Rust", "parentSlug": "blockchain", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Rust" }] },
-
-  {
-    "slug": "languages",
-    "label": "By Language",
-    "sortOrder": 12,
-    "nodes": []
-  },
-  { "slug": "lang-go", "label": "Go", "parentSlug": "languages", "sortOrder": 1, "nodes": [{ "type": "SKILL", "canonicalName": "Go" }] },
-  { "slug": "lang-rust", "label": "Rust", "parentSlug": "languages", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Rust" }] },
-  { "slug": "lang-scala", "label": "Scala", "parentSlug": "languages", "sortOrder": 3, "nodes": [{ "type": "SKILL", "canonicalName": "Scala" }] },
-  { "slug": "lang-ruby", "label": "Ruby", "parentSlug": "languages", "sortOrder": 4, "nodes": [{ "type": "SKILL", "canonicalName": "Ruby" }] },
-  { "slug": "lang-kotlin", "label": "Kotlin", "parentSlug": "languages", "sortOrder": 5, "nodes": [{ "type": "SKILL", "canonicalName": "Kotlin" }] },
-  { "slug": "lang-cpp", "label": "C++", "parentSlug": "languages", "sortOrder": 6, "nodes": [{ "type": "SKILL", "canonicalName": "C++" }] }
+  { "slug": "blockchain-rust", "label": "Rust", "parentSlug": "blockchain", "sortOrder": 2, "nodes": [{ "type": "SKILL", "canonicalName": "Rust" }] }
 ]
