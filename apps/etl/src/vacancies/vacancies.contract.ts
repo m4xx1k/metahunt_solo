@@ -11,6 +11,8 @@
  * server-side and ships refs.
  */
 
+import type { NodeRef } from "../shared/contract";
+
 // ───────────────────────────── Enums ─────────────────────────────
 // Mirror the pgEnums in libs/database/src/schema/vacancies.ts.
 
@@ -57,11 +59,7 @@ export type EngagementType =
 // Server resolves FKs to {id, name}-shaped refs so the UI never has to
 // do a second round-trip just to render a label.
 
-export interface NodeRef {
-  id: string;
-  /** `nodes.canonical_name` — already humanized at ingest time. */
-  name: string;
-}
+export type { NodeRef };
 
 export interface CompanyRef {
   id: string;
@@ -193,26 +191,6 @@ export interface ListVacanciesResponse {
   total: number;
 }
 
-// ───────────────────────── Tracks endpoint ─────────────────────────
-// The single user-facing browse tree (disciplines + stack/sub-discipline
-// children). One flat list the web nests by `parentSlug`. Counts are per
-// track and inherited (a child's count == what clicking it returns); never
-// sum them. See md/journal/migrations/taxonomy-navigation.md.
-
-export interface TrackDto {
-  slug: string;
-  label: string;
-  /** Null for top-level disciplines; the discipline's slug for children. */
-  parentSlug: string | null;
-  /** Eligible vacancies matched by this track (from the track_counts view). */
-  count: number;
-  sortOrder: number;
-}
-
-export interface TracksResponse {
-  tracks: TrackDto[];
-}
-
 // Full verified facet lists for the filter sidebar's search — every
 // VERIFIED ROLE / SKILL node over the eligible vacancy set (not the topN
 // the aggregates snapshot ships), so search/add covers the whole catalog.
@@ -228,28 +206,6 @@ export interface RoleFacetsResponse {
 
 export interface SkillFacetsResponse {
   skills: NodeFacet[];
-}
-
-// The effective preset a track resolves to, per axis (own nodes, else
-// inherited from the parent — one hop). Both axes power the unified facet
-// panels: the preset is shown on by default, the user toggles/adds to refine.
-// A pure-grouping track returns empty arrays. See override-else-inherit in
-// md/journal/migrations/taxonomy-navigation.md.
-export interface TrackPresetResponse {
-  roles: NodeRef[];
-  skills: NodeRef[];
-}
-
-// Contextual skill facet shown under an active track selection: the skills
-// most common in the matched vacancies, excluding the track's own preset.
-export interface ContextualSkill {
-  id: string;
-  name: string;
-  count: number;
-}
-
-export interface ContextualSkillsResponse {
-  skills: ContextualSkill[];
 }
 
 // ─────────────────────── Aggregates endpoint ───────────────────────

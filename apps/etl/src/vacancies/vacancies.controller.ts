@@ -1,15 +1,8 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Param,
-  Query,
-} from "@nestjs/common";
+import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
 
 import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./vacancies.contract";
 import { VacanciesService } from "./vacancies.service";
 import { AggregatesService } from "./aggregates.service";
-import { TracksService } from "./tracks.service";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -19,7 +12,6 @@ export class VacanciesController {
   constructor(
     private readonly vacancies: VacanciesService,
     private readonly aggregates: AggregatesService,
-    private readonly tracks: TracksService,
   ) {}
 
   @Get()
@@ -67,11 +59,6 @@ export class VacanciesController {
     return this.aggregates.getAggregates();
   }
 
-  @Get("tracks")
-  trackTree() {
-    return this.tracks.getTracks();
-  }
-
   @Get("skills")
   skills() {
     return this.aggregates.getSkillFacets();
@@ -80,16 +67,6 @@ export class VacanciesController {
   @Get("roles")
   roles() {
     return this.aggregates.getRoleFacets();
-  }
-
-  @Get("tracks/:slug/skills")
-  trackSkills(@Param("slug") slug: string) {
-    return this.tracks.getContextualSkills(slug);
-  }
-
-  @Get("tracks/:slug/preset")
-  trackPreset(@Param("slug") slug: string) {
-    return this.tracks.getTrackPreset(slug);
   }
 }
 

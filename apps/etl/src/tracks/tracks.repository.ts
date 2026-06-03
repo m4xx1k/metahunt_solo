@@ -4,7 +4,8 @@ import { sql } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import type { ContextualSkill, NodeRef, TrackDto } from "./vacancies.contract";
+import type { NodeRef } from "../shared/contract";
+import type { ContextualSkill, TrackDto } from "./tracks.contract";
 import {
   presetCondition,
   uuidList,

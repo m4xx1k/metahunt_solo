@@ -2,9 +2,12 @@ import { sql } from "drizzle-orm";
 import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
-import { TracksRepository } from "../../src/vacancies/tracks.repository";
+import { TracksRepository } from "../../src/tracks/tracks.repository";
 import { VacanciesService } from "../../src/vacancies/vacancies.service";
-import { resolveTrackPreset, presetMatchesNothing } from "../../src/vacancies/track-preset";
+import {
+  resolveTrackPreset,
+  presetMatchesNothing,
+} from "../../src/tracks/track-preset";
 import { makeTestDb, truncateAll } from "./db";
 
 // The headline invariant of the browse tree: a track's displayed count (from

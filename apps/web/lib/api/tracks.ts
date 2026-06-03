@@ -60,15 +60,15 @@ export interface TrackPresetResponse {
 const ISR = { next: { revalidate: 60 } } satisfies RequestInit;
 
 export const tracksApi = {
-  get: () => apiGet<TracksResponse>("/vacancies/tracks", ISR),
+  get: () => apiGet<TracksResponse>("/tracks", ISR),
   skills: (slug: string) =>
     apiGet<ContextualSkillsResponse>(
-      `/vacancies/tracks/${encodeURIComponent(slug)}/skills`,
+      `/tracks/${encodeURIComponent(slug)}/skills`,
       ISR,
     ),
   preset: (slug: string) =>
     apiGet<TrackPresetResponse>(
-      `/vacancies/tracks/${encodeURIComponent(slug)}/preset`,
+      `/tracks/${encodeURIComponent(slug)}/preset`,
       ISR,
     ),
 };

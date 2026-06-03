@@ -4,7 +4,7 @@ import type {
   ContextualSkillsResponse,
   TrackPresetResponse,
   TracksResponse,
-} from "./vacancies.contract";
+} from "./tracks.contract";
 import {
   presetMatchesNothing,
   resolveTrackPreset,
