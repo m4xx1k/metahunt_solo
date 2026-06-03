@@ -280,24 +280,33 @@ export class VacanciesService {
   // (a node is hidden only if count===0 AND it has no visible child, so
   // grouping parents like "By Language" survive on their children's counts).
   async getTracks(): Promise<TracksResponse> {
-    const rows = await this.db.execute<{
-      slug: string;
-      label: string;
-      parent_slug: string | null;
-      count: number;
-      sort_order: number;
-    }>(sql`
-      SELECT t.slug AS slug,
-             t.label AS label,
-             pt.slug AS parent_slug,
-             COALESCE(tc.vacancy_count, 0)::int AS count,
-             t.sort_order AS sort_order
-      FROM tracks t
-      LEFT JOIN tracks pt ON pt.id = t.parent_id
-      LEFT JOIN track_counts tc ON tc.track_id = t.id
-      WHERE t.is_active
-      ORDER BY t.sort_order, t.slug
-    `);
+    // track_counts' correlated per-track count subquery hands the planner a
+    // wildly inflated cost estimate (~291k vs <90ms of real work), which trips
+    // Postgres JIT; JIT compilation then burns ~265ms — 3x the query itself.
+    // Disable JIT for just this statement (SET LOCAL is released at txn end, so
+    // the pooled connection is unaffected). ~340ms → ~70ms. If counts ever
+    // dominate again, materialize the view + refresh post-ingest.
+    const rows = await this.db.transaction(async (tx) => {
+      await tx.execute(sql`SET LOCAL jit = off`);
+      return tx.execute<{
+        slug: string;
+        label: string;
+        parent_slug: string | null;
+        count: number;
+        sort_order: number;
+      }>(sql`
+        SELECT t.slug AS slug,
+               t.label AS label,
+               pt.slug AS parent_slug,
+               COALESCE(tc.vacancy_count, 0)::int AS count,
+               t.sort_order AS sort_order
+        FROM tracks t
+        LEFT JOIN tracks pt ON pt.id = t.parent_id
+        LEFT JOIN track_counts tc ON tc.track_id = t.id
+        WHERE t.is_active
+        ORDER BY t.sort_order, t.slug
+      `);
+    });
     return {
       tracks: rows.rows.map((r) => ({
         slug: r.slug,

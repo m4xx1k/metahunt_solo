@@ -53,14 +53,22 @@ export interface TrackCriteriaResponse {
 
 // ─────────────────────────── Fetcher ────────────────────────────
 
+// ISR-cache: the track tree + per-track criteria/contextual-skills change only
+// on the hourly RSS ingest, never on a skill/role toggle. The page re-runs on
+// every toggle (URL change), so without this each chip click recomputes the
+// tracks count view (~340ms) and re-hits the backend for data that didn't move.
+const ISR = { next: { revalidate: 60 } } satisfies RequestInit;
+
 export const tracksApi = {
-  get: () => apiGet<TracksResponse>("/vacancies/tracks"),
+  get: () => apiGet<TracksResponse>("/vacancies/tracks", ISR),
   skills: (slug: string) =>
     apiGet<ContextualSkillsResponse>(
       `/vacancies/tracks/${encodeURIComponent(slug)}/skills`,
+      ISR,
     ),
   criteria: (slug: string) =>
     apiGet<TrackCriteriaResponse>(
       `/vacancies/tracks/${encodeURIComponent(slug)}/criteria`,
+      ISR,
     ),
 };
