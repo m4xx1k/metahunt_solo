@@ -1,13 +1,15 @@
-// Track-navigation page. A copy of the landing feed scoped to a browse-tree
-// track. The active track is the first route segment (flat slug, e.g.
-// /track/backend-go); /track with no segment is the all-disciplines index.
+// The home feed. Served at `/` (all disciplines) and `/<trackSlug>` (a
+// browse-tree track) via the group-root optional catch-all. The active track
+// is the first route segment, e.g. /backend-go.
 //
 // Feed model (Variant C): the track is a *preset*, not the feed driver. Its
 // preset endpoint resolves the effective ROLE + SKILL nodes; the page reads
-// ?roles / ?skills (absent → the track's preset, present → the explicit
-// set) and queries the feed by those two explicit axes — never trackSlug. So
+// ?roles / ?skills (absent → the track's preset, present → the explicit set)
+// and queries the feed by those two explicit axes — never trackSlug. So
 // removing a preset node (drop Go) honestly broadens the feed, and both axes
 // share one unified facet UI. See md/journal/migrations/taxonomy-navigation.md.
+
+import { notFound } from "next/navigation";
 
 import { Header, type NavItem } from "@/components/shared/Header";
 import { Footer } from "@/components/shared/Footer";
@@ -20,9 +22,9 @@ import {
   coerceWorkFormat,
   vacanciesApi,
 } from "@/lib/api/vacancies";
-import { Snapshot } from "../../_components/market-snapshot/Snapshot";
-import { MarketFilters } from "../../_components/market-snapshot/MarketFilters";
-import { VacancyList } from "../../_components/vacancy-list/VacancyList";
+import { Snapshot } from "../_components/market-snapshot/Snapshot";
+import { MarketFilters } from "../_components/market-snapshot/MarketFilters";
+import { VacancyList } from "../_components/vacancy-list/VacancyList";
 
 export const dynamic = "force-dynamic";
 
@@ -71,8 +73,8 @@ export default async function TrackPage({
   const { slug } = await params;
   const sp = await searchParams;
 
-  // Flat slug: one segment == the track slug. First segment wins; /track is
-  // the index (no active track).
+  // Flat slug: one segment == the track slug. First segment wins; `/` (no
+  // segment) is the index (no active track).
   const trackSlug = slug?.[0];
 
   const offset = asNonNegativeInt(sp.offset, 0);
@@ -84,22 +86,31 @@ export default async function TrackPage({
   const hasTestAssignment = coerceBool(asString(sp.test));
   const hasReservation = coerceBool(asString(sp.reservation));
 
+  const [aggregates, { tracks }] = await Promise.all([
+    aggregatesApi.get(),
+    tracksApi.get(),
+  ]);
+
+  // The catch-all serves every `/<slug>`, so an unknown slug is a real 404 —
+  // not a feed scoped to a track that doesn't exist.
+  if (trackSlug && !tracks.some((t) => t.slug === trackSlug)) {
+    notFound();
+  }
+
+  // The preset, contextual skills, and full catalogs only matter once a track
+  // is active (the facet panels render only then) — skip them on the index.
   const [
-    aggregates,
-    { tracks },
     preset,
     { skills: contextualSkills },
     { roles: roleCatalog },
     { skills: skillCatalog },
   ] = await Promise.all([
-    aggregatesApi.get(),
-    tracksApi.get(),
     trackSlug
       ? tracksApi.preset(trackSlug)
       : Promise.resolve({ roles: [], skills: [] }),
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
-    facetsApi.roles(),
-    facetsApi.skills(),
+    trackSlug ? facetsApi.roles() : Promise.resolve({ roles: [] }),
+    trackSlug ? facetsApi.skills() : Promise.resolve({ skills: [] }),
   ]);
 
   // Effective axes: the URL overrides the track's preset per axis.
@@ -119,7 +130,7 @@ export default async function TrackPage({
 
   // An active track whose effective axes are both empty (every preset node
   // removed, or a pure-grouping track) matches nothing — mirror the count,
-  // don't fall through to the unfiltered set. The bare /track index (no track)
+  // don't fall through to the unfiltered set. The bare `/` index (no track)
   // does show everything eligible.
   const hasPreset = roleIds.length > 0 || skillIds.length > 0;
   const list =

@@ -69,7 +69,7 @@ export function MarketFilters({
   // Picking a track is a fresh context: navigate to its route and drop any
   // prior refine query (the new track's own preset becomes the defaults).
   const handleSelectTrack = useCallback(
-    (slug: string) => router.push(`/track/${encodeURIComponent(slug)}`),
+    (slug: string) => router.push(`/${encodeURIComponent(slug)}`),
     [router],
   );
 
