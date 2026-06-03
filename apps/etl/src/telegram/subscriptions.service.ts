@@ -4,6 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import {
+  SUBSCRIPTION_PARAM_KEYS,
+  type SubscriptionParams,
+} from "./subscriptions.contract";
+
 const { subscriptions } = schema;
 
 // Postgres `uuid` columns reject malformed input at the driver level, so we
@@ -21,6 +26,27 @@ export type LinkResult = "linked" | "not_found";
 @Injectable()
 export class SubscriptionsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+
+  /**
+   * Create a pending subscription from the web facet filter. Persists only the
+   * known feed-query keys (so `params` stays a clean, replayable query) and
+   * leaves it inactive + unlinked until the user runs `/start <id>`. Returns
+   * the new id, which doubles as the deep-link token.
+   */
+  async create(rawParams: SubscriptionParams): Promise<string> {
+    const params: SubscriptionParams = {};
+    for (const key of SUBSCRIPTION_PARAM_KEYS) {
+      const value = rawParams[key];
+      if (value !== undefined && value !== null) params[key] = value;
+    }
+
+    const [created] = await this.db
+      .insert(subscriptions)
+      .values({ params })
+      .returning({ id: subscriptions.id });
+
+    return created.id;
+  }
 
   /** Bind a chat to a pending subscription (the `/start <token>` payload) and activate it. */
   async linkChat(token: string, chatId: string): Promise<LinkResult> {

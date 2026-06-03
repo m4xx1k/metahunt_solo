@@ -123,6 +123,9 @@ export function validateEnv(config: RawEnv): RawEnv {
   // Optional: empty string disables the Telegram poller (the bot module logs a
   // warning and stays dormant) so the app boots fine before the token is set.
   const telegramBotToken = asString(config.TELEGRAM_BOT_TOKEN) ?? "";
+  // Bot @username (no leading @) — used to build `t.me/<username>?start=<id>`
+  // deep links. Empty → `POST /subscriptions` 400s (can't form the link).
+  const telegramBotUsername = asString(config.TELEGRAM_BOT_USERNAME) ?? "";
 
   return {
     ...config,
@@ -143,5 +146,6 @@ export function validateEnv(config: RawEnv): RawEnv {
     OPENAI_MODEL: openaiModel,
     EXTRACTOR_PROVIDER: extractorProvider,
     TELEGRAM_BOT_TOKEN: telegramBotToken,
+    TELEGRAM_BOT_USERNAME: telegramBotUsername,
   };
 }

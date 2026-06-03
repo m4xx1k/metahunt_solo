@@ -22,8 +22,10 @@ import {
   coerceWorkFormat,
   vacanciesApi,
 } from "@/lib/api/vacancies";
+import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import { Snapshot } from "../_components/market-snapshot/Snapshot";
 import { MarketFilters } from "../_components/market-snapshot/MarketFilters";
+import { SubscribeButton } from "../_components/subscribe/SubscribeButton";
 import { VacancyList } from "../_components/vacancy-list/VacancyList";
 
 export const dynamic = "force-dynamic";
@@ -153,6 +155,18 @@ export default async function TrackPage({
     flatSearchParams[k] = asString(v);
   }
 
+  // The effective query a subscription would replay — same filter the list
+  // above ran, minus pagination. Mirrors the `vacanciesApi.list` call.
+  const subscriptionParams: SubscriptionParams = {
+    roleIds: roleIds.length > 0 ? roleIds : undefined,
+    skillIds: skillIds.length > 0 ? skillIds : undefined,
+    sourceId: sourceId ?? undefined,
+    seniority,
+    workFormat,
+    hasTestAssignment,
+    hasReservation,
+  };
+
   return (
     <>
       <Header links={snapshotNav} />
@@ -160,16 +174,21 @@ export default async function TrackPage({
         <Snapshot aggregates={aggregates} />
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
-            <MarketFilters
-              aggregates={aggregates}
-              tracks={tracks}
-              activeTrackSlug={trackSlug ?? null}
-              presetRoles={preset.roles}
-              presetSkills={preset.skills}
-              contextualSkills={contextualSkills}
-              roleCatalog={roleCatalog}
-              skillCatalog={skillCatalog}
-            />
+            <div className="flex flex-col gap-4">
+              {(!trackSlug || hasPreset) && (
+                <SubscribeButton params={subscriptionParams} />
+              )}
+              <MarketFilters
+                aggregates={aggregates}
+                tracks={tracks}
+                activeTrackSlug={trackSlug ?? null}
+                presetRoles={preset.roles}
+                presetSkills={preset.skills}
+                contextualSkills={contextualSkills}
+                roleCatalog={roleCatalog}
+                skillCatalog={skillCatalog}
+              />
+            </div>
             <VacancyList
               result={list}
               offset={offset}

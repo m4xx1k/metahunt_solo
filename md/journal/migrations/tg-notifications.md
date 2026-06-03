@@ -25,8 +25,12 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
 - [x] T2 — isolated bot module `apps/etl/src/telegram/` — *done when:* typecheck green.
       `TelegramService` (grammy poller lifecycle + `/start`/`/stop`/`/help`, stateless
       `sendMessage`), `SubscriptionsService` (link/deactivate). Skips poller without token.
-- [ ] T3 — web "Subscribe": facet UI → POST creates `subscriptions` row (params, inactive) →
-      returns `t.me/<bot>?start=<id>` — *done when:* clicking Subscribe yields a working deep link.
+- [x] T3 — web "Subscribe": facet UI → `POST /subscriptions` creates a row (effective feed
+      query as `params`, inactive) → returns `t.me/<bot>?start=<id>`; web shows "Відкрити
+      Telegram". Endpoint + `SubscriptionsService.create` in the telegram module;
+      `SubscribeButton` (tier-3) in the feed sidebar, hidden when the query matches nothing
+      (`trackSlug && !hasPreset`). Needs `TELEGRAM_BOT_USERNAME`. — *done when:* clicking
+      Subscribe yields a working deep link. ✅ commit pending.
 - [ ] T4 — `buildWhere` extension: `loadedAfter` + `excludeIds` — *done when:* `list()` accepts both.
 - [ ] T5 — `matchNewVacancies` + `sendDigest` activities (HTML-escaped, capped) — *done when:* a seeded sub gets a digest.
 - [ ] T6 — `notifySubscribersWorkflow` + Schedule @:15 (register like `RssSchedulerService.ensureSchedule`) — *done when:* live digests fire.
@@ -46,19 +50,35 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
   view can show the backlog in-app on demand instead of via notifications.
 - **Analytics deferred.** Ship TG first. PostHog is purely additive later (no schema change) —
   `subscriptions.id` is already the future `distinct_id`. See `analytics-posthog-plan.md`.
+- **Digest rendering (T5).** Render from `VacancyDto` (`FeedService.list()`). Per-vacancy
+  "rich card": title (link) → company → skills → location/format → salary/english → apply.
+  Rules: (a) **graceful degradation** — render a field only when present, no empty rows;
+  (b) **no seniority dup** — show the seniority chip only if the title doesn't already
+  contain that level; (c) **english as CEFR** — BEGINNER→A1, INTERMEDIATE→B1,
+  UPPER_INTERMEDIATE→B2, ADVANCED→C1, NATIVE→C2; (d) salary: both→`$min–max`, min-only→
+  `from $min`, max-only→`up to $max`, currency symbol $/€/₴; (e) skills: required first,
+  cap ~5 + `+N`. Card style preferred (pending final confirm). HTML `parse_mode`, escape.
+- **Digest paging (T5/T6).** No truncation — page instead. Order newest-first; cap each
+  message by `MAX_PER_MESSAGE` (~8) AND a ~3500-char budget (under Telegram's 4096); header
+  shows `(i/n)`. Sequential sends, ~1 msg/s per chat, honor `retry_after` on 429. Write
+  `sent_notifications` **per page after a successful send**, so a retried page never
+  double-sends earlier pages. Workflow: matches → chunk → `sendDigestPage(chunk)` per chunk.
+  Far-future hard ceiling (collapse tail to "N new — see site") is YAGNI now.
 
 ## Test `/start` locally (after this session)
 
 1. `pnpm db:up` then `pnpm db:migrate` — applies `0014`.
-2. Create a bot via @BotFather, put `TELEGRAM_BOT_TOKEN=...` in repo-root `.env`.
+2. Create a bot via @BotFather; in repo-root `.env` set `TELEGRAM_BOT_TOKEN=...` and
+   `TELEGRAM_BOT_USERNAME=<bot_username_no_@>`.
 3. `pnpm --filter @metahunt/etl build && pnpm --filter @metahunt/etl start`
    (log shows `Telegram bot @<name> polling`).
-4. DM the bot `/start` → greeting. To test linking: insert a row and `/start <its id>`:
-   ```sql
-   INSERT INTO subscriptions (params) VALUES ('{}'::jsonb) RETURNING id;
-   ```
-   `/start <id>` → "Підписку активовано"; row now has your `chat_id`, `is_active=true`.
-   `/stop` → deactivates.
+4. **Bot only:** DM `/start` → greeting; `/help`; `/stop`.
+5. **Full subscribe flow:** ensure web `.env.local` has `NEXT_PUBLIC_API_URL=http://localhost:3000`
+   (the etl port), `pnpm dev:web`, open the feed, set a filter, click **🔔 Сповіщення в
+   Telegram** → tap "Відкрити Telegram" → `/start` auto-fires with the token → "Підписку
+   активовано"; the row now has your `chat_id`, `is_active=true`. `/stop` → deactivates.
+   (Manual alt: `INSERT INTO subscriptions (params) VALUES ('{}'::jsonb) RETURNING id;` then
+   `/start <id>`.)
 
 ## Links
 
