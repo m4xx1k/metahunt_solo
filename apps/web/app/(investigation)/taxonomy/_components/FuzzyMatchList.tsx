@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { taxonomyApi, type FuzzyMatch } from "@/lib/api/taxonomy";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ export function FuzzyMatchList({
   emptyLabel = "схожих понять не знайдено",
 }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +35,11 @@ export function FuzzyMatchList({
     setError(null);
     try {
       await taxonomyApi.mergeInto(sourceId, targetId);
-      router.refresh();
+      // Source node is deleted by the merge; move the selection to the target
+      // (where the data now lives) so the refresh doesn't re-fetch a dead id → 404.
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("selected", targetId);
+      router.push(`/taxonomy?${params.toString()}`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
