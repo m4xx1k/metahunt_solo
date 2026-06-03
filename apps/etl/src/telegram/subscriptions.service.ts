@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -155,6 +155,29 @@ export class SubscriptionsService {
       .returning({ id: subscriptions.id });
 
     return stopped.length > 0;
+  }
+
+  /**
+   * Sweep orphan pending rows: created on the web (`POST /subscriptions`) but
+   * never claimed via `/start`, so they sit unlinked forever. Each web tap mints
+   * a fresh row, so abandoned taps accumulate — this is the GC for them. Only
+   * unlinked, inactive rows past the TTL are removed; an active subscription is
+   * never touched. Returns how many were deleted.
+   */
+  async purgeStalePending(maxAgeHours: number): Promise<number> {
+    const cutoff = new Date(Date.now() - maxAgeHours * 3_600_000);
+    const deleted = await this.db
+      .delete(subscriptions)
+      .where(
+        and(
+          isNull(subscriptions.chatId),
+          eq(subscriptions.isActive, false),
+          lt(subscriptions.createdAt, cutoff),
+        ),
+      )
+      .returning({ id: subscriptions.id });
+
+    return deleted.length;
   }
 
   /** Short human label for `/list` — resolved role names + skill count. */

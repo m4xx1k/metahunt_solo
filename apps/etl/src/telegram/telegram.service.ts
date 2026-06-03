@@ -15,6 +15,12 @@ const DIGEST_WINDOW_DAYS = 14;
 const DIGEST_PREVIEW_SIZE = 3;
 const DAY_MS = 86_400_000;
 
+// Orphan pending rows (web "Subscribe" tapped, never `/start`-ed) are swept once
+// they're older than this. Generous enough that a user can subscribe and open
+// Telegram minutes or hours later; tight enough that abandoned taps don't pile up.
+const PENDING_TTL_HOURS = 48;
+const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
 // grammy long-polling is single-consumer: this service must run in exactly ONE
 // `@metahunt/etl` replica. Keep the etl service pinned to 1 replica on Railway,
 // or extract the poller before scaling the worker horizontally.
@@ -22,6 +28,7 @@ const DAY_MS = 86_400_000;
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
   private bot?: Bot;
+  private cleanupTimer?: NodeJS.Timeout;
 
   constructor(
     private readonly config: ConfigService,
@@ -57,6 +64,27 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     void bot.start({
       onStart: (me) => this.logger.log(`Telegram bot @${me.username} polling`),
     });
+
+    // GC abandoned web "Subscribe" taps. Lives here (not Temporal) because the
+    // poller already pins this service to one replica, so the interval is too.
+    void this.purgeStalePending();
+    this.cleanupTimer = setInterval(
+      () => void this.purgeStalePending(),
+      CLEANUP_INTERVAL_MS,
+    );
+    this.cleanupTimer.unref();
+  }
+
+  private async purgeStalePending(): Promise<void> {
+    try {
+      const removed =
+        await this.subscriptions.purgeStalePending(PENDING_TTL_HOURS);
+      if (removed > 0) {
+        this.logger.log(`Purged ${removed} stale pending subscription(s)`);
+      }
+    } catch (err) {
+      this.logger.error("Stale-subscription purge failed", err);
+    }
   }
 
   /** Bot @username (from getMe), once initialized. Undefined while dormant. */
@@ -65,6 +93,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     await this.bot?.stop();
   }
 
@@ -109,19 +138,25 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       const loadedAfter = new Date(Date.now() - DIGEST_WINDOW_DAYS * DAY_MS);
+      const applyBaseUrl = this.config.get<string>("PUBLIC_BASE_URL")!;
       for (const sub of subs) {
         // Stored params are a feed query (whitelisted keys) — a JSON boundary.
         const params = sub.params as Partial<FeedSearchParams>;
-        const { items, total } = await this.feed.search({
-          ...params,
-          page: 1,
-          pageSize: DIGEST_PREVIEW_SIZE,
-          loadedAfter,
-        });
+        const [{ items, total }, label] = await Promise.all([
+          this.feed.search({
+            ...params,
+            page: 1,
+            pageSize: DIGEST_PREVIEW_SIZE,
+            loadedAfter,
+          }),
+          this.subscriptions.describe(sub.params),
+        ]);
         await ctx.reply(
           renderDigest(items, {
             totalNew: total,
             windowDays: DIGEST_WINDOW_DAYS,
+            applyBaseUrl,
+            label,
           }),
           {
             parse_mode: "HTML",

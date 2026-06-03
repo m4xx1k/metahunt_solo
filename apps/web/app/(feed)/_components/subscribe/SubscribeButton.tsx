@@ -9,41 +9,34 @@ import {
   type SubscriptionParams,
 } from "@/lib/api/subscriptions";
 
-// Creates a pending subscription from the current facet filter, then surfaces
-// the `t.me/<bot>?start=<id>` deep link. Tapping it hands off to Telegram,
-// where `/start <id>` links the chat and activates the subscription.
+// Single tap: create a fresh pending subscription from the current facet filter
+// and hand off straight to Telegram, where `/start <id>` links the chat and
+// activates it. We open the tab synchronously inside the click gesture (with
+// `about:blank`) so the popup blocker doesn't eat the post-fetch navigation,
+// then point it at the deep link once the row exists. Every tap creates a new
+// subscription (dedup of identical filters happens later, at `/start` time).
 export function SubscribeButton({ params }: { params: SubscriptionParams }) {
-  const [deepLink, setDeepLink] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const tab = window.open("about:blank", "_blank");
     try {
       const res = await subscriptionsApi.create(params);
-      setDeepLink(res.deepLink);
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = res.deepLink;
+      } else {
+        window.location.href = res.deepLink;
+      }
     } catch {
+      tab?.close();
       toast.error("Не вдалося створити підписку");
     } finally {
       setIsSubmitting(false);
     }
   }, [isSubmitting, params]);
-
-  if (deepLink) {
-    return (
-      <div className="flex flex-col gap-2 border border-border bg-bg-card p-4">
-        <p className="font-body text-[13px] text-text-muted">
-          Залишився крок: відкрий бота, щоб активувати сповіщення за цим
-          фільтром.
-        </p>
-        <a href={deepLink} target="_blank" rel="noopener noreferrer">
-          <Button variant="primary" size="sm" className="w-full">
-            Відкрити Telegram →
-          </Button>
-        </a>
-      </div>
-    );
-  }
 
   return (
     <Button

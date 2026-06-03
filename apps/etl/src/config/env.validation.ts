@@ -125,6 +125,13 @@ export function validateEnv(config: RawEnv): RawEnv {
   // The bot @username is derived from the token via getMe — no separate var.
   const telegramBotToken = asString(config.TELEGRAM_BOT_TOKEN) ?? "";
 
+  // Public origin this service is reachable at — used to build absolute
+  // `/go/:id` apply-redirect links in Telegram digests (Telegram needs absolute
+  // URLs). Defaults to the local port for dev; set to the deployed domain in prod.
+  const publicBaseUrl =
+    asString(config.PUBLIC_BASE_URL) ?? `http://localhost:${port}`;
+  assertUrl("PUBLIC_BASE_URL", publicBaseUrl);
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -144,5 +151,6 @@ export function validateEnv(config: RawEnv): RawEnv {
     OPENAI_MODEL: openaiModel,
     EXTRACTOR_PROVIDER: extractorProvider,
     TELEGRAM_BOT_TOKEN: telegramBotToken,
+    PUBLIC_BASE_URL: publicBaseUrl,
   };
 }

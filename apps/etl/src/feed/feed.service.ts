@@ -33,6 +33,11 @@ const {
   rssRecords,
 } = schema;
 
+// Postgres `uuid` columns reject malformed input at the driver level, so screen
+// path params before they reach a query.
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface FeedSearchParams {
   page: number;
   pageSize: number;
@@ -187,6 +192,23 @@ export class FeedService {
       pageSize: params.pageSize,
       total,
     };
+  }
+
+  /**
+   * Resolve the outbound source URL for one vacancy — backs the `/go/:id`
+   * apply redirect so digest taps route through metahunt (the seam where click
+   * tracking will hang). Returns null for a malformed id, a missing vacancy, or
+   * a legacy row with no link.
+   */
+  async getApplyLink(id: string): Promise<string | null> {
+    if (!UUID_REGEX.test(id)) return null;
+    const [row] = await this.db
+      .select({ link: rssRecords.link })
+      .from(vacancies)
+      .innerJoin(rssRecords, eq(rssRecords.id, vacancies.lastRssRecordId))
+      .where(eq(vacancies.id, id))
+      .limit(1);
+    return row?.link ?? null;
   }
 
   private async fetchSkills(
