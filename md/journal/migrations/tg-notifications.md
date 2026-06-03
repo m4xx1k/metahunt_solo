@@ -32,8 +32,13 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
       (`trackSlug && !hasPreset`). Bot @username is derived from the token via `getMe` at
       startup — no extra env var. — *done when:* clicking Subscribe yields a working deep
       link. ✅ verified live (`https://t.me/<bot>?start=<id>`).
-- [ ] T4 — `buildWhere` extension: `loadedAfter` + `excludeIds` — *done when:* `list()` accepts both.
-- [ ] T5 — `matchNewVacancies` + `sendDigest` activities (HTML-escaped, capped) — *done when:* a seeded sub gets a digest.
+- [~] T4 — `buildWhere` extension: `loadedAfter` ✅ (feed `loaded_at > x`); `excludeIds` +
+      `created_at` floor still pending for the scheduled path.
+- [~] T5 — digest rendering ✅: `digest.renderer.ts` (Rich card, escaped, skills capped,
+      CEFR, seniority dedup) + `/preview` bot command (reuses `FeedService.search`,
+      3 cards + "N new in 14d" count, `DIGEST_WINDOW_DAYS`/`DIGEST_PREVIEW_SIZE` consts).
+      Verified on real data. Still pending: `matchNewVacancies`/`sendDigestPage` activities +
+      paging + `sent_notifications` writes for the scheduled (non-preview) path.
 - [ ] T6 — `notifySubscribersWorkflow` + Schedule @:15 (register like `RssSchedulerService.ensureSchedule`) — *done when:* live digests fire.
 - [ ] T7 — pre-launch gate (see `weekend-launch-plan.md`): 1 replica, `/stop`, dedup re-run, grouping-track guard, dry-run.
 

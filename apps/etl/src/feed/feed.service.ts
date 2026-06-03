@@ -4,6 +4,7 @@ import {
   count,
   desc,
   eq,
+  gt,
   ilike,
   inArray,
   isNotNull,
@@ -50,6 +51,8 @@ export interface FeedSearchParams {
   hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
+  /** Only vacancies first loaded after this instant (the digest "new since" window). */
+  loadedAfter?: Date;
 }
 
 interface VacancyRow {
@@ -239,6 +242,7 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.hasReservation !== undefined) {
     conds.push(eq(vacancies.hasReservation, params.hasReservation));
   }
+  if (params.loadedAfter) conds.push(gt(vacancies.loadedAt, params.loadedAfter));
   if (params.skillIds && params.skillIds.length > 0) {
     // AND semantics: keep only vacancies whose vacancy_nodes set covers
     // every requested skill. One subquery (not N joins) keeps both the

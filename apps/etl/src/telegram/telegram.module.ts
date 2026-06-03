@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { FeedModule } from "../feed/feed.module";
 import { SubscriptionsController } from "./subscriptions.controller";
 import { SubscriptionsService } from "./subscriptions.service";
 import { TelegramService } from "./telegram.service";
@@ -9,6 +10,7 @@ import { TelegramService } from "./telegram.service";
 // outbound `sendMessage`. Exports TelegramService so the future digest activity
 // can deliver without depending on the poller internals.
 @Module({
+  imports: [FeedModule],
   controllers: [SubscriptionsController],
   providers: [TelegramService, SubscriptionsService],
   exports: [TelegramService, SubscriptionsService],

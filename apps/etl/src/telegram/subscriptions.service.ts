@@ -61,6 +61,18 @@ export class SubscriptionsService {
     return linked.length > 0 ? "linked" : "not_found";
   }
 
+  /** Active subscriptions for a chat — id + stored feed-query params. */
+  async listActiveByChat(
+    chatId: string,
+  ): Promise<{ id: string; params: SubscriptionParams }[]> {
+    return this.db
+      .select({ id: subscriptions.id, params: subscriptions.params })
+      .from(subscriptions)
+      .where(
+        and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)),
+      );
+  }
+
   /** `/stop` — deactivate every subscription for a chat. Returns how many were active. */
   async deactivateByChat(chatId: string): Promise<number> {
     const stopped = await this.db
