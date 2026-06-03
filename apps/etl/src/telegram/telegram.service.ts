@@ -5,7 +5,7 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard } from "grammy";
 
 import { FeedService, type FeedSearchParams } from "../feed/feed.service";
 import { renderDigest } from "./digest.renderer";
@@ -127,6 +127,38 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
     });
 
+    bot.command("list", async (ctx) => {
+      const subs = await this.subscriptions.listActiveByChat(
+        String(ctx.chat.id),
+      );
+      if (subs.length === 0) {
+        await ctx.reply("У тебе немає активних підписок.");
+        return;
+      }
+
+      for (const sub of subs) {
+        const label = await this.subscriptions.describe(sub.params);
+        await ctx.reply(`🔔 ${label}`, {
+          reply_markup: new InlineKeyboard().text(
+            "❌ Відписатись",
+            `unsub:${sub.id}`,
+          ),
+        });
+      }
+    });
+
+    bot.callbackQuery(/^unsub:(.+)$/, async (ctx) => {
+      const id = ctx.match[1];
+      const chatId = ctx.chat?.id;
+      const stopped =
+        chatId !== undefined &&
+        (await this.subscriptions.deactivateById(id, String(chatId)));
+      await ctx.answerCallbackQuery(
+        stopped ? "Відписано" : "Підписку не знайдено",
+      );
+      if (stopped) await ctx.editMessageText("❌ Відписано.");
+    });
+
     bot.command("stop", async (ctx) => {
       const stopped = await this.subscriptions.deactivateByChat(
         String(ctx.chat.id),
@@ -141,8 +173,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     bot.command("help", async (ctx) => {
       await ctx.reply(
         "Команди:\n/start — активувати підписку за посиланням із сайту\n" +
+          "/list — мої підписки (з кнопкою відписки на кожну)\n" +
           "/preview — показати приклад дайджесту за твоїм фільтром\n" +
-          "/stop — вимкнути сповіщення",
+          "/stop — вимкнути всі сповіщення",
       );
     });
 

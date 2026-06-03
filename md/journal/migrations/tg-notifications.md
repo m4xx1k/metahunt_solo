@@ -23,8 +23,11 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
       deep-link token = canonical subscriber identity (never key on `chat_id`).
 - [x] T1 — `TELEGRAM_BOT_TOKEN` env (optional; empty → poller dormant) — *done when:* env.validation passes.
 - [x] T2 — isolated bot module `apps/etl/src/telegram/` — *done when:* typecheck green.
-      `TelegramService` (grammy poller lifecycle + `/start`/`/stop`/`/help`, stateless
-      `sendMessage`), `SubscriptionsService` (link/deactivate). Skips poller without token.
+      `TelegramService` (grammy poller lifecycle + `/start`/`/list`/`/preview`/`/stop`/`/help`,
+      stateless `sendMessage`), `SubscriptionsService` (link/deactivate/describe). `/list`
+      shows each active sub with an inline "❌ Відписатись" button (callback `unsub:<id>`,
+      chat-scoped so a forged callback can't touch others' subs); `/stop` deactivates all.
+      Skips poller without token.
 - [x] T3 — web "Subscribe": facet UI → `POST /subscriptions` creates a row (effective feed
       query as `params`, inactive) → returns `t.me/<bot>?start=<id>`; web shows "Відкрити
       Telegram". Endpoint + `SubscriptionsService.create` in the telegram module;

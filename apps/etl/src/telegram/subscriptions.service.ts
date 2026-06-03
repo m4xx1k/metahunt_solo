@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -9,7 +9,15 @@ import {
   type SubscriptionParams,
 } from "./subscriptions.contract";
 
-const { subscriptions } = schema;
+const { subscriptions, nodes } = schema;
+
+const MAX_SUMMARY_ROLES = 2;
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === "string")
+    : [];
+}
 
 // Postgres `uuid` columns reject malformed input at the driver level, so we
 // screen the deep-link token before it reaches a query.
@@ -84,5 +92,53 @@ export class SubscriptionsService {
       .returning({ id: subscriptions.id });
 
     return stopped.length;
+  }
+
+  /**
+   * Deactivate one subscription (the inline "unsubscribe" button). Scoped to
+   * the chat so a forged callback can't touch someone else's subscription.
+   */
+  async deactivateById(id: string, chatId: string): Promise<boolean> {
+    if (!UUID_REGEX.test(id)) return false;
+
+    const stopped = await this.db
+      .update(subscriptions)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(subscriptions.id, id),
+          eq(subscriptions.chatId, chatId),
+          eq(subscriptions.isActive, true),
+        ),
+      )
+      .returning({ id: subscriptions.id });
+
+    return stopped.length > 0;
+  }
+
+  /** Short human label for `/list` — resolved role names + skill count. */
+  async describe(params: SubscriptionParams): Promise<string> {
+    const roleIds = asStringArray(params.roleIds);
+    const skillIds = asStringArray(params.skillIds);
+
+    const roleNames =
+      roleIds.length > 0
+        ? (
+            await this.db
+              .select({ name: nodes.canonicalName })
+              .from(nodes)
+              .where(inArray(nodes.id, roleIds))
+          ).map((r) => r.name)
+        : [];
+
+    const parts: string[] = [];
+    if (roleNames.length > 0) {
+      const shown = roleNames.slice(0, MAX_SUMMARY_ROLES).join(", ");
+      const extra = roleNames.length - MAX_SUMMARY_ROLES;
+      parts.push(extra > 0 ? `${shown} +${extra}` : shown);
+    }
+    if (skillIds.length > 0) parts.push(`${skillIds.length} скіл.`);
+
+    return parts.length > 0 ? parts.join(" · ") : "усі вакансії";
   }
 }
