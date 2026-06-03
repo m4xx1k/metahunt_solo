@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Section } from "./Section";
-import { SelectRow } from "./SelectRow";
+import { chipClass } from "./pill";
 import type { SkillStat } from "./types";
 
 const TOP_N = 8;
@@ -41,8 +41,6 @@ export function SkillsSection({
   const summary =
     selectedIds.length > 0 ? `${selectedIds.length} selected` : "any";
   const showNoMatches = q.length > 0 && filteredRest.length === 0;
-  const showDivider =
-    selected.length > 0 && (visibleRest.length > 0 || showNoMatches);
 
   return (
     <Section title="skills" summary={summary}>
@@ -55,34 +53,33 @@ export function SkillsSection({
           className="border border-border bg-bg px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
         />
 
-        <ul className="flex flex-col">
+        <div className="flex flex-wrap gap-1.5">
           {selected.map((s) => (
-            <SelectRow
+            <button
               key={s.id}
-              label={s.label}
-              active
-              marker="check"
+              type="button"
+              aria-pressed
               onClick={() => onToggle(s.id)}
-            />
+              className={chipClass(true)}
+            >
+              {s.label}
+            </button>
           ))}
-          {showDivider ? (
-            <li aria-hidden className="my-1 border-t border-border/60" />
-          ) : null}
           {visibleRest.map((s) => (
-            <SelectRow
+            <button
               key={s.id}
-              label={s.label}
-              active={false}
-              marker="check"
+              type="button"
+              aria-pressed={false}
               onClick={() => onToggle(s.id)}
-            />
+              className={chipClass(false)}
+            >
+              {s.label}
+            </button>
           ))}
           {showNoMatches ? (
-            <li className="px-1 py-3 font-mono text-xs text-text-muted">
-              no matches
-            </li>
+            <p className="py-1 font-mono text-xs text-text-muted">no matches</p>
           ) : null}
-        </ul>
+        </div>
 
         {q.length === 0 && hiddenCount > 0 ? (
           <button

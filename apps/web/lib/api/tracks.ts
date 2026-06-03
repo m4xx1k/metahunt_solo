@@ -36,6 +36,21 @@ export interface ContextualSkillsResponse {
   skills: ContextualSkill[];
 }
 
+// ─────────────────── Track criteria (both axes) ───────────────────
+// The ROLE + SKILL nodes a track resolves to (own axis, else inherited
+// one hop). Both render as the unified facet panels' preset chips — on by
+// default; toggle to narrow, search to widen. Empty arrays = pure grouping.
+
+export interface TrackNode {
+  id: string;
+  name: string;
+}
+
+export interface TrackCriteriaResponse {
+  roles: TrackNode[];
+  skills: TrackNode[];
+}
+
 // ─────────────────────────── Fetcher ────────────────────────────
 
 export const tracksApi = {
@@ -43,5 +58,9 @@ export const tracksApi = {
   skills: (slug: string) =>
     apiGet<ContextualSkillsResponse>(
       `/vacancies/tracks/${encodeURIComponent(slug)}/skills`,
+    ),
+  criteria: (slug: string) =>
+    apiGet<TrackCriteriaResponse>(
+      `/vacancies/tracks/${encodeURIComponent(slug)}/criteria`,
     ),
 };

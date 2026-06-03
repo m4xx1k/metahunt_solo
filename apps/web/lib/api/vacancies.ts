@@ -137,6 +137,12 @@ export interface ListVacanciesQuery {
   sourceId?: string;
   companyId?: string;
   roleId?: string;
+  /**
+   * Match ANY of these ROLE node ids (OR). With `trackSlug` it overrides the
+   * track's role axis (lazy-refine to specific roles) while the track's skill
+   * criteria still apply. Serialized as repeated ?roleIds= params.
+   */
+  roleIds?: string[];
   skillIds?: string[];
   seniority?: Seniority;
   workFormat?: WorkFormat;

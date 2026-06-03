@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import {
   ActiveFiltersBar,
   EnumSection,
+  type Facet,
+  FacetSection,
   FlagSection,
   RoleSection,
   SkillsSection,
@@ -24,41 +26,59 @@ import { useUrlFilters } from "./use-url-filters";
 // it never pushes the list off the first screen; on lg+ it is a sticky
 // always-visible column.
 
-// When `tracks` is passed (the /track prototype route) the sidebar leads
-// with the browse tree and selecting a node navigates to that track's page;
-// the flat RoleSection is dropped in that mode. Without it, the landing
-// keeps its current flat-role behavior untouched.
+// Two layouts share this component:
+// - Landing (no `tracks`): flat single-select RoleSection + skill multiselect,
+//   with the ActiveFiltersBar summary on top. Unchanged.
+// - Track route (`tracks` passed): leads with the browse tree; once a track is
+//   active, both axes render as unified FacetSections (preset chips on by
+//   default, contextual suggestions, search-add) writing ?roles / ?skills.
+//   The feed is driven by those explicit axes, so the bar is dropped here —
+//   each section shows its own state.
 export function MarketFilters({
   aggregates,
   tracks,
   activeTrackSlug,
+  roleCriteria,
+  skillCriteria,
+  contextualSkills,
+  roleCatalog,
+  skillCatalog,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
   activeTrackSlug?: string | null;
+  /** The active track's preset ROLE nodes (on by default in the facet). */
+  roleCriteria?: Facet[];
+  /** The active track's preset SKILL nodes. */
+  skillCriteria?: Facet[];
+  /** Contextual skills ranked for the active track (facet suggestions). */
+  contextualSkills?: Facet[];
+  /** Full verified-role catalog — search-and-add in the role facet. */
+  roleCatalog?: Facet[];
+  /** Full verified-skill catalog — search-and-add in the skill facet. */
+  skillCatalog?: Facet[];
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   const api = useUrlFilters();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const trackMode = tracks != null;
+  const showFacets = trackMode && activeTrackSlug != null;
+
   // Picking a track is a fresh context: navigate to its route and drop any
-  // prior refine query (lazy-refine starts from the track's own criteria).
+  // prior refine query (the new track's own criteria become the defaults).
   const handleSelectTrack = useCallback(
     (slug: string) => router.push(`/track/${encodeURIComponent(slug)}`),
     [router],
   );
 
-  const handleToggleMobile = useCallback(
-    () => setMobileOpen((v) => !v),
-    [],
-  );
+  const handleToggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
 
   return (
     <div
       className={cn(
         "flex flex-col gap-3 transition-opacity",
-        // "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto",
         api.isPending && "pointer-events-none opacity-50",
       )}
     >
@@ -75,32 +95,50 @@ export function MarketFilters({
         <span aria-hidden>{mobileOpen ? "[− hide]" : "[+ show]"}</span>
       </button>
 
-      <div
-        className={cn(
-          "flex-col gap-3 lg:flex",
-          mobileOpen ? "flex" : "hidden",
-        )}
-      >
-        <ActiveFiltersBar api={api} agg={agg} />
+      <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
+        {trackMode ? null : <ActiveFiltersBar api={api} agg={agg} />}
         <aside className="flex flex-col border border-border bg-bg-card">
-          {tracks ? (
-            <TrackTree
-              tracks={tracks}
-              activeSlug={activeTrackSlug ?? null}
-              onSelect={handleSelectTrack}
-            />
+          {trackMode ? (
+            <>
+              <TrackTree
+                tracks={tracks}
+                activeSlug={activeTrackSlug ?? null}
+                onSelect={handleSelectTrack}
+              />
+              {showFacets ? (
+                <>
+                  <FacetSection
+                    title="refine · roles"
+                    urlKey="roles"
+                    addLabel="add role…"
+                    presets={roleCriteria ?? []}
+                    catalog={roleCatalog ?? []}
+                  />
+                  <FacetSection
+                    title="skills"
+                    urlKey="skills"
+                    addLabel="add skill…"
+                    presets={skillCriteria ?? []}
+                    catalog={skillCatalog ?? []}
+                    suggestions={contextualSkills ?? []}
+                  />
+                </>
+              ) : null}
+            </>
           ) : (
-            <RoleSection
-              roles={agg.roles}
-              activeId={api.filters.roleId}
-              onChange={api.setRole}
-            />
+            <>
+              <RoleSection
+                roles={agg.roles}
+                activeId={api.filters.roleId}
+                onChange={api.setRole}
+              />
+              <SkillsSection
+                skills={agg.skills}
+                selectedIds={api.filters.skillIds}
+                onToggle={api.toggleSkill}
+              />
+            </>
           )}
-          <SkillsSection
-            skills={agg.skills}
-            selectedIds={api.filters.skillIds}
-            onToggle={api.toggleSkill}
-          />
           <EnumSection
             title="seniority"
             options={agg.seniorities}
