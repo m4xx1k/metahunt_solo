@@ -1,9 +1,10 @@
 # taxonomy-navigation — single browse tree (`tracks`) over a two-axis feed
 
 **Branch:** feat/taxonomy-navigation
-**Status:** backend complete — schema+migrations (0012 tables, 0013 `track_counts`
-view), seed run, and all three API endpoints landed & verified vs dev DB; frontend
-next; 2026-06-02
+**Status:** frontend complete (Variant C) — track tree + unified two-axis
+`FacetSection`, feed driven by explicit `roleIds`/`skillIds` (track = preset),
+`/tracks/:slug/criteria` endpoint, `fullstack-ts` pruned; verified end-to-end vs
+dev feed; 2026-06-03. (Backend: 0012/0013 migrations, seed, API — done 2026-06-02.)
 **Started:** 2026-05-29
 
 > **TL;DR (whole doc).** Feed navigation becomes ONE nested list the user browses
@@ -426,6 +427,48 @@ lang-go 164, languages 0). DTOs: `TrackDto`/`ContextualSkill` in `vacancies.cont
 (replaces flat `RoleSection`) · 3) `trackSlug` into `useFilters`, drop raw `roleId` ·
 4) contextual chip row (refetch on track change only).
 
+### Frontend impl — Variant C: track = preset, feed by explicit axes (2026-06-03)
+
+Supersedes "clicking a track writes `trackSlug` into `useFilters`". The feed is
+no longer *driven* by `trackSlug`; the track is a **filter preset** and the feed
+runs on the two explicit axes. This makes both axes symmetric and removable —
+the user's ask "pick a track → its roles AND skills show selected, and I can
+deselect any of them".
+
+- **New endpoint `GET /vacancies/tracks/:slug/criteria` → `{ roles, skills }`**
+  (effective ROLE+SKILL nodes, override-else-inherit). Generalises and *replaces*
+  the roles-only `/tracks/:slug/roles` (`getTrackCriteria`; `getTrackRoles` +
+  `TrackRolesResponse` removed). One round-trip seeds both axes' presets.
+- **Unified `FacetSection`** (one component, both axes) replaces the role-only
+  `RefinePanel` and the track-mode `SkillsSection`. Three zones: preset chips
+  (on by default, removable) → contextual suggestions (skills only, from
+  `/tracks/:slug/skills`) → search-add over the full `/vacancies/roles|skills`
+  catalog.
+- **URL model (per axis, `?roles` / `?skills`):** param *absent* == exactly the
+  preset (clean URL on a fresh track pick); a *present* value — **even empty
+  (`?skills=`)** — is the explicit set. The empty-but-present case is what lets a
+  preset be fully removed; the page reads the same convention
+  (`absent → criteria`, `present → listed ids`).
+- **Page feed:** `effective[axis] = urlParam ?? criteria[axis]`, then
+  `list({ roleIds, skillIds })` with **no `trackSlug`**. An active track whose
+  effective axes are both empty matches nothing (mirrors the view count); the
+  bare `/track` index (no track) shows all eligible. The `ActiveFiltersBar` is
+  dropped in track mode — each `FacetSection` owns its state.
+- **`trackSlug` on `list` is retained** (server-side resolve-and-filter door,
+  still tested) but the web no longer uses it for the feed — only for tree
+  highlight + the criteria/contextual lookups.
+- **Invariant holds.** Explicit `roleIds`(OR) + `skillIds`(AND) ≡ the `trackSlug`
+  feed ≡ `track_counts`, because each stack child carries exactly one skill (AND
+  of one ≡ EXISTS-any). Verified vs dev feed: backend-go 163; drop Go → 996 (all
+  backend); data-analytics 160, +SQL → 147; `/track` index 5860 (all eligible).
+  **Caveat:** a future *multi-skill* stack child would make AND ≠ the view's
+  EXISTS-any — revisit then (skills are trending toward a ranking signal anyway,
+  see [ADR-0006](../decisions/0006-skills-as-ranking-signal.md)).
+- **Seed:** dropped the `fullstack-ts` child (TypeScript is ubiquitous across
+  fullstack stacks, not a distinguishing branch). Re-sync the tree standalone
+  with `pnpm db:seed:tracks` (`tracks.run.ts`) — never full `db:seed`, which also
+  reseeds nodes and reverts moderated statuses.
+
 ## Resolved
 
 - **Discipline source — derived, not extracted.** From existing role links via track
@@ -443,6 +486,8 @@ lang-go 164, languages 0). DTOs: `TrackDto`/`ContextualSkill` in `vacancies.cont
   stay untracked (decoupled from nav). Same family as the prompt fix above.
 - `is_generic` flag — **direction locked: blacklist, not whitelist** (see 2026-06-02
   block); build only if the facet is noisy. Smarter eventual form = lift ranking.
+  Likely **obsoleted by IDF weighting** once skills become a ranking signal — see
+  [ADR-0006](../decisions/0006-skills-as-ranking-signal.md).
 - Materialize `track_counts` — only when the live VIEW is slow.
 
 ## Out of scope
