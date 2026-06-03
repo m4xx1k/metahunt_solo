@@ -37,8 +37,11 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
       link. ✅ verified live (`https://t.me/<bot>?start=<id>`).
 - [~] T4 — `buildWhere` extension: `loadedAfter` ✅ (feed `loaded_at > x`); `excludeIds` +
       `created_at` floor still pending for the scheduled path.
-- [~] T5 — digest rendering ✅: `digest.renderer.ts` (Rich card, escaped, skills capped,
-      CEFR, seniority dedup) + `/preview` bot command (reuses `FeedService.search`,
+- [~] T5 — digest rendering ✅: `digest.renderer.ts` — headline = clean taxonomy **role**
+      (+ seniority), raw title as a trimmed italic subtitle to disambiguate, monochrome
+      CLI-vibe glyphs (`⌖` header, `◆` card, `→` apply), one emoji-free meta line
+      (company · format · place · $salary · EN level), escaped, skills capped, CEFR. Plus
+      `/preview` bot command (reuses `FeedService.search`,
       3 cards + "N new in 14d" count, `DIGEST_WINDOW_DAYS`/`DIGEST_PREVIEW_SIZE` consts).
       Verified on real data. Still pending: `matchNewVacancies`/`sendDigestPage` activities +
       paging + `sent_notifications` writes for the scheduled (non-preview) path.

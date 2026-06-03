@@ -24,11 +24,22 @@ const SENIORITY_LABEL: Record<Seniority, string> = {
   C_LEVEL: "C-Level",
 };
 
-const WORK_FORMAT_CHIP: Record<WorkFormat, string> = {
-  REMOTE: "🏠 Remote",
-  OFFICE: "🏢 Office",
-  HYBRID: "🔀 Hybrid",
+const WORK_FORMAT_LABEL: Record<WorkFormat, string> = {
+  REMOTE: "Remote",
+  OFFICE: "Office",
+  HYBRID: "Hybrid",
 };
+
+// Raw scraped titles run long ("… (Python / Node.js / JS/TS / GCP) with
+// Claude Code") — trim the subtitle so it distinguishes the role without
+// swamping the card.
+const MAX_TITLE_LEN = 52;
+
+function trimTitle(title: string): string {
+  const t = title.trim();
+  if (t.length <= MAX_TITLE_LEN) return t;
+  return `${t.slice(0, MAX_TITLE_LEN - 1).trimEnd()}…`;
+}
 
 const ENGLISH_CEFR: Record<EnglishLevel, string> = {
   BEGINNER: "A1",
@@ -60,53 +71,58 @@ function formatSalary(salary: VacancyDto["salary"]): string | null {
   return `up to ${sym}${max}`;
 }
 
-function seniorityChip(v: VacancyDto): string | null {
-  if (!v.seniority) return null;
-  const label = SENIORITY_LABEL[v.seniority];
-  // Skip when the source title already carries the level — avoids
-  // "Senior Backend Engineer · Senior".
-  if (v.title.toLowerCase().includes(label.toLowerCase())) return null;
-  return label;
-}
-
 function joinChips(parts: (string | null | undefined)[]): string | null {
   const present = parts.filter((p): p is string => !!p);
   return present.length > 0 ? present.join(" · ") : null;
 }
 
+function locationChip(locations: string[]): string | null {
+  if (locations.length === 0) return null;
+  const shown = locations.slice(0, 2).join(" · ");
+  const extra = locations.length - 2;
+  return extra > 0 ? `${shown} +${extra}` : shown;
+}
+
 function renderCard(v: VacancyDto): string {
   const lines: string[] = [];
 
-  lines.push(`💼 <b>${escapeHtml(v.title)}</b>`);
+  // Headline = the clean taxonomy role (the raw scraped title is noisy). The
+  // diamond is the only card marker — monochrome, CLI-ish. Seniority rides the
+  // headline since canonical role names never carry a level.
+  const headline = v.role?.name ?? v.title;
+  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
+  lines.push(
+    `◆ <b>${escapeHtml(headline)}</b>${seniority ? ` · ${seniority}` : ""}`,
+  );
 
-  const company = joinChips([
-    v.company ? `🏢 ${escapeHtml(v.company.name)}` : null,
-    seniorityChip(v),
-  ]);
-  if (company) lines.push(company);
+  // Subtitle = trimmed raw title, to tell apart vacancies sharing a role.
+  // Skip when it adds nothing (role unresolved → title is already the headline,
+  // or the title is just the role name).
+  if (v.role && v.title.trim().toLowerCase() !== v.role.name.toLowerCase()) {
+    lines.push(`<i>${escapeHtml(trimTitle(v.title))}</i>`);
+  }
 
   if (v.skills.required.length > 0) {
     const names = v.skills.required.slice(0, MAX_SKILLS).map((s) => s.name);
     const extra = v.skills.required.length - names.length;
     const tail = extra > 0 ? ` +${extra}` : "";
-    lines.push(`🧩 ${escapeHtml(names.join(" · "))}${tail}`);
+    lines.push(`${escapeHtml(names.join(" · "))}${tail}`);
   }
 
-  const place = joinChips([
-    v.locations.length > 0 ? `📍 ${escapeHtml(v.locations.join(" · "))}` : null,
-    v.workFormat ? WORK_FORMAT_CHIP[v.workFormat] : null,
+  // One meta line, no field emoji — content self-labels (company, format,
+  // place, $salary, EN level).
+  const meta = joinChips([
+    v.company ? escapeHtml(v.company.name) : null,
+    v.workFormat ? WORK_FORMAT_LABEL[v.workFormat] : null,
+    locationChip(v.locations.map(escapeHtml)),
+    formatSalary(v.salary),
+    v.englishLevel ? `EN ${ENGLISH_CEFR[v.englishLevel]}` : null,
   ]);
-  if (place) lines.push(place);
-
-  const comp = joinChips([
-    formatSalary(v.salary) ? `💰 ${formatSalary(v.salary)}` : null,
-    v.englishLevel ? `🇬🇧 ${ENGLISH_CEFR[v.englishLevel]}` : null,
-  ]);
-  if (comp) lines.push(comp);
+  if (meta) lines.push(meta);
 
   if (v.link) {
     lines.push(
-      `👉 <a href="${escapeHtml(v.link)}">Apply on ${escapeHtml(v.source.displayName)}</a>`,
+      `→ <a href="${escapeHtml(v.link)}">${escapeHtml(v.source.displayName)}</a>`,
     );
   }
 
@@ -124,9 +140,10 @@ export function renderDigest(
   vacancies: VacancyDto[],
   { totalNew, windowDays }: DigestMeta,
 ): string {
-  const header = `🔔 <b>${totalNew}</b> нових вакансій за ${windowDays} дн`;
+  const header = `⌖ <b>${totalNew}</b> нових за ${windowDays} дн`;
   if (vacancies.length === 0) return header;
 
-  const cards = vacancies.map(renderCard).join("\n──────────────────\n");
-  return `${header}\n━━━━━━━━━━━━━━━━━━\n${cards}`;
+  // Each card starts with ◆, so a blank line between cards is enough — no rules.
+  const cards = vacancies.map(renderCard).join("\n\n");
+  return `${header}\n\n${cards}`;
 }
