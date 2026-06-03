@@ -147,6 +147,13 @@ export interface ListVacanciesQuery {
   sourceId?: string;
   companyId?: string;
   roleId?: string;
+  /**
+   * Match vacancies whose role is ANY of these ROLE node ids (OR semantics).
+   * The lazy-refine power axis: when paired with `trackSlug` it overrides the
+   * track's role set (the user narrowing a track to specific roles) while the
+   * track's skill criteria still apply. Standalone, it filters by role alone.
+   */
+  roleIds?: string[];
   /** Match vacancies that have ALL listed skills (AND semantics). */
   skillIds?: string[];
   /**
@@ -216,6 +223,33 @@ export interface TrackDto {
 
 export interface TracksResponse {
   tracks: TrackDto[];
+}
+
+// Full verified facet lists for the filter sidebar's search — every
+// VERIFIED ROLE / SKILL node over the eligible vacancy set (not the topN
+// the aggregates snapshot ships), so search/add covers the whole catalog.
+export interface NodeFacet {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface RoleFacetsResponse {
+  roles: NodeFacet[];
+}
+
+export interface SkillFacetsResponse {
+  skills: NodeFacet[];
+}
+
+// The effective criteria a track resolves to, per axis (own nodes, else
+// inherited from the parent — one hop). Both axes power the unified facet
+// panels: presets shown on by default, the user toggles/adds to refine.
+// A pure-grouping track returns empty arrays. See override-else-inherit in
+// md/journal/migrations/taxonomy-navigation.md.
+export interface TrackCriteriaResponse {
+  roles: NodeRef[];
+  skills: NodeRef[];
 }
 
 // Contextual skill facet shown under an active track selection: the skills

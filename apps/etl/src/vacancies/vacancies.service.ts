@@ -20,7 +20,10 @@ import type {
   ContextualSkillsResponse,
   ListVacanciesResponse,
   NodeRef,
+  RoleFacetsResponse,
   Seniority,
+  SkillFacetsResponse,
+  TrackCriteriaResponse,
   TracksResponse,
   VacancyAggregatesResponse,
   VacancyDto,
@@ -44,6 +47,12 @@ export interface ListVacanciesParams {
   sourceId?: string;
   /** Filter by vacancies.roleNodeId (a ROLE node UUID). */
   roleId?: string;
+  /**
+   * Match vacancies whose role is ANY of these ROLE node UUIDs (OR). With
+   * `trackSlug`, overrides the track's role axis (refine to specific roles)
+   * while the track's skill axis still applies.
+   */
+  roleIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
   /** Browse-tree slug; resolved to the two arrays below before buildWhere. */
@@ -118,9 +127,18 @@ export class VacanciesService {
       if (!resolved) {
         throw new NotFoundException(`Unknown trackSlug "${params.trackSlug}"`);
       }
+      // Lazy-refine: explicit roleIds narrow the track's role axis (a subset
+      // the user kept on), but the track's own skill criteria still bind. The
+      // explicit roleIds branch in buildWhere is then suppressed to avoid a
+      // redundant duplicate of the same condition.
+      const refinedRoleIds =
+        params.roleIds && params.roleIds.length > 0
+          ? params.roleIds
+          : resolved.roleIds;
       params = {
         ...params,
-        trackRoleIds: resolved.roleIds,
+        roleIds: undefined,
+        trackRoleIds: refinedRoleIds,
         trackSkillIds: resolved.skillIds,
       };
     }
@@ -351,6 +369,86 @@ export class VacanciesService {
     `);
     return {
       skills: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
+    };
+  }
+
+  // The track's effective criteria per axis (id + canonical name, ordered by
+  // name): the ROLE/SKILL nodes resolved via override-else-inherit. Both axes
+  // power the unified facet panels — presets on by default, the user toggles
+  // to narrow or adds to widen. A pure-grouping track returns empty arrays.
+  // The page reads these as the feed's effective axes when the URL is bare.
+  async getTrackCriteria(slug: string): Promise<TrackCriteriaResponse> {
+    const resolved = await this.resolveTrackFilter(slug);
+    if (!resolved) throw new NotFoundException(`Unknown trackSlug "${slug}"`);
+    const ids = [...resolved.roleIds, ...resolved.skillIds];
+    if (ids.length === 0) return { roles: [], skills: [] };
+
+    const rows = await this.db.execute<{
+      id: string;
+      name: string;
+      type: string;
+    }>(sql`
+      SELECT n.id::text AS id, n.canonical_name AS name, n.type::text AS type
+      FROM nodes n
+      WHERE n.id IN (${sql.join(
+        ids.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})
+      ORDER BY n.canonical_name
+    `);
+    const pick = (t: string): NodeRef[] =>
+      rows.rows
+        .filter((r) => r.type === t)
+        .map((r) => ({ id: r.id, name: r.name }));
+    return { roles: pick("ROLE"), skills: pick("SKILL") };
+  }
+
+  // Every VERIFIED SKILL over the eligible set (role verified), with the
+  // distinct-vacancy count, ranked by popularity. Powers the sidebar skill
+  // search across the whole catalog — not just the aggregates topN.
+  async getSkillFacets(): Promise<SkillFacetsResponse> {
+    const rows = await this.db.execute<{
+      id: string;
+      name: string;
+      count: number;
+    }>(sql`
+      SELECT n.id::text AS id,
+             n.canonical_name AS name,
+             COUNT(DISTINCT vn.vacancy_id)::int AS count
+      FROM vacancy_nodes vn
+      JOIN nodes n ON n.id = vn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
+      JOIN vacancies v ON v.id = vn.vacancy_id
+      WHERE v.role_node_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM nodes rn
+          WHERE rn.id = v.role_node_id AND rn.status = 'VERIFIED'
+        )
+      GROUP BY n.id, n.canonical_name
+      ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC, n.canonical_name
+    `);
+    return {
+      skills: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
+    };
+  }
+
+  // Every VERIFIED ROLE in use, with its vacancy count — the full role
+  // catalog for the refine panel's search-and-add.
+  async getRoleFacets(): Promise<RoleFacetsResponse> {
+    const rows = await this.db.execute<{
+      id: string;
+      name: string;
+      count: number;
+    }>(sql`
+      SELECT n.id::text AS id,
+             n.canonical_name AS name,
+             COUNT(*)::int AS count
+      FROM vacancies v
+      JOIN nodes n ON n.id = v.role_node_id AND n.type = 'ROLE' AND n.status = 'VERIFIED'
+      GROUP BY n.id, n.canonical_name
+      ORDER BY COUNT(*) DESC, n.canonical_name
+    `);
+    return {
+      roles: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
     };
   }
 
@@ -585,6 +683,12 @@ function buildWhere(params: ListVacanciesParams): SQL | undefined {
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
   if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
   if (params.roleId) conds.push(eq(vacancies.roleNodeId, params.roleId));
+  // Standalone multi-role filter (OR). When a trackSlug is present, `list`
+  // has already folded roleIds into trackRoleIds and cleared this, so we
+  // never double-apply the role axis.
+  if (params.roleIds && params.roleIds.length > 0) {
+    conds.push(inArray(vacancies.roleNodeId, params.roleIds));
+  }
   if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
   if (params.workFormat) {
     conds.push(eq(vacancies.workFormat, params.workFormat));

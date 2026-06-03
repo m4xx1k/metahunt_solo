@@ -31,16 +31,21 @@ export class VacanciesController {
     @Query("includeRoleless") rawIncludeRoleless?: string,
     @Query("includeAllSkills") rawIncludeAllSkills?: string,
     @Query("trackSlug") rawTrackSlug?: string,
+    // Appended (not grouped with roleId) to keep the positional argument
+    // order stable for existing callers/tests.
+    @Query("roleIds") rawRoleIds?: string | string[],
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
     const roleId = rawRoleId?.trim();
+    const roleIds = parseIdList(rawRoleIds);
     const skillIds = parseIdList(rawSkillIds);
     const trackSlug = rawTrackSlug?.trim();
     return this.vacancies.list({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       roleId: roleId && roleId.length > 0 ? roleId : undefined,
+      roleIds: roleIds.length > 0 ? roleIds : undefined,
       skillIds: skillIds.length > 0 ? skillIds : undefined,
       trackSlug: trackSlug && trackSlug.length > 0 ? trackSlug : undefined,
       seniority: parseEnum("seniority", rawSeniority, SENIORITY_VALUES),
@@ -64,9 +69,24 @@ export class VacanciesController {
     return this.vacancies.getTracks();
   }
 
+  @Get("skills")
+  skills() {
+    return this.vacancies.getSkillFacets();
+  }
+
+  @Get("roles")
+  roles() {
+    return this.vacancies.getRoleFacets();
+  }
+
   @Get("tracks/:slug/skills")
   trackSkills(@Param("slug") slug: string) {
     return this.vacancies.getContextualSkills(slug);
+  }
+
+  @Get("tracks/:slug/criteria")
+  trackCriteria(@Param("slug") slug: string) {
+    return this.vacancies.getTrackCriteria(slug);
   }
 }
 

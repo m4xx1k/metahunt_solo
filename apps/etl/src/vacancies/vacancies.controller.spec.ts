@@ -33,6 +33,7 @@ describe("VacanciesController", () => {
         q: undefined,
         sourceId: undefined,
         roleId: undefined,
+        roleIds: undefined,
         skillIds: undefined,
         trackSlug: undefined,
         seniority: undefined,
@@ -163,6 +164,53 @@ describe("VacanciesController", () => {
         ),
       ).toThrow(BadRequestException);
       expect(list).not.toHaveBeenCalled();
+    });
+
+    it("parses roleIds from repeated params (array) into a trimmed list", async () => {
+      // roleIds is the 14th positional arg (appended after trackSlug).
+      await controller.list(
+        undefined, // q
+        undefined, // page
+        undefined, // pageSize
+        undefined, // sourceId
+        undefined, // roleId
+        undefined, // skillIds
+        undefined, // seniority
+        undefined, // workFormat
+        undefined, // hasTestAssignment
+        undefined, // hasReservation
+        undefined, // includeRoleless
+        undefined, // includeAllSkills
+        undefined, // trackSlug
+        [" a ", "b", "  "], // roleIds — repeated query params
+      );
+
+      expect(list).toHaveBeenCalledWith(
+        expect.objectContaining({ roleIds: ["a", "b"] }),
+      );
+    });
+
+    it("treats an all-blank roleIds list as no filter (undefined)", async () => {
+      await controller.list(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        ["", "   "],
+      );
+
+      expect(list).toHaveBeenCalledWith(
+        expect.objectContaining({ roleIds: undefined }),
+      );
     });
 
     it("composes seniority and workFormat with the existing filters", async () => {
