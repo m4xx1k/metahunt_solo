@@ -24,7 +24,11 @@ function asStringArray(value: unknown): string[] {
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type LinkResult = "linked" | "duplicate" | "not_found";
+export type LinkResult =
+  | "linked"
+  | "already_active"
+  | "duplicate"
+  | "not_found";
 
 /**
  * Thin persistence layer for the Telegram bot — link/unlink only. All vacancy
@@ -58,18 +62,30 @@ export class SubscriptionsService {
 
   /**
    * Bind a chat to a pending subscription (the `/start <token>` payload) and
-   * activate it. If the chat already has an active subscription with identical
-   * params, drop this pending row instead of creating a duplicate — dedup
-   * happens here because the chat is unknown at web-create time.
+   * activate it. Distinguishes re-tapping an already-active link
+   * (`already_active`) from a fresh activation, and if the chat already has an
+   * active subscription with identical params, drops this pending row instead
+   * of creating a duplicate. Dedup lives here because the chat is unknown at
+   * web-create time.
    */
   async linkChat(token: string, chatId: string): Promise<LinkResult> {
     if (!UUID_REGEX.test(token)) return "not_found";
 
     const [pending] = await this.db
-      .select({ params: subscriptions.params })
+      .select({
+        chatId: subscriptions.chatId,
+        isActive: subscriptions.isActive,
+        params: subscriptions.params,
+      })
       .from(subscriptions)
       .where(eq(subscriptions.id, token));
     if (!pending) return "not_found";
+
+    // Already activated: re-tapping the same link from the same chat is a
+    // no-op; a token already claimed by another chat is treated as unusable.
+    if (pending.isActive) {
+      return pending.chatId === chatId ? "already_active" : "not_found";
+    }
 
     const [duplicate] = await this.db
       .select({ id: subscriptions.id })

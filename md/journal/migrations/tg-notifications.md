@@ -58,9 +58,12 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
   get vacancies that appeared *after* they subscribed. Future: a separate "active vacancies"
   view can show the backlog in-app on demand instead of via notifications.
 - **Dedup at link time, not create time.** The row is created before the chat is known
-  (web-create → `chat_id` null), so we can't dedup on create. `linkChat` (`/start`) checks
-  whether the chat already has an active sub with identical `params` (jsonb `=`, key-order
-  independent) and, if so, deletes the just-tapped pending row → "already subscribed". Orphan
+  (web-create → `chat_id` null), so we can't dedup on create. `linkChat` (`/start`)
+  distinguishes: re-tapping an already-active link from the same chat → `already_active`
+  (no-op, "вже активна"); a token already claimed by another chat → `not_found` (no
+  takeover); else if the chat already has an active sub with identical `params` (jsonb `=`,
+  key-order independent) → delete the just-tapped pending row, "already subscribed"; else
+  activate. Orphan
   pending rows from re-clicks (never `/start`-ed) linger inert (null chat); a TTL cleanup is a
   future nicety. A concurrent double-`/start` of two same-param tokens can still race past the
   check (no unique index yet) — acceptable for MVP.
