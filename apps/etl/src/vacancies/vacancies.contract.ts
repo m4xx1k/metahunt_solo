@@ -11,55 +11,33 @@
  * server-side and ships refs.
  */
 
-import type { NodeRef } from "../shared/contract";
+// Enums + NodeRef live in shared/contract (used by feed, market, tracks).
+// Re-exported here so existing importers of ./vacancies.contract keep resolving.
+import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "../shared/contract";
+import type {
+  Currency,
+  EmploymentType,
+  EngagementType,
+  EnglishLevel,
+  NodeRef,
+  Seniority,
+  WorkFormat,
+} from "../shared/contract";
 
-// ───────────────────────────── Enums ─────────────────────────────
-// Mirror the pgEnums in libs/database/src/schema/vacancies.ts.
-
-// Value arrays are the single runtime source of truth so the controller
-// can validate query params at the boundary without redeclaring the set.
-export const SENIORITY_VALUES = [
-  "INTERN",
-  "JUNIOR",
-  "MIDDLE",
-  "SENIOR",
-  "LEAD",
-  "PRINCIPAL",
-  "C_LEVEL",
-] as const;
-export type Seniority = (typeof SENIORITY_VALUES)[number];
-
-export const WORK_FORMAT_VALUES = ["REMOTE", "OFFICE", "HYBRID"] as const;
-export type WorkFormat = (typeof WORK_FORMAT_VALUES)[number];
-
-export type EmploymentType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "FREELANCE"
-  | "INTERNSHIP";
-
-export type EnglishLevel =
-  | "BEGINNER"
-  | "INTERMEDIATE"
-  | "UPPER_INTERMEDIATE"
-  | "ADVANCED"
-  | "NATIVE";
-
-export type Currency = "USD" | "EUR" | "UAH";
-
-export type EngagementType =
-  | "PRODUCT"
-  | "OUTSOURCE"
-  | "OUTSTAFF"
-  | "STARTUP"
-  | "AGENCY";
+export { SENIORITY_VALUES, WORK_FORMAT_VALUES };
+export type {
+  Currency,
+  EmploymentType,
+  EngagementType,
+  EnglishLevel,
+  NodeRef,
+  Seniority,
+  WorkFormat,
+};
 
 // ───────────────────────── Resolved refs ─────────────────────────
 // Server resolves FKs to {id, name}-shaped refs so the UI never has to
 // do a second round-trip just to render a label.
-
-export type { NodeRef };
 
 export interface CompanyRef {
   id: string;
@@ -206,55 +184,4 @@ export interface RoleFacetsResponse {
 
 export interface SkillFacetsResponse {
   skills: NodeFacet[];
-}
-
-// ─────────────────────── Aggregates endpoint ───────────────────────
-// Global market aggregates over the eligible vacancy set (same default
-// as `list`: only vacancies with a VERIFIED role node). Powers the
-// public market-snapshot hero — see md/journal/migrations/market-snapshot.md.
-
-export interface AggregateSourceCount {
-  id: string;
-  code: string;
-  displayName: string;
-  count: number;
-}
-
-export interface AggregateSkillCount {
-  id: string;
-  name: string;
-  count: number;
-}
-
-/**
- * Same shape regardless of whether it's the global aggregate or scoped
- * to a single source. Omits `sources` (which is a global-only directory).
- */
-export interface AggregatesPerSource {
-  total: number;
-  /** ISO-8601. max(loaded_at) over the eligible set. Null if empty. */
-  lastSyncAt: string | null;
-  /** Up to 10 entries; consumer renders top 8. VERIFIED skills only. */
-  topSkills: AggregateSkillCount[];
-  /** Up to 6 entries. Roles are always VERIFIED via the eligibility rule. */
-  topRoles: AggregateSkillCount[];
-  seniorityDist: Record<Seniority, number>;
-  workFormatDist: Record<WorkFormat, number>;
-  engagementDist: Record<EngagementType, number>;
-  /** Count where `has_reservation IS NOT NULL` — denominator for the share. */
-  reservationKnownCount: number;
-  /** Count where `has_reservation = true`. */
-  reservationTrueCount: number;
-  /** Count where salary_min OR salary_max is present. */
-  salaryDisclosedCount: number;
-}
-
-export interface VacancyAggregatesResponse extends AggregatesPerSource {
-  sources: AggregateSourceCount[];
-  /**
-   * Per-source breakdown keyed by `sources[].code` (e.g. `djinni`, `dou`).
-   * Each value carries the same shape as the global aggregate so the UI
-   * can swap data slices without changing widget contracts.
-   */
-  bySource: Record<string, AggregatesPerSource>;
 }

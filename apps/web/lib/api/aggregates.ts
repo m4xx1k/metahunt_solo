@@ -1,5 +1,5 @@
 // Hand-mirrored types for VacancyAggregatesResponse from
-// apps/etl/src/vacancies/vacancies.contract.ts. Per ADR-0005 we duplicate
+// apps/etl/src/market/market.contract.ts. Per ADR-0005 we duplicate
 // types here until a second consumer justifies extracting libs/contracts.
 
 import type { EngagementType, Seniority, WorkFormat } from "./vacancies";
@@ -43,7 +43,7 @@ export const aggregatesApi = {
   // the hourly RSS schedule, so per-request fetches were wasted work.
   get: (init?: RequestInit) =>
     apiGet<VacancyAggregates>(
-      "/vacancies/aggregates",
+      "/market/aggregates",
       init ?? { next: { revalidate: 60 } },
     ),
 };

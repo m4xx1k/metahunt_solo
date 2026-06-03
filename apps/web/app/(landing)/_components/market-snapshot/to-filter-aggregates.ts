@@ -9,7 +9,7 @@ import type {
   OptionRow,
 } from "./filters";
 
-// Maps the real /vacancies/aggregates response into the shape the filter
+// Maps the real /market/aggregates response into the shape the filter
 // widgets expect. Counts are intentionally dropped — the widgets render
 // labels only; the count field is kept solely so skills can sort by
 // popularity in SkillsSection.

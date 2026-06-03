@@ -4,7 +4,7 @@ import { Test } from "@nestjs/testing";
 import type { ListVacanciesResponse } from "./vacancies.contract";
 import { VacanciesController } from "./vacancies.controller";
 import { VacanciesService } from "./vacancies.service";
-import { AggregatesService } from "./aggregates.service";
+import { FacetsService } from "./facets.service";
 
 const EMPTY: ListVacanciesResponse = {
   items: [],
@@ -23,7 +23,7 @@ describe("VacanciesController", () => {
       controllers: [VacanciesController],
       providers: [
         { provide: VacanciesService, useValue: { list } },
-        { provide: AggregatesService, useValue: {} },
+        { provide: FacetsService, useValue: {} },
       ],
     }).compile();
     controller = moduleRef.get(VacanciesController);

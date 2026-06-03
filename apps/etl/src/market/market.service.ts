@@ -4,28 +4,16 @@ import { sql } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { ELIGIBLE_VACANCY } from "../shared/eligible";
 import type {
   AggregatesPerSource,
-  RoleFacetsResponse,
-  SkillFacetsResponse,
   VacancyAggregatesResponse,
-} from "./vacancies.contract";
+} from "./market.contract";
 
-// A vacancy is eligible for public counts/facets when it has a VERIFIED role —
-// taxonomy moderation directly gates what the snapshot and sidebar surface.
-// One predicate over the `v` alias, shared by every query below.
-const ELIGIBLE = sql`
-  v.role_node_id IS NOT NULL
-  AND EXISTS (
-    SELECT 1 FROM nodes rn
-    WHERE rn.id = v.role_node_id AND rn.status = 'VERIFIED'
-  )
-`;
-
-// Market-snapshot aggregates + the full role/skill catalogs the filter sidebar
-// searches. All read-only counts over the eligible vacancy set.
+// Market-snapshot aggregates over the eligible vacancy set: global plus a
+// per-source breakdown.
 @Injectable()
-export class AggregatesService {
+export class MarketService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async getAggregates(): Promise<VacancyAggregatesResponse> {
@@ -42,7 +30,7 @@ export class AggregatesService {
              COUNT(*)::text AS count
       FROM vacancies v
       JOIN sources s ON s.id = v.source_id
-      WHERE ${ELIGIBLE}
+      WHERE ${ELIGIBLE_VACANCY}
       GROUP BY s.id, s.code, s.display_name
       ORDER BY COUNT(*) DESC
     `);
@@ -67,50 +55,6 @@ export class AggregatesService {
     });
 
     return { ...global, sources, bySource };
-  }
-
-  // Every VERIFIED SKILL over the eligible set with its distinct-vacancy count,
-  // ranked — the whole catalog for the sidebar search, not just the topN.
-  async getSkillFacets(): Promise<SkillFacetsResponse> {
-    const rows = await this.db.execute<{
-      id: string;
-      name: string;
-      count: number;
-    }>(sql`
-      SELECT n.id::text AS id,
-             n.canonical_name AS name,
-             COUNT(DISTINCT vn.vacancy_id)::int AS count
-      FROM vacancy_nodes vn
-      JOIN nodes n ON n.id = vn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
-      JOIN vacancies v ON v.id = vn.vacancy_id
-      WHERE ${ELIGIBLE}
-      GROUP BY n.id, n.canonical_name
-      ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC, n.canonical_name
-    `);
-    return {
-      skills: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
-    };
-  }
-
-  // Every VERIFIED ROLE in use with its vacancy count — the role catalog for
-  // the refine panel's search-and-add.
-  async getRoleFacets(): Promise<RoleFacetsResponse> {
-    const rows = await this.db.execute<{
-      id: string;
-      name: string;
-      count: number;
-    }>(sql`
-      SELECT n.id::text AS id,
-             n.canonical_name AS name,
-             COUNT(*)::int AS count
-      FROM vacancies v
-      JOIN nodes n ON n.id = v.role_node_id AND n.type = 'ROLE' AND n.status = 'VERIFIED'
-      GROUP BY n.id, n.canonical_name
-      ORDER BY COUNT(*) DESC, n.canonical_name
-    `);
-    return {
-      roles: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
-    };
   }
 
   private async computeAggregates(
@@ -174,7 +118,7 @@ export class AggregatesService {
           COUNT(*) FILTER (WHERE v.salary_min IS NOT NULL OR v.salary_max IS NOT NULL)::text
                                                                                           AS salary_disclosed
         FROM vacancies v
-        WHERE ${ELIGIBLE} ${sourceFilter}
+        WHERE ${ELIGIBLE_VACANCY} ${sourceFilter}
       `),
       this.db.execute<{
         id: string;
@@ -189,7 +133,7 @@ export class AggregatesService {
         JOIN vacancies v ON v.id = vn.vacancy_id
         WHERE n.type = 'SKILL'
           AND n.status = 'VERIFIED'
-          AND ${ELIGIBLE} ${sourceFilter}
+          AND ${ELIGIBLE_VACANCY} ${sourceFilter}
         GROUP BY n.id, n.canonical_name
         ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC
         LIMIT 10
@@ -205,7 +149,7 @@ export class AggregatesService {
         FROM vacancies v
         JOIN nodes n ON n.id = v.role_node_id
         WHERE n.type = 'ROLE'
-          AND ${ELIGIBLE} ${sourceFilter}
+          AND ${ELIGIBLE_VACANCY} ${sourceFilter}
         GROUP BY n.id, n.canonical_name
         ORDER BY COUNT(*) DESC
         LIMIT 6

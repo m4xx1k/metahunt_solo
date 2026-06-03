@@ -2,7 +2,7 @@ import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
 
 import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./vacancies.contract";
 import { VacanciesService } from "./vacancies.service";
-import { AggregatesService } from "./aggregates.service";
+import { FacetsService } from "./facets.service";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -11,7 +11,7 @@ const MAX_PAGE_SIZE = 100;
 export class VacanciesController {
   constructor(
     private readonly vacancies: VacanciesService,
-    private readonly aggregates: AggregatesService,
+    private readonly facets: FacetsService,
   ) {}
 
   @Get()
@@ -54,19 +54,14 @@ export class VacanciesController {
     });
   }
 
-  @Get("aggregates")
-  aggregatesSummary() {
-    return this.aggregates.getAggregates();
-  }
-
   @Get("skills")
   skills() {
-    return this.aggregates.getSkillFacets();
+    return this.facets.getSkillFacets();
   }
 
   @Get("roles")
   roles() {
-    return this.aggregates.getRoleFacets();
+    return this.facets.getRoleFacets();
   }
 }
 
