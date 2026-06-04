@@ -8,7 +8,9 @@ import {
   ilike,
   inArray,
   isNotNull,
+  isNull,
   notInArray,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -261,8 +263,18 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.workFormat) {
     conds.push(eq(vacancies.workFormat, params.workFormat));
   }
-  if (params.hasTestAssignment !== undefined) {
-    conds.push(eq(vacancies.hasTestAssignment, params.hasTestAssignment));
+  // "Without a test task" (false) includes unknowns: a null (unscored) vacancy
+  // still counts as "no test", so only a confirmed-true is excluded. Filtering
+  // *for* a test task (true) stays strict.
+  if (params.hasTestAssignment === true) {
+    conds.push(eq(vacancies.hasTestAssignment, true));
+  } else if (params.hasTestAssignment === false) {
+    conds.push(
+      or(
+        eq(vacancies.hasTestAssignment, false),
+        isNull(vacancies.hasTestAssignment),
+      )!,
+    );
   }
   if (params.hasReservation !== undefined) {
     conds.push(eq(vacancies.hasReservation, params.hasReservation));

@@ -31,9 +31,16 @@ export class TelegramCommandsHandler {
       const chatId = String(ctx.chat.id);
 
       if (token.length === 0) {
+        const webUrl = this.config.get<string>("WEB_BASE_URL")!;
         await ctx.reply(
-          "👋 Привіт! Підписки на вакансії створюються на сайті — там ти " +
-            "обираєш фільтр і отримуєш кнопку «Підписатись».",
+          `👋 Привіт! Це <b>metahunt</b> — агрегатор IT-вакансій.\n` +
+            `🔗 <a href="${webUrl}">${webUrl.replace(/^https?:\/\//, "")}</a>\n\n` +
+            `Підписки створюються на сайті: обираєш фільтр і тиснеш ` +
+            `«Підписатись» — далі я надсилатиму нові вакансії сюди.`,
+          {
+            parse_mode: "HTML",
+            link_preview_options: { is_disabled: true },
+          },
         );
         return;
       }

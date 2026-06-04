@@ -114,26 +114,21 @@ function renderCard(
   applyBaseUrl: string,
   subscriptionId?: string,
 ): string {
-  const lines: string[] = [];
-
-  // Headline = seniority then the clean taxonomy role (the raw scraped title is
-  // noisy, so it's dropped). The diamond is the only card marker — monochrome,
-  // CLI-ish. Seniority leads since canonical role names never carry a level.
-  const role = v.role?.name ?? v.title;
-  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
-  lines.push(
-    `◆ ${seniority ? `${seniority} · ` : ""}<b>${escapeHtml(role)}</b>`,
-  );
+  // The ◆ headline stays flush-left; everything else is a 2-space-indented body
+  // so each card reads as a titled block. Skills are [bracket] tags and perks
+  // are {brace} tags — a light CLI-ish structure over the old dot-joined prose.
+  const body: string[] = [];
 
   // Muted domain line, italic so it reads as a subtitle without competing with
   // the bold headline. (Freshness lives in the footer, next to the apply link.)
-  if (v.domain) lines.push(`<i>${escapeHtml(v.domain.name)}</i>`);
+  if (v.domain) body.push(`<i>${escapeHtml(v.domain.name)}</i>`);
 
   if (v.skills.required.length > 0) {
     const names = v.skills.required.slice(0, MAX_SKILLS).map((s) => s.name);
     const extra = v.skills.required.length - names.length;
     const tail = extra > 0 ? ` +${extra}` : "";
-    lines.push(`${escapeHtml(names.join(" · "))}${tail}`);
+    const tags = names.map((n) => `[${escapeHtml(n)}]`).join(" ");
+    body.push(`${tags}${tail}`);
   }
 
   // One meta line — content self-labels. Accents kept light: salary bold (rare
@@ -145,15 +140,21 @@ function renderCard(
     salary ? `<b>${salary}</b>` : null,
     v.englishLevel ? `🇬🇧 ${ENGLISH_CEFR[v.englishLevel]}` : null,
   ]);
-  if (meta) lines.push(meta);
+  if (meta) body.push(meta);
 
-  // Perks line: reservation accented (deferment from mobilization is a top draw
-  // in the UA market), test task flagged plainly. Only shown when known true.
+  // Perks line, framed the way candidates read them: reservation is a draw
+  // (🪖 — deferment from mobilization), and "без тесту" is a plus, so the absence
+  // of a test task is surfaced too, not just its presence. Both are bolded to
+  // read as perks, dot-joined so they don't blur into the meta line above.
   const perks = joinChips([
-    v.hasReservation ? "🛡 <b>Бронювання</b>" : null,
-    v.hasTestAssignment ? "📝 Тестове" : null,
+    v.hasReservation === true ? "🪖 <b>бронь</b>" : null,
+    v.hasTestAssignment === false
+      ? "🧪 <b>без тесту</b>"
+      : v.hasTestAssignment === true
+        ? "🧪 <b>тестове</b>"
+        : null,
   ]);
-  if (perks) lines.push(perks);
+  if (perks) body.push(perks);
 
   // Footer: apply link + freshness, muted at the end. The link routes through
   // our `/go/:id` redirect (not straight to source) so the tap passes through
@@ -166,13 +167,24 @@ function renderCard(
       : null,
     age ? `<i>${age}</i>` : null,
   ]);
-  if (footer) lines.push(footer);
+  if (footer) body.push(footer);
 
-  return lines.join("\n");
+  // Headline = seniority then the clean taxonomy role (the raw scraped title is
+  // noisy, so it's dropped). The diamond is the only card marker — monochrome,
+  // CLI-ish. Seniority leads since canonical role names never carry a level.
+  const role = v.role?.name ?? v.title;
+  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
+  const head = `◆ ${seniority ? `${seniority} · ` : ""}<b>${escapeHtml(role)}</b>`;
+
+  if (body.length === 0) return head;
+  return `${head}\n${body.map((line) => `  ${line}`).join("\n")}`;
 }
 
-// Each card starts with ◆, so a blank line between cards is enough — no rules.
-const CARD_SEPARATOR = "\n\n";
+// A dotted rule between cards (the ◆ headline alone read as too cramped in a
+// long digest). The header is set off from the first card by a plain blank line.
+const CARD_DIVIDER = "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈";
+const CARD_SEPARATOR = `\n${CARD_DIVIDER}\n`;
+const HEADER_GAP = "\n\n";
 
 // Paging budget for the scheduled digest. Cap by card count AND a char budget
 // well under Telegram's 4096 (the header + separators ride in the remainder).
@@ -214,7 +226,7 @@ export function renderDigest(vacancies: VacancyDto[], meta: DigestMeta): string 
   const cards = vacancies
     .map((v) => renderCard(v, meta.applyBaseUrl, meta.subscriptionId))
     .join(CARD_SEPARATOR);
-  return `${header}${CARD_SEPARATOR}${cards}`;
+  return `${header}${HEADER_GAP}${cards}`;
 }
 
 /** One Telegram message + the vacancy ids it covers (so the caller records them after a successful send). */
@@ -264,7 +276,7 @@ export function paginateDigest(
     });
     const body = group.map((c) => c.text).join(CARD_SEPARATOR);
     return {
-      html: `${header}${CARD_SEPARATOR}${body}`,
+      html: `${header}${HEADER_GAP}${body}`,
       vacancyIds: group.map((c) => c.id),
     };
   });
