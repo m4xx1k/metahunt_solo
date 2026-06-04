@@ -3,6 +3,7 @@ import { Test } from "@nestjs/testing";
 
 import type { FeedResponse, VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { FeedService } from "../../03-discovery/feed/feed.service";
+import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { DigestService } from "./digest.service";
 import { SentNotificationsService } from "./sent-notifications.service";
 import {
@@ -87,6 +88,7 @@ describe("DigestService", () => {
         },
         { provide: SentNotificationsService, useValue: { sentVacancyIds, record } },
         { provide: TelegramService, useValue: { sendMessage } },
+        { provide: AnalyticsService, useValue: { digestSent: jest.fn() } },
       ],
     }).compile();
     service = moduleRef.get(DigestService);

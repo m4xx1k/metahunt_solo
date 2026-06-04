@@ -132,6 +132,14 @@ export function validateEnv(config: RawEnv): RawEnv {
     asString(config.PUBLIC_BASE_URL) ?? `http://localhost:${port}`;
   assertUrl("PUBLIC_BASE_URL", publicBaseUrl);
 
+  // Optional: empty key keeps the AnalyticsService dormant (logs a warning and
+  // no-ops every event) so local/test/CI never ship data to PostHog — same
+  // shape as the dormant Telegram bot above. Host defaults to PostHog EU since
+  // the product is EU-facing (Kyiv); override for self-host or US.
+  const posthogApiKey = asString(config.POSTHOG_API_KEY) ?? "";
+  const posthogHost = asString(config.POSTHOG_HOST) ?? "https://eu.i.posthog.com";
+  assertUrl("POSTHOG_HOST", posthogHost);
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -152,5 +160,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     EXTRACTOR_PROVIDER: extractorProvider,
     TELEGRAM_BOT_TOKEN: telegramBotToken,
     PUBLIC_BASE_URL: publicBaseUrl,
+    POSTHOG_API_KEY: posthogApiKey,
+    POSTHOG_HOST: posthogHost,
   };
 }

@@ -4,6 +4,7 @@ import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import {
   SUBSCRIPTION_PARAM_KEYS,
   type SubscriptionParams,
@@ -47,7 +48,10 @@ export interface ActiveSubscription {
  */
 @Injectable()
 export class SubscriptionsService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly analytics: AnalyticsService,
+  ) {}
 
   /**
    * Create a pending subscription from the web facet filter. Persists only the
@@ -66,6 +70,10 @@ export class SubscriptionsService {
       .insert(subscriptions)
       .values({ params })
       .returning({ id: subscriptions.id });
+
+    // Funnel entry, keyed on the uuid the web client will alias its anonymous
+    // visitor onto — this is what stitches the browser session to the person.
+    this.analytics.subscriptionCreated(created.id, params);
 
     return created.id;
   }
@@ -117,6 +125,10 @@ export class SubscriptionsService {
       .update(subscriptions)
       .set({ chatId, isActive: true })
       .where(eq(subscriptions.id, token));
+
+    // Bridge №2: collapse the web/subscription person onto the canonical
+    // `tg:<chatId>` human so the browser session and Telegram are one person.
+    this.analytics.telegramLinked(token, chatId, "linked");
     return "linked";
   }
 
@@ -169,6 +181,12 @@ export class SubscriptionsService {
       )
       .returning({ id: subscriptions.id });
 
+    if (stopped.length > 0) {
+      this.analytics.unsubscribed(chatId, {
+        method: "stop_command",
+        count: stopped.length,
+      });
+    }
     return stopped.length;
   }
 
@@ -191,6 +209,12 @@ export class SubscriptionsService {
       )
       .returning({ id: subscriptions.id });
 
+    if (stopped.length > 0) {
+      this.analytics.unsubscribed(chatId, {
+        method: "button",
+        subscriptionId: id,
+      });
+    }
     return stopped.length > 0;
   }
 

@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui-kit";
+import { useAnalytics } from "@/lib/hooks/use-analytics";
 import {
   subscriptionsApi,
   type SubscriptionParams,
@@ -17,6 +18,7 @@ import {
 // subscription (dedup of identical filters happens later, at `/start` time).
 export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const analytics = useAnalytics();
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
@@ -24,6 +26,7 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
     const tab = window.open("about:blank", "_blank");
     try {
       const res = await subscriptionsApi.create(params);
+      analytics.subscriptionCreated(res.id, params);
       if (tab) {
         tab.opener = null;
         tab.location.href = res.deepLink;
@@ -36,7 +39,7 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, params]);
+  }, [isSubmitting, params, analytics]);
 
   return (
     <Button

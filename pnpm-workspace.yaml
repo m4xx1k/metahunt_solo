@@ -6,6 +6,7 @@ allowBuilds:
   '@nestjs/core': true
   '@scarf/scarf': true
   '@swc/core': true
+  core-js: false
   cpu-features: false
   esbuild: true
   msw: true

@@ -76,6 +76,13 @@ describe("digest.renderer", () => {
       expect(out).toContain("позавчора");
     });
 
+    it("stamps the apply link with ?s=<subscriptionId> for click attribution", () => {
+      const out = renderDigest([createVacancy()], { ...META, subscriptionId: "sub-7" });
+      expect(out).toContain(
+        `<a href="${BASE}/go/11111111-1111-1111-1111-111111111111?s=sub-7">`,
+      );
+    });
+
     it("escapes HTML in dynamic fields", () => {
       const out = renderDigest(
         [createVacancy({ role: { id: "r", name: "Dev <script>" } })],

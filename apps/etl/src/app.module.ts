@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
 import { validateEnv } from "./platform/config/env.validation";
+import { AnalyticsModule } from "./platform/analytics/analytics.module";
 import { DedupModule } from "./02-enrich/dedup/dedup.module";
 import { ExtractionCostModule } from "./02-enrich/extraction-cost/extraction-cost.module";
 import { HealthController } from "./platform/health/health.controller";
@@ -26,6 +27,7 @@ import { TelegramModule } from "./04-notify/telegram/telegram.module";
       validate: validateEnv,
     }),
     DatabaseModule.forRoot(),
+    AnalyticsModule,
     TemporalInfraModule,
     StorageModule,
     RssModule,

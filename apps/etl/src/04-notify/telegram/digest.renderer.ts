@@ -97,7 +97,23 @@ function locationChip(locations: string[]): string | null {
   return extra > 0 ? `${shown} +${extra}` : shown;
 }
 
-function renderCard(v: VacancyDto, applyBaseUrl: string): string {
+// Build the outbound apply URL. Carries `?s=<subscriptionId>` when known so the
+// `/go/:id` redirect can attribute the click back to the referring subscription
+// (omitted for the `/preview` sample, which has no subscription).
+function applyUrl(
+  applyBaseUrl: string,
+  vacancyId: string,
+  subscriptionId?: string,
+): string {
+  const base = `${applyBaseUrl}/go/${vacancyId}`;
+  return subscriptionId ? `${base}?s=${subscriptionId}` : base;
+}
+
+function renderCard(
+  v: VacancyDto,
+  applyBaseUrl: string,
+  subscriptionId?: string,
+): string {
   const lines: string[] = [];
 
   // Headline = seniority then the clean taxonomy role (the raw scraped title is
@@ -146,7 +162,7 @@ function renderCard(v: VacancyDto, applyBaseUrl: string): string {
   const age = posted ? relativeTime(posted) : null;
   const footer = joinChips([
     v.link
-      ? `→ <a href="${escapeHtml(`${applyBaseUrl}/go/${v.id}`)}">${escapeHtml(v.source.displayName)}</a>`
+      ? `→ <a href="${escapeHtml(applyUrl(applyBaseUrl, v.id, subscriptionId))}">${escapeHtml(v.source.displayName)}</a>`
       : null,
     age ? `<i>${age}</i>` : null,
   ]);
@@ -175,6 +191,9 @@ export interface DigestMeta {
   windowDays?: number;
   /** Per-subscription filter label for the header (e.g. "React, Node · 3 скіл."). */
   label?: string;
+  /** Referring subscription — stamps apply links with `?s=<id>` for click
+   * attribution. Omitted for the `/preview` sample (no subscription). */
+  subscriptionId?: string;
 }
 
 function renderHeader(
@@ -193,7 +212,7 @@ export function renderDigest(vacancies: VacancyDto[], meta: DigestMeta): string 
   const header = renderHeader(meta.totalNew, meta);
   if (vacancies.length === 0) return header;
   const cards = vacancies
-    .map((v) => renderCard(v, meta.applyBaseUrl))
+    .map((v) => renderCard(v, meta.applyBaseUrl, meta.subscriptionId))
     .join(CARD_SEPARATOR);
   return `${header}${CARD_SEPARATOR}${cards}`;
 }
@@ -217,7 +236,7 @@ export function paginateDigest(
 
   const cards = vacancies.map((v) => ({
     id: v.id,
-    text: renderCard(v, meta.applyBaseUrl),
+    text: renderCard(v, meta.applyBaseUrl, meta.subscriptionId),
   }));
 
   // Greedy pack: start a new page when the next card would breach either cap.
