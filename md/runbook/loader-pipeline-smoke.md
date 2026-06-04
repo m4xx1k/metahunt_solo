@@ -1,6 +1,6 @@
 # Loader pipeline — local E2E smoke
 
-**Use when:** verifying the silver-layer loader (`vacancyPipelineWorkflow`) locally — after schema changes, after a refactor of the resolvers, or before opening a PR that touches `apps/etl/src/loader/`.
+**Use when:** verifying the silver-layer loader (`vacancyPipelineWorkflow`) locally — after schema changes, after a refactor of the resolvers, or before opening a PR that touches `apps/etl/src/02-enrich/loader/`.
 
 The loader stage runs per-record after extraction: `rssIngestWorkflow` fans out one `vacancyPipelineWorkflow` child per successfully extracted record (`ABANDON` parent close, deterministic `workflowId = vacancy-pipeline-{rssRecordId}`). Each child runs `loadVacancy(rssRecordId)`, which calls `VacancyLoaderService.loadFromRecord` — `CompanyResolver` + `NodeResolver` (race-safe via `ON CONFLICT DO NOTHING`), then a transactional vacancy upsert + `vacancy_nodes` rewrite.
 
@@ -89,6 +89,6 @@ The endpoint runs the loader in-process (no Temporal) for `rss_records WHERE ext
 | Symptom | Cause | Fix |
 |---|---|---|
 | `pnpm db:migrate` errors `relation "sources" already exists` | DB has tables but `__drizzle_migrations` is empty (schema was pushed out-of-band) | Drop & recreate the local DB, or use the smoke script which works against a fresh DB. |
-| Smoke script: `Cannot derive external_id` | Source code in `EXTRACTORS` registry doesn't match `sources.code` | Check `apps/etl/src/loader/external-id/source-external-id.ts` |
-| HTTP smoke: `vacancies` stays at 0 after triggering `/rss` | Worker isn't picking up `vacancyPipelineWorkflow` | Confirm `LoaderModule` is in `AppModule` imports and `LOADER_ACTIVITIES` is in the worker's `activityClasses` (`apps/etl/src/temporal/temporal.module.ts`) |
+| Smoke script: `Cannot derive external_id` | Source code in `EXTRACTORS` registry doesn't match `sources.code` | Check `apps/etl/src/02-enrich/loader/external-id/source-external-id.ts` |
+| HTTP smoke: `vacancies` stays at 0 after triggering `/rss` | Worker isn't picking up `vacancyPipelineWorkflow` | Confirm `LoaderModule` is in `AppModule` imports and `LOADER_ACTIVITIES` is in the worker's `activityClasses` (`apps/etl/src/platform/temporal/temporal.module.ts`) |
 | HTTP smoke: child workflow fails with `WorkflowExecutionAlreadyStarted` | Re-run hit the deterministic ID guard | Either drop the failed `vacancies`/`rss_records` row or rely on `WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY` (already configured) on the next ingest pass |
