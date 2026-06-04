@@ -53,18 +53,18 @@ describe("digest.renderer", () => {
       expect(out).toContain("🇬🇧 B2");
     });
 
-    it("tags reservation and a present test task as {brace} perks", () => {
+    it("bolds reservation and a present test task as perks", () => {
       const out = renderDigest([createVacancy()], META);
-      expect(out).toContain("{🛡 бронь}");
-      expect(out).toContain("{📝 тестове}");
+      expect(out).toContain("🪖 <b>бронь</b>");
+      expect(out).toContain("🧪 <b>тестове</b>");
     });
 
-    it("surfaces the absence of a test task as a {без тесту} plus", () => {
+    it("surfaces the absence of a test task as a 'без тесту' plus", () => {
       const out = renderDigest(
         [createVacancy({ hasReservation: false, hasTestAssignment: false })],
         META,
       );
-      expect(out).toContain("{📝 без тесту}");
+      expect(out).toContain("🧪 <b>без тесту</b>");
       expect(out).not.toContain("бронь");
     });
 
@@ -80,6 +80,14 @@ describe("digest.renderer", () => {
     it("renders required skills as [bracket] tags", () => {
       const out = renderDigest([createVacancy()], META);
       expect(out).toContain("[Python]");
+    });
+
+    it("separates consecutive cards with a dotted divider", () => {
+      const out = renderDigest(
+        [createVacancy({ id: "a" }), createVacancy({ id: "b" })],
+        { ...META, totalNew: 2 },
+      );
+      expect(out).toContain("┈┈┈┈");
     });
 
     it("routes the apply link through /go/:id and appends the relative time", () => {

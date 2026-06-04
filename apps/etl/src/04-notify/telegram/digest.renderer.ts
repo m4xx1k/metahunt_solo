@@ -142,18 +142,19 @@ function renderCard(
   ]);
   if (meta) body.push(meta);
 
-  // Perks line as {brace} tags, framed the way candidates read them: reservation
-  // is a draw (deferment from mobilization), and "без тесту" is a plus — so the
-  // absence of a test task is surfaced too, not just its presence.
-  const perks = [
-    v.hasReservation === true ? "{🛡 бронь}" : null,
+  // Perks line, framed the way candidates read them: reservation is a draw
+  // (🪖 — deferment from mobilization), and "без тесту" is a plus, so the absence
+  // of a test task is surfaced too, not just its presence. Both are bolded to
+  // read as perks, dot-joined so they don't blur into the meta line above.
+  const perks = joinChips([
+    v.hasReservation === true ? "🪖 <b>бронь</b>" : null,
     v.hasTestAssignment === false
-      ? "{📝 без тесту}"
+      ? "🧪 <b>без тесту</b>"
       : v.hasTestAssignment === true
-        ? "{📝 тестове}"
+        ? "🧪 <b>тестове</b>"
         : null,
-  ].filter((p): p is string => !!p);
-  if (perks.length > 0) body.push(perks.join(" "));
+  ]);
+  if (perks) body.push(perks);
 
   // Footer: apply link + freshness, muted at the end. The link routes through
   // our `/go/:id` redirect (not straight to source) so the tap passes through
@@ -179,8 +180,11 @@ function renderCard(
   return `${head}\n${body.map((line) => `  ${line}`).join("\n")}`;
 }
 
-// Each card starts with ◆, so a blank line between cards is enough — no rules.
-const CARD_SEPARATOR = "\n\n";
+// A dotted rule between cards (the ◆ headline alone read as too cramped in a
+// long digest). The header is set off from the first card by a plain blank line.
+const CARD_DIVIDER = "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈";
+const CARD_SEPARATOR = `\n${CARD_DIVIDER}\n`;
+const HEADER_GAP = "\n\n";
 
 // Paging budget for the scheduled digest. Cap by card count AND a char budget
 // well under Telegram's 4096 (the header + separators ride in the remainder).
@@ -222,7 +226,7 @@ export function renderDigest(vacancies: VacancyDto[], meta: DigestMeta): string 
   const cards = vacancies
     .map((v) => renderCard(v, meta.applyBaseUrl, meta.subscriptionId))
     .join(CARD_SEPARATOR);
-  return `${header}${CARD_SEPARATOR}${cards}`;
+  return `${header}${HEADER_GAP}${cards}`;
 }
 
 /** One Telegram message + the vacancy ids it covers (so the caller records them after a successful send). */
@@ -272,7 +276,7 @@ export function paginateDigest(
     });
     const body = group.map((c) => c.text).join(CARD_SEPARATOR);
     return {
-      html: `${header}${CARD_SEPARATOR}${body}`,
+      html: `${header}${HEADER_GAP}${body}`,
       vacancyIds: group.map((c) => c.id),
     };
   });
