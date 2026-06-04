@@ -26,7 +26,7 @@ The `extraction_cost` SQL view (migration `0009`) parses this JSON, joins per-mo
 
 1. Edit `apps/etl/baml_src/extract-vacancy.baml` — the schema, descriptions, `prompt #"..."#` body, or anything else.
 2. Run `pnpm --filter etl baml:generate` to regenerate `apps/etl/src/baml_client/`. Commit the generated files together with the .baml change.
-3. Bump `PROMPT_VERSION` in `apps/etl/src/extraction/baml.extractor.ts` to the next integer (1, 2, 3 …). The constant is the only thing the cost view groups on; whitespace-only edits don't need a bump.
+3. Bump `PROMPT_VERSION` in `apps/etl/src/02-enrich/extraction/baml.extractor.ts` to the next integer (1, 2, 3 …). The constant is the only thing the cost view groups on; whitespace-only edits don't need a bump.
 4. Run `pnpm --filter etl exec baml-cli test --from baml_src` to sanity-check both fixtures (`senior_backend_remote`, `dou_fullstack_talanovyti`).
 5. `pnpm --filter etl test` for unit tests.
 
@@ -78,7 +78,7 @@ Or hit `GET /extraction-cost/summary` on the ETL backend, or open `/dashboard/ex
 
 ## Adding a new model
 
-1. Add the entry to `MODEL_PRICING_USD_PER_MTOK` in `apps/etl/src/extraction/pricing.ts`.
+1. Add the entry to `MODEL_PRICING_USD_PER_MTOK` in `apps/etl/src/02-enrich/extraction/pricing.ts`.
 2. Add a `WHEN '<model>' THEN ...` branch to the `cost_usd` CASE in a new migration (`CREATE OR REPLACE VIEW extraction_cost AS ...` — column shape doesn't change, so no DROP needed).
 3. Both files reference each other in comments — keep the constants in lockstep.
 
