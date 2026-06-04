@@ -53,7 +53,13 @@ export class AnalyticsService implements OnModuleDestroy {
    * chat id as a person property (not an identity key). */
   telegramLinked(uuid: string, chatId: string, result: string): void {
     if (!this.client) return;
-    this.client.alias({ distinctId: uuid, alias: `tg:${chatId}` });
+    // Direction matters: the canonical `tg:<chat_id>` must be the `distinctId`
+    // (merge target) and the fresh subscription uuid the `alias` (merge source).
+    // PostHog rejects `$create_alias` when the `alias` value is already an
+    // identified distinct_id — so putting tg:<chat_id> there only works for a
+    // chat's FIRST subscription and silently drops every later one. The uuid is
+    // always new, so it merges every time, however many subscriptions a chat has.
+    this.client.alias({ distinctId: `tg:${chatId}`, alias: uuid });
     this.client.identify({
       distinctId: `tg:${chatId}`,
       properties: { chat_id: chatId },
