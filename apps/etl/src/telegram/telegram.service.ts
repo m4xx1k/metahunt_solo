@@ -97,10 +97,14 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     await this.bot?.stop();
   }
 
-  /** Stateless outbound send — used by the digest activity later. */
+  /** Stateless outbound send — used by the scheduled digest delivery. */
   async sendMessage(chatId: string, html: string): Promise<void> {
     if (!this.bot) throw new Error("Telegram bot is not initialized");
-    await this.bot.api.sendMessage(chatId, html, { parse_mode: "HTML" });
+    await this.bot.api.sendMessage(chatId, html, {
+      parse_mode: "HTML",
+      // Digest cards carry apply links; a preview card would bloat the message.
+      link_preview_options: { is_disabled: true },
+    });
   }
 
   private registerHandlers(bot: Bot): void {

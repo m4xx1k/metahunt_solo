@@ -5,6 +5,7 @@ import { TemporalModule } from "nestjs-temporal-core";
 
 import { LOADER_ACTIVITIES } from "../loader/activities";
 import { RSS_ACTIVITIES } from "../rss/activities";
+import { TELEGRAM_ACTIVITIES } from "../telegram/activities";
 import { appendTsLoaderRule } from "./webpack-workflow.hook";
 
 @Module({
@@ -35,7 +36,11 @@ import { appendTsLoaderRule } from "./webpack-workflow.hook";
             // from one entry point.
             workflowsPath: resolve(__dirname, "../workflows"),
             bundlerOptions: { webpackConfigHook: appendTsLoaderRule },
-            activityClasses: [...RSS_ACTIVITIES, ...LOADER_ACTIVITIES],
+            activityClasses: [
+              ...RSS_ACTIVITIES,
+              ...LOADER_ACTIVITIES,
+              ...TELEGRAM_ACTIVITIES,
+            ],
             // Worker spawns a Temporal connection; in `NODE_ENV=test` the
             // AppModule smoke spec compiles the graph without a running server.
             autoStart: config.get<string>("NODE_ENV") !== "test",

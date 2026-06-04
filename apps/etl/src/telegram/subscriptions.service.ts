@@ -30,6 +30,16 @@ export type LinkResult =
   | "duplicate"
   | "not_found";
 
+/** An active subscription with its delivery target — the digest engine's unit of work. */
+export interface ActiveSubscription {
+  id: string;
+  /** Non-null for active rows (set at link time alongside activation). */
+  chatId: string;
+  params: SubscriptionParams;
+  /** Floor for "new since" matching — never notify about pre-subscription vacancies. */
+  createdAt: Date;
+}
+
 /**
  * Thin persistence layer for the Telegram bot — link/unlink only. All vacancy
  * matching stays in the catalog services; the bot is transport, not business
@@ -120,6 +130,33 @@ export class SubscriptionsService {
       .where(
         and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)),
       );
+  }
+
+  /** Ids of every active subscription — the digest workflow's work-list. */
+  async listActiveIds(): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(eq(subscriptions.isActive, true));
+    return rows.map((r) => r.id);
+  }
+
+  /**
+   * One active subscription by id, with its chat + creation floor. Null when it
+   * was deactivated between listing and delivery (a benign race the engine skips).
+   */
+  async getActiveById(id: string): Promise<ActiveSubscription | null> {
+    const [row] = await this.db
+      .select({
+        id: subscriptions.id,
+        chatId: subscriptions.chatId,
+        params: subscriptions.params,
+        createdAt: subscriptions.createdAt,
+      })
+      .from(subscriptions)
+      .where(and(eq(subscriptions.id, id), eq(subscriptions.isActive, true)));
+    if (!row || row.chatId === null) return null;
+    return { ...row, chatId: row.chatId };
   }
 
   /** `/stop` — deactivate every subscription for a chat. Returns how many were active. */

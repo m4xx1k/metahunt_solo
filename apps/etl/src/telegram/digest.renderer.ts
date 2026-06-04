@@ -155,26 +155,98 @@ function renderCard(v: VacancyDto, applyBaseUrl: string): string {
   return lines.join("\n");
 }
 
+// Each card starts with ◆, so a blank line between cards is enough — no rules.
+const CARD_SEPARATOR = "\n\n";
+
+// Paging budget for the scheduled digest. Cap by card count AND a char budget
+// well under Telegram's 4096 (the header + separators ride in the remainder).
+const MAX_CARDS_PER_MESSAGE = 8;
+const MAX_MESSAGE_CHARS = 3500;
+
 export interface DigestMeta {
-  /** Total matching vacancies within the window (the "N new" headline count). */
+  /** Total matching vacancies (the "N new" headline count). */
   totalNew: number;
-  windowDays: number;
   /** Public origin for building `/go/:id` apply-redirect links. */
   applyBaseUrl: string;
+  /**
+   * Rolling window in days. Present → "за N дн" framing (the `/preview` sample);
+   * omit for scheduled digests, which carry only genuinely-new vacancies.
+   */
+  windowDays?: number;
   /** Per-subscription filter label for the header (e.g. "React, Node · 3 скіл."). */
   label?: string;
 }
 
-/** Render a digest: a headline count + one rich card per vacancy. */
-export function renderDigest(
-  vacancies: VacancyDto[],
-  { totalNew, windowDays, applyBaseUrl, label }: DigestMeta,
+function renderHeader(
+  totalNew: number,
+  { windowDays, label }: Pick<DigestMeta, "windowDays" | "label">,
+  page?: { index: number; count: number },
 ): string {
-  const tail = label ? ` · ${escapeHtml(label)}` : "";
-  const header = `⌖ <b>${totalNew}</b> нових за ${windowDays} дн${tail}`;
-  if (vacancies.length === 0) return header;
+  const window = windowDays !== undefined ? ` за ${windowDays} дн` : "";
+  const filter = label ? ` · ${escapeHtml(label)}` : "";
+  const pager = page && page.count > 1 ? ` (${page.index}/${page.count})` : "";
+  return `⌖ <b>${totalNew}</b> нових${window}${filter}${pager}`;
+}
 
-  // Each card starts with ◆, so a blank line between cards is enough — no rules.
-  const cards = vacancies.map((v) => renderCard(v, applyBaseUrl)).join("\n\n");
-  return `${header}\n\n${cards}`;
+/** Render a digest as a single message — headline + one card per vacancy (used by `/preview`). */
+export function renderDigest(vacancies: VacancyDto[], meta: DigestMeta): string {
+  const header = renderHeader(meta.totalNew, meta);
+  if (vacancies.length === 0) return header;
+  const cards = vacancies
+    .map((v) => renderCard(v, meta.applyBaseUrl))
+    .join(CARD_SEPARATOR);
+  return `${header}${CARD_SEPARATOR}${cards}`;
+}
+
+/** One Telegram message + the vacancy ids it covers (so the caller records them after a successful send). */
+export interface DigestPage {
+  html: string;
+  vacancyIds: string[];
+}
+
+/**
+ * Split a digest across Telegram messages, each under the count + char budget,
+ * with a per-page header (and `(i/n)` once it spans more than one). Pure: the
+ * scheduled engine sends each page and records its `vacancyIds`.
+ */
+export function paginateDigest(
+  vacancies: VacancyDto[],
+  meta: DigestMeta,
+): DigestPage[] {
+  if (vacancies.length === 0) return [];
+
+  const cards = vacancies.map((v) => ({
+    id: v.id,
+    text: renderCard(v, meta.applyBaseUrl),
+  }));
+
+  // Greedy pack: start a new page when the next card would breach either cap.
+  const groups: (typeof cards)[] = [];
+  let current: typeof cards = [];
+  let chars = 0;
+  for (const card of cards) {
+    const projected = chars + card.text.length + CARD_SEPARATOR.length;
+    const wouldOverflow =
+      current.length >= MAX_CARDS_PER_MESSAGE || projected > MAX_MESSAGE_CHARS;
+    if (current.length > 0 && wouldOverflow) {
+      groups.push(current);
+      current = [];
+      chars = 0;
+    }
+    current.push(card);
+    chars += card.text.length + CARD_SEPARATOR.length;
+  }
+  if (current.length > 0) groups.push(current);
+
+  return groups.map((group, index) => {
+    const header = renderHeader(meta.totalNew, meta, {
+      index: index + 1,
+      count: groups.length,
+    });
+    const body = group.map((c) => c.text).join(CARD_SEPARATOR);
+    return {
+      html: `${header}${CARD_SEPARATOR}${body}`,
+      vacancyIds: group.map((c) => c.id),
+    };
+  });
 }

@@ -8,6 +8,7 @@ import {
   ilike,
   inArray,
   isNotNull,
+  notInArray,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -58,6 +59,8 @@ export interface FeedSearchParams {
   includeAllSkills?: boolean;
   /** Only vacancies first loaded after this instant (the digest "new since" window). */
   loadedAfter?: Date;
+  /** Drop these vacancy ids from the result (digest anti-join: already-sent). */
+  excludeIds?: string[];
 }
 
 interface VacancyRow {
@@ -265,6 +268,9 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
     conds.push(eq(vacancies.hasReservation, params.hasReservation));
   }
   if (params.loadedAfter) conds.push(gt(vacancies.loadedAt, params.loadedAfter));
+  if (params.excludeIds && params.excludeIds.length > 0) {
+    conds.push(notInArray(vacancies.id, params.excludeIds));
+  }
   if (params.skillIds && params.skillIds.length > 0) {
     // AND semantics: keep only vacancies whose vacancy_nodes set covers
     // every requested skill. One subquery (not N joins) keeps both the

@@ -3,3 +3,4 @@
 // re-export here; the worker's workflowsPath stays put.
 export * from "../rss/workflows";
 export * from "../loader/workflows";
+export * from "../telegram/workflows";
