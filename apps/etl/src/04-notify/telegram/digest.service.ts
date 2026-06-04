@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
+import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { FeedService, type FeedSearchParams } from "../../03-discovery/feed/feed.service";
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { paginateDigest } from "./digest.renderer";
@@ -49,6 +50,7 @@ export class DigestService {
     private readonly subscriptions: SubscriptionsService,
     private readonly sentNotifications: SentNotificationsService,
     private readonly telegram: TelegramService,
+    private readonly analytics: AnalyticsService,
   ) {
     this.applyBaseUrl = this.config.get<string>("PUBLIC_BASE_URL")!;
   }
@@ -96,6 +98,9 @@ export class DigestService {
       totalNew: total,
       applyBaseUrl: this.applyBaseUrl,
       label,
+      // Stamps apply links with `?s=<id>` so the `/go/:id` redirect can attribute
+      // clicks back to this subscription's person.
+      subscriptionId: sub.id,
     });
     for (const page of pages) {
       await this.telegram.sendMessage(sub.chatId, page.html);
@@ -103,6 +108,11 @@ export class DigestService {
       await this.sentNotifications.record(sub.id, page.vacancyIds);
     }
 
+    this.analytics.digestSent(sub.chatId, {
+      subscriptionId: sub.id,
+      vacancies: total,
+      pages: pages.length,
+    });
     this.logger.log(
       `digest → sub ${sub.id}: ${total} new in ${pages.length} page(s)`,
     );
