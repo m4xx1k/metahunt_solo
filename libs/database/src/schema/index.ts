@@ -10,3 +10,5 @@ export * from './vacancy-nodes';
 export * from './tracks';
 export * from './unique-vacancies';
 export * from './users';
+export * from './subscriptions';
+export * from './sent-notifications';

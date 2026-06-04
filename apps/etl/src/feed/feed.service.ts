@@ -4,9 +4,11 @@ import {
   count,
   desc,
   eq,
+  gt,
   ilike,
   inArray,
   isNotNull,
+  notInArray,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -32,6 +34,11 @@ const {
   rssRecords,
 } = schema;
 
+// Postgres `uuid` columns reject malformed input at the driver level, so screen
+// path params before they reach a query.
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface FeedSearchParams {
   page: number;
   pageSize: number;
@@ -50,6 +57,10 @@ export interface FeedSearchParams {
   hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
+  /** Only vacancies first loaded after this instant (the digest "new since" window). */
+  loadedAfter?: Date;
+  /** Drop these vacancy ids from the result (digest anti-join: already-sent). */
+  excludeIds?: string[];
 }
 
 interface VacancyRow {
@@ -186,6 +197,23 @@ export class FeedService {
     };
   }
 
+  /**
+   * Resolve the outbound source URL for one vacancy — backs the `/go/:id`
+   * apply redirect so digest taps route through metahunt (the seam where click
+   * tracking will hang). Returns null for a malformed id, a missing vacancy, or
+   * a legacy row with no link.
+   */
+  async getApplyLink(id: string): Promise<string | null> {
+    if (!UUID_REGEX.test(id)) return null;
+    const [row] = await this.db
+      .select({ link: rssRecords.link })
+      .from(vacancies)
+      .innerJoin(rssRecords, eq(rssRecords.id, vacancies.lastRssRecordId))
+      .where(eq(vacancies.id, id))
+      .limit(1);
+    return row?.link ?? null;
+  }
+
   private async fetchSkills(
     vacancyIds: string[],
     includeAllSkills: boolean,
@@ -238,6 +266,10 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   }
   if (params.hasReservation !== undefined) {
     conds.push(eq(vacancies.hasReservation, params.hasReservation));
+  }
+  if (params.loadedAfter) conds.push(gt(vacancies.loadedAt, params.loadedAfter));
+  if (params.excludeIds && params.excludeIds.length > 0) {
+    conds.push(notInArray(vacancies.id, params.excludeIds));
   }
   if (params.skillIds && params.skillIds.length > 0) {
     // AND semantics: keep only vacancies whose vacancy_nodes set covers
