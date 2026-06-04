@@ -7,7 +7,14 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { Bot } from "grammy";
 
+import { RateLimiter, withRetryAfter } from "./rate-limiter";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
+
+// Telegram caps outbound at ~30 msg/s globally; stay comfortably under it.
+const SEND_INTERVAL_MS = 50; // ≈20 msg/s
+// A burst to one chat can still trip a per-chat 429 — honor its retry_after
+// rather than burning the activity's Temporal attempts on a transient limit.
+const SEND_MAX_RETRIES = 2;
 
 // grammy long-polling is single-consumer: this service must run in exactly ONE
 // `@metahunt/etl` replica. Keep the etl service pinned to 1 replica on Railway,
@@ -18,6 +25,7 @@ import { TelegramCommandsHandler } from "./telegram-commands.handler";
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
+  private readonly limiter = new RateLimiter(SEND_INTERVAL_MS);
   private bot?: Bot;
 
   constructor(
@@ -65,13 +73,23 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     return this.bot?.botInfo.username;
   }
 
-  /** Stateless outbound send — used by the scheduled digest delivery. */
+  /**
+   * Stateless outbound send — used by the scheduled digest delivery. Throttled
+   * to stay under Telegram's global limit, and resilient to a 429 (waits the
+   * advised retry_after, then retries).
+   */
   async sendMessage(chatId: string, html: string): Promise<void> {
-    if (!this.bot) throw new Error("Telegram bot is not initialized");
-    await this.bot.api.sendMessage(chatId, html, {
-      parse_mode: "HTML",
-      // Digest cards carry apply links; a preview card would bloat the message.
-      link_preview_options: { is_disabled: true },
-    });
+    const bot = this.bot;
+    if (!bot) throw new Error("Telegram bot is not initialized");
+    await this.limiter.acquire();
+    await withRetryAfter(
+      () =>
+        bot.api.sendMessage(chatId, html, {
+          parse_mode: "HTML",
+          // Digest cards carry apply links; a preview card would bloat the message.
+          link_preview_options: { is_disabled: true },
+        }),
+      { maxRetries: SEND_MAX_RETRIES },
+    );
   }
 }
