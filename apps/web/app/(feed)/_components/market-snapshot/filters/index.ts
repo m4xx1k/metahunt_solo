@@ -20,5 +20,5 @@ export { FacetSection, type Facet } from "./FacetSection";
 export { SkillsSection } from "./SkillsSection";
 export { SourceSection } from "./SourceSection";
 export { EnumSection } from "./EnumSection";
-export { FlagSection } from "./FlagSection";
+export { PerksFilter } from "./PerksFilter";
 export { ActiveFiltersBar } from "./ActiveFiltersBar";

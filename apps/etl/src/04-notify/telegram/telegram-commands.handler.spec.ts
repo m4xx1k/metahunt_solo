@@ -60,13 +60,16 @@ describe("TelegramCommandsHandler", () => {
   });
 
   describe("/start", () => {
-    it("explains where subscriptions come from when there's no token", async () => {
+    it("greets with a direct site link and explains subscriptions when there's no token", async () => {
       const ctx = commandCtx("   ");
       await commands.get("start")!(ctx);
 
       expect(linkChat).not.toHaveBeenCalled();
-      expect(ctx.reply).toHaveBeenCalledWith(
-        expect.stringContaining("створюються на сайті"),
+      const [text, opts] = (ctx.reply as jest.Mock).mock.calls[0];
+      expect(text).toContain("створюються на сайті");
+      expect(text).toContain('<a href="https://metahunt.test">');
+      expect(opts).toEqual(
+        expect.objectContaining({ parse_mode: "HTML" }),
       );
     });
 

@@ -132,6 +132,13 @@ export function validateEnv(config: RawEnv): RawEnv {
     asString(config.PUBLIC_BASE_URL) ?? `http://localhost:${port}`;
   assertUrl("PUBLIC_BASE_URL", publicBaseUrl);
 
+  // Public origin of the marketing site (the Next.js web app, a different domain
+  // than this service). Used for the direct "open metahunt" link in the Telegram
+  // /start reply. Defaults to the local web dev port; set to the deployed domain.
+  const webBaseUrl =
+    asString(config.WEB_BASE_URL) ?? "http://localhost:4000";
+  assertUrl("WEB_BASE_URL", webBaseUrl);
+
   // Optional: empty key keeps the AnalyticsService dormant (logs a warning and
   // no-ops every event) so local/test/CI never ship data to PostHog — same
   // shape as the dormant Telegram bot above. Host defaults to PostHog EU since
@@ -160,6 +167,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     EXTRACTOR_PROVIDER: extractorProvider,
     TELEGRAM_BOT_TOKEN: telegramBotToken,
     PUBLIC_BASE_URL: publicBaseUrl,
+    WEB_BASE_URL: webBaseUrl,
     POSTHOG_API_KEY: posthogApiKey,
     POSTHOG_HOST: posthogHost,
   };

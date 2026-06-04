@@ -9,7 +9,7 @@ import {
   EnumSection,
   type Facet,
   FacetSection,
-  FlagSection,
+  PerksFilter,
   RoleSection,
   SkillsSection,
   SourceSection,
@@ -139,6 +139,15 @@ export function MarketFilters({
               />
             </>
           )}
+          {/* Perks sit right under the browse/refine block — high, but never
+              above the tracks. Reservation framed as a draw, test by its
+              desirable absence (see PerksFilter). */}
+          <PerksFilter
+            reservation={api.filters.reservation}
+            test={api.filters.test}
+            onReservation={api.setReservation}
+            onTest={api.setTest}
+          />
           <EnumSection
             title="seniority"
             options={agg.seniorities}
@@ -155,16 +164,6 @@ export function MarketFilters({
             sources={agg.sources}
             activeCode={api.filters.sourceCode}
             onChange={api.setSource}
-          />
-          <FlagSection
-            title="test task"
-            value={api.filters.test}
-            onChange={api.setTest}
-          />
-          <FlagSection
-            title="reservation"
-            value={api.filters.reservation}
-            onChange={api.setReservation}
           />
         </aside>
       </div>

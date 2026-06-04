@@ -114,26 +114,21 @@ function renderCard(
   applyBaseUrl: string,
   subscriptionId?: string,
 ): string {
-  const lines: string[] = [];
-
-  // Headline = seniority then the clean taxonomy role (the raw scraped title is
-  // noisy, so it's dropped). The diamond is the only card marker — monochrome,
-  // CLI-ish. Seniority leads since canonical role names never carry a level.
-  const role = v.role?.name ?? v.title;
-  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
-  lines.push(
-    `◆ ${seniority ? `${seniority} · ` : ""}<b>${escapeHtml(role)}</b>`,
-  );
+  // The ◆ headline stays flush-left; everything else is a 2-space-indented body
+  // so each card reads as a titled block. Skills are [bracket] tags and perks
+  // are {brace} tags — a light CLI-ish structure over the old dot-joined prose.
+  const body: string[] = [];
 
   // Muted domain line, italic so it reads as a subtitle without competing with
   // the bold headline. (Freshness lives in the footer, next to the apply link.)
-  if (v.domain) lines.push(`<i>${escapeHtml(v.domain.name)}</i>`);
+  if (v.domain) body.push(`<i>${escapeHtml(v.domain.name)}</i>`);
 
   if (v.skills.required.length > 0) {
     const names = v.skills.required.slice(0, MAX_SKILLS).map((s) => s.name);
     const extra = v.skills.required.length - names.length;
     const tail = extra > 0 ? ` +${extra}` : "";
-    lines.push(`${escapeHtml(names.join(" · "))}${tail}`);
+    const tags = names.map((n) => `[${escapeHtml(n)}]`).join(" ");
+    body.push(`${tags}${tail}`);
   }
 
   // One meta line — content self-labels. Accents kept light: salary bold (rare
@@ -145,15 +140,20 @@ function renderCard(
     salary ? `<b>${salary}</b>` : null,
     v.englishLevel ? `🇬🇧 ${ENGLISH_CEFR[v.englishLevel]}` : null,
   ]);
-  if (meta) lines.push(meta);
+  if (meta) body.push(meta);
 
-  // Perks line: reservation accented (deferment from mobilization is a top draw
-  // in the UA market), test task flagged plainly. Only shown when known true.
-  const perks = joinChips([
-    v.hasReservation ? "🛡 <b>Бронювання</b>" : null,
-    v.hasTestAssignment ? "📝 Тестове" : null,
-  ]);
-  if (perks) lines.push(perks);
+  // Perks line as {brace} tags, framed the way candidates read them: reservation
+  // is a draw (deferment from mobilization), and "без тесту" is a plus — so the
+  // absence of a test task is surfaced too, not just its presence.
+  const perks = [
+    v.hasReservation === true ? "{🛡 бронь}" : null,
+    v.hasTestAssignment === false
+      ? "{📝 без тесту}"
+      : v.hasTestAssignment === true
+        ? "{📝 тестове}"
+        : null,
+  ].filter((p): p is string => !!p);
+  if (perks.length > 0) body.push(perks.join(" "));
 
   // Footer: apply link + freshness, muted at the end. The link routes through
   // our `/go/:id` redirect (not straight to source) so the tap passes through
@@ -166,9 +166,17 @@ function renderCard(
       : null,
     age ? `<i>${age}</i>` : null,
   ]);
-  if (footer) lines.push(footer);
+  if (footer) body.push(footer);
 
-  return lines.join("\n");
+  // Headline = seniority then the clean taxonomy role (the raw scraped title is
+  // noisy, so it's dropped). The diamond is the only card marker — monochrome,
+  // CLI-ish. Seniority leads since canonical role names never carry a level.
+  const role = v.role?.name ?? v.title;
+  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
+  const head = `◆ ${seniority ? `${seniority} · ` : ""}<b>${escapeHtml(role)}</b>`;
+
+  if (body.length === 0) return head;
+  return `${head}\n${body.map((line) => `  ${line}`).join("\n")}`;
 }
 
 // Each card starts with ◆, so a blank line between cards is enough — no rules.

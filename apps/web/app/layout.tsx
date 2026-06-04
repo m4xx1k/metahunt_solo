@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MetaHunt",
+  title: "[metahunt]",
   description: "Neo-brutalist UI kit for MetaHunt",
 };
 
