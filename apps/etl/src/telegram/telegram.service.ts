@@ -5,35 +5,24 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot } from "grammy";
 
-import { FeedService, type FeedSearchParams } from "../feed/feed.service";
-import { renderDigest } from "./digest.renderer";
-import { SubscriptionsService } from "./subscriptions.service";
-
-const DIGEST_WINDOW_DAYS = 14;
-const DIGEST_PREVIEW_SIZE = 3;
-const DAY_MS = 86_400_000;
-
-// Orphan pending rows (web "Subscribe" tapped, never `/start`-ed) are swept once
-// they're older than this. Generous enough that a user can subscribe and open
-// Telegram minutes or hours later; tight enough that abandoned taps don't pile up.
-const PENDING_TTL_HOURS = 48;
-const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+import { TelegramCommandsHandler } from "./telegram-commands.handler";
 
 // grammy long-polling is single-consumer: this service must run in exactly ONE
 // `@metahunt/etl` replica. Keep the etl service pinned to 1 replica on Railway,
 // or extract the poller before scaling the worker horizontally.
+//
+// Transport only: owns the bot's lifecycle (poller) and the stateless outbound
+// `sendMessage`. Inbound commands live in `TelegramCommandsHandler`.
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
   private bot?: Bot;
-  private cleanupTimer?: NodeJS.Timeout;
 
   constructor(
     private readonly config: ConfigService,
-    private readonly subscriptions: SubscriptionsService,
-    private readonly feed: FeedService,
+    private readonly commands: TelegramCommandsHandler,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -46,7 +35,8 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     }
 
     const bot = new Bot(token);
-    this.registerHandlers(bot);
+    // Handlers must be wired before the poller starts, or early updates are lost.
+    this.commands.register(bot);
 
     // init() runs getMe so `botInfo.username` is available to the subscribe
     // endpoint without a separate env var. A bad token fails here — log and
@@ -64,37 +54,15 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     void bot.start({
       onStart: (me) => this.logger.log(`Telegram bot @${me.username} polling`),
     });
-
-    // GC abandoned web "Subscribe" taps. Lives here (not Temporal) because the
-    // poller already pins this service to one replica, so the interval is too.
-    void this.purgeStalePending();
-    this.cleanupTimer = setInterval(
-      () => void this.purgeStalePending(),
-      CLEANUP_INTERVAL_MS,
-    );
-    this.cleanupTimer.unref();
   }
 
-  private async purgeStalePending(): Promise<void> {
-    try {
-      const removed =
-        await this.subscriptions.purgeStalePending(PENDING_TTL_HOURS);
-      if (removed > 0) {
-        this.logger.log(`Purged ${removed} stale pending subscription(s)`);
-      }
-    } catch (err) {
-      this.logger.error("Stale-subscription purge failed", err);
-    }
+  async onModuleDestroy(): Promise<void> {
+    await this.bot?.stop();
   }
 
   /** Bot @username (from getMe), once initialized. Undefined while dormant. */
   get botUsername(): string | undefined {
     return this.bot?.botInfo.username;
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
-    await this.bot?.stop();
   }
 
   /** Stateless outbound send — used by the scheduled digest delivery. */
@@ -104,126 +72,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       parse_mode: "HTML",
       // Digest cards carry apply links; a preview card would bloat the message.
       link_preview_options: { is_disabled: true },
-    });
-  }
-
-  private registerHandlers(bot: Bot): void {
-    bot.command("start", async (ctx) => {
-      const token = ctx.match.trim();
-      const chatId = String(ctx.chat.id);
-
-      if (token.length === 0) {
-        await ctx.reply(
-          "👋 Привіт! Підписки на вакансії створюються на сайті — там ти " +
-            "обираєш фільтр і отримуєш кнопку «Підписатись».",
-        );
-        return;
-      }
-
-      const result = await this.subscriptions.linkChat(token, chatId);
-      const reply =
-        result === "linked"
-          ? "✅ Підписку активовано. Надсилатиму нові вакансії за твоїм фільтром."
-          : result === "already_active"
-            ? "ℹ️ Ця підписка вже активна — нічого робити не треба."
-            : result === "duplicate"
-              ? "ℹ️ Ти вже підписаний на цей фільтр — нову підписку не створював."
-              : "⚠️ Це посилання недійсне або застаріле. Створи підписку на сайті ще раз.";
-      await ctx.reply(reply);
-    });
-
-    bot.command("preview", async (ctx) => {
-      const subs = await this.subscriptions.listActiveByChat(
-        String(ctx.chat.id),
-      );
-      if (subs.length === 0) {
-        await ctx.reply("У тебе немає активних підписок. Створи на сайті.");
-        return;
-      }
-
-      const loadedAfter = new Date(Date.now() - DIGEST_WINDOW_DAYS * DAY_MS);
-      const applyBaseUrl = this.config.get<string>("PUBLIC_BASE_URL")!;
-      for (const sub of subs) {
-        // Stored params are a feed query (whitelisted keys) — a JSON boundary.
-        const params = sub.params as Partial<FeedSearchParams>;
-        const [{ items, total }, label] = await Promise.all([
-          this.feed.search({
-            ...params,
-            page: 1,
-            pageSize: DIGEST_PREVIEW_SIZE,
-            loadedAfter,
-          }),
-          this.subscriptions.describe(sub.params),
-        ]);
-        await ctx.reply(
-          renderDigest(items, {
-            totalNew: total,
-            windowDays: DIGEST_WINDOW_DAYS,
-            applyBaseUrl,
-            label,
-          }),
-          {
-            parse_mode: "HTML",
-            link_preview_options: { is_disabled: true },
-          },
-        );
-      }
-    });
-
-    bot.command("list", async (ctx) => {
-      const subs = await this.subscriptions.listActiveByChat(
-        String(ctx.chat.id),
-      );
-      if (subs.length === 0) {
-        await ctx.reply("У тебе немає активних підписок.");
-        return;
-      }
-
-      for (const sub of subs) {
-        const label = await this.subscriptions.describe(sub.params);
-        await ctx.reply(`🔔 ${label}`, {
-          reply_markup: new InlineKeyboard().text(
-            "❌ Відписатись",
-            `unsub:${sub.id}`,
-          ),
-        });
-      }
-    });
-
-    bot.callbackQuery(/^unsub:(.+)$/, async (ctx) => {
-      const id = ctx.match[1];
-      const chatId = ctx.chat?.id;
-      const stopped =
-        chatId !== undefined &&
-        (await this.subscriptions.deactivateById(id, String(chatId)));
-      await ctx.answerCallbackQuery(
-        stopped ? "Відписано" : "Підписку не знайдено",
-      );
-      if (stopped) await ctx.editMessageText("❌ Відписано.");
-    });
-
-    bot.command("stop", async (ctx) => {
-      const stopped = await this.subscriptions.deactivateByChat(
-        String(ctx.chat.id),
-      );
-      await ctx.reply(
-        stopped > 0
-          ? "🛑 Сповіщення вимкнено."
-          : "У тебе немає активних підписок.",
-      );
-    });
-
-    bot.command("help", async (ctx) => {
-      await ctx.reply(
-        "Команди:\n/start — активувати підписку за посиланням із сайту\n" +
-          "/list — мої підписки (з кнопкою відписки на кожну)\n" +
-          "/preview — показати приклад дайджесту за твоїм фільтром\n" +
-          "/stop — вимкнути всі сповіщення",
-      );
-    });
-
-    bot.catch((err) => {
-      this.logger.error("Telegram update handler failed", err.error);
     });
   }
 }
