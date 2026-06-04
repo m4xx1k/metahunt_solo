@@ -5,7 +5,7 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      { "include": "rss/workflows/**/*.ts", "outDir": "dist", "watchAssets": true }
+      { "include": "01-ingest/rss/workflows/**/*.ts", "outDir": "dist", "watchAssets": true }
     ]
   }
 }

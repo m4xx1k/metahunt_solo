@@ -2,12 +2,12 @@ import { count, eq } from "drizzle-orm";
 import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
-import { DrizzleCompanyRepository } from "../../src/loader/repositories/company.repository";
-import { DrizzleNodeRepository } from "../../src/loader/repositories/node.repository";
-import { DrizzleVacancyRepository } from "../../src/loader/repositories/vacancy.repository";
-import { CompanyResolverService } from "../../src/loader/services/company-resolver.service";
-import { NodeResolverService } from "../../src/loader/services/node-resolver.service";
-import { VacancyLoaderService } from "../../src/loader/services/vacancy-loader.service";
+import { DrizzleCompanyRepository } from "../../src/02-enrich/loader/repositories/company.repository";
+import { DrizzleNodeRepository } from "../../src/02-enrich/loader/repositories/node.repository";
+import { DrizzleVacancyRepository } from "../../src/02-enrich/loader/repositories/vacancy.repository";
+import { CompanyResolverService } from "../../src/02-enrich/loader/services/company-resolver.service";
+import { NodeResolverService } from "../../src/02-enrich/loader/services/node-resolver.service";
+import { VacancyLoaderService } from "../../src/02-enrich/loader/services/vacancy-loader.service";
 import { makeTestDb, truncateAll } from "./db";
 
 const PUBLISHED_AT = new Date("2026-04-24T10:00:00.000Z");
