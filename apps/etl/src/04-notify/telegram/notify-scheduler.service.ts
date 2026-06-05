@@ -15,7 +15,8 @@ const SCHEDULE_ID = "tg-digest-daytime";
 const SCHEDULE_TIMEZONE = "Europe/Kyiv";
 const SCHEDULE_HOUR_START = 9;
 const SCHEDULE_HOUR_END = 21;
-const SCHEDULE_STEP_HOURS = 3; // 09, 12, 15, 18, 21
+const SCHEDULE_MINUTE = 30;
+const SCHEDULE_STEP_HOURS = 1; // hourly at :30 — 09:30, 10:30 … 21:30
 
 // Installs the Temporal schedule that fires `notifySubscribersWorkflow` a few
 // times a day. Mirrors RssSchedulerService; idempotent create-or-update on boot.
@@ -64,7 +65,7 @@ export class NotifySchedulerService implements OnApplicationBootstrap {
     const spec: ScheduleOptions["spec"] = {
       calendars: [
         {
-          minute: 0,
+          minute: SCHEDULE_MINUTE,
           hour: {
             start: SCHEDULE_HOUR_START,
             end: SCHEDULE_HOUR_END,
@@ -81,12 +82,13 @@ export class NotifySchedulerService implements OnApplicationBootstrap {
       workflowId: "tg-digest",
     };
     const policies = { overlap: ScheduleOverlapPolicy.SKIP };
-    const description = `TG digests every ${SCHEDULE_STEP_HOURS}h, ${String(
+    const mm = String(SCHEDULE_MINUTE).padStart(2, "0");
+    const description = `TG digests hourly, ${String(
       SCHEDULE_HOUR_START,
-    ).padStart(2, "0")}:00–${String(SCHEDULE_HOUR_END).padStart(
+    ).padStart(2, "0")}:${mm}–${String(SCHEDULE_HOUR_END).padStart(
       2,
       "0",
-    )}:00 ${SCHEDULE_TIMEZONE}`;
+    )}:${mm} ${SCHEDULE_TIMEZONE}`;
 
     try {
       await raw.schedule.create({
