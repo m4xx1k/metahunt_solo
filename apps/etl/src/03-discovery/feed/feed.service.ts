@@ -175,7 +175,12 @@ export class FeedService {
       .leftJoin(roleNode, roleJoin)
       .leftJoin(domainNode, domainJoin)
       .where(where)
-      .orderBy(desc(vacancies.loadedAt))
+      // Freshest by publish date first (bump = alive). Fall back to loadedAt when
+      // publishedAt is null; id as a stable tiebreaker for offset pagination.
+      .orderBy(
+        desc(sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})`),
+        desc(vacancies.id),
+      )
       .limit(params.pageSize)
       .offset(offset)) as VacancyRow[];
 
