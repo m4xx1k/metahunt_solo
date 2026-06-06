@@ -193,6 +193,9 @@ export default async function TrackPage({
               result={list}
               offset={offset}
               flatSearchParams={flatSearchParams}
+              basePath={
+                trackSlug ? `/${encodeURIComponent(trackSlug)}` : "/"
+              }
             />
           </div>
         </div>

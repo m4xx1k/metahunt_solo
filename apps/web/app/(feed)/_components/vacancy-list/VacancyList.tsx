@@ -6,9 +6,17 @@ type Props = {
   result: ListVacanciesResponse;
   offset: number;
   flatSearchParams: Record<string, string | undefined>;
+  // The active track lives in the route segment, not the query string, so the
+  // page passes its route as the pagination base — otherwise paging drops it.
+  basePath: string;
 };
 
-export function VacancyList({ result, offset, flatSearchParams }: Props) {
+export function VacancyList({
+  result,
+  offset,
+  flatSearchParams,
+  basePath,
+}: Props) {
   return (
     <section id="list" className="flex w-full min-w-0 flex-col gap-6">
       <div className="flex items-baseline justify-between">
@@ -39,7 +47,7 @@ export function VacancyList({ result, offset, flatSearchParams }: Props) {
         total={result.total}
         limit={result.pageSize}
         offset={offset}
-        basePath="/"
+        basePath={basePath}
         searchParams={flatSearchParams}
       />
     </section>
