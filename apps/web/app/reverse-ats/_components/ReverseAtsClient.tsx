@@ -222,9 +222,9 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         </div>
       </section>
 
-      {/* FILTERS + RESULTS */}
+      {/* FILTERS · RESULTS · CV PROFILE (3-col on lg+; profile shows first on mobile) */}
       <section className="px-6 pb-20 pt-8 lg:px-12">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)_300px] lg:items-start">
           <div className="lg:sticky lg:top-24">
             <MatchFilters
               filters={filters}
@@ -238,17 +238,6 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               <p className="border border-danger/40 bg-danger/5 px-4 py-3 font-mono text-sm text-danger">
                 помилка: {error} — бекенд (NEXT_PUBLIC_API_URL) піднятий?
               </p>
-            ) : null}
-
-            {data ? (
-              <CandidateProfile
-                title={profileTitle}
-                role={source.kind === "cv" ? source.info.role : null}
-                seniority={source.kind === "cv" ? source.info.seniority : null}
-                matched={data.resolved.matched}
-                unmatched={data.resolved.unmatched}
-                totalVacancies={data.total}
-              />
             ) : null}
 
             {busy ? (
@@ -279,6 +268,20 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               </div>
             ) : null}
           </div>
+
+          {/* CV profile: right rail on lg+, first thing on mobile */}
+          {data ? (
+            <div className="order-first lg:order-none lg:sticky lg:top-24">
+              <CandidateProfile
+                title={profileTitle}
+                role={source.kind === "cv" ? source.info.role : null}
+                seniority={source.kind === "cv" ? source.info.seniority : null}
+                matched={data.resolved.matched}
+                unmatched={data.resolved.unmatched}
+                totalVacancies={data.total}
+              />
+            </div>
+          ) : null}
         </div>
       </section>
     </main>
