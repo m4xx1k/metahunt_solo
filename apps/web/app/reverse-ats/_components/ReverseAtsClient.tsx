@@ -4,12 +4,28 @@ import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 
 import { Logo } from "@/components/ui-kit";
+import { Pagination } from "@/components/data/Pagination";
+import { pillClass } from "@/components/data/filters/pill";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
 import { rankingApi, type MatchResponse } from "@/lib/api/ranking";
+import type { Seniority } from "@/lib/api/vacancies";
 import { MatchCard } from "./MatchCard";
 import { SAMPLES } from "./samples";
 
 const PAGE_SIZE = 20;
+
+// The seniority levels worth offering as quick chips (the long enum tail —
+// INTERN / PRINCIPAL / C_LEVEL — is noise for a candidate filter).
+const SENIORITY_CHIPS: Seniority[] = ["JUNIOR", "MIDDLE", "SENIOR", "LEAD"];
+const FRESH_DAYS = 7;
+
+interface Filters {
+  seniorities: Seniority[]; // OR — any selected level
+  remote: boolean; // → workFormat REMOTE
+  fresh: boolean; // → postedWithinDays = FRESH_DAYS
+}
+
+const NO_FILTERS: Filters = { seniorities: [], remote: false, fresh: false };
 
 type Source =
   | { kind: "sample"; index: number }
@@ -17,18 +33,43 @@ type Source =
 
 export function ReverseAtsClient({ initial }: { initial: MatchResponse | null }) {
   const [source, setSource] = useState<Source>({ kind: "sample", index: 0 });
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [page, setPage] = useState(1);
   const [data, setData] = useState<MatchResponse | null>(initial);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const runSample = useCallback(async (index: number) => {
-    setSource({ kind: "sample", index });
+  // Single fetch path: re-rank the given source under the given filters at the
+  // given page. Both the sample and CV cards share it, so a filter toggle or
+  // page change re-runs whichever candidate is active. Source/filters/page are
+  // passed in to dodge stale closures.
+  const run = useCallback(async (src: Source, f: Filters, p: number) => {
+    const seniorities = f.seniorities.length > 0 ? f.seniorities : undefined;
+    const workFormat = f.remote ? ("REMOTE" as const) : undefined;
+    const postedWithinDays = f.fresh ? FRESH_DAYS : undefined;
     setError(null);
     setLoading(true);
     try {
-      setData(await rankingApi.match({ skills: SAMPLES[index].skills, pageSize: PAGE_SIZE }));
+      const res =
+        src.kind === "sample"
+          ? await rankingApi.match({
+              skills: SAMPLES[src.index].skills,
+              page: p,
+              pageSize: PAGE_SIZE,
+              seniorities,
+              workFormat,
+              postedWithinDays,
+            })
+          : await cvApi.matches(src.info.candidateId, {
+              page: p,
+              pageSize: PAGE_SIZE,
+              seniorities: seniorities?.join(","),
+              workFormat,
+              postedWithinDays,
+            });
+      setData(res);
     } catch (e) {
       setError(msg(e));
       setData(null);
@@ -37,22 +78,64 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
     }
   }, []);
 
-  const onFile = useCallback(async (file: File) => {
-    setError(null);
-    setUploading(true);
-    try {
-      const info = await cvApi.uploadFile(file);
-      setSource({ kind: "cv", info });
-      setLoading(true);
-      setData(await cvApi.matches(info.candidateId, { pageSize: PAGE_SIZE }));
-    } catch (e) {
-      setError(msg(e));
-      setData(null);
-    } finally {
-      setUploading(false);
-      setLoading(false);
-    }
-  }, []);
+  // Changing the candidate or any filter resets to page 1 (the old page may not
+  // exist in the new, smaller result set).
+  const runSample = useCallback(
+    (index: number) => {
+      const src: Source = { kind: "sample", index };
+      setSource(src);
+      setPage(1);
+      void run(src, filters, 1);
+    },
+    [run, filters],
+  );
+
+  const onFile = useCallback(
+    async (file: File) => {
+      setError(null);
+      setUploading(true);
+      try {
+        const info = await cvApi.uploadFile(file);
+        const src: Source = { kind: "cv", info };
+        setSource(src);
+        setPage(1);
+        await run(src, filters, 1);
+      } catch (e) {
+        setError(msg(e));
+        setData(null);
+      } finally {
+        setUploading(false);
+      }
+    },
+    [run, filters],
+  );
+
+  // Mutate one filter, persist it, reset to page 1, and re-rank.
+  const applyFilters = useCallback(
+    (next: Filters) => {
+      setFilters(next);
+      setPage(1);
+      void run(source, next, 1);
+    },
+    [run, source],
+  );
+
+  // Pagination drives offset; map it back to a 1-based page and refetch.
+  const goToOffset = useCallback(
+    (offset: number) => {
+      const p = Math.floor(offset / PAGE_SIZE) + 1;
+      setPage(p);
+      void run(source, filters, p);
+    },
+    [run, source, filters],
+  );
+  const toggleSeniority = (s: Seniority) =>
+    applyFilters({
+      ...filters,
+      seniorities: filters.seniorities.includes(s)
+        ? filters.seniorities.filter((x) => x !== s)
+        : [...filters.seniorities, s],
+    });
 
   return (
     <main className="min-h-screen bg-bg text-text-primary">
@@ -161,6 +244,50 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         ) : null}
       </section>
 
+      {/* FILTER BAR */}
+      <section className="border-b border-border px-6 py-4 lg:px-12">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-3">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            фільтри
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {SENIORITY_CHIPS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleSeniority(s)}
+                className={pillClass(filters.seniorities.includes(s))}
+              >
+                {s.toLowerCase()}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => applyFilters({ ...filters, remote: !filters.remote })}
+            className={pillClass(filters.remote)}
+          >
+            remote
+          </button>
+          <button
+            type="button"
+            onClick={() => applyFilters({ ...filters, fresh: !filters.fresh })}
+            className={pillClass(filters.fresh)}
+          >
+            ≤ тиждень
+          </button>
+          {filters.seniorities.length > 0 || filters.remote || filters.fresh ? (
+            <button
+              type="button"
+              onClick={() => applyFilters(NO_FILTERS)}
+              className="font-mono text-xs text-text-muted underline hover:text-accent"
+            >
+              скинути
+            </button>
+          ) : null}
+        </div>
+      </section>
+
       {/* RANKED LIST */}
       <section className="px-6 py-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
@@ -174,8 +301,22 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
             <p className="font-mono text-sm text-text-muted">жодної вакансії з перетином.</p>
           ) : null}
           {data?.items.map((item, i) => (
-            <MatchCard key={item.vacancy.id} item={item} rank={i + 1} />
+            <MatchCard
+              key={item.vacancy.id}
+              item={item}
+              rank={(page - 1) * PAGE_SIZE + i + 1}
+            />
           ))}
+          {data && data.total > PAGE_SIZE ? (
+            <div className="mt-2 border-t border-border pt-5">
+              <Pagination
+                total={data.total}
+                limit={PAGE_SIZE}
+                offset={(page - 1) * PAGE_SIZE}
+                onNavigate={goToOffset}
+              />
+            </div>
+          ) : null}
         </div>
       </section>
     </main>

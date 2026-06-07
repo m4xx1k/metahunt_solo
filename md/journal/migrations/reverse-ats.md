@@ -2,10 +2,12 @@
 
 **Status:** MVP working end-to-end — §1-6 shipped, tested & verified (IDF view,
 matcher+endpoints, CV ingestion, matches-by-id, presentable `/reverse-ats` page).
-Next: feedback loop + market-gap (How-we-fast-track below)
+Ranking-quality pass landed (smoothed IDF + Fit-first sort + real filters — see
+*Quality pass* below). Next: feedback loop + market-gap (How-we-fast-track below)
 **Branch:** `feat/reverse-ats`
 **Sits atop:** ADR-0006 (skills are a ranking signal, not a filter), taxonomy-navigation, semantic-dedup
-**Date:** 2026-06-03 (rev 2026-06-06: scoring runs in SQL over a `node_stats` materialized view)
+**Date:** 2026-06-03 (rev 2026-06-06: scoring runs in SQL over a `node_stats`
+materialized view · rev 2026-06-07: ranking-quality pass — *Quality pass* §)
 
 ## Problem
 
@@ -215,10 +217,81 @@ normalization). Full suite green: 214 unit + 12 int.
 Critical path: §1 → §2 (the risk) is fully independent of §3; §4-5 wire them
 together; §6 is the shell.
 
+## Quality pass (rev 2026-06-07 — first real-data eyeball)
+
+Three pathologies surfaced once the page ran on the full corpus. All three were
+*anticipated* below ("signals to watch"); the eyeball promoted them to fixes.
+
+1. **Rare skills over-boost (the `passport.js` problem).** A single `df=1` match
+   (niche lib / typo / extractor noise) scored `ln(N)` ≈ 8.8 and catapulted an
+   otherwise-weak vacancy to #1 — and these skills are often the ones a candidate
+   wouldn't even list. **Fix = the documented smoothing**, no new mechanism:
+   `ln(N/df)` → `ln(N/(df+5))` in the `node_stats` view (migration `0017`).
+   Settles `df=1` from 8.77 → **6.98** (verified), eases the whole tail down with
+   no cliff, generics unmoved at the floor. `K=5` is the single tuning point in
+   `node-stats.ts`. (Watch: on a tiny corpus `df+5 > N` makes weights negative —
+   irrelevant in prod where `N≈6.4k ≫ df+5`, but the ranking int test had to pad
+   its fixture corpus to stay non-degenerate.)
+2. **One rare skill out-ranking a broad fit.** Pure `ORDER BY relevance` let a
+   lone niche bonus skill beat a job the candidate broadly qualifies for. **Fix =
+   promote Fit to the primary sort *bucket*** (the parked tie-breaker, now
+   earned): `ORDER BY tier_bucket DESC, relevance DESC` where `tier_bucket` =
+   STRONG 2 / GOOD 1 / STRETCH 0 (mirrors `fitTier`, computed in the ranked SQL
+   via a `req` CTE for `required_total`). Relevance now only orders *within* a
+   tier. Two axes, still no fused fake %.
+3. **Same vacancy at #1 and #13.** Not one row twice (`GROUP BY vacancy_id`
+   forbids it) — **two duplicate vacancies** (re-post / cross-source) whose
+   independent extractions disagreed on skills, so one caught the rare boost and
+   the other didn't. This is the parked **per-vacancy-not-per-UniqueVacancy**
+   gap; the *proper* fix stays semantic-dedup (score the group's core member /
+   skill-union, exclude the rest by id — no engine change). **Still open** — not
+   addressed in this pass; smoothing (#1) only softens how far the dup drifts.
+
+**Filters, now real (§2's "minimal inline set" → usable).** `MatchFilters`:
+`seniorities: Seniority[]` (OR — middle ∪ senior, was a single `=`),
+`workFormat` (REMOTE), `postedWithinDays` (`coalesce(published_at, loaded_at) >
+now() - make_interval`, mirrors the feed's freshness coalesce). Both controllers
+parse them (`/ranking/match` JSON array · `/cv/:id/matches` CSV query); the
+`/reverse-ats` page got a chip filter bar that re-ranks the active candidate
+(sample or CV) on toggle. Still ranking signals layered on a *filtered* set —
+ADR-0006 intact (filters narrow the corpus, skills still rank within it).
+
+## Refactor pass (rev 2026-06-07 — audit-driven cleanup)
+
+The reverse-ATS work had spread copy-paste; a mini-audit (duplicated utils +
+engineering-rule + frontend-reuse) drove four fixes:
+
+1. **Fit-tier thresholds — one source of truth.** `FIT_STRONG_MIN`/`FIT_GOOD_MIN`
+   in `ranking.contract.ts`; both `fitTier` (badge) and the SQL tier-bucket
+   (sort) read them, so the displayed tier can't drift from the sort order (a
+   latent bug introduced by the Quality pass's SQL CASE).
+2. **Shared request-parsing home.** `platform/shared/query-parsing.ts` (inputs
+   typed `unknown` → serves both GET-query and POST-body) + `platform/shared/
+   sql.ts` (`uuidList`). Deleted the per-controller `parseEnum`/`parsePage`/
+   `parsePageSize`/`parseId`/`parseDays`/`parseBool` copies across **6
+   controllers** (feed, cv, ranking, taxonomy, dedup, monitoring) and the
+   stray `admin/monitoring/query-parsing.ts`; centralised the inline `uuidList`
+   (was re-rolled in feed.service + ranking.service).
+3. **Filter primitives → tier-2.** `pill` / `Section` / `EnumSection` / filter
+   `types` promoted from the feed's page-private `market-snapshot/filters/` to
+   `components/data/filters/` (the rule-of-three second consumer — reverse-ATS —
+   arrived). Feed consumers unchanged (barrel re-exports). The `/reverse-ats`
+   filter bar now uses the shared `pillClass` instead of a hand-rolled chip.
+4. **Pagination — tier-2 + callback mode + wired into reverse-ATS.** The pager
+   moved to `components/data/Pagination.tsx` and gained an `onNavigate(offset)`
+   mode for client islands (the feed/investigation link mode stays). The
+   `/reverse-ats` page previously fetched only page 1 — it now has page state +
+   the shared pager. **Deferred (Path B):** full URL-state unification of the
+   ATS page + a feed↔ATS mode toggle (needs UX sign-off).
+
+Verified: etl 212 unit + 12 int green; web tsc + lint clean; `build:web` all
+routes compile.
+
 ## What to look at AFTER MVP (signals to watch, not build)
 
-- **Ranking flatness.** If many vacancies tie on relevance → add role/seniority
-  tie-breakers (the parked context flags).
+- ~~**Ranking flatness.**~~ **Partially addressed** (Quality pass #2): Fit-tier is
+  now the primary sort bucket. Role/seniority tie-breakers within a tier are still
+  available if relevance ties inside a bucket.
 - **Keyword-stuffing.** If padded CVs rank fake-high → add evidence-gating
   (skill counts only if it appears in an experience bullet, not just "Skills:").
 - **Synonym misses.** If candidate skills legitimately miss related job skills
@@ -227,10 +300,9 @@ together; §6 is the shell.
 - **Coverage at scale.** If vacancy count grows large → two-stage retrieve
   (pgvector ANN on a CV embedding) + rerank. Embedding column already exists on
   `vacancies`; add the mirror on `candidates`.
-- **IDF quality.** Watch the fat tail (`df=1`, see *Why we never skip it*): if a
-  CV coincides with a junk single-vacancy node it gets an outsized boost. Remedy is
-  the smoothed `ln(N/(df+k))`, not a cutoff — the `node_stats` view's weight
-  expression is the single tuning point.
+- ~~**IDF quality.**~~ **Addressed** (Quality pass #1): smoothed to `ln(N/(df+5))`
+  in migration `0017`; `df=1` tail now 6.98, no cutoff. `K` remains the single
+  tuning point — revisit if the tail still over-boosts after dedup lands.
 - **Calibration.** No ground truth yet — weights are expert guesses until we
   have a feedback signal (below).
 

@@ -4,8 +4,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ChangeEvent, useCallback, useState, useTransition } from "react";
 
 import { cn } from "@/lib/utils";
-import { Section } from "./Section";
-import { chipClass } from "./pill";
+import { Section } from "@/components/data/filters/Section";
+import { chipClass } from "@/components/data/filters/pill";
 
 // One unified facet panel for either axis of an active track (roles or
 // skills). Three zones, top to bottom:

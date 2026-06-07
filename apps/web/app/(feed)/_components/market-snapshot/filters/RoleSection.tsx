@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Section } from "./Section";
+import { Section } from "@/components/data/filters/Section";
 import { SelectRow } from "./SelectRow";
-import type { OptionRow } from "./types";
+import type { OptionRow } from "@/components/data/filters/types";
 
 const TOP_N = 6;
 

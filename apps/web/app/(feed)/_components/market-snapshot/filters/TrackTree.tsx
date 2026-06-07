@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Section } from "./Section";
+import { Section } from "@/components/data/filters/Section";
 import type { TrackDto } from "@/lib/api/tracks";
 
 // Nested browse tree (disciplines → stack/language children) that replaces

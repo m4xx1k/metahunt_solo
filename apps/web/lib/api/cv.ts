@@ -1,6 +1,6 @@
 import { apiBase, apiGet, buildQs } from "./client";
 import type { MatchResponse, SkillRef } from "./ranking";
-import type { Seniority } from "./vacancies";
+import type { WorkFormat } from "./vacancies";
 
 // CV ingestion + stored-candidate matching — mirrors apps/etl .../cv/.
 
@@ -14,7 +14,9 @@ export interface CvIngestResult {
 }
 
 export interface CvMatchQuery {
-  seniority?: Seniority;
+  seniorities?: string; // CSV (e.g. "MIDDLE,SENIOR") — flat GET param
+  workFormat?: WorkFormat;
+  postedWithinDays?: number;
   sourceId?: string;
   pageSize?: number;
   page?: number;

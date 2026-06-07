@@ -1,5 +1,5 @@
 import { apiPost } from "./client";
-import type { Seniority, VacancyDto } from "./vacancies";
+import type { Seniority, VacancyDto, WorkFormat } from "./vacancies";
 
 // reverse-ATS matcher client — mirrors apps/etl .../ranking/ranking.contract.ts.
 // A ranked card = the full feed VacancyDto + a personalized match overlay.
@@ -29,7 +29,10 @@ export interface MatchResponse {
 
 export interface MatchBody {
   skills: string[];
-  seniority?: Seniority;
+  seniorities?: Seniority[]; // OR — middle ∪ senior etc.
+  workFormat?: WorkFormat; // e.g. REMOTE
+  postedWithinDays?: number; // freshness
+  page?: number;
   pageSize?: number;
 }
 
