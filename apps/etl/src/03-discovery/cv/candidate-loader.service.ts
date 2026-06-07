@@ -1,0 +1,148 @@
+import { createHash } from "node:crypto";
+
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { eq } from "drizzle-orm";
+
+import { DRIZZLE, schema } from "@metahunt/database";
+import type { DrizzleDB } from "@metahunt/database";
+
+import { RankingService } from "../ranking/ranking.service";
+import { CandidateExtractor } from "./candidate.extractor";
+import type {
+  CandidateNodeRef,
+  CandidateView,
+  CvIngestResult,
+} from "./cv.contract";
+
+// Ingest a CV: hash → (reuse | extract → resolve → store). The content hash
+// makes re-upload idempotent — the same text never hits the LLM twice. Skills
+// are resolve-only (RankingService.resolveSkills): existing nodes match,
+// unknown skills are kept as strings, never created (they'd be inert anyway).
+@Injectable()
+export class CandidateLoaderService {
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly extractor: CandidateExtractor,
+    private readonly ranking: RankingService,
+  ) {}
+
+  async loadFromText(rawText: string): Promise<CvIngestResult> {
+    const sourceText = rawText.trim();
+    if (sourceText.length === 0) {
+      throw new BadRequestException("empty CV text");
+    }
+    const contentHash = createHash("sha256")
+      .update(sourceText.replace(/\s+/g, " ").toLowerCase())
+      .digest("hex");
+
+    const existing = await this.db
+      .select({ id: schema.candidates.id })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.contentHash, contentHash));
+    if (existing[0]) return this.buildResult(existing[0].id, true);
+
+    const extracted = await this.extractor.extract(sourceText);
+    const skills = [
+      ...(extracted.skills?.required ?? []),
+      ...(extracted.skills?.optional ?? []),
+    ];
+    const resolved = await this.ranking.resolveSkills(skills);
+
+    const id = await this.db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(schema.candidates)
+        .values({
+          contentHash,
+          sourceText,
+          extracted: { ...extracted, unmatchedSkills: resolved.unmatched },
+          role: extracted.role ?? null,
+          seniority: extracted.seniority ?? null,
+          englishLevel: extracted.englishLevel ?? null,
+          experienceYears:
+            extracted.experienceYears != null
+              ? Math.round(extracted.experienceYears)
+              : null,
+        })
+        .onConflictDoNothing({ target: schema.candidates.contentHash })
+        .returning({ id: schema.candidates.id });
+
+      // Lost an insert race — another request stored the same CV first.
+      const candidateId =
+        inserted[0]?.id ??
+        (
+          await tx
+            .select({ id: schema.candidates.id })
+            .from(schema.candidates)
+            .where(eq(schema.candidates.contentHash, contentHash))
+        )[0]?.id;
+      if (!candidateId) throw new Error("failed to persist candidate");
+
+      if (inserted[0] && resolved.matched.length > 0) {
+        await tx
+          .insert(schema.candidateNodes)
+          .values(
+            resolved.matched.map((m) => ({ candidateId, nodeId: m.id })),
+          )
+          .onConflictDoNothing();
+      }
+      return candidateId;
+    });
+
+    return this.buildResult(id, false);
+  }
+
+  async getById(id: string): Promise<CandidateView> {
+    const rows = await this.db
+      .select()
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, id));
+    const row = rows[0];
+    if (!row) throw new NotFoundException(`candidate ${id} not found`);
+    const matched = await this.matchedNodes(id);
+    const extracted = row.extracted as Record<string, unknown>;
+    return {
+      candidateId: id,
+      reused: false,
+      role: row.role,
+      seniority: row.seniority,
+      englishLevel: row.englishLevel,
+      experienceYears: row.experienceYears,
+      matched,
+      unmatched: (extracted.unmatchedSkills as string[]) ?? [],
+      extracted,
+    };
+  }
+
+  private async buildResult(
+    id: string,
+    reused: boolean,
+  ): Promise<CvIngestResult> {
+    const rows = await this.db
+      .select({
+        role: schema.candidates.role,
+        seniority: schema.candidates.seniority,
+        extracted: schema.candidates.extracted,
+      })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, id));
+    const row = rows[0];
+    const matched = await this.matchedNodes(id);
+    const extracted = (row?.extracted as Record<string, unknown>) ?? {};
+    return {
+      candidateId: id,
+      reused,
+      role: row?.role ?? null,
+      seniority: row?.seniority ?? null,
+      matched,
+      unmatched: (extracted.unmatchedSkills as string[]) ?? [],
+    };
+  }
+
+  private async matchedNodes(id: string): Promise<CandidateNodeRef[]> {
+    return this.db
+      .select({ id: schema.nodes.id, name: schema.nodes.canonicalName })
+      .from(schema.candidateNodes)
+      .innerJoin(schema.nodes, eq(schema.nodes.id, schema.candidateNodes.nodeId))
+      .where(eq(schema.candidateNodes.candidateId, id));
+  }
+}

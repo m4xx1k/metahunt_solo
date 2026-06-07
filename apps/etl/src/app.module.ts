@@ -15,6 +15,7 @@ import { TaxonomyModule } from "./admin/taxonomy/taxonomy.module";
 import { FeedModule } from "./03-discovery/feed/feed.module";
 import { MarketModule } from "./03-discovery/market/market.module";
 import { RankingModule } from "./03-discovery/ranking/ranking.module";
+import { CvModule } from "./03-discovery/cv/cv.module";
 import { TemporalInfraModule } from "./platform/temporal/temporal.module";
 import { TracksModule } from "./03-discovery/tracks/tracks.module";
 import { UsersModule } from "./04-notify/users/users.module";
@@ -39,6 +40,7 @@ import { TelegramModule } from "./04-notify/telegram/telegram.module";
     TracksModule,
     MarketModule,
     RankingModule,
+    CvModule,
     DedupModule,
     ExtractionCostModule,
     UsersModule,

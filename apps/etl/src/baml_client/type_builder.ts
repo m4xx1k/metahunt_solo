@@ -27,6 +27,8 @@ export { FieldType, EnumBuilder, ClassBuilder }
 export default class TypeBuilder {
     private tb: _TypeBuilder;
     
+    ExtractedCandidate: ClassViewer<'ExtractedCandidate', "role" | "seniority" | "skills" | "experienceYears" | "englishLevel">;
+    
     ExtractedLocation: ClassViewer<'ExtractedLocation', "city" | "country">;
     
     ExtractedVacancy: ClassViewer<'ExtractedVacancy', "role" | "seniority" | "skills" | "experienceYears" | "salary" | "englishLevel" | "employmentType" | "workFormat" | "locations" | "domain" | "engagementType" | "companyName" | "hasTestAssignment" | "hasReservation">;
@@ -52,13 +54,17 @@ export default class TypeBuilder {
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "ExtractedLocation","ExtractedVacancy","Salary","Skills",
+            "ExtractedCandidate","ExtractedLocation","ExtractedVacancy","Salary","Skills",
           ]),
           enums: new Set([
             "Currency","EmploymentType","EngagementType","EnglishLevel","Seniority","WorkFormat",
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
+        
+        this.ExtractedCandidate = this.tb.classViewer("ExtractedCandidate", [
+          "role","seniority","skills","experienceYears","englishLevel",
+        ]);
         
         this.ExtractedLocation = this.tb.classViewer("ExtractedLocation", [
           "city","country",

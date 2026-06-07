@@ -1,6 +1,7 @@
 # reverse-ats — candidate→vacancy fit engine + gap analysis
 
-**Status:** in progress — §1 (`node_stats` view) shipped & verified
+**Status:** in progress — §1-4 shipped & verified (view, matcher+endpoints, CV
+ingestion); next: §5 matches-by-id + UI
 **Branch:** `feat/reverse-ats`
 **Sits atop:** ADR-0006 (skills are a ranking signal, not a filter), taxonomy-navigation, semantic-dedup
 **Date:** 2026-06-03 (rev 2026-06-06: scoring runs in SQL over a `node_stats` materialized view)
@@ -172,17 +173,23 @@ set, no CV. Each step independently testable.
    rows**, not the whole corpus. Testable with a hand-picked node_id array — no CV
    needed; compare against an in-process reference on the same data (kept as the
    correctness oracle, not the prod path).
-3. **Candidate extraction + storage.** New `ExtractCV` BAML reusing the vacancy
-   extractor's enums + node-resolution pipeline (`NodeResolverService.resolve`
-   already race-safe-creates `NEW` nodes). Output: skill node_ids, role,
-   seniority, english, experience_years. Store a `candidates` row (extracted JSON,
-   role/seniority/english, optional embedding for later) + `candidate_nodes`
-   (mirror of `vacancy_nodes`, presence-only — no `is_required`). Unknown skills
-   grow the taxonomy as `NEW` (CV-origin tag deferred, see open Q). *Schema
-   designed on the branch.*
-4. **CV upload.** `POST /cv` (`FileInterceptor`; `@nestjs/platform-express` is
-   already a dep): PDF → text → `ExtractCV` → store → return `{ candidateId }`.
-   No S3 in MVP — persist only the extracted JSON.
+3. **[DONE — migration `0016`, `apps/etl/src/03-discovery/cv/`]** `ExtractCandidate`
+   BAML (`extract-candidate.baml`, reuses the vacancy `Seniority`/`EnglishLevel`/
+   `Skills` types) → `CandidateExtractor`. Stored as `candidates` (contentHash,
+   sourceText, extracted JSON, role/seniority/english/exp) + `candidate_nodes`
+   (presence-only). **Decision flip vs original plan:** skills are **resolve-only**
+   (`RankingService.resolveSkills`), NOT created as `NEW` — an unknown CV skill is
+   `df=0` → weight 0 → inert for matching anyway, so creating it only pollutes the
+   taxonomy; unmatched skills are kept as strings in `extracted.unmatchedSkills`.
+   Verified on the real CV: role=Full Stack Developer, SENIOR, 15/15 matched.
+4. **[DONE]** `POST /cv` — `FileInterceptor` accepts a PDF/.txt file (PDF→text via
+   `unpdf`, pure-JS) **or** raw `{text}`; `GET /cv/:id` reads back the stored
+   extraction. **Idempotency:** `sha256` of normalized text = `content_hash`
+   (unique) → re-upload returns the existing candidate, skips the LLM (verified:
+   2nd POST and the .txt-file upload both `reused:true`, same id). No S3 (JSON only).
+   **Watch:** the `Skills` class caps required≤10 + optional≤5, so a CV yields only
+   ~15 skills (vs 51 hand-listed) — likely too tight for candidates; relax the cap
+   for `ExtractCandidate` if ranking comes out thin.
 5. **Matches API.** `GET /cv/:id/matches` → reads `candidate_nodes` → matcher.
    Query parsing mirrors `feed.controller`. Sort by relevance, tier by fit.
 6. **Minimal UI.** Upload box → ranked list reusing the feed card + diff chips
@@ -242,10 +249,11 @@ together; §6 is the shell.
 
 ## Open (decide on the branch)
 
-- **CV-origin nodes:** new `NEW` node tagged CV-origin vs a flag/column on
-  `nodes` — leaning a `source`/origin marker on `nodes` over a parallel table.
-- **Candidate ↔ user link:** tie a candidate to a waitlist `users` row, or keep
-  anonymous in MVP.
+- ~~**CV-origin nodes**~~ **RESOLVED:** moot — CV skills are resolve-only (never
+  create nodes), so there's nothing to tag. Unmatched skills live as strings on
+  the candidate, not in `nodes`.
+- ~~**Candidate ↔ user link**~~ **RESOLVED (MVP):** anonymous — no `users` link.
+  Revisit with profile-persistence (How-we-fast-track §3).
 
 ## Out of scope (v1)
 
