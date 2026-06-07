@@ -7,12 +7,13 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { b } from "../../baml_client";
 import type { ExtractedCandidate } from "../../baml_client";
+import type { CandidateExtractorPort } from "./candidate-extractor.port";
 
 // CV → structured candidate via BAML (mirror of BamlVacancyExtractor). Feeds the
 // LLM the same VERIFIED role catalog so a candidate's role lands on a canonical
 // name when one fits.
 @Injectable()
-export class CandidateExtractor {
+export class BamlCandidateExtractor implements CandidateExtractorPort {
   private cache: { roles: string; domains: string; expiresAt: number } | null =
     null;
 

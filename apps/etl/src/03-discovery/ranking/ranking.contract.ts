@@ -1,7 +1,9 @@
 import type { Seniority, WorkFormat } from "../../platform/shared/contract";
+import type { VacancyDto } from "../feed/feed.contract";
 
 // reverse-ATS matcher contract — see md/journal/migrations/reverse-ats.md (§2).
-// Two axes per card: Fit (coverage tier) + Relevance (Σ IDF weight, the sort key).
+// A ranked card = the full feed VacancyDto + a personalized match overlay:
+// Fit (coverage tier) + Relevance (Σ IDF weight, the sort key) + skill diff.
 
 export type FitTier = "STRONG" | "GOOD" | "STRETCH";
 
@@ -16,18 +18,23 @@ export interface ResolveResult {
   unmatched: string[]; // input skills with no SKILL node (taxonomy/extraction gap)
 }
 
+export interface FitInfo {
+  tier: FitTier;
+  matchedRequired: number;
+  requiredTotal: number;
+}
+
+export interface SkillDiff {
+  have: SkillRef[]; // ✅ candidate skills the job wants (weight desc)
+  missing: SkillRef[]; // ❌ required skills the candidate lacks (weight desc)
+  bonus: SkillRef[]; // ➕ candidate skills the job doesn't ask for (weight desc)
+}
+
 export interface RankedVacancy {
-  id: string;
-  title: string;
-  company: string | null;
-  seniority: Seniority | null;
+  vacancy: VacancyDto;
   relevance: number; // Σ weight over overlap — the sort key
-  fit: { tier: FitTier; matchedRequired: number; requiredTotal: number };
-  diff: {
-    have: SkillRef[]; // ✅ candidate skills the job wants (weight desc)
-    missing: SkillRef[]; // ❌ required skills the candidate lacks (weight desc)
-    bonus: SkillRef[]; // ➕ candidate skills the job doesn't ask for (weight desc)
-  };
+  fit: FitInfo;
+  diff: SkillDiff;
 }
 
 export interface MatchFilters {

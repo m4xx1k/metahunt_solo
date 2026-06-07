@@ -5,6 +5,7 @@ import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
+import { FeedService } from "../feed/feed.service";
 import {
   fitTier,
   type MatchFilters,
@@ -14,14 +15,18 @@ import {
   type SkillRef,
 } from "./ranking.contract";
 
-// reverse-ATS matcher (md/journal/migrations/reverse-ats.md §2). Two responsibilities:
-//   1. resolveSkills — plain-text CV skills → SKILL node ids (exact canonical or
-//      alias match, NEW + VERIFIED, HIDDEN excluded to mirror node_stats).
-//   2. match — OR-overlap ranking: SUM(node_stats.weight) = relevance, required
-//      coverage = fit tier, plus the per-page ✅/❌/➕ skill diff.
+// reverse-ATS matcher (md/journal/migrations/reverse-ats.md §2).
+//   resolveSkills — plain-text skills → SKILL node ids (canonical+alias, NEW +
+//     VERIFIED, HIDDEN excluded to mirror node_stats).
+//   match / rankByRefs — OR-overlap ranking: SUM(node_stats.weight) = relevance,
+//     required coverage = fit tier, per-page ✅/❌/➕ diff, hydrated into the
+//     full feed VacancyDto so a ranked card is identical to a feed card.
 @Injectable()
 export class RankingService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly feed: FeedService,
+  ) {}
 
   async resolveSkills(skills: string[]): Promise<ResolveResult> {
     const cleaned = [...new Set(skills.map((s) => s.trim()).filter(Boolean))];
@@ -84,6 +89,7 @@ export class RankingService {
     return { matched, unmatched };
   }
 
+  // Rank for plain-text skills (the demo / mock-candidate path).
   async match(
     skills: string[],
     filters: MatchFilters,
@@ -91,6 +97,17 @@ export class RankingService {
     pageSize: number,
   ): Promise<MatchResponse> {
     const resolved = await this.resolveSkills(skills);
+    return this.rankByRefs(resolved, filters, page, pageSize);
+  }
+
+  // Rank for already-resolved skills (the stored-candidate path: GET
+  // /cv/:id/matches passes candidate_nodes refs + the unmatched strings).
+  async rankByRefs(
+    resolved: ResolveResult,
+    filters: MatchFilters,
+    page: number,
+    pageSize: number,
+  ): Promise<MatchResponse> {
     const nodeIds = resolved.matched.map((m) => m.id);
     if (nodeIds.length === 0) {
       return { resolved, items: [], page, pageSize, total: 0 };
@@ -107,13 +124,7 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    const ranked = await this.db.execute<{
-      id: string;
-      title: string;
-      company: string | null;
-      seniority: string | null;
-      relevance: number;
-    }>(sql`
+    const ranked = await this.db.execute<{ id: string; relevance: number }>(sql`
       WITH cand(node_id) AS (VALUES ${cand}),
       scored AS (
         SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance
@@ -122,11 +133,9 @@ export class RankingService {
         JOIN node_stats ns ON ns.node_id = vn.node_id
         GROUP BY vn.vacancy_id
       )
-      SELECT v.id::text AS id, v.title, comp.name AS company,
-             v.seniority::text AS seniority, s.relevance
+      SELECT v.id::text AS id, s.relevance
       FROM scored s
       JOIN vacancies v ON v.id = s.id
-      LEFT JOIN companies comp ON comp.id = v.company_id
       WHERE ${where}
       ORDER BY s.relevance DESC, v.id
       LIMIT ${pageSize} OFFSET ${offset}
@@ -145,25 +154,27 @@ export class RankingService {
     `);
     const total = totalRes.rows[0]?.count ?? 0;
 
-    const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
+    const items = await this.buildItems(
+      ranked.rows,
+      candIds,
+      resolved.matched,
+    );
     return { resolved, items, page, pageSize, total };
   }
 
-  // Per-page diff (tracker: computed for the page's ~20 rows, not the corpus).
+  // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
+  // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: {
-      id: string;
-      title: string;
-      company: string | null;
-      seniority: string | null;
-      relevance: number;
-    }[],
+    rows: { id: string; relevance: number }[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
     if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+    const dtos = await this.feed.hydrateByIds(ids);
+
     const pageIds = sql.join(
-      rows.map((r) => sql`${r.id}::uuid`),
+      ids.map((id) => sql`${id}::uuid`),
       sql`, `,
     );
     const skillRows = await this.db.execute<{
@@ -192,7 +203,10 @@ export class RankingService {
     }
     const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
 
-    return rows.map((row) => {
+    const items: RankedVacancy[] = [];
+    for (const row of rows) {
+      const vacancy = dtos.get(row.id);
+      if (!vacancy) continue; // hydrate can't lose a row, but stay defensive
       const vskills = byVacancy.get(row.id) ?? [];
       const vacancyNodeIds = new Set(vskills.map((s) => s.node_id));
       const have: SkillRef[] = [];
@@ -210,20 +224,22 @@ export class RankingService {
         }
       }
       const bonus = candidate.filter((c) => !vacancyNodeIds.has(c.id));
-      return {
-        id: row.id,
-        title: row.title,
-        company: row.company,
-        seniority: row.seniority as RankedVacancy["seniority"],
+      items.push({
+        vacancy,
         relevance: row.relevance,
-        fit: { tier: fitTier(matchedRequired, requiredTotal), matchedRequired, requiredTotal },
+        fit: {
+          tier: fitTier(matchedRequired, requiredTotal),
+          matchedRequired,
+          requiredTotal,
+        },
         diff: {
           have: have.sort(byWeight),
           missing: missing.sort(byWeight),
           bonus: [...bonus].sort(byWeight),
         },
-      };
-    });
+      });
+    }
+    return items;
   }
 
   // ELIGIBLE_VACANCY mirrors the feed (only VERIFIED-role vacancies are

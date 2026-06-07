@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Currency,  EmploymentType,  EngagementType,  EnglishLevel,  ExtractedCandidate,  ExtractedLocation,  ExtractedVacancy,  Salary,  Seniority,  Skills,  WorkFormat } from "./types"
+import type {  CandidateSkills,  Currency,  EmploymentType,  EngagementType,  EnglishLevel,  ExtractedCandidate,  ExtractedLocation,  ExtractedVacancy,  Salary,  Seniority,  Skills,  WorkFormat } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -36,10 +36,14 @@ export interface StreamState<T> {
 }
 
 export namespace partial_types {
+    export interface CandidateSkills {
+      required: string[]
+      optional: string[]
+    }
     export interface ExtractedCandidate {
       role?: string | null
       seniority?: types.Seniority | null
-      skills?: Skills | null
+      skills?: CandidateSkills | null
       experienceYears?: number | null
       englishLevel?: types.EnglishLevel | null
     }

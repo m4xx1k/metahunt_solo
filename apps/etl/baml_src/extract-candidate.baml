@@ -3,6 +3,26 @@
 // (BAML types are global across baml_src). The TS type ExtractedCandidate is
 // generated into apps/etl/src/baml_client/types.ts.
 
+// A CV lists far more skills than a single vacancy asks for — use a wider cap
+// than the vacancy `Skills` class so matching has enough surface to rank on.
+class CandidateSkills {
+  required string[] @description(#"
+    Core hard technical skills the candidate clearly has hands-on experience
+    with (skills sections + technologies named across experience bullets).
+    Languages, frameworks, databases, cloud, infra tools. MAX 30 entries.
+    Use canonical English names as written in the Ukrainian IT market.
+
+    EXCLUDE: soft skills, generic categories, process methodologies
+    (Scrum/Agile/unit testing), universal protocols (HTTP/JSON/REST as a
+    concept), and tools every dev uses (git, terminal, IDE).
+    DEDUPLICATE forms (react + react.js → React; node + node.js → Node.js).
+  "#)
+  optional string[] @description(#"
+    Secondary / familiar-with skills mentioned in passing. Same EXCLUDE /
+    DEDUPLICATE rules. MAX 15 entries.
+  "#)
+}
+
 class ExtractedCandidate {
   role string? @description(#"
     Candidate's primary canonical role WITHOUT seniority prefix, inferred from
@@ -30,14 +50,10 @@ class ExtractedCandidate {
       4. null if it genuinely cannot be inferred.
   "#)
 
-  skills Skills @description(#"
+  skills CandidateSkills @description(#"
     Hard technical skills the candidate KNOWS, pulled from skills sections AND
-    from technologies named in their experience bullets.
-    `required` = core skills they clearly have hands-on experience with.
-    `optional` = skills mentioned in passing / familiar-with.
-    Same EXCLUDE / DEDUPLICATE rules as vacancies (no soft skills, no
-    methodologies, no universal protocols, no git/IDE). Use canonical English
-    names as written in the Ukrainian IT market.
+    from technologies named in their experience bullets. Be generous on
+    `required` — capture the candidate's real stack, not just the headline few.
   "#)
 
   experienceYears float? @description(#"

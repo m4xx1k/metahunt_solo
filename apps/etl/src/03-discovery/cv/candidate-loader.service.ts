@@ -7,7 +7,11 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { RankingService } from "../ranking/ranking.service";
-import { CandidateExtractor } from "./candidate.extractor";
+import type { SkillRef } from "../ranking/ranking.contract";
+import {
+  CANDIDATE_EXTRACTOR,
+  type CandidateExtractorPort,
+} from "./candidate-extractor.port";
 import type {
   CandidateNodeRef,
   CandidateView,
@@ -22,7 +26,7 @@ import type {
 export class CandidateLoaderService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    private readonly extractor: CandidateExtractor,
+    @Inject(CANDIDATE_EXTRACTOR) private readonly extractor: CandidateExtractorPort,
     private readonly ranking: RankingService,
   ) {}
 
@@ -89,6 +93,42 @@ export class CandidateLoaderService {
     });
 
     return this.buildResult(id, false);
+  }
+
+  // Skill inputs for ranking a stored candidate (GET /cv/:id/matches): resolved
+  // nodes with their IDF weight + the unmatched strings kept on the candidate.
+  async getMatchInput(
+    id: string,
+  ): Promise<{ matched: SkillRef[]; unmatched: string[] }> {
+    const rows = await this.db
+      .select({ extracted: schema.candidates.extracted })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, id));
+    if (!rows[0]) throw new NotFoundException(`candidate ${id} not found`);
+
+    const matched = await this.db
+      .select({
+        id: schema.nodes.id,
+        name: schema.nodes.canonicalName,
+        weight: schema.nodeStats.weight,
+      })
+      .from(schema.candidateNodes)
+      .innerJoin(schema.nodes, eq(schema.nodes.id, schema.candidateNodes.nodeId))
+      .leftJoin(
+        schema.nodeStats,
+        eq(schema.nodeStats.nodeId, schema.candidateNodes.nodeId),
+      )
+      .where(eq(schema.candidateNodes.candidateId, id));
+
+    const extracted = rows[0].extracted as Record<string, unknown>;
+    return {
+      matched: matched.map((m) => ({
+        id: m.id,
+        name: m.name,
+        weight: m.weight ?? 0,
+      })),
+      unmatched: (extracted.unmatchedSkills as string[]) ?? [],
+    };
   }
 
   async getById(id: string): Promise<CandidateView> {

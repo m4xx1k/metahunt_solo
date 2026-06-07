@@ -15,6 +15,7 @@ export function makeTestDb(): { db: DrizzleDB; pool: Pool } {
 export async function truncateAll(db: DrizzleDB): Promise<void> {
   await db.execute(
     sql`TRUNCATE TABLE
+      candidate_nodes, candidates,
       vacancy_nodes, vacancies, node_aliases, nodes,
       company_identifiers, companies, rss_records, rss_ingests, sources
       RESTART IDENTITY CASCADE`,

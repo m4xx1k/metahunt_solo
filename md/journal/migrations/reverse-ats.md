@@ -1,7 +1,8 @@
 # reverse-ats — candidate→vacancy fit engine + gap analysis
 
-**Status:** in progress — §1-4 shipped & verified (view, matcher+endpoints, CV
-ingestion); next: §5 matches-by-id + UI
+**Status:** MVP working end-to-end — §1-6 shipped, tested & verified (IDF view,
+matcher+endpoints, CV ingestion, matches-by-id, presentable `/reverse-ats` page).
+Next: feedback loop + market-gap (How-we-fast-track below)
 **Branch:** `feat/reverse-ats`
 **Sits atop:** ADR-0006 (skills are a ranking signal, not a filter), taxonomy-navigation, semantic-dedup
 **Date:** 2026-06-03 (rev 2026-06-06: scoring runs in SQL over a `node_stats` materialized view)
@@ -187,13 +188,29 @@ set, no CV. Each step independently testable.
    extraction. **Idempotency:** `sha256` of normalized text = `content_hash`
    (unique) → re-upload returns the existing candidate, skips the LLM (verified:
    2nd POST and the .txt-file upload both `reused:true`, same id). No S3 (JSON only).
-   **Watch:** the `Skills` class caps required≤10 + optional≤5, so a CV yields only
-   ~15 skills (vs 51 hand-listed) — likely too tight for candidates; relax the cap
-   for `ExtractCandidate` if ranking comes out thin.
-5. **Matches API.** `GET /cv/:id/matches` → reads `candidate_nodes` → matcher.
-   Query parsing mirrors `feed.controller`. Sort by relevance, tier by fit.
-6. **Minimal UI.** Upload box → ranked list reusing the feed card + diff chips
-   (✅/❌/➕) + tier badge. "Best match" sort becomes the default post-upload.
+   **Cap fixed:** a dedicated `CandidateSkills` class (required≤30 + optional≤15)
+   replaces the vacancy `Skills` for `ExtractCandidate` — the real PDF now yields
+   **44 matched** skills (was 15). The LLM extractor is a token seam
+   (`CANDIDATE_EXTRACTOR`) so tests stub it.
+5. **[DONE]** `GET /cv/:id/matches` — `loader.getMatchInput` reads
+   `candidate_nodes` (+ node_stats weight) → `RankingService.rankByRefs`. Query
+   parsing mirrors `feed.controller` (seniority/source/workFormat/page).
+6. **[DONE]** `/reverse-ats` page — hero + sample-profile picker + real CV upload
+   (PDF/TXT) → ranked list. **Cards now reuse the actual feed card**: the matcher
+   returns the full `VacancyDto` via the new `FeedService.hydrateByIds`, and
+   `PublicVacancyCard` was promoted to tier-2 `components/data/` (2nd consumer).
+   `MatchCard` = feed card + overlay (tier badge · relevance · ✅/❌/➕ diff).
+   First list is SSR'd from a sample profile.
+
+**Refactor / cleanup done this pass** (resolved the §1-review debt): the matcher
+no longer reimplements feed display — `FeedService` gained `selectVacancies`
+(shared base query) + `hydrateByIds`; `RankingService.match` now wraps
+`rankByRefs` so the skills-path and stored-candidate-path share one ranker.
+
+**Tests:** unit (`fitTier`, `extractText`) + integration (`ranking.int`,
+`candidate-loader.int` — stubbed extractor, real db: IDF order, fit tiers,
+ELIGIBLE gate, resolve canonical/alias, idempotency, resolve-only, hash
+normalization). Full suite green: 214 unit + 12 int.
 
 Critical path: §1 → §2 (the risk) is fully independent of §3; §4-5 wire them
 together; §6 is the shell.

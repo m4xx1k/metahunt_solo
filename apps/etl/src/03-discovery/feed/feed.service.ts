@@ -110,24 +110,72 @@ interface VacancyRow {
 const roleNode = alias(nodes, "role_node");
 const domainNode = alias(nodes, "domain_node");
 
+// VERIFIED-gated role/domain joins, shared by the list, count, and hydrate
+// queries. Module-level so selectVacancies and the count query reuse one defn.
+const roleJoin = and(
+  eq(roleNode.id, vacancies.roleNodeId),
+  eq(roleNode.status, "VERIFIED"),
+);
+const domainJoin = and(
+  eq(domainNode.id, vacancies.domainNodeId),
+  eq(domainNode.status, "VERIFIED"),
+);
+
 @Injectable()
 export class FeedService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async search(params: FeedSearchParams): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
-
-    const roleJoin = and(
-      eq(roleNode.id, vacancies.roleNodeId),
-      eq(roleNode.status, "VERIFIED"),
-    );
-    const domainJoin = and(
-      eq(domainNode.id, vacancies.domainNodeId),
-      eq(domainNode.status, "VERIFIED"),
-    );
     const where = buildWhere(params);
 
-    const rows = (await this.db
+    const rows = (await this.selectVacancies(where)
+      // Freshest by publish date first (bump = alive). Fall back to loadedAt when
+      // publishedAt is null; id as a stable tiebreaker for offset pagination.
+      .orderBy(
+        desc(sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})`),
+        desc(vacancies.id),
+      )
+      .limit(params.pageSize)
+      .offset(offset)) as VacancyRow[];
+
+    const totalRow = await this.db
+      .select({ value: count() })
+      .from(vacancies)
+      .leftJoin(roleNode, roleJoin)
+      .where(where);
+    const total = totalRow[0]?.value ?? 0;
+
+    const skillsByVacancy = await this.fetchSkills(
+      rows.map((r) => r.id),
+      params.includeAllSkills === true,
+    );
+
+    return {
+      items: rows.map((row) => toDto(row, skillsByVacancy.get(row.id))),
+      page: params.page,
+      pageSize: params.pageSize,
+      total,
+    };
+  }
+
+  // Hydrate full vacancy DTOs by id — feed-identical cards for the reverse-ATS
+  // matcher. Verified skills only (the feed default). Returned as a map so the
+  // caller keeps its own ordering (the matcher orders by relevance).
+  async hydrateByIds(ids: string[]): Promise<Map<string, VacancyDto>> {
+    const out = new Map<string, VacancyDto>();
+    if (ids.length === 0) return out;
+    const rows = (await this.selectVacancies(
+      inArray(vacancies.id, ids),
+    )) as VacancyRow[];
+    const skills = await this.fetchSkills(ids, false);
+    for (const row of rows) out.set(row.id, toDto(row, skills.get(row.id)));
+    return out;
+  }
+
+  // Base list projection + joins; order/limit/offset are the caller's to add.
+  private selectVacancies(where: SQL | undefined) {
+    return this.db
       .select({
         id: vacancies.id,
         externalId: vacancies.externalId,
@@ -174,34 +222,7 @@ export class FeedService {
       .leftJoin(companies, eq(companies.id, vacancies.companyId))
       .leftJoin(roleNode, roleJoin)
       .leftJoin(domainNode, domainJoin)
-      .where(where)
-      // Freshest by publish date first (bump = alive). Fall back to loadedAt when
-      // publishedAt is null; id as a stable tiebreaker for offset pagination.
-      .orderBy(
-        desc(sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})`),
-        desc(vacancies.id),
-      )
-      .limit(params.pageSize)
-      .offset(offset)) as VacancyRow[];
-
-    const totalRow = await this.db
-      .select({ value: count() })
-      .from(vacancies)
-      .leftJoin(roleNode, roleJoin)
       .where(where);
-    const total = totalRow[0]?.value ?? 0;
-
-    const skillsByVacancy = await this.fetchSkills(
-      rows.map((r) => r.id),
-      params.includeAllSkills === true,
-    );
-
-    return {
-      items: rows.map((row) => toDto(row, skillsByVacancy.get(row.id))),
-      page: params.page,
-      pageSize: params.pageSize,
-      total,
-    };
   }
 
   /**

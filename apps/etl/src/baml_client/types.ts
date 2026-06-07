@@ -93,10 +93,16 @@ export enum WorkFormat {
   HYBRID = "HYBRID",
 }
 
+export interface CandidateSkills {
+  required: string[]
+  optional: string[]
+  
+}
+
 export interface ExtractedCandidate {
   role?: string | null
   seniority?: Seniority | null
-  skills: Skills
+  skills: CandidateSkills
   experienceYears?: number | null
   englishLevel?: EnglishLevel | null
   
