@@ -19,7 +19,12 @@ export function CandidateProfile({
   unmatched: string[];
   totalVacancies: number;
 }) {
-  const skills = [...matched].sort((a, b) => b.weight - a.weight);
+  // Popular skills first: a lower IDF weight means a higher df — more vacancies
+  // want it. weight 0 = the skill is on no vacancy (df=0), so it's not popular,
+  // just unknown → push it to the end rather than the front.
+  const skills = [...matched].sort(
+    (a, b) => (a.weight || Infinity) - (b.weight || Infinity),
+  );
   const SHOWN = 24;
   const extra = skills.length - SHOWN;
 

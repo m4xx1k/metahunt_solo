@@ -325,10 +325,12 @@ The `/reverse-ats` page restructured to the feed's proven shape:
   reused verbatim), and `Section`. The flat top filter bar is gone. Filter model
   (state + enum→label option sets) extracted to `_components/filter-model.ts`.
 - **Extraction display.** New `CandidateProfile` (a styled right-rail panel on
-  lg+, first thing on mobile) surfaces what the engine understood — role +
+  xl+, first thing when stacked) surfaces what the engine understood — role +
   seniority (uploaded CV), matched/vacancy stat counters, resolved skills as
-  chips (IDF-sorted), and unmatched strings — so the user sanity-checks before
-  trusting the rank. Replaces the old one-line resolved summary.
+  chips (sorted popular-first — low IDF weight = high df), and unmatched strings
+  — so the user sanity-checks before trusting the rank. The 3-col layout (filters
+  · results · profile) needs xl; below it everything stacks (cramped thirds read
+  worse than one column). Replaces the old one-line resolved summary.
 - **Polish.** Sticky blurred header, slimmer hero, three-column layout (filters ·
   results · CV profile) collapsing to a sensible mobile stack, improved
   empty/error states; responsive via the feed's grid + the Section accordion.

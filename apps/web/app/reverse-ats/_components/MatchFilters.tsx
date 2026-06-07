@@ -55,7 +55,7 @@ export function MatchFilters({
         type="button"
         onClick={() => setMobileOpen((v) => !v)}
         aria-expanded={mobileOpen}
-        className="flex items-center justify-between border border-border bg-bg-card px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent lg:hidden"
+        className="flex items-center justify-between border border-border bg-bg-card px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent xl:hidden"
       >
         <span>
           &gt; фільтри{count > 0 ? ` · ${count}` : ""}
@@ -63,7 +63,7 @@ export function MatchFilters({
         <span aria-hidden>{mobileOpen ? "[− сховати]" : "[+ показати]"}</span>
       </button>
 
-      <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
+      <div className={cn("flex-col gap-3 xl:flex", mobileOpen ? "flex" : "hidden")}>
         <aside className="flex flex-col border border-border bg-bg-card">
           <EnumSection
             title="рівень"

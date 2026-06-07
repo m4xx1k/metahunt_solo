@@ -222,10 +222,11 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         </div>
       </section>
 
-      {/* FILTERS · RESULTS · CV PROFILE (3-col on lg+; profile shows first on mobile) */}
+      {/* FILTERS · RESULTS · CV PROFILE (3-col on xl+; stacks below — at <xl the
+          single-column layout reads better than cramped thirds). */}
       <section className="px-6 pb-20 pt-8 lg:px-12">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)_300px] lg:items-start">
-          <div className="lg:sticky lg:top-24">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_300px] xl:items-start">
+          <div className="xl:sticky xl:top-24">
             <MatchFilters
               filters={filters}
               onChange={onFilterChange}
@@ -269,9 +270,9 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
             ) : null}
           </div>
 
-          {/* CV profile: right rail on lg+, first thing on mobile */}
+          {/* CV profile: right rail on xl+, first thing when stacked */}
           {data ? (
-            <div className="order-first lg:order-none lg:sticky lg:top-24">
+            <div className="order-first xl:order-none xl:sticky xl:top-24">
               <CandidateProfile
                 title={profileTitle}
                 role={source.kind === "cv" ? source.info.role : null}
