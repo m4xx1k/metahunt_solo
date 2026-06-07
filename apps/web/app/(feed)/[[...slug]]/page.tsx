@@ -87,6 +87,7 @@ export default async function TrackPage({
   const workFormat = coerceWorkFormat(asString(sp.workFormat));
   const hasTestAssignment = coerceBool(asString(sp.test));
   const hasReservation = coerceBool(asString(sp.reservation));
+  const hasDuplicates = asString(sp.dupes) === "true" ? true : undefined;
 
   const [aggregates, { tracks }] = await Promise.all([
     aggregatesApi.get(),
@@ -147,6 +148,7 @@ export default async function TrackPage({
           workFormat,
           hasTestAssignment,
           hasReservation,
+          hasDuplicates,
         })
       : { items: [], page, pageSize: PAGE_SIZE, total: 0 };
 

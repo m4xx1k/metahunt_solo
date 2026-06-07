@@ -161,6 +161,9 @@ export interface FeedQuery {
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
 
+  /** When true, show ONLY deduped vacancies (canonical card of a collapsed gold group). */
+  hasDuplicates?: boolean;
+
   /**
    * When false (default), exclude vacancies that lack a VERIFIED role.
    * When true, also surface vacancies whose role is null or unverified

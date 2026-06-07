@@ -17,6 +17,7 @@ import {
 } from "./filters";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
+import { DedupeToggle } from "./DedupeToggle";
 import { toFilterAggregates } from "./to-filter-aggregates";
 import { useUrlFilters } from "./use-url-filters";
 
@@ -96,6 +97,7 @@ export function MarketFilters({
       </button>
 
       <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
+        <DedupeToggle />
         {trackMode ? null : <ActiveFiltersBar api={api} agg={agg} />}
         <aside className="flex flex-col border border-border bg-bg-card">
           {trackMode ? (

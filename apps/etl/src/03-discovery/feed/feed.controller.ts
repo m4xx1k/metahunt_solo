@@ -46,6 +46,7 @@ export class FeedController {
     // Appended (not grouped with roleId) to keep the positional argument
     // order stable for existing callers/tests.
     @Query("roleIds") rawRoleIds?: string | string[],
+    @Query("hasDuplicates") rawHasDuplicates?: string,
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
@@ -62,6 +63,7 @@ export class FeedController {
       workFormat: parseEnum("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
       hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment, { numeric: true }),
       hasReservation: parseBool("hasReservation", rawHasReservation, { numeric: true }),
+      hasDuplicates: parseBool("hasDuplicates", rawHasDuplicates, { numeric: true }),
       page: parsePage(rawPage),
       pageSize: parsePageSize(rawPageSize),
       includeRoleless: parseBool("includeRoleless", rawIncludeRoleless, { numeric: true }),

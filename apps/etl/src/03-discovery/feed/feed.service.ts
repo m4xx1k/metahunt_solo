@@ -71,6 +71,8 @@ export interface FeedSearchParams {
   hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
+  /** When true, return ONLY the canonical card of a collapsed gold group (>1 member). */
+  hasDuplicates?: boolean;
   /** Only vacancies first loaded after this instant (the digest "new since" window). */
   loadedAfter?: Date;
   /** Drop these vacancy ids from the result (digest anti-join: already-sent). */
@@ -359,6 +361,18 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   // join to have matched. The join itself enforces VERIFIED, so this also
   // excludes vacancies whose role is unverified.
   if (params.includeRoleless !== true) conds.push(isNotNull(roleNode.id));
+  // "Only duplicates" toggle: restrict to the canonical card of a collapsed
+  // gold group — same condition that makes `duplicateCount` non-null. Lets the
+  // demo show just the deduped cross-source vacancies.
+  if (params.hasDuplicates === true) {
+    conds.push(
+      and(
+        eq(uniqueVacancies.canonicalVacancyId, vacancies.id),
+        gt(uniqueVacancies.vacancyCount, 1),
+        sql`NOT ${groupHasConfirmedEdge}`,
+      )!,
+    );
+  }
   // Gold collapse: drop a non-canonical member only when its whole group is
   // gold-tier. Keep singletons, every canonical member, and every member of a
   // confirmed (non-gold) group. Safe pre-resolve: all unique_vacancy_id are
