@@ -1,7 +1,8 @@
 import { apiPost } from "./client";
-import type { Seniority } from "./vacancies";
+import type { Seniority, VacancyDto } from "./vacancies";
 
 // reverse-ATS matcher client — mirrors apps/etl .../ranking/ranking.contract.ts.
+// A ranked card = the full feed VacancyDto + a personalized match overlay.
 
 export interface SkillRef {
   id: string;
@@ -12,10 +13,7 @@ export interface SkillRef {
 export type FitTier = "STRONG" | "GOOD" | "STRETCH";
 
 export interface RankedVacancy {
-  id: string;
-  title: string;
-  company: string | null;
-  seniority: Seniority | null;
+  vacancy: VacancyDto;
   relevance: number;
   fit: { tier: FitTier; matchedRequired: number; requiredTotal: number };
   diff: { have: SkillRef[]; missing: SkillRef[]; bonus: SkillRef[] };

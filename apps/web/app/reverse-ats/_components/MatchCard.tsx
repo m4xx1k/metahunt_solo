@@ -1,0 +1,75 @@
+import { PublicVacancyCard } from "@/components/data/PublicVacancyCard";
+import type { FitTier, RankedVacancy, SkillRef } from "@/lib/api/ranking";
+
+const TIER: Record<FitTier, { cls: string; label: string }> = {
+  STRONG: { cls: "border-success bg-success text-bg", label: "strong fit" },
+  GOOD: { cls: "border-accent text-accent", label: "good fit" },
+  STRETCH: { cls: "border-text-muted text-text-muted", label: "stretch" },
+};
+
+// One ranked vacancy: a match overlay (fit tier · relevance · ✅/❌/➕ diff)
+// stacked on top of the exact feed card, so the row reads like the feed plus
+// a personalized verdict. The strips use border-b-0 to merge into the card's
+// own top border into one continuous box.
+export function MatchCard({ item, rank }: { item: RankedVacancy; rank: number }) {
+  const t = TIER[item.fit.tier];
+  return (
+    <div className="flex flex-col">
+      <div className="flex flex-wrap items-center gap-3 border border-b-0 border-border bg-bg-card px-6 py-3 font-mono text-xs">
+        <span className="text-text-muted">#{rank}</span>
+        <span className={`border px-2 py-[2px] font-bold uppercase tracking-wider ${t.cls}`}>
+          {t.label}
+        </span>
+        <span className="text-text-secondary">
+          required <span className="text-text-primary">{item.fit.matchedRequired}/{item.fit.requiredTotal}</span>
+        </span>
+        <span className="ml-auto text-accent">
+          relevance <span className="font-bold">{item.relevance.toFixed(1)}</span>
+        </span>
+      </div>
+
+      {(item.diff.have.length > 0 ||
+        item.diff.missing.length > 0 ||
+        item.diff.bonus.length > 0) && (
+        <div className="flex flex-col gap-2 border border-b-0 border-border bg-bg-card px-6 pb-4 pt-1">
+          <SkillLine sign="✅" label="ти маєш" cls="border-success text-success" skills={item.diff.have} />
+          <SkillLine sign="❌" label="бракує" cls="border-danger text-danger" skills={item.diff.missing} max={8} />
+          <SkillLine sign="➕" label="бонус" cls="border-border text-text-muted" skills={item.diff.bonus} max={8} />
+        </div>
+      )}
+
+      <PublicVacancyCard vacancy={item.vacancy} />
+    </div>
+  );
+}
+
+function SkillLine({
+  sign,
+  label,
+  cls,
+  skills,
+  max = 14,
+}: {
+  sign: string;
+  label: string;
+  cls: string;
+  skills: SkillRef[];
+  max?: number;
+}) {
+  if (skills.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="w-20 shrink-0 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+        {sign} {label}
+      </span>
+      {skills.slice(0, max).map((s) => (
+        <span key={s.id} className={`border px-1.5 py-[1px] font-mono text-[11px] ${cls}`}>
+          {s.name.toLowerCase()}
+        </span>
+      ))}
+      {skills.length > max ? (
+        <span className="font-mono text-[11px] text-text-muted">+{skills.length - max}</span>
+      ) : null}
+    </div>
+  );
+}
