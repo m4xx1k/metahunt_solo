@@ -71,6 +71,15 @@ pnpm lint:web    # lint web
 
 The dev port for web is set in this package's `dev` script (currently `next dev --port=4000`); change it there if it conflicts. ETL listens on `PORT` from `.env` (default 3000).
 
+### Dev-server noise (hydration / browser logs)
+
+Browser extensions (Grammarly, password managers, dark-reader…) mutate `<html>`/`<body>` attributes before React hydrates, producing spurious hydration-mismatch errors. Two guards keep the dev terminal clean:
+
+- `app/layout.tsx` sets `suppressHydrationWarning` on `<html>` **and** `<body>` — silences the root cause. It's *shallow* (only those two elements' own attributes), so real mismatches deeper in the tree still surface.
+- `next.config.ts` sets `logging.browserToTerminal: false` (Next 16.2+) so client console output is never forwarded to `pnpm dev:web`, regardless of the upstream default.
+
+If you ever need client logs in the terminal for a debugging session, flip `browserToTerminal` to `'warn'`/`true` temporarily — don't commit it.
+
 ## Deploy
 
 Vercel builds from `apps/web/` of this monorepo (Root Directory setting). The Ignored Build Step skips Vercel when a commit doesn't touch `apps/web/`, `libs/`, or root manifests. Setup + domain-migration procedure: [`md/runbook/vercel-deploy.md`](../../md/runbook/vercel-deploy.md).

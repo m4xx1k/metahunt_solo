@@ -25,9 +25,15 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // suppressHydrationWarning on <html>/<body>: browser extensions (Grammarly,
+  // password managers, dark-reader…) inject attributes on these root elements
+  // before React hydrates, which otherwise logs a hydration-mismatch error on
+  // every load. Shallow by design — silences only these two elements' own
+  // attributes, never real mismatches inside the tree.
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(
         "h-full antialiased",
         inter.variable,
@@ -35,7 +41,10 @@ export default function RootLayout({
         jetbrainsMono.variable,
       )}
     >
-      <body className="min-h-full flex flex-col bg-bg text-text-primary">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-bg text-text-primary"
+      >
         <ClerkProvider afterSignOutUrl="/">
           <PostHogProvider>
             <VercelAnalytics>
