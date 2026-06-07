@@ -130,6 +130,64 @@ export interface VacancyDto {
 
   salary: VacancySalary;
   locations: string[];
+
+  /** Dedup group id (`unique_vacancies.id`), or null. Drives the "show group" drawer. */
+  uniqueVacancyId: string | null;
+  /** Group size — non-null ONLY on the canonical card of a collapsed gold group (>1). */
+  duplicateCount: number | null;
+  /** Distinct sources in that group; non-null on the same rows as `duplicateCount`. */
+  duplicateSourceCount: number | null;
+}
+
+// ─────────────────────── Dedup group (drawer) ──────────────────────
+// Mirror of apps/etl/src/02-enrich/dedup/dedup.contract.ts. The "why merged"
+// reasons shown when a duplicate badge is expanded.
+
+export type DedupConfidence = "gold" | "confirmed";
+
+export interface DedupReason {
+  /** Cosine similarity at decision time (0..1). */
+  similarity: number;
+  matchedAgainstVacancyId: string;
+  prefilterMatches: {
+    role: boolean | null;
+    seniority: boolean | null;
+    workFormat: boolean | null;
+    company: boolean | null;
+    dateWindowDays: number;
+  };
+  confidence: DedupConfidence;
+  corroboration: {
+    /** Jaccard over required-skill ids (0..1). */
+    skillJaccard: number;
+    /** Jaccard over normalised title tokens (0..1). */
+    titleJaccard: number;
+    companyMatch: boolean;
+  };
+  embeddingModel: string;
+  decidedAt: string;
+}
+
+export interface DedupGroupMember {
+  vacancyId: string;
+  source: SourceRef;
+  externalId: string;
+  externalUrl: string | null;
+  title: string;
+  publishedAt: string | null;
+  isCanonical: boolean;
+  /** Similarity to group centroid; null on the canonical member. */
+  similarityToCentroid: number | null;
+  /** null on the canonical member. */
+  dedupReason: DedupReason | null;
+}
+
+export interface FeedDuplicateGroup {
+  id: string;
+  canonicalVacancyId: string;
+  vacancyCount: number;
+  sourceCount: number;
+  members: DedupGroupMember[];
 }
 
 // ───────────────────────── List endpoint ─────────────────────────
@@ -159,6 +217,8 @@ export interface ListVacanciesQuery {
   currency?: Currency;
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
+  /** When true, show ONLY deduped vacancies (canonical card of a collapsed gold group). */
+  hasDuplicates?: boolean;
 
   /** When false (default), exclude vacancies that lack a VERIFIED role. */
   includeRoleless?: boolean;
@@ -178,4 +238,7 @@ export interface ListVacanciesResponse {
 export const vacanciesApi = {
   list: (q: ListVacanciesQuery = {}) =>
     apiGet<ListVacanciesResponse>(`/feed${buildQs(q)}`),
+  /** Members + "why merged" reasons for one dedup group (the badge drawer). */
+  group: (uniqueVacancyId: string) =>
+    apiGet<FeedDuplicateGroup>(`/feed/group/${uniqueVacancyId}`),
 };

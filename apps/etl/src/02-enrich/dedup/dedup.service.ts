@@ -14,6 +14,7 @@ import {
 import type {
   DedupMetrics,
   DedupReason,
+  FeedDuplicateGroup,
   SourceBadge,
   UniqueVacanciesQuery,
   UniqueVacanciesResponse,
@@ -763,6 +764,54 @@ export class DedupService {
       metrics: await this.getMetrics(),
       items: groupRows.rows.map((g) => itemsById.get(g.id)!),
       pagination: { page, pageSize, total },
+    };
+  }
+
+  // Public, feed-facing single-group read — backs the "show duplicates" drawer
+  // on the main feed. Same member shape + "why merged" reasons as the operator
+  // dashboard, minus the metrics/pagination envelope. Returns null for an
+  // unknown id. Reuses fetchMembersForGroups so the projection never drifts.
+  async getGroupForFeed(
+    uniqueVacancyId: string,
+  ): Promise<FeedDuplicateGroup | null> {
+    const [grp] = await this.db
+      .select({
+        id: schema.uniqueVacancies.id,
+        canonicalVacancyId: schema.uniqueVacancies.canonicalVacancyId,
+        vacancyCount: schema.uniqueVacancies.vacancyCount,
+        sourceCount: schema.uniqueVacancies.sourceCount,
+      })
+      .from(schema.uniqueVacancies)
+      .where(eq(schema.uniqueVacancies.id, uniqueVacancyId))
+      .limit(1);
+    if (!grp) return null;
+
+    const members: UniqueVacancyMember[] = (
+      await this.fetchMembersForGroups([uniqueVacancyId])
+    )
+      .map((m) => ({
+        vacancyId: m.id,
+        source: m.source,
+        externalId: m.externalId,
+        externalUrl: m.externalUrl,
+        title: m.title,
+        publishedAt: m.publishedAt ? toDate(m.publishedAt).toISOString() : null,
+        isCanonical: m.id === grp.canonicalVacancyId,
+        similarityToCentroid: m.similarityToCentroid,
+        dedupReason: m.dedupReason,
+      }))
+      .sort((a, b) => {
+        if (a.isCanonical) return -1;
+        if (b.isCanonical) return 1;
+        return (b.similarityToCentroid ?? 0) - (a.similarityToCentroid ?? 0);
+      });
+
+    return {
+      id: grp.id,
+      canonicalVacancyId: grp.canonicalVacancyId,
+      vacancyCount: grp.vacancyCount,
+      sourceCount: grp.sourceCount,
+      members,
     };
   }
 

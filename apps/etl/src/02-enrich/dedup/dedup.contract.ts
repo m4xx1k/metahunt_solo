@@ -139,6 +139,19 @@ export interface UniqueVacancyListItem {
   members: UniqueVacancyMember[];
 }
 
+// ─────────────────── Feed-facing group view ────────────────────
+// Slim envelope for the public main-feed "show duplicates" drawer: just the
+// group identity, counters, and members with their merge reasons — no metrics
+// or pagination (a group is always returned whole).
+
+export interface FeedDuplicateGroup {
+  id: string;
+  canonicalVacancyId: string;
+  vacancyCount: number;
+  sourceCount: number;
+  members: UniqueVacancyMember[];
+}
+
 // ──────────────────────── Metrics panel ────────────────────────
 
 export interface DedupSimilarityBuckets {

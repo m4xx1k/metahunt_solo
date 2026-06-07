@@ -1,6 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { DedupService } from "../../02-enrich/dedup/dedup.service";
 import type { FeedResponse } from "./feed.contract";
 import { FeedController } from "./feed.controller";
 import { FeedService } from "./feed.service";
@@ -24,6 +25,7 @@ describe("FeedController", () => {
       providers: [
         { provide: FeedService, useValue: { search } },
         { provide: FacetsService, useValue: {} },
+        { provide: DedupService, useValue: {} },
       ],
     }).compile();
     controller = moduleRef.get(FeedController);

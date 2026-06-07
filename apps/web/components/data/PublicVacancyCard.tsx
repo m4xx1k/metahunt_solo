@@ -2,6 +2,7 @@ import { Fragment } from "react";
 
 import Link from "next/link";
 
+import { DuplicatesBadge } from "@/components/data/DuplicatesBadge";
 import { SeniorityBadge } from "@/components/data/SeniorityBadge";
 import {
   EMPLOYMENT_LABELS,
@@ -121,6 +122,13 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
           <h3 className="break-words font-mono text-xl font-bold leading-tight text-text-primary md:text-2xl">
             {role}
           </h3>
+          {v.duplicateCount && v.uniqueVacancyId ? (
+            <DuplicatesBadge
+              uniqueVacancyId={v.uniqueVacancyId}
+              count={v.duplicateCount}
+              sourceCount={v.duplicateSourceCount ?? 1}
+            />
+          ) : null}
         </div>
 
         {/* Mobile-only inline aside strip — replaces the desktop right column */}
