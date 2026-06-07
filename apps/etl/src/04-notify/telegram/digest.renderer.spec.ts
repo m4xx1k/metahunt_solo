@@ -29,6 +29,9 @@ function createVacancy(overrides: Partial<VacancyDto> = {}): VacancyDto {
     hasReservation: true,
     salary: { min: 4000, max: 6000, currency: "USD" },
     locations: ["Kyiv"],
+    uniqueVacancyId: null,
+    duplicateCount: null,
+    duplicateSourceCount: null,
     ...overrides,
   };
 }

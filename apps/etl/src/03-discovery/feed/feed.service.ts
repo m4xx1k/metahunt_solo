@@ -35,7 +35,18 @@ const {
   sources,
   companies,
   rssRecords,
+  uniqueVacancies,
 } = schema;
+
+// "This vacancy's dedup group still has a confirmed-only (non-gold) edge."
+// Gold collapse only fires when this is false — confirmed groups stay
+// expanded (every member is its own card). Reused by the collapse predicate
+// and the badge projection so the two never drift.
+const groupHasConfirmedEdge = sql`EXISTS (
+  SELECT 1 FROM vacancies m
+  WHERE m.unique_vacancy_id = ${vacancies.uniqueVacancyId}
+    AND m.dedup_reason->>'confidence' = 'confirmed'
+)`;
 
 // Postgres `uuid` columns reject malformed input at the driver level, so screen
 // path params before they reach a query.
@@ -106,6 +117,10 @@ interface VacancyRow {
   publishedAt: Date | null;
 
   rssRecordId: string;
+
+  uniqueVacancyId: string | null;
+  duplicateCount: number | null;
+  duplicateSourceCount: number | null;
 }
 
 const roleNode = alias(nodes, "role_node");
@@ -144,6 +159,7 @@ export class FeedService {
       .select({ value: count() })
       .from(vacancies)
       .leftJoin(roleNode, roleJoin)
+      .leftJoin(uniqueVacancies, eq(uniqueVacancies.id, vacancies.uniqueVacancyId))
       .where(where);
     const total = totalRow[0]?.value ?? 0;
 
@@ -216,6 +232,21 @@ export class FeedService {
         link: rssRecords.link,
         publishedAt: rssRecords.publishedAt,
         rssRecordId: rssRecords.id,
+
+        uniqueVacancyId: vacancies.uniqueVacancyId,
+        // Badge counters — non-null only on the canonical card of a collapsed
+        // gold group (>1 member). Confirmed groups stay expanded, so their
+        // members get null and render as plain cards.
+        duplicateCount: sql<number | null>`CASE
+          WHEN ${uniqueVacancies.canonicalVacancyId} = ${vacancies.id}
+            AND ${uniqueVacancies.vacancyCount} > 1
+            AND NOT ${groupHasConfirmedEdge}
+          THEN ${uniqueVacancies.vacancyCount} ELSE NULL END`,
+        duplicateSourceCount: sql<number | null>`CASE
+          WHEN ${uniqueVacancies.canonicalVacancyId} = ${vacancies.id}
+            AND ${uniqueVacancies.vacancyCount} > 1
+            AND NOT ${groupHasConfirmedEdge}
+          THEN ${uniqueVacancies.sourceCount} ELSE NULL END`,
       })
       .from(vacancies)
       .innerJoin(sources, eq(sources.id, vacancies.sourceId))
@@ -223,6 +254,7 @@ export class FeedService {
       .leftJoin(companies, eq(companies.id, vacancies.companyId))
       .leftJoin(roleNode, roleJoin)
       .leftJoin(domainNode, domainJoin)
+      .leftJoin(uniqueVacancies, eq(uniqueVacancies.id, vacancies.uniqueVacancyId))
       .where(where);
   }
 
@@ -327,6 +359,17 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   // join to have matched. The join itself enforces VERIFIED, so this also
   // excludes vacancies whose role is unverified.
   if (params.includeRoleless !== true) conds.push(isNotNull(roleNode.id));
+  // Gold collapse: drop a non-canonical member only when its whole group is
+  // gold-tier. Keep singletons, every canonical member, and every member of a
+  // confirmed (non-gold) group. Safe pre-resolve: all unique_vacancy_id are
+  // NULL → the first arm passes and the feed behaves as before.
+  conds.push(
+    or(
+      isNull(vacancies.uniqueVacancyId),
+      eq(uniqueVacancies.canonicalVacancyId, vacancies.id),
+      groupHasConfirmedEdge,
+    )!,
+  );
   if (conds.length === 0) return undefined;
   if (conds.length === 1) return conds[0];
   return and(...conds);
@@ -384,6 +427,10 @@ function toDto(
       currency: row.currency,
     },
     locations: flattenLocations(row.locations),
+
+    uniqueVacancyId: row.uniqueVacancyId,
+    duplicateCount: row.duplicateCount,
+    duplicateSourceCount: row.duplicateSourceCount,
   };
 }
 

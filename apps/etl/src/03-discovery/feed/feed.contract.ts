@@ -103,6 +103,21 @@ export interface VacancyDto {
   salary: VacancySalary;
   /** Always an array; empty when extraction found no locations. */
   locations: string[];
+
+  /**
+   * Dedup group this vacancy belongs to (`unique_vacancies.id`), or null when
+   * it has no duplicates / hasn't been resolved. Drives the "show group" drawer.
+   */
+  uniqueVacancyId: string | null;
+  /**
+   * Total postings in this vacancy's gold-tier group — non-null ONLY on the
+   * canonical card of a collapsed group (>1 member). Null on singletons and on
+   * members of confirmed (non-collapsed) groups. Frontend shows the dedup badge
+   * when non-null.
+   */
+  duplicateCount: number | null;
+  /** Distinct sources across the same gold group; non-null on the same rows as `duplicateCount`. */
+  duplicateSourceCount: number | null;
 }
 
 // ─────────────────────── Search endpoint ───────────────────────
