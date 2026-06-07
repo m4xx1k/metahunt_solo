@@ -10,6 +10,11 @@ import {
 } from "@nestjs/common";
 
 import {
+  parseLimit,
+  parsePage,
+  parsePageSize,
+} from "../../platform/shared/query-parsing";
+import {
   TAXONOMY_LIST_DEFAULT,
   TAXONOMY_LIST_MAX,
   TaxonomyService,
@@ -48,7 +53,10 @@ export class TaxonomyController {
       q: parseSearchString(rawQ),
       minBlocked: parseMinBlocked(rawBlocked),
       page: parsePage(rawPage),
-      pageSize: parsePageSize(rawPageSize),
+      pageSize: parsePageSize(rawPageSize, {
+        default: TAXONOMY_LIST_DEFAULT,
+        max: TAXONOMY_LIST_MAX,
+      }),
     };
     return this.service.listNodes(filters);
   }
@@ -67,7 +75,7 @@ export class TaxonomyController {
     if (q.length < 2) {
       throw new BadRequestException("q must be at least 2 characters");
     }
-    const limit = parseSearchLimit(rawLimit);
+    const limit = parseLimit(rawLimit, SEARCH_DEFAULT, SEARCH_MAX);
     return this.service.searchVerifiedNodes(type, q, limit);
   }
 
@@ -162,39 +170,6 @@ function parseMinBlocked(raw: string | undefined): number {
   if (!Number.isInteger(n) || n < 0) {
     throw new BadRequestException(
       `blocked must be a non-negative integer, got "${raw}"`,
-    );
-  }
-  return n;
-}
-
-function parsePage(raw: string | undefined): number {
-  if (raw === undefined) return 1;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 1) {
-    throw new BadRequestException(
-      `page must be a positive integer, got "${raw}"`,
-    );
-  }
-  return n;
-}
-
-function parsePageSize(raw: string | undefined): number {
-  if (raw === undefined) return TAXONOMY_LIST_DEFAULT;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 1 || n > TAXONOMY_LIST_MAX) {
-    throw new BadRequestException(
-      `pageSize must be an integer in 1..${TAXONOMY_LIST_MAX}, got "${raw}"`,
-    );
-  }
-  return n;
-}
-
-function parseSearchLimit(raw: string | undefined): number {
-  if (raw === undefined) return SEARCH_DEFAULT;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 1 || n > SEARCH_MAX) {
-    throw new BadRequestException(
-      `limit must be an integer in 1..${SEARCH_MAX}, got "${raw}"`,
     );
   }
   return n;

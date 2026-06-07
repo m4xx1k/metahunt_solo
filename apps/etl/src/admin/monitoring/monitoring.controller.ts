@@ -1,6 +1,5 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 
-import { MonitoringService } from "./monitoring.service";
 import {
   parseBool,
   parseEnum,
@@ -9,7 +8,8 @@ import {
   parseOffset,
   parseRequiredUuid,
   parseUuid,
-} from "./query-parsing";
+} from "../../platform/shared/query-parsing";
+import { MonitoringService } from "./monitoring.service";
 
 const INGEST_STATUSES = ["running", "completed", "failed"] as const;
 const STATS_PERIODS = ["24h", "week", "all"] as const;

@@ -38,9 +38,10 @@ export interface RankedVacancy {
 }
 
 export interface MatchFilters {
-  seniority?: Seniority;
+  seniorities?: Seniority[]; // OR — keep vacancies at ANY listed level (e.g. middle ∪ senior)
   sourceId?: string;
-  workFormat?: WorkFormat;
+  workFormat?: WorkFormat; // e.g. REMOTE
+  postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
 }
 
 export interface MatchResponse {
@@ -51,13 +52,19 @@ export interface MatchResponse {
   total: number;
 }
 
-// Fit coverage → tier. Thresholds are v1 expert guesses (no ground truth yet);
-// |required| = 0 is neutral → GOOD (tracker: never emit a fake %). The single
-// place tiering lives, so calibration later is one edit.
+// Fit-coverage thresholds. v1 expert guesses (no ground truth yet) — the SINGLE
+// source of truth, read by both `fitTier` (the badge) AND the ranked SQL's
+// tier-bucket sort (ranking.service): if these drift apart the displayed tier
+// stops matching the sort order. Calibrate here, once.
+export const FIT_STRONG_MIN = 0.8;
+export const FIT_GOOD_MIN = 0.5;
+
+// Fit coverage → tier. |required| = 0 is neutral → GOOD (tracker: never emit a
+// fake %).
 export function fitTier(matchedRequired: number, requiredTotal: number): FitTier {
   if (requiredTotal === 0) return "GOOD";
   const coverage = matchedRequired / requiredTotal;
-  if (coverage >= 0.8) return "STRONG";
-  if (coverage >= 0.5) return "GOOD";
+  if (coverage >= FIT_STRONG_MIN) return "STRONG";
+  if (coverage >= FIT_GOOD_MIN) return "GOOD";
   return "STRETCH";
 }

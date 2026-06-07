@@ -5,8 +5,11 @@ import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
+import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
 import {
+  FIT_GOOD_MIN,
+  FIT_STRONG_MIN,
   fitTier,
   type MatchFilters,
   type MatchResponse,
@@ -113,31 +116,50 @@ export class RankingService {
       return { resolved, items: [], page, pageSize, total: 0 };
     }
 
+    // `cand` is a VALUES row list `(uuid), (uuid)`; `candIds` is a flat
+    // `uuid, uuid` for an IN (...) membership test.
     const cand = sql.join(
       nodeIds.map((id) => sql`(${id}::uuid)`),
       sql`, `,
     );
-    const candIds = sql.join(
-      nodeIds.map((id) => sql`${id}::uuid`),
-      sql`, `,
-    );
+    const candIds = uuidList(nodeIds);
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
     const ranked = await this.db.execute<{ id: string; relevance: number }>(sql`
       WITH cand(node_id) AS (VALUES ${cand}),
       scored AS (
-        SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance
+        SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance,
+               count(*) FILTER (WHERE vn.is_required) AS matched_required
         FROM vacancy_nodes vn
         JOIN cand c ON c.node_id = vn.node_id
         JOIN node_stats ns ON ns.node_id = vn.node_id
         GROUP BY vn.vacancy_id
+      ),
+      req AS (
+        SELECT vn.vacancy_id AS id,
+               count(*) FILTER (WHERE vn.is_required) AS required_total
+        FROM vacancy_nodes vn
+        JOIN nodes n ON n.id = vn.node_id AND n.status <> 'HIDDEN'
+        WHERE vn.vacancy_id IN (SELECT id FROM scored)
+        GROUP BY vn.vacancy_id
       )
-      SELECT v.id::text AS id, s.relevance
+      SELECT v.id::text AS id, s.relevance,
+             -- Fit tier as a sort bucket (mirrors fitTier): STRONG=2, GOOD=1,
+             -- STRETCH=0. Primary key so a single rare skill can't catapult a
+             -- weak-fit vacancy over a job you broadly qualify for; relevance
+             -- (Σ IDF) only orders *within* a tier.
+             CASE
+               WHEN COALESCE(r.required_total, 0) = 0 THEN 1
+               WHEN s.matched_required::float8 / r.required_total >= ${FIT_STRONG_MIN} THEN 2
+               WHEN s.matched_required::float8 / r.required_total >= ${FIT_GOOD_MIN} THEN 1
+               ELSE 0
+             END AS tier_bucket
       FROM scored s
       JOIN vacancies v ON v.id = s.id
+      LEFT JOIN req r ON r.id = s.id
       WHERE ${where}
-      ORDER BY s.relevance DESC, v.id
+      ORDER BY tier_bucket DESC, s.relevance DESC, v.id
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
@@ -173,10 +195,7 @@ export class RankingService {
     const ids = rows.map((r) => r.id);
     const dtos = await this.feed.hydrateByIds(ids);
 
-    const pageIds = sql.join(
-      ids.map((id) => sql`${id}::uuid`),
-      sql`, `,
-    );
+    const pageIds = uuidList(ids);
     const skillRows = await this.db.execute<{
       vacancy_id: string;
       node_id: string;
@@ -246,9 +265,22 @@ export class RankingService {
   // browsable) so the matcher ranks what the user can actually open.
   private buildFilters(f: MatchFilters): SQL {
     const conds: SQL[] = [ELIGIBLE_VACANCY];
-    if (f.seniority) conds.push(sql`v.seniority::text = ${f.seniority}`);
+    if (f.seniorities && f.seniorities.length > 0) {
+      const levels = sql.join(
+        f.seniorities.map((s) => sql`${s}`),
+        sql`, `,
+      );
+      conds.push(sql`v.seniority::text IN (${levels})`);
+    }
     if (f.workFormat) conds.push(sql`v.work_format::text = ${f.workFormat}`);
     if (f.sourceId) conds.push(sql`v.source_id = ${f.sourceId}::uuid`);
+    if (f.postedWithinDays !== undefined) {
+      // Freshness: published_at when known, else loaded_at (mirrors the feed's
+      // coalesce sort). make_interval keeps the day count a bound parameter.
+      conds.push(
+        sql`coalesce(v.published_at, v.loaded_at) > now() - make_interval(days => ${f.postedWithinDays})`,
+      );
+    }
     return sql.join(conds, sql` AND `);
   }
 }

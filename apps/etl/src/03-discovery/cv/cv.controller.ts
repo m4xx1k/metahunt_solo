@@ -17,6 +17,14 @@ import {
   type Seniority,
   type WorkFormat,
 } from "../../platform/shared/contract";
+import {
+  parseDays,
+  parseEnum,
+  parseEnumCsv,
+  parseId,
+  parsePage,
+  parsePageSize,
+} from "../../platform/shared/query-parsing";
 import { RankingService } from "../ranking/ranking.service";
 import type { MatchResponse } from "../ranking/ranking.contract";
 import { CandidateLoaderService } from "./candidate-loader.service";
@@ -59,9 +67,10 @@ export class CvController {
   @Get(":id/matches")
   async matches(
     @Param("id") id: string,
-    @Query("seniority") rawSeniority?: string,
+    @Query("seniorities") rawSeniorities?: string,
     @Query("workFormat") rawWorkFormat?: string,
     @Query("sourceId") rawSourceId?: string,
+    @Query("postedWithinDays") rawPostedWithinDays?: string,
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
   ): Promise<MatchResponse> {
@@ -69,48 +78,13 @@ export class CvController {
     return this.ranking.rankByRefs(
       refs,
       {
-        seniority: parseEnum<Seniority>("seniority", rawSeniority, SENIORITY_VALUES),
+        seniorities: parseEnumCsv<Seniority>("seniorities", rawSeniorities, SENIORITY_VALUES),
         workFormat: parseEnum<WorkFormat>("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
-        sourceId: parseId(rawSourceId),
+        sourceId: parseId("sourceId", rawSourceId),
+        postedWithinDays: parseDays("postedWithinDays", rawPostedWithinDays),
       },
       parsePage(rawPage),
       parsePageSize(rawPageSize),
     );
   }
-}
-
-function parseEnum<T extends string>(
-  name: string,
-  raw: string | undefined,
-  allowed: readonly string[],
-): T | undefined {
-  const trimmed = raw?.trim();
-  if (!trimmed) return undefined;
-  if (!allowed.includes(trimmed)) {
-    throw new BadRequestException(`${name} must be one of ${allowed.join(", ")}`);
-  }
-  return trimmed as T;
-}
-
-function parseId(raw: string | undefined): string | undefined {
-  const trimmed = raw?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : undefined;
-}
-
-function parsePage(raw: string | undefined): number {
-  if (raw === undefined) return 1;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 1) {
-    throw new BadRequestException("page must be a positive integer");
-  }
-  return n;
-}
-
-function parsePageSize(raw: string | undefined): number {
-  if (raw === undefined) return 20;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 1 || n > 100) {
-    throw new BadRequestException("pageSize must be an integer 1..100");
-  }
-  return n;
 }

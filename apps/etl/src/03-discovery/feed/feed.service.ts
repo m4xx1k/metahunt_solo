@@ -19,6 +19,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { uuidList } from "../../platform/shared/sql";
 import type {
   FeedResponse,
   NodeRef,
@@ -317,10 +318,7 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
     conds.push(sql`${vacancies.id} IN (
       SELECT vn.vacancy_id
       FROM vacancy_nodes vn
-      WHERE vn.node_id IN (${sql.join(
-        ids.map((id) => sql`${id}::uuid`),
-        sql`, `,
-      )})
+      WHERE vn.node_id IN (${uuidList(ids)})
       GROUP BY vn.vacancy_id
       HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
     )`);

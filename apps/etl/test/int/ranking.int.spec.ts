@@ -106,7 +106,13 @@ describe("RankingService.match (integration)", () => {
     const common = await seedNode("SKILL", "Python");
     const vacRare = await seedVacancy(sourceId, ingestId, role, "Rare");
     const vacCommon = await seedVacancy(sourceId, ingestId, role, "Common");
-    // common on both (df=2 → weight 0), rare on one only (df=1 → high weight).
+    // common on both (high df → low weight), rare on one only (df=1 → high
+    // weight). Smoothed IDF (ln(N/(df+5))) is only meaningful once N ≫ df+5, so
+    // pad the corpus with skill-less filler vacancies — they inflate N (keeping
+    // the rare skill's weight positive) without touching either df.
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
     await linkSkill(vacRare, rare);
     await linkSkill(vacRare, common);
     await linkSkill(vacCommon, common);
