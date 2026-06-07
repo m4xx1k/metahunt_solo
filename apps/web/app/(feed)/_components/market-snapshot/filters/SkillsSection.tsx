@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Section } from "./Section";
-import { chipClass } from "./pill";
-import type { SkillStat } from "./types";
+import { Section } from "@/components/data/filters/Section";
+import { chipClass } from "@/components/data/filters/pill";
+import type { SkillStat } from "@/components/data/filters/types";
 
 const TOP_N = 8;
 

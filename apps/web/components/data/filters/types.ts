@@ -1,7 +1,7 @@
-// Shared filter-widget types. Decoupled from lib/api/aggregates on
+// Shared filter-widget types (tier-2). Decoupled from lib/api/aggregates on
 // purpose: the widgets project only what the filter categories need, so
-// any consumer (lab mock, landing real API) maps its own source into
-// these shapes via an adapter.
+// any consumer (market feed, reverse-ATS) maps its own source into these
+// shapes via an adapter.
 //
 // Skills are filtered as must-have only. We don't expose nice-to-have to
 // users: it's noise — people search for what they need (must), not what's
@@ -53,7 +53,7 @@ export const EMPTY_FILTERS: FilterState = {
   reservation: null,
 };
 
-// The contract every filter-state backend satisfies (URL-backed today;
+// The contract every filter-state backend satisfies (URL-backed on the feed;
 // a local-useState backend could implement the same shape). Sections are
 // driven through this, never through a concrete hook.
 export interface FiltersApi {

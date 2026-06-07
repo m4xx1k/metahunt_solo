@@ -2,6 +2,8 @@ import { inArray, sql, type SQL } from "drizzle-orm";
 
 import { schema } from "@metahunt/database";
 
+import { uuidList } from "../../platform/shared/sql";
+
 const { vacancies } = schema;
 
 // A track's effective node selection — the ROLE and SKILL node ids it filters
@@ -55,12 +57,4 @@ export function presetCondition(preset: TrackPreset): SQL {
   }
   if (conds.length === 1) return conds[0];
   return sql`(${sql.join(conds, sql` AND `)})`;
-}
-
-// Comma-join ids as a uuid-cast SQL list for an `IN (...)` clause.
-export function uuidList(ids: string[]): SQL {
-  return sql.join(
-    ids.map((id) => sql`${id}::uuid`),
-    sql`, `,
-  );
 }

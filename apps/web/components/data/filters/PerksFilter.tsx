@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Section } from "./Section";
+import { Section } from "@/components/data/filters/Section";
 
 // PerksFilter — the two market "perks" (бронь, тестове) merged into a single
 // two-column quick-filter row, styled to mirror the card pills in

@@ -5,10 +5,10 @@ import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import type { NodeRef } from "../../platform/shared/contract";
+import { uuidList } from "../../platform/shared/sql";
 import type { ContextualSkill, TrackDto } from "./tracks.contract";
 import {
   presetCondition,
-  uuidList,
   type TrackNodeIds,
   type TrackPreset,
 } from "./track-preset";

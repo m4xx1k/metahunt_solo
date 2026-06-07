@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Never forward browser console output to the dev terminal (Next 16.2+
+  // `logging.browserToTerminal`). Browser extensions mutate <html>/<body>
+  // before React hydrates → a stream of hydration-mismatch console.errors that
+  // would otherwise flood `pnpm dev:web`. The root cause is silenced with
+  // `suppressHydrationWarning` in app/layout.tsx; this is the belt-and-braces
+  // guard so no client noise reaches the terminal regardless of the upstream
+  // default. See apps/web/CLAUDE.md ("Dev-server noise").
+  logging: { browserToTerminal: false },
+
   // PostHog reverse proxy: serve analytics through our own origin so ad/tracker
   // blockers (which blacklist *.posthog.com) can't drop events. posthog-js
   // points api_host at "/ingest"; Next proxies those requests to PostHog EU

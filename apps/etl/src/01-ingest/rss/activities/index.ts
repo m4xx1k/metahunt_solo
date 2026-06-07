@@ -1,3 +1,4 @@
+import { RefreshNodeStatsActivity } from "./refresh-node-stats.activity";
 import { RssExtractActivity } from "./rss-extract.activity";
 import { RssFetchActivity } from "./rss-fetch.activity";
 import { RssFinalizeActivity } from "./rss-finalize.activity";
@@ -5,6 +6,7 @@ import { RssListSourcesActivity } from "./rss-list-sources.activity";
 import { RssParseActivity } from "./rss-parse.activity";
 
 export {
+  RefreshNodeStatsActivity,
   RssExtractActivity,
   RssFetchActivity,
   RssFinalizeActivity,
@@ -22,4 +24,5 @@ export const RSS_ACTIVITIES = [
   RssExtractActivity,
   RssFinalizeActivity,
   RssListSourcesActivity,
+  RefreshNodeStatsActivity,
 ] as const;

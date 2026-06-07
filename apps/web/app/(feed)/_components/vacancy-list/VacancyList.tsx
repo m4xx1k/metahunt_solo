@@ -1,6 +1,6 @@
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
-import { Pagination } from "../../../(investigation)/_components/Pagination";
-import { PublicVacancyCard } from "./PublicVacancyCard";
+import { Pagination } from "@/components/data/Pagination";
+import { PublicVacancyCard } from "@/components/data/PublicVacancyCard";
 
 type Props = {
   result: ListVacanciesResponse;

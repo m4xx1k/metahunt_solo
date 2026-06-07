@@ -19,9 +19,11 @@ export function Header({ links }: { links?: NavItem[] }) {
             ))}
           </nav>
         )}
-        <Button variant="nav" size="sm">
-          Coming soon🚀
-        </Button>
+        <Link href="/reverse-ats" aria-label="reverse-ATS — вакансії під твоє CV">
+          <Button variant="nav" size="sm">
+            під моє CV →
+          </Button>
+        </Link>
       </div>
     </header>
   );

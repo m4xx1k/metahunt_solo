@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-// Collapsible section primitive used by every filter group.
+// Collapsible section primitive used by every filter group (tier-2).
 //
 // On desktop (md+) the content is forced visible via `md:block`, the
 // chevron is hidden, and the header button is inert. On mobile the

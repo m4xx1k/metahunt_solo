@@ -1,8 +1,8 @@
 "use client";
 
-import { Section } from "./Section";
-import { pillClass } from "./pill";
-import type { SourceOption } from "./types";
+import { Section } from "@/components/data/filters/Section";
+import { pillClass } from "@/components/data/filters/pill";
+import type { SourceOption } from "@/components/data/filters/types";
 
 export function SourceSection({
   sources,
