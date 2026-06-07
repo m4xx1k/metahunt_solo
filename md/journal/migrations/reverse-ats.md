@@ -150,7 +150,18 @@ set, no CV. Each step independently testable.
    on `node_id`**. The weight stays swappable — the smoothed `ln(N/(df+k))` is one
    edit to the view definition. Testable with one `SELECT ... ORDER BY weight`:
    generic skills land ~1, niche ones ~8.7.
-2. **Matcher — SQL ranking query.** Pure function `rank(candidateNodeIds,
+2. **[DONE — `apps/etl/src/03-discovery/ranking/`]** `RankingService.match` +
+   `POST /ranking/match` (and `POST /ranking/resolve` for the skill→node mapping).
+   Verified on real data with a live CV (51 résumé skills, 51/51 resolved via
+   canonical+alias): top-8 are all Full-Stack/Node roles, ranking driven by rare
+   high-weight matches (Passport.js 8.8, Prisma 5.1) while generics (Docker 1.5)
+   barely move it; fit tiers + ✅/❌/➕ diff all explainable. 3,785/6,400 vacancies
+   overlap ≥1 skill. Notes vs original plan: filters are a minimal inline set
+   (seniority/source/workFormat) reusing `ELIGIBLE_VACANCY` rather than feed's
+   full `buildWhere` (parked); the in-process correctness oracle is deferred (the
+   live eyeball check sufficed). Surfaced the parked **synonym-miss** for real:
+   recurring `miss: JavaScript` because the CV lists TypeScript only — candidate
+   for `related_nodes` later. _Original plan:_ Pure function `rank(candidateNodeIds,
    filters) → ranked page`. **NOT** the feed's skill filter: `feed.search` treats
    `skillIds` as AND (`HAVING count(distinct node_id) = len`); the matcher is
    OR-overlap *scored* — `JOIN unnest($ids) → vacancy_nodes` (hits the `node_id`
