@@ -141,8 +141,11 @@ set, no CV. Each step independently testable.
    entire IDF-differentiating long tail lives in NEW; a VERIFIED-only cut would
    flatten ranking to mainstream skills (the parked "ranking flatness" risk) and
    is the same kind of cliff the fat-tail section rejects. HIDDEN (2 skills) is
-   the one "do not surface" signal, mirrored from the feed. Refresh-at-end-of-
-   ingest wiring is still TODO (the `REFRESH` call in the ingest workflow).
+   the one "do not surface" signal, mirrored from the feed. **Refresh-at-end-of-
+   ingest: DONE** — `RefreshNodeStatsActivity` runs `REFRESH MATERIALIZED VIEW
+   CONCURRENTLY node_stats` as the final step of `rssIngestAllWorkflow` (best-
+   effort; the per-vacancy loads are ABANDON children, so the view lags ≤1
+   ingest cycle — fine for IDF).
 
    _Original plan:_ A `pgMaterializedView` over
    `vacancy_nodes`: `node_id`, `df = count(distinct vacancy_id)`, `weight =
@@ -286,6 +289,29 @@ engineering-rule + frontend-reuse) drove four fixes:
 
 Verified: etl 212 unit + 12 int green; web tsc + lint clean; `build:web` all
 routes compile.
+
+## Hardening pass (rev 2026-06-07 — toward "give it to testers")
+
+Pre-public guards + filter depth so the page survives real users:
+
+- **Abuse guards.** `@nestjs/throttler` global backstop (300/min/IP — high so
+  feed SSR, which shares the Vercel IP, never trips it) + a strict `@Throttle`
+  on `POST /cv` (5/min per real browser IP, since each new CV = a BAML call) +
+  a 5 MB upload cap on the `FileInterceptor`.
+- **Filter depth.** `MatchFilters` grew: `workFormats[]` (was a single REMOTE
+  toggle), `englishLevels[]` (UI shows CEFR — A2/B1/B2…), `employmentTypes[]`,
+  `hasTestAssignment` (false keeps unknowns, mirrors feed), `hasReservation`
+  ("бронь"), and `minFitTier` (hide below a coverage tier). The Fit-tier filter
+  reads the computed `tier_bucket`, so `rankByRefs` now builds a shared `ranked`
+  CTE that both the page and count queries filter on. Enum value-arrays
+  (`ENGLISH_LEVEL_VALUES`, `EMPLOYMENT_TYPE_VALUES`, `FIT_TIER_VALUES`) added so
+  the boundary validates without redeclaring sets. (Salary deliberately skipped.)
+- **node_stats freshness.** Refresh wired into ingest (see build-plan §1).
+- **Entry point.** Header CTA "Coming soon🚀" → link to `/reverse-ats` ("під
+  моє CV"). The page-private `/reverse-ats` filter bar reuses tier-2 `pillClass`.
+
+Verified: etl tsc + 212 unit + 8 int green, `nest build` ok; web tsc + lint +
+`build:web` ok; the refactored ranked query + new filters smoke-tested on real db.
 
 ## What to look at AFTER MVP (signals to watch, not build)
 

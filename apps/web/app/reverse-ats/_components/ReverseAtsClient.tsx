@@ -1,31 +1,88 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 
 import { Logo } from "@/components/ui-kit";
 import { Pagination } from "@/components/data/Pagination";
 import { pillClass } from "@/components/data/filters/pill";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
-import { rankingApi, type MatchResponse } from "@/lib/api/ranking";
-import type { Seniority } from "@/lib/api/vacancies";
+import {
+  rankingApi,
+  FIT_TIER_VALUES,
+  type FitTier,
+  type MatchResponse,
+} from "@/lib/api/ranking";
+import {
+  EMPLOYMENT_TYPE_VALUES,
+  ENGLISH_LEVEL_VALUES,
+  WORK_FORMAT_VALUES,
+  type EmploymentType,
+  type EnglishLevel,
+  type Seniority,
+  type WorkFormat,
+} from "@/lib/api/vacancies";
 import { MatchCard } from "./MatchCard";
 import { SAMPLES } from "./samples";
 
 const PAGE_SIZE = 20;
-
-// The seniority levels worth offering as quick chips (the long enum tail —
-// INTERN / PRINCIPAL / C_LEVEL — is noise for a candidate filter).
-const SENIORITY_CHIPS: Seniority[] = ["JUNIOR", "MIDDLE", "SENIOR", "LEAD"];
 const FRESH_DAYS = 7;
 
+// Seniority: drop the noisy tail (INTERN/PRINCIPAL/C_LEVEL) for a candidate UI.
+const SENIORITY_CHIPS: Seniority[] = ["JUNIOR", "MIDDLE", "SENIOR", "LEAD"];
+
+// DB enums → labels users actually recognise.
+const ENGLISH_LABEL: Record<EnglishLevel, string> = {
+  BEGINNER: "A1–A2",
+  INTERMEDIATE: "B1",
+  UPPER_INTERMEDIATE: "B2",
+  ADVANCED: "C1",
+  NATIVE: "C2",
+};
+const WORK_FORMAT_LABEL: Record<WorkFormat, string> = {
+  REMOTE: "remote",
+  OFFICE: "офіс",
+  HYBRID: "гібрид",
+};
+const EMPLOYMENT_LABEL: Record<EmploymentType, string> = {
+  FULL_TIME: "full-time",
+  PART_TIME: "part-time",
+  CONTRACT: "contract",
+  FREELANCE: "freelance",
+  INTERNSHIP: "intern",
+};
+
 interface Filters {
-  seniorities: Seniority[]; // OR — any selected level
-  remote: boolean; // → workFormat REMOTE
+  seniorities: Seniority[]; // all OR-within / AND-across the groups
+  workFormats: WorkFormat[];
+  englishLevels: EnglishLevel[];
+  employmentTypes: EmploymentType[];
+  minFitTier: FitTier | null; // hide vacancies below this coverage tier
+  noTest: boolean; // → hasTestAssignment: false (keeps unknowns)
+  reservation: boolean; // → hasReservation: true ("бронь")
   fresh: boolean; // → postedWithinDays = FRESH_DAYS
 }
 
-const NO_FILTERS: Filters = { seniorities: [], remote: false, fresh: false };
+const NO_FILTERS: Filters = {
+  seniorities: [],
+  workFormats: [],
+  englishLevels: [],
+  employmentTypes: [],
+  minFitTier: null,
+  noTest: false,
+  reservation: false,
+  fresh: false,
+};
+
+const hasActiveFilters = (f: Filters): boolean =>
+  f.seniorities.length > 0 ||
+  f.workFormats.length > 0 ||
+  f.englishLevels.length > 0 ||
+  f.employmentTypes.length > 0 ||
+  f.minFitTier !== null ||
+  f.noTest ||
+  f.reservation ||
+  f.fresh;
 
 type Source =
   | { kind: "sample"; index: number }
@@ -46,9 +103,17 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
   // page change re-runs whichever candidate is active. Source/filters/page are
   // passed in to dodge stale closures.
   const run = useCallback(async (src: Source, f: Filters, p: number) => {
-    const seniorities = f.seniorities.length > 0 ? f.seniorities : undefined;
-    const workFormat = f.remote ? ("REMOTE" as const) : undefined;
-    const postedWithinDays = f.fresh ? FRESH_DAYS : undefined;
+    // Filters shared by both paths (scalars). Multi-value filters differ only in
+    // wire format: JSON arrays for the POST body, CSV for the GET query.
+    const scalar = {
+      hasTestAssignment: f.noTest ? false : undefined,
+      hasReservation: f.reservation ? true : undefined,
+      minFitTier: f.minFitTier ?? undefined,
+      postedWithinDays: f.fresh ? FRESH_DAYS : undefined,
+    };
+    const arr = <T,>(a: T[]): T[] | undefined => (a.length > 0 ? a : undefined);
+    const csv = (a: string[]): string | undefined =>
+      a.length > 0 ? a.join(",") : undefined;
     setError(null);
     setLoading(true);
     try {
@@ -58,16 +123,20 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               skills: SAMPLES[src.index].skills,
               page: p,
               pageSize: PAGE_SIZE,
-              seniorities,
-              workFormat,
-              postedWithinDays,
+              seniorities: arr(f.seniorities),
+              workFormats: arr(f.workFormats),
+              englishLevels: arr(f.englishLevels),
+              employmentTypes: arr(f.employmentTypes),
+              ...scalar,
             })
           : await cvApi.matches(src.info.candidateId, {
               page: p,
               pageSize: PAGE_SIZE,
-              seniorities: seniorities?.join(","),
-              workFormat,
-              postedWithinDays,
+              seniorities: csv(f.seniorities),
+              workFormats: csv(f.workFormats),
+              englishLevels: csv(f.englishLevels),
+              employmentTypes: csv(f.employmentTypes),
+              ...scalar,
             });
       setData(res);
     } catch (e) {
@@ -129,13 +198,7 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
     },
     [run, source, filters],
   );
-  const toggleSeniority = (s: Seniority) =>
-    applyFilters({
-      ...filters,
-      seniorities: filters.seniorities.includes(s)
-        ? filters.seniorities.filter((x) => x !== s)
-        : [...filters.seniorities, s],
-    });
+  const set = (patch: Partial<Filters>) => applyFilters({ ...filters, ...patch });
 
   return (
     <main className="min-h-screen bg-bg text-text-primary">
@@ -245,46 +308,88 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
       </section>
 
       {/* FILTER BAR */}
-      <section className="border-b border-border px-6 py-4 lg:px-12">
-        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-3">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-            фільтри
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {SENIORITY_CHIPS.map((s) => (
+      <section className="border-b border-border px-6 py-5 lg:px-12">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
+          <ChipRow label="рівень">
+            <MultiChips
+              options={SENIORITY_CHIPS}
+              active={filters.seniorities}
+              labelOf={(v) => v.toLowerCase()}
+              onToggle={(v) => set({ seniorities: toggleIn(filters.seniorities, v) })}
+            />
+          </ChipRow>
+          <ChipRow label="формат">
+            <MultiChips
+              options={WORK_FORMAT_VALUES}
+              active={filters.workFormats}
+              labelOf={(v) => WORK_FORMAT_LABEL[v]}
+              onToggle={(v) => set({ workFormats: toggleIn(filters.workFormats, v) })}
+            />
+          </ChipRow>
+          <ChipRow label="англ">
+            <MultiChips
+              options={ENGLISH_LEVEL_VALUES}
+              active={filters.englishLevels}
+              labelOf={(v) => ENGLISH_LABEL[v]}
+              onToggle={(v) => set({ englishLevels: toggleIn(filters.englishLevels, v) })}
+            />
+          </ChipRow>
+          <ChipRow label="зайнятість">
+            <MultiChips
+              options={EMPLOYMENT_TYPE_VALUES}
+              active={filters.employmentTypes}
+              labelOf={(v) => EMPLOYMENT_LABEL[v]}
+              onToggle={(v) => set({ employmentTypes: toggleIn(filters.employmentTypes, v) })}
+            />
+          </ChipRow>
+          <ChipRow label="мін. fit">
+            {FIT_TIER_VALUES.map((t) => (
               <button
-                key={s}
+                key={t}
                 type="button"
-                onClick={() => toggleSeniority(s)}
-                className={pillClass(filters.seniorities.includes(s))}
+                aria-pressed={filters.minFitTier === t}
+                onClick={() => set({ minFitTier: filters.minFitTier === t ? null : t })}
+                className={pillClass(filters.minFitTier === t)}
               >
-                {s.toLowerCase()}
+                {t.toLowerCase()}
               </button>
             ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => applyFilters({ ...filters, remote: !filters.remote })}
-            className={pillClass(filters.remote)}
-          >
-            remote
-          </button>
-          <button
-            type="button"
-            onClick={() => applyFilters({ ...filters, fresh: !filters.fresh })}
-            className={pillClass(filters.fresh)}
-          >
-            ≤ тиждень
-          </button>
-          {filters.seniorities.length > 0 || filters.remote || filters.fresh ? (
+          </ChipRow>
+          <ChipRow label="ще">
             <button
               type="button"
-              onClick={() => applyFilters(NO_FILTERS)}
-              className="font-mono text-xs text-text-muted underline hover:text-accent"
+              aria-pressed={filters.noTest}
+              onClick={() => set({ noTest: !filters.noTest })}
+              className={pillClass(filters.noTest)}
             >
-              скинути
+              без тесту
             </button>
-          ) : null}
+            <button
+              type="button"
+              aria-pressed={filters.reservation}
+              onClick={() => set({ reservation: !filters.reservation })}
+              className={pillClass(filters.reservation)}
+            >
+              є бронь
+            </button>
+            <button
+              type="button"
+              aria-pressed={filters.fresh}
+              onClick={() => set({ fresh: !filters.fresh })}
+              className={pillClass(filters.fresh)}
+            >
+              ≤ тиждень
+            </button>
+            {hasActiveFilters(filters) ? (
+              <button
+                type="button"
+                onClick={() => applyFilters(NO_FILTERS)}
+                className="font-mono text-xs text-text-muted underline hover:text-accent"
+              >
+                скинути
+              </button>
+            ) : null}
+          </ChipRow>
         </div>
       </section>
 
@@ -325,4 +430,50 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
 
 function msg(e: unknown): string {
   return e instanceof Error ? e.message : "request failed";
+}
+
+// Add/remove a value from a multi-select filter array (immutable).
+function toggleIn<T>(list: T[], v: T): T[] {
+  return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+}
+
+// A labelled row in the filter bar: a fixed-width caption + its chips.
+function ChipRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+// Multi-select pill list over a closed option set (reuses the shared pillClass).
+function MultiChips<T extends string>({
+  options,
+  active,
+  labelOf,
+  onToggle,
+}: {
+  options: readonly T[];
+  active: T[];
+  labelOf: (v: T) => string;
+  onToggle: (v: T) => void;
+}) {
+  return (
+    <>
+      {options.map((o) => (
+        <button
+          key={o}
+          type="button"
+          aria-pressed={active.includes(o)}
+          onClick={() => onToggle(o)}
+          className={pillClass(active.includes(o))}
+        >
+          {labelOf(o)}
+        </button>
+      ))}
+    </>
+  );
 }

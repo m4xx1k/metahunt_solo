@@ -39,19 +39,23 @@ export function coerceBool(v: string | undefined): boolean | undefined {
   return undefined;
 }
 
-export type EmploymentType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "FREELANCE"
-  | "INTERNSHIP";
+export const EMPLOYMENT_TYPE_VALUES = [
+  "FULL_TIME",
+  "PART_TIME",
+  "CONTRACT",
+  "FREELANCE",
+  "INTERNSHIP",
+] as const;
+export type EmploymentType = (typeof EMPLOYMENT_TYPE_VALUES)[number];
 
-export type EnglishLevel =
-  | "BEGINNER"
-  | "INTERMEDIATE"
-  | "UPPER_INTERMEDIATE"
-  | "ADVANCED"
-  | "NATIVE";
+export const ENGLISH_LEVEL_VALUES = [
+  "BEGINNER",
+  "INTERMEDIATE",
+  "UPPER_INTERMEDIATE",
+  "ADVANCED",
+  "NATIVE",
+] as const;
+export type EnglishLevel = (typeof ENGLISH_LEVEL_VALUES)[number];
 
 export type Currency = "USD" | "EUR" | "UAH";
 

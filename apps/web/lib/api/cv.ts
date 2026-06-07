@@ -1,6 +1,5 @@
 import { apiBase, apiGet, buildQs } from "./client";
-import type { MatchResponse, SkillRef } from "./ranking";
-import type { WorkFormat } from "./vacancies";
+import type { FitTier, MatchResponse, SkillRef } from "./ranking";
 
 // CV ingestion + stored-candidate matching — mirrors apps/etl .../cv/.
 
@@ -13,9 +12,16 @@ export interface CvIngestResult {
   unmatched: string[];
 }
 
+// Multi-value filters travel as CSV (e.g. "MIDDLE,SENIOR") to keep the GET URL
+// flat; booleans/enums as-is (buildQs stringifies them).
 export interface CvMatchQuery {
-  seniorities?: string; // CSV (e.g. "MIDDLE,SENIOR") — flat GET param
-  workFormat?: WorkFormat;
+  seniorities?: string;
+  workFormats?: string;
+  englishLevels?: string;
+  employmentTypes?: string;
+  hasTestAssignment?: boolean;
+  hasReservation?: boolean;
+  minFitTier?: FitTier;
   postedWithinDays?: number;
   sourceId?: string;
   pageSize?: number;

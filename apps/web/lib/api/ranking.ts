@@ -1,5 +1,11 @@
 import { apiPost } from "./client";
-import type { Seniority, VacancyDto, WorkFormat } from "./vacancies";
+import type {
+  EmploymentType,
+  EnglishLevel,
+  Seniority,
+  VacancyDto,
+  WorkFormat,
+} from "./vacancies";
 
 // reverse-ATS matcher client — mirrors apps/etl .../ranking/ranking.contract.ts.
 // A ranked card = the full feed VacancyDto + a personalized match overlay.
@@ -10,7 +16,8 @@ export interface SkillRef {
   weight: number;
 }
 
-export type FitTier = "STRONG" | "GOOD" | "STRETCH";
+export const FIT_TIER_VALUES = ["STRONG", "GOOD", "STRETCH"] as const;
+export type FitTier = (typeof FIT_TIER_VALUES)[number];
 
 export interface RankedVacancy {
   vacancy: VacancyDto;
@@ -30,7 +37,12 @@ export interface MatchResponse {
 export interface MatchBody {
   skills: string[];
   seniorities?: Seniority[]; // OR — middle ∪ senior etc.
-  workFormat?: WorkFormat; // e.g. REMOTE
+  workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID
+  englishLevels?: EnglishLevel[];
+  employmentTypes?: EmploymentType[];
+  hasTestAssignment?: boolean; // false keeps unknowns; true strict
+  hasReservation?: boolean;
+  minFitTier?: FitTier; // hide below this coverage tier
   postedWithinDays?: number; // freshness
   page?: number;
   pageSize?: number;
