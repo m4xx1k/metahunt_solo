@@ -23,6 +23,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/throttler": "^6.5.0",
     "@temporalio/activity": "^1.16.1",
     "@temporalio/client": "^1.16.1",
     "@temporalio/worker": "^1.16.1",

@@ -1,11 +1,17 @@
-import type { Seniority, WorkFormat } from "../../platform/shared/contract";
+import type {
+  EmploymentType,
+  EnglishLevel,
+  Seniority,
+  WorkFormat,
+} from "../../platform/shared/contract";
 import type { VacancyDto } from "../feed/feed.contract";
 
 // reverse-ATS matcher contract — see md/journal/migrations/reverse-ats.md (§2).
 // A ranked card = the full feed VacancyDto + a personalized match overlay:
 // Fit (coverage tier) + Relevance (Σ IDF weight, the sort key) + skill diff.
 
-export type FitTier = "STRONG" | "GOOD" | "STRETCH";
+export const FIT_TIER_VALUES = ["STRONG", "GOOD", "STRETCH"] as const;
+export type FitTier = (typeof FIT_TIER_VALUES)[number];
 
 export interface SkillRef {
   id: string;
@@ -39,8 +45,13 @@ export interface RankedVacancy {
 
 export interface MatchFilters {
   seniorities?: Seniority[]; // OR — keep vacancies at ANY listed level (e.g. middle ∪ senior)
+  workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID …
+  englishLevels?: EnglishLevel[]; // OR — the level the job requires
+  employmentTypes?: EmploymentType[]; // OR — full-time ∪ contract …
+  hasTestAssignment?: boolean; // false also keeps unknowns (no confirmed test); true is strict
+  hasReservation?: boolean; // UA military deferment ("бронь")
+  minFitTier?: FitTier; // hide vacancies below this coverage tier (STRONG > GOOD > STRETCH)
   sourceId?: string;
-  workFormat?: WorkFormat; // e.g. REMOTE
   postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
 }
 

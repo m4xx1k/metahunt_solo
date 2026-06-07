@@ -11,12 +11,17 @@ import {
   FIT_GOOD_MIN,
   FIT_STRONG_MIN,
   fitTier,
+  type FitTier,
   type MatchFilters,
   type MatchResponse,
   type RankedVacancy,
   type ResolveResult,
   type SkillRef,
 } from "./ranking.contract";
+
+// Ordinal of each Fit tier, mirroring the SQL tier_bucket CASE. The minFitTier
+// filter keeps rows with tier_bucket >= the requested tier's ordinal.
+const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRONG: 2 };
 
 // reverse-ATS matcher (md/journal/migrations/reverse-ats.md §2).
 //   resolveSkills — plain-text skills → SKILL node ids (canonical+alias, NEW +
@@ -126,8 +131,14 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    const ranked = await this.db.execute<{ id: string; relevance: number }>(sql`
-      WITH cand(node_id) AS (VALUES ${cand}),
+    // Shared CTE: per-vacancy relevance + tier_bucket. Both the page query and
+    // the count query build on `ranked`, so the Fit-tier filter (which reads
+    // the computed bucket, not a vacancy column) applies identically to both.
+    // tier_bucket mirrors fitTier: STRONG=2, GOOD=1, STRETCH=0 — the primary
+    // sort key, so a single rare skill can't catapult a weak-fit vacancy over
+    // a job you broadly qualify for; relevance (Σ IDF) only orders within a tier.
+    const rankedCte = sql`
+      cand(node_id) AS (VALUES ${cand}),
       scored AS (
         SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance,
                count(*) FILTER (WHERE vn.is_required) AS matched_required
@@ -143,36 +154,40 @@ export class RankingService {
         JOIN nodes n ON n.id = vn.node_id AND n.status <> 'HIDDEN'
         WHERE vn.vacancy_id IN (SELECT id FROM scored)
         GROUP BY vn.vacancy_id
-      )
-      SELECT v.id::text AS id, s.relevance,
-             -- Fit tier as a sort bucket (mirrors fitTier): STRONG=2, GOOD=1,
-             -- STRETCH=0. Primary key so a single rare skill can't catapult a
-             -- weak-fit vacancy over a job you broadly qualify for; relevance
-             -- (Σ IDF) only orders *within* a tier.
-             CASE
-               WHEN COALESCE(r.required_total, 0) = 0 THEN 1
-               WHEN s.matched_required::float8 / r.required_total >= ${FIT_STRONG_MIN} THEN 2
-               WHEN s.matched_required::float8 / r.required_total >= ${FIT_GOOD_MIN} THEN 1
-               ELSE 0
-             END AS tier_bucket
-      FROM scored s
-      JOIN vacancies v ON v.id = s.id
-      LEFT JOIN req r ON r.id = s.id
-      WHERE ${where}
-      ORDER BY tier_bucket DESC, s.relevance DESC, v.id
+      ),
+      ranked AS (
+        SELECT s.id, s.relevance,
+               CASE
+                 WHEN COALESCE(r.required_total, 0) = 0 THEN 1
+                 WHEN s.matched_required::float8 / r.required_total >= ${FIT_STRONG_MIN} THEN 2
+                 WHEN s.matched_required::float8 / r.required_total >= ${FIT_GOOD_MIN} THEN 1
+                 ELSE 0
+               END AS tier_bucket
+        FROM scored s
+        LEFT JOIN req r ON r.id = s.id
+      )`;
+
+    const minBucket =
+      filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
+    const tierCond =
+      minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
+
+    const ranked = await this.db.execute<{ id: string; relevance: number }>(sql`
+      WITH ${rankedCte}
+      SELECT v.id::text AS id, rk.relevance
+      FROM ranked rk
+      JOIN vacancies v ON v.id = rk.id
+      WHERE ${where}${tierCond}
+      ORDER BY rk.tier_bucket DESC, rk.relevance DESC, v.id
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
     const totalRes = await this.db.execute<{ count: number }>(sql`
-      WITH cand(node_id) AS (VALUES ${cand}),
-      scored AS (
-        SELECT DISTINCT vn.vacancy_id AS id
-        FROM vacancy_nodes vn
-        JOIN cand c ON c.node_id = vn.node_id
-      )
+      WITH ${rankedCte}
       SELECT count(*)::int AS count
-      FROM scored s JOIN vacancies v ON v.id = s.id
-      WHERE ${where}
+      FROM ranked rk
+      JOIN vacancies v ON v.id = rk.id
+      WHERE ${where}${tierCond}
     `);
     const total = totalRes.rows[0]?.count ?? 0;
 
@@ -262,17 +277,40 @@ export class RankingService {
   }
 
   // ELIGIBLE_VACANCY mirrors the feed (only VERIFIED-role vacancies are
-  // browsable) so the matcher ranks what the user can actually open.
+  // browsable) so the matcher ranks what the user can actually open. All the
+  // enum filters are OR-within / AND-across (any listed seniority AND any
+  // listed english …). The Fit-tier filter is NOT here — it reads the computed
+  // tier_bucket, so it's applied against the `ranked` CTE in rankByRefs.
   private buildFilters(f: MatchFilters): SQL {
     const conds: SQL[] = [ELIGIBLE_VACANCY];
-    if (f.seniorities && f.seniorities.length > 0) {
-      const levels = sql.join(
-        f.seniorities.map((s) => sql`${s}`),
-        sql`, `,
+    const inText = (col: SQL, vals: readonly string[]) =>
+      conds.push(
+        sql`${col}::text IN (${sql.join(
+          vals.map((v) => sql`${v}`),
+          sql`, `,
+        )})`,
       );
-      conds.push(sql`v.seniority::text IN (${levels})`);
+
+    if (f.seniorities?.length) inText(sql`v.seniority`, f.seniorities);
+    if (f.workFormats?.length) inText(sql`v.work_format`, f.workFormats);
+    if (f.englishLevels?.length) inText(sql`v.english_level`, f.englishLevels);
+    if (f.employmentTypes?.length)
+      inText(sql`v.employment_type`, f.employmentTypes);
+
+    // Test task: "without" (false) keeps unknowns — a null (unscored) vacancy
+    // still counts as no-test, so only a confirmed true is excluded (mirrors
+    // the feed). "with" (true) stays strict.
+    if (f.hasTestAssignment === true) {
+      conds.push(sql`v.has_test_assignment = true`);
+    } else if (f.hasTestAssignment === false) {
+      conds.push(
+        sql`(v.has_test_assignment = false OR v.has_test_assignment IS NULL)`,
+      );
     }
-    if (f.workFormat) conds.push(sql`v.work_format::text = ${f.workFormat}`);
+    if (f.hasReservation !== undefined) {
+      conds.push(sql`v.has_reservation = ${f.hasReservation}`);
+    }
+
     if (f.sourceId) conds.push(sql`v.source_id = ${f.sourceId}::uuid`);
     if (f.postedWithinDays !== undefined) {
       // Freshness: published_at when known, else loaded_at (mirrors the feed's

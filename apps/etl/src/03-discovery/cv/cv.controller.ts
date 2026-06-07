@@ -10,14 +10,20 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle } from "@nestjs/throttler";
 
 import {
+  EMPLOYMENT_TYPE_VALUES,
+  ENGLISH_LEVEL_VALUES,
   SENIORITY_VALUES,
   WORK_FORMAT_VALUES,
+  type EmploymentType,
+  type EnglishLevel,
   type Seniority,
   type WorkFormat,
 } from "../../platform/shared/contract";
 import {
+  parseBool,
   parseDays,
   parseEnum,
   parseEnumCsv,
@@ -26,10 +32,22 @@ import {
   parsePageSize,
 } from "../../platform/shared/query-parsing";
 import { RankingService } from "../ranking/ranking.service";
-import type { MatchResponse } from "../ranking/ranking.contract";
+import {
+  FIT_TIER_VALUES,
+  type FitTier,
+  type MatchResponse,
+} from "../ranking/ranking.contract";
 import { CandidateLoaderService } from "./candidate-loader.service";
 import type { CandidateView, CvIngestResult } from "./cv.contract";
 import { extractText } from "./text-extract";
+
+// CV upload is LLM-backed (a BAML extraction per new file) + accepts user
+// uploads, so it gets two guards on top of the global rate limit:
+//   - a strict per-IP throttle (5/min) so the public endpoint can't burn
+//     tokens or be used to spam the extractor;
+//   - a 5 MB file cap (a text CV is KBs; anything larger is abuse/mistake).
+const CV_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
+const CV_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 
 @Controller("cv")
 export class CvController {
@@ -40,7 +58,10 @@ export class CvController {
 
   // Upload a CV as a file (field "file": PDF or .txt) OR as raw JSON {text}.
   @Post()
-  @UseInterceptors(FileInterceptor("file"))
+  @Throttle(CV_THROTTLE)
+  @UseInterceptors(
+    FileInterceptor("file", { limits: { fileSize: CV_UPLOAD_MAX_BYTES } }),
+  )
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: { text?: unknown } | undefined,
@@ -68,7 +89,12 @@ export class CvController {
   async matches(
     @Param("id") id: string,
     @Query("seniorities") rawSeniorities?: string,
-    @Query("workFormat") rawWorkFormat?: string,
+    @Query("workFormats") rawWorkFormats?: string,
+    @Query("englishLevels") rawEnglishLevels?: string,
+    @Query("employmentTypes") rawEmploymentTypes?: string,
+    @Query("hasTestAssignment") rawHasTestAssignment?: string,
+    @Query("hasReservation") rawHasReservation?: string,
+    @Query("minFitTier") rawMinFitTier?: string,
     @Query("sourceId") rawSourceId?: string,
     @Query("postedWithinDays") rawPostedWithinDays?: string,
     @Query("page") rawPage?: string,
@@ -79,7 +105,12 @@ export class CvController {
       refs,
       {
         seniorities: parseEnumCsv<Seniority>("seniorities", rawSeniorities, SENIORITY_VALUES),
-        workFormat: parseEnum<WorkFormat>("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
+        workFormats: parseEnumCsv<WorkFormat>("workFormats", rawWorkFormats, WORK_FORMAT_VALUES),
+        englishLevels: parseEnumCsv<EnglishLevel>("englishLevels", rawEnglishLevels, ENGLISH_LEVEL_VALUES),
+        employmentTypes: parseEnumCsv<EmploymentType>("employmentTypes", rawEmploymentTypes, EMPLOYMENT_TYPE_VALUES),
+        hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),
+        hasReservation: parseBool("hasReservation", rawHasReservation),
+        minFitTier: parseEnum<FitTier>("minFitTier", rawMinFitTier, FIT_TIER_VALUES),
         sourceId: parseId("sourceId", rawSourceId),
         postedWithinDays: parseDays("postedWithinDays", rawPostedWithinDays),
       },
