@@ -15,6 +15,7 @@ export type {
 export { EMPTY_FILTERS } from "@/components/data/filters/types";
 export { Section } from "@/components/data/filters/Section";
 export { EnumSection } from "@/components/data/filters/EnumSection";
+export { PerksFilter } from "@/components/data/filters/PerksFilter";
 
 // Feed-specific sections stay page-private.
 export { SelectRow } from "./SelectRow";
@@ -23,5 +24,4 @@ export { TrackTree } from "./TrackTree";
 export { FacetSection, type Facet } from "./FacetSection";
 export { SkillsSection } from "./SkillsSection";
 export { SourceSection } from "./SourceSection";
-export { PerksFilter } from "./PerksFilter";
 export { ActiveFiltersBar } from "./ActiveFiltersBar";

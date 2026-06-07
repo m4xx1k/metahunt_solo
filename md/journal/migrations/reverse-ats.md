@@ -313,6 +313,27 @@ Pre-public guards + filter depth so the page survives real users:
 Verified: etl tsc + 212 unit + 8 int green, `nest build` ok; web tsc + lint +
 `build:web` ok; the refactored ranked query + new filters smoke-tested on real db.
 
+## Presentable pass (rev 2026-06-07 — looks-good-for-users)
+
+The `/reverse-ats` page restructured to the feed's proven shape:
+
+- **Feed-style sidebar.** New page-private `MatchFilters` mirrors `MarketFilters`:
+  a sticky left column on lg+ (`lg:grid-cols-[300px_minmax(0,1fr)]`), collapsed
+  behind one toggle on <lg. It composes the **same tier-2 primitives the feed
+  uses** — `EnumSection` (now with an additive multi-select mode for the
+  candidate's OR-filters), `PerksFilter` (promoted to tier-2; "бронь"/"без тесту"
+  reused verbatim), and `Section`. The flat top filter bar is gone. Filter model
+  (state + enum→label option sets) extracted to `_components/filter-model.ts`.
+- **Extraction display.** New `CandidateProfile` surfaces what the engine
+  understood — role + seniority (uploaded CV), resolved skills as chips (IDF-
+  sorted), and unmatched strings — so the user sanity-checks before trusting the
+  rank. Replaces the old one-line resolved summary.
+- **Polish.** Sticky blurred header, slimmer hero, two-column results, improved
+  empty/error states; responsive desktop↔mobile via the feed's grid + the
+  Section accordion.
+
+Verified: web tsc + lint clean; `build:web` (feed + ATS routes) green.
+
 ## What to look at AFTER MVP (signals to watch, not build)
 
 - ~~**Ranking flatness.**~~ **Partially addressed** (Quality pass #2): Fit-tier is

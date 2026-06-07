@@ -1,88 +1,19 @@
 "use client";
 
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 
 import { Logo } from "@/components/ui-kit";
 import { Pagination } from "@/components/data/Pagination";
-import { pillClass } from "@/components/data/filters/pill";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
-import {
-  rankingApi,
-  FIT_TIER_VALUES,
-  type FitTier,
-  type MatchResponse,
-} from "@/lib/api/ranking";
-import {
-  EMPLOYMENT_TYPE_VALUES,
-  ENGLISH_LEVEL_VALUES,
-  WORK_FORMAT_VALUES,
-  type EmploymentType,
-  type EnglishLevel,
-  type Seniority,
-  type WorkFormat,
-} from "@/lib/api/vacancies";
+import { rankingApi, type MatchResponse } from "@/lib/api/ranking";
+import { CandidateProfile } from "./CandidateProfile";
+import { MatchFilters } from "./MatchFilters";
 import { MatchCard } from "./MatchCard";
+import { FRESH_DAYS, NO_FILTERS, type Filters } from "./filter-model";
 import { SAMPLES } from "./samples";
 
 const PAGE_SIZE = 20;
-const FRESH_DAYS = 7;
-
-// Seniority: drop the noisy tail (INTERN/PRINCIPAL/C_LEVEL) for a candidate UI.
-const SENIORITY_CHIPS: Seniority[] = ["JUNIOR", "MIDDLE", "SENIOR", "LEAD"];
-
-// DB enums → labels users actually recognise.
-const ENGLISH_LABEL: Record<EnglishLevel, string> = {
-  BEGINNER: "A1–A2",
-  INTERMEDIATE: "B1",
-  UPPER_INTERMEDIATE: "B2",
-  ADVANCED: "C1",
-  NATIVE: "C2",
-};
-const WORK_FORMAT_LABEL: Record<WorkFormat, string> = {
-  REMOTE: "remote",
-  OFFICE: "офіс",
-  HYBRID: "гібрид",
-};
-const EMPLOYMENT_LABEL: Record<EmploymentType, string> = {
-  FULL_TIME: "full-time",
-  PART_TIME: "part-time",
-  CONTRACT: "contract",
-  FREELANCE: "freelance",
-  INTERNSHIP: "intern",
-};
-
-interface Filters {
-  seniorities: Seniority[]; // all OR-within / AND-across the groups
-  workFormats: WorkFormat[];
-  englishLevels: EnglishLevel[];
-  employmentTypes: EmploymentType[];
-  minFitTier: FitTier | null; // hide vacancies below this coverage tier
-  noTest: boolean; // → hasTestAssignment: false (keeps unknowns)
-  reservation: boolean; // → hasReservation: true ("бронь")
-  fresh: boolean; // → postedWithinDays = FRESH_DAYS
-}
-
-const NO_FILTERS: Filters = {
-  seniorities: [],
-  workFormats: [],
-  englishLevels: [],
-  employmentTypes: [],
-  minFitTier: null,
-  noTest: false,
-  reservation: false,
-  fresh: false,
-};
-
-const hasActiveFilters = (f: Filters): boolean =>
-  f.seniorities.length > 0 ||
-  f.workFormats.length > 0 ||
-  f.englishLevels.length > 0 ||
-  f.employmentTypes.length > 0 ||
-  f.minFitTier !== null ||
-  f.noTest ||
-  f.reservation ||
-  f.fresh;
 
 type Source =
   | { kind: "sample"; index: number }
@@ -103,8 +34,8 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
   // page change re-runs whichever candidate is active. Source/filters/page are
   // passed in to dodge stale closures.
   const run = useCallback(async (src: Source, f: Filters, p: number) => {
-    // Filters shared by both paths (scalars). Multi-value filters differ only in
-    // wire format: JSON arrays for the POST body, CSV for the GET query.
+    // Scalars shared by both paths; multi-value filters differ only in wire
+    // format — JSON arrays for the POST body, CSV for the GET query.
     const scalar = {
       hasTestAssignment: f.noTest ? false : undefined,
       hasReservation: f.reservation ? true : undefined,
@@ -179,14 +110,15 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
     [run, filters],
   );
 
-  // Mutate one filter, persist it, reset to page 1, and re-rank.
-  const applyFilters = useCallback(
-    (next: Filters) => {
+  // Apply a partial filter change, reset to page 1, and re-rank the active source.
+  const onFilterChange = useCallback(
+    (patch: Partial<Filters>) => {
+      const next = { ...filters, ...patch };
       setFilters(next);
       setPage(1);
       void run(source, next, 1);
     },
-    [run, source],
+    [run, source, filters],
   );
 
   // Pagination drives offset; map it back to a 1-based page and refetch.
@@ -198,40 +130,42 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
     },
     [run, source, filters],
   );
-  const set = (patch: Partial<Filters>) => applyFilters({ ...filters, ...patch });
+
+  const profileTitle =
+    source.kind === "cv" ? "твоє CV" : `профіль · ${SAMPLES[source.index].label}`;
+  const busy = loading || uploading;
 
   return (
     <main className="min-h-screen bg-bg text-text-primary">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4 lg:px-12">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-bg/90 px-6 py-4 backdrop-blur lg:px-12">
         <Logo />
-        <Link href="/" className="font-mono text-xs text-text-secondary hover:text-accent">
-          ← feed
+        <Link
+          href="/"
+          className="font-mono text-xs text-text-secondary hover:text-accent"
+        >
+          ← до фіда
         </Link>
       </header>
 
       {/* HERO */}
-      <section className="border-b border-border px-6 py-14 lg:px-12">
-        <div className="mx-auto w-full max-w-5xl">
-          <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent">reverse-ats</p>
-          <h1 className="mt-3 max-w-3xl font-mono text-4xl font-bold leading-tight md:text-5xl">
+      <section className="border-b border-border px-6 py-10 lg:px-12">
+        <div className="mx-auto w-full max-w-7xl">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-accent">
+            reverse-ats
+          </p>
+          <h1 className="mt-3 max-w-3xl font-mono text-3xl font-bold leading-tight md:text-5xl">
             Вакансії, відсортовані під <span className="text-accent">твій</span> стек.
           </h1>
           <p className="mt-4 max-w-2xl font-body text-base text-text-secondary md:text-lg">
-            Звичайний ATS ранжує кандидатів під одну вакансію. Ми робимо навпаки:
-            завантаж резюме — і бачиш усі вакансії за релевантністю твоїх навичок,
+            Завантаж резюме — і побач усі вакансії за релевантністю твоїх навичок,
             з оцінкою fit та тим, що збігається і чого бракує.
           </p>
-          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 font-mono text-xs text-text-muted">
-            <span>① скіли з CV → ноди таксономії</span>
-            <span>② Σ IDF-ваги = relevance (сортування)</span>
-            <span>③ покриття required = fit-tier</span>
-          </div>
         </div>
       </section>
 
       {/* CANDIDATE PICKER */}
-      <section className="border-b border-border px-6 py-8 lg:px-12">
-        <div className="mx-auto grid w-full max-w-5xl gap-6 md:grid-cols-[1fr_auto]">
+      <section className="border-b border-border px-6 py-6 lg:px-12">
+        <div className="mx-auto grid w-full max-w-7xl gap-6 md:grid-cols-[1fr_auto] md:items-end">
           <div>
             <p className="mb-3 font-mono text-[10px] uppercase tracking-wider text-text-muted">
               готовий профіль
@@ -277,151 +211,74 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               type="button"
               disabled={uploading}
               onClick={() => fileRef.current?.click()}
-              className="border border-accent bg-accent px-4 py-2 font-mono text-xs font-bold text-bg transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full border border-accent bg-accent px-4 py-2 font-mono text-xs font-bold text-bg transition-opacity hover:opacity-90 disabled:opacity-50 md:w-auto"
             >
               {uploading ? "парсимо…" : "↑ завантажити PDF / TXT"}
             </button>
-            <p className="mt-2 max-w-[200px] font-mono text-[10px] text-text-muted">
+            <p className="mt-2 font-mono text-[10px] text-text-muted md:max-w-[200px]">
               текст витягнеться, скіли зматчаться на таксономію
             </p>
           </div>
         </div>
+      </section>
 
-        {/* resolved summary */}
-        {data ? (
-          <div className="mx-auto mt-6 w-full max-w-5xl border border-border bg-bg-card px-4 py-3 font-mono text-xs">
-            {source.kind === "cv" ? (
-              <span className="text-text-secondary">
-                CV: <span className="text-text-primary">{source.info.role ?? "—"}</span>
-                {source.info.seniority ? ` · ${source.info.seniority.toLowerCase()}` : ""} ·{" "}
-              </span>
+      {/* FILTERS + RESULTS */}
+      <section className="px-6 pb-20 pt-8 lg:px-12">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+          <div className="lg:sticky lg:top-24">
+            <MatchFilters
+              filters={filters}
+              onChange={onFilterChange}
+              disabled={busy}
+            />
+          </div>
+
+          <div className="flex flex-col gap-5">
+            {error ? (
+              <p className="border border-danger/40 bg-danger/5 px-4 py-3 font-mono text-sm text-danger">
+                помилка: {error} — бекенд (NEXT_PUBLIC_API_URL) піднятий?
+              </p>
             ) : null}
-            <span className="text-text-secondary">
-              зматчено <span className="text-success">{data.resolved.matched.length}</span> скілів ·{" "}
-              <span className="text-accent">{data.total}</span> вакансій з перетином
-            </span>
-            {data.resolved.unmatched.length > 0 ? (
-              <span className="text-text-muted"> · не розпізнано: {data.resolved.unmatched.join(", ")}</span>
+
+            {data ? (
+              <CandidateProfile
+                title={profileTitle}
+                role={source.kind === "cv" ? source.info.role : null}
+                seniority={source.kind === "cv" ? source.info.seniority : null}
+                matched={data.resolved.matched}
+                unmatched={data.resolved.unmatched}
+                totalVacancies={data.total}
+              />
+            ) : null}
+
+            {busy ? (
+              <p className="font-mono text-sm text-text-muted">ранжуємо…</p>
+            ) : null}
+            {!busy && data && data.items.length === 0 ? (
+              <p className="border border-border bg-bg-card px-4 py-6 text-center font-mono text-sm text-text-muted">
+                жодної вакансії під ці фільтри — спробуй послабити їх.
+              </p>
+            ) : null}
+
+            {data?.items.map((item, i) => (
+              <MatchCard
+                key={item.vacancy.id}
+                item={item}
+                rank={(page - 1) * PAGE_SIZE + i + 1}
+              />
+            ))}
+
+            {data && data.total > PAGE_SIZE ? (
+              <div className="mt-2 border-t border-border pt-5">
+                <Pagination
+                  total={data.total}
+                  limit={PAGE_SIZE}
+                  offset={(page - 1) * PAGE_SIZE}
+                  onNavigate={goToOffset}
+                />
+              </div>
             ) : null}
           </div>
-        ) : null}
-      </section>
-
-      {/* FILTER BAR */}
-      <section className="border-b border-border px-6 py-5 lg:px-12">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
-          <ChipRow label="рівень">
-            <MultiChips
-              options={SENIORITY_CHIPS}
-              active={filters.seniorities}
-              labelOf={(v) => v.toLowerCase()}
-              onToggle={(v) => set({ seniorities: toggleIn(filters.seniorities, v) })}
-            />
-          </ChipRow>
-          <ChipRow label="формат">
-            <MultiChips
-              options={WORK_FORMAT_VALUES}
-              active={filters.workFormats}
-              labelOf={(v) => WORK_FORMAT_LABEL[v]}
-              onToggle={(v) => set({ workFormats: toggleIn(filters.workFormats, v) })}
-            />
-          </ChipRow>
-          <ChipRow label="англ">
-            <MultiChips
-              options={ENGLISH_LEVEL_VALUES}
-              active={filters.englishLevels}
-              labelOf={(v) => ENGLISH_LABEL[v]}
-              onToggle={(v) => set({ englishLevels: toggleIn(filters.englishLevels, v) })}
-            />
-          </ChipRow>
-          <ChipRow label="зайнятість">
-            <MultiChips
-              options={EMPLOYMENT_TYPE_VALUES}
-              active={filters.employmentTypes}
-              labelOf={(v) => EMPLOYMENT_LABEL[v]}
-              onToggle={(v) => set({ employmentTypes: toggleIn(filters.employmentTypes, v) })}
-            />
-          </ChipRow>
-          <ChipRow label="мін. fit">
-            {FIT_TIER_VALUES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={filters.minFitTier === t}
-                onClick={() => set({ minFitTier: filters.minFitTier === t ? null : t })}
-                className={pillClass(filters.minFitTier === t)}
-              >
-                {t.toLowerCase()}
-              </button>
-            ))}
-          </ChipRow>
-          <ChipRow label="ще">
-            <button
-              type="button"
-              aria-pressed={filters.noTest}
-              onClick={() => set({ noTest: !filters.noTest })}
-              className={pillClass(filters.noTest)}
-            >
-              без тесту
-            </button>
-            <button
-              type="button"
-              aria-pressed={filters.reservation}
-              onClick={() => set({ reservation: !filters.reservation })}
-              className={pillClass(filters.reservation)}
-            >
-              є бронь
-            </button>
-            <button
-              type="button"
-              aria-pressed={filters.fresh}
-              onClick={() => set({ fresh: !filters.fresh })}
-              className={pillClass(filters.fresh)}
-            >
-              ≤ тиждень
-            </button>
-            {hasActiveFilters(filters) ? (
-              <button
-                type="button"
-                onClick={() => applyFilters(NO_FILTERS)}
-                className="font-mono text-xs text-text-muted underline hover:text-accent"
-              >
-                скинути
-              </button>
-            ) : null}
-          </ChipRow>
-        </div>
-      </section>
-
-      {/* RANKED LIST */}
-      <section className="px-6 py-8 lg:px-12">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-          {error ? (
-            <p className="font-mono text-sm text-danger">
-              помилка: {error} — бекенд (NEXT_PUBLIC_API_URL) піднятий?
-            </p>
-          ) : null}
-          {loading ? <p className="font-mono text-sm text-text-muted">ранжуємо…</p> : null}
-          {!loading && data?.items.length === 0 ? (
-            <p className="font-mono text-sm text-text-muted">жодної вакансії з перетином.</p>
-          ) : null}
-          {data?.items.map((item, i) => (
-            <MatchCard
-              key={item.vacancy.id}
-              item={item}
-              rank={(page - 1) * PAGE_SIZE + i + 1}
-            />
-          ))}
-          {data && data.total > PAGE_SIZE ? (
-            <div className="mt-2 border-t border-border pt-5">
-              <Pagination
-                total={data.total}
-                limit={PAGE_SIZE}
-                offset={(page - 1) * PAGE_SIZE}
-                onNavigate={goToOffset}
-              />
-            </div>
-          ) : null}
         </div>
       </section>
     </main>
@@ -430,50 +287,4 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
 
 function msg(e: unknown): string {
   return e instanceof Error ? e.message : "request failed";
-}
-
-// Add/remove a value from a multi-select filter array (immutable).
-function toggleIn<T>(list: T[], v: T): T[] {
-  return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
-}
-
-// A labelled row in the filter bar: a fixed-width caption + its chips.
-function ChipRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-wider text-text-muted">
-        {label}
-      </span>
-      {children}
-    </div>
-  );
-}
-
-// Multi-select pill list over a closed option set (reuses the shared pillClass).
-function MultiChips<T extends string>({
-  options,
-  active,
-  labelOf,
-  onToggle,
-}: {
-  options: readonly T[];
-  active: T[];
-  labelOf: (v: T) => string;
-  onToggle: (v: T) => void;
-}) {
-  return (
-    <>
-      {options.map((o) => (
-        <button
-          key={o}
-          type="button"
-          aria-pressed={active.includes(o)}
-          onClick={() => onToggle(o)}
-          className={pillClass(active.includes(o))}
-        >
-          {labelOf(o)}
-        </button>
-      ))}
-    </>
-  );
 }
