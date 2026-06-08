@@ -206,6 +206,12 @@ export interface ListVacanciesQuery {
    */
   roleIds?: string[];
   skillIds?: string[];
+  /**
+   * Skill-match scope. Omitted/false: a skill matches only when it's a
+   * required (must-have) skill on the vacancy. true: nice-to-have skills also
+   * satisfy the filter.
+   */
+  includeOptionalSkills?: boolean;
   seniority?: Seniority;
   workFormat?: WorkFormat;
   employmentType?: EmploymentType;

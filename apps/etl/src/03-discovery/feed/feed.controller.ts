@@ -47,6 +47,7 @@ export class FeedController {
     // order stable for existing callers/tests.
     @Query("roleIds") rawRoleIds?: string | string[],
     @Query("hasDuplicates") rawHasDuplicates?: string,
+    @Query("includeOptionalSkills") rawIncludeOptionalSkills?: string,
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
@@ -68,6 +69,7 @@ export class FeedController {
       pageSize: parsePageSize(rawPageSize),
       includeRoleless: parseBool("includeRoleless", rawIncludeRoleless, { numeric: true }),
       includeAllSkills: parseBool("includeAllSkills", rawIncludeAllSkills, { numeric: true }),
+      includeOptionalSkills: parseBool("includeOptionalSkills", rawIncludeOptionalSkills, { numeric: true }),
     });
   }
 

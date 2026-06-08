@@ -141,6 +141,12 @@ export interface FeedQuery {
   roleIds?: string[];
   /** Match vacancies that have ALL listed skills (AND semantics). */
   skillIds?: string[];
+  /**
+   * Skill-match scope. Default (false): a skill matches only when it's a
+   * required (must-have) skill. When true, nice-to-have skills also satisfy
+   * the filter.
+   */
+  includeOptionalSkills?: boolean;
 
   seniority?: Seniority;
   workFormat?: WorkFormat;
