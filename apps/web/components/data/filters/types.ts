@@ -3,9 +3,11 @@
 // any consumer (market feed, reverse-ATS) maps its own source into these
 // shapes via an adapter.
 //
-// Skills are filtered as must-have only. We don't expose nice-to-have to
-// users: it's noise — people search for what they need (must), not what's
-// optional. The `count` on a skill is the must-have count.
+// Skills are filtered as must-have by default — people search for what they
+// need (must), not what's optional, so nice-to-have stays out of the way. The
+// SkillScopeToggle (?nice=true → includeOptionalSkills) is the opt-in escape
+// hatch that also matches nice-to-have. The `count` on a skill is the
+// must-have count.
 
 export interface OptionRow {
   id: string;

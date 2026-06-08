@@ -88,6 +88,9 @@ export default async function TrackPage({
   const hasTestAssignment = coerceBool(asString(sp.test));
   const hasReservation = coerceBool(asString(sp.reservation));
   const hasDuplicates = asString(sp.dupes) === "true" ? true : undefined;
+  // Skill-scope toggle: by default skills match must-have only; ?nice=true
+  // loosens the filter so nice-to-have skills count too.
+  const includeOptionalSkills = asString(sp.nice) === "true" ? true : undefined;
 
   const [aggregates, { tracks }] = await Promise.all([
     aggregatesApi.get(),
@@ -143,6 +146,7 @@ export default async function TrackPage({
           pageSize: PAGE_SIZE,
           roleIds: roleIds.length > 0 ? roleIds : undefined,
           skillIds: skillIds.length > 0 ? skillIds : undefined,
+          includeOptionalSkills,
           sourceId: sourceId ?? undefined,
           seniority,
           workFormat,

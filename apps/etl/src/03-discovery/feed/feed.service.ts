@@ -65,6 +65,12 @@ export interface FeedSearchParams {
   roleIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
+  /**
+   * Skill-match scope. Default (false/undefined): a skill counts only when it's
+   * `required` (must-have) on the vacancy. When true, a nice-to-have link also
+   * satisfies the filter — looser, surfaces vacancies where the skill is optional.
+   */
+  includeOptionalSkills?: boolean;
   seniority?: Seniority;
   workFormat?: WorkFormat;
   hasTestAssignment?: boolean;
@@ -348,11 +354,17 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
     // AND semantics: keep only vacancies whose vacancy_nodes set covers
     // every requested skill. One subquery (not N joins) keeps both the
     // list and the count query — which share buildWhere — single-pass.
+    // By default a skill must be `required`; the optional-scope toggle drops
+    // that gate so nice-to-have links also satisfy the filter.
     const ids = params.skillIds;
+    const requiredGate = params.includeOptionalSkills
+      ? sql``
+      : sql`AND vn.is_required`;
     conds.push(sql`${vacancies.id} IN (
       SELECT vn.vacancy_id
       FROM vacancy_nodes vn
       WHERE vn.node_id IN (${uuidList(ids)})
+        ${requiredGate}
       GROUP BY vn.vacancy_id
       HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
     )`);

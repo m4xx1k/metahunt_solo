@@ -18,6 +18,7 @@ import {
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import { DedupeToggle } from "./DedupeToggle";
+import { SkillScopeToggle } from "./SkillScopeToggle";
 import { toFilterAggregates } from "./to-filter-aggregates";
 import { useUrlFilters } from "./use-url-filters";
 
@@ -124,6 +125,9 @@ export function MarketFilters({
                     catalog={skillCatalog ?? []}
                     suggestions={contextualSkills ?? []}
                   />
+                  <div className="border-b border-border px-4 py-3 last:border-b-0">
+                    <SkillScopeToggle />
+                  </div>
                 </>
               ) : null}
             </>
@@ -139,6 +143,11 @@ export function MarketFilters({
                 selectedIds={api.filters.skillIds}
                 onToggle={api.toggleSkill}
               />
+              {api.filters.skillIds.length > 0 ? (
+                <div className="border-b border-border px-4 py-3 last:border-b-0">
+                  <SkillScopeToggle />
+                </div>
+              ) : null}
             </>
           )}
           {/* Perks sit right under the browse/refine block — high, but never
