@@ -76,8 +76,8 @@ function StatusDot() {
 export function TotalCounter({ total, lastSyncAt, sources }: Props) {
   const sourceLabel = sources.map((s) => s.displayName).join(" + ") || "—";
   return (
-    <div className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-bg-card px-8 py-6 md:items-end md:text-right">
-      <span className="font-display text-6xl font-bold leading-none text-text-primary md:text-7xl">
+    <div className="flex flex-col items-start gap-2 md:items-end md:justify-center md:text-right">
+      <span className="font-display text-6xl font-bold leading-none text-accent md:text-7xl">
         <CountUp value={total} />
       </span>
       <span className="font-body text-sm text-text-secondary">

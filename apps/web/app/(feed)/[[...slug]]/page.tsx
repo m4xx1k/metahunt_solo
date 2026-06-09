@@ -177,7 +177,7 @@ export default async function TrackPage({
     <>
       <Header links={snapshotNav} />
       <main className="flex min-h-screen flex-col bg-bg">
-        <Snapshot aggregates={aggregates} />
+        <Snapshot aggregates={aggregates} showPipeline={!trackSlug} />
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
             <div className="flex flex-col gap-4">

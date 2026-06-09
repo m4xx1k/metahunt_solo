@@ -5,7 +5,7 @@ export type NavItem = { label: string; href: string };
 
 export function Header({ links }: { links?: NavItem[] }) {
   return (
-    <header className="w-full px-6 py-5 md:px-20">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-bg/80 px-6 py-4 backdrop-blur-md md:px-12">
       <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between">
         <Link href="/" aria-label="MetaHunt home">
           <Logo />

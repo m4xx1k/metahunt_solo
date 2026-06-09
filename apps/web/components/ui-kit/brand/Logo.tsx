@@ -12,7 +12,9 @@ export function Logo({
     <div className={cn("flex items-center gap-3", className)}>
       <Image src={'/logo.webp'} alt="logo" width={32} height={32} className='rounded-xs' />
       <span className="font-display text-xl font-bold tracking-tight text-text-primary">
-        {label}
+        <span className="text-accent">[</span>
+        {label.toLowerCase()}
+        <span className="text-accent">]</span>
       </span>
     </div>
   );
