@@ -8,6 +8,17 @@
 
 export type PipelineAccent = "secondary" | "accent" | "success";
 
+// Sample CV-Match verdict — mirrors the real RankedVacancy.diff (have/missing/
+// bonus) + fit tier shown on the reverse-ats MatchCard, just with static skills.
+export interface PipelineMatch {
+  fit: string;
+  matched: number;
+  required: number;
+  have: string[]; // must-have skills the CV covers
+  missing: string[]; // must-have skills the CV lacks
+  bonus: string[]; // nice-to-have skills the CV happens to cover
+}
+
 export const pipeline = {
   tag: "як це працює",
   steps: {
@@ -33,6 +44,13 @@ export const pipeline = {
   },
   // Sample fields the parser pulls out — illustrative, shown as popping tags.
   extracted: ["Python", "Senior", "Remote", "$4000+", "тестове"],
-  // Sample match scores — illustrative bars in the matching stage.
-  matches: [94, 82, 68],
+  // Sample CV-Match verdict — illustrative skill diff in the matching stage.
+  match: {
+    fit: "good fit",
+    matched: 3,
+    required: 5,
+    have: ["Python", "FastAPI", "PostgreSQL"],
+    missing: ["Kubernetes", "Go"],
+    bonus: ["Docker", "AWS"],
+  } satisfies PipelineMatch,
 };
