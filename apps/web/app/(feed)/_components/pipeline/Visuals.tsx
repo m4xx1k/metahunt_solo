@@ -3,7 +3,7 @@
 // The three stage-specific mini-visuals. Each is meant to read in a second:
 //  · SourcesVisual — real sources (from aggregates) stack into one feed
 //  · ExtractVisual — raw text bars collapse into structured tags
-//  · MatchVisual   — ranked match-score bars fill up
+//  · MatchVisual   — a CV-Match verdict: fit tier + ✅ have / ❌ missing / ➕ bonus
 // All animate in once on scroll, staggered, sharing the card's accent colour.
 
 import { motion } from "framer-motion";
@@ -12,10 +12,16 @@ import type { AggregateSourceCount } from "@/lib/api/aggregates";
 import { Badge } from "@/components/ui-kit";
 import { cn } from "@/lib/utils";
 import { accentBg, accentText, EASE } from "./PipelineCard";
-import type { PipelineAccent } from "./data";
+import type { PipelineAccent, PipelineMatch } from "./data";
 
 const NUM = new Intl.NumberFormat("uk-UA");
 const VIEWPORT = { once: true, margin: "-60px" } as const;
+
+const accentBorder: Record<PipelineAccent, string> = {
+  secondary: "border-accent-secondary",
+  accent: "border-accent",
+  success: "border-success",
+};
 
 // ── 01 · Збір ────────────────────────────────────────────────────────────────
 export function SourcesVisual({
@@ -133,31 +139,76 @@ export function ExtractVisual({
 }
 
 // ── 03 · Підбір ──────────────────────────────────────────────────────────────
+// Mirrors the reverse-ats MatchCard verdict: a fit tier + must-have count, then
+// the ✅ have / ❌ missing / ➕ bonus skill diff (same colour language as there).
+const MATCH_LINES = [
+  { key: "have", sign: "✅", cls: "border-success text-success" },
+  { key: "missing", sign: "❌", cls: "border-danger text-danger" },
+  { key: "bonus", sign: "➕", cls: "border-border text-text-muted" },
+] as const;
+
 export function MatchVisual({
-  scores,
+  match,
   accent,
 }: {
-  scores: number[];
+  match: PipelineMatch;
   accent: PipelineAccent;
 }) {
   return (
     <div className="flex flex-col gap-2.5">
-      {scores.map((score, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div className="h-2.5 flex-1 bg-bg-elev">
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: `${score}%` }}
-              viewport={VIEWPORT}
-              transition={{ duration: 0.7, delay: 0.15 + i * 0.12, ease: EASE }}
-              className={cn("h-full", accentBg[accent])}
-            />
-          </div>
-          <span className={cn("w-9 text-right font-mono text-[13px] font-bold", accentText[accent])}>
-            {score}%
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={VIEWPORT}
+        transition={{ duration: 0.4, ease: EASE }}
+        className="flex flex-wrap items-center gap-2 font-mono text-[11px]"
+      >
+        <span
+          className={cn(
+            "border px-2 py-[2px] font-bold uppercase tracking-wider",
+            accentBorder[accent],
+            accentText[accent],
+          )}
+        >
+          {match.fit}
+        </span>
+        <span className="text-text-muted">
+          must-have{" "}
+          <span className={cn("font-bold", accentText[accent])}>
+            {match.matched}/{match.required}
           </span>
-        </div>
-      ))}
+        </span>
+      </motion.div>
+
+      {MATCH_LINES.map((line, i) => {
+        const skills = match[line.key];
+        if (skills.length === 0) return null;
+        return (
+          <motion.div
+            key={line.key}
+            initial={{ opacity: 0, x: -12 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={VIEWPORT}
+            transition={{ duration: 0.4, delay: 0.15 + i * 0.1, ease: EASE }}
+            className="flex flex-wrap items-center gap-1.5"
+          >
+            <span aria-hidden className="text-[11px] leading-none">
+              {line.sign}
+            </span>
+            {skills.map((s) => (
+              <span
+                key={s}
+                className={cn(
+                  "border px-1.5 py-[1px] font-mono text-[11px] leading-none",
+                  line.cls,
+                )}
+              >
+                {s.toLowerCase()}
+              </span>
+            ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
