@@ -12,8 +12,10 @@ import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui-kit";
 import { SeniorityBadge } from "@/components/data/SeniorityBadge";
-import { Fact } from "../../_components/Fact";
-import { FlagPills } from "../../_components/FlagPills";
+import { SkillChip } from "@/entities/skill/SkillChip";
+import { Fact } from "@/entities/vacancy/Fact";
+import { FlagPills } from "@/entities/vacancy/FlagPills";
+import { formatLocations } from "@/entities/vacancy/format-locations";
 
 export function VacancyCard({
   vacancy,
@@ -171,17 +173,7 @@ function SkillsRow({
         {label}:
       </span>
       {items.map((s) => (
-        <span
-          key={s.id}
-          className={cn(
-            "border px-2 py-[2px] font-mono text-xs",
-            tone === "required"
-              ? "border-accent text-accent"
-              : "border-border text-text-secondary",
-          )}
-        >
-          #{s.name.toLowerCase()}
-        </span>
+        <SkillChip key={s.id} name={s.name} tone={tone} />
       ))}
     </div>
   );
@@ -256,14 +248,4 @@ function Footer({ vacancy }: { vacancy: VacancyDto }) {
       </span>
     </div>
   );
-}
-
-// ─── helpers ─────────────────────────────────────────────────────────────
-
-const LOCATIONS_MAX = 2;
-
-function formatLocations(locations: string[]): string | null {
-  if (locations.length === 0) return null;
-  if (locations.length <= LOCATIONS_MAX) return locations.join(" · ");
-  return `${locations.slice(0, LOCATIONS_MAX).join(" · ")} · +${locations.length - LOCATIONS_MAX}`;
 }

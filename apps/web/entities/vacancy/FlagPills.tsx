@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { FlagPill } from "./FlagPill";
 
 // Test-assignment / reservation pills shared by the investigation vacancy
 // cards. Driven by the two booleans (data in, not markup) so each card —
@@ -11,14 +11,11 @@ export function FlagPills({
   hasTestAssignment?: boolean | null;
   hasReservation?: boolean | null;
 }) {
-  const pills: Array<{
-    label: string;
-    value: string;
-    tone: "ok" | "no" | "muted";
-  }> = [];
+  const pills: Array<{ label: string; value: string; tone: "ok" | "warn" }> =
+    [];
 
   if (hasTestAssignment === true) {
-    pills.push({ label: "тестове", value: "так", tone: "no" });
+    pills.push({ label: "тестове", value: "так", tone: "warn" });
   } else if (hasTestAssignment === false) {
     pills.push({ label: "тестове", value: "ні", tone: "ok" });
   }
@@ -31,20 +28,7 @@ export function FlagPills({
   return (
     <div className="flex flex-wrap gap-2">
       {pills.map((p) => (
-        <span
-          key={p.label}
-          className={cn(
-            "inline-flex items-center gap-2 border px-3 py-1 font-mono text-xs",
-            p.tone === "ok" && "border-success text-success",
-            p.tone === "no" && "border-danger text-danger",
-            p.tone === "muted" && "border-border text-text-secondary",
-          )}
-        >
-          <span className="text-[10px] uppercase tracking-wider text-text-muted">
-            {p.label}:
-          </span>
-          <span className="font-bold">{p.value}</span>
-        </span>
+        <FlagPill key={p.label} label={p.label} value={p.value} tone={p.tone} />
       ))}
     </div>
   );

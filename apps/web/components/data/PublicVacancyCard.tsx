@@ -4,6 +4,10 @@ import Link from "next/link";
 
 import { DuplicatesBadge } from "@/components/data/DuplicatesBadge";
 import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { SkillChip } from "@/entities/skill/SkillChip";
+import { Fact } from "@/entities/vacancy/Fact";
+import { FlagPill } from "@/entities/vacancy/FlagPill";
+import { formatLocations } from "@/entities/vacancy/format-locations";
 import {
   EMPLOYMENT_LABELS,
   ENGLISH_LABELS,
@@ -12,45 +16,12 @@ import {
   formatSalary,
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
 
 type Props = { vacancy: VacancyDto };
 
-const LOCATIONS_MAX = 2;
 const SKILLS_REQUIRED_SHOWN = 6;
 const SKILLS_OPTIONAL_SHOWN = 5;
-
-// Backend ships locations as strings like "Kyiv, Ukraine" (BAML splits city
-// and country, but the wire contract collapses them). When every location
-// shares the same country, render the country once at the end so we don't
-// shout "Україна" five times for an all-UA posting.
-function formatLocationsCapped(locations: string[]): string | null {
-  if (locations.length === 0) return null;
-  const parsed = locations.map((raw) => {
-    const idx = raw.indexOf(",");
-    if (idx === -1) return { city: raw.trim(), country: null as string | null };
-    return { city: raw.slice(0, idx).trim(), country: raw.slice(idx + 1).trim() };
-  });
-
-  const sharedCountry =
-    parsed.every((p) => p.country) &&
-    new Set(parsed.map((p) => p.country)).size === 1
-      ? parsed[0].country
-      : null;
-
-  const renderableItems = sharedCountry
-    ? parsed.map((p) => p.city)
-    : parsed.map((p) => (p.country ? `${p.city}, ${p.country}` : p.city));
-
-  const head = renderableItems.slice(0, LOCATIONS_MAX).join(" · ");
-  const overflow =
-    renderableItems.length > LOCATIONS_MAX
-      ? ` +${renderableItems.length - LOCATIONS_MAX}`
-      : "";
-  const suffix = sharedCountry ? `, ${sharedCountry}` : "";
-  return `${head}${overflow}${suffix}`;
-}
 
 export function PublicVacancyCard({ vacancy: v }: Props) {
   const role = v.role?.name ?? "untitled role";
@@ -64,7 +35,7 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
     max: v.salary.max,
     currency: v.salary.currency,
   });
-  const loc = formatLocationsCapped(v.locations);
+  const loc = formatLocations(v.locations);
 
   const metaItems: React.ReactNode[] = [];
   if (v.workFormat)
@@ -186,12 +157,7 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
               must-have:
             </span>
             {requiredSkills.map((s: NodeRef) => (
-              <span
-                key={s.id}
-                className="border border-accent px-2 py-[2px] font-mono text-xs text-accent"
-              >
-                #{s.name.toLowerCase()}
-              </span>
+              <SkillChip key={s.id} name={s.name} tone="required" />
             ))}
             {extraRequired > 0 ? (
               <span className="font-mono text-xs text-text-muted">
@@ -207,12 +173,7 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
               nice-to-have:
             </span>
             {optionalSkills.map((s: NodeRef) => (
-              <span
-                key={s.id}
-                className="border border-border px-2 py-[2px] font-mono text-xs text-text-secondary"
-              >
-                #{s.name.toLowerCase()}
-              </span>
+              <SkillChip key={s.id} name={s.name} tone="optional" />
             ))}
             {extraOptional > 0 ? (
               <span className="font-mono text-xs text-text-muted">
@@ -249,16 +210,16 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
 
       {/* DESKTOP-ONLY ASIDE — source / company / domain / pills */}
       <aside className="hidden md:flex md:w-[160px] md:flex-shrink-0 md:flex-col md:gap-4 md:border-l md:border-border md:pl-6">
-        <SidebarFact label="on" value={sourceName} valueClass="font-bold text-accent" />
+        <Fact label="on" value={sourceName} valueClass="text-sm font-bold text-accent" />
         {company ? (
-          <SidebarFact label="company" value={company} valueClass="font-body text-text-primary" />
+          <Fact label="company" value={company} valueClass="text-sm font-body text-text-primary" />
         ) : null}
         {domain ? (
-          <SidebarFact label="domain">
+          <Fact label="domain">
             <span className="w-fit border border-border px-2 py-[2px] font-mono text-xs text-text-secondary">
               [{domain}]
             </span>
-          </SidebarFact>
+          </Fact>
         ) : null}
 
         {hasAnyPill ? (
@@ -269,58 +230,5 @@ export function PublicVacancyCard({ vacancy: v }: Props) {
         ) : null}
       </aside>
     </article>
-  );
-}
-
-// ─── helpers ────────────────────────────────────────────────────────────
-
-function SidebarFact({
-  label,
-  value,
-  valueClass,
-  children,
-}: {
-  label: string;
-  value?: string;
-  valueClass?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-        {label}
-      </span>
-      {children ?? (
-        <span className={cn("font-mono text-sm", valueClass)}>{value}</span>
-      )}
-    </div>
-  );
-}
-
-function FlagPill({
-  icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  tone: "ok" | "warn";
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex w-fit items-center gap-2 border px-3 py-1 font-mono text-xs",
-        tone === "ok" && "border-success text-success",
-        tone === "warn" && "border-danger text-danger",
-      )}
-    >
-      <span aria-hidden>{icon}</span>
-      <span className="text-[10px] uppercase tracking-wider text-text-muted">
-        {label}:
-      </span>
-      <span className="font-bold">{value}</span>
-    </span>
   );
 }
