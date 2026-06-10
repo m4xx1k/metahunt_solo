@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
+import { normalizeAliasName } from "../../../platform/shared/normalize-alias";
 import { NodeRepository } from "../repositories/node.repository";
 import type { Executor } from "../repositories/executor";
 
@@ -17,7 +18,7 @@ export class NodeResolverService {
     executor?: Executor,
   ): Promise<string> {
     const trimmed = name.trim();
-    const normalized = trimmed.toLowerCase();
+    const normalized = normalizeAliasName(trimmed);
 
     const byAlias = await this.repo.findIdByAlias(type, normalized, executor);
     if (byAlias) return byAlias;

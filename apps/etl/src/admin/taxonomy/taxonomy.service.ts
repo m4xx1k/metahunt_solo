@@ -9,6 +9,8 @@ import { sql, eq, and, inArray } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
+
 export type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 export type NodeStatusValue = "NEW" | "VERIFIED" | "HIDDEN";
 
@@ -503,7 +505,7 @@ export class TaxonomyService {
         FROM node_aliases
         WHERE type = ${node.type}
           AND node_id <> ${id}
-          AND LOWER(name) = LOWER(${newName})
+          AND name = ${normalizeAliasName(newName)}
         LIMIT 1
       `);
 
@@ -515,17 +517,18 @@ export class TaxonomyService {
         });
       }
 
-      // Both the old and the new canonical live on as lowercased aliases so
-      // historical extractions (in any case) keep resolving here. Storing
-      // lower(canonical) as a self-alias is the same invariant ingest maintains
-      // — it's what stops a differently-cased re-extraction from spawning a
-      // duplicate node. ON CONFLICT (incl. intra-VALUES dupes on a case-only
-      // rename) is a safe no-op via DO NOTHING.
+      // Both the old and the new canonical live on as normalized aliases so
+      // historical extractions (in any case/spelling) keep resolving here.
+      // Storing normalize(canonical) as a self-alias is the same invariant
+      // ingest maintains — it's what stops a differently-spelled
+      // re-extraction from spawning a duplicate node. ON CONFLICT (incl.
+      // intra-VALUES dupes on a case-only rename) is a safe no-op via
+      // DO NOTHING.
       await tx.execute(sql`
         INSERT INTO node_aliases (name, type, node_id)
         VALUES
-          (${node.canonicalName.trim().toLowerCase()}, ${node.type}, ${id}),
-          (${newName.toLowerCase()}, ${node.type}, ${id})
+          (${normalizeAliasName(node.canonicalName)}, ${node.type}, ${id}),
+          (${normalizeAliasName(newName)}, ${node.type}, ${id})
         ON CONFLICT (name, type) DO NOTHING
       `);
 
@@ -579,11 +582,11 @@ export class TaxonomyService {
       `);
 
       // 2) Source's canonical name becomes an alias of target (if not already one).
-      // Lowercased: ingest resolves aliases by exact lower-cased match, so a
-      // mixed-case alias here would silently never resolve (and spawn dup nodes).
+      // Normalized: ingest resolves aliases by exact normalized match, so a
+      // raw-form alias here would silently never resolve (and spawn dup nodes).
       await tx.execute(sql`
         INSERT INTO node_aliases (name, type, node_id)
-        VALUES (${source.canonicalName.trim().toLowerCase()}, ${source.type}, ${targetId})
+        VALUES (${normalizeAliasName(source.canonicalName)}, ${source.type}, ${targetId})
         ON CONFLICT (name, type) DO NOTHING
       `);
 
