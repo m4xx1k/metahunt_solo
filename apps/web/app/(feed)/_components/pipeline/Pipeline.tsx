@@ -24,7 +24,7 @@ export function Pipeline({ aggregates }: { aggregates: VacancyAggregates }) {
       <Connector />
 
       <PipelineCard {...match} index={2}>
-        <MatchVisual scores={pipeline.matches} accent={match.accent} />
+        <MatchVisual match={pipeline.match} accent={match.accent} />
       </PipelineCard>
     </div>
   );
