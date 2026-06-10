@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Section } from "@/components/data/filters/Section";
+import { CollapsibleSection } from "./CollapsibleSection";
 import { SelectRow } from "./SelectRow";
-import type { OptionRow } from "@/components/data/filters/types";
+import type { OptionRow } from "./types";
 
 const TOP_N = 6;
 
@@ -25,7 +25,7 @@ export function RoleSection({
       : "any";
 
   return (
-    <Section title="role" summary={summary}>
+    <CollapsibleSection title="role" summary={summary}>
       <div className="flex flex-col">
         <ul className="flex flex-col">
           {visible.map((r) => (
@@ -48,6 +48,6 @@ export function RoleSection({
           </button>
         ) : null}
       </div>
-    </Section>
+    </CollapsibleSection>
   );
 }

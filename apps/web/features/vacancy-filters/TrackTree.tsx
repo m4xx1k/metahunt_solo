@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Section } from "@/components/data/filters/Section";
+import { CollapsibleSection } from "./CollapsibleSection";
 import type { TrackDto } from "@/lib/api/tracks";
 
 // Nested browse tree (disciplines → stack/language children) that replaces
@@ -80,7 +80,7 @@ export function TrackTree({
       : "any";
 
   return (
-    <Section title="track" summary={activeLabel}>
+    <CollapsibleSection title="track" summary={activeLabel}>
       <ul className="flex flex-col">
         {visibleRoots.map((disc) => {
           const kids = childrenOf(disc.slug);
@@ -115,7 +115,7 @@ export function TrackTree({
           );
         })}
       </ul>
-    </Section>
+    </CollapsibleSection>
   );
 }
 

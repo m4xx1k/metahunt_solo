@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 // header toggles `open` and acts as a real accordion control. Open-by-
 // default → SSR renders the full content, no-JS users see everything.
 
-export function Section({
+export function CollapsibleSection({
   title,
   summary,
   children,

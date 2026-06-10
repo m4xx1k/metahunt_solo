@@ -6,7 +6,7 @@ import { useCallback, useMemo, useTransition } from "react";
 import type {
   FiltersApi,
   FilterState,
-} from "./filters";
+} from "./types";
 
 export type UrlFiltersApi = FiltersApi & { isPending: boolean };
 

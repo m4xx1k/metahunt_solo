@@ -1,6 +1,6 @@
 "use client";
 
-import { Section } from "./Section";
+import { CollapsibleSection } from "./CollapsibleSection";
 import { pillClass } from "./pill";
 import type { OptionRow } from "./types";
 
@@ -45,7 +45,7 @@ export function EnumSection({
   };
 
   return (
-    <Section title={title} summary={summary}>
+    <CollapsibleSection title={title} summary={summary}>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => {
           const active = isActive(o.id);
@@ -62,6 +62,6 @@ export function EnumSection({
           );
         })}
       </div>
-    </Section>
+    </CollapsibleSection>
   );
 }

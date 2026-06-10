@@ -4,8 +4,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ChangeEvent, useCallback, useState, useTransition } from "react";
 
 import { cn } from "@/lib/utils";
-import { Section } from "@/components/data/filters/Section";
-import { chipClass } from "@/components/data/filters/pill";
+import { CollapsibleSection } from "./CollapsibleSection";
+import { chipClass } from "./pill";
 
 // One unified facet panel for either axis of an active track (roles or
 // skills). Three zones, top to bottom:
@@ -119,7 +119,7 @@ export function FacetSection({
     selected.length === 0 ? "any" : `${selected.length} selected`;
 
   return (
-    <Section title={title} summary={summary}>
+    <CollapsibleSection title={title} summary={summary}>
       <div
         className={cn(
           "flex flex-col gap-3",
@@ -199,6 +199,6 @@ export function FacetSection({
           )
         ) : null}
       </div>
-    </Section>
+    </CollapsibleSection>
   );
 }

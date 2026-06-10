@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Section } from "@/components/data/filters/Section";
+import { CollapsibleSection } from "./CollapsibleSection";
 
 // PerksFilter — the two market "perks" (бронь, тестове) merged into a single
 // two-column quick-filter row, styled to mirror the card pills in
@@ -32,7 +32,7 @@ export function PerksFilter({
       .join(" · ") || "any";
 
   return (
-    <Section title="perks" summary={summary}>
+    <CollapsibleSection title="perks" summary={summary}>
       <div className="grid grid-cols-2 gap-2">
         <PerkPill
           icon="🛡"
@@ -47,7 +47,7 @@ export function PerksFilter({
           onClick={() => onTest(testOn ? null : false)}
         />
       </div>
-    </Section>
+    </CollapsibleSection>
   );
 }
 

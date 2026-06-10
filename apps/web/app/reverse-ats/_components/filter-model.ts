@@ -1,4 +1,4 @@
-import type { OptionRow } from "@/components/data/filters/types";
+import type { OptionRow } from "@/features/vacancy-filters/types";
 import { FIT_TIER_VALUES, type FitTier } from "@/lib/api/ranking";
 import {
   EMPLOYMENT_TYPE_VALUES,

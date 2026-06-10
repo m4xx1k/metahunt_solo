@@ -1,8 +1,8 @@
 "use client";
 
-import { Section } from "@/components/data/filters/Section";
-import { pillClass } from "@/components/data/filters/pill";
-import type { SourceOption } from "@/components/data/filters/types";
+import { CollapsibleSection } from "./CollapsibleSection";
+import { pillClass } from "./pill";
+import type { SourceOption } from "./types";
 
 export function SourceSection({
   sources,
@@ -19,7 +19,7 @@ export function SourceSection({
       : "any";
 
   return (
-    <Section title="source" summary={summary}>
+    <CollapsibleSection title="source" summary={summary}>
       <div className="flex flex-wrap gap-2">
         {sources.map((s) => {
           const active = activeCode === s.code;
@@ -36,6 +36,6 @@ export function SourceSection({
           );
         })}
       </div>
-    </Section>
+    </CollapsibleSection>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Section } from "@/components/data/filters/Section";
-import { chipClass } from "@/components/data/filters/pill";
-import type { SkillStat } from "@/components/data/filters/types";
+import { CollapsibleSection } from "./CollapsibleSection";
+import { chipClass } from "./pill";
+import type { SkillStat } from "./types";
 
 const TOP_N = 8;
 
@@ -43,7 +43,7 @@ export function SkillsSection({
   const showNoMatches = q.length > 0 && filteredRest.length === 0;
 
   return (
-    <Section title="skills" summary={summary}>
+    <CollapsibleSection title="skills" summary={summary}>
       <div className="flex flex-col gap-3">
         <input
           type="search"
@@ -100,6 +100,6 @@ export function SkillsSection({
           </button>
         ) : null}
       </div>
-    </Section>
+    </CollapsibleSection>
   );
 }

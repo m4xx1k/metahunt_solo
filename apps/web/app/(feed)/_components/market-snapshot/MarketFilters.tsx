@@ -4,23 +4,20 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import {
-  ActiveFiltersBar,
-  EnumSection,
-  type Facet,
-  FacetSection,
-  PerksFilter,
-  RoleSection,
-  SkillsSection,
-  SourceSection,
-  TrackTree,
-} from "./filters";
+import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
+import { EnumSection } from "@/features/vacancy-filters/EnumSection";
+import { type Facet, FacetSection } from "@/features/vacancy-filters/FacetSection";
+import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
+import { RoleSection } from "@/features/vacancy-filters/RoleSection";
+import { SkillsSection } from "@/features/vacancy-filters/SkillsSection";
+import { SourceSection } from "@/features/vacancy-filters/SourceSection";
+import { TrackTree } from "@/features/vacancy-filters/TrackTree";
+import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import { DedupeToggle } from "./DedupeToggle";
 import { SkillScopeToggle } from "./SkillScopeToggle";
 import { toFilterAggregates } from "./to-filter-aggregates";
-import { useUrlFilters } from "./use-url-filters";
 
 // Interactive replacement for the old Snapshot stat widgets. The sidebar
 // drives the filter query string; the server page reads it and re-fetches

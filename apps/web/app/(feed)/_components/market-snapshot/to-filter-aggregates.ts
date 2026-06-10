@@ -7,7 +7,7 @@ import {
 import type {
   FilterAggregates,
   OptionRow,
-} from "./filters";
+} from "@/features/vacancy-filters/types";
 
 // Maps the real /market/aggregates response into the shape the filter
 // widgets expect. Counts are intentionally dropped — the widgets render

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { EnumSection } from "@/components/data/filters/EnumSection";
-import { PerksFilter } from "@/components/data/filters/PerksFilter";
-import { Section } from "@/components/data/filters/Section";
-import { pillClass } from "@/components/data/filters/pill";
+import { EnumSection } from "@/features/vacancy-filters/EnumSection";
+import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
+import { CollapsibleSection } from "@/features/vacancy-filters/CollapsibleSection";
+import { pillClass } from "@/features/vacancy-filters/pill";
 import { cn } from "@/lib/utils";
 import type { FitTier } from "@/lib/api/ranking";
 import type {
@@ -115,7 +115,7 @@ export function MatchFilters({
             onReservation={(v) => onChange({ reservation: v === true })}
             onTest={(v) => onChange({ noTest: v === false })}
           />
-          <Section title="свіжість" summary={filters.fresh ? "≤ тиждень" : "any"}>
+          <CollapsibleSection title="свіжість" summary={filters.fresh ? "≤ тиждень" : "any"}>
             <button
               type="button"
               aria-pressed={filters.fresh}
@@ -124,7 +124,7 @@ export function MatchFilters({
             >
               ≤ тиждень
             </button>
-          </Section>
+          </CollapsibleSection>
         </aside>
 
         {hasActiveFilters(filters) ? (

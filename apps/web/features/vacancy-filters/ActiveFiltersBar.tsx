@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { FilterAggregates, FiltersApi } from "@/components/data/filters/types";
+import type { FilterAggregates, FiltersApi } from "./types";
 
 interface Chip {
   key: string;
