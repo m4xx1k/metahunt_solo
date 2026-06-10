@@ -11,8 +11,8 @@
 
 import { notFound } from "next/navigation";
 
-import { Header, type NavItem } from "@/components/shared/Header";
-import { Footer } from "@/components/shared/Footer";
+import { Header, type NavItem } from "@/app/_components/Header";
+import { Footer } from "@/app/_components/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";

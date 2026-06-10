@@ -3,7 +3,7 @@ import { monitoringApi } from "@/lib/api/monitoring";
 import { InvestigationHeader } from "../../../_components/InvestigationHeader";
 import { StatusBadge } from "../../../_components/StatusBadge";
 import { RssRecordCard } from "../../../_components/RssRecordCard";
-import { Pagination } from "@/components/data/Pagination";
+import { Pagination } from "@/components/ui-kit/navigation/Pagination";
 import { Tag } from "@/components/ui-kit";
 import {
   formatCount,

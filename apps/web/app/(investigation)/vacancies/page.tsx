@@ -1,7 +1,7 @@
 import { Tag } from "@/components/ui-kit";
 import { vacanciesApi } from "@/lib/api/vacancies";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
-import { Pagination } from "@/components/data/Pagination";
+import { Pagination } from "@/components/ui-kit/navigation/Pagination";
 import { FilterToggles } from "../_components/FilterToggles";
 import { VacancyInspectCard } from "./_components/VacancyInspectCard";
 

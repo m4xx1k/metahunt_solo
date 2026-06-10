@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 
 import { Logo } from "@/components/ui-kit";
-import { Pagination } from "@/components/data/Pagination";
+import { Pagination } from "@/components/ui-kit/navigation/Pagination";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
 import { rankingApi, type MatchResponse } from "@/lib/api/ranking";
 import { CandidateProfile } from "./CandidateProfile";

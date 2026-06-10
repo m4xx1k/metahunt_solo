@@ -3,7 +3,7 @@ import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { AppToaster } from "@/components/shared/AppToaster";
+import { AppToaster } from "@/app/_components/AppToaster";
 import { VercelAnalytics } from '@/lib/vercel-analytics';
 import { PostHogProvider } from '@/lib/posthog';
 

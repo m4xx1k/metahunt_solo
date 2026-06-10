@@ -1,5 +1,5 @@
-import { Header, type NavItem } from "@/components/shared/Header";
-import { Footer } from "@/components/shared/Footer";
+import { Header, type NavItem } from "@/app/_components/Header";
+import { Footer } from "@/app/_components/Footer";
 import { Hero } from "../_components/hero/Hero";
 import { Problem } from "../_components/problem/Problem";
 import { HowItWorks } from "../_components/how/HowItWorks";

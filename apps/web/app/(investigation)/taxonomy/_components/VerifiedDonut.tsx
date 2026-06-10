@@ -1,4 +1,4 @@
-import { Donut } from "@/components/data/Donut";
+import { Donut } from "@/components/ui-kit/charts/Donut";
 import { formatPercent } from "@/lib/format";
 
 export function VerifiedDonut({
