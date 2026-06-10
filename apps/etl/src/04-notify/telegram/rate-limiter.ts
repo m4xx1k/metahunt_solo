@@ -48,6 +48,18 @@ export function retryAfterMs(err: unknown): number | null {
 }
 
 /**
+ * True when `err` is a Telegram 403 — the chat is unreachable (bot blocked,
+ * user deactivated, or bot can't open the chat). Permanent for this run: no
+ * retry succeeds until the user acts, so the digest engine fails fast on it
+ * instead of burning Temporal attempts. Duck-typed against grammy's
+ * `GrammyError` (`error_code`), like `retryAfterMs`.
+ */
+export function isChatUnreachable(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  return (err as { error_code?: number }).error_code === 403;
+}
+
+/**
  * Run `fn`, and on a Telegram 429 wait the advised `retry_after` and retry — up
  * to `maxRetries` times. Any non-429 error (or exhausted retries) propagates, so
  * Temporal's activity retry still backstops genuine failures.
