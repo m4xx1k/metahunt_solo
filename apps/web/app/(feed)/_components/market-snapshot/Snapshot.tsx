@@ -7,7 +7,8 @@ import { Pipeline } from "../pipeline/Pipeline";
 // the headline + live counter say *what this is*, and the 3-stage pipeline
 // below says *how it works* (Збір → Розбір → Підбір). The pipeline only shows
 // on the bare index (`showPipeline`), not on track pages. The old stat widgets
-// (TopSkills / SeniorityBars / …) stay in this folder but unrendered.
+// (TopSkills / SeniorityBars / …) were deleted as unrendered dead code — git
+// history has them if a stats band ever comes back.
 
 type Props = {
   aggregates: VacancyAggregates;
