@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
-import { DRIZZLE } from "@metahunt/database";
+import { DRIZZLE, schema } from "@metahunt/database";
 
 import { TaxonomyService } from "./taxonomy.service";
 
@@ -208,8 +208,9 @@ describe("TaxonomyService", () => {
         type: "ROLE",
         status: "NEW",
       });
-      // 3 execute calls in the happy path: conflicts probe, alias cleanup, alias insert.
-      expect(tx.execute).toHaveBeenCalledTimes(3);
+      // 2 execute calls in the happy path: conflicts probe, then the combined
+      // (old + new canonical) lowercased alias insert.
+      expect(tx.execute).toHaveBeenCalledTimes(2);
       expect(tx.update).toHaveBeenCalledTimes(1);
     });
 
@@ -303,6 +304,76 @@ describe("TaxonomyService", () => {
           suggestion: { mergeTargetId: OTHER_ID },
         },
       });
+    });
+  });
+
+  describe("mergeInto", () => {
+    const SRC = "33333333-3333-3333-3333-333333333333";
+    const DST = "44444444-4444-4444-4444-444444444444";
+
+    function buildMergeTx(source: Row, target: Row) {
+      const selectWhere = jest.fn().mockResolvedValue([source, target]);
+      const select = jest.fn().mockReturnValue({
+        from: jest.fn().mockReturnValue({ where: selectWhere }),
+      });
+      const execute = jest.fn().mockResolvedValue(undefined);
+      const update = jest.fn().mockReturnValue({
+        set: jest
+          .fn()
+          .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+      });
+      const del = jest
+        .fn()
+        .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) });
+      return { select, execute, update, delete: del };
+    }
+
+    function wireMergeTx(db: DbMock, tx: ReturnType<typeof buildMergeTx>): void {
+      db.transaction.mockImplementation(
+        async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
+      );
+    }
+
+    it("rejects merging a node into itself without touching the DB", async () => {
+      const db = emptyDbMock();
+      const svc = await bootstrap(db);
+      await expect(svc.mergeInto(SRC, SRC)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(db.transaction).not.toHaveBeenCalled();
+    });
+
+    it("rejects merging across node types", async () => {
+      const db = emptyDbMock();
+      const tx = buildMergeTx(
+        { id: SRC, canonicalName: "x", type: "SKILL", status: "NEW" },
+        { id: DST, canonicalName: "y", type: "ROLE", status: "VERIFIED" },
+      );
+      wireMergeTx(db, tx);
+      const svc = await bootstrap(db);
+      await expect(svc.mergeInto(SRC, DST)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it("repoints candidate_nodes (CV skill links) onto the target", async () => {
+      const db = emptyDbMock();
+      const tx = buildMergeTx(
+        { id: SRC, canonicalName: "React.js", type: "SKILL", status: "NEW" },
+        { id: DST, canonicalName: "React", type: "SKILL", status: "VERIFIED" },
+      );
+      wireMergeTx(db, tx);
+      const svc = await bootstrap(db);
+
+      const out = await svc.mergeInto(SRC, DST);
+
+      expect(out).toEqual({ mergedInto: DST, source: "React.js", target: "React" });
+      // candidate_nodes must be repointed alongside vacancy_nodes — else the
+      // final node delete trips the candidate_nodes FK and aborts the merge for
+      // any skill a CV has already matched.
+      const updatedTables = tx.update.mock.calls.map((c) => c[0]);
+      expect(updatedTables).toContain(schema.candidateNodes);
+      expect(updatedTables).toContain(schema.vacancyNodes);
     });
   });
 });
