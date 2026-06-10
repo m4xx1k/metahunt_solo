@@ -154,7 +154,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async ExtractVacancy(
-        text: string,knownRoles: string,knownDomains: string,
+        text: string,knownRoles: string,knownDomains: string,knownSkills: string,
         __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ExtractedVacancy> {
           try {
@@ -168,7 +168,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (__options__.onTick) {
           const __stream__ = this.stream.ExtractVacancy(
-          text,knownRoles,knownDomains,
+          text,knownRoles,knownDomains,knownSkills,
           __baml_options__
           );
 
@@ -192,7 +192,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const __raw__ = await this.runtime.callFunction(
             "ExtractVacancy",
             {
-            "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+            "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains,"knownSkills": knownSkills
             },
             this.ctxManager.cloneContext(),
             __options__.tb?.__tb(),
@@ -298,7 +298,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             ExtractVacancy(
-            text: string,knownRoles: string,knownDomains: string,
+            text: string,knownRoles: string,knownDomains: string,knownSkills: string,
             __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ExtractedVacancy, types.ExtractedVacancy>
               {
@@ -347,7 +347,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const __raw__ = this.runtime.streamFunction(
                 "ExtractVacancy",
                 {
-                "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+                "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains,"knownSkills": knownSkills
                 },
                 undefined,
                 this.ctxManager.cloneContext(),
