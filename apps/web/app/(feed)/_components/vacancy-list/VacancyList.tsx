@@ -1,6 +1,6 @@
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
 import { Pagination } from "@/components/data/Pagination";
-import { PublicVacancyCard } from "@/components/data/PublicVacancyCard";
+import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 
 type Props = {
   result: ListVacanciesResponse;
@@ -38,7 +38,7 @@ export function VacancyList({
       ) : (
         <div className="flex flex-col gap-4">
           {result.items.map((v) => (
-            <PublicVacancyCard key={v.id} vacancy={v} />
+            <VacancyCard key={v.id} vacancy={v} />
           ))}
         </div>
       )}

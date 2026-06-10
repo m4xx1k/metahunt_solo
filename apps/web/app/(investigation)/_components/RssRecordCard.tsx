@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { CopyButton } from "@/components/ui-kit";
-import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 import { Fact } from "@/entities/vacancy/Fact";
 import { FlagPills } from "@/entities/vacancy/FlagPills";
 

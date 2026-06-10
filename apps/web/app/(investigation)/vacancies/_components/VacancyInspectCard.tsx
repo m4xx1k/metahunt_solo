@@ -11,13 +11,13 @@ import {
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/ui-kit";
-import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 import { SkillChip } from "@/entities/skill/SkillChip";
 import { Fact } from "@/entities/vacancy/Fact";
 import { FlagPills } from "@/entities/vacancy/FlagPills";
 import { formatLocations } from "@/entities/vacancy/format-locations";
 
-export function VacancyCard({
+export function VacancyInspectCard({
   vacancy,
   className,
 }: {

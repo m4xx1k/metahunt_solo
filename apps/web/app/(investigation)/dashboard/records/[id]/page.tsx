@@ -6,7 +6,7 @@ import { ExtractedDataView } from "./_components/ExtractedDataView";
 import { Badge, Tag } from "@/components/ui-kit";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { displayTitle, extractedSeniority } from "@/lib/extracted-vacancy";
-import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 
 export const dynamic = "force-dynamic";
 

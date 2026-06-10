@@ -1,4 +1,4 @@
-import { PublicVacancyCard } from "@/components/data/PublicVacancyCard";
+import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import { SkillChip, type SkillTone } from "@/entities/skill/SkillChip";
 import type { FitTier, RankedVacancy, SkillRef } from "@/lib/api/ranking";
 
@@ -39,7 +39,7 @@ export function MatchCard({ item, rank }: { item: RankedVacancy; rank: number })
         </div>
       )}
 
-      <PublicVacancyCard vacancy={item.vacancy} />
+      <VacancyCard vacancy={item.vacancy} />
     </div>
   );
 }

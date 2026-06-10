@@ -2,12 +2,12 @@ import { Fragment } from "react";
 
 import Link from "next/link";
 
-import { DuplicatesBadge } from "@/components/data/DuplicatesBadge";
-import { SeniorityBadge } from "@/components/data/SeniorityBadge";
+import { DuplicatesBadge } from "./DuplicatesBadge";
+import { SeniorityBadge } from "./SeniorityBadge";
 import { SkillChip } from "@/entities/skill/SkillChip";
-import { Fact } from "@/entities/vacancy/Fact";
-import { FlagPill } from "@/entities/vacancy/FlagPill";
-import { formatLocations } from "@/entities/vacancy/format-locations";
+import { Fact } from "./Fact";
+import { FlagPill } from "./FlagPill";
+import { formatLocations } from "./format-locations";
 import {
   EMPLOYMENT_LABELS,
   ENGLISH_LABELS,
@@ -23,7 +23,7 @@ type Props = { vacancy: VacancyDto };
 const SKILLS_REQUIRED_SHOWN = 6;
 const SKILLS_OPTIONAL_SHOWN = 5;
 
-export function PublicVacancyCard({ vacancy: v }: Props) {
+export function VacancyCard({ vacancy: v }: Props) {
   const role = v.role?.name ?? "untitled role";
   const company = v.company?.name ?? null;
   const domain = v.domain?.name ?? null;

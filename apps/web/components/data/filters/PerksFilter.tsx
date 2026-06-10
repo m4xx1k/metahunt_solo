@@ -5,7 +5,7 @@ import { Section } from "@/components/data/filters/Section";
 
 // PerksFilter — the two market "perks" (бронь, тестове) merged into a single
 // two-column quick-filter row, styled to mirror the card pills in
-// PublicVacancyCard. Framed the way candidates read them: reservation as a draw
+// VacancyCard. Framed the way candidates read them: reservation as a draw
 // ("бронь") and the test task by its desirable absence ("без тесту").
 //
 // Each pill is an independent on/off toggle: active → the meaningful filter,
