@@ -515,21 +515,17 @@ export class TaxonomyService {
         });
       }
 
-      // If newName is already an alias of THIS node, drop it — same string
-      // can't live in both the canonical and alias tables for the same node.
-      await tx.execute(sql`
-        DELETE FROM node_aliases
-        WHERE node_id = ${id}
-          AND type = ${node.type}
-          AND LOWER(name) = LOWER(${newName})
-      `);
-
-      // Old canonical becomes an alias. ON CONFLICT guards against the rare
-      // case where it was already an alias of this node (would otherwise
-      // trip the unique (name, type) constraint).
+      // Both the old and the new canonical live on as lowercased aliases so
+      // historical extractions (in any case) keep resolving here. Storing
+      // lower(canonical) as a self-alias is the same invariant ingest maintains
+      // — it's what stops a differently-cased re-extraction from spawning a
+      // duplicate node. ON CONFLICT (incl. intra-VALUES dupes on a case-only
+      // rename) is a safe no-op via DO NOTHING.
       await tx.execute(sql`
         INSERT INTO node_aliases (name, type, node_id)
-        VALUES (${node.canonicalName}, ${node.type}, ${id})
+        VALUES
+          (${node.canonicalName.trim().toLowerCase()}, ${node.type}, ${id}),
+          (${newName.toLowerCase()}, ${node.type}, ${id})
         ON CONFLICT (name, type) DO NOTHING
       `);
 
@@ -583,9 +579,11 @@ export class TaxonomyService {
       `);
 
       // 2) Source's canonical name becomes an alias of target (if not already one).
+      // Lowercased: ingest resolves aliases by exact lower-cased match, so a
+      // mixed-case alias here would silently never resolve (and spawn dup nodes).
       await tx.execute(sql`
         INSERT INTO node_aliases (name, type, node_id)
-        VALUES (${source.canonicalName}, ${source.type}, ${targetId})
+        VALUES (${source.canonicalName.trim().toLowerCase()}, ${source.type}, ${targetId})
         ON CONFLICT (name, type) DO NOTHING
       `);
 
@@ -611,6 +609,23 @@ export class TaxonomyService {
         .update(schema.vacancies)
         .set({ domainNodeId: targetId })
         .where(eq(schema.vacancies.domainNodeId, sourceId));
+
+      // 4b) Re-point candidate_nodes (CV skill links). Same composite-PK
+      // collision handling as vacancy_nodes — drop dupes first, then move the
+      // rest. Without this the final node delete trips the candidate_nodes FK
+      // (ON DELETE NO ACTION) and aborts the whole merge for any skill a CV has
+      // matched. Harmless no-op for ROLE/DOMAIN merges (those never link here).
+      await tx.execute(sql`
+        DELETE FROM candidate_nodes
+        WHERE node_id = ${sourceId}
+          AND candidate_id IN (
+            SELECT candidate_id FROM candidate_nodes WHERE node_id = ${targetId}
+          )
+      `);
+      await tx
+        .update(schema.candidateNodes)
+        .set({ nodeId: targetId })
+        .where(eq(schema.candidateNodes.nodeId, sourceId));
 
       // 5) Delete source. Any lingering aliases cascade automatically.
       await tx
