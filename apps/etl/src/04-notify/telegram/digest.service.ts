@@ -128,7 +128,18 @@ export class DigestService {
     const ids = await this.subscriptions.listActiveIds();
     let sent = 0;
     for (const id of ids) {
-      sent += await this.deliver(id);
+      // Isolate per-subscription failures (e.g. a blocked bot, 403) so one
+      // unreachable chat doesn't abort delivery to everyone queued behind it —
+      // matches notifySubscribersWorkflow's resilience.
+      try {
+        sent += await this.deliver(id);
+      } catch (err) {
+        this.logger.warn(
+          `digest delivery failed for sub ${id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
     }
     return { subscriptions: ids.length, sent };
   }

@@ -1,4 +1,9 @@
-import { RateLimiter, retryAfterMs, withRetryAfter } from "./rate-limiter";
+import {
+  isChatUnreachable,
+  RateLimiter,
+  retryAfterMs,
+  withRetryAfter,
+} from "./rate-limiter";
 
 describe("RateLimiter", () => {
   // Drive the limiter with a virtual clock + a wait() that advances it, so the
@@ -93,6 +98,28 @@ describe("retryAfterMs", () => {
     expect(retryAfterMs(null)).toBeNull();
     expect(retryAfterMs("nope")).toBeNull();
     expect(retryAfterMs(new Error("network"))).toBeNull();
+  });
+});
+
+describe("isChatUnreachable", () => {
+  it("is true for a 403 (bot blocked / chat gone)", () => {
+    expect(
+      isChatUnreachable({
+        error_code: 403,
+        description: "Forbidden: bot was blocked by the user",
+      }),
+    ).toBe(true);
+  });
+
+  it("is false for other Telegram errors", () => {
+    expect(isChatUnreachable({ error_code: 429 })).toBe(false);
+    expect(isChatUnreachable({ error_code: 400 })).toBe(false);
+  });
+
+  it("is false for non-error shapes", () => {
+    expect(isChatUnreachable(null)).toBe(false);
+    expect(isChatUnreachable("nope")).toBe(false);
+    expect(isChatUnreachable(new Error("network"))).toBe(false);
   });
 });
 
