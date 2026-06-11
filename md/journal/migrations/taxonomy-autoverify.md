@@ -19,6 +19,7 @@ Model flip: verification is threshold-driven (usage promotes), the operator only
 - [x] T0 — separator-insensitive alias normalization (`normalizeAliasName`, migration 0019) — *done when:* "REST Assured"/"rest-assured"/"RestAssured" resolve to one node; migration dry-run keeps (type,name) unique — `b440a6a`
 - [x] T1 — VERIFIED skill vocabulary in extraction prompt (PROMPT_VERSION 3) — *done when:* `ExtractVacancy` receives `knownSkills`; baml tests updated — `ec03f60`
 - [x] T2 — auto-verify Temporal schedule (daily, ≥5 vacancies & ≥2 companies, NULL company = own company) — *done when:* schedule installs on bootstrap, activity promotes idempotently — `24bc1d0`
+- [x] T2.5 — `taxonomy-review` skill (curation stays human-in-the-loop tooling, NOT prod code — rejected an in-pipeline LLM judge) + Railway day-2 ops runbook section — *done when:* skill shortlists junk/dupes and applies verdicts via admin API after confirmation
 - [ ] T3 — prod rollout (see plan below) — *done when:* prod feed shows skills for Hardware/QA vacancies; `pct zero visible` per role drops to raw-extraction levels
 - [ ] T4 — role dedup in prod: merge ~95 NEW role dupes into VERIFIED umbrellas via admin merge — *done when:* 0 vacancies hidden behind NEW roles
 - [ ] T5 — re-extraction batches: Python Developer (72) + .NET Developer (120) after merging those roles into Backend Developer; Software Engineer (516) after prompt tightening; 89 raw-zero-skill vacancies — *done when:* batches re-extracted under PROMPT_VERSION 3
@@ -27,7 +28,7 @@ Model flip: verification is threshold-driven (usage promotes), the operator only
 
 Order matters: normalization must land before the first auto-verify fire, otherwise the pass promotes spelling-variant duplicates.
 
-1. **Pre-merge junk sweep (manual, ~30 min).** Against prod DB, dry-run the promotion SELECT (same predicate as `autoVerifySkills`, `SELECT` instead of `UPDATE`). Eyeball the list (~1.0–1.1k names on current data); HIDE obvious junk via admin (`PATCH /admin/taxonomy/nodes/:id/hide`) — e.g. "QA", "AI tools", generic categories. HIDDEN is sticky: the auto-pass skips it forever.
+1. **Pre-merge junk sweep — run the `taxonomy-review` skill** (`.claude/skills/taxonomy-review/SKILL.md`) against prod: it shortlists junk/dupes among threshold-crossing candidates and HIDEs confirmed junk before the first auto-verify fire. HIDDEN is sticky: the auto-pass skips it forever. Same skill is the recurring cleanup tool after each promote.
 2. **Merge PR → Railway deploy.** Pre-deploy step runs migration 0019 (alias re-normalization, data-only). App bootstrap installs the `taxonomy-autoverify` Temporal schedule.
 3. **First promotion.** Either wait ≤24h for the schedule, or trigger `taxonomyAutoverifyWorkflow` manually from the Temporal UI for immediate effect. Activity log lists every promoted name — skim it.
 4. **Verify.** Spot-check feed cards for Hardware/QA/Network vacancies (skills now visible); facet sidebar shows TestRail/I2C/KiCad-class skills; re-run the per-role zero-visible-skill query and compare against the audit numbers above.
