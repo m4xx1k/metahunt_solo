@@ -14,7 +14,7 @@ import {
 } from "@/lib/extracted-vacancy";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatRelative } from "@/lib/format";
-import { CopyButton } from "@/components/ui-kit";
+import { CopyButton } from "@/ui";
 import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 import { Fact } from "@/entities/vacancy/Fact";
 import { FlagPills } from "@/entities/vacancy/FlagPills";

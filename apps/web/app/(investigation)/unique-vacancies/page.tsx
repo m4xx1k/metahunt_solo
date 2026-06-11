@@ -1,4 +1,4 @@
-import { Tag } from "@/components/ui-kit";
+import { Tag } from "@/ui";
 import { dedupApi, type DedupConfidence } from "@/lib/api/dedup";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
 import { FilterToggles } from "../_components/FilterToggles";

@@ -1,5 +1,5 @@
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
-import { Pagination } from "@/components/ui-kit/navigation/Pagination";
+import { Pagination } from "@/ui/navigation/Pagination";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 
 type Props = {

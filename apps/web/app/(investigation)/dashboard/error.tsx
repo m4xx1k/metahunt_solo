@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/ui-kit";
+import { Button } from "@/ui";
 
 export default function MonitoringError({
   error,

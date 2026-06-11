@@ -14,7 +14,7 @@ Background + full rationale: [`md/journal/migrations/front-refactor/rules.md`](.
 
 | Layer | Lives in | Contains | Imports from |
 |---|---|---|---|
-| **shared** | `components/ui-kit/`, `lib/` | Domain-free primitives, charts, api client, utils, hooks | nothing above |
+| **shared** | `ui/`, `lib/` | Domain-free primitives, charts, api client, utils, hooks | nothing above |
 | **entities** | `entities/<noun>/` | Domain nouns: types re-exports, pure formatters, dumb display components (VacancyCard, SkillChip) | shared |
 | **features** | `features/<capability>/` | Domain verbs: UI + client/url state + adapter types (vacancy-filters) | entities, shared |
 | **app** | `app/` | Routes = composition roots; server components fetch via `lib/api` and inject data via props | everything |
@@ -38,10 +38,15 @@ app/
   layout.tsx                       # root: html, body, fonts, analytics
   _components/                     # app chrome: Header, Footer, AppToaster
   (feed)/
-    [[...slug]]/page.tsx           # public feed + landing
-    _components/<section>/         # one folder per landing section — static
-      <Section>.tsx                #   content, NOT features; stays colocated
-      data.tsx                     #   forever (hero, how, pipeline, problem…)
+    [[...slug]]/page.tsx           # public feed (catch-all: /, /track/<slug>…)
+    _components/                   # feed-owned only: market/ (FeedHero,
+                                   #   FeedFilters, toggles), pipeline/,
+                                   #   subscribe/, vacancy-list/
+  welcome/                         # marketing landing (/welcome)
+    page.tsx
+    _components/<section>/         # one folder per static section: hero, how,
+      <Section>.tsx                #   problem, result, ai, roadmap, about,
+      data.tsx                     #   cta, waitlist — content, NOT features
   (investigation)/                 # internal data pages
     layout.tsx
     <route>/
@@ -55,19 +60,24 @@ entities/
 features/
   vacancy-filters/                 # filter sections + adapter types + use-url-filters,
                                    #   consumed by the feed and reverse-ATS
-components/
-  ui-kit/                          # shared primitives only (+ charts/, navigation/)
+ui/                                # shared domain-free primitives
+  badges/ buttons/ cards/ charts/ icons/ inputs/ layout/ navigation/ typography/
 lib/
   api/                             # typed fetchers — the only backend boundary
   hooks/  utils.ts  format.ts  extracted-vacancy.ts
 ```
 
-**Rules of thumb:**
+**`_components` is not a junk drawer — it's an ownership claim.** Each `_components` folder belongs to exactly one route (the `_` prefix is Next's opt-out of routing). The moment a second page imports from another page's `_components`, that import is the promotion signal: move the thing to `entities`/`features`/`ui` instead. Two pages sharing one `_components` folder (how welcome + feed used to share `(feed)/_components`) is the bug this rule exists to catch.
 
-- Adding a landing section → new folder under `app/(feed)/_components/<name>/` with `<Name>.tsx` + `data.tsx`. Import in the feed page.
-- Adding an investigation page → `app/(investigation)/<route>/page.tsx` (server component) calls `lib/api/<resource>.ts`, passes data as props to `_components/`.
-- A card/widget used by exactly one page does NOT belong in `ui-kit`/`entities`. Put it next to its consumer.
-- Needed on two pages → `entities/` if it's a domain noun's display, `features/` if it carries state/behavior, `ui-kit` if it's domain-free.
+**Sparse layers are fine.** `features/` having one slice and `ui/` being small is expected at this stage — layers earn tenants through the promotion rule, they are not filled for symmetry.
+
+**Where does new code go (decision list):**
+
+1. Used by one page → that page's `_components/` (or a section folder under `welcome/_components/`).
+2. Needed on a second page and it *displays a domain noun* (vacancy, skill, source…) → `entities/<noun>/`.
+3. Needed on a second page and it *does something* (state, url-sync, mutation flow) → `features/<capability>/`.
+4. Domain-free and reusable anywhere (button, chart, layout shell) → `ui/`.
+5. Talks to the backend → a typed fetcher in `lib/api/`, never inside a component.
 
 ## Local dev
 
@@ -98,4 +108,4 @@ Vercel builds from `apps/web/` of this monorepo (Root Directory setting). The Ig
 
 ## API integration
 
-`lib/api/` is the single backend boundary: one typed fetcher per resource, all going through the shared `lib/api/client.ts` (`apiBase` + `apiFetch` + `buildQs`). Pages (server components) call the fetchers and pass data as props; components stay dumb. `NEXT_PUBLIC_API_URL` must point at `@metahunt/etl` (set in `.env.local` locally, on Vercel for deploys). The landing is static apart from the live market-snapshot + vacancy-list sections; investigation pages are fully API-driven. See ADR-0005 consequences.
+`lib/api/` is the single backend boundary: one typed fetcher per resource, all going through the shared `lib/api/client.ts` (`apiBase` + `apiFetch` + `buildQs`). Pages (server components) call the fetchers and pass data as props; components stay dumb. `NEXT_PUBLIC_API_URL` must point at `@metahunt/etl` (set in `.env.local` locally, on Vercel for deploys). The welcome landing is fully static; the feed page is live (market filters + vacancy list); investigation pages are fully API-driven. See ADR-0005 consequences.

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { IngestStatus, LatestPerSourceItem } from "@/lib/api/monitoring";
 import { formatRelative } from "@/lib/format";
-import { Sparkline } from "@/components/ui-kit/charts/Sparkline";
+import { Sparkline } from "@/ui/charts/Sparkline";
 import { StatusBadge } from "../../_components/StatusBadge";
 
 const STATUS_VALUE: Record<IngestStatus, number> = {

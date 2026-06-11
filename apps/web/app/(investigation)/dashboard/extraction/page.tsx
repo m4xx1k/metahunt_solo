@@ -1,6 +1,6 @@
 import { extractionCostApi } from "@/lib/api/extraction-cost";
 import { InvestigationHeader } from "../../_components/InvestigationHeader";
-import { Tag } from "@/components/ui-kit";
+import { Tag } from "@/ui";
 import {
   formatCount,
   formatPercent,

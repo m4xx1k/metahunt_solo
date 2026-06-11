@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button, Logo, NavLink } from "@/components/ui-kit";
+import { Button, Logo, NavLink } from "@/ui";
 
 export type NavItem = { label: string; href: string };
 

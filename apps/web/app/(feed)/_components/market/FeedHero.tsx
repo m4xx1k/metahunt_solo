@@ -1,5 +1,5 @@
 import type { VacancyAggregates } from "@/lib/api/aggregates";
-import { Tag, Divider } from "@/components/ui-kit";
+import { Tag, Divider } from "@/ui";
 import { TotalCounter } from "./TotalCounter";
 import { Pipeline } from "../pipeline/Pipeline";
 

@@ -10,7 +10,7 @@ import {
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "@/components/ui-kit";
+import { CopyButton } from "@/ui";
 import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 import { SkillChip } from "@/entities/skill/SkillChip";
 import { Fact } from "@/entities/vacancy/Fact";

@@ -1,4 +1,4 @@
-import { StackedBar } from "@/components/ui-kit/charts/StackedBar";
+import { StackedBar } from "@/ui/charts/StackedBar";
 import type { AxisCoverage, AxisKey } from "@/lib/api/taxonomy";
 import { cn } from "@/lib/utils";
 

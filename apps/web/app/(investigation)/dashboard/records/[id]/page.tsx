@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { monitoringApi } from "@/lib/api/monitoring";
 import { InvestigationHeader } from "../../../_components/InvestigationHeader";
 import { ExtractedDataView } from "./_components/ExtractedDataView";
-import { Badge, Tag } from "@/components/ui-kit";
+import { Badge, Tag } from "@/ui";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { displayTitle, extractedSeniority } from "@/lib/extracted-vacancy";
 import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";

@@ -7,7 +7,7 @@ import {
 import { taxonomyApi } from "@/lib/api/taxonomy";
 import { dedupApi } from "@/lib/api/dedup";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
-import { Tag } from "@/components/ui-kit";
+import { Tag } from "@/ui";
 import { cn } from "@/lib/utils";
 import { formatCount, formatUsd, formatTokens } from "@/lib/format";
 import { KpiCard } from "./_components/KpiCard";

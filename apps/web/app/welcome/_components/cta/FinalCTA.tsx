@@ -1,4 +1,4 @@
-import { Section } from "@/components/ui-kit";
+import { Section } from "@/ui";
 import { FinalCTAForm } from "./FinalCTAForm";
 import { ctaSection } from "./data";
 

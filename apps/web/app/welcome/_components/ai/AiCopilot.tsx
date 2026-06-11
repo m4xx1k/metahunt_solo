@@ -1,4 +1,4 @@
-import { Section, SectionHeader } from "@/components/ui-kit";
+import { Section, SectionHeader } from "@/ui";
 import { FeatureCard } from "./FeatureCard";
 import { aiCopilotSection, aiFeatures } from "./data";
 

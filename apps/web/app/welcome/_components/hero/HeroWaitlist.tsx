@@ -1,6 +1,6 @@
 "use client";
 
-import { EmailInput } from "@/components/ui-kit";
+import { EmailInput } from "@/ui";
 import { useWaitlistSignup } from "../waitlist/use-waitlist-signup";
 
 interface Props {

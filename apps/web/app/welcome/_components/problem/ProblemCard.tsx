@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui-kit";
+import { Card } from "@/ui";
 import { cn } from "@/lib/utils";
 
 export function ProblemCard({

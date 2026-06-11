@@ -1,4 +1,4 @@
-import { Section, SectionHeader } from "@/components/ui-kit";
+import { Section, SectionHeader } from "@/ui";
 import { ProblemCard } from "./ProblemCard";
 import { problemSection, problems } from "./data";
 

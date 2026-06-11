@@ -1,4 +1,4 @@
-import { Section, SectionHeader } from "@/components/ui-kit";
+import { Section, SectionHeader } from "@/ui";
 import { cn } from "@/lib/utils";
 import { roadmapItems, roadmapSection } from "./data";
 

@@ -1,4 +1,4 @@
-import { Heading } from "@/components/ui-kit";
+import { Heading } from "@/ui";
 import { HeroWaitlist } from "./HeroWaitlist";
 import { hero } from "./data";
 

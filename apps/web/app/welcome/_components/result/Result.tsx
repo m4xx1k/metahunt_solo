@@ -1,5 +1,5 @@
 import { ArrowDown } from "@phosphor-icons/react/dist/ssr";
-import { Section, SectionHeader } from "@/components/ui-kit";
+import { Section, SectionHeader } from "@/ui";
 import { GoldenJobCard } from "./GoldenJobCard";
 import { RawJobCard } from "./RawJobCard";
 import { goldenJob, rawJobs, resultSection } from "./data";

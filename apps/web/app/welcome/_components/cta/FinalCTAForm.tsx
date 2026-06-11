@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ChangeEvent } from "react";
-import { Button } from "@/components/ui-kit";
+import { Button } from "@/ui";
 import { useWaitlistSignup } from "../waitlist/use-waitlist-signup";
 import { ctaSection } from "./data";
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Card, Divider, Section, SectionHeader } from "@/components/ui-kit";
+import { Card, Divider, Section, SectionHeader } from "@/ui";
 import { aboutMeSection } from "./data";
 
 export function AboutMe() {

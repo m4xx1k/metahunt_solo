@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui-kit";
+import { Card } from "@/ui";
 import type { DedupMetrics } from "@/lib/api/dedup";
 
 // Three plain numbers that tell the whole story: how many postings went in,
