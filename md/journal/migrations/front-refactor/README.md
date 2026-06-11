@@ -17,6 +17,17 @@
   (вхід `ExtractedLocation[]`).
 - Нормативна частина rules.md перенесена в `apps/web/CLAUDE.md` (коміт 4).
 
+## Друга хвиля (той же день, після рев'ю Макса)
+
+- Неймінг-аудит → [naming.md](naming.md); топ-3 ренейми застосовані
+  (`TrackAxisSection`, `FeedHero` + папка `market/`, `FeedFilters`).
+- `welcome` винесено з `(feed)` у `app/welcome/` разом з 9 секціями — дві сторінки
+  більше не діляться одним `_components` (це й був головний "сморід").
+- `components/ui-kit` → топ-рівневий `ui/` — рівень `components/` з єдиною дитиною
+  видалено; тепер кожна топ-папка = шар: `app / entities / features / ui / lib`.
+- `features/` з одним слайсом — свідомо: шари заповнюються через promotion-правило,
+  а не для симетрії (зафіксовано в CLAUDE.md "Sparse layers are fine").
+
 ## Мета
 
 Прибрати "звалищні" папки (`components/data`, `components/shared`), розмазаність фіч
