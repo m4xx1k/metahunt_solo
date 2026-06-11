@@ -1,4 +1,4 @@
-import { Badge, Card } from "@/components/ui-kit";
+import { Badge, Card } from "@/ui";
 import type { UniqueVacancyListItem } from "@/lib/api/dedup";
 import {
   formatDateOnly,

@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui-kit";
+import { Button } from "@/ui";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
 import {
   subscriptionsApi,

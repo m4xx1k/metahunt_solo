@@ -11,8 +11,8 @@
 
 import { notFound } from "next/navigation";
 
-import { Header, type NavItem } from "@/components/shared/Header";
-import { Footer } from "@/components/shared/Footer";
+import { Header, type NavItem } from "@/app/_components/Header";
+import { Footer } from "@/app/_components/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
@@ -23,8 +23,8 @@ import {
   vacanciesApi,
 } from "@/lib/api/vacancies";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
-import { Snapshot } from "../_components/market-snapshot/Snapshot";
-import { MarketFilters } from "../_components/market-snapshot/MarketFilters";
+import { FeedHero } from "../_components/market/FeedHero";
+import { FeedFilters } from "../_components/market/FeedFilters";
 import { SubscribeButton } from "../_components/subscribe/SubscribeButton";
 import { VacancyList } from "../_components/vacancy-list/VacancyList";
 
@@ -44,7 +44,7 @@ function asString(v: string | string[] | undefined): string | undefined {
 }
 
 // An axis param: absent (undefined) → fall back to the track's preset node ids;
-// present (even "") → the explicit comma-joined set. Mirrors FacetSection's
+// present (even "") → the explicit comma-joined set. Mirrors TrackAxisSection's
 // URL model so a fully-removed preset (?skills=) yields an empty axis.
 function axisOr(
   v: string | string[] | undefined,
@@ -177,14 +177,14 @@ export default async function TrackPage({
     <>
       <Header links={snapshotNav} />
       <main className="flex min-h-screen flex-col bg-bg">
-        <Snapshot aggregates={aggregates} showPipeline={!trackSlug} />
+        <FeedHero aggregates={aggregates} showPipeline={!trackSlug} />
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
             <div className="flex flex-col gap-4">
               {(!trackSlug || hasPreset) && (
                 <SubscribeButton params={subscriptionParams} />
               )}
-              <MarketFilters
+              <FeedFilters
                 aggregates={aggregates}
                 tracks={tracks}
                 activeTrackSlug={trackSlug ?? null}

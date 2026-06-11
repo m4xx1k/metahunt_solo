@@ -1,7 +1,7 @@
 import { monitoringApi, type IngestStatus } from "@/lib/api/monitoring";
 import { taxonomyApi, type SourceCoverage } from "@/lib/api/taxonomy";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
-import { Tag } from "@/components/ui-kit";
+import { Tag } from "@/ui";
 import { SourcesTable, type SourceRow } from "./_components/SourcesTable";
 
 export const dynamic = "force-dynamic";

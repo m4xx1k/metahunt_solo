@@ -9,7 +9,7 @@
 import { motion } from "framer-motion";
 
 import type { AggregateSourceCount } from "@/lib/api/aggregates";
-import { Badge } from "@/components/ui-kit";
+import { Badge } from "@/ui";
 import { cn } from "@/lib/utils";
 import { accentBg, accentText, EASE } from "./PipelineCard";
 import type { PipelineAccent, PipelineMatch } from "./data";

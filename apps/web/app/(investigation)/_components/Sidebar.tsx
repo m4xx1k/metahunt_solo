@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { Logo } from "@/components/ui-kit";
+import { Logo } from "@/ui";
 import { cn } from "@/lib/utils";
 import { RefreshButton } from "./RefreshButton";
 

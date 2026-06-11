@@ -5,7 +5,7 @@ import type {
   Source,
 } from "@/lib/api/monitoring";
 import type { SourceCoverage } from "@/lib/api/taxonomy";
-import { Sparkline } from "@/components/data/Sparkline";
+import { Sparkline } from "@/ui/charts/Sparkline";
 import { StatusBadge } from "../../_components/StatusBadge";
 import { formatCount, formatRelative } from "@/lib/format";
 

@@ -1,4 +1,5 @@
-import { PublicVacancyCard } from "@/components/data/PublicVacancyCard";
+import { VacancyCard } from "@/entities/vacancy/VacancyCard";
+import { SkillChip, type SkillTone } from "@/entities/skill/SkillChip";
 import type { FitTier, RankedVacancy, SkillRef } from "@/lib/api/ranking";
 
 const TIER: Record<FitTier, { cls: string; label: string }> = {
@@ -32,13 +33,13 @@ export function MatchCard({ item, rank }: { item: RankedVacancy; rank: number })
         item.diff.missing.length > 0 ||
         item.diff.bonus.length > 0) && (
         <div className="flex flex-col gap-2 border border-b-0 border-border bg-bg-card px-6 pb-4 pt-1">
-          <SkillLine sign="✅" label="ти маєш" cls="border-success text-success" skills={item.diff.have} />
-          <SkillLine sign="❌" label="бракує" cls="border-danger text-danger" skills={item.diff.missing} max={8} />
-          <SkillLine sign="➕" label="бонус" cls="border-border text-text-muted" skills={item.diff.bonus} max={8} />
+          <SkillLine sign="✅" label="ти маєш" tone="have" skills={item.diff.have} />
+          <SkillLine sign="❌" label="бракує" tone="missing" skills={item.diff.missing} max={8} />
+          <SkillLine sign="➕" label="бонус" tone="bonus" skills={item.diff.bonus} max={8} />
         </div>
       )}
 
-      <PublicVacancyCard vacancy={item.vacancy} />
+      <VacancyCard vacancy={item.vacancy} />
     </div>
   );
 }
@@ -46,13 +47,13 @@ export function MatchCard({ item, rank }: { item: RankedVacancy; rank: number })
 function SkillLine({
   sign,
   label,
-  cls,
+  tone,
   skills,
   max = 14,
 }: {
   sign: string;
   label: string;
-  cls: string;
+  tone: SkillTone;
   skills: SkillRef[];
   max?: number;
 }) {
@@ -63,9 +64,7 @@ function SkillLine({
         {sign} {label}
       </span>
       {skills.slice(0, max).map((s) => (
-        <span key={s.id} className={`border px-1.5 py-[1px] font-mono text-[11px] ${cls}`}>
-          {s.name.toLowerCase()}
-        </span>
+        <SkillChip key={s.id} name={s.name} tone={tone} compact hash={false} />
       ))}
       {skills.length > max ? (
         <span className="font-mono text-[11px] text-text-muted">+{skills.length - max}</span>

@@ -6,7 +6,7 @@ import {
   type NodeType,
   type TaxonomyCoverage,
 } from "@/lib/api/taxonomy";
-import { Tag } from "@/components/ui-kit";
+import { Tag } from "@/ui";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
 import { AnalyticsStrip } from "./_components/AnalyticsStrip";
 import { Filters } from "./_components/Filters";

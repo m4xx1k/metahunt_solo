@@ -1,9 +1,9 @@
-import { Tag } from "@/components/ui-kit";
+import { Tag } from "@/ui";
 import { vacanciesApi } from "@/lib/api/vacancies";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
-import { Pagination } from "@/components/data/Pagination";
+import { Pagination } from "@/ui/navigation/Pagination";
 import { FilterToggles } from "../_components/FilterToggles";
-import { VacancyCard } from "./_components/VacancyCard";
+import { VacancyInspectCard } from "./_components/VacancyInspectCard";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +95,7 @@ export default async function VacanciesPage({
           ) : (
             <div className="flex flex-col gap-5">
               {result.items.map((v) => (
-                <VacancyCard key={v.id} vacancy={v} />
+                <VacancyInspectCard key={v.id} vacancy={v} />
               ))}
             </div>
           )}
