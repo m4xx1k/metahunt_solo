@@ -32,7 +32,7 @@ describe("NodeResolverService.resolve", () => {
     expect(repo.linkAlias).not.toHaveBeenCalled();
   });
 
-  it("normalizes the lookup name (lowercase + trim)", async () => {
+  it("normalizes the lookup name (lowercase + trim + separators stripped)", async () => {
     const repo = makeRepo();
     repo.findIdByAlias.mockResolvedValue(EXISTING_NODE_ID);
     const svc = new NodeResolverService(repo);
@@ -41,9 +41,24 @@ describe("NodeResolverService.resolve", () => {
 
     expect(repo.findIdByAlias).toHaveBeenCalledWith(
       "ROLE",
-      "backend developer",
+      "backenddeveloper",
       TX,
     );
+  });
+
+  it("resolves separator variants to the same alias key", async () => {
+    const repo = makeRepo();
+    repo.findIdByAlias.mockResolvedValue(EXISTING_NODE_ID);
+    const svc = new NodeResolverService(repo);
+
+    for (const variant of ["REST Assured", "rest-assured", "Rest.Assured"]) {
+      await svc.resolve("SKILL", variant, TX);
+      expect(repo.findIdByAlias).toHaveBeenLastCalledWith(
+        "SKILL",
+        "restassured",
+        TX,
+      );
+    }
   });
 
   it("creates node + alias on miss and returns the new id", async () => {

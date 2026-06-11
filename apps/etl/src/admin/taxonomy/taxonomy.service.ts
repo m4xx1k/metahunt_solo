@@ -9,10 +9,14 @@ import { sql, eq, and, inArray } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
+
 export type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 export type NodeStatusValue = "NEW" | "VERIFIED" | "HIDDEN";
 
 const RENAME_MIN_LEN = 2;
+export const AUTOVERIFY_MIN_VACANCIES = 5;
+export const AUTOVERIFY_MIN_COMPANIES = 2;
 export const TAXONOMY_LIST_DEFAULT = 50;
 export const TAXONOMY_LIST_MAX = 200;
 
@@ -469,6 +473,31 @@ export class TaxonomyService {
     return trimNode(updated);
   }
 
+  // Promote NEW skills that have proven themselves by usage: linked from
+  // enough distinct vacancies AND seen at more than one company, so a single
+  // employer's jargon can't self-verify. Vacancies without a company count as
+  // their own "company" — a third of the corpus has company_id NULL, and a
+  // strict company check would silently exclude skills seen only there.
+  // HIDDEN is never touched: an operator's "this is junk" verdict is final.
+  // Idempotent — safe for the Temporal schedule to re-fire.
+  async autoVerifySkills(): Promise<{ promoted: string[] }> {
+    const result = await this.db.execute<{ canonical_name: string }>(sql`
+      UPDATE nodes SET status = 'VERIFIED'
+      WHERE type = 'SKILL' AND status = 'NEW'
+        AND id IN (
+          SELECT vn.node_id
+          FROM vacancy_nodes vn
+          JOIN vacancies v ON v.id = vn.vacancy_id
+          GROUP BY vn.node_id
+          HAVING count(DISTINCT vn.vacancy_id) >= ${AUTOVERIFY_MIN_VACANCIES}
+             AND count(DISTINCT coalesce(v.company_id::text, v.id::text))
+                 >= ${AUTOVERIFY_MIN_COMPANIES}
+        )
+      RETURNING canonical_name
+    `);
+    return { promoted: result.rows.map((r) => r.canonical_name) };
+  }
+
   // Rename a node's canonical name. The old canonical becomes an alias so
   // historical extractions still resolve. Conflicts surface as 409 with a
   // mergeTargetId suggestion — the UI uses it to route the operator into
@@ -503,7 +532,7 @@ export class TaxonomyService {
         FROM node_aliases
         WHERE type = ${node.type}
           AND node_id <> ${id}
-          AND LOWER(name) = LOWER(${newName})
+          AND name = ${normalizeAliasName(newName)}
         LIMIT 1
       `);
 
@@ -515,17 +544,18 @@ export class TaxonomyService {
         });
       }
 
-      // Both the old and the new canonical live on as lowercased aliases so
-      // historical extractions (in any case) keep resolving here. Storing
-      // lower(canonical) as a self-alias is the same invariant ingest maintains
-      // — it's what stops a differently-cased re-extraction from spawning a
-      // duplicate node. ON CONFLICT (incl. intra-VALUES dupes on a case-only
-      // rename) is a safe no-op via DO NOTHING.
+      // Both the old and the new canonical live on as normalized aliases so
+      // historical extractions (in any case/spelling) keep resolving here.
+      // Storing normalize(canonical) as a self-alias is the same invariant
+      // ingest maintains — it's what stops a differently-spelled
+      // re-extraction from spawning a duplicate node. ON CONFLICT (incl.
+      // intra-VALUES dupes on a case-only rename) is a safe no-op via
+      // DO NOTHING.
       await tx.execute(sql`
         INSERT INTO node_aliases (name, type, node_id)
         VALUES
-          (${node.canonicalName.trim().toLowerCase()}, ${node.type}, ${id}),
-          (${newName.toLowerCase()}, ${node.type}, ${id})
+          (${normalizeAliasName(node.canonicalName)}, ${node.type}, ${id}),
+          (${normalizeAliasName(newName)}, ${node.type}, ${id})
         ON CONFLICT (name, type) DO NOTHING
       `);
 
@@ -579,11 +609,11 @@ export class TaxonomyService {
       `);
 
       // 2) Source's canonical name becomes an alias of target (if not already one).
-      // Lowercased: ingest resolves aliases by exact lower-cased match, so a
-      // mixed-case alias here would silently never resolve (and spawn dup nodes).
+      // Normalized: ingest resolves aliases by exact normalized match, so a
+      // raw-form alias here would silently never resolve (and spawn dup nodes).
       await tx.execute(sql`
         INSERT INTO node_aliases (name, type, node_id)
-        VALUES (${source.canonicalName.trim().toLowerCase()}, ${source.type}, ${targetId})
+        VALUES (${normalizeAliasName(source.canonicalName)}, ${source.type}, ${targetId})
         ON CONFLICT (name, type) DO NOTHING
       `);
 

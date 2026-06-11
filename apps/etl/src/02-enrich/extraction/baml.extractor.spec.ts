@@ -48,7 +48,8 @@ describe("BamlVacancyExtractor", () => {
       { type: "ROLE", name: "Backend Developer" },
       { type: "ROLE", name: "Frontend Developer" },
       { type: "DOMAIN", name: "Fintech" },
-      { type: "SKILL", name: "TypeScript" }, // should be filtered out
+      { type: "SKILL", name: "TypeScript" },
+      { type: "SKILL", name: "PostgreSQL" },
     ],
   ) {
     extractVacancy.mockReset();
@@ -62,7 +63,7 @@ describe("BamlVacancyExtractor", () => {
     return { extractor: moduleRef.get(BamlVacancyExtractor), db };
   }
 
-  it("passes alphabetised canonical roles + domains to BAML and returns usage meta", async () => {
+  it("passes alphabetised canonical roles + domains + skills to BAML and returns usage meta", async () => {
     process.env.OPENAI_MODEL = "gpt-5.4-mini";
     const { extractor } = await bootstrap();
     extractVacancy.mockResolvedValue(sampleVacancy);
@@ -80,10 +81,11 @@ describe("BamlVacancyExtractor", () => {
     });
 
     expect(extractVacancy).toHaveBeenCalledTimes(1);
-    const [text, roles, domains, options] = extractVacancy.mock.calls[0];
+    const [text, roles, domains, skills, options] = extractVacancy.mock.calls[0];
     expect(text).toBe("Senior Backend Developer ...");
     expect(roles).toBe("Backend Developer, Frontend Developer");
     expect(domains).toBe("Fintech");
+    expect(skills).toBe("PostgreSQL, TypeScript");
     expect(options).toHaveProperty("collector");
   });
 
@@ -114,8 +116,9 @@ describe("BamlVacancyExtractor", () => {
     extractVacancy.mockResolvedValue(sampleVacancy);
 
     await extractor.extract("…");
-    const [, roles, domains] = extractVacancy.mock.calls[0];
+    const [, roles, domains, skills] = extractVacancy.mock.calls[0];
     expect(roles).toBe("");
     expect(domains).toBe("");
+    expect(skills).toBe("");
   });
 });

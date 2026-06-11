@@ -229,6 +229,7 @@ function ExtractVacancy(
   text: string,
   knownRoles: string,
   knownDomains: string,
+  knownSkills: string,
 ) -> ExtractedVacancy {
   client OpenAIClient
   prompt #"
@@ -254,6 +255,13 @@ function ExtractVacancy(
     use tech stacks (e.g. "DevOps", "Microservices") as a domain.
     Canonical domains:
     {{ knownDomains }}
+
+    For SKILLS: when a skill you extract matches one of these canonical
+    SKILL names, use the EXACT spelling from the list. Skills not on the
+    list are still welcome — output them under their market-standard
+    English name; do NOT invent variant spellings of listed skills.
+    Canonical skills:
+    {{ knownSkills }}
 
     Example
       Input: "Senior React Developer at Bolt fintech, $5k-7k/mo, remote.
@@ -295,6 +303,7 @@ test senior_backend_remote {
     "#
     knownRoles "Backend Developer, Frontend Developer, Full Stack Developer, DevOps Engineer, QA Engineer"
     knownDomains "Fintech, E-commerce, HealthTech, GameDev"
+    knownSkills "Node.js, TypeScript, PostgreSQL, AWS, Docker, React, NestJS"
   }
 }
 
@@ -312,5 +321,6 @@ test dou_fullstack_talanovyti {
     "#
     knownRoles "Backend Developer, Frontend Developer, Full Stack Developer, DevOps Engineer, QA Engineer, Mobile Developer, Data Engineer, ML Engineer"
     knownDomains "Fintech, E-commerce, HealthTech, GameDev, EdTech, AdTech, Logistics"
+    knownSkills "React, Node.js, JavaScript, TypeScript, PostgreSQL, MySQL, Redis, AWS, GCP, Azure, OAuth, SAML, Microservices"
   }
 }

@@ -148,7 +148,7 @@ export class BamlSyncClient {
   }
   
   ExtractVacancy(
-      text: string,knownRoles: string,knownDomains: string,
+      text: string,knownRoles: string,knownDomains: string,knownSkills: string,
       __baml_options__?: BamlCallOptions<never>
   ): types.ExtractedVacancy {
     try {
@@ -180,7 +180,7 @@ export class BamlSyncClient {
       const __raw__ = this.runtime.callFunctionSync(
         "ExtractVacancy",
         {
-          "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+          "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains,"knownSkills": knownSkills
         },
         this.ctxManager.cloneContext(),
         __options__.tb?.__tb(),

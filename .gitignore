@@ -3,7 +3,9 @@ dist
 .env
 .DS_Store
 .codex
-.claude
+# .claude is local state except skills, which are versioned project tooling
+.claude/*
+!.claude/skills/
 
 # Vercel CLI artifacts (created by `vercel link` / `vercel pull`)
 .vercel

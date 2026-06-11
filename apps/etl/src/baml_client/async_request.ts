@@ -76,7 +76,7 @@ env?: Record<string, string | undefined>
       }
       
   async ExtractVacancy(
-  text: string,knownRoles: string,knownDomains: string,
+  text: string,knownRoles: string,knownDomains: string,knownSkills: string,
   __baml_options__?: BamlCallOptions<never>
   ): Promise<HTTPRequest> {
     try {
@@ -95,7 +95,7 @@ env?: Record<string, string | undefined>
       return await this.runtime.buildRequest(
       "ExtractVacancy",
       {
-      "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+      "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains,"knownSkills": knownSkills
       },
       this.ctxManager.cloneContext(),
       __baml_options__?.tb?.__tb(),
@@ -148,7 +148,7 @@ env?: Record<string, string | undefined>
           }
           
       async ExtractVacancy(
-      text: string,knownRoles: string,knownDomains: string,
+      text: string,knownRoles: string,knownDomains: string,knownSkills: string,
       __baml_options__?: BamlCallOptions<never>
       ): Promise<HTTPRequest> {
         try {
@@ -167,7 +167,7 @@ env?: Record<string, string | undefined>
           return await this.runtime.buildRequest(
           "ExtractVacancy",
           {
-          "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+          "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains,"knownSkills": knownSkills
           },
           this.ctxManager.cloneContext(),
           __baml_options__?.tb?.__tb(),
