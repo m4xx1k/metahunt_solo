@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
 import { EnumSection } from "@/features/vacancy-filters/EnumSection";
-import { type Facet, FacetSection } from "@/features/vacancy-filters/FacetSection";
+import { type TrackAxis, TrackAxisSection } from "@/features/vacancy-filters/TrackAxisSection";
 import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
 import { RoleSection } from "@/features/vacancy-filters/RoleSection";
 import { SkillsSection } from "@/features/vacancy-filters/SkillsSection";
@@ -29,11 +29,11 @@ import { toFilterAggregates } from "./to-filter-aggregates";
 // - Landing (no `tracks`): flat single-select RoleSection + skill multiselect,
 //   with the ActiveFiltersBar summary on top. Unchanged.
 // - Track route (`tracks` passed): leads with the browse tree; once a track is
-//   active, both axes render as unified FacetSections (preset chips on by
+//   active, both axes render as unified TrackAxisSections (preset chips on by
 //   default, contextual suggestions, search-add) writing ?roles / ?skills.
 //   The feed is driven by those explicit axes, so the bar is dropped here —
 //   each section shows its own state.
-export function MarketFilters({
+export function FeedFilters({
   aggregates,
   tracks,
   activeTrackSlug,
@@ -47,15 +47,15 @@ export function MarketFilters({
   tracks?: TrackDto[];
   activeTrackSlug?: string | null;
   /** The active track's preset ROLE nodes (on by default in the facet). */
-  presetRoles?: Facet[];
+  presetRoles?: TrackAxis[];
   /** The active track's preset SKILL nodes. */
-  presetSkills?: Facet[];
+  presetSkills?: TrackAxis[];
   /** Contextual skills ranked for the active track (facet suggestions). */
-  contextualSkills?: Facet[];
+  contextualSkills?: TrackAxis[];
   /** Full verified-role catalog — search-and-add in the role facet. */
-  roleCatalog?: Facet[];
+  roleCatalog?: TrackAxis[];
   /** Full verified-skill catalog — search-and-add in the skill facet. */
-  skillCatalog?: Facet[];
+  skillCatalog?: TrackAxis[];
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   const api = useUrlFilters();
@@ -107,14 +107,14 @@ export function MarketFilters({
               />
               {showFacets ? (
                 <>
-                  <FacetSection
+                  <TrackAxisSection
                     title="refine · roles"
                     urlKey="roles"
                     addLabel="add role…"
                     presets={presetRoles ?? []}
                     catalog={roleCatalog ?? []}
                   />
-                  <FacetSection
+                  <TrackAxisSection
                     title="skills"
                     urlKey="skills"
                     addLabel="add skill…"

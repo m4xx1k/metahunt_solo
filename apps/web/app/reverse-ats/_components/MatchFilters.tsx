@@ -27,7 +27,7 @@ import {
   NO_FILTERS,
 } from "./filter-model";
 
-// The reverse-ATS filter sidebar. Mirrors the feed's MarketFilters: a sticky
+// The reverse-ATS filter sidebar. Mirrors the feed's FeedFilters: a sticky
 // always-visible column on lg+, collapsed behind one toggle on <lg so it never
 // pushes the results below the fold. Reuses the same tier-2 section primitives
 // (EnumSection, PerksFilter, Section) the feed uses — the only difference is the

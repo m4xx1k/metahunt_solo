@@ -26,9 +26,9 @@ const SEP = ",";
 const MAX_MATCHES = 8;
 const MAX_SUGGEST = 8;
 
-export type Facet = { id: string; name: string; count?: number };
+export type TrackAxis = { id: string; name: string; count?: number };
 
-export function FacetSection({
+export function TrackAxisSection({
   title,
   urlKey,
   addLabel,
@@ -43,11 +43,11 @@ export function FacetSection({
   /** Search input placeholder, e.g. "add role…". */
   addLabel: string;
   /** The track's preset nodes for this axis (shown on by default). */
-  presets: Facet[];
+  presets: TrackAxis[];
   /** Full verified catalog — search-and-add + name resolution. */
-  catalog: Facet[];
+  catalog: TrackAxis[];
   /** Contextual ranked nodes (skills only); omitted for roles. */
-  suggestions?: Facet[];
+  suggestions?: TrackAxis[];
 }) {
   const router = useRouter();
   const pathname = usePathname();

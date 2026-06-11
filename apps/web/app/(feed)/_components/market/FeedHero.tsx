@@ -15,7 +15,7 @@ type Props = {
   showPipeline?: boolean;
 };
 
-export function Snapshot({ aggregates: a, showPipeline = false }: Props) {
+export function FeedHero({ aggregates: a, showPipeline = false }: Props) {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
