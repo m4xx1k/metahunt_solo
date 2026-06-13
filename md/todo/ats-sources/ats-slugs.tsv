@@ -1,0 +1,459 @@
+tier	ats	slug	company	jobs	ua_jobs	remote_jobs	flag
+UA	ashby	skelar	Skelar	169	155	135	
+UA	lever	ajax	Ajax Systems	213	104	80	
+UA	greenhouse	nix	N-iX	195	63	0	
+UA	ashby	preply	Preply	146	35	146	
+UA	ashby	ruby-labs	Ruby Labs	42	31	42	
+UA	ashby	holywater	HolyWater	28	27	28	
+UA	lever	tsmg	TSMG	3326	19	660	aggregator
+UA	greenhouse	speechify	Speechify	1503	26	19	
+UA	ashby	kissmyapps	Kiss My Apps	26	26	26	
+UA	ashby	universe-group	Universe Group	28	22	21	
+UA	smartrecruiters	playtech	Playtech	114	21	11	
+UA	greenhouse	squad	SQUAD	22	21	13	
+UA	ashby	obrio	OBRIO	20	20	20	
+UA	recruitee	brainstack	Brainstack	19	19	19	
+UA	ashby	welltech	Welltech	20	17	20	
+UA	greenhouse	innovecs	Innovecs	20	15	11	
+UA	ashby	toogeza	Toogeza	43	14	12	aggregator
+UA	recruitee	macpaw	MacPaw	14	14	13	
+UA	lever	eleks	ELEKS	23	13	21	
+UA	ashby	solidgate	Solidgate	51	12	21	
+UA	ashby	swarmer	Swarmer	22	12	21	
+UA	lever	remofirst	RemoFirst	22	10	22	aggregator
+UA	ashby	ideals	Ideals	46	8	40	
+UA	greenhouse	justanswer	JustAnswer	16	8	0	
+UA	greenhouse	remotecom	Remote.com	281	5	270	
+UA	ashby	clickup	Clickup	64	7	64	
+UA	ashby	Liven	Liven	7	7	5	
+UA	lever	provectus	Provectus	26	6	26	
+UA	lever	viseven	Viseven	20	6	20	
+UA	smartrecruiters	gameloft	Gameloft	70	6	5	
+UA	lever	weloglobal	Welo Global	543	1	481	aggregator
+UA	ashby	quarks-tech	Quarks Tech	10	6	7	
+UA	ashby	everai	EverAI	169	4	169	
+UA	ashby	n8n	n8n	39	5	39	
+UA	lever	binance	Binance	374	1	312	
+UA	recruitee	mgid	MGID	9	4	7	
+UA	lever	intellias	Intellias	7	4	4	
+UA	recruitee	betterme	BetterMe	4	4	3	
+UA	ashby	elevenlabs	ElevenLabs	154	2	143	
+UA	greenhouse	boltv2	Bolt	310	3	0	
+UA	lever	airslate	airSlate	16	3	14	
+UA	greenhouse	payoneer	Payoneer	98	2	2	
+UA	ashby	hirehangar	Hire Hangar	92	1	83	
+UA	smartrecruiters	Ubisoft2	Ubisoft	221	1	0	
+UA	lever	belkins	Belkins	5	1	5	
+UA	lever	influ2	Influ2	2	1	2	
+UA	ashby	newxel	Newxel	1	1	1	
+UA	ashby	picogrid	Picogrid	20	1	0	
+UA	smartrecruiters	sigmasoftware	Sigma Software	1	1	0	
+UA	smartrecruiters	innovecs	Innovecs	1	1	0	
+UA	recruitee	newxel	Newxel	1	1	0	
+REMOTE	lever	jobgether	Jobgether	4807	0	4807	aggregator
+REMOTE	ashby	openai	OpenAI	733	0	443	
+REMOTE	greenhouse	samsara	Samsara	305	0	260	
+REMOTE	greenhouse	sezzle	Sezzle	199	0	150	
+REMOTE	greenhouse	twilio	Twilio	150	0	146	
+REMOTE	greenhouse	gitlab	GitLab	137	0	137	
+REMOTE	greenhouse	clickhouse	ClickHouse	177	0	130	
+REMOTE	ashby	cohere	Cohere	124	0	115	
+REMOTE	ashby	ramp	Ramp	113	0	109	
+REMOTE	greenhouse	grafanalabs	Grafana Labs	108	0	108	
+REMOTE	ashby	notion	Notion	150	0	101	
+REMOTE	ashby	hopper	Hopper	99	0	99	
+REMOTE	ashby	plaid	Plaid	104	0	97	
+REMOTE	ashby	replit	Replit	96	0	94	
+REMOTE	greenhouse	pinterest	Pinterest	174	0	88	
+REMOTE	greenhouse	reddit	Reddit	143	0	80	
+REMOTE	ashby	kong	Kong	90	0	74	
+REMOTE	greenhouse	coinbase	Coinbase	81	0	74	
+REMOTE	ashby	synthesia	Synthesia	78	0	70	
+REMOTE	ashby	baseten	Baseten	68	0	67	
+REMOTE	ashby	redis	Redis	74	0	64	
+REMOTE	greenhouse	dropbox	Dropbox	63	0	63	
+REMOTE	ashby	handshake	Handshake	118	0	60	
+REMOTE	greenhouse	mozilla	Mozilla	58	0	58	
+REMOTE	ashby	1password	1Password	58	0	58	
+REMOTE	ashby	ashby	Ashby	58	0	58	
+REMOTE	lever	spotify	Spotify	144	0	53	
+REMOTE	greenhouse	mercury	Mercury	59	0	57	
+REMOTE	greenhouse	alpaca	Alpaca	54	0	49	
+REMOTE	ashby	writer	Writer	50	0	49	
+REMOTE	greenhouse	jetbrains	JetBrains	103	0	43	
+REMOTE	ashby	confluent	Confluent	48	0	45	
+REMOTE	ashby	cursor	Cursor	99	0	42	
+REMOTE	ashby	supabase	Supabase	47	0	44	
+REMOTE	ashby	sentry	Sentry	45	0	44	
+REMOTE	ashby	ironcladhq	Ironclad	43	0	43	
+REMOTE	ashby	headway	Headway	66	0	40	
+REMOTE	ashby	docker	Docker	39	0	39	
+REMOTE	lever	swordhealth	Sword Health	45	0	38	
+REMOTE	ashby	higharc	Higharc	38	0	38	
+REMOTE	ashby	sentilink	SentiLink	37	0	37	
+REMOTE	greenhouse	monzo	Monzo	68	0	34	
+REMOTE	ashby	upvest	Upvest	36	0	35	
+REMOTE	ashby	Mapbox	Mapbox	84	0	32	
+REMOTE	ashby	oscilar	Oscilar	34	0	34	
+REMOTE	ashby	Pear-VC	Pear VC	93	0	30	
+REMOTE	ashby	permitflow	PermitFlow	33	0	33	
+REMOTE	greenhouse	dataiku	Dataiku	59	0	30	
+REMOTE	ashby	paddle	Paddle	31	0	31	
+REMOTE	greenhouse	launchdarkly	LaunchDarkly	45	0	30	
+REMOTE	ashby	perplexity	Perplexity	71	0	28	
+REMOTE	ashby	siftstack	Sift Stack	28	0	28	
+REMOTE	ashby	Weave	Weave	37	0	27	
+REMOTE	ashby	aptura	Aptura	29	0	27	
+REMOTE	ashby	vapi	Vapi	29	0	27	
+REMOTE	greenhouse	wikimedia	Wikimedia Foundation	27	0	27	
+REMOTE	ashby	Solace	Solace Health	28	0	26	
+REMOTE	lever	BTSE	BTSE	67	0	23	
+REMOTE	ashby	linear	Linear	25	0	25	
+REMOTE	greenhouse	processstreet	Process Street	25	0	25	
+REMOTE	ashby	frontcareers	Front	43	0	24	
+REMOTE	ashby	socket	Socket	24	0	24	
+REMOTE	ashby	prompt	Prompt	23	0	23	
+REMOTE	ashby	Distyl	Distyl AI	23	0	22	
+REMOTE	ashby	render	Render	22	0	22	
+REMOTE	ashby	revenuecat	RevenueCat	23	0	21	
+REMOTE	ashby	zapier	Zapier	21	0	21	
+REMOTE	ashby	hiya	Hiya	21	0	21	
+REMOTE	ashby	flagright.com	Flagright	38	0	20	
+REMOTE	ashby	livekit	LiveKit	20	0	20	
+REMOTE	ashby	deepl	DeepL	23	0	19	
+REMOTE	lever	tryjeeves	Jeeves	41	0	18	
+REMOTE	ashby	prelude	Prelude	19	0	19	
+REMOTE	lever	zimperium	Zimperium	19	0	19	
+REMOTE	greenhouse	typeform	Typeform	18	0	18	
+REMOTE	greenhouse	webflow	Webflow	21	0	17	
+REMOTE	ashby	imprint	Imprint	18	0	17	
+REMOTE	ashby	posthog	PostHog	17	0	17	
+REMOTE	ashby	Coder	Coder	17	0	17	
+REMOTE	ashby	protege	Protege	17	0	17	
+REMOTE	ashby	backmarket	Back Market	24	0	16	
+REMOTE	ashby	capimoney	Capi Money	18	0	16	
+REMOTE	lever	moonpay	MoonPay	18	0	16	
+REMOTE	lever	oowlish	Oowlish Technology	18	0	16	aggregator
+REMOTE	ashby	cruxclimate	Crux Climate	16	0	16	
+REMOTE	ashby	genesis	Genesis	32	0	15	name-collision?
+REMOTE	greenhouse	airtable	Airtable	30	0	15	
+REMOTE	ashby	g2i	G2i	28	0	15	aggregator
+REMOTE	ashby	astronomer	Astronomer	17	0	15	
+REMOTE	ashby	counsel	Counsel Health	15	0	15	
+REMOTE	ashby	oneleet	Oneleet	15	0	15	
+REMOTE	lever	voodoo	Voodoo	34	0	14	
+REMOTE	ashby	character	Character.AI	15	0	14	
+REMOTE	ashby	oyster	Oyster	14	0	14	
+REMOTE	ashby	turquoise-health	Turquoise Health	14	0	14	
+REMOTE	ashby	virtahealth	Virta Health	14	0	14	
+REMOTE	ashby	zippymh	Zippy Mental Health	14	0	14	
+REMOTE	ashby	notable	Notable	14	0	13	
+REMOTE	greenhouse	codepath	CodePath	14	0	13	
+REMOTE	ashby	gradient-labs	Gradient Labs	13	0	13	
+REMOTE	ashby	lago	Lago	13	0	13	
+REMOTE	ashby	lightning	Lightning AI	13	0	13	
+REMOTE	ashby	office-hours	Office Hours	13	0	13	
+REMOTE	ashby	Felix	Felix	27	0	12	
+REMOTE	ashby	airops	AirOps	22	0	12	
+REMOTE	ashby	nectar-social	Nectar Social	16	0	12	
+REMOTE	lever	neon	Neon	12	0	12	
+REMOTE	greenhouse	planetscale	PlanetScale	12	0	12	
+REMOTE	ashby	orb	Orb	12	0	12	
+REMOTE	ashby	workwhilejobs	WorkWhile	12	0	12	aggregator
+REMOTE	greenhouse	consensys	Consensys	12	0	12	
+REMOTE	ashby	GovSignals	GovSignals	11	0	11	
+REMOTE	greenhouse	xapo61	Xapo Bank	11	0	11	
+REMOTE	lever	smart-working-solutions	Smart Working Solutions	11	0	11	aggregator
+REMOTE	ashby	astera	Astera Labs	22	0	10	
+REMOTE	ashby	viktor	Viktor	18	0	10	
+REMOTE	ashby	legionhealth	Legion Health	15	0	10	
+REMOTE	ashby	Cambly	Cambly	12	0	10	
+REMOTE	ashby	pylon	Pylon	12	0	10	
+REMOTE	ashby	collective	Collective	11	0	10	
+REMOTE	ashby	tempo-xyz	Tempo	11	0	10	
+REMOTE	ashby	railway	Railway	10	0	10	
+REMOTE	ashby	Voldex	Voldex	10	0	10	
+REMOTE	ashby	axle-careers	Axle	10	0	10	
+REMOTE	ashby	comity	Comity	10	0	10	
+REMOTE	ashby	openrouter	OpenRouter	10	0	10	
+REMOTE	ashby	orchard	Orchard	16	0	9	
+REMOTE	ashby	cradlebio	Cradle Bio	10	0	9	
+REMOTE	ashby	PlantingSpace	PlantingSpace	9	0	9	
+REMOTE	ashby	allspice	AllSpice	9	0	9	
+REMOTE	ashby	infisical	Infisical	9	0	9	
+REMOTE	ashby	onoshealth	Onos Health	9	0	9	
+REMOTE	ashby	parabola-io	Parabola	9	0	9	
+REMOTE	ashby	synthflow	Synthflow AI	9	0	9	
+REMOTE	greenhouse	saasgroup	saas.group	9	0	9	
+REMOTE	lever	nextech	Nextech	9	0	9	
+REMOTE	lever	pennylane	Pennylane	19	0	8	
+REMOTE	ashby	cantina	Cantina	17	0	8	
+REMOTE	ashby	xdof	xDOF	11	0	8	
+REMOTE	ashby	keyrock	Keyrock	10	0	8	
+REMOTE	ashby	vitalize	Vitalize	10	0	8	
+REMOTE	ashby	akur8	Akur8	9	0	8	
+REMOTE	lever	people-ai	People.ai	8	0	8	
+REMOTE	ashby	ledger	Ledger	8	0	8	
+REMOTE	ashby	airbyte	Airbyte	8	0	8	
+REMOTE	ashby	Authorium	Authorium	8	0	8	
+REMOTE	ashby	clarium	Clarium	8	0	8	
+REMOTE	ashby	fanvue.com	Fanvue	8	0	8	
+REMOTE	ashby	inductive-bio	Inductive Bio	8	0	8	
+REMOTE	ashby	monad.foundation	Monad Foundation	8	0	8	
+REMOTE	ashby	wirescreen	WireScreen	8	0	8	
+REMOTE	lever	verygoodsecurity	Very Good Security	8	0	8	
+REMOTE	ashby	flaglerhealth	Flagler Health	19	0	7	
+REMOTE	greenhouse	testlio	Testlio	14	0	7	
+REMOTE	ashby	Ontic	Ontic	11	0	7	
+REMOTE	ashby	Anima	Anima	8	0	7	
+REMOTE	lever	termgrid	Termgrid	8	0	7	
+REMOTE	greenhouse	bitwarden	Bitwarden	7	0	7	
+REMOTE	ashby	Close	Close	7	0	7	
+REMOTE	ashby	Oso	Oso	7	0	7	
+REMOTE	ashby	august-health	August Health	7	0	7	
+REMOTE	ashby	colonist	Colonist	7	0	7	
+REMOTE	ashby	fathom.video	Fathom	7	0	7	
+REMOTE	ashby	column	Column	18	0	6	
+REMOTE	ashby	restream	Restream	8	0	6	
+REMOTE	ashby	ataraxis-ai	Ataraxis AI	8	0	6	
+REMOTE	lever	sprucesystems	Spruce	7	0	6	
+REMOTE	ashby	duck-duck-go	DuckDuckGo	6	0	6	
+REMOTE	ashby	homevision	HomeVision	6	0	6	
+REMOTE	ashby	kodex	Kodex	6	0	6	
+REMOTE	ashby	lightdash	Lightdash	6	0	6	
+REMOTE	ashby	pod-network	Pod Network	6	0	6	
+REMOTE	ashby	spruceid	SpruceID	6	0	6	
+REMOTE	ashby	walrusfi	Walrus	6	0	6	
+REMOTE	ashby	SigNoz	SigNoz	14	0	5	
+REMOTE	ashby	parker	Parker	13	0	5	
+REMOTE	ashby	patch.io	Patch	9	0	5	
+REMOTE	ashby	odyssey	Odyssey	6	0	5	
+REMOTE	ashby	castletontower	Castleton Tower	5	0	5	
+REMOTE	ashby	griffin	Griffin	5	0	5	
+REMOTE	ashby	p2p.org	P2P.org	5	0	5	
+REMOTE	ashby	pareto-ai	Pareto	5	0	5	
+REMOTE	ashby	quora	Quora	5	0	5	
+REMOTE	ashby	stytch	Stytch	5	0	5	
+REMOTE	greenhouse	future	Future	5	0	5	
+GLOBAL	greenhouse	stripe	Stripe	503	0	92	
+GLOBAL	greenhouse	databricks	Databricks	791	0	75	
+GLOBAL	greenhouse	datadog	Datadog	403	0	50	
+GLOBAL	greenhouse	anthropic	Anthropic	379	0	33	
+GLOBAL	greenhouse	airbnb	Airbnb	220	0	30	
+GLOBAL	lever	crypto	Crypto.com	134	0	33	
+GLOBAL	ashby	fluidstack	Fluidstack	129	0	33	
+GLOBAL	greenhouse	fivetran	Fivetran	114	0	30	
+GLOBAL	ashby	Crusoe	Crusoe Energy	352	0	16	
+GLOBAL	smartrecruiters	canva	Canva	217	0	21	
+GLOBAL	greenhouse	sumup	SumUp	428	0	0	
+GLOBAL	greenhouse	mongodb	MongoDB	426	0	0	
+GLOBAL	greenhouse	vercel	Vercel	72	0	17	
+GLOBAL	ashby	cognition	Cognition	63	0	17	
+GLOBAL	greenhouse	wolt	Wolt	299	0	3	
+GLOBAL	smartrecruiters	wise	Wise	356	0	0	
+GLOBAL	greenhouse	okta	Okta	337	0	0	
+GLOBAL	ashby	sierra	Sierra	129	0	10	
+GLOBAL	ashby	lovable	Lovable	76	0	12	
+GLOBAL	greenhouse	canonical	Canonical	297	0	0	
+GLOBAL	ashby	gigaml	Giga ML	54	0	11	
+GLOBAL	lever	mistral	Mistral AI	171	0	5	
+GLOBAL	lever	aircall	Aircall	91	0	8	
+GLOBAL	greenhouse	cloudflare	Cloudflare	190	0	3	
+GLOBAL	greenhouse	discord	Discord	70	0	9	
+GLOBAL	ashby	eightsleep	Eight Sleep	43	0	10	
+GLOBAL	greenhouse	brex	Brex	239	0	0	
+GLOBAL	greenhouse	asana	Asana	134	0	5	
+GLOBAL	lever	palantir	Palantir Technologies	228	0	0	
+GLOBAL	ashby	mollie	Mollie	40	0	9	
+GLOBAL	greenhouse	adyen	Adyen	206	0	0	
+GLOBAL	greenhouse	algolia	Algolia	45	0	8	
+GLOBAL	greenhouse	elastic	Elastic	194	0	0	
+GLOBAL	greenhouse	amplitude	Amplitude	54	0	7	
+GLOBAL	greenhouse	intercom	Intercom	143	0	2	
+GLOBAL	greenhouse	scaleai	Scale AI	175	0	0	
+GLOBAL	greenhouse	figma	Figma	169	0	0	
+GLOBAL	greenhouse	mixpanel	Mixpanel	33	0	6	
+GLOBAL	ashby	EliseAI	EliseAI	111	0	2	
+GLOBAL	greenhouse	lyft	Lyft	140	0	0	
+GLOBAL	greenhouse	cockroachlabs	Cockroach Labs	36	0	4	
+GLOBAL	greenhouse	duolingo	Duolingo	59	0	2	
+GLOBAL	greenhouse	circleci	CircleCI	15	0	4	
+GLOBAL	ashby	amperos	Amperos Energy	15	0	4	
+GLOBAL	ashby	prosper-ai	Prosper AI	9	0	4	
+GLOBAL	greenhouse	singlestore	SingleStore	47	0	2	
+GLOBAL	greenhouse	ingenious	INGENIOUS.BUILD	6	0	4	
+GLOBAL	ashby	NorthwoodSpace	Northwood Space	65	0	1	
+GLOBAL	ashby	runway	Runway	4	0	4	
+GLOBAL	ashby	Chestnut	Chestnut	4	0	4	
+GLOBAL	ashby	Diagrid	Diagrid	4	0	4	
+GLOBAL	ashby	MotherDuck	MotherDuck	4	0	4	
+GLOBAL	ashby	blueberrypediatrics	Blueberry Pediatrics	4	0	4	
+GLOBAL	ashby	category-labs	Category Labs	4	0	4	
+GLOBAL	ashby	electronx	ElectronX	4	0	4	
+GLOBAL	ashby	hive.co	Hive.co	4	0	4	
+GLOBAL	ashby	norm-ai	Norm Ai	4	0	4	
+GLOBAL	ashby	poesis	Poesis	4	0	4	
+GLOBAL	ashby	stream	Stream	4	0	4	
+GLOBAL	ashby	tracelabs	Trace Labs	4	0	4	
+GLOBAL	lever	teamsnap	TeamSnap	4	0	4	
+GLOBAL	greenhouse	railsware	Railsware	4	0	4	
+GLOBAL	greenhouse	bloomreach	Bloomreach	83	0	0	
+GLOBAL	greenhouse	checkr	Checkr	61	0	1	
+GLOBAL	greenhouse	n26	N26	77	0	0	
+GLOBAL	greenhouse	swayable	Swayable	15	0	3	
+GLOBAL	ashby	ether.fi	Ether.fi	14	0	3	
+GLOBAL	ashby	hike-medical	Hike Medical	13	0	3	
+GLOBAL	lever	dlocal	dLocal	51	0	1	
+GLOBAL	ashby	neon-health	Neon Health	11	0	3	
+GLOBAL	greenhouse	xebiacee	Xebia CEE	69	0	0	
+GLOBAL	ashby	terraai	Terra AI	8	0	3	
+GLOBAL	lever	charitywater	charity: water	8	0	3	
+GLOBAL	greenhouse	fastly	Fastly	46	0	1	
+GLOBAL	greenhouse	mantis	Mantis Analytics	6	0	3	
+GLOBAL	lever	prismic	Prismic	6	0	3	
+GLOBAL	greenhouse	proton	Proton	65	0	0	
+GLOBAL	ashby	mercor	Mercor	64	0	0	aggregator
+GLOBAL	greenhouse	squarespace	Squarespace	24	0	2	
+GLOBAL	ashby	voltai.careers	VoltAI	24	0	2	
+GLOBAL	ashby	cloudtrucks	CloudTrucks	4	0	3	
+GLOBAL	ashby	ScribdInc	Scribd	23	0	2	
+GLOBAL	ashby	suno	Suno	43	0	1	
+GLOBAL	ashby	onecrew	OneCrew	3	0	3	
+GLOBAL	ashby	safi	Safi	3	0	3	
+GLOBAL	ashby	triggerdev	Trigger.dev	3	0	3	
+GLOBAL	ashby	zencastr	Zencastr	3	0	3	
+GLOBAL	greenhouse	flyflat	FlyFlat	3	0	3	
+GLOBAL	lever	saga-xyz	Saga	3	0	3	
+GLOBAL	lever	sphere-laboratories	Sphere Laboratories	3	0	3	
+GLOBAL	greenhouse	enova	Enova International	34	0	1	
+GLOBAL	ashby	flux	Flux	11	0	2	
+GLOBAL	ashby	graymatter-robotics	GrayMatter Robotics	10	0	2	
+GLOBAL	greenhouse	contentful	Contentful	49	0	0	
+GLOBAL	ashby	opusclip	OpusClip	9	0	2	
+GLOBAL	ashby	temporal	Temporal	48	0	0	
+GLOBAL	ashby	Lorikeet	Lorikeet	7	0	2	
+GLOBAL	ashby	bliro	Bliro	7	0	2	
+GLOBAL	ashby	salesjack	SalesJack	6	0	2	
+GLOBAL	ashby	layerfi	Layer	5	0	2	
+GLOBAL	ashby	rilla	Rilla	24	0	1	
+GLOBAL	greenhouse	bitpanda	Bitpanda	43	0	0	
+GLOBAL	ashby	bitnomial	Bitnomial	3	0	2	
+GLOBAL	ashby	river	River	3	0	2	
+GLOBAL	ashby	traba	Traba	22	0	1	
+GLOBAL	greenhouse	netlify	Netlify	2	0	2	
+GLOBAL	ashby	WunderGraph	WunderGraph	2	0	2	
+GLOBAL	ashby	atomic-financial	Atomic Financial	2	0	2	
+GLOBAL	ashby	curie	Curie	2	0	2	
+GLOBAL	ashby	dune	Dune Analytics	2	0	2	
+GLOBAL	ashby	evervault	Evervault	2	0	2	
+GLOBAL	ashby	inngest	Inngest	2	0	2	
+GLOBAL	ashby	kilocode	Kilo Code	2	0	2	
+GLOBAL	ashby	matterworks	Matterworks	2	0	2	
+GLOBAL	ashby	monterra	Monterra	2	0	2	
+GLOBAL	ashby	neo-tax	Neo.Tax	2	0	2	
+GLOBAL	ashby	nevoya	Nevoya	2	0	2	
+GLOBAL	ashby	pallon.com	Pallon	2	0	2	
+GLOBAL	ashby	rivora	Rivora	2	0	2	
+GLOBAL	ashby	speckle	Speckle	2	0	2	
+GLOBAL	ashby	creditgenie	Credit Genie	17	0	1	
+GLOBAL	ashby	AtomicSemi	Atomic Semi	35	0	0	
+GLOBAL	ashby	modal	Modal	31	0	0	
+GLOBAL	ashby	Kombo	Kombo	11	0	1	
+GLOBAL	ashby	basis-ai	Basis	30	0	0	
+GLOBAL	ashby	sesame	Sesame	28	0	0	
+GLOBAL	ashby	Harmonic	Harmonic	8	0	1	
+GLOBAL	lever	viabill	ViaBill	8	0	1	
+GLOBAL	ashby	neon	Neon	7	0	1	
+GLOBAL	greenhouse	chartbeatinc	Chartbeat	6	0	1	
+GLOBAL	ashby	coram-ai	Coram AI	24	0	0	
+GLOBAL	smartrecruiters	binance	Binance	4	0	1	
+GLOBAL	ashby	Cleric	Cleric	4	0	1	
+GLOBAL	ashby	altimate	Altimate AI	4	0	1	
+GLOBAL	ashby	dialogueai	Dialogue AI	4	0	1	
+GLOBAL	lever	esper	Esper Bionics	3	0	1	
+GLOBAL	ashby	squint.ai	Squint	3	0	1	
+GLOBAL	ashby	Nango	Nango	2	0	1	
+GLOBAL	ashby	Scholarly	Scholarly	2	0	1	
+GLOBAL	lever	toku	Toku	2	0	1	
+GLOBAL	ashby	boosters	Boosters	1	0	1	
+GLOBAL	lever	ledger	Ledger	1	0	1	
+GLOBAL	ashby	7gen	7Gen	1	0	1	
+GLOBAL	ashby	Gruntwork	Gruntwork	1	0	1	
+GLOBAL	ashby	MUI	MUI	1	0	1	
+GLOBAL	ashby	cargado	Cargado	1	0	1	
+GLOBAL	ashby	checkly	Checkly	1	0	1	
+GLOBAL	ashby	count	Count	1	0	1	
+GLOBAL	ashby	greatquestion	Great Question	1	0	1	
+GLOBAL	ashby	happyscribe.com	Happy Scribe	1	0	1	
+GLOBAL	ashby	mubit	Mubit	1	0	1	
+GLOBAL	ashby	routefusion	Routefusion	1	0	1	
+GLOBAL	ashby	safety	Safety	1	0	1	
+GLOBAL	ashby	schoolhouse-world	Schoolhouse.world	1	0	1	
+GLOBAL	ashby	sobek-ai	Sobek AI	1	0	1	
+GLOBAL	ashby	verge-genomics	Verge Genomics	1	0	1	
+GLOBAL	ashby	vitvio	Vitvio	1	0	1	
+GLOBAL	ashby	voladynamics	Vola Dynamics	1	0	1	
+GLOBAL	ashby	vvd	VVD	1	0	1	
+GLOBAL	lever	fundrise	Fundrise	1	0	1	
+GLOBAL	ashby	parallel	Parallel	19	0	0	
+GLOBAL	greenhouse	growe	Growe	19	0	0	
+GLOBAL	ashby	shepherd	Shepherd	18	0	0	
+GLOBAL	greenhouse	alma31	Alma	18	0	0	
+GLOBAL	ashby	fractional-ai	Fractional AI	17	0	0	
+GLOBAL	ashby	humaans	Humaans	17	0	0	
+GLOBAL	ashby	prior-labs	Prior Labs	17	0	0	
+GLOBAL	ashby	lassie	Lassie	16	0	0	
+GLOBAL	ashby	langdock	Langdock	15	0	0	
+GLOBAL	greenhouse	buildkite	Buildkite	14	0	0	
+GLOBAL	ashby	charge-robotics	Charge Robotics	13	0	0	
+GLOBAL	ashby	9-mothers	Nine Mothers	12	0	0	
+GLOBAL	ashby	titan	Titan	12	0	0	
+GLOBAL	lever	pipedrive	Pipedrive	11	0	0	
+GLOBAL	ashby	DatologyAI	DatologyAI	11	0	0	
+GLOBAL	ashby	sfcompute	San Francisco Compute	11	0	0	
+GLOBAL	ashby	v7labs.com	V7 Labs	11	0	0	
+GLOBAL	greenhouse	qualio	Qualio	11	0	0	
+GLOBAL	ashby	extend	Extend	10	0	0	
+GLOBAL	ashby	Adaptive	Adaptive	9	0	0	
+GLOBAL	ashby	dimensional	Dimensional	9	0	0	
+GLOBAL	ashby	FleetWorks	FleetWorks	8	0	0	
+GLOBAL	ashby	meticulous	Meticulous	8	0	0	
+GLOBAL	ashby	phoebe-work	Phoebe	8	0	0	
+GLOBAL	ashby	kepler-ai	Kepler AI	7	0	0	
+GLOBAL	ashby	two-dots	Two Dots	7	0	0	
+GLOBAL	ashby	unto-labs	Unto Labs	7	0	0	
+GLOBAL	ashby	coreflow	CoreFlow	6	0	0	
+GLOBAL	ashby	ajax	Ajax Systems	5	0	0	name-collision?
+GLOBAL	ashby	Speakeasy	Speakeasy	5	0	0	
+GLOBAL	ashby	alembic	Alembic	5	0	0	
+GLOBAL	ashby	dryft	Dryft	5	0	0	
+GLOBAL	ashby	eagle	Eagle	5	0	0	
+GLOBAL	lever	genesis	Genesis	4	0	0	name-collision?
+GLOBAL	ashby	firetiger	Firetiger	4	0	0	
+GLOBAL	ashby	kittl	Kittl	4	0	0	
+GLOBAL	ashby	letta	Letta	4	0	0	
+GLOBAL	ashby	mechanize	Mechanize	4	0	0	
+GLOBAL	ashby	ami	Ami	3	0	0	
+GLOBAL	ashby	blaxel	Blaxel	3	0	0	
+GLOBAL	ashby	continue	Continue	3	0	0	
+GLOBAL	ashby	noise-labs	Noise Labs	3	0	0	
+GLOBAL	ashby	sheerhealth	Sheer Health	3	0	0	
+GLOBAL	greenhouse	remote	Remote	2	0	0	
+GLOBAL	ashby	airgoods	Airgoods	2	0	0	
+GLOBAL	ashby	ameba	Ameba	2	0	0	
+GLOBAL	ashby	hinoki	Hinoki	2	0	0	
+GLOBAL	ashby	konvu	KonvU	2	0	0	
+GLOBAL	ashby	mobasi	Mobasi	2	0	0	
+GLOBAL	ashby	steel	Steel	2	0	0	
+GLOBAL	ashby	tetsuwan	Tetsuwan Scientific	2	0	0	
+GLOBAL	ashby	withdaydream	Daydream	2	0	0	
+GLOBAL	greenhouse	expressvpn	ExpressVPN	2	0	0	
+GLOBAL	smartrecruiters	fondy	Fondy	2	0	0	
+GLOBAL	smartrecruiters	bigcommerce	BigCommerce	2	0	0	
+GLOBAL	smartrecruiters	uber	Uber	1	0	0	
+GLOBAL	ashby	boon	Boon	1	0	0	
+GLOBAL	ashby	edlink	Edlink	1	0	0	
+GLOBAL	ashby	hyperspell	Hyperspell	1	0	0	
+GLOBAL	ashby	kiloforge	Kiloforge	1	0	0	
+GLOBAL	ashby	trychroma	Chroma	1	0	0	
+GLOBAL	ashby	upflow	Upflow	1	0	0	
