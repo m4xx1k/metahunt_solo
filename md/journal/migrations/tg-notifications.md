@@ -48,9 +48,9 @@ leaning snapshot); final digest glyph set (current `⌖`/`◆`/`→` is provisio
 
 A subscription = a saved `list()` filter + a Telegram chat. On a schedule we match
 new vacancies for each subscriber and push one digest. Matching reuses the catalog
-`list()` — no new matching logic. Full research lives in repo-root drafts:
-`tg-notifications-todo.md` (mechanics), `weekend-launch-plan.md` (sequencing + pre-MVP gate),
-`analytics-posthog-plan.md` (analytics, deferred).
+`list()` — no new matching logic. Full research lives in journal drafts:
+[`_done/tg-notifications-todo.md`](_done/tg-notifications-todo.md) (mechanics), [`_done/weekend-launch-plan.md`](_done/weekend-launch-plan.md) (sequencing + pre-MVP gate),
+[`_done/analytics-posthog-plan.md`](_done/analytics-posthog-plan.md) (analytics, deferred).
 
 ## Subtasks
 
@@ -82,7 +82,7 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
       Verified on real data. Still pending: `matchNewVacancies`/`sendDigestPage` activities +
       paging + `sent_notifications` writes for the scheduled (non-preview) path.
 - [ ] T6 — `notifySubscribersWorkflow` + Schedule (register like `RssSchedulerService.ensureSchedule`) — *done when:* live digests fire. **Step-by-step:** [#t6-build-guide](#t6-build-guide).
-- [ ] T7 — pre-launch gate (see `weekend-launch-plan.md`): 1 replica, `/stop`, dedup re-run, grouping-track guard, dry-run.
+- [ ] T7 — pre-launch gate (see [`_done/weekend-launch-plan.md`](_done/weekend-launch-plan.md)): 1 replica, `/stop`, dedup re-run, grouping-track guard, dry-run.
 
 ## Decisions
 
@@ -107,7 +107,7 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
   future nicety. A concurrent double-`/start` of two same-param tokens can still race past the
   check (no unique index yet) — acceptable for MVP.
 - **Analytics deferred.** Ship TG first. PostHog is purely additive later (no schema change) —
-  `subscriptions.id` is already the future `distinct_id`. See `analytics-posthog-plan.md`.
+  `subscriptions.id` is already the future `distinct_id`. See [`_done/analytics-posthog-plan.md`](_done/analytics-posthog-plan.md).
 - **Digest rendering (T5) — as shipped.** Render from `VacancyDto` (`FeedService.list()`).
   Card lines: `◆ <b>role</b> · Seniority` → trimmed italic raw-title subtitle (skipped when it
   equals the role) → skills line → one meta line (`company · format · place · $salary · EN level`)

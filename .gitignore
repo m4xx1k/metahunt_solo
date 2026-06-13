@@ -18,6 +18,7 @@ apps/*/.env*.local
 
 # Personal notes (not engineering docs) — keep out of the project repo
 diploma.md
+article.md
 docs/runbook/etl-stream-blocks-ua.md
 docs/runbook/etl-temporal-stream-demo.md
 THESIS_TODO.md
