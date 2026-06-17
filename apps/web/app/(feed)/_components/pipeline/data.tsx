@@ -39,7 +39,6 @@ export const pipeline = {
       title: "Підбір",
       lead: "Завантаж резюме — і фід ранжується під твій профіль.",
       accent: "success" as PipelineAccent,
-      cta: { label: "спробувати CV-Match", href: "/reverse-ats" },
     },
   },
   // Sample fields the parser pulls out — illustrative, shown as popping tags.
