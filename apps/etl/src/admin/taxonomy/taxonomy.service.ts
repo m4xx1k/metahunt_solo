@@ -15,8 +15,6 @@ export type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 export type NodeStatusValue = "NEW" | "VERIFIED" | "HIDDEN";
 
 const RENAME_MIN_LEN = 2;
-export const AUTOVERIFY_MIN_VACANCIES = 5;
-export const AUTOVERIFY_MIN_COMPANIES = 2;
 export const TAXONOMY_LIST_DEFAULT = 50;
 export const TAXONOMY_LIST_MAX = 200;
 
@@ -480,24 +478,6 @@ export class TaxonomyService {
   // strict company check would silently exclude skills seen only there.
   // HIDDEN is never touched: an operator's "this is junk" verdict is final.
   // Idempotent — safe for the Temporal schedule to re-fire.
-  async autoVerifySkills(): Promise<{ promoted: string[] }> {
-    const result = await this.db.execute<{ canonical_name: string }>(sql`
-      UPDATE nodes SET status = 'VERIFIED'
-      WHERE type = 'SKILL' AND status = 'NEW'
-        AND id IN (
-          SELECT vn.node_id
-          FROM vacancy_nodes vn
-          JOIN vacancies v ON v.id = vn.vacancy_id
-          GROUP BY vn.node_id
-          HAVING count(DISTINCT vn.vacancy_id) >= ${AUTOVERIFY_MIN_VACANCIES}
-             AND count(DISTINCT coalesce(v.company_id::text, v.id::text))
-                 >= ${AUTOVERIFY_MIN_COMPANIES}
-        )
-      RETURNING canonical_name
-    `);
-    return { promoted: result.rows.map((r) => r.canonical_name) };
-  }
-
   // Rename a node's canonical name. The old canonical becomes an alias so
   // historical extractions still resolve. Conflicts surface as 409 with a
   // mergeTargetId suggestion — the UI uses it to route the operator into

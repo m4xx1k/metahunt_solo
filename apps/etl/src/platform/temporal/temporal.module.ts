@@ -6,7 +6,6 @@ import { TemporalModule } from "nestjs-temporal-core";
 import { DEDUP_ACTIVITIES } from "../../02-enrich/dedup/activities";
 import { LOADER_ACTIVITIES } from "../../02-enrich/loader/activities";
 import { RSS_ACTIVITIES } from "../../01-ingest/rss/activities";
-import { TAXONOMY_ACTIVITIES } from "../../admin/taxonomy/activities";
 import { TELEGRAM_ACTIVITIES } from "../../04-notify/telegram/activities";
 import { appendTsLoaderRule } from "./webpack-workflow.hook";
 
@@ -43,7 +42,6 @@ import { appendTsLoaderRule } from "./webpack-workflow.hook";
               ...LOADER_ACTIVITIES,
               ...DEDUP_ACTIVITIES,
               ...TELEGRAM_ACTIVITIES,
-              ...TAXONOMY_ACTIVITIES,
             ],
             // Worker spawns a Temporal connection; in `NODE_ENV=test` the
             // AppModule smoke spec compiles the graph without a running server.

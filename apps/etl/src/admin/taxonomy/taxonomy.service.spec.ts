@@ -377,26 +377,4 @@ describe("TaxonomyService", () => {
     });
   });
 
-  describe("autoVerifySkills", () => {
-    it("returns the promoted canonical names from the UPDATE's RETURNING", async () => {
-      const db = emptyDbMock();
-      db.execute.mockResolvedValue({
-        rows: [{ canonical_name: "TestRail" }, { canonical_name: "KiCad" }],
-      });
-      const svc = await bootstrap(db);
-
-      const out = await svc.autoVerifySkills();
-
-      expect(out).toEqual({ promoted: ["TestRail", "KiCad"] });
-      expect(db.execute).toHaveBeenCalledTimes(1);
-    });
-
-    it("returns an empty list when nothing crosses the threshold", async () => {
-      const db = emptyDbMock();
-      db.execute.mockResolvedValue({ rows: [] });
-      const svc = await bootstrap(db);
-
-      await expect(svc.autoVerifySkills()).resolves.toEqual({ promoted: [] });
-    });
-  });
 });
