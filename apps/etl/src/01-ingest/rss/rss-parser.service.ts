@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
 import { createHash } from 'crypto';
 import { z } from 'zod';
-import { isITVacancy } from './utils/vacancy-filter';
+import { passesTechGate } from './utils/vacancy-filter';
 
 export const RawRssItem = z.object({
   title: z.string(),
@@ -33,7 +33,7 @@ export class RssParserService {
   }
 
   filterItItems(items: RawRssItem[]): RawRssItem[] {
-    return items.filter((item) => isITVacancy(item.title));
+    return items.filter((item) => passesTechGate({ title: item.title }).pass);
   }
 
   computeHash(item: RawRssItem): string {

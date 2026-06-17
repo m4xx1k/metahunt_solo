@@ -119,6 +119,15 @@ class ExtractedVacancy {
     null only if the posting is not a software / tech job at all.
   "#)
 
+  isTech bool @description(#"
+    TRUE if this is a technical/engineering role: software dev, QA, DevOps/SRE,
+    data, security, embedded, or engineering management of those.
+    FALSE for non-tech roles even at a tech company: sales, marketing, media
+    buying, copywriting, recruiting/HR, finance, legal, support, product/project
+    management, design (UI/UX/graphic). A FALSE vacancy is dropped, not stored —
+    so when unsure between a real tech role and noise, prefer TRUE.
+  "#)
+
   seniority Seniority? @description(#"
     Seniority level inferred from title or requirements.
     Rules:

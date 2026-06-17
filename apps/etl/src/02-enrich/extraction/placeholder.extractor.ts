@@ -15,6 +15,7 @@ import type {
 
 const PLACEHOLDER: ExtractedVacancy = {
   role: "Backend Developer",
+  isTech: true,
   seniority: Seniority.SENIOR,
   skills: {
     required: ["TypeScript", "PostgreSQL"],

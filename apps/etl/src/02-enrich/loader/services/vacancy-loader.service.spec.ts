@@ -212,6 +212,37 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     expect(skillsArg(repo)).toEqual([]);
   });
 
+  it("drops a non-tech record (isTech=false) without upserting", async () => {
+    const repo = makeRepo();
+    repo.findRecord.mockResolvedValue({
+      ...baseRecord,
+      extractedData: { ...fullExtracted, isTech: false },
+    } as never);
+    const { service } = makeService(repo);
+
+    const result = await service.loadFromRecord(RECORD_ID);
+
+    expect(result).toBeNull();
+    expect(repo.runInTransaction).not.toHaveBeenCalled();
+    expect(repo.upsertWithSkills).not.toHaveBeenCalled();
+  });
+
+  it("loads when isTech is true", async () => {
+    const repo = makeRepo();
+    repo.findRecord.mockResolvedValue({
+      ...baseRecord,
+      extractedData: { ...fullExtracted, isTech: true },
+    } as never);
+    const { service, companyResolve, nodeResolve } = makeService(repo);
+    companyResolve.mockResolvedValue(COMPANY_ID);
+    nodeResolve.mockResolvedValue("node");
+
+    const result = await service.loadFromRecord(RECORD_ID);
+
+    expect(result).toBe(VACANCY_ID);
+    expect(repo.upsertWithSkills).toHaveBeenCalled();
+  });
+
   it("throws before opening a transaction when the rss_record is missing", async () => {
     const repo = makeRepo();
     repo.findRecord.mockResolvedValue(null);
