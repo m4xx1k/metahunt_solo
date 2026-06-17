@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button, Logo, NavLink } from "@/ui";
+import { Logo, NavLink } from "@/ui";
 
 export type NavItem = { label: string; href: string };
 
@@ -19,11 +19,13 @@ export function Header({ links }: { links?: NavItem[] }) {
             ))}
           </nav>
         )}
+        {/* demo: CV-Match out of diploma scope — hidden for recording
         <Link href="/reverse-ats" aria-label="reverse-ATS — вакансії під твоє CV">
           <Button variant="nav" size="sm">
             під моє CV →
           </Button>
         </Link>
+        */}
       </div>
     </header>
   );

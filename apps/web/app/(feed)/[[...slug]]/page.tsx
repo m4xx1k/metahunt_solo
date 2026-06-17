@@ -184,9 +184,12 @@ export default async function TrackPage({
               {(!trackSlug || hasPreset) && (
                 <SubscribeButton params={subscriptionParams} />
               )}
+              {/* demo: тимчасово показуємо фільтри по ролях+скілах замість дерева
+                  треків — tracks={undefined} перемикає FeedFilters у role/skill
+                  режим (RoleSection + SkillsSection). */}
               <FeedFilters
                 aggregates={aggregates}
-                tracks={tracks}
+                tracks={undefined}
                 activeTrackSlug={trackSlug ?? null}
                 presetRoles={preset.roles}
                 presetSkills={preset.skills}
