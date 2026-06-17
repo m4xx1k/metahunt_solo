@@ -33,7 +33,7 @@ export default class TypeBuilder {
     
     ExtractedLocation: ClassViewer<'ExtractedLocation', "city" | "country">;
     
-    ExtractedVacancy: ClassViewer<'ExtractedVacancy', "role" | "seniority" | "skills" | "experienceYears" | "salary" | "englishLevel" | "employmentType" | "workFormat" | "locations" | "domain" | "engagementType" | "companyName" | "hasTestAssignment" | "hasReservation">;
+    ExtractedVacancy: ClassViewer<'ExtractedVacancy', "role" | "isTech" | "seniority" | "skills" | "experienceYears" | "salary" | "englishLevel" | "employmentType" | "workFormat" | "locations" | "domain" | "engagementType" | "companyName" | "hasTestAssignment" | "hasReservation">;
     
     Salary: ClassViewer<'Salary', "min" | "max" | "currency">;
     
@@ -77,7 +77,7 @@ export default class TypeBuilder {
         ]);
         
         this.ExtractedVacancy = this.tb.classViewer("ExtractedVacancy", [
-          "role","seniority","skills","experienceYears","salary","englishLevel","employmentType","workFormat","locations","domain","engagementType","companyName","hasTestAssignment","hasReservation",
+          "role","isTech","seniority","skills","experienceYears","salary","englishLevel","employmentType","workFormat","locations","domain","engagementType","companyName","hasTestAssignment","hasReservation",
         ]);
         
         this.Salary = this.tb.classViewer("Salary", [

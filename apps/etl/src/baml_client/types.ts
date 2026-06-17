@@ -116,6 +116,7 @@ export interface ExtractedLocation {
 
 export interface ExtractedVacancy {
   role?: string | null
+  isTech: boolean
   seniority?: Seniority | null
   skills: Skills
   experienceYears?: number | null

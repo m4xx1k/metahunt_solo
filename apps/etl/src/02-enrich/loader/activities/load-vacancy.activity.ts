@@ -9,7 +9,7 @@ export class LoadVacancyActivity {
   constructor(private readonly loader: VacancyLoaderService) {}
 
   @ActivityMethod()
-  async loadVacancy(rssRecordId: string): Promise<string> {
+  async loadVacancy(rssRecordId: string): Promise<string | null> {
     return this.loader.loadFromRecord(rssRecordId);
   }
 }

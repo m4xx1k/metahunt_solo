@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 
 import type { ExtractedVacancy } from "../../../baml_client/types";
 import type { Executor } from "../repositories/executor";
@@ -12,13 +12,17 @@ import { NodeResolverService } from "./node-resolver.service";
 
 @Injectable()
 export class VacancyLoaderService {
+  private readonly logger = new Logger(VacancyLoaderService.name);
+
   constructor(
     private readonly repo: VacancyRepository,
     private readonly companyResolver: CompanyResolverService,
     private readonly nodeResolver: NodeResolverService,
   ) {}
 
-  async loadFromRecord(rssRecordId: string): Promise<string> {
+  // Returns the upserted vacancy id, or null when the record is the LLM serve
+  // gate dropped it (non-tech). Callers must treat null as "skipped".
+  async loadFromRecord(rssRecordId: string): Promise<string | null> {
     const record = await this.repo.findRecord(rssRecordId);
     if (!record) {
       throw new Error(`rss_record ${rssRecordId} not found`);
@@ -31,6 +35,14 @@ export class VacancyLoaderService {
       throw new Error(
         `rss_record ${rssRecordId} has no extractedData; cannot load`,
       );
+    }
+
+    // Serve gate (Gate 2): the LLM read the full posting and flagged it
+    // non-tech. Drop it — don't store. Only an explicit `false` skips; missing
+    // (older records) or true falls through. See md/todo/ats-sources/.
+    if (extracted.isTech === false) {
+      this.logger.log(`Skipped non-tech rss_record ${rssRecordId}`);
+      return null;
     }
 
     // One transaction for the whole load: company/node resolution AND the

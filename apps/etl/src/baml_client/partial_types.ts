@@ -53,6 +53,7 @@ export namespace partial_types {
     }
     export interface ExtractedVacancy {
       role?: string | null
+      isTech?: boolean | null
       seniority?: types.Seniority | null
       skills?: Skills | null
       experienceYears?: number | null
