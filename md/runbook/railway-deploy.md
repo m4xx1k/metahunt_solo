@@ -89,19 +89,22 @@ railway variables --service @metahunt/etl --set KEY=value  # set → triggers re
 
 ```bash
 railway connect Postgres                  # interactive psql through the proxy
-# or grab the URL for one-off psql/scripts:
-railway variables --service Postgres --json | jq -r '.DATABASE_PUBLIC_URL'
+# or grab the URL for one-off psql/scripts (use the *PUBLIC* URL — the plain
+# DATABASE_URL points at postgres.railway.internal and only resolves in-cluster):
+railway variables --service Postgres --kv | grep DATABASE_PUBLIC_URL
 ```
 
 Rule of thumb: SELECTs freely; writes only through migrations or the admin
 API (`/admin/taxonomy/...`) — see `.claude/skills/taxonomy-review/SKILL.md`.
 
-**Temporal schedules** (rss-ingest-hourly, dedup-sweep, taxonomy-autoverify)
+**Temporal schedules** (rss-ingest-hourly, dedup-sweep)
 
 Temporal Cloud UI → Schedules → pick one → **Trigger** fires it immediately
-(e.g. first taxonomy-autoverify pass right after a deploy instead of waiting
-24h). Pause/unpause lives in the same place. Schedules self-install/update on
-app bootstrap — changing cadence is a code change, not a UI change.
+(e.g. a dedup sweep right after a deploy instead of waiting for the next tick).
+Pause/unpause lives in the same place. Schedules self-install/update on app
+bootstrap — changing cadence is a code change, not a UI change. (The
+`taxonomy-autoverify` schedule was removed 2026-06-17 — skill verification is
+manual now, see [taxonomy-verification-policy.md](taxonomy-verification-policy.md).)
 
 **Logs**
 

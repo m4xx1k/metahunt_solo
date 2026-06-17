@@ -1,12 +1,21 @@
 # taxonomy-autoverify — threshold-driven skill verification
 
 **Branch:** `feat/taxonomy-autoverify`
-**Status:** in-progress
-**Started:** 2026-06-10 · **Closed:** —
+**Status:** SUPERSEDED — removed 2026-06-17 (branch `refactor/skill-verify`)
+**Started:** 2026-06-10 · **Closed:** 2026-06-17
 
 ## Outcome
 
-*(fill in when closing)*
+Shipped, then **reverted**. The ≥5-vacancy / ≥2-company threshold promoted
+whatever was *frequent* (junk umbrella-aliases, miscanonicalised fragments) and
+never demoted — frequency isn't quality. Auto-promotion (`autoVerifySkills`, the
+scheduler, workflow, activity, and the `taxonomy-autoverify` Temporal schedule)
+was removed; verification is now a deliberate operator decision. The mention
+count survives only as a triage signal that ranks the NEW review queue.
+
+See the replacement contract: [taxonomy-verification-policy.md](../../runbook/taxonomy-verification-policy.md).
+
+The rest of this tracker is kept for history.
 
 ## Context
 
