@@ -13,7 +13,8 @@ const TONE: Record<Seniority, string> = {
 
 // Outline-only variant: never filled, so it stays a quiet qualifier next to
 // the role on the feed card (the filled tones win in dense lists elsewhere).
-const OUTLINE_TONE: Record<Seniority, string> = {
+// Exported so the seniority filter pills carry the same per-level colours.
+export const SENIORITY_OUTLINE_TONE: Record<Seniority, string> = {
   INTERN: "border-text-muted text-text-muted",
   JUNIOR: "border-accent-secondary text-accent-secondary",
   MIDDLE: "border-accent text-accent",
@@ -46,7 +47,7 @@ export function SeniorityBadge({
     <span
       className={cn(
         "inline-flex items-center border px-2 py-[3px] font-mono text-2xs font-bold uppercase tracking-[0.2em]",
-        outline ? OUTLINE_TONE[seniority] : TONE[seniority],
+        outline ? SENIORITY_OUTLINE_TONE[seniority] : TONE[seniority],
         className,
       )}
     >

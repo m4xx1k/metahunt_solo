@@ -1,6 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
+import type { Seniority } from "@/lib/extracted-vacancy";
 import type { FilterAggregates, FiltersApi } from "./types";
 
 interface Chip {
@@ -103,7 +105,8 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
       chips.push({
         key: `seniority-${o.id}`,
         label: `seniority: ${o.label}`,
-        tone: "border-accent text-accent",
+        tone:
+          SENIORITY_OUTLINE_TONE[o.id as Seniority] ?? "border-accent text-accent",
         onRemove: () => api.setSeniority(null),
       });
     }
@@ -123,9 +126,7 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
     chips.push({
       key: "test",
       label: `test: ${filters.test ? "yes" : "no"}`,
-      tone: filters.test
-        ? "border-danger text-danger"
-        : "border-success text-success",
+      tone: "border-accent-secondary text-accent-secondary",
       onRemove: () => api.setTest(null),
     });
   }

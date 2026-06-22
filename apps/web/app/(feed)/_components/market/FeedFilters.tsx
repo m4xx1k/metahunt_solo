@@ -13,6 +13,8 @@ import { SkillsSection } from "@/features/vacancy-filters/SkillsSection";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
 import { TrackTree } from "@/features/vacancy-filters/TrackTree";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
+import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
+import type { Seniority } from "@/lib/extracted-vacancy";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import { DedupeToggle } from "./DedupeToggle";
@@ -161,6 +163,7 @@ export function FeedFilters({
             options={agg.seniorities}
             activeId={api.filters.seniority}
             onChange={api.setSeniority}
+            activeClassFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
           <EnumSection
             title="format"
