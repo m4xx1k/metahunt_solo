@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CrosshairIcon,
   GithubLogoIcon,
@@ -20,12 +21,12 @@ export function Footer() {
         </div>
 
         <nav className="flex items-center gap-[18px]">
-          <a
+          <Link
             href="/"
             className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
             продукт
-          </a>
+          </Link>
           <a
             href="#roadmap"
             className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"

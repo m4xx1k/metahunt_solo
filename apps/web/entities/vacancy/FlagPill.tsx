@@ -10,7 +10,9 @@ export function FlagPill({
   tone,
 }: {
   icon?: string;
-  label: string;
+  // Optional: the feed card drops the label (position/colour is the label),
+  // the investigation FlagPills row keeps it ("тестове: так").
+  label?: string;
   value: string;
   tone: "ok" | "warn" | "muted";
 }) {
@@ -24,9 +26,11 @@ export function FlagPill({
       )}
     >
       {icon ? <span aria-hidden>{icon}</span> : null}
-      <span className="text-2xs uppercase tracking-wider text-text-muted">
-        {label}:
-      </span>
+      {label ? (
+        <span className="text-2xs uppercase tracking-wider text-text-muted">
+          {label}:
+        </span>
+      ) : null}
       <span className="font-bold">{value}</span>
     </span>
   );

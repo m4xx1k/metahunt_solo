@@ -44,13 +44,13 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   return (
     <Button
       type="button"
-      variant="secondary"
+      variant="primary"
       size="sm"
       className="w-full"
       disabled={isSubmitting}
       onClick={handleSubscribe}
     >
-      🔔 Сповіщення в Telegram
+      Сповіщення в Telegram
     </Button>
   );
 }
