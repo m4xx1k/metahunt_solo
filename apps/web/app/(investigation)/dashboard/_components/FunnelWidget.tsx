@@ -17,12 +17,12 @@ export function FunnelWidget({ funnel }: Props) {
   const dupPct = formatPercent(duplicatesMerged, silver);
 
   return (
-    <div className="border border-border bg-bg-card p-6 shadow-[6px_6px_0_0_#000]">
+    <div className="border border-border bg-bg-card p-6 shadow-brut-md">
       <div className="mb-5 flex items-baseline justify-between">
         <h3 className="font-display text-lg font-bold text-text-primary">
           ETL-воронка · Bronze → Silver → Gold
         </h3>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
           конверсія між шарами даних
         </span>
       </div>
@@ -87,7 +87,7 @@ function Stage({
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {tag}
       </span>
       <span
@@ -101,7 +101,7 @@ function Stage({
       >
         <div className={cn("h-full", bar)} style={{ width: `${widthPct}%` }} />
       </div>
-      <span className="font-mono text-[10px] text-text-muted">{subline}</span>
+      <span className="font-mono text-2xs text-text-muted">{subline}</span>
     </div>
   );
 }

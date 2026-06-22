@@ -8,15 +8,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-accent text-bg border-transparent shadow-[4px_4px_0_0_#000] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]",
+          "bg-accent text-bg border-transparent shadow-brut hover:shadow-brut-xs hover:translate-x-[2px] hover:translate-y-[2px]",
         secondary:
-          "bg-bg text-text-primary border-border shadow-[3px_3px_0_0_#000] font-display hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]",
+          "bg-bg text-text-primary border-border shadow-brut-sm font-display hover:shadow-brut-2xs hover:translate-x-[2px] hover:translate-y-[2px]",
         nav:
-          "bg-accent text-bg border-transparent shadow-[3px_3px_0_0_#000] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] text-[13px]",
+          "bg-accent text-bg border-transparent shadow-brut-sm hover:shadow-brut-2xs hover:translate-x-[2px] hover:translate-y-[2px] text-xs",
       },
       size: {
-        md: "px-[22px] py-3 text-sm",
-        sm: "px-[18px] py-[10px] text-[13px]",
+        md: "px-5 py-3 text-sm",
+        sm: "px-4 py-2.5 text-xs",
         lg: "px-7 py-4 text-base",
       },
     },

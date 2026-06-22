@@ -21,7 +21,7 @@ export function AnalyticsStrip({
 
   return (
     <details className="border border-border bg-bg-card" open>
-      <summary className="flex cursor-pointer items-center justify-between gap-3 border-b border-border bg-bg-elev px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+      <summary className="flex cursor-pointer items-center justify-between gap-3 border-b border-border bg-bg-elev px-4 py-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
         <span>покриття довідника · {coverage.byAxis.role.total} вакансій</span>
         <span className="text-text-secondary">розгорнути / згорнути</span>
       </summary>

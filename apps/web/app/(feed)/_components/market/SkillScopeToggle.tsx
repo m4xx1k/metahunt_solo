@@ -36,7 +36,7 @@ export function SkillScopeToggle() {
       onClick={toggle}
       aria-pressed={on}
       className={cn(
-        "flex items-center justify-between gap-2 border px-3 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors",
+        "flex items-center justify-between gap-2 border px-3 py-2 font-mono text-2xs uppercase tracking-wider transition-colors",
         isPending && "pointer-events-none opacity-50",
         on
           ? "border-accent-secondary bg-accent-secondary/10 text-accent-secondary"

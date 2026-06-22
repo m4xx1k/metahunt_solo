@@ -10,7 +10,7 @@ export function Hero() {
           <Heading
             level="h1"
             as="h1"
-            className="text-center text-[44px] leading-[1.05] md:text-[88px]"
+            className="text-center text-5xl leading-[1.05] md:text-8xl"
           >
             {hero.title}
           </Heading>
@@ -19,7 +19,7 @@ export function Hero() {
           </p>
         </div>
         <HeroWaitlist cta={hero.cta} />
-        <p className="font-body text-[13px] text-text-muted">
+        <p className="font-body text-xs text-text-muted">
           {hero.microCopy}
         </p>
       </div>

@@ -50,12 +50,12 @@ export function FailedIngestsDrawer({ count, failedIngests, trigger }: Props) {
           onClick={() => setOpen(false)}
         >
           <div
-            className="flex h-full w-full max-w-[480px] flex-col gap-5 overflow-y-auto border-l border-danger bg-bg-card p-6 shadow-[-8px_0_0_0_#000]"
+            className="flex h-full w-full max-w-[480px] flex-col gap-5 overflow-y-auto border-l border-danger bg-bg-card p-6 shadow-brut-l"
             onClick={(e) => e.stopPropagation()}
           >
             <header className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-1">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+                <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   помилки · поточний період
                 </span>
                 <h2 className="font-display text-2xl font-bold text-danger">

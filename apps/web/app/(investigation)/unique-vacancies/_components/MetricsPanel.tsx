@@ -36,7 +36,7 @@ function Stat({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+      <div className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}
       </div>
       <div

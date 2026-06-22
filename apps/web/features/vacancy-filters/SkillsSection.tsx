@@ -85,7 +85,7 @@ export function SkillsSection({
           <button
             type="button"
             onClick={() => setShowAll(true)}
-            className="self-start font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent"
+            className="self-start font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
           >
             [+ {hiddenCount} more]
           </button>
@@ -94,7 +94,7 @@ export function SkillsSection({
           <button
             type="button"
             onClick={() => setShowAll(false)}
-            className="self-start font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent"
+            className="self-start font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
           >
             [− collapse]
           </button>

@@ -21,20 +21,11 @@ export function FeedHero({ aggregates: a, showPipeline = false }: Props) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
         <div className="flex flex-col justify-center gap-5">
           <h1 className="font-display text-4xl font-bold leading-tight tracking-tight text-text-primary md:text-5xl">
-            <span className="text-accent">[</span>metahunt
-            <span className="text-accent">]</span>
+            Всі IT-вакансії — <span className="text-accent">в одному списку</span>.
           </h1>
           <p className="max-w-[560px] font-body text-base leading-[1.55] text-text-secondary md:text-lg">
-            <span className="font-medium text-text-primary">
-              Всі IT-вакансії — в одному списку.
-            </span>{" "}
-            Збираємо з{" "}
-            <span className="font-medium text-accent-secondary">
-              усіх джерел
-            </span>
-            , структуруємо через{" "}
-            <span className="font-medium text-accent">AI</span> та підбираємо під{" "}
-            <span className="font-medium text-success">твоє резюме</span>.
+            Збираємо з усіх джерел, структуруємо через AI та підбираємо під твоє
+            резюме.
           </p>
         </div>
         <TotalCounter

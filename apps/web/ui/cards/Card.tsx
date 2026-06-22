@@ -10,7 +10,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 border border-border bg-bg-card p-8 shadow-[8px_8px_0_0_#000]",
+        "flex flex-col gap-4 border border-border bg-bg-card p-8 shadow-brut-lg",
         className,
       )}
     >

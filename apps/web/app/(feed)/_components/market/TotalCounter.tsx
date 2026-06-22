@@ -73,8 +73,15 @@ function StatusDot() {
   );
 }
 
+const SOURCES_SHOWN = 3;
+
 export function TotalCounter({ total, lastSyncAt, sources }: Props) {
-  const sourceLabel = sources.map((s) => s.displayName).join(" + ") || "—";
+  const shown = sources.slice(0, SOURCES_SHOWN).map((s) => s.displayName);
+  const extra = sources.length - shown.length;
+  const sourceLabel =
+    shown.length === 0
+      ? "—"
+      : shown.join(" + ") + (extra > 0 ? ` +${extra}` : "");
   return (
     <div className="flex flex-col items-start gap-2 md:items-end md:justify-center md:text-right">
       <span className="font-display text-6xl font-bold leading-none text-accent md:text-7xl">

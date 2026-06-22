@@ -93,7 +93,7 @@ export default async function DashboardPage({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <Tag>{`> огляд`}</Tag>
-            <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+            <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
               пайплайн загалом ·{" "}
               <span className="text-accent">{periodLabel}</span>
             </h2>
@@ -107,7 +107,7 @@ export default async function DashboardPage({
             <span className="font-display text-4xl font-bold leading-none text-accent">
               {formatCount(stats.funnel.gold)}
             </span>
-            <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
               нових Golden Records {periodLabel}
             </span>
           </KpiCard>
@@ -116,7 +116,7 @@ export default async function DashboardPage({
             <span className="font-display text-4xl font-bold leading-none text-text-primary">
               {formatCount(stats.funnel.silver)}
             </span>
-            <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
               структуровано через LLM
             </span>
           </KpiCard>
@@ -125,7 +125,7 @@ export default async function DashboardPage({
             <span className="font-display text-4xl font-bold leading-none text-text-primary">
               {formatCount(stats.funnel.duplicatesMerged)}
             </span>
-            <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
               приєдналися до існуючих груп
             </span>
           </KpiCard>
@@ -135,7 +135,7 @@ export default async function DashboardPage({
               <span className="font-display text-4xl font-bold leading-none text-accent">
                 {formatUsd(stats.llmCost.costUsd)}
               </span>
-              <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+              <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
                 {formatCount(stats.llmCost.count)} викликів ·{" "}
                 {formatTokens(stats.llmCost.tokensIn)} токенів in
               </span>
@@ -215,7 +215,7 @@ function Section({
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Tag>{tag}</Tag>
-        <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+        <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
           {title}
         </h2>
         {subtitle ? (

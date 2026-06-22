@@ -105,7 +105,7 @@ export function ModerationActions({ node }: { node: NodeDetail }) {
 
   return (
     <div className="flex flex-col gap-2 border border-border bg-bg-elev p-3">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         дії модератора
       </span>
       <div className="flex flex-wrap gap-2">
@@ -176,7 +176,7 @@ export function ModerationActions({ node }: { node: NodeDetail }) {
       ) : null}
 
       {action.error ? (
-        <pre className="overflow-x-auto whitespace-pre-wrap border border-danger bg-bg p-2 font-mono text-[11px] text-danger">
+        <pre className="overflow-x-auto whitespace-pre-wrap border border-danger bg-bg p-2 font-mono text-2xs text-danger">
           {action.error}
         </pre>
       ) : null}

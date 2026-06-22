@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import type { IngestStatus } from "@/lib/api/monitoring";
 
 const styles = cva(
-  "inline-flex items-center px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-wider border border-transparent",
+  "inline-flex items-center px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider border border-transparent",
   {
     variants: {
       status: {
@@ -36,7 +36,7 @@ export function StatusBadge({
       className={cn(
         known
           ? styles({ status: status as IngestStatus })
-          : "inline-flex items-center px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-wider border border-border bg-bg-elev text-text-secondary",
+          : "inline-flex items-center px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider border border-border bg-bg-elev text-text-secondary",
         className,
       )}
     >

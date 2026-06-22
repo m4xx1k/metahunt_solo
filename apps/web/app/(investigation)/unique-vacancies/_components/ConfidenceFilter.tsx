@@ -23,7 +23,7 @@ export function ConfidenceFilter({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         &gt; впевненість:
       </span>
       {options.map((o) => (
@@ -34,7 +34,7 @@ export function ConfidenceFilter({
           className={cn(
             "inline-flex items-center border px-3 py-1 font-mono text-xs uppercase tracking-wider",
             active === o.key
-              ? "border-accent text-accent shadow-[3px_3px_0_0_#000]"
+              ? "border-accent text-accent shadow-brut-sm"
               : "border-border text-text-secondary hover:border-accent hover:text-accent",
           )}
         >

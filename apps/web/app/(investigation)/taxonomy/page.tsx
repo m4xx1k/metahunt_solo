@@ -60,7 +60,7 @@ export default async function TaxonomyPage({
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 md:px-12">
         <div className="flex flex-col gap-2">
           <Tag>&gt; робоче місце куратора</Tag>
-          <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+          <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
             довідник + черга курації
           </h2>
           <p className="font-mono text-xs text-text-muted">

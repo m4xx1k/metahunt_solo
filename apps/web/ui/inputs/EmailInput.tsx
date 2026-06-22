@@ -28,7 +28,7 @@ export function EmailInput({
     <form
       onSubmit={onSubmit}
       className={cn(
-        "flex w-full max-w-[520px] flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-[6px] border border-border bg-bg-card p-2 sm:p-[6px] shadow-[6px_6px_0_0_#000] focus-within:border-accent",
+        "flex w-full max-w-[520px] flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-[6px] border border-border bg-bg-card p-2 sm:p-[6px] shadow-brut-md focus-within:border-accent",
         className,
       )}
     >

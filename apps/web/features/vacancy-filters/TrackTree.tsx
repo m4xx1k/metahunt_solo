@@ -144,7 +144,7 @@ function TrackRow({
           aria-label={expanded ? "collapse" : "expand"}
           aria-expanded={expanded}
           onClick={onToggle}
-          className="flex h-3 w-3 items-center justify-center font-mono text-[10px] text-text-muted hover:text-accent"
+          className="flex h-3 w-3 items-center justify-center font-mono text-2xs text-text-muted hover:text-accent"
         >
           {expanded ? "▾" : "▸"}
         </button>
@@ -184,7 +184,7 @@ function TrackRow({
         </span>
       </button>
 
-      <span className="font-mono text-[11px] tabular-nums text-text-muted">
+      <span className="font-mono text-2xs tabular-nums text-text-muted">
         {count}
       </span>
     </div>

@@ -12,7 +12,7 @@ export function RawJobCard({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-2 border border-border bg-bg-card p-5 shadow-[4px_4px_0_0_#000]",
+        "flex w-full flex-col gap-2 border border-border bg-bg-card p-5 shadow-brut",
         className,
       )}
     >

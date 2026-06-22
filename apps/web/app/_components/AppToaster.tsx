@@ -12,7 +12,7 @@ export function AppToaster() {
         unstyled: true,
         classNames: {
           toast:
-            "flex items-center gap-3 w-full border bg-bg-card text-text-primary shadow-[4px_4px_0_0_#000] rounded-lg px-4 py-3 font-body text-sm",
+            "flex items-center gap-3 w-full border bg-bg-card text-text-primary shadow-brut rounded-lg px-4 py-3 font-body text-sm",
           title: "font-body text-sm leading-snug",
           description: "font-body text-xs text-text-secondary",
           icon: "shrink-0",

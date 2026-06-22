@@ -20,7 +20,7 @@ export function VacancyList({
   return (
     <section id="list" className="flex w-full min-w-0 flex-col gap-6">
       <div className="flex items-baseline justify-between">
-        <h2 className="font-display text-2xl font-semibold text-text-primary md:text-3xl">
+        <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">
           вакансії
         </h2>
         <span className="font-mono text-xs text-text-muted">
@@ -30,11 +30,11 @@ export function VacancyList({
       </div>
 
       {result.items.length === 0 ? (
-        <p className="font-mono text-sm text-text-muted">
+        <div className="border border-border bg-bg-card p-8 text-center font-mono text-sm text-text-secondary">
           {result.total === 0
             ? "Нічого не знайдено за поточними фільтрами — спробуй прибрати частину."
             : "Ця сторінка порожня — повернись на попередню."}
-        </p>
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
           {result.items.map((v) => (

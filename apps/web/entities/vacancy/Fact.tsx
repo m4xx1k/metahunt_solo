@@ -19,7 +19,7 @@ export function Fact({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}
       </span>
       {children ?? (
@@ -28,7 +28,7 @@ export function Fact({
             "font-mono",
             highlight
               ? "text-success text-base font-bold"
-              : (valueClass ?? "text-text-primary text-[13px]"),
+              : (valueClass ?? "text-text-primary text-xs"),
           )}
         >
           {value}

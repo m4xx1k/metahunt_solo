@@ -184,7 +184,7 @@ export function TrackAxisSection({
                       + {c.name}
                     </span>
                     {c.count != null ? (
-                      <span className="font-mono text-[11px] tabular-nums text-text-muted">
+                      <span className="font-mono text-2xs tabular-nums text-text-muted">
                         {c.count}
                       </span>
                     ) : null}

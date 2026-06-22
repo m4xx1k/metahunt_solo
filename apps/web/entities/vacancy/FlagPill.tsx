@@ -9,10 +9,12 @@ export function FlagPill({
   value,
   tone,
 }: {
-  icon?: string;
-  label: string;
+  icon?: React.ReactNode;
+  // Optional: the feed card drops the label (position/colour is the label),
+  // the investigation FlagPills row keeps it ("тестове: так").
+  label?: string;
   value: string;
-  tone: "ok" | "warn" | "muted";
+  tone: "ok" | "warn" | "info" | "muted";
 }) {
   return (
     <span
@@ -20,13 +22,16 @@ export function FlagPill({
         "inline-flex w-fit items-center gap-2 border px-3 py-1 font-mono text-xs",
         tone === "ok" && "border-success text-success",
         tone === "warn" && "border-danger text-danger",
+        tone === "info" && "border-accent-secondary text-accent-secondary",
         tone === "muted" && "border-border text-text-secondary",
       )}
     >
       {icon ? <span aria-hidden>{icon}</span> : null}
-      <span className="text-[10px] uppercase tracking-wider text-text-muted">
-        {label}:
-      </span>
+      {label ? (
+        <span className="text-2xs uppercase tracking-wider text-text-muted">
+          {label}:
+        </span>
+      ) : null}
       <span className="font-bold">{value}</span>
     </span>
   );

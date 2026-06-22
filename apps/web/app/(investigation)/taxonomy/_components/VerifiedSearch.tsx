@@ -74,7 +74,7 @@ export function VerifiedSearch({
         <p className="font-mono text-xs text-text-muted">пошук…</p>
       ) : null}
       {active && state.kind === "error" ? (
-        <pre className="overflow-x-auto whitespace-pre-wrap border border-danger bg-bg p-2 font-mono text-[11px] text-danger">
+        <pre className="overflow-x-auto whitespace-pre-wrap border border-danger bg-bg p-2 font-mono text-2xs text-danger">
           {state.message}
         </pre>
       ) : null}

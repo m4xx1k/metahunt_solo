@@ -91,7 +91,7 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
   return (
     <div className="flex flex-col gap-3 border border-border bg-bg-card p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
           статус
         </span>
         {STATUSES.map((s) => {
@@ -115,7 +115,7 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
           тип
         </span>
         <button
@@ -169,7 +169,7 @@ export function Filters({ type, statuses, q, minBlocked, total }: Props) {
             className="w-16 border border-border bg-bg-elev px-2 py-2 text-right text-text-primary outline-none focus:border-accent sm:py-1"
           />
         </label>
-        <span className="font-mono text-[11px] text-text-muted sm:ml-auto">
+        <span className="font-mono text-2xs text-text-muted sm:ml-auto">
           знайдено · {total}
         </span>
       </div>

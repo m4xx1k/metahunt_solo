@@ -64,7 +64,7 @@ export function AxisBar({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-text-muted">
+        <span className="font-mono text-2xs font-bold uppercase tracking-[0.15em] text-text-muted">
           {AXIS_LABEL[axis]}
         </span>
         <div className="flex items-baseline gap-3 font-mono text-xs text-text-muted">
@@ -73,7 +73,7 @@ export function AxisBar({
           <span>не вказано · {coverage.missing}</span>
           <span
             className={cn(
-              "border px-2 py-[2px] text-[10px] uppercase tracking-wider",
+              "border px-2 py-[2px] text-2xs uppercase tracking-wider",
               HEALTH_PILL[health],
             )}
           >

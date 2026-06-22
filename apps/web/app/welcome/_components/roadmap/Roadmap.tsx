@@ -33,7 +33,7 @@ export function Roadmap() {
             <div className="flex flex-col gap-3.5">
               <span
                 className={cn(
-                  "font-mono text-[11px]",
+                  "font-mono text-2xs",
                   item.status === "current" ? "text-accent" : "text-text-muted",
                 )}
               >
@@ -42,7 +42,7 @@ export function Roadmap() {
               <h4 className="font-display text-xl font-bold text-text-primary">
                 {item.title}
               </h4>
-              <p className="font-body text-[13px] leading-[1.55] text-text-secondary">
+              <p className="font-body text-xs leading-[1.55] text-text-secondary">
                 {item.description}
               </p>
             </div>

@@ -153,8 +153,8 @@ function Stat({
   sub?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 border border-border bg-bg-card p-5 shadow-[4px_4px_0_0_#000]">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+    <div className="flex flex-col gap-2 border border-border bg-bg-card p-5 shadow-brut">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}
       </span>
       <span className="font-display text-2xl font-bold text-text-primary">

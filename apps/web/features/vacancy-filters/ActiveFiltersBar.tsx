@@ -1,6 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
+import type { Seniority } from "@/lib/extracted-vacancy";
 import type { FilterAggregates, FiltersApi } from "./types";
 
 interface Chip {
@@ -26,7 +28,7 @@ export function ActiveFiltersBar({
         api.activeCount === 0 && "opacity-50",
       )}
     >
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         &gt; active filters · {api.activeCount}
       </span>
       {chips.map((c) => (
@@ -35,7 +37,7 @@ export function ActiveFiltersBar({
           type="button"
           onClick={c.onRemove}
           className={cn(
-            "inline-flex items-center gap-2 border px-2 py-[2px] font-mono text-[11px] hover:bg-bg-elev",
+            "inline-flex items-center gap-2 border px-2 py-[2px] font-mono text-2xs hover:bg-bg-elev",
             c.tone,
           )}
         >
@@ -46,12 +48,12 @@ export function ActiveFiltersBar({
         </button>
       ))}
       {api.activeCount === 0 ? (
-        <span className="font-mono text-[11px] text-text-muted">nothing selected</span>
+        <span className="font-mono text-2xs text-text-muted">nothing selected</span>
       ) : (
         <button
           type="button"
           onClick={api.clear}
-          className="ml-auto font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent"
+          className="ml-auto font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
         >
           [clear all]
         </button>
@@ -103,7 +105,8 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
       chips.push({
         key: `seniority-${o.id}`,
         label: `seniority: ${o.label}`,
-        tone: "border-accent text-accent",
+        tone:
+          SENIORITY_OUTLINE_TONE[o.id as Seniority] ?? "border-accent text-accent",
         onRemove: () => api.setSeniority(null),
       });
     }
@@ -123,9 +126,7 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
     chips.push({
       key: "test",
       label: `test: ${filters.test ? "yes" : "no"}`,
-      tone: filters.test
-        ? "border-danger text-danger"
-        : "border-success text-success",
+      tone: "border-accent-secondary text-accent-secondary",
       onRemove: () => api.setTest(null),
     });
   }

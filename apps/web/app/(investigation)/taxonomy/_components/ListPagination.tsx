@@ -35,7 +35,7 @@ export function ListPagination({ page, pageSize, total }: Props) {
 
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="font-mono text-xs text-text-muted sm:text-[11px]">
+      <span className="font-mono text-xs text-text-muted sm:text-2xs">
         показано {from}–{to} з {total}
       </span>
       <div className="flex items-center gap-2">

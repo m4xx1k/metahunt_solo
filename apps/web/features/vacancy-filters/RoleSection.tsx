@@ -42,7 +42,7 @@ export function RoleSection({
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="self-start py-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent"
+            className="self-start py-2 font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
           >
             {showAll ? "[− collapse]" : `[+ ${hiddenCount} more]`}
           </button>

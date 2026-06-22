@@ -1,7 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "./CollapsibleSection";
-import { pillClass } from "./pill";
+import { PILL_BASE, pillClass } from "./pill";
 import type { OptionRow } from "./types";
 
 // Pills for closed enum filters (seniority, work format…). `id` carries the raw
@@ -17,6 +18,7 @@ export function EnumSection({
   multiple = false,
   activeIds = [],
   onToggle,
+  activeClassFor,
 }: {
   title: string;
   options: OptionRow[];
@@ -25,6 +27,9 @@ export function EnumSection({
   multiple?: boolean;
   activeIds?: string[];
   onToggle?: (id: string) => void;
+  // Optional per-option colour for the active state (seniority uses the
+  // card's per-level tones); falls back to the default accent pill.
+  activeClassFor?: (id: string) => string | undefined;
 }) {
   const isActive = (id: string) =>
     multiple ? activeIds.includes(id) : activeId === id;
@@ -49,13 +54,14 @@ export function EnumSection({
       <div className="flex flex-wrap gap-2">
         {options.map((o) => {
           const active = isActive(o.id);
+          const tone = active ? activeClassFor?.(o.id) : undefined;
           return (
             <button
               key={o.id}
               type="button"
               aria-pressed={active}
               onClick={() => handle(o.id, active)}
-              className={pillClass(active)}
+              className={tone ? cn(PILL_BASE, "font-bold", tone) : pillClass(active)}
             >
               {o.label}
             </button>

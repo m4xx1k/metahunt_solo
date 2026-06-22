@@ -33,10 +33,10 @@ export function SourcesTable({ rows }: { rows: SourceRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto border border-border bg-bg-card shadow-[6px_6px_0_0_#000]">
+    <div className="overflow-x-auto border border-border bg-bg-card shadow-brut-md">
       <table className="min-w-full font-mono text-sm">
         <thead>
-          <tr className="border-b border-border bg-bg-elev text-[11px] uppercase tracking-wider text-text-muted">
+          <tr className="border-b border-border bg-bg-elev text-2xs uppercase tracking-wider text-text-muted">
             <Th>код</Th>
             <Th>назва</Th>
             <Th>останній збір</Th>

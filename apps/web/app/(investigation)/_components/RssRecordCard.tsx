@@ -34,8 +34,8 @@ export function RssRecordCard({
       className={cn(
         "flex w-full flex-col gap-6 bg-bg-card p-6 transition-shadow",
         extracted
-          ? "border border-accent shadow-[10px_10px_0_0_#000]"
-          : "border border-border shadow-[6px_6px_0_0_#000]",
+          ? "border border-accent shadow-brut-xl"
+          : "border border-border shadow-brut-md",
         className,
       )}
     >
@@ -86,7 +86,7 @@ function MetaTags({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
       <span className="text-accent">[{record.sourceCode ?? "src"}]</span>
       {items.map((s) => (
         <span key={s}>{s}</span>
@@ -195,7 +195,7 @@ function SkillsRow({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}:
       </span>
       {items.map((s) => (
@@ -220,7 +220,7 @@ function SkillsRow({
 function DescriptionDetails({ text }: { text: string }) {
   return (
     <details className="group flex flex-col gap-2 border-l-2 border-border pl-3 hover:border-accent">
-      <summary className="cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-text-muted hover:text-accent">
+      <summary className="cursor-pointer list-none font-mono text-2xs uppercase tracking-wider text-text-muted hover:text-accent">
         <span className="group-open:hidden">
           ▸ опис ({text.length} символів)
         </span>
@@ -252,7 +252,7 @@ function Sidebar({
       >
         <span
           className={cn(
-            "font-mono text-[11px] font-bold uppercase tracking-wider",
+            "font-mono text-2xs font-bold uppercase tracking-wider",
             ex ? "text-accent" : "text-text-muted",
           )}
         >
@@ -270,11 +270,11 @@ function Sidebar({
         </span>
         {ex ? (
           <details className="group">
-            <summary className="cursor-pointer list-none font-mono text-[11px] uppercase tracking-wider text-text-muted hover:text-accent">
+            <summary className="cursor-pointer list-none font-mono text-2xs uppercase tracking-wider text-text-muted hover:text-accent">
               <span className="group-open:hidden">▸ сирий JSON</span>
               <span className="hidden group-open:inline">▾ сирий JSON</span>
             </summary>
-            <pre className="mt-2 max-h-[260px] overflow-auto border border-border bg-bg p-2 font-mono text-[11px] leading-relaxed text-text-primary">
+            <pre className="mt-2 max-h-[260px] overflow-auto border border-border bg-bg p-2 font-mono text-2xs leading-relaxed text-text-primary">
               {JSON.stringify(ex, null, 2)}
             </pre>
           </details>
@@ -283,13 +283,13 @@ function Sidebar({
 
       <Link
         href={`/dashboard/records/${record.id}`}
-        className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
+        className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-brut transition-[transform,box-shadow] hover:shadow-brut-xs hover:translate-x-[2px] hover:translate-y-[2px]"
       >
         <span className="text-accent">→</span> детально
       </Link>
       <Link
         href={`/dashboard/ingests/${record.rssIngestId}`}
-        className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:text-text-primary"
+        className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-brut-sm transition-[transform,box-shadow] hover:shadow-brut-2xs hover:translate-x-[2px] hover:translate-y-[2px] hover:text-text-primary"
       >
         <span className="text-text-muted">⌥</span> відкрити запуск
       </Link>
@@ -301,7 +301,7 @@ function Sidebar({
 
 function Footer({ record }: { record: RecordListItem }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-2xs uppercase tracking-wider">
       <span className="font-bold text-accent">&gt; ідентифікатори:</span>
       <span className="inline-flex items-center gap-2 text-text-muted">
         запис

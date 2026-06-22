@@ -31,7 +31,7 @@ export type GoldenJob = {
 function MatchBar({ percent }: { percent: number }) {
   const filled = Math.round((percent / 100) * 8);
   return (
-    <span className="font-mono text-[13px] text-text-primary">
+    <span className="font-mono text-xs text-text-primary">
       match: [{"█".repeat(filled)}{"░".repeat(8 - filled)}] {percent}%
     </span>
   );
@@ -40,12 +40,12 @@ function MatchBar({ percent }: { percent: number }) {
 function Fact({ fact }: { fact: GoldenFact }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {fact.label}
       </span>
       <span
         className={cn(
-          "font-mono text-[13px]",
+          "font-mono text-xs",
           fact.highlight
             ? "text-success text-base font-bold"
             : "text-text-primary",
@@ -67,7 +67,7 @@ export function GoldenJobCard({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-8 border border-accent bg-bg-card p-8 shadow-[12px_12px_0_0_#000]",
+        "flex w-full flex-col gap-8 border border-accent bg-bg-card p-8 shadow-brut-2xl",
         className,
       )}
     >
@@ -112,7 +112,7 @@ export function GoldenJobCard({
 
         <div className="flex w-full flex-col gap-3 md:w-[240px]">
           <div className="flex flex-col gap-2 border border-accent bg-bg-elev p-4">
-            <span className="font-mono text-[11px] font-bold text-accent">
+            <span className="font-mono text-2xs font-bold text-accent">
               &gt; ai skill analysis:
             </span>
             <MatchBar percent={job.ai.matchPercent} />
@@ -126,7 +126,7 @@ export function GoldenJobCard({
             <button
               key={a.label}
               type="button"
-              className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
+              className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-brut transition-[transform,box-shadow] hover:shadow-brut-xs hover:translate-x-[2px] hover:translate-y-[2px]"
             >
               {a.icon && <span className="text-accent">{a.icon}</span>}
               {a.label}

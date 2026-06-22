@@ -28,7 +28,7 @@ export function Small({
 }) {
   return (
     <p
-      className={cn("font-body text-[13px] text-text-secondary", className)}
+      className={cn("font-body text-xs text-text-secondary", className)}
     >
       {children}
     </p>
@@ -45,7 +45,7 @@ export function Mono({
   return (
     <span
       className={cn(
-        "font-mono text-[13px] tracking-wide text-text-secondary",
+        "font-mono text-xs tracking-wide text-text-secondary",
         className,
       )}
     >

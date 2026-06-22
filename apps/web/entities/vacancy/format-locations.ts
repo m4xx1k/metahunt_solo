@@ -1,9 +1,11 @@
-const LOCATIONS_MAX = 2;
+const CITIES_MAX = 3;
+const ITEMS_MAX = 2;
 
 // Backend ships locations as strings like "Kyiv, Ukraine" (BAML splits city
 // and country, but the wire contract collapses them). When every location
-// shares the same country, render the country once at the end so we don't
-// shout "Україна" five times for an all-UA posting.
+// shares one country we factor it out — "Ukraine (Kyiv, Kharkiv)" — instead of
+// repeating it per city. Mixed countries fall back to a capped "City, Country"
+// list.
 export function formatLocations(locations: string[]): string | null {
   if (locations.length === 0) return null;
   const parsed = locations.map((raw) => {
@@ -18,15 +20,18 @@ export function formatLocations(locations: string[]): string | null {
       ? parsed[0].country
       : null;
 
-  const renderableItems = sharedCountry
-    ? parsed.map((p) => p.city)
-    : parsed.map((p) => (p.country ? `${p.city}, ${p.country}` : p.city));
+  if (sharedCountry) {
+    const cities = parsed.map((p) => p.city);
+    if (cities.length === 1) return `${cities[0]}, ${sharedCountry}`;
+    const head = cities.slice(0, CITIES_MAX).join(", ");
+    const overflow =
+      cities.length > CITIES_MAX ? `, +${cities.length - CITIES_MAX}` : "";
+    return `${sharedCountry} (${head}${overflow})`;
+  }
 
-  const head = renderableItems.slice(0, LOCATIONS_MAX).join(" · ");
+  const items = parsed.map((p) => (p.country ? `${p.city}, ${p.country}` : p.city));
+  const head = items.slice(0, ITEMS_MAX).join(" · ");
   const overflow =
-    renderableItems.length > LOCATIONS_MAX
-      ? ` +${renderableItems.length - LOCATIONS_MAX}`
-      : "";
-  const suffix = sharedCountry ? `, ${sharedCountry}` : "";
-  return `${head}${overflow}${suffix}`;
+    items.length > ITEMS_MAX ? ` +${items.length - ITEMS_MAX}` : "";
+  return `${head}${overflow}`;
 }
