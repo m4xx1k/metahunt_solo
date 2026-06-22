@@ -8,10 +8,10 @@
   --color-border-strong: #3B424F;
   --color-text-primary: #E6EDF3;
   --color-text-secondary: #8B949E;
-  --color-text-muted: #5D6570;
+  --color-text-muted: #828C9A;
   --color-accent: #FFB380;
-  --color-accent-soft: #FFB67A;
   --color-accent-secondary: #6B9EFA;
+  --color-accent-subtle-bg: #2A1C12;
   --color-success: #3DD68C;
   --color-danger: #FF5C5C;
 
@@ -19,11 +19,18 @@
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
+  --text-2xs: 0.625rem;
+
+  --shadow-brut-2xs: 1px 1px 0 0 #000;
   --shadow-brut-xs: 2px 2px 0 0 #000;
   --shadow-brut-sm: 3px 3px 0 0 #000;
   --shadow-brut: 4px 4px 0 0 #000;
   --shadow-brut-md: 6px 6px 0 0 #000;
   --shadow-brut-lg: 8px 8px 0 0 #000;
+  --shadow-brut-xl: 10px 10px 0 0 #000;
+  --shadow-brut-2xl: 12px 12px 0 0 #000;
+  --shadow-brut-l: -8px 0 0 0 #000;
+  --shadow-brut-r: 8px 0 0 0 #000;
 
   --radius: 0rem;
   --radius-sm: 0rem;
