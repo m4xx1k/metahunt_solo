@@ -1,8 +1,10 @@
 import { Fragment } from "react";
 
+import { ClipboardList, ShieldCheck } from "lucide-react";
+
 import { DuplicatesBadge } from "./DuplicatesBadge";
 import { SeniorityBadge } from "./SeniorityBadge";
-import { SkillChip } from "@/entities/skill/SkillChip";
+import { VacancySkills } from "./VacancySkills";
 import { FlagPill } from "./FlagPill";
 import { formatLocations } from "./format-locations";
 import {
@@ -13,12 +15,9 @@ import {
   formatSalary,
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
-import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
+import type { VacancyDto } from "@/lib/api/vacancies";
 
 type Props = { vacancy: VacancyDto };
-
-const SKILLS_REQUIRED_SHOWN = 6;
-const SKILLS_OPTIONAL_SHOWN = 5;
 
 // Variant B: one reflowing card, ranked by what a candidate scans. Eight
 // meaning-groups, grouped by space, never by Label:Value. The role is the one
@@ -56,22 +55,10 @@ export function VacancyCard({ vacancy: v }: Props) {
       </span>,
     );
 
-  const requiredSkills = v.skills.required.slice(0, SKILLS_REQUIRED_SHOWN);
-  const extraRequired = Math.max(
-    0,
-    v.skills.required.length - SKILLS_REQUIRED_SHOWN,
-  );
-  const optionalSkills = v.skills.optional.slice(0, SKILLS_OPTIONAL_SHOWN);
-  const extraOptional = Math.max(
-    0,
-    v.skills.optional.length - SKILLS_OPTIONAL_SHOWN,
-  );
-  const hasSkills = requiredSkills.length > 0 || optionalSkills.length > 0;
-
   return (
-    <article className="flex w-full flex-col gap-5 border border-border bg-bg-card p-6 transition-colors hover:border-accent">
+    <article className="flex w-full flex-col gap-4 border border-border bg-bg-card p-5 transition-colors hover:border-accent">
       {/* TOP — main column (1–5) + provenance rail (6) */}
-      <div className="flex flex-col gap-5 md:flex-row md:gap-8">
+      <div className="flex flex-col gap-4 md:flex-row md:gap-6">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {/* 1 — eyebrow */}
           {eyebrow.length > 0 ? (
@@ -103,11 +90,11 @@ export function VacancyCard({ vacancy: v }: Props) {
             </h3>
           </div>
 
-          {/* 3 — requirements: years (accent chip) + english (plain) */}
+          {/* 3 — requirements: years (accent, no border) + english (plain) */}
           {experience || english ? (
-            <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
               {experience ? (
-                <span className="border border-accent bg-accent-subtle-bg px-2 py-[2px] font-bold text-accent">
+                <span className="font-bold uppercase tracking-wider text-accent">
                   {experience}
                 </span>
               ) : null}
@@ -125,26 +112,10 @@ export function VacancyCard({ vacancy: v }: Props) {
           ) : null}
 
           {/* 5 — skills: colour is the label (required = accent, optional = muted) */}
-          {hasSkills ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {requiredSkills.map((s: NodeRef) => (
-                <SkillChip key={s.id} name={s.name} tone="required" />
-              ))}
-              {extraRequired > 0 ? (
-                <span className="font-mono text-xs text-text-muted">
-                  +{extraRequired}
-                </span>
-              ) : null}
-              {optionalSkills.map((s: NodeRef) => (
-                <SkillChip key={s.id} name={s.name} tone="optional" />
-              ))}
-              {extraOptional > 0 ? (
-                <span className="font-mono text-xs text-text-muted">
-                  +{extraOptional}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
+          <VacancySkills
+            required={v.skills.required}
+            optional={v.skills.optional}
+          />
         </div>
 
         {/* 6 — provenance rail: company · domain (source moved to apply) */}
@@ -165,8 +136,8 @@ export function VacancyCard({ vacancy: v }: Props) {
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   domain
                 </span>
-                <span className="w-fit border border-border px-2 py-[2px] font-mono text-xs text-text-secondary">
-                  [{domain}]
+                <span className="w-fit border border-border-strong bg-bg-elev px-2.5 py-1 font-mono text-xs font-medium text-text-primary">
+                  {domain}
                 </span>
               </div>
             ) : null}
@@ -178,10 +149,18 @@ export function VacancyCard({ vacancy: v }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
         <div className="flex flex-wrap items-center gap-2">
           {v.hasTestAssignment === true ? (
-            <FlagPill value="тестове" tone="muted" />
+            <FlagPill
+              icon={<ClipboardList className="h-3.5 w-3.5" strokeWidth={2.5} />}
+              value="тестове"
+              tone="info"
+            />
           ) : null}
           {v.hasReservation === true ? (
-            <FlagPill value="бронь" tone="muted" />
+            <FlagPill
+              icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
+              value="бронь"
+              tone="ok"
+            />
           ) : null}
           {v.duplicateCount && v.uniqueVacancyId ? (
             <DuplicatesBadge

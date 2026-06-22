@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils";
 
 // The one skill chip. Tones map to what the skill means in context:
 // required/optional on vacancy cards, have/missing/bonus on the reverse-ATS
-// diff lines. `compact` is the dense diff-line size; `hash` is the feed-style
-// `#` prefix (diff lines drop it).
+// diff lines. `compact` is the dense diff-line size; `hash` opts into a `#`
+// prefix (off by default — it reads oddly for multi-word skills like
+// "machine learning").
 const TONES = {
   required: "border-accent text-accent",
   optional: "border-border text-text-secondary",
@@ -18,7 +19,7 @@ export function SkillChip({
   name,
   tone,
   compact = false,
-  hash = true,
+  hash = false,
 }: {
   name: string;
   tone: SkillTone;
