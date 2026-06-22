@@ -95,12 +95,7 @@ The dev port for web is set in this package's `dev` script (currently `next dev 
 
 ### Dev-server noise (hydration / browser logs)
 
-Browser extensions (Grammarly, password managers, dark-reader…) mutate `<html>`/`<body>` attributes before React hydrates, producing spurious hydration-mismatch errors. Two guards keep the dev terminal clean:
-
-- `app/layout.tsx` sets `suppressHydrationWarning` on `<html>` **and** `<body>` — silences the root cause. It's *shallow* (only those two elements' own attributes), so real mismatches deeper in the tree still surface.
-- `next.config.ts` sets `logging.browserToTerminal: false` (Next 16.2+) so client console output is never forwarded to `pnpm dev:web`, regardless of the upstream default.
-
-If you ever need client logs in the terminal for a debugging session, flip `browserToTerminal` to `'warn'`/`true` temporarily — don't commit it.
+Browser extensions mutate `<html>`/`<body>` before React hydrates, causing spurious hydration-mismatch errors. Two guards keep the dev terminal clean: `app/layout.tsx` sets a *shallow* `suppressHydrationWarning` on `<html>` and `<body>` (deeper mismatches still surface), and `next.config.ts` sets `logging.browserToTerminal: false`. Flip the latter to `'warn'` temporarily if you need client logs — don't commit it.
 
 ## Deploy
 

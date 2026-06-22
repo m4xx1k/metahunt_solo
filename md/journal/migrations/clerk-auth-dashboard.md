@@ -27,7 +27,7 @@ Close the auth gap on the operator UI (the entire `app/(investigation)` route gr
 
 - **Why Clerk Allowlist vs a code-side email check.** Single-operator project; Clerk's Dashboard allowlist is the smallest moving part. No `if (email !== ALLOWED)` scattered through the codebase, no extra env to rotate, no DB column. Trade-off: switching operator requires a dashboard edit instead of a deploy — acceptable.
 - **Why `proxy.ts`, not `middleware.ts`.** Next.js 16.2.3 (see `apps/web/package.json`). Per Next.js 16 and Clerk docs, the convention is `proxy.ts` at the project root.
-- **Why protect the whole `(investigation)` group, not just `/dashboard/*`.** Sidebar literally labels itself "оператор" and the architecture snapshot flags `/admin/taxonomy/*` as an unauthorized gap. One matcher covers the whole operator surface in one go; promoting some pages to public later is a one-line matcher change.
+- **Why protect the whole `(investigation)` group, not just `/dashboard/*`.** Sidebar labels itself "operator" and the architecture snapshot flags `/admin/taxonomy/*` as an unauthorized gap. One matcher covers the whole operator surface in one go; promoting some pages to public later is a one-line matcher change.
 - **Why no custom `/sign-in` page.** "Max basic" — Clerk's hosted Account Portal handles sign-in. Custom branded pages can come later as a separate ADR if needed.
 
 ## Links

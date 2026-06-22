@@ -95,7 +95,7 @@ Login is **not** a gate at the entrance — it appears at the value moment, whic
 1. /reverse-ats  →  upload CV  →  ranked feed                 [ANONYMOUS, as today]
                           │
                           ▼
-2. CTA "🔔 Get new matches for this CV in Telegram"           [VALUE MOMENT]
+2. CTA "Get new matches for this CV in Telegram"              [VALUE MOMENT]
                           │
                           ▼
 3. Telegram Login (1 click)  →  backend HMAC-verifies
@@ -159,21 +159,21 @@ Login is **not** a gate at the entrance — it appears at the value moment, whic
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  metahunt            🟦 @maxxik (Telegram)        вийти       │  AuthStatus
+│  metahunt            @maxxik (Telegram)          logout      │  AuthStatus
 ├─────────────────────────────────────────────────────────────┤
-│  МОЄ CV                                                       │
+│  MY CV                                                        │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │ Senior Backend · Python · 6 р. · English B2          │    │
-│  │ ✅ 18 скілів зматчено   ➕ 4 не розпізнано           │    │  MyCvPanel
-│  │ [ Переглянути фід ] [ Замінити CV ↑ ] [ Видалити 🗑 ]│    │
+│  │ Senior Backend · Python · 6 yr · English B2          │    │
+│  │ 18 skills matched   4 unrecognized                   │    │  MyCvPanel
+│  │ [ View feed ] [ Replace CV ] [ Delete ]              │    │
 │  └─────────────────────────────────────────────────────┘    │
 │   (no CV → big dropzone)                                      │
 │                                                               │
-│  МОЇ ПІДПИСКИ                                  + нова з CV    │
+│  MY SUBSCRIPTIONS                              + new from CV  │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │ 🔔 Python Backend · Remote · fit ≥ GOOD              │    │  SubscriptionCard
-│  │    12 нових за тиждень · доставка в Telegram          │    │
-│  │    [ Переглянути ] [ Пауза ] [ Видалити ]            │    │
+│  │ Python Backend · Remote · fit >= GOOD                │    │  SubscriptionCard
+│  │    12 new this week · delivered via Telegram          │    │
+│  │    [ View ] [ Pause ] [ Delete ]                     │    │
 │  └─────────────────────────────────────────────────────┘    │
 └───────────────────────────────────────────────────────────────┘
 ```

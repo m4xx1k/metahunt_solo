@@ -546,5 +546,5 @@ module into bounded modules. **Done this pass:**
 - Feed search / facets: `apps/etl/src/feed/feed.service.ts`, `facets.service.ts`;
   tracks: `apps/etl/src/tracks/`; aggregates: `apps/etl/src/market/`
 - Filter UI: `apps/web/components/data/vacancy-filters/`
-- Prior taxonomy work: `taxonomy-curation.md`, `taxonomy-workspace.md`
+- Prior taxonomy work: `taxonomy-curation.md`, `_done/taxonomy-workspace.md`
 - Ingest crutch: `apps/etl/src/rss/utils/vacancy-filter.ts`

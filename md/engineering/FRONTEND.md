@@ -51,8 +51,6 @@ const handleDelete = (id: string) => () => onDelete(id);
 <Button onClick={handleDelete(item.id)}>delete</Button>
 ```
 
-Keeps the bound value at the call-site instead of hidden inside an inline closure.
-
 ---
 
 ## Container vs presentational
@@ -104,13 +102,9 @@ export const vacanciesApi = {
 };
 ```
 
-### Boundaries: `loading.tsx`, `error.tsx`
-
-Use Next.js conventions instead of a hand-rolled `<ErrorBoundary>`. Place `loading.tsx` (streamed fallback) and `error.tsx` (`"use client"`, receives `{ error, reset }`) next to `page.tsx`. A custom boundary is only needed for sub-tree errors inside a single page.
-
 ### Client-side fetching is the exception
 
-Most pages should be Server Components. Reach for `useEffect` / SWR / TanStack Query only for user-specific data that changes frequently (e.g. search-as-you-type) or a single client-only widget on an otherwise static page. For URL-driven filters, prefer `searchParams` on a Server Component over a client `useEffect` loop.
+Most pages are Server Components. Reach for `useEffect` / SWR / TanStack Query only for user-specific data that changes frequently (e.g. search-as-you-type) or a single client-only widget on an otherwise static page. For URL-driven filters, prefer `searchParams` on a Server Component over a client `useEffect` loop.
 
 ---
 
@@ -143,35 +137,11 @@ Always throw on missing provider — silent `null` chains hide bugs.
 
 ---
 
-## Forms
-
-Controlled — single source of truth in `useState`, validate on submit, disable the button while in-flight:
-
-```tsx
-const [values, setValues] = useState<FormValues>(initial);
-const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
-const [isSubmitting, setIsSubmitting] = useState(false);
-
-const handleSubmit = useCallback(async (e: FormEvent) => {
-  e.preventDefault();
-  const v = validate(values);
-  if (Object.keys(v).length) { setErrors(v); return; }
-  setIsSubmitting(true);
-  try { await onSubmit(values); } finally { setIsSubmitting(false); }
-}, [values, onSubmit]);
-```
-
-For server-mutating forms, prefer Next.js Server Actions (`<form action={action}>`) over a hand-rolled `fetch` — progressive enhancement and revalidation come free.
-
-When a form has 5+ fields, lift `values`/`errors`/`setValue` into a context and write a `<FormField name="…" />` that reads from it.
-
----
-
 ## UI patterns
 
 - **Loading / error / empty.** For Server Component pages: `loading.tsx` + `error.tsx` next to `page.tsx`. For client-only widgets: a one-liner gate (`if (isLoading) return …; if (error) …; if (!items.length) …`).
 - **Modal via portal.** `createPortal` to `document.body`, lock `document.body.style.overflow = "hidden"` while open, listen for `Escape` in a `useEffect` whose cleanup removes both. Don't bake click-overlay-to-close into the primitive — leave it to the consumer.
-- **Infinite scroll vs pagination.** For investigation pages, use URL-driven `<Pagination />` from `app/(investigation)/_components/` — infinite scroll breaks back-button restoration. Reach for an `IntersectionObserver` ref-callback only when scroll context is essential to the UX (a feed). Don't pull in a library.
+- **Pagination.** For investigation pages, use URL-driven `<Pagination />` from `app/(investigation)/_components/` — infinite scroll breaks back-button restoration. Reach for an `IntersectionObserver` ref-callback only when scroll context is essential to the UX (a feed).
 
 ---
 

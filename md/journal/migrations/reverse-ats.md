@@ -55,10 +55,17 @@ weight(s) = log(N / df(s))                            // IDF, ISOLATED behind a 
 - **Fit** answers "am I qualified?" → tier **Strong / Good / Stretch** (never a
   fake %). `|required| = 0` → neutral (treat as Good).
 - **Relevance** answers "does it use my strengths?" → the **sort order**.
-- **IDF weighting** makes generic noise (git/english/scrum) self-cancel — no
-  `is_generic` blacklist needed (full intuition in *Why IDF* below). `N` = total
-  vacancies, `df(s)` = vacancies carrying skill `s`. Materialized as the
-  `node_stats` view so the score is a plain join+sum in SQL (build plan §1-2).
+- **IDF weighting:** `weight(s) = ln(N/df(s))` where `N` = total vacancies and
+  `df(s)` = vacancies carrying skill `s`. Generic skills (e.g. `git`, `English`,
+  `scrum`) appear in most vacancies → low `df` ratio → weight near 1 → they
+  self-cancel with no blacklist needed. Rare/niche skills score high (e.g.
+  `Ariadne` at `df=2` → `ln(6376/2)` ≈ 8.1) but `log` compresses the scale so
+  six solid common-skill matches can still out-rank one exotic hit (raw `N/df`
+  would give a 1000× gap; `log` shrinks it to ~7×). Materialized as the
+  `node_stats` view so the score is a plain join+sum in SQL.
+  If the tail over-boosts, bend the curve with `ln(N/(df+k))` — one knob `k`,
+  no cliff, nothing deleted. `weight()` lives behind a swappable interface for
+  exactly this.
 - **Output per card (two axes + diff):** Fit-tier badge · sorted by Relevance ·
   **skill-diff**: ✅ have · ❌ missing (sorted by IDF desc — most valuable gap
   first) · ➕ bonus (your skills they don't even ask for).
@@ -67,55 +74,6 @@ weight(s) = log(N / df(s))                            // IDF, ISOLATED behind a 
 - **Role / seniority / english:** soft, **context flags only** in the gap block
   ("needs Senior, you're Middle"); they do NOT enter the score or sort in v1.
   Promote to tie-breakers later only if ranking comes out flat.
-
-### Why IDF — the weight, intuitively
-
-The one non-obvious piece, spelled out from zero. `weight(s)` answers *how strong
-a signal is this match?* — because matches aren't equal. A match on `Python` (half
-the market wants it) proves almost nothing; a match on `Ariadne` (niche GraphQL
-lib, 2 vacancies in the whole corpus) is a bull's-eye. So we need a number that's
-**big for rare skills, ~0 for mass-market ones**. Two steps build it:
-
-1. **Rarity = `N / df`** — "one in how many vacancies." `Python` → 6376/2101 ≈ 3
-   (every third job). `Ariadne` → 6376/2 ≈ 3188 (one in three thousand). Raw N/df
-   already separates mass from rare.
-2. **Why the `log`** — Relevance *sums* weights over the overlap. With raw N/df one
-   exotic match (Ariadne = 3188) buries six solid ones (Python+SQL+Docker+AWS+
-   Redis+Kafka ≈ 40 combined): the scale blows up ~1000×, so a broad confident
-   match loses to one lottery tick. `log` compresses it — the Python→Ariadne gap
-   shrinks from 1000× to ~7× (1.1 → 8.1), so six normal matches can out-rank one
-   rare hit. Log = "rarity in **orders of magnitude**" (same reason Richter,
-   decibels, star magnitudes are log): one order rarer = +1 weight, even steps
-   instead of an explosion.
-
-**One-line version:** weight = how rare a skill is, in orders of magnitude. Generic
-skills land at ~1 (self-cancel, no blacklist); a skill an order rarer is worth +1.
-We sort vacancies by the sum of these over the matched skills.
-
-### The fat tail (`df=1`) — why we never skip it
-
-~2800 skills sit at `df=1` (one vacancy), ~1000 at `df=2` — nearly half the
-taxonomy maxes out the weight (`df=1` → `ln(6376/1)` ≈ 8.76). The instinct is to
-drop `df=1` as noise. **We don't, on principle:**
-
-- A `df=1` match is two things we can't yet tell apart: garbage (typo / extractor
-  hallucination / hyper-specific phrase) **or** the most informative match the
-  engine can make (the one candidate with the one niche skill the one job wanted).
-  A hard skip kills the best signal to remove the worst — baby with the bathwater.
-- A cutoff is a cliff, not a slope: why is `df=1` worth zero but `df=2` worth full
-  8.76? No principled answer — that's the brittle `is_generic` blacklist ADR-0006
-  deleted, reborn as a threshold. And it doesn't even fix noise: a typo at `df=2`
-  still scores 8.07, so you'd keep raising the floor — back to manual tuning.
-- The noise mostly self-cancels anyway: a garbage `df=1` node hurts *only* if a CV
-  *independently* resolves to that same node — but a typo in one vacancy won't be
-  reproduced by a different CV's text (different text → resolves elsewhere). Junk
-  `df=1` nodes sit inert in the corpus; the `df=1` nodes that *do* match are
-  disproportionately the real-rare ones.
-- **If the tail ever does fizz**, bend the curve, don't cut it: `ln(N/(df+k))`
-  (e.g. `k=5`) settles `df=1` from 8.76 → ~6.97 and the whole tail eases down with
-  no discontinuity. Nothing is ever deleted, everything stays in the diff and
-  explainable, tuning is one knob `k` — not a growing exception list. This is the
-  whole reason `weight()` lives behind a swappable interface.
 
 ### Why these calls (KISS)
 
@@ -129,8 +87,7 @@ drop `df=1` as noise. **We don't, on principle:**
 ## What MVP needs (build plan)
 
 Ordered to **front-load the risk** — does the ranking produce a sensible order?
-— before investing in upload UX. Steps 1-2 are testable with a hand-picked node
-set, no CV. Each step independently testable.
+— before investing in upload UX. Each step independently testable.
 
 1. **[DONE — migration `0015`, `libs/database/src/schema/node-stats.ts`]** Live
    on `feat/reverse-ats`: 5,824 rows (every non-HIDDEN skill carried by ≥1
@@ -139,55 +96,40 @@ set, no CV. Each step independently testable.
    CONCURRENTLY` verified. **Status-scope decision:** include **NEW + VERIFIED,
    exclude only HIDDEN** — only ~234 of ~5,800 used skills are VERIFIED, so the
    entire IDF-differentiating long tail lives in NEW; a VERIFIED-only cut would
-   flatten ranking to mainstream skills (the parked "ranking flatness" risk) and
-   is the same kind of cliff the fat-tail section rejects. HIDDEN (2 skills) is
-   the one "do not surface" signal, mirrored from the feed. **Refresh-at-end-of-
-   ingest: DONE** — `RefreshNodeStatsActivity` runs `REFRESH MATERIALIZED VIEW
-   CONCURRENTLY node_stats` as the final step of `rssIngestAllWorkflow` (best-
-   effort; the per-vacancy loads are ABANDON children, so the view lags ≤1
-   ingest cycle — fine for IDF).
+   flatten ranking to mainstream skills and is the same kind of cliff the IDF
+   design rejects. HIDDEN (2 skills) is the one "do not surface" signal, mirrored
+   from the feed. **Refresh-at-end-of-ingest: DONE** — `RefreshNodeStatsActivity`
+   runs `REFRESH MATERIALIZED VIEW CONCURRENTLY node_stats` as the final step of
+   `rssIngestAllWorkflow` (best-effort; the per-vacancy loads are ABANDON children,
+   so the view lags ≤1 ingest cycle — fine for IDF).
 
-   _Original plan:_ A `pgMaterializedView` over
-   `vacancy_nodes`: `node_id`, `df = count(distinct vacancy_id)`, `weight =
-   ln(N/df)` (`N = (select count(*) from vacancies)`). Naturally skills-only —
-   `vacancy_nodes` is the skill join table; role/domain are FK columns on
-   `vacancies`. A `REFRESH MATERIALIZED VIEW CONCURRENTLY node_stats` runs as the
-   final activity of the ingest workflow (after 02-enrich load). `CONCURRENTLY`
-   keeps the feed/matcher readable during refresh and **requires a UNIQUE index
-   on `node_id`**. The weight stays swappable — the smoothed `ln(N/(df+k))` is one
-   edit to the view definition. Testable with one `SELECT ... ORDER BY weight`:
-   generic skills land ~1, niche ones ~8.7.
 2. **[DONE — `apps/etl/src/03-discovery/ranking/`]** `RankingService.match` +
    `POST /ranking/match` (and `POST /ranking/resolve` for the skill→node mapping).
    Verified on real data with a live CV (51 résumé skills, 51/51 resolved via
    canonical+alias): top-8 are all Full-Stack/Node roles, ranking driven by rare
    high-weight matches (Passport.js 8.8, Prisma 5.1) while generics (Docker 1.5)
    barely move it; fit tiers + ✅/❌/➕ diff all explainable. 3,785/6,400 vacancies
-   overlap ≥1 skill. Notes vs original plan: filters are a minimal inline set
-   (seniority/source/workFormat) reusing `ELIGIBLE_VACANCY` rather than feed's
-   full `buildWhere` (parked); the in-process correctness oracle is deferred (the
-   live eyeball check sufficed). Surfaced the parked **synonym-miss** for real:
-   recurring `miss: JavaScript` because the CV lists TypeScript only — candidate
-   for `related_nodes` later. _Original plan:_ Pure function `rank(candidateNodeIds,
-   filters) → ranked page`. **NOT** the feed's skill filter: `feed.search` treats
-   `skillIds` as AND (`HAVING count(distinct node_id) = len`); the matcher is
-   OR-overlap *scored* — `JOIN unnest($ids) → vacancy_nodes` (hits the `node_id`
-   index) `→ node_stats`, `SUM(weight) = relevance`, `count(*) FILTER
-   (is_required) / req_total → fit tier`, `ORDER BY relevance DESC LIMIT/OFFSET`.
-   Filters (seniority/source/…) reuse `feed.service`'s `buildWhere`. The
-   skill-diff (✅have / ❌missing / ➕bonus) is computed **only for the page's ~20
-   rows**, not the whole corpus. Testable with a hand-picked node_id array — no CV
-   needed; compare against an in-process reference on the same data (kept as the
-   correctness oracle, not the prod path).
+   overlap ≥1 skill. Implementation: filters are a minimal inline set
+   (seniority/source/workFormat) reusing `ELIGIBLE_VACANCY`. Surfaced the parked
+   **synonym-miss** for real: recurring `miss: JavaScript` because the CV lists
+   TypeScript only — candidate for `related_nodes` later. Pure function
+   `rank(candidateNodeIds, filters) → ranked page`. **NOT** the feed's skill
+   filter: `feed.search` treats `skillIds` as AND; the matcher is OR-overlap
+   *scored* — `JOIN unnest($ids) → vacancy_nodes` (hits the `node_id` index)
+   `→ node_stats`, `SUM(weight) = relevance`, `count(*) FILTER (is_required) /
+   req_total → fit tier`, `ORDER BY relevance DESC LIMIT/OFFSET`. The skill-diff
+   (✅have / ❌missing / ➕bonus) is computed **only for the page's ~20 rows**.
+
 3. **[DONE — migration `0016`, `apps/etl/src/03-discovery/cv/`]** `ExtractCandidate`
    BAML (`extract-candidate.baml`, reuses the vacancy `Seniority`/`EnglishLevel`/
    `Skills` types) → `CandidateExtractor`. Stored as `candidates` (contentHash,
    sourceText, extracted JSON, role/seniority/english/exp) + `candidate_nodes`
-   (presence-only). **Decision flip vs original plan:** skills are **resolve-only**
-   (`RankingService.resolveSkills`), NOT created as `NEW` — an unknown CV skill is
-   `df=0` → weight 0 → inert for matching anyway, so creating it only pollutes the
-   taxonomy; unmatched skills are kept as strings in `extracted.unmatchedSkills`.
-   Verified on the real CV: role=Full Stack Developer, SENIOR, 15/15 matched.
+   (presence-only). **Decision:** skills are **resolve-only** (`RankingService.resolveSkills`),
+   NOT created as `NEW` — an unknown CV skill is `df=0` → weight 0 → inert for
+   matching anyway, so creating it only pollutes the taxonomy; unmatched skills
+   are kept as strings in `extracted.unmatchedSkills`. Verified on real CV:
+   role=Full Stack Developer, SENIOR, 15/15 matched.
+
 4. **[DONE]** `POST /cv` — `FileInterceptor` accepts a PDF/.txt file (PDF→text via
    `unpdf`, pure-JS) **or** raw `{text}`; `GET /cv/:id` reads back the stored
    extraction. **Idempotency:** `sha256` of normalized text = `content_hash`
@@ -197,9 +139,11 @@ set, no CV. Each step independently testable.
    replaces the vacancy `Skills` for `ExtractCandidate` — the real PDF now yields
    **44 matched** skills (was 15). The LLM extractor is a token seam
    (`CANDIDATE_EXTRACTOR`) so tests stub it.
+
 5. **[DONE]** `GET /cv/:id/matches` — `loader.getMatchInput` reads
    `candidate_nodes` (+ node_stats weight) → `RankingService.rankByRefs`. Query
    parsing mirrors `feed.controller` (seniority/source/workFormat/page).
+
 6. **[DONE]** `/reverse-ats` page — hero + sample-profile picker + real CV upload
    (PDF/TXT) → ranked list. **Cards now reuse the actual feed card**: the matcher
    returns the full `VacancyDto` via the new `FeedService.hydrateByIds`, and
@@ -226,31 +170,29 @@ Three pathologies surfaced once the page ran on the full corpus. All three were
 *anticipated* below ("signals to watch"); the eyeball promoted them to fixes.
 
 1. **Rare skills over-boost (the `passport.js` problem).** A single `df=1` match
-   (niche lib / typo / extractor noise) scored `ln(N)` ≈ 8.8 and catapulted an
-   otherwise-weak vacancy to #1 — and these skills are often the ones a candidate
-   wouldn't even list. **Fix = the documented smoothing**, no new mechanism:
-   `ln(N/df)` → `ln(N/(df+5))` in the `node_stats` view (migration `0017`).
-   Settles `df=1` from 8.77 → **6.98** (verified), eases the whole tail down with
-   no cliff, generics unmoved at the floor. `K=5` is the single tuning point in
-   `node-stats.ts`. (Watch: on a tiny corpus `df+5 > N` makes weights negative —
-   irrelevant in prod where `N≈6.4k ≫ df+5`, but the ranking int test had to pad
-   its fixture corpus to stay non-degenerate.)
+   scored `ln(N)` ≈ 8.8 and catapulted an otherwise-weak vacancy to #1. **Fix =
+   the documented smoothing**: `ln(N/df)` → `ln(N/(df+5))` in the `node_stats`
+   view (migration `0017`). Settles `df=1` from 8.77 → **6.98** (verified), eases
+   the whole tail down with no cliff, generics unmoved at the floor. `K=5` is the
+   single tuning point in `node-stats.ts`. (Watch: on a tiny corpus `df+5 > N`
+   makes weights negative — irrelevant in prod where `N≈6.4k ≫ df+5`, but the
+   ranking int test had to pad its fixture corpus to stay non-degenerate.)
+
 2. **One rare skill out-ranking a broad fit.** Pure `ORDER BY relevance` let a
    lone niche bonus skill beat a job the candidate broadly qualifies for. **Fix =
-   promote Fit to the primary sort *bucket*** (the parked tie-breaker, now
-   earned): `ORDER BY tier_bucket DESC, relevance DESC` where `tier_bucket` =
-   STRONG 2 / GOOD 1 / STRETCH 0 (mirrors `fitTier`, computed in the ranked SQL
-   via a `req` CTE for `required_total`). Relevance now only orders *within* a
-   tier. Two axes, still no fused fake %.
+   promote Fit to the primary sort bucket**: `ORDER BY tier_bucket DESC, relevance DESC`
+   where `tier_bucket` = STRONG 2 / GOOD 1 / STRETCH 0 (computed in the ranked
+   SQL via a `req` CTE for `required_total`). Relevance now only orders *within*
+   a tier. Two axes, still no fused fake %.
+
 3. **Same vacancy at #1 and #13.** Not one row twice (`GROUP BY vacancy_id`
    forbids it) — **two duplicate vacancies** (re-post / cross-source) whose
-   independent extractions disagreed on skills, so one caught the rare boost and
-   the other didn't. This is the parked **per-vacancy-not-per-UniqueVacancy**
-   gap; the *proper* fix stays semantic-dedup (score the group's core member /
-   skill-union, exclude the rest by id — no engine change). **Still open** — not
-   addressed in this pass; smoothing (#1) only softens how far the dup drifts.
+   independent extractions disagreed on skills. The *proper* fix is semantic-dedup
+   (score the group's core member / skill-union, exclude the rest by id — no
+   engine change). **Still open** — smoothing (#1) only softens how far the dup
+   drifts.
 
-**Filters, now real (§2's "minimal inline set" → usable).** `MatchFilters`:
+**Filters, now real.** `MatchFilters`:
 `seniorities: Seniority[]` (OR — middle ∪ senior, was a single `=`),
 `workFormat` (REMOTE), `postedWithinDays` (`coalesce(published_at, loaded_at) >
 now() - make_interval`, mirrors the feed's freshness coalesce). Both controllers
@@ -261,13 +203,10 @@ ADR-0006 intact (filters narrow the corpus, skills still rank within it).
 
 ## Refactor pass (rev 2026-06-07 — audit-driven cleanup)
 
-The reverse-ATS work had spread copy-paste; a mini-audit (duplicated utils +
-engineering-rule + frontend-reuse) drove four fixes:
-
 1. **Fit-tier thresholds — one source of truth.** `FIT_STRONG_MIN`/`FIT_GOOD_MIN`
    in `ranking.contract.ts`; both `fitTier` (badge) and the SQL tier-bucket
-   (sort) read them, so the displayed tier can't drift from the sort order (a
-   latent bug introduced by the Quality pass's SQL CASE).
+   (sort) read them, so the displayed tier can't drift from the sort order.
+
 2. **Shared request-parsing home.** `platform/shared/query-parsing.ts` (inputs
    typed `unknown` → serves both GET-query and POST-body) + `platform/shared/
    sql.ts` (`uuidList`). Deleted the per-controller `parseEnum`/`parsePage`/
@@ -275,11 +214,13 @@ engineering-rule + frontend-reuse) drove four fixes:
    controllers** (feed, cv, ranking, taxonomy, dedup, monitoring) and the
    stray `admin/monitoring/query-parsing.ts`; centralised the inline `uuidList`
    (was re-rolled in feed.service + ranking.service).
+
 3. **Filter primitives → tier-2.** `pill` / `Section` / `EnumSection` / filter
    `types` promoted from the feed's page-private `market-snapshot/filters/` to
    `components/data/filters/` (the rule-of-three second consumer — reverse-ATS —
    arrived). Feed consumers unchanged (barrel re-exports). The `/reverse-ats`
    filter bar now uses the shared `pillClass` instead of a hand-rolled chip.
+
 4. **Pagination — tier-2 + callback mode + wired into reverse-ATS.** The pager
    moved to `components/data/Pagination.tsx` and gained an `onNavigate(offset)`
    mode for client islands (the feed/investigation link mode stays). The
@@ -292,8 +233,6 @@ routes compile.
 
 ## Hardening pass (rev 2026-06-07 — toward "give it to testers")
 
-Pre-public guards + filter depth so the page survives real users:
-
 - **Abuse guards.** `@nestjs/throttler` global backstop (300/min/IP — high so
   feed SSR, which shares the Vercel IP, never trips it) + a strict `@Throttle`
   on `POST /cv` (5/min per real browser IP, since each new CV = a BAML call) +
@@ -301,36 +240,34 @@ Pre-public guards + filter depth so the page survives real users:
 - **Filter depth.** `MatchFilters` grew: `workFormats[]` (was a single REMOTE
   toggle), `englishLevels[]` (UI shows CEFR — A2/B1/B2…), `employmentTypes[]`,
   `hasTestAssignment` (false keeps unknowns, mirrors feed), `hasReservation`
-  ("бронь"), and `minFitTier` (hide below a coverage tier). The Fit-tier filter
-  reads the computed `tier_bucket`, so `rankByRefs` now builds a shared `ranked`
-  CTE that both the page and count queries filter on. Enum value-arrays
-  (`ENGLISH_LEVEL_VALUES`, `EMPLOYMENT_TYPE_VALUES`, `FIT_TIER_VALUES`) added so
-  the boundary validates without redeclaring sets. (Salary deliberately skipped.)
+  (military deferment filter), and `minFitTier` (hide below a coverage tier). The
+  Fit-tier filter reads the computed `tier_bucket`, so `rankByRefs` now builds a
+  shared `ranked` CTE that both the page and count queries filter on. Enum
+  value-arrays (`ENGLISH_LEVEL_VALUES`, `EMPLOYMENT_TYPE_VALUES`,
+  `FIT_TIER_VALUES`) added so the boundary validates without redeclaring sets.
+  (Salary deliberately skipped.)
 - **node_stats freshness.** Refresh wired into ingest (see build-plan §1).
-- **Entry point.** Header CTA "Coming soon🚀" → link to `/reverse-ats` ("під
-  моє CV"). The page-private `/reverse-ats` filter bar reuses tier-2 `pillClass`.
+- **Entry point.** Header CTA "Coming soon" → link to `/reverse-ats`.
 
 Verified: etl tsc + 212 unit + 8 int green, `nest build` ok; web tsc + lint +
 `build:web` ok; the refactored ranked query + new filters smoke-tested on real db.
 
 ## Presentable pass (rev 2026-06-07 — looks-good-for-users)
 
-The `/reverse-ats` page restructured to the feed's proven shape:
-
 - **Feed-style sidebar.** New page-private `MatchFilters` mirrors `MarketFilters`:
   a sticky left column on lg+ (`lg:grid-cols-[300px_minmax(0,1fr)]`), collapsed
   behind one toggle on <lg. It composes the **same tier-2 primitives the feed
   uses** — `EnumSection` (now with an additive multi-select mode for the
-  candidate's OR-filters), `PerksFilter` (promoted to tier-2; "бронь"/"без тесту"
-  reused verbatim), and `Section`. The flat top filter bar is gone. Filter model
-  (state + enum→label option sets) extracted to `_components/filter-model.ts`.
+  candidate's OR-filters), `PerksFilter` (promoted to tier-2; military deferment
+  and no-test-assignment perks reused verbatim), and `Section`. The flat top
+  filter bar is gone. Filter model (state + enum→label option sets) extracted to
+  `_components/filter-model.ts`.
 - **Extraction display.** New `CandidateProfile` (a styled right-rail panel on
   xl+, first thing when stacked) surfaces what the engine understood — role +
   seniority (uploaded CV), matched/vacancy stat counters, resolved skills as
   chips (sorted popular-first — low IDF weight = high df), and unmatched strings
-  — so the user sanity-checks before trusting the rank. The 3-col layout (filters
-  · results · profile) needs xl; below it everything stacks (cramped thirds read
-  worse than one column). Replaces the old one-line resolved summary.
+  — so the user sanity-checks before trusting the rank. Replaces the old one-line
+  resolved summary.
 - **Polish.** Sticky blurred header, slimmer hero, three-column layout (filters ·
   results · CV profile) collapsing to a sensible mobile stack, improved
   empty/error states; responsive via the feed's grid + the Section accordion.
@@ -355,6 +292,8 @@ Verified: web tsc + lint clean; `build:web` (feed + ATS routes) green.
   tuning point — revisit if the tail still over-boosts after dedup lands.
 - **Calibration.** No ground truth yet — weights are expert guesses until we
   have a feedback signal (below).
+- **Duplicate vacancies in results.** Semantic-dedup (score the group's core
+  member, exclude the rest by id) is the proper fix; still open.
 
 ## How we fast-track it to users (after MVP works)
 

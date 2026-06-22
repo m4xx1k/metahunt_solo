@@ -26,7 +26,7 @@ hasEquity: boolean               // new, nullable
 
 ### Extraction changes (BAML)
 
-- `Salary { min, max, currency, period }` — verbatim from text, **no division, no guardrail**. Rules: "yearly/annual/per annum/k-figures ≥ 60k in EN-language posting → YEAR"; "/hour, погодинна → HOUR"; "UA sources (djinni/dou), bare number → MONTH". `null` period when truly ambiguous.
+- `Salary { min, max, currency, period }` — verbatim from text, **no division, no guardrail**. Rules: "yearly/annual/per annum/k-figures ≥ 60k in EN-language posting → YEAR"; "/hour → HOUR"; "UA sources (djinni/dou), bare number → MONTH". `null` period when truly ambiguous.
 - Equity: "equity / stock options / ESOP" → `hasEquity: true`.
 
 ### Normalization (loader, deterministic)
@@ -42,7 +42,7 @@ Ashby `compensation` (with `?includeCompensation=true`) and Lever `salaryRange` 
 
 ### Display
 
-Digest/feed always renders the **original**: `$25–35/hour`, `€90–110k/year`, `$3–5k/міс`. Normalized columns are invisible plumbing.
+Digest/feed always renders the **original**: `$25–35/hour`, `€90–110k/year`, `$3–5k/month`. Normalized columns are invisible plumbing.
 
 ## 2. Timezones & hiring eligibility (P1 — the remote-relevance problem)
 
@@ -56,12 +56,12 @@ Two distinct things postings conflate; model them separately:
 ```ts
 hiringRegions: jsonb       // string[] from controlled vocab, null = unstated
 tzNote: text               // raw overlap requirement verbatim ("4h overlap with PST"), null if none
-uaEligible: boolean        // computed by loader; null = unknown (treated as eligible in filters, badge "не вказано")
+uaEligible: boolean        // computed by loader; null = unknown (treated as eligible in filters, badge "not specified")
 ```
 
 Controlled vocab (keep ≤10): `WORLDWIDE, EUROPE, EMEA, UKRAINE, UK, US, AMERICAS, APAC, OTHER`. Sources: ATS location strings are strong signals ("Remote - EMEA", `secondaryLocations`, `country`) — adapter maps those without LLM; description text ("must be located in…") — LLM extracts.
 
-`uaEligible` derivation: `WORLDWIDE|EUROPE|EMEA|UKRAINE ⊆ regions → true`; only `US|AMERICAS|APAC|UK → false`; null/`OTHER` → null. Subscriptions/feed get a "сумісно з Україною" filter; digest ranking can downrank `tzNote` mentioning Americas overlap without hard-excluding.
+`uaEligible` derivation: `WORLDWIDE|EUROPE|EMEA|UKRAINE ⊆ regions → true`; only `US|AMERICAS|APAC|UK → false`; null/`OTHER` → null. Subscriptions/feed get a "compatible with Ukraine" filter; digest ranking can downrank `tzNote` mentioning Americas overlap without hard-excluding.
 
 Why not numeric UTC-offset ranges: postings rarely state them precisely enough; a coarse vocab + raw note covers ~95% of real strings at a fraction of the modeling cost. Revisit only if filter quality demands it.
 
@@ -71,7 +71,7 @@ Why not numeric UTC-offset ranges: postings rarely state them precisely enough; 
 interviewStagesCount: integer   // nullable
 ```
 
-LLM rule: count only an explicitly described process ("3 етапи: скрінінг, технічна, фінал" → 3; vague "кілька співбесід" → null). Sparse (~10-20% of postings state it) but zero-cost to carry and genuinely decision-relevant for candidates. Renders as "🪜 3 етапи" badge when present. Pairs with existing `hasTestAssignment`.
+LLM rule: count only an explicitly described process ("3 stages: screening, technical, final" → 3; vague "a few interviews" → null). Sparse (~10-20% of postings state it) but zero-cost to carry and genuinely decision-relevant for candidates. Renders as a stages badge when present. Pairs with existing `hasTestAssignment`.
 
 ## 4. Considered, with verdicts
 
@@ -97,5 +97,5 @@ LLM rule: count only an explicitly described process ("3 етапи: скрін�
 ## 6. Open questions
 
 1. Original salary display: show converted hint too ("€90k/yr ≈ $8.1k/mo")? (UI-only, cheap)
-2. `uaEligible = null` (unstated) — include in "сумісно з Україною" filter by default (recommended: yes, with badge) or exclude?
+2. `uaEligible = null` (unstated) — include in "compatible with Ukraine" filter by default (recommended: yes, with badge) or exclude?
 3. Re-extract scope: all open vacancies or only those with currently-null salary?

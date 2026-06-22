@@ -4,7 +4,7 @@
 
 ## Why
 
-Backend audit ([`BACKEND_AUDIT.md`](../../../BACKEND_AUDIT.md) §2.1) flagged the #1 cross-cutting
+A backend audit flagged the #1 cross-cutting
 debt: DB access (Drizzle + raw SQL) is interleaved with business logic everywhere, so domain
 services can't be unit-tested without a live Postgres. Pre-existing resolver specs proved it —
 they mocked the Drizzle query-builder chain (`select().from().where()`, `insert().values()

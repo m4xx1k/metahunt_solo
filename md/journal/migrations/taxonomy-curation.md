@@ -72,7 +72,7 @@ Skill-coverage histogram: `100%` bucket 6 → 13, `0%` bucket 6 → 1. SKILL sta
 ## Followups
 
 - **F1 — More `nodes.json` iterations.** Tier 2 (≥1 vacancy blocked), Tier 3 (long tail). SKILL axis is gated on F2 — without prompt narrowing, the long-tail keeps regenerating. Stop when the marginal pass yields <2pp.
-- **F2 — Prompt tuning.** BAML prompt currently emits a lot of soft-skill / tooling noise as `SKILL`. See [`todo/baml-extraction-prompt-tuning.md`](../../../todo/baml-extraction-prompt-tuning.md) for the plan (inject the live taxonomy as soft constraints, add anti-extraction rules, UA-market context). Measure delta via the same `fill-vacancies` coverage block.
+- **F2 — Prompt tuning.** BAML prompt currently emits a lot of soft-skill / tooling noise as `SKILL`. See [`_done/extraction-prompt-v2.md`](_done/extraction-prompt-v2.md) (shipped: live-taxonomy injection as soft constraints, anti-extraction rules, UA-market context). Measure delta via the same `fill-vacancies` coverage block.
 - **F3 — Apply moderator actions.** Read-only endpoints exist; the write-path (`POST /admin/taxonomy/nodes/:id/verify`, `POST /admin/taxonomy/nodes/:id/merge → :targetId`, alias adds) hasn't shipped. Phase 2.
 - **F4 — Auth on `/admin/taxonomy/*`.** Currently open. Decide on a guard (basic-auth env-token, signed cookie, dedicated admin JWT) before exposing beyond localhost.
 - **F5 — Admin UI in `apps/web`.** A `/admin/taxonomy` route consuming the read endpoints (queue + node detail + fuzzy suggestions). Out of scope until F3 lands and there's something to do once a moderator opens a node.
@@ -99,4 +99,4 @@ Skill-coverage histogram: `100%` bucket 6 → 13, `0%` bucket 6 → 1. SKILL sta
 - Source-of-truth seed: `libs/database/seeds/data/nodes.json` (~3.4k lines, 360 canonical names).
 - Coverage CLI: `apps/etl/scripts/fill-vacancies.ts`.
 - Admin endpoints: `apps/etl/src/taxonomy/taxonomy.controller.ts`.
-- Prompt-tuning followup: [`todo/baml-extraction-prompt-tuning.md`](../../../todo/baml-extraction-prompt-tuning.md).
+- Prompt-tuning followup: [`_done/extraction-prompt-v2.md`](_done/extraction-prompt-v2.md).

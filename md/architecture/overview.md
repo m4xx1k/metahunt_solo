@@ -8,7 +8,7 @@ metahunt — job aggregator for the Ukrainian IT market. Current baseline is a r
 
 ## Monorepo
 
-pnpm workspaces. Root — `/home/user/plan-a/metahunt/`. Workspaces declared in `pnpm-workspace.yaml`:
+pnpm workspaces. Workspaces declared in `pnpm-workspace.yaml`:
 
 ```yaml
 packages:
@@ -145,8 +145,8 @@ Two independent surfaces, both built from a subset of this monorepo. Neither reb
 
 ## Current gaps
 
-- BAML prompt v2 shipped (canonical-taxonomy injection + anti-fluff per-field rules + few-shot examples — see [migration tracker](../journal/migrations/extraction-prompt-v2.md) and [runbook](../runbook/extraction-cost.md)); empirical v1→v2 SKILL-coverage delta was deferred and remains the open question for the next Stage 06 iteration.
-- Moderator write-path on `/admin/taxonomy/*` shipped (verify, hide, rename, merge) — see [`taxonomy-workspace`](../journal/migrations/taxonomy-workspace.md). No bulk operations yet.
+- BAML prompt v2 shipped (canonical-taxonomy injection + anti-fluff per-field rules + few-shot examples — see [migration tracker](../journal/migrations/_done/extraction-prompt-v2.md) and [runbook](../runbook/extraction-cost.md)); empirical v1→v2 SKILL-coverage delta was deferred and remains the open question for the next Stage 06 iteration.
+- Moderator write-path on `/admin/taxonomy/*` shipped (verify, hide, rename, merge) — see [`taxonomy-workspace`](../journal/migrations/_done/taxonomy-workspace.md). No bulk operations yet.
 - Operator UI (`(investigation)` group) is now gated by Clerk via `apps/web/proxy.ts` — see Deployment → `@metahunt/web` above. The ETL admin endpoints (`/admin/taxonomy/*`, `/rss` triggers) are still wide open at the Nest layer — Clerk only protects the Next.js pages. Gate the API directly before exposing it beyond localhost. See [`rss-schedule-followups.md#a--production-hardening`](../journal/migrations/rss-schedule-followups.md#a--production-hardening) (A1).
 - No lint/format pipeline or CI yet (Stage 07).
 - LLM extraction defaults to `EXTRACTOR_PROVIDER=placeholder` (static stub, no LLM call). Switching to `EXTRACTOR_PROVIDER=baml` requires a valid `OPENAI_API_KEY` (BAML routes through OpenAI by default).
