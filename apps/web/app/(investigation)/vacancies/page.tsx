@@ -61,7 +61,7 @@ export default async function VacanciesPage({
         <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <Tag>&gt; рівень silver</Tag>
-            <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+            <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
               структуровані вакансії
             </h2>
             <p className="font-mono text-xs text-text-muted">

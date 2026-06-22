@@ -93,7 +93,7 @@ export default async function DashboardPage({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <Tag>{`> огляд`}</Tag>
-            <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+            <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
               пайплайн загалом ·{" "}
               <span className="text-accent">{periodLabel}</span>
             </h2>
@@ -215,7 +215,7 @@ function Section({
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Tag>{tag}</Tag>
-        <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+        <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
           {title}
         </h2>
         {subtitle ? (

@@ -62,7 +62,7 @@ export default async function SourcesPage() {
         <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <Tag>&gt; джерела</Tag>
-            <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+            <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
               налаштовані джерела · стан і покриття
             </h2>
             <p className="font-mono text-xs text-text-muted">

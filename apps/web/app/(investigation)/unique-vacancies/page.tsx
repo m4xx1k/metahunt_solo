@@ -52,7 +52,7 @@ export default async function UniqueVacanciesPage({
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <section className="flex flex-col gap-3">
           <Tag>&gt; дедуплікація</Tag>
-          <h2 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+          <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
             крос-джерельні дублікати
           </h2>
           <p className="font-mono text-xs text-text-muted">

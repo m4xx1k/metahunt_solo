@@ -10,7 +10,7 @@ export function Tag({
   return (
     <span
       className={cn(
-        "font-mono text-[13px] uppercase tracking-wider text-accent",
+        "font-mono text-xs uppercase tracking-wider text-accent",
         className,
       )}
     >
