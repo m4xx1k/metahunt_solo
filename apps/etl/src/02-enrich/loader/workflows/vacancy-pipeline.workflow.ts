@@ -10,8 +10,4 @@ export async function vacancyPipelineWorkflow(
   rssRecordId: string,
 ): Promise<void> {
   await loadVacancy(rssRecordId);
-  // Future stages append here (no workflow rewrite needed):
-  //   const vacancyId = await loadVacancy(rssRecordId);
-  //   await dedupVacancy(vacancyId);
-  //   await notifyVacancy(vacancyId);
 }

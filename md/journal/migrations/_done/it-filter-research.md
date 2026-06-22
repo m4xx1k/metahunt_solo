@@ -1,6 +1,6 @@
 # IT-vacancy filter redesign
 
-Status: research, 2026-06-12. Applies to current RSS pipeline; ATS sources (see [integration-research.md](integration-research.md)) make it more urgent — ATS boards carry the whole company (sales/legal/HR), not a pre-filtered IT feed.
+Status: research, 2026-06-12. Applies to current RSS pipeline; ATS sources (see [integration-research.md](../../../todo/ats-sources/integration-research.md)) make it more urgent — ATS boards carry the whole company (sales/legal/HR), not a pre-filtered IT feed.
 
 ## 0. Why media buyers leak — two confirmed bugs in `vacancy-filter.ts`
 
@@ -14,7 +14,7 @@ Status: research, 2026-06-12. Applies to current RSS pipeline; ATS sources (see 
 
 Every Cyrillic entry (бухгалтер, дизайнер, електрик, бригада…, розробник, архітектор) has never fired. Fix: Unicode boundaries `(?<![\p{L}\p{N}])term(?![\p{L}\p{N}])` with `/u` (verified working).
 
-**Bug 2 — generic seniority words in the whitelist outrank missed function words.** First-match-wins: blacklist has `media\s?buyer` but the title is "Media **Buying** Team Lead" → blacklist misses → whitelist `team lead` fires → passes. Same shape: "Affiliate Lead" only survives because `affiliate` happens to be blacklisted; any marketing function the blacklist spells slightly differently (user acquisition, media buying, influencer, ASO, retention, CRM…) + any generic whitelist word (lead, head wait that's blacklisted, team lead, cto, stack…) = leak.
+**Bug 2 — generic seniority words in the whitelist outrank missed function words.** First-match-wins: blacklist has `media\s?buyer` but the title is "Media **Buying** Team Lead" → blacklist misses → whitelist `team lead` fires → passes. Same shape: "Affiliate Lead" only survives because `affiliate` happens to be blacklisted; any marketing function the blacklist spells slightly differently (user acquisition, media buying, influencer, ASO, retention, CRM…) + any generic whitelist word (lead, head — wait, that's blacklisted, team lead, cto, stack…) = leak.
 
 **Plus: zero observability** — the stage-logging code is commented out (`vacancy-filter.ts:72-110`), so leak/false-block rates are invisible.
 

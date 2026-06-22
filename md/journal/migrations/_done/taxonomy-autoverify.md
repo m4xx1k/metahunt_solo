@@ -13,7 +13,7 @@ scheduler, workflow, activity, and the `taxonomy-autoverify` Temporal schedule)
 was removed; verification is now a deliberate operator decision. The mention
 count survives only as a triage signal that ranks the NEW review queue.
 
-See the replacement contract: [taxonomy-verification-policy.md](../../runbook/taxonomy-verification-policy.md).
+See the replacement contract: [taxonomy-verification-policy.md](../../../runbook/taxonomy-verification-policy.md).
 
 The rest of this tracker is kept for history.
 

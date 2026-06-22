@@ -84,6 +84,6 @@ Or hit `GET /extraction-cost/summary` on the ETL backend, or open `/dashboard/ex
 
 ## Caveats
 
-- **Failure rows are best-effort.** The activity writes `{ _v, _usage, _error }` before re-throw, so failed-attempt cost lands in the view. But if Temporal retries and the next attempt succeeds, the success-row overwrites the failure-row — that one attempt's cost is lost. Acceptable approximation; most failures spend zero tokens anyway. → See [migration tracker](../journal/migrations/extraction-prompt-v2.md#decisions).
+- **Failure rows are best-effort.** The activity writes `{ _v, _usage, _error }` before re-throw, so failed-attempt cost lands in the view. But if Temporal retries and the next attempt succeeds, the success-row overwrites the failure-row — that one attempt's cost is lost. Acceptable approximation; most failures spend zero tokens anyway. → See [migration tracker](../journal/migrations/_done/extraction-prompt-v2.md#decisions).
 - **Old rows are version-NULL.** Records extracted before the `_v` sidecar landed appear under `prompt_version = NULL` in the breakdown. They won't be re-versioned without a re-extract.
 - **Taxonomy is cached.** `BamlVacancyExtractor` caches the VERIFIED ROLE + DOMAIN canonical lists for 60 s per instance. If you add a VERIFIED node and want it visible to the prompt immediately, restart the ETL process or wait one TTL window.

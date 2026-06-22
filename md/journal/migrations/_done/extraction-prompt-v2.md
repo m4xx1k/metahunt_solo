@@ -28,7 +28,6 @@ Quality measurement (the BEFORE/AFTER coverage protocol from the original TODO) 
 ## Links
 
 - ADRs: none — failure-storage decision is small enough to live here.
-- Releases: → [`releases.md#2026-05-11`](../releases.md#2026-05-11)
-- Runbook: [`md/runbook/extraction-cost.md`](../../runbook/extraction-cost.md)
-- Plan: `/home/user/.claude/plans/typed-dazzling-quail.md` (local)
+- Releases: → [`releases.md#2026-05-11`](../../releases.md#2026-05-11)
+- Runbook: [`md/runbook/extraction-cost.md`](../../../runbook/extraction-cost.md)
 - Supersedes: `todo/baml-extraction-prompt-tuning.md` (removed on close)

@@ -47,7 +47,7 @@ app/
 **Redirects.** None required — `/` rewrites in place. Header nav for `/welcome` keeps its anchor links (`/welcome#problem` etc.) so deep-links from old promo material stay intact.
 
 **Header nav (landing).** Today's nav points to anchors on `/`. After this change it splits:
-- On `/` (snapshot): nav has `вакансії` (scrolls to list) · `моніторинг` → `/dashboard` · `про проєкт` → `/welcome`.
+- On `/` (snapshot): nav has `vacancies` (scrolls to list) · `monitoring` → `/dashboard` · `about` → `/welcome`.
 - On `/welcome`: nav unchanged from current (anchors to sections).
 
 Header is one component; it picks nav variant from a prop set per page.
@@ -60,11 +60,11 @@ Variant 3 from brainstorm — "market snapshot". Two rows.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Метахант                                       ┌─────────────┐    │
-│ агрегує IT-вакансії з DOU та Джині, нормалізує │   1 247     │    │
-│ роль / стек / формат і викладає одним списком  │  вакансій   │    │
-│                                                │  на ринку UA│    │
-│ ● оновлено 12 хв тому · DOU + Джині            └─────────────┘    │
+│ Metahunt                                       ┌─────────────┐    │
+│ aggregates IT vacancies from DOU and Djinni,   │   1 247     │    │
+│ normalizes role / stack / format, one list     │  vacancies  │    │
+│                                                │  in UA mkt  │    │
+│ ● updated 12 min ago · DOU + Djinni            └─────────────┘    │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -82,8 +82,8 @@ Variant 3 from brainstorm — "market snapshot". Two rows.
 │ Go         ██   18%│ Senior   ███       │      remote      │
 │ React      ██   17%│ Lead     ▁         │                  │
 │ AWS        █    14%│ Principal ▁        │ ─────────────── │
-│ Node       █    12%│                    │ 14% з броню-     │
-│ K8s        █    10%│                    │ ванням           │
+│ Node       █    12%│                    │ 14% with         │
+│ K8s        █    10%│                    │ reservation      │
 │ SQL        █     9%│                    │                  │
 └────────────────────┴────────────────────┴──────────────────┘
 ```
@@ -92,7 +92,7 @@ Variant 3 from brainstorm — "market snapshot". Two rows.
 - Each tile: title row + content. Tile background uses the same surface token as other dashboard cards (`bg-surface`, `border-border`, rounded-lg).
 - Top skills: top 8 skills by count, horizontal bars, label · count · share-%.
 - Seniority: vertical bar histogram, INTERN→C_LEVEL on x-axis, count above each bar.
-- Format: donut showing REMOTE / HYBRID / OFFICE; below the donut, a divider, then a single-line stat "X% з бронюванням". The format tile carries the reservation stat because both are short single-glance signals.
+- Format: donut showing REMOTE / HYBRID / OFFICE; below the donut, a divider, then a single-line stat "X% with reservation". The format tile carries the reservation stat because both are short single-glance signals.
 
 Below row 2 — a divider, then the vacancy list section.
 
@@ -104,9 +104,9 @@ Below row 2 — a divider, then the vacancy list section.
 |---|---|
 | Source | `aggregates.total` |
 | Format | thousands grouping (`1 247`) |
-| Subtitle | "вакансій зараз на ринку UA" |
-| Status row | `● оновлено N хв тому · DOU + Джині` (sources joined from `aggregates.sources[].name`) |
-| Empty state | If `total === 0` show "ринок порожній — пайплайн дивиться, але нічого не знайшов" (defensive only — total is non-zero in steady state) |
+| Subtitle | "vacancies on the UA market right now" |
+| Status row | `● updated N min ago · DOU + Djinni` (sources joined from `aggregates.sources[].name`) |
+| Empty state | If `total === 0` show "market empty — pipeline is watching but found nothing" (defensive only — total is non-zero in steady state) |
 
 ### TopSkills
 
@@ -135,7 +135,7 @@ Below row 2 — a divider, then the vacancy list section.
 | Source | `aggregates.workFormatDist` (REMOTE / HYBRID / OFFICE) |
 | Center label | dominant share — e.g. "68% remote" if REMOTE leads |
 | Legend | small pills below donut: `● remote 68%  ● hybrid 22%  ● office 10%` |
-| Reservation stat | computed from `aggregates.reservationCount / aggregates.reservationKnownCount`. Display below divider: `14% з бронюванням`. Do not divide by total — only count vacancies where `hasReservation !== null`. |
+| Reservation stat | computed from `aggregates.reservationCount / aggregates.reservationKnownCount`. Display below divider: `14% with reservation`. Do not divide by total — only count vacancies where `hasReservation !== null`. |
 
 ### Vacancy list
 
@@ -206,7 +206,7 @@ New component `app/(landing)/_components/vacancy-list/PublicVacancyCard.tsx`. Di
 │                                                                  │
 │ $4 000 – 6 000 / month                                           │
 │                                                                  │
-│                              [подати заявку ↗]  [запис у нас →] │
+│                              [apply ↗]  [our record →] │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -215,7 +215,7 @@ New component `app/(landing)/_components/vacancy-list/PublicVacancyCard.tsx`. Di
 - Subtitle row: `company?.name ?? '—'` · `locations[0] ?? ''` · `workFormat label`. Skip empty fields, separator only between non-empty.
 - Tag row: `seniority` · `employmentType` · `englishLevel`. Each as a small tag. Skip nulls.
 - Skills row: top 5 skills (required first, then optional), `+N more` if truncated.
-- Salary row: `formatSalary(salary)` — if all null show `ЗП не вказано` in muted color (intentional — Djinni gap is a *visible* part of the market story).
+- Salary row: `formatSalary(salary)` — if all null show `Salary not listed` in muted color (intentional — Djinni gap is a *visible* part of the market story).
 - Action row: external apply link (target=_blank, `vacancy.link`) + internal record link (`/records/:rssRecordId`). Both styled as small text-buttons; apply is primary, record is secondary.
 
 **Empty data handling.** Most fields are nullable. The card MUST render with only `title` + `source`; everything else is gracefully skipped.
@@ -301,7 +301,7 @@ Single commit at the end of P1. Goal: page feels *alive* without becoming circus
 ## Open questions / decisions
 
 - **Verified-role default for aggregates.** Adopted: yes, match list default (`includeRoleless: false`). Rationale: numbers on the public page should match what the list below shows, otherwise "1 247 vacancies" + "list shows 800" looks broken.
-- **Reservation denominator.** Adopted: divide by *known* count (`hasReservation IS NOT NULL`), not total. Rationale: dividing by total under-reports because Djinni often leaves it null. Show denominator-aware copy: `14% з бронюванням (з тих, де відомо)` — or accept the simpler `14% з бронюванням` and document the caveat. **Pick one during implementation; default to the simpler form unless it reads misleading.**
+- **Reservation denominator.** Adopted: divide by *known* count (`hasReservation IS NOT NULL`), not total. Rationale: dividing by total under-reports because Djinni often leaves it null. Show denominator-aware copy: `14% with reservation (of those where known)` — or accept the simpler `14% with reservation` and document the caveat. **Pick one during implementation; default to the simpler form unless it reads misleading.**
 - **Salary stat in v1.** Aggregates returns `salaryDisclosedCount` but the v1 UI doesn't surface it. Reason: three widgets is the right density; salary disclosure belongs in a future "data quality / honesty" block. The data is available the moment we add the block — no backend change needed.
 - **Sparkline.** Postponed. The current vacancies table doesn't carry a creation snapshot, so a sparkline either needs daily snapshots or `loadedAt` bucketing (which biases toward recently re-loaded vacancies, not net-new). Defer until a snapshot table exists.
 
@@ -309,7 +309,7 @@ Single commit at the end of P1. Goal: page feels *alive* without becoming circus
 
 - **Aggregate query cost.** The skill aggregation joins `vacancy_nodes` × `nodes` × `vacancies`. At < 10k vacancies this is sub-50 ms; revisit if the table grows past 100k.
 - **Header nav drift.** Adding a nav variant prop to `Header` doubles the surface area. Mitigation: keep variants as a `links` array prop already used today — landing-snapshot just passes a different array. No code branches inside `Header`.
-- **Old-landing rot.** Moving the marketing landing to `/welcome` makes it second-class — easy to forget to update when copy changes. Mitigation: link from snapshot's "про проєкт" nav makes it discoverable; if it's not viewed, that's a useful signal it can be deleted entirely later.
+- **Old-landing rot.** Moving the marketing landing to `/welcome` makes it second-class — easy to forget to update when copy changes. Mitigation: link from snapshot's "about" nav makes it discoverable; if it's not viewed, that's a useful signal it can be deleted entirely later.
 - **Animation jank on slow devices.** Reduced-motion path covers accessibility; for general perf, animations are mount-once, no scroll-tied work, no heavy blur. Skill bars use `transform: scaleX` not width to stay on the compositor.
 
 ## Cross-links

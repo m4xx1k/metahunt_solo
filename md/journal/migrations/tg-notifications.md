@@ -61,11 +61,11 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
 - [x] T2 — isolated bot module `apps/etl/src/telegram/` — *done when:* typecheck green.
       `TelegramService` (grammy poller lifecycle + `/start`/`/list`/`/preview`/`/stop`/`/help`,
       stateless `sendMessage`), `SubscriptionsService` (link/deactivate/describe). `/list`
-      shows each active sub with an inline "❌ Відписатись" button (callback `unsub:<id>`,
+      shows each active sub with an inline "❌ Unsubscribe" button (callback `unsub:<id>`,
       chat-scoped so a forged callback can't touch others' subs); `/stop` deactivates all.
       Skips poller without token.
 - [x] T3 — web "Subscribe": facet UI → `POST /subscriptions` creates a row (effective feed
-      query as `params`, inactive) → returns `t.me/<bot>?start=<id>`; web shows "Відкрити
+      query as `params`, inactive) → returns `t.me/<bot>?start=<id>`; web shows "Open
       Telegram". Endpoint + `SubscriptionsService.create` in the telegram module;
       `SubscribeButton` (tier-3) in the feed sidebar, hidden when the query matches nothing
       (`trackSlug && !hasPreset`). Bot @username is derived from the token via `getMe` at
@@ -99,7 +99,7 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
 - **Dedup at link time, not create time.** The row is created before the chat is known
   (web-create → `chat_id` null), so we can't dedup on create. `linkChat` (`/start`)
   distinguishes: re-tapping an already-active link from the same chat → `already_active`
-  (no-op, "вже активна"); a token already claimed by another chat → `not_found` (no
+  (no-op, "already active"); a token already claimed by another chat → `not_found` (no
   takeover); else if the chat already has an active sub with identical `params` (jsonb `=`,
   key-order independent) → delete the just-tapped pending row, "already subscribed"; else
   activate. Orphan
@@ -135,9 +135,9 @@ new vacancies for each subscriber and push one digest. Matching reuses the catal
    (log shows `Telegram bot @<name> polling`).
 4. **Bot only:** DM `/start` → greeting; `/help`; `/stop`.
 5. **Full subscribe flow:** ensure web `.env.local` has `NEXT_PUBLIC_API_URL=http://localhost:3000`
-   (the etl port), `pnpm dev:web`, open the feed, set a filter, click **🔔 Сповіщення в
-   Telegram** → tap "Відкрити Telegram" → `/start` auto-fires with the token → "Підписку
-   активовано"; the row now has your `chat_id`, `is_active=true`. `/stop` → deactivates.
+   (the etl port), `pnpm dev:web`, open the feed, set a filter, click **🔔 Telegram notifications**
+   → tap "Open Telegram" → `/start` auto-fires with the token → "Subscription activated";
+   the row now has your `chat_id`, `is_active=true`. `/stop` → deactivates.
    (Manual alt: `INSERT INTO subscriptions (params) VALUES ('{}'::jsonb) RETURNING id;` then
    `/start <id>`.)
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-The first monorepo attempt (`/home/user/plan-a/_metahunt/`) used the NestJS CLI monorepo: one root `package.json`, apps/libs under `apps/`/`libs/`, but the layout is driven by `nest-cli.json`. Quick to set up, but it doesn't scale — the shared `package.json` mixes deps from all projects, versions drift, and the lib can't be published independently without surgery.
+The first monorepo attempt (the old `_metahunt/` prototype) used the NestJS CLI monorepo: one root `package.json`, apps/libs under `apps/`/`libs/`, but the layout is driven by `nest-cli.json`. Quick to set up, but it doesn't scale — the shared `package.json` mixes deps from all projects, versions drift, and the lib can't be published independently without surgery.
 
 We want a structure where each package is isolated and explicitly declares its own dependencies.
 

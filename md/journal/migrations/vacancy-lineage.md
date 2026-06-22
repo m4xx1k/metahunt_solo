@@ -167,7 +167,7 @@ The redacted public surface becomes a small parallel namespace; `/monitoring/*` 
 
 ## Open questions
 
-- **Q1 — Public vs operator surface for records / ingests.** Original ask: "доступним для всіх". Risk: ingest data exposes internal IDs (`workflowRunId`, `payloadStorageKey`), full error stack traces, `triggeredBy` (could leak operator email). Resolution: **two parallel surfaces.** Public `GET /records/:id` and `GET /ingests/:id` serve a **redacted** shape; operator `GET /monitoring/*` keeps the full one. The public payload omits operational fields. Lock the redacted DTOs as part of P3/P4. **Decide before P3 ships.**
+- **Q1 — Public vs operator surface for records / ingests.** Original ask: "accessible to everyone". Risk: ingest data exposes internal IDs (`workflowRunId`, `payloadStorageKey`), full error stack traces, `triggeredBy` (could leak operator email). Resolution: **two parallel surfaces.** Public `GET /records/:id` and `GET /ingests/:id` serve a **redacted** shape; operator `GET /monitoring/*` keeps the full one. The public payload omits operational fields. Lock the redacted DTOs as part of P3/P4. **Decide before P3 ships.**
 - **Q2 — Slug vs UUID URLs.** Vacancies have UUIDs. Job-board URLs typically use slugs (`/vacancies/senior-fullstack-at-acme-1234`). Defer slugs to a follow-up — UUID routing for v1.
 - **Q3 — SEO + indexing strategy.** Public vacancy detail pages are great SEO targets. Need `<head>` meta + JSON-LD `JobPosting` schema + a sitemap. Add in P5. Vercel ISR or Cache Components for revalidation.
 - **Q4 — Crawler load.** Public detail pages → crawlers will hit them at scale. Confirm caching strategy (probably `revalidate = 3600` + `cacheTag(['vacancy', id])` per `vercel:next-cache-components`). Not blocking P1.

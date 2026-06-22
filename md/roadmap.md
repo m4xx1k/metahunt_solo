@@ -9,14 +9,14 @@ What's now / what's next. Stages are business-meaningful milestones, not small f
 
 Stage 05 closed 2026-05-08 with the silver pipeline stable; Stage 06 has two threads.
 
-**(1) Extraction quality.** Close the prompt-quality loop on BAML — inject the live taxonomy as soft constraints, add anti-extraction rules + UA-market context, regression-test against captured fixtures, re-measure delta via `fill-vacancies` coverage. Brief: [`todo/baml-extraction-prompt-tuning.md`](../todo/baml-extraction-prompt-tuning.md). Unblocks further `nodes.json` iterations on the SKILL axis.
+**(1) Extraction quality.** Close the prompt-quality loop on BAML — inject the live taxonomy as soft constraints, add anti-extraction rules + UA-market context, regression-test against captured fixtures, re-measure delta via `fill-vacancies` coverage. Tracker: [`_done/extraction-prompt-v2.md`](./journal/migrations/_done/extraction-prompt-v2.md) (prompt v2 shipped; the v1→v2 delta measurement is the deferred piece). Unblocks further `nodes.json` iterations on the SKILL axis.
 
 **(2) Operator surface.** Read-only sidebar-driven dashboard inside `apps/web` (KPI strip · sources health · taxonomy coverage + queue) so pipeline + curation are observable without `psql`. **P1–P3 + polish shipped 2026-05-09** ([`operator-dashboard`](./journal/migrations/_done/operator-dashboard.md)). Builds atop the Stage 05 silver feed; the taxonomy SKILL backlog is visible only because Stage 05 wired `taxonomy.service.getCoverage()`.
 
 **Trackers:**
 - [`journal/migrations/_done/operator-dashboard.md`](./journal/migrations/_done/operator-dashboard.md) — done 2026-05-09
 - [`journal/migrations/vacancy-lineage.md`](./journal/migrations/vacancy-lineage.md) — public drill-down (vacancy → record → ingest); spec only, not started
-- [`journal/migrations/taxonomy-workspace.md`](./journal/migrations/taxonomy-workspace.md) — split-pane curation surface (list + always-on detail, rename, unified list endpoint) — done 2026-05-24
+- [`journal/migrations/_done/taxonomy-workspace.md`](./journal/migrations/_done/taxonomy-workspace.md) — split-pane curation surface (list + always-on detail, rename, unified list endpoint) — done 2026-05-24
 
 ## Next
 

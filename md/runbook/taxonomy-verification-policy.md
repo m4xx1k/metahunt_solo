@@ -62,7 +62,7 @@ direction — a wrongly-VERIFIED node leaks to users and into prompts).
   (e.g. a single node aliasing many unrelated tools) — hide and let the specific
   nodes stand on their own.
 - Out of scope: PM/design/sales/marketing roles (the ingest tech-filter already
-  drops most — see [tech-filter](../todo/ats-sources/tech-filter-implementation.md)).
+  drops most — see [tech-filter](../journal/migrations/_done/tech-filter-implementation.md)).
 
 ## How to run a pass
 
