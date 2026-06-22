@@ -127,7 +127,7 @@ export function EmptyDetailPanel() {
 function PanelShell({ children }: { children: React.ReactNode }) {
   return (
     <aside className="flex flex-col gap-5 border border-border bg-bg-card p-5">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         поняття довідника
       </span>
       {children}
@@ -144,7 +144,7 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}
       </span>
       {children}

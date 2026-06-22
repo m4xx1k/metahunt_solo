@@ -27,7 +27,7 @@ export function VacancyInspectCard({
   return (
     <article
       className={cn(
-        "flex w-full flex-col gap-6 border border-accent bg-bg-card p-6 shadow-[10px_10px_0_0_#000]",
+        "flex w-full flex-col gap-6 border border-accent bg-bg-card p-6 shadow-brut-xl",
         className,
       )}
     >
@@ -65,7 +65,7 @@ function MetaTags({ vacancy }: { vacancy: VacancyDto }) {
   if (loc) items.push(`[${loc}]`);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
       <span className="text-accent">[{vacancy.source.code}]</span>
       {items.map((s) => (
         <span key={s}>{s}</span>
@@ -169,7 +169,7 @@ function SkillsRow({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}:
       </span>
       {items.map((s) => (
@@ -185,13 +185,13 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
   return (
     <div className="flex w-full flex-col gap-3 md:w-[240px] md:flex-shrink-0">
       <div className="flex flex-col gap-2 border border-accent bg-bg-elev p-4">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-accent">
+        <span className="font-mono text-2xs font-bold uppercase tracking-wider text-accent">
           &gt; джерело
         </span>
         <span className="font-mono text-sm font-bold text-text-primary">
           {vacancy.source.displayName}
         </span>
-        <span className="font-mono text-[11px] text-text-muted">
+        <span className="font-mono text-2xs text-text-muted">
           завантажено {formatRelative(vacancy.loadedAt)}
         </span>
       </div>
@@ -201,7 +201,7 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
           href={vacancy.link}
           target="_blank"
           rel="noreferrer noopener"
-          className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-[4px_4px_0_0_#000] transition-[transform,box-shadow] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
+          className="flex items-center justify-center gap-2 border border-accent bg-bg px-4 py-[10px] font-body text-xs text-text-primary shadow-brut transition-[transform,box-shadow] hover:shadow-brut-xs hover:translate-x-[2px] hover:translate-y-[2px]"
         >
           <span className="text-accent">↗</span> відкрити оригінал
         </a>
@@ -212,7 +212,7 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
       )}
       <Link
         href={`/dashboard/records/${vacancy.rssRecordId}`}
-        className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:border-accent hover:text-text-primary hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px]"
+        className="flex items-center justify-center gap-2 border border-border bg-bg px-4 py-[10px] font-body text-xs text-text-secondary shadow-brut-sm transition-[transform,box-shadow] hover:border-accent hover:text-text-primary hover:shadow-brut-2xs hover:translate-x-[2px] hover:translate-y-[2px]"
       >
         <span className="text-text-muted">⌥</span> вихідний запис
       </Link>
@@ -224,7 +224,7 @@ function Sidebar({ vacancy }: { vacancy: VacancyDto }) {
 
 function Footer({ vacancy }: { vacancy: VacancyDto }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 font-mono text-2xs uppercase tracking-wider">
       <span className="font-bold text-accent">&gt; ідентифікатори:</span>
       <span className="inline-flex items-center gap-2 text-text-muted">
         внутрішній

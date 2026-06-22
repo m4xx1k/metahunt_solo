@@ -31,15 +31,15 @@ export function CollapsibleSection({
         <span className="flex items-baseline gap-2">
           <span
             aria-hidden
-            className="font-mono text-[10px] text-text-muted md:hidden"
+            className="font-mono text-2xs text-text-muted md:hidden"
           >
             {open ? "▾" : "▸"}
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
             &gt; {title}
           </span>
         </span>
-        <span className="truncate font-mono text-[11px] text-text-secondary">
+        <span className="truncate font-mono text-2xs text-text-secondary">
           {summary}
         </span>
       </button>

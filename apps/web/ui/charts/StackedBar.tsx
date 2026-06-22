@@ -90,7 +90,7 @@ export function StackedBar({
           s.showLabel ? (
             <span
               key={`label-${s.label}-${i}`}
-              className="absolute top-0 flex h-full items-center justify-center font-mono text-[11px] font-bold text-bg"
+              className="absolute top-0 flex h-full items-center justify-center font-mono text-2xs font-bold text-bg"
               style={{ left: `${s.x}%`, width: `${s.widthPct}%` }}
             >
               {s.value}

@@ -69,7 +69,7 @@ export function TaxonomyHealth({ coverage }: Props) {
                   style={{ width: `${Math.max(pct, 2)}%` }}
                 />
               </div>
-              <span className="font-mono text-[10px] text-text-muted">
+              <span className="font-mono text-2xs text-text-muted">
                 {formatCount(a.verified)} підтверджених · {formatCount(a.new)} на
                 розгляді
               </span>
@@ -97,13 +97,13 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full flex-col gap-4 border border-border bg-bg-card p-5 shadow-[6px_6px_0_0_#000]">
+    <div className="flex h-full flex-col gap-4 border border-border bg-bg-card p-5 shadow-brut-md">
       <div className="flex flex-col gap-1">
         <h3 className="font-display text-base font-bold text-text-primary">
           {title}
         </h3>
         {subtitle ? (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
             {subtitle}
           </span>
         ) : null}

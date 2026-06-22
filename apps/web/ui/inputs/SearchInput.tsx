@@ -8,7 +8,7 @@ export function SearchInput({
   return (
     <label
       className={cn(
-        "flex w-full max-w-[400px] items-center gap-3 border border-border bg-bg-card px-4 py-3 shadow-[4px_4px_0_0_#000] focus-within:border-accent",
+        "flex w-full max-w-[400px] items-center gap-3 border border-border bg-bg-card px-4 py-3 shadow-brut focus-within:border-accent",
         className,
       )}
     >

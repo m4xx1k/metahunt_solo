@@ -30,7 +30,7 @@ export function PeriodSelector({ current }: { current: StatsPeriod }) {
 
   return (
     <div
-      className="inline-flex border border-border bg-bg-card shadow-[4px_4px_0_0_#000]"
+      className="inline-flex border border-border bg-bg-card shadow-brut"
       role="tablist"
       aria-label="період"
       data-pending={pending}

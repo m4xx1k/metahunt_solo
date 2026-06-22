@@ -26,7 +26,7 @@ export function ActiveFiltersBar({
         api.activeCount === 0 && "opacity-50",
       )}
     >
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         &gt; active filters · {api.activeCount}
       </span>
       {chips.map((c) => (
@@ -35,7 +35,7 @@ export function ActiveFiltersBar({
           type="button"
           onClick={c.onRemove}
           className={cn(
-            "inline-flex items-center gap-2 border px-2 py-[2px] font-mono text-[11px] hover:bg-bg-elev",
+            "inline-flex items-center gap-2 border px-2 py-[2px] font-mono text-2xs hover:bg-bg-elev",
             c.tone,
           )}
         >
@@ -46,12 +46,12 @@ export function ActiveFiltersBar({
         </button>
       ))}
       {api.activeCount === 0 ? (
-        <span className="font-mono text-[11px] text-text-muted">nothing selected</span>
+        <span className="font-mono text-2xs text-text-muted">nothing selected</span>
       ) : (
         <button
           type="button"
           onClick={api.clear}
-          className="ml-auto font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent"
+          className="ml-auto font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
         >
           [clear all]
         </button>

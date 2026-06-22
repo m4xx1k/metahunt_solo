@@ -38,8 +38,8 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
               <span
                 className={
                   tier === "gold"
-                    ? "inline-flex items-center bg-amber-300 px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-bg"
-                    : "inline-flex items-center bg-accent px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-bg"
+                    ? "inline-flex items-center bg-amber-300 px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-bg"
+                    : "inline-flex items-center bg-accent px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-bg"
                 }
               >
                 {tier}
@@ -63,7 +63,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
       </header>
 
       <details className="group/details">
-        <summary className="flex cursor-pointer list-none items-center justify-between border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider text-text-muted hover:text-text-primary">
+        <summary className="flex cursor-pointer list-none items-center justify-between border-t border-border pt-4 font-mono text-2xs uppercase tracking-wider text-text-muted hover:text-text-primary">
           <span>
             {group.vacancyCount === 1
               ? "переглянути канонічний запис →"
@@ -84,13 +84,13 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
                     {m.source.displayName}
                   </Badge>
                   {m.isCanonical ? (
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                    <span className="font-mono text-2xs uppercase tracking-wider text-accent">
                       канонічний
                     </span>
                   ) : null}
                   <span className="text-sm text-text-primary">{m.title}</span>
                 </div>
-                <div className="flex items-center gap-3 font-mono text-[11px] text-text-muted">
+                <div className="flex items-center gap-3 font-mono text-2xs text-text-muted">
                   {m.publishedAt ? (
                     <span>{formatDateOnly(m.publishedAt)}</span>
                   ) : null}

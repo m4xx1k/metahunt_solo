@@ -75,7 +75,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
           {count} {plural(count, ["копія", "копії", "копій"])}
           {sourceSuffix}
         </span>
-        <span aria-hidden className="text-[10px]">
+        <span aria-hidden className="text-2xs">
           ▾
         </span>
       </button>
@@ -89,12 +89,12 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
           onClick={() => setOpen(false)}
         >
           <div
-            className="flex h-full w-full max-w-[520px] flex-col gap-5 overflow-y-auto border-l border-accent-secondary bg-bg-card p-6 shadow-[-8px_0_0_0_#000]"
+            className="flex h-full w-full max-w-[520px] flex-col gap-5 overflow-y-auto border-l border-accent-secondary bg-bg-card p-6 shadow-brut-l"
             onClick={(e) => e.stopPropagation()}
           >
             <header className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+                <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   семантичний дедуп
                 </span>
                 <div className="flex items-center gap-3">
@@ -102,7 +102,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
                     Об&apos;єднано {count}{" "}
                     {plural(count, ["вакансію", "вакансії", "вакансій"])}
                   </h2>
-                  <span className="border border-accent px-2 py-[1px] font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-accent">
+                  <span className="border border-accent px-2 py-[1px] font-mono text-2xs font-bold uppercase tracking-[0.15em] text-accent">
                     gold
                   </span>
                 </div>
@@ -146,10 +146,10 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
         m.isCanonical ? "border-border-strong" : "border-border",
       )}
     >
-      <div className="flex items-baseline justify-between gap-3 font-mono text-[11px] uppercase tracking-wider">
+      <div className="flex items-baseline justify-between gap-3 font-mono text-2xs uppercase tracking-wider">
         <span className="font-bold text-accent">{m.source.displayName}</span>
         {m.isCanonical ? (
-          <span className="border border-border-strong px-2 py-[1px] text-[10px] text-text-secondary">
+          <span className="border border-border-strong px-2 py-[1px] text-2xs text-text-secondary">
             основна
           </span>
         ) : (
@@ -195,13 +195,13 @@ function WhyMerged({ reason: r }: { reason: DedupReason }) {
 
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-3">
-      <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         чому об&apos;єднано
       </span>
 
       {/* similarity bar */}
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
           схожість
         </span>
         <div className="h-1.5 flex-1 bg-bg">
@@ -237,7 +237,7 @@ function WhyMerged({ reason: r }: { reason: DedupReason }) {
       </div>
 
       {/* prefilter facts — quiet */}
-      <p className="font-mono text-[10px] text-text-muted">
+      <p className="font-mono text-2xs text-text-muted">
         роль {mark(pf.role)} · рівень {mark(pf.seniority)} · формат{" "}
         {mark(pf.workFormat)} · вікно {pf.dateWindowDays}д
       </p>
@@ -257,7 +257,7 @@ function Chip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 border px-2 py-[2px] font-mono text-[11px]",
+        "inline-flex items-center gap-1.5 border px-2 py-[2px] font-mono text-2xs",
         strong
           ? "border-success text-success"
           : "border-border text-text-secondary",

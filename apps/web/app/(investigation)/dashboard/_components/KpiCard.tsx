@@ -28,13 +28,13 @@ export function KpiCard({
 }: Props) {
   const interactive = typeof onClick === "function";
   const className = cn(
-    "flex h-full min-h-[160px] flex-col gap-3 border bg-bg-card p-5 text-left shadow-[6px_6px_0_0_#000]",
+    "flex h-full min-h-[160px] flex-col gap-3 border bg-bg-card p-5 text-left shadow-brut-md",
     TONE_BORDER[tone],
     interactive &&
-      "cursor-pointer transition-[transform,box-shadow] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-[3px_3px_0_0_#000]",
+      "cursor-pointer transition-[transform,box-shadow] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-brut-sm",
   );
   const labelEl = (
-    <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+    <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
       {label}
     </span>
   );

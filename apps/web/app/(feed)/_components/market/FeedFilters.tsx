@@ -85,7 +85,7 @@ export function FeedFilters({
         type="button"
         onClick={handleToggleMobile}
         aria-expanded={mobileOpen}
-        className="flex items-center justify-between border border-border bg-bg-card px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent lg:hidden"
+        className="flex items-center justify-between border border-border bg-bg-card px-3 py-2 font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent lg:hidden"
       >
         <span>
           &gt; filters

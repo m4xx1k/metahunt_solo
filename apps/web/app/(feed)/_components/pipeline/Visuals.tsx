@@ -44,11 +44,11 @@ export function SourcesVisual({
           transition={{ duration: 0.4, delay: 0.1 + i * 0.08, ease: EASE }}
           className="flex items-center justify-between border border-border bg-bg-elev px-3 py-2"
         >
-          <span className="flex items-center gap-2 font-body text-[13px] text-text-primary">
+          <span className="flex items-center gap-2 font-body text-xs text-text-primary">
             <span className={cn("h-2 w-2", accentBg[accent])} />
             {s.displayName}
           </span>
-          <span className="font-mono text-[12px] text-text-muted">
+          <span className="font-mono text-xs text-text-muted">
             {NUM.format(s.count)}
           </span>
         </motion.div>
@@ -63,7 +63,7 @@ export function SourcesVisual({
         <span className={cn("font-mono text-2xl font-bold leading-none", accentText[accent])}>
           {sources.length}
         </span>
-        <span className="font-body text-[13px] text-text-muted">
+        <span className="font-body text-xs text-text-muted">
           джерел · оновлення щогодини
         </span>
       </motion.div>
@@ -126,9 +126,9 @@ export function ExtractVisual({
             delay: 0.3 + fields.length * 0.07,
             ease: EASE,
           }}
-          className="box-border mt-0.5 inline-flex h-6 items-center gap-1.5 px-2 font-mono text-[11px] font-bold uppercase leading-none tracking-wider text-success ring-1 ring-inset ring-success"
+          className="box-border mt-0.5 inline-flex h-6 items-center gap-1.5 px-2 font-mono text-2xs font-bold uppercase leading-none tracking-wider text-success ring-1 ring-inset ring-success"
         >
-          <span aria-hidden className="text-[10px] leading-none">
+          <span aria-hidden className="text-2xs leading-none">
             🛡
           </span>
           бронь
@@ -161,7 +161,7 @@ export function MatchVisual({
         whileInView={{ opacity: 1, y: 0 }}
         viewport={VIEWPORT}
         transition={{ duration: 0.4, ease: EASE }}
-        className="flex flex-wrap items-center gap-2 font-mono text-[11px]"
+        className="flex flex-wrap items-center gap-2 font-mono text-2xs"
       >
         <span
           className={cn(
@@ -192,14 +192,14 @@ export function MatchVisual({
             transition={{ duration: 0.4, delay: 0.15 + i * 0.1, ease: EASE }}
             className="flex flex-wrap items-center gap-1.5"
           >
-            <span aria-hidden className="text-[11px] leading-none">
+            <span aria-hidden className="text-2xs leading-none">
               {line.sign}
             </span>
             {skills.map((s) => (
               <span
                 key={s}
                 className={cn(
-                  "border px-1.5 py-[1px] font-mono text-[11px] leading-none",
+                  "border px-1.5 py-[1px] font-mono text-2xs leading-none",
                   line.cls,
                 )}
               >

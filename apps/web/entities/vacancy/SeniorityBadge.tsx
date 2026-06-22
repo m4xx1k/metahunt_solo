@@ -31,7 +31,7 @@ export function SeniorityBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center border px-2 py-[3px] font-mono text-[10px] font-bold uppercase tracking-[0.2em]",
+        "inline-flex items-center border px-2 py-[3px] font-mono text-2xs font-bold uppercase tracking-[0.2em]",
         TONE[seniority],
         className,
       )}

@@ -34,7 +34,7 @@ export function LatestPerSource({ items, recentBySource }: Props) {
           <Link
             key={item.sourceId}
             href={`/dashboard/ingests/${item.lastIngestId}`}
-            className="flex h-full flex-col gap-3 border border-border bg-bg-card p-5 shadow-[4px_4px_0_0_#000] transition-shadow hover:shadow-[6px_6px_0_0_#000]"
+            className="flex h-full flex-col gap-3 border border-border bg-bg-card p-5 shadow-brut transition-shadow hover:shadow-brut-md"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="font-display text-lg font-bold text-text-primary">
@@ -51,7 +51,7 @@ export function LatestPerSource({ items, recentBySource }: Props) {
               </span>
             </div>
             <div className="mt-auto flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+              <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                 останні {sparkPoints.length || 0} запусків
               </span>
               {sparkPoints.length >= 2 ? (
@@ -67,7 +67,7 @@ export function LatestPerSource({ items, recentBySource }: Props) {
                   ariaLabel={`Останні ${sparkPoints.length} запусків`}
                 />
               ) : (
-                <span className="font-mono text-[10px] text-text-muted">
+                <span className="font-mono text-2xs text-text-muted">
                   недостатньо даних
                 </span>
               )}

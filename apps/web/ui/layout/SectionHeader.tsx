@@ -23,12 +23,12 @@ export function SectionHeader({
       {tag && <Tag>{tag}</Tag>}
       <Heading
         level="section"
-        className="text-center text-[40px] md:text-[64px]"
+        className="text-center text-4xl md:text-6xl"
       >
         {title}
       </Heading>
       {subtitle && (
-        <p className="max-w-[720px] font-body text-base leading-[1.6] text-text-secondary md:text-[17px]">
+        <p className="max-w-[720px] font-body text-base leading-[1.6] text-text-secondary md:text-lg">
           {subtitle}
         </p>
       )}

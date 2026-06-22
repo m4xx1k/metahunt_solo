@@ -19,7 +19,7 @@ export function VerifiedDonut({
         ariaLabel="вакансії з повністю підтвердженою таксономією"
       />
       <div className="flex flex-col gap-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
           повністю підтверджено
         </span>
         <span className="font-display text-2xl font-bold text-text-primary">

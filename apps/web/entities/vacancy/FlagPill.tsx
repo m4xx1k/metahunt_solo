@@ -24,7 +24,7 @@ export function FlagPill({
       )}
     >
       {icon ? <span aria-hidden>{icon}</span> : null}
-      <span className="text-[10px] uppercase tracking-wider text-text-muted">
+      <span className="text-2xs uppercase tracking-wider text-text-muted">
         {label}:
       </span>
       <span className="font-bold">{value}</span>

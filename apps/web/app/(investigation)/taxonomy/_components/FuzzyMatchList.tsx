@@ -70,7 +70,7 @@ export function FuzzyMatchList({
         <button
           type="button"
           onClick={handleDismissError}
-          className="border border-danger bg-bg p-2 text-left font-mono text-[11px] text-danger hover:bg-danger hover:text-bg"
+          className="border border-danger bg-bg p-2 text-left font-mono text-2xs text-danger hover:bg-danger hover:text-bg"
         >
           {error} · приховати
         </button>
@@ -99,7 +99,7 @@ export function FuzzyMatchList({
                 disabled={disabled}
                 onClick={handleMerge(m.id, m.canonicalName)}
                 className={cn(
-                  "border px-3 py-2 text-[10px] uppercase tracking-wider transition-colors sm:px-2 sm:py-1",
+                  "border px-3 py-2 text-2xs uppercase tracking-wider transition-colors sm:px-2 sm:py-1",
                   disabled
                     ? "border-border text-text-muted"
                     : "border-accent text-accent hover:bg-accent hover:text-bg",

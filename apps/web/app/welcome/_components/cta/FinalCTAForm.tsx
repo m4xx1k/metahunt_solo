@@ -25,7 +25,7 @@ export function FinalCTAForm() {
         placeholder={ctaSection.placeholder}
         value={email}
         onChange={handleEmailChange}
-        className="w-full bg-transparent px-4 font-body text-[15px] text-text-primary outline-none placeholder:text-text-muted"
+        className="w-full bg-transparent px-4 font-body text-xs text-text-primary outline-none placeholder:text-text-muted"
       />
       <Button
         type="submit"

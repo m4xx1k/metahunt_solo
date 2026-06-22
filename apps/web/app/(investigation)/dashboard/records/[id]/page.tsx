@@ -100,7 +100,7 @@ export default async function RecordDetailPage({
         {record.description ? (
           <section className="flex flex-col gap-3">
             <Tag>{"> опис"}</Tag>
-            <div className="border border-border bg-bg-card p-6 shadow-[6px_6px_0_0_#000]">
+            <div className="border border-border bg-bg-card p-6 shadow-brut-md">
               <p className="whitespace-pre-wrap font-body text-base leading-relaxed text-text-primary">
                 {record.description}
               </p>
@@ -132,7 +132,7 @@ function Field({
     <div
       className={`flex flex-col gap-1 border border-border bg-bg-card p-4 ${className ?? ""}`}
     >
-      <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         {label}
       </span>
       <span

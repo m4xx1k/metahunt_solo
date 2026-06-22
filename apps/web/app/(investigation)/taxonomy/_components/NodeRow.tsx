@@ -52,7 +52,7 @@ export function NodeRow({ item, maxBlocked, selected }: Props) {
           </span>
           <span
             className={cn(
-              "shrink-0 border px-2 py-[1px] text-[10px] uppercase tracking-wider",
+              "shrink-0 border px-2 py-[1px] text-2xs uppercase tracking-wider",
               STATUS_PILL[item.status],
             )}
           >
@@ -60,7 +60,7 @@ export function NodeRow({ item, maxBlocked, selected }: Props) {
           </span>
         </div>
         <div className="flex items-center gap-3 sm:contents">
-          <span className="text-[10px] uppercase tracking-wider text-text-muted">
+          <span className="text-2xs uppercase tracking-wider text-text-muted">
             {item.type}
           </span>
           <span className="text-xs text-text-muted sm:text-right">

@@ -65,7 +65,7 @@ export function DetailPanelShell({ selected, children }: Props) {
         )}
       >
         {selected ? (
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-bg-elev px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-text-muted lg:hidden">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-bg-elev px-4 py-2 font-mono text-2xs uppercase tracking-wider text-text-muted lg:hidden">
             <span>поняття довідника</span>
             <button
               type="button"

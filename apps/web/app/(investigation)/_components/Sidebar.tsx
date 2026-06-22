@@ -72,7 +72,7 @@ export function Sidebar({
         onClick={() => setOpen((prev) => !prev)}
         aria-label={open ? "закрити меню" : "відкрити меню"}
         aria-expanded={open}
-        className="fixed left-3 top-3 z-50 flex h-10 w-10 items-center justify-center border border-border bg-bg-card font-mono text-lg text-text-primary shadow-[3px_3px_0_0_#000] md:hidden"
+        className="fixed left-3 top-3 z-50 flex h-10 w-10 items-center justify-center border border-border bg-bg-card font-mono text-lg text-text-primary shadow-brut-sm md:hidden"
       >
         {open ? "✕" : "☰"}
       </button>
@@ -91,7 +91,7 @@ export function Sidebar({
           "z-40 w-[240px] flex-shrink-0 flex-col border-r border-border bg-bg",
           "md:static md:flex",
           open
-            ? "fixed inset-y-0 left-0 flex shadow-[8px_0_0_0_#000]"
+            ? "fixed inset-y-0 left-0 flex shadow-brut-r"
             : "hidden md:flex",
         )}
       >
@@ -104,7 +104,7 @@ export function Sidebar({
           >
             <Logo label="metahunt" />
           </Link>
-          <span className="pl-[44px] font-mono text-[11px] uppercase tracking-wider text-text-muted">
+          <span className="pl-[44px] font-mono text-2xs uppercase tracking-wider text-text-muted">
             оператор
           </span>
         </div>
@@ -112,7 +112,7 @@ export function Sidebar({
         <nav className="flex flex-1 flex-col gap-6 px-3 py-6">
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="flex flex-col gap-2">
-              <span className="px-3 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted">
+              <span className="px-3 font-mono text-2xs font-bold uppercase tracking-[0.15em] text-text-muted">
                 {group.label}
               </span>
               <ul className="flex flex-col gap-[2px]">
@@ -142,7 +142,7 @@ export function Sidebar({
                           </span>
                         ) : null}
                         {typeof badge === "number" && badge > 0 ? (
-                          <span className="font-mono text-[11px] text-text-muted">
+                          <span className="font-mono text-2xs text-text-muted">
                             ⌄{badge}
                           </span>
                         ) : null}
@@ -156,17 +156,17 @@ export function Sidebar({
         </nav>
 
         <div className="flex flex-col gap-3 border-t border-border px-5 py-5">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+          <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
             станом на {formatTime(asOf)}
           </span>
           <RefreshButton />
           <div className="flex items-center gap-2">
             <UserButton />
-            <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+            <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
               оператор
             </span>
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+          <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
             {VERSION_LABEL}
           </span>
         </div>

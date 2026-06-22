@@ -47,7 +47,7 @@ export function PipelineCard({
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: index * 0.12, ease: EASE }}
       whileHover={{ y: -4 }}
-      className="group relative flex w-full flex-col gap-4 overflow-hidden border border-border bg-bg-card p-6 shadow-[8px_8px_0_0_#000] md:w-[320px]"
+      className="group relative flex w-full flex-col gap-4 overflow-hidden border border-border bg-bg-card p-6 shadow-brut-lg md:w-[320px]"
     >
       <motion.span
         aria-hidden
@@ -83,7 +83,7 @@ export function PipelineCard({
         <a
           href={cta.href}
           className={cn(
-            "mt-auto inline-flex items-center justify-center gap-2 border border-transparent px-5 py-3 font-body text-sm font-semibold text-bg shadow-[3px_3px_0_0_#000] transition-[transform,box-shadow] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px]",
+            "mt-auto inline-flex items-center justify-center gap-2 border border-transparent px-5 py-3 font-body text-sm font-semibold text-bg shadow-brut-sm transition-[transform,box-shadow] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-brut-2xs active:translate-x-[2px] active:translate-y-[2px]",
             accentBg[accent],
           )}
         >

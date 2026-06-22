@@ -33,7 +33,7 @@ export function CopyButton({
       aria-label={ariaLabel}
       title={ariaLabel}
       className={cn(
-        "inline-flex items-center gap-1 border px-2 py-[2px] font-mono text-[11px] uppercase tracking-wider transition-colors",
+        "inline-flex items-center gap-1 border px-2 py-[2px] font-mono text-2xs uppercase tracking-wider transition-colors",
         copied
           ? "border-success text-success"
           : "border-border bg-bg-elev text-text-muted hover:border-accent hover:text-accent",

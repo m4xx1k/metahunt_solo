@@ -114,7 +114,7 @@ export function VacancyCard({ vacancy: v }: Props) {
           {domain ? (
             <>
               <span className="text-text-muted">·</span>
-              <span className="border border-border px-2 py-[1px] text-[11px] text-text-secondary">
+              <span className="border border-border px-2 py-[1px] text-2xs text-text-secondary">
                 [{domain}]
               </span>
             </>
@@ -130,7 +130,7 @@ export function VacancyCard({ vacancy: v }: Props) {
         ) : null}
 
         {metaItems.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-text-muted">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
             {metaItems.map((item, i) => (
               <Fragment key={i}>
                 {i > 0 ? (
@@ -153,7 +153,7 @@ export function VacancyCard({ vacancy: v }: Props) {
 
         {requiredSkills.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
               must-have:
             </span>
             {requiredSkills.map((s: NodeRef) => (
@@ -169,7 +169,7 @@ export function VacancyCard({ vacancy: v }: Props) {
 
         {optionalSkills.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
               nice-to-have:
             </span>
             {optionalSkills.map((s: NodeRef) => (
@@ -184,7 +184,7 @@ export function VacancyCard({ vacancy: v }: Props) {
         ) : null}
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+          <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
             posted {formatRelative(v.publishedAt)}
           </span>
           <div className="flex items-center gap-4">

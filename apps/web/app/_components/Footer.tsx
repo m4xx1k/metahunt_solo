@@ -21,20 +21,20 @@ export function Footer() {
 
         <nav className="flex items-center gap-[18px]">
           <a
-            href="#"
-            className="font-body text-[13px] text-text-secondary transition-colors hover:text-text-primary"
+            href="/"
+            className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
             продукт
           </a>
           <a
             href="#roadmap"
-            className="font-body text-[13px] text-text-secondary transition-colors hover:text-text-primary"
+            className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
             roadmap
           </a>
           <a
             href="https://t.me/m4xx1k"
-            className="font-body text-[13px] text-text-secondary transition-colors hover:text-text-primary"
+            className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
             для партнерів
           </a>

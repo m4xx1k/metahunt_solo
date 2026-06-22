@@ -32,7 +32,7 @@ export default async function ExtractionCostPage() {
               <span className="font-display text-4xl font-bold leading-none text-accent">
                 {formatUsd(total.costUsd)}
               </span>
-              <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+              <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
                 {formatCount(total.count)} викликів · {formatCount(total.failures)} помилок
               </span>
             </KpiCard>
@@ -40,7 +40,7 @@ export default async function ExtractionCostPage() {
               <span className="font-display text-4xl font-bold leading-none text-text-primary">
                 {formatUsd(last24h.costUsd)}
               </span>
-              <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+              <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
                 {formatCount(last24h.count)} викликів · {formatCount(last24h.failures)} помилок
               </span>
             </KpiCard>
@@ -48,7 +48,7 @@ export default async function ExtractionCostPage() {
               <span className="font-display text-4xl font-bold leading-none text-text-primary">
                 {formatTokens(total.tokensIn)}
               </span>
-              <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+              <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
                 кешовано {formatTokens(total.tokensCached)} ·{" "}
                 {formatPercent(total.tokensCached, total.tokensIn)} попадань
               </span>
@@ -57,7 +57,7 @@ export default async function ExtractionCostPage() {
               <span className="font-display text-4xl font-bold leading-none text-text-primary">
                 {formatTokens(total.tokensOut)}
               </span>
-              <span className="mt-auto font-mono text-[10px] uppercase tracking-wider text-text-muted">
+              <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
                 у середньому{" "}
                 {total.count > 0
                   ? formatCount(Math.round(total.tokensOut / total.count))
@@ -189,14 +189,14 @@ function BreakdownTable({
   rows: Array<{ key: string; cells: string[]; danger?: boolean }>;
 }) {
   return (
-    <div className="overflow-x-auto border border-border bg-bg-card shadow-[6px_6px_0_0_#000]">
+    <div className="overflow-x-auto border border-border bg-bg-card shadow-brut-md">
       <table className="w-full border-collapse text-left">
         <thead>
           <tr className="border-b border-border bg-bg">
             {headers.map((h) => (
               <th
                 key={h}
-                className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider text-text-muted"
+                className="px-4 py-3 font-mono text-2xs uppercase tracking-wider text-text-muted"
               >
                 {h}
               </th>

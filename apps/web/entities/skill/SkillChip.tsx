@@ -29,7 +29,7 @@ export function SkillChip({
     <span
       className={cn(
         "border font-mono",
-        compact ? "px-1.5 py-[1px] text-[11px]" : "px-2 py-[2px] text-xs",
+        compact ? "px-1.5 py-[1px] text-2xs" : "px-2 py-[2px] text-xs",
         TONES[tone],
       )}
     >
