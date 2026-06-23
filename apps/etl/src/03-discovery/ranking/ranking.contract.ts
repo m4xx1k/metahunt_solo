@@ -53,6 +53,8 @@ export interface MatchFilters {
   minFitTier?: FitTier; // hide vacancies below this coverage tier (STRONG > GOOD > STRETCH)
   sourceId?: string;
   postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
+  loadedAfter?: Date; // digest only: new-since floor
+  excludeIds?: string[]; // digest only: already-sent anti-join
 }
 
 export interface MatchResponse {

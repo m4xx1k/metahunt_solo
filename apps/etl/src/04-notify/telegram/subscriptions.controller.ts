@@ -32,7 +32,10 @@ export class SubscriptionsController {
       );
     }
 
-    const id = await this.subscriptions.create(params);
+    const candidateId =
+      typeof body?.candidateId === "string" ? body.candidateId : undefined;
+
+    const id = await this.subscriptions.create(params, candidateId);
     return { id, deepLink: `https://t.me/${username}?start=${id}` };
   }
 }

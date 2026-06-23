@@ -1,4 +1,10 @@
-import { Controller, Param, Post } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+} from "@nestjs/common";
 
 import { DigestService } from "./digest.service";
 
@@ -8,6 +14,14 @@ import { DigestService } from "./digest.service";
 @Controller("digest")
 export class DigestController {
   constructor(private readonly digest: DigestService) {}
+
+  /** Dry-run match, no send. `{ total, label, titles }`. */
+  @Get("preview/:subscriptionId")
+  async preview(@Param("subscriptionId") subscriptionId: string) {
+    const result = await this.digest.preview(subscriptionId);
+    if (!result) throw new NotFoundException("subscription not found");
+    return result;
+  }
 
   /** Deliver to every active subscription. `{ subscriptions, sent }`. */
   @Post("run")

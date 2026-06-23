@@ -56,6 +56,10 @@ Group with a blank line between:
 
 ## Comments
 
+**MUST: comment the non-obvious *why*, never the *what*.** Clarity comes from naming and structure — not prose. Before writing a comment, first try to delete the need for it: rename the symbol, split the function, extract a well-named helper. A comment is the fallback when the code genuinely can't say it itself.
+
+**MUST: no comment paragraphs.** Keep any comment to ~2 lines. Needing more means the code needs splitting, not narrating. No banner/essay headers on files, classes, or functions; no god components/functions that require a paragraph to explain.
+
 Default: don't write one. Add only when the *why* is non-obvious — a hidden constraint, a bug workaround, a subtle invariant. If removing the comment wouldn't confuse the next reader, don't write it.
 
 Don't write:
@@ -70,6 +74,7 @@ JSDoc: only on complex public functions. Skip simple ones.
 
 ## Code structure
 
+- **MUST: don't define functions inside functions/methods.** Lift trivial/generic helpers (coercion, formatting, mapping) to module scope, or a shared util if reused. Nest a closure only when it genuinely captures local state *and* aids readability — not for an `asBool`/`arr`-style one-liner.
 - Early returns over deep nesting; keep the happy path at primary indentation.
 - Ternary / `??` over `if/else` for trivial assignments.
 - Destructure parameters, especially with defaults: `function f({ page = 1, limit = 10 })`.

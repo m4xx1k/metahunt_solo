@@ -53,6 +53,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 
 ## Hygiene
 
+- **MUST: minimal code comments — the non-obvious *why* only, ≤2 lines, never paragraphs.** Clarity comes from naming and small focused units, not prose; make a comment unnecessary before writing it. Full rule: [`md/engineering/STYLE.md#comments`](md/engineering/STYLE.md#comments).
 - Don't duplicate facts. Code reality lives in `md/architecture/`. Link to it from `md/engineering/*` or `product/*` — don't restate.
 - Don't read all of `md/engineering/` to "get oriented." Pick the one file you need.
 - Don't write a 1000-line file when 3×300 would do.

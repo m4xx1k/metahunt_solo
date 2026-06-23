@@ -13,5 +13,7 @@ import { CvController } from "./cv.controller";
     { provide: CANDIDATE_EXTRACTOR, useClass: BamlCandidateExtractor },
   ],
   controllers: [CvController],
+  exports: [CandidateLoaderService], // for the Telegram CV-sub digest
+
 })
 export class CvModule {}

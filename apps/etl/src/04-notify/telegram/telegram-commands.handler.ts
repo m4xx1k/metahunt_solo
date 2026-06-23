@@ -2,13 +2,12 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Bot, InlineKeyboard } from "grammy";
 
-import { FeedService, type FeedSearchParams } from "../../03-discovery/feed/feed.service";
 import { renderDigest } from "./digest.renderer";
+import { SubscriptionMatcherService } from "./subscription-matcher.service";
 import { SubscriptionsService } from "./subscriptions.service";
 
 const DIGEST_WINDOW_DAYS = 14;
 const DIGEST_PREVIEW_SIZE = 3;
-const DAY_MS = 86_400_000;
 
 // Inbound side of the bot: command + callback handlers. Owns the conversation
 // (reply copy, inline keyboards) and reads through the catalog/subscription
@@ -21,7 +20,7 @@ export class TelegramCommandsHandler {
   constructor(
     private readonly config: ConfigService,
     private readonly subscriptions: SubscriptionsService,
-    private readonly feed: FeedService,
+    private readonly matcher: SubscriptionMatcherService,
   ) {}
 
   /** Wire every command/callback handler onto the bot. Call before `bot.start()`. */
@@ -66,22 +65,14 @@ export class TelegramCommandsHandler {
         return;
       }
 
-      const loadedAfter = new Date(Date.now() - DIGEST_WINDOW_DAYS * DAY_MS);
       const applyBaseUrl = this.config.get<string>("PUBLIC_BASE_URL")!;
       for (const sub of subs) {
-        // Stored params are a feed query (whitelisted keys) — a JSON boundary.
-        const params = sub.params as Partial<FeedSearchParams>;
-        const [{ items, total }, label] = await Promise.all([
-          this.feed.search({
-            ...params,
-            page: 1,
-            pageSize: DIGEST_PREVIEW_SIZE,
-            loadedAfter,
-          }),
-          this.subscriptions.describe(sub.params),
-        ]);
+        const { items, total, label } = await this.matcher.sample(
+          sub,
+          DIGEST_WINDOW_DAYS,
+        );
         await ctx.reply(
-          renderDigest(items, {
+          renderDigest(items.slice(0, DIGEST_PREVIEW_SIZE), {
             totalNew: total,
             windowDays: DIGEST_WINDOW_DAYS,
             applyBaseUrl,
@@ -105,7 +96,10 @@ export class TelegramCommandsHandler {
       }
 
       for (const sub of subs) {
-        const label = await this.subscriptions.describe(sub.params);
+        const label = await this.subscriptions.describe(
+          sub.params,
+          sub.candidateId,
+        );
         await ctx.reply(`🔔 ${label}`, {
           reply_markup: new InlineKeyboard().text(
             "❌ Відписатись",

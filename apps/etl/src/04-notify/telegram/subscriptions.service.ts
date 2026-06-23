@@ -1,10 +1,11 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import { asString, asStringArray } from "../../platform/shared/coerce";
 import {
   SUBSCRIPTION_PARAM_KEYS,
   type SubscriptionParams,
@@ -14,10 +15,12 @@ const { subscriptions, nodes } = schema;
 
 const MAX_SUMMARY_ROLES = 2;
 
-function asStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((v): v is string => typeof v === "string")
-    : [];
+// CV subs store array filters (`seniorities`), feed subs a scalar (`seniority`).
+function asEnumList(arrayVal: unknown, scalarVal: unknown): string[] {
+  const arr = asStringArray(arrayVal);
+  if (arr.length > 0) return arr;
+  const scalar = asString(scalarVal);
+  return scalar ? [scalar] : [];
 }
 
 // Postgres `uuid` columns reject malformed input at the driver level, so we
@@ -31,14 +34,17 @@ export type LinkResult =
   | "duplicate"
   | "not_found";
 
-/** An active subscription with its delivery target — the digest engine's unit of work. */
-export interface ActiveSubscription {
+// What the digest needs to match a subscription, independent of delivery — so
+// matching can run for preview on an unlinked row. createdAt is the new-since floor.
+export interface SubscriptionMatchTarget {
   id: string;
-  /** Non-null for active rows (set at link time alongside activation). */
-  chatId: string;
   params: SubscriptionParams;
-  /** Floor for "new since" matching — never notify about pre-subscription vacancies. */
+  candidateId: string | null;
   createdAt: Date;
+}
+
+export interface ActiveSubscription extends SubscriptionMatchTarget {
+  chatId: string;
 }
 
 /**
@@ -48,28 +54,36 @@ export interface ActiveSubscription {
  */
 @Injectable()
 export class SubscriptionsService {
+  private readonly logger = new Logger(SubscriptionsService.name);
+
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
   ) {}
 
-  /**
-   * Create a pending subscription from the web facet filter. Persists only the
-   * known feed-query keys (so `params` stays a clean, replayable query) and
-   * leaves it inactive + unlinked until the user runs `/start <id>`. Returns
-   * the new id, which doubles as the deep-link token.
-   */
-  async create(rawParams: SubscriptionParams): Promise<string> {
+  // Pending (inactive, unlinked) until `/start <id>`. Persists only whitelisted
+  // keys. Returns the id, which doubles as the deep-link token.
+  async create(
+    rawParams: SubscriptionParams,
+    candidateId?: string,
+  ): Promise<string> {
     const params: SubscriptionParams = {};
     for (const key of SUBSCRIPTION_PARAM_KEYS) {
       const value = rawParams[key];
       if (value !== undefined && value !== null) params[key] = value;
     }
+    if (candidateId !== undefined && !UUID_REGEX.test(candidateId)) {
+      throw new Error(`invalid candidateId: ${candidateId}`);
+    }
 
     const [created] = await this.db
       .insert(subscriptions)
-      .values({ params })
+      .values({ params, candidateId: candidateId ?? null })
       .returning({ id: subscriptions.id });
+
+    this.logger.log(
+      `create sub ${created.id}: candidateId=${candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
+    );
 
     // Funnel entry, keyed on the uuid the web client will alias its anonymous
     // visitor onto — this is what stitches the browser session to the person.
@@ -93,6 +107,7 @@ export class SubscriptionsService {
       .select({
         chatId: subscriptions.chatId,
         isActive: subscriptions.isActive,
+        candidateId: subscriptions.candidateId,
         params: subscriptions.params,
       })
       .from(subscriptions)
@@ -105,6 +120,9 @@ export class SubscriptionsService {
       return pending.chatId === chatId ? "already_active" : "not_found";
     }
 
+    // Dedup on the full identity: same chat, same params AND same candidate.
+    // Without candidateId two different CVs (or a CV vs a feed sub) with the
+    // same filters would collapse into one.
     const [duplicate] = await this.db
       .select({ id: subscriptions.id })
       .from(subscriptions)
@@ -113,11 +131,15 @@ export class SubscriptionsService {
           eq(subscriptions.chatId, chatId),
           eq(subscriptions.isActive, true),
           ne(subscriptions.id, token),
+          pending.candidateId === null
+            ? isNull(subscriptions.candidateId)
+            : eq(subscriptions.candidateId, pending.candidateId),
           sql`${subscriptions.params} = ${JSON.stringify(pending.params)}::jsonb`,
         ),
       );
     if (duplicate) {
       await this.db.delete(subscriptions).where(eq(subscriptions.id, token));
+      this.logger.log(`link ${token}: duplicate of ${duplicate.id} — dropped`);
       return "duplicate";
     }
 
@@ -125,6 +147,9 @@ export class SubscriptionsService {
       .update(subscriptions)
       .set({ chatId, isActive: true })
       .where(eq(subscriptions.id, token));
+    this.logger.log(
+      `link ${token}: activated for chat ${chatId} (candidateId=${pending.candidateId ?? "none"})`,
+    );
 
     // Bridge №2: collapse the web/subscription person onto the canonical
     // `tg:<chatId>` human so the browser session and Telegram are one person.
@@ -132,12 +157,15 @@ export class SubscriptionsService {
     return "linked";
   }
 
-  /** Active subscriptions for a chat — id + stored feed-query params. */
-  async listActiveByChat(
-    chatId: string,
-  ): Promise<{ id: string; params: SubscriptionParams }[]> {
+  /** Active subscriptions for a chat — full match targets (id, params, candidate). */
+  async listActiveByChat(chatId: string): Promise<SubscriptionMatchTarget[]> {
     return this.db
-      .select({ id: subscriptions.id, params: subscriptions.params })
+      .select({
+        id: subscriptions.id,
+        params: subscriptions.params,
+        candidateId: subscriptions.candidateId,
+        createdAt: subscriptions.createdAt,
+      })
       .from(subscriptions)
       .where(
         and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)),
@@ -162,6 +190,7 @@ export class SubscriptionsService {
       .select({
         id: subscriptions.id,
         chatId: subscriptions.chatId,
+        candidateId: subscriptions.candidateId,
         params: subscriptions.params,
         createdAt: subscriptions.createdAt,
       })
@@ -169,6 +198,21 @@ export class SubscriptionsService {
       .where(and(eq(subscriptions.id, id), eq(subscriptions.isActive, true)));
     if (!row || row.chatId === null) return null;
     return { ...row, chatId: row.chatId };
+  }
+
+  // Match target by id, any state — backs the read-only digest preview.
+  async getMatchTarget(id: string): Promise<SubscriptionMatchTarget | null> {
+    if (!UUID_REGEX.test(id)) return null;
+    const [row] = await this.db
+      .select({
+        id: subscriptions.id,
+        candidateId: subscriptions.candidateId,
+        params: subscriptions.params,
+        createdAt: subscriptions.createdAt,
+      })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, id));
+    return row ?? null;
   }
 
   /** `/stop` — deactivate every subscription for a chat. Returns how many were active. */
@@ -241,8 +285,12 @@ export class SubscriptionsService {
     return deleted.length;
   }
 
-  /** Short human label for `/list` — resolved role names + skill count. */
-  async describe(params: SubscriptionParams): Promise<string> {
+  // Human label distinguishing one sub from another: CV marker, roles/skills,
+  // then the headline filters (seniority, format, бронь, fit gate).
+  async describe(
+    params: SubscriptionParams,
+    candidateId?: string | null,
+  ): Promise<string> {
     const roleIds = asStringArray(params.roleIds);
     const skillIds = asStringArray(params.skillIds);
 
@@ -257,12 +305,26 @@ export class SubscriptionsService {
         : [];
 
     const parts: string[] = [];
+    if (candidateId) parts.push("за резюме");
     if (roleNames.length > 0) {
       const shown = roleNames.slice(0, MAX_SUMMARY_ROLES).join(", ");
       const extra = roleNames.length - MAX_SUMMARY_ROLES;
       parts.push(extra > 0 ? `${shown} +${extra}` : shown);
     }
     if (skillIds.length > 0) parts.push(`${skillIds.length} скіл.`);
+
+    const seniorities = asEnumList(params.seniorities, params.seniority);
+    if (seniorities.length > 0) {
+      parts.push(seniorities.map((s) => s.toLowerCase()).join("/"));
+    }
+    const formats = asEnumList(params.workFormats, params.workFormat);
+    if (formats.length > 0) {
+      parts.push(formats.map((f) => f.toLowerCase()).join("/"));
+    }
+    if (params.hasReservation === true) parts.push("бронь");
+    if (typeof params.minFitTier === "string") {
+      parts.push(`fit≥${params.minFitTier.toLowerCase()}`);
+    }
 
     return parts.length > 0 ? parts.join(" · ") : "усі вакансії";
   }

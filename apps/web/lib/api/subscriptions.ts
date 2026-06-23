@@ -3,11 +3,29 @@
 // apps/etl/src/telegram/subscriptions.contract.ts. Hand-mirrored per ADR-0005.
 
 import { apiPost } from "./client";
-import type { ListVacanciesQuery } from "./vacancies";
+import type { FitTier } from "./ranking";
+import type {
+  EmploymentType,
+  EnglishLevel,
+  ListVacanciesQuery,
+  Seniority,
+  WorkFormat,
+} from "./vacancies";
 
-// A subscription stores the effective feed query (same filter the catalog list
-// consumes) minus pagination — the matching workflow replays it verbatim.
+// Mirrors apps/etl .../subscriptions.contract.ts. Feed sub = SubscriptionParams;
+// CV sub = CvMatchParams + a candidateId.
 export type SubscriptionParams = Omit<ListVacanciesQuery, "page" | "pageSize">;
+
+export interface CvMatchParams {
+  seniorities?: Seniority[];
+  workFormats?: WorkFormat[];
+  englishLevels?: EnglishLevel[];
+  employmentTypes?: EmploymentType[];
+  hasTestAssignment?: boolean;
+  hasReservation?: boolean;
+  minFitTier?: FitTier;
+  postedWithinDays?: number;
+}
 
 export interface CreateSubscriptionResponse {
   id: string;
@@ -16,6 +34,9 @@ export interface CreateSubscriptionResponse {
 }
 
 export const subscriptionsApi = {
-  create: (params: SubscriptionParams) =>
-    apiPost<CreateSubscriptionResponse>("/subscriptions", { params }),
+  create: (params: SubscriptionParams | CvMatchParams, candidateId?: string) =>
+    apiPost<CreateSubscriptionResponse>("/subscriptions", {
+      params,
+      candidateId,
+    }),
 };

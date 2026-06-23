@@ -1,7 +1,7 @@
 import type { ConfigService } from "@nestjs/config";
 import type { Bot } from "grammy";
 
-import type { FeedService } from "../../03-discovery/feed/feed.service";
+import type { SubscriptionMatcherService } from "./subscription-matcher.service";
 import type { SubscriptionsService } from "./subscriptions.service";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
 
@@ -32,7 +32,7 @@ describe("TelegramCommandsHandler", () => {
   const describe_ = jest.fn();
   const deactivateByChat = jest.fn();
   const deactivateById = jest.fn();
-  const search = jest.fn();
+  const sample = jest.fn();
   const get = jest.fn();
 
   const subscriptions = {
@@ -42,7 +42,7 @@ describe("TelegramCommandsHandler", () => {
     deactivateByChat,
     deactivateById,
   } as unknown as SubscriptionsService;
-  const feed = { search } as unknown as FeedService;
+  const matcher = { sample } as unknown as SubscriptionMatcherService;
   const config = { get } as unknown as ConfigService;
 
   let commands: Map<string, Handler>;
@@ -52,7 +52,7 @@ describe("TelegramCommandsHandler", () => {
     jest.clearAllMocks();
     describe_.mockResolvedValue("Backend");
     get.mockReturnValue("https://metahunt.test");
-    const handler = new TelegramCommandsHandler(config, subscriptions, feed);
+    const handler = new TelegramCommandsHandler(config, subscriptions, matcher);
     const wired = fakeBot();
     handler.register(wired.bot);
     commands = wired.commands;
@@ -100,12 +100,14 @@ describe("TelegramCommandsHandler", () => {
     });
 
     it("renders one labelled row with an unsubscribe button per sub", async () => {
-      listActiveByChat.mockResolvedValue([{ id: "sub-1", params: {} }]);
+      listActiveByChat.mockResolvedValue([
+        { id: "sub-1", params: {}, candidateId: null },
+      ]);
       const ctx = commandCtx("");
 
       await commands.get("list")!(ctx);
 
-      expect(describe_).toHaveBeenCalledWith({});
+      expect(describe_).toHaveBeenCalledWith({}, null);
       expect(ctx.reply).toHaveBeenCalledWith(
         "🔔 Backend",
         expect.objectContaining({ reply_markup: expect.anything() }),
@@ -182,21 +184,24 @@ describe("TelegramCommandsHandler", () => {
 
       await commands.get("preview")!(ctx);
 
-      expect(search).not.toHaveBeenCalled();
+      expect(sample).not.toHaveBeenCalled();
       expect(ctx.reply).toHaveBeenCalledWith(
         expect.stringContaining("Створи на сайті"),
       );
     });
 
     it("sends a rendered HTML sample per subscription", async () => {
-      listActiveByChat.mockResolvedValue([{ id: "sub-1", params: { q: "go" } }]);
-      search.mockResolvedValue({ items: [], total: 0 });
+      listActiveByChat.mockResolvedValue([
+        { id: "sub-1", params: { q: "go" }, candidateId: null },
+      ]);
+      sample.mockResolvedValue({ items: [], total: 0, label: "go" });
       const ctx = commandCtx("");
 
       await commands.get("preview")!(ctx);
 
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ q: "go", page: 1 }),
+      expect(sample).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "sub-1" }),
+        14,
       );
       expect(ctx.reply).toHaveBeenCalledWith(
         expect.any(String),
