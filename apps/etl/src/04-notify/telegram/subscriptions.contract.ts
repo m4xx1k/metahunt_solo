@@ -9,9 +9,8 @@
  * `list()`, so "what I filtered in the catalog == what I get notified about".
  */
 
-// The filter keys we persist. Anything else in the request body is dropped —
-// `params` stays a clean, replayable feed query.
-export const SUBSCRIPTION_PARAM_KEYS = [
+// Feed-filter sub: the effective feed query, replayed through FeedService.search.
+export const FEED_PARAM_KEYS = [
   "q",
   "sourceId",
   "companyId",
@@ -33,12 +32,31 @@ export const SUBSCRIPTION_PARAM_KEYS = [
   "includeAllSkills",
 ] as const;
 
+// CV sub: reverse-ATS match filters (arrays + fit tier). Shared keys
+// (hasTestAssignment/hasReservation/sourceId) already live in FEED_PARAM_KEYS.
+export const CV_MATCH_PARAM_KEYS = [
+  "seniorities",
+  "workFormats",
+  "englishLevels",
+  "employmentTypes",
+  "minFitTier",
+  "postedWithinDays",
+] as const;
+
+// Persisted whitelist; anything else in the body is dropped.
+export const SUBSCRIPTION_PARAM_KEYS = [
+  ...FEED_PARAM_KEYS,
+  ...CV_MATCH_PARAM_KEYS,
+] as const;
+
 export type SubscriptionParamKey = (typeof SUBSCRIPTION_PARAM_KEYS)[number];
 
 export type SubscriptionParams = Partial<Record<SubscriptionParamKey, unknown>>;
 
 export interface CreateSubscriptionRequest {
   params: SubscriptionParams;
+  /** Set for a CV (reverse-ATS) sub. */
+  candidateId?: string;
 }
 
 export interface CreateSubscriptionResponse {

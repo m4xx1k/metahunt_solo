@@ -1,12 +1,15 @@
 import { Module } from "@nestjs/common";
 
+import { CvModule } from "../../03-discovery/cv/cv.module";
 import { FeedModule } from "../../03-discovery/feed/feed.module";
+import { RankingModule } from "../../03-discovery/ranking/ranking.module";
 import { TELEGRAM_ACTIVITIES } from "./activities";
 import { DigestController } from "./digest.controller";
 import { DigestService } from "./digest.service";
 import { NotifySchedulerService } from "./notify-scheduler.service";
 import { PendingSubscriptionsGc } from "./pending-subscriptions.gc";
 import { SentNotificationsService } from "./sent-notifications.service";
+import { SubscriptionMatcherService } from "./subscription-matcher.service";
 import { SubscriptionsController } from "./subscriptions.controller";
 import { SubscriptionsService } from "./subscriptions.service";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
@@ -18,7 +21,7 @@ import { TelegramService } from "./telegram.service";
 // `POST /subscriptions` create endpoint (web "Subscribe") and the scheduled
 // digest engine (NotifyActivity + notifySubscribersWorkflow + NotifySchedulerService).
 @Module({
-  imports: [FeedModule],
+  imports: [FeedModule, CvModule, RankingModule],
   controllers: [SubscriptionsController, DigestController],
   providers: [
     TelegramService,
@@ -26,6 +29,7 @@ import { TelegramService } from "./telegram.service";
     PendingSubscriptionsGc,
     SubscriptionsService,
     SentNotificationsService,
+    SubscriptionMatcherService,
     DigestService,
     NotifySchedulerService,
     ...TELEGRAM_ACTIVITIES,
