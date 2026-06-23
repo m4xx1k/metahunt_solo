@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { usePostHog } from "posthog-js/react";
 
-import type { SubscriptionParams } from "@/lib/api/subscriptions";
+import type {
+  CvMatchParams,
+  SubscriptionParams,
+} from "@/lib/api/subscriptions";
 
 // Single source of truth for client-side event names (mirrors the backend
 // events.ts) — no event-name string literals in components.
@@ -25,7 +28,10 @@ export function useAnalytics() {
        * subscription uuid — the seam that stitches the web session to the
        * cross-context person (uuid → Telegram chat → future auth).
        */
-      subscriptionCreated(subscriptionUuid: string, params: SubscriptionParams) {
+      subscriptionCreated(
+        subscriptionUuid: string,
+        params: SubscriptionParams | CvMatchParams,
+      ) {
         posthog?.capture(ANALYTICS_EVENTS.subscribeClicked, { params });
         posthog?.alias(subscriptionUuid);
       },

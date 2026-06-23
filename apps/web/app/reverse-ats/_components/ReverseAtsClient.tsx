@@ -7,7 +7,9 @@ import { Logo } from "@/ui";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
 import { rankingApi, type MatchResponse } from "@/lib/api/ranking";
+import { nonEmpty, toCsv } from "@/lib/utils";
 import { CandidateProfile } from "./CandidateProfile";
+import { CvSubscribeButton } from "./CvSubscribeButton";
 import { MatchFilters } from "./MatchFilters";
 import { MatchCard } from "./MatchCard";
 import { FRESH_DAYS, NO_FILTERS, type Filters } from "./filter-model";
@@ -42,9 +44,6 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
       minFitTier: f.minFitTier ?? undefined,
       postedWithinDays: f.fresh ? FRESH_DAYS : undefined,
     };
-    const arr = <T,>(a: T[]): T[] | undefined => (a.length > 0 ? a : undefined);
-    const csv = (a: string[]): string | undefined =>
-      a.length > 0 ? a.join(",") : undefined;
     setError(null);
     setLoading(true);
     try {
@@ -54,19 +53,19 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               skills: SAMPLES[src.index].skills,
               page: p,
               pageSize: PAGE_SIZE,
-              seniorities: arr(f.seniorities),
-              workFormats: arr(f.workFormats),
-              englishLevels: arr(f.englishLevels),
-              employmentTypes: arr(f.employmentTypes),
+              seniorities: nonEmpty(f.seniorities),
+              workFormats: nonEmpty(f.workFormats),
+              englishLevels: nonEmpty(f.englishLevels),
+              employmentTypes: nonEmpty(f.employmentTypes),
               ...scalar,
             })
           : await cvApi.matches(src.info.candidateId, {
               page: p,
               pageSize: PAGE_SIZE,
-              seniorities: csv(f.seniorities),
-              workFormats: csv(f.workFormats),
-              englishLevels: csv(f.englishLevels),
-              employmentTypes: csv(f.employmentTypes),
+              seniorities: toCsv(f.seniorities),
+              workFormats: toCsv(f.workFormats),
+              englishLevels: toCsv(f.englishLevels),
+              employmentTypes: toCsv(f.employmentTypes),
               ...scalar,
             });
       setData(res);
@@ -226,7 +225,14 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
           single-column layout reads better than cramped thirds). */}
       <section className="px-6 pb-20 pt-8 lg:px-12">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_300px] xl:items-start">
-          <div className="xl:sticky xl:top-24">
+          <div className="flex flex-col gap-4 xl:sticky xl:top-24">
+            {/* CV source only — samples have no candidate to rank against. */}
+            {source.kind === "cv" && data ? (
+              <CvSubscribeButton
+                candidateId={source.info.candidateId}
+                filters={filters}
+              />
+            ) : null}
             <MatchFilters
               filters={filters}
               onChange={onFilterChange}
