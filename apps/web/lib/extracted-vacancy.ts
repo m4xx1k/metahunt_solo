@@ -136,6 +136,10 @@ export function extractedSeniority(input: {
   return safeExtracted(input.extractedData)?.seniority ?? null;
 }
 
+// 1500 → "1.5k", 2000 → "2k", 800 → "800".
+const compactThousands = (n: number) =>
+  n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
+
 export function formatSalary(salary: ExtractedSalary | null): string | null {
   if (!salary) return null;
   const { min, max, currency } = salary;
@@ -148,16 +152,12 @@ export function formatSalary(salary: ExtractedSalary | null): string | null {
         : currency === "UAH"
           ? "₴"
           : "";
-  const fmt = (n: number) =>
-    n >= 1000
-      ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`
-      : String(n);
   if (min != null && max != null && min !== max) {
-    return `${sign}${fmt(min)}–${fmt(max)}`;
+    return `${sign}${compactThousands(min)}–${compactThousands(max)}`;
   }
   const v = max ?? min;
   if (v == null) return null;
-  return `${sign}${fmt(v)}`;
+  return `${sign}${compactThousands(v)}`;
 }
 
 export function formatLocations(

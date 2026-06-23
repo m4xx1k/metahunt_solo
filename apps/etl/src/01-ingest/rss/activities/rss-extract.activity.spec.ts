@@ -130,6 +130,21 @@ describe("RssExtractActivity", () => {
     expect(setArg.extractedAt).toBeInstanceOf(Date);
   });
 
+  it("strips HTML/entities from the description before extracting", async () => {
+    extractor.extract.mockResolvedValue(successResult);
+    const { activity } = await bootstrap({
+      ...baseRecord,
+      description: "<p>Node.js &amp; <b>TypeScript</b></p>",
+    });
+
+    await activity.extractAndInsert(RECORD_ID);
+
+    const passedText = extractor.extract.mock.calls[0][0];
+    expect(passedText).not.toMatch(/<\/?[a-z]/i);
+    expect(passedText).not.toContain("&amp;");
+    expect(passedText).toContain("Node.js & TypeScript");
+  });
+
   it("writes _v/_usage/_error and re-throws on failure", async () => {
     extractor.extract.mockResolvedValue(failureResult);
     const { activity, mocks } = await bootstrap(baseRecord);

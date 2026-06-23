@@ -8,6 +8,7 @@ import {
   VACANCY_EXTRACTOR,
   type VacancyExtractor,
 } from "../../../02-enrich/extraction/vacancy-extractor";
+import { cleanDescription } from "../../../02-enrich/dedup/sanitize";
 
 @Injectable()
 @Activity()
@@ -26,7 +27,10 @@ export class RssExtractActivity {
 
     if (!record) throw new Error(`Record ${recordId} not found`);
 
-    const text = `Title: ${record.title}\n\n${record.description ?? ""}`;
+    // RSS descriptions arrive as HTML (tags + entities); strip to plain text so
+    // the LLM extracts skills/role/domain from content, not markup noise. Same
+    // cleaner the dedup pipeline uses on this field.
+    const text = `Title: ${record.title}\n\n${cleanDescription(record.description)}`;
     const result = await this.extractor.extract(text);
     const sidecar = {
       _v: result.meta.promptVersion,

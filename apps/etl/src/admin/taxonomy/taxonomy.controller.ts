@@ -9,6 +9,8 @@ import {
   Query,
 } from "@nestjs/common";
 
+import type { NodeType } from "@metahunt/database";
+
 import {
   parseLimit,
   parsePage,
@@ -20,12 +22,11 @@ import {
   TaxonomyService,
   type NodeListFilters,
   type NodeStatusValue,
-  type NodeTypeValue,
 } from "./taxonomy.service";
 
 const SEARCH_DEFAULT = 20;
 const SEARCH_MAX = 50;
-const VALID_TYPES = new Set<NodeTypeValue>(["ROLE", "SKILL", "DOMAIN"]);
+const VALID_TYPES = new Set<NodeType>(["ROLE", "SKILL", "DOMAIN"]);
 const VALID_STATUSES = new Set<NodeStatusValue>(["NEW", "VERIFIED", "HIDDEN"]);
 const DEFAULT_STATUSES: NodeStatusValue[] = ["NEW", "VERIFIED"];
 
@@ -127,9 +128,9 @@ export class TaxonomyController {
   }
 }
 
-function parseType(raw: string | undefined): NodeTypeValue | undefined {
+function parseType(raw: string | undefined): NodeType | undefined {
   if (!raw) return undefined;
-  const upper = raw.toUpperCase() as NodeTypeValue;
+  const upper = raw.toUpperCase() as NodeType;
   if (!VALID_TYPES.has(upper)) {
     throw new BadRequestException(
       `type must be one of ROLE, SKILL, DOMAIN (case-insensitive), got "${raw}"`,

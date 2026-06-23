@@ -11,6 +11,8 @@ import {
 export const nodeType = pgEnum('node_type', ['ROLE', 'SKILL', 'DOMAIN']);
 export const nodeStatus = pgEnum('node_status', ['NEW', 'VERIFIED', 'HIDDEN']);
 
+export type NodeType = (typeof nodeType.enumValues)[number];
+
 export const nodes = pgTable(
   'nodes',
   {

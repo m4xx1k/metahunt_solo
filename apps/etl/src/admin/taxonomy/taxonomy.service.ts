@@ -7,11 +7,10 @@ import {
 } from "@nestjs/common";
 import { sql, eq, and, inArray } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
+import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 
-export type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 export type NodeStatusValue = "NEW" | "VERIFIED" | "HIDDEN";
 
 const RENAME_MIN_LEN = 2;
@@ -19,7 +18,7 @@ export const TAXONOMY_LIST_DEFAULT = 50;
 export const TAXONOMY_LIST_MAX = 200;
 
 export interface NodeListFilters {
-  type?: NodeTypeValue;
+  type?: NodeType;
   statuses: NodeStatusValue[];
   q?: string;
   minBlocked: number;
@@ -29,7 +28,7 @@ export interface NodeListFilters {
 
 export interface NodeListItem {
   id: string;
-  type: NodeTypeValue;
+  type: NodeType;
   canonicalName: string;
   status: NodeStatusValue;
   vacanciesBlocked: number;
@@ -51,7 +50,7 @@ type FuzzyThreshold = {
   minWordSim?: number;
 };
 
-const FUZZY: Record<NodeTypeValue, FuzzyThreshold> = {
+const FUZZY: Record<NodeType, FuzzyThreshold> = {
   ROLE: { minLen: 4, minSim: 0.55 },
   SKILL: { minLen: 3, minSim: 0.65, minWordSim: 0.5 },
   DOMAIN: { minLen: 4, minSim: 0.55 },
@@ -249,7 +248,7 @@ export class TaxonomyService {
     // lexicographically (11 before 9) otherwise.
     const rows = await this.db.execute<{
       id: string;
-      type: NodeTypeValue;
+      type: NodeType;
       canonical_name: string;
       status: NodeStatusValue;
       vacancies_blocked: string;
@@ -365,7 +364,7 @@ export class TaxonomyService {
       .where(eq(schema.nodes.id, id));
     if (!node) throw new NotFoundException(`Node ${id} not found`);
 
-    const cfg = FUZZY[node.type as NodeTypeValue];
+    const cfg = FUZZY[node.type as NodeType];
     const name = node.canonicalName;
     if (name.length < cfg.minLen) {
       return {
@@ -418,7 +417,7 @@ export class TaxonomyService {
   // detail panel to find a merge target when fuzzy didn't surface it
   // (short names, novel phrasing). ILIKE finds substring hits even when
   // trigram similarity is below the fuzzy threshold; trigram only ranks.
-  async searchVerifiedNodes(type: NodeTypeValue, q: string, limit: number) {
+  async searchVerifiedNodes(type: NodeType, q: string, limit: number) {
     const trimmed = q.trim();
     const like = `%${trimmed.replace(/[\\%_]/g, "\\$&")}%`;
     const rows = await this.db.execute<{

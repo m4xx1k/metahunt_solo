@@ -23,6 +23,8 @@ import {
 // filter keeps rows with tier_bucket >= the requested tier's ordinal.
 const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRONG: 2 };
 
+const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
+
 // reverse-ATS matcher (md/journal/migrations/reverse-ats.md §2).
 //   resolveSkills — plain-text skills → SKILL node ids (canonical+alias, NEW +
 //     VERIFIED, HIDDEN excluded to mirror node_stats).
@@ -247,8 +249,6 @@ export class RankingService {
       arr.push(r);
       byVacancy.set(r.vacancy_id, arr);
     }
-    const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
-
     const items: RankedVacancy[] = [];
     for (const row of rows) {
       const vacancy = dtos.get(row.id);

@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { sql } from "drizzle-orm";
 
 import { DRIZZLE } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
+import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import type { NodeRef } from "../../platform/shared/contract";
 import { uuidList } from "../../platform/shared/sql";
@@ -12,6 +12,15 @@ import {
   type TrackNodeIds,
   type TrackPreset,
 } from "./track-preset";
+
+function pickRefsByType(
+  rows: readonly { id: string; name: string; type: string }[],
+  type: NodeType,
+): NodeRef[] {
+  return rows
+    .filter((r) => r.type === type)
+    .map((r) => ({ id: r.id, name: r.name }));
+}
 
 // Thin DB gateway for the browse-tree (tracks) read side: the SQL lives here,
 // the preset resolution and predicate logic stay pure in track-preset.ts. Keeps
@@ -122,11 +131,10 @@ export class TracksRepository {
       WHERE n.id IN (${uuidList(ids)})
       ORDER BY n.canonical_name
     `);
-    const pick = (t: string): NodeRef[] =>
-      rows.rows
-        .filter((r) => r.type === t)
-        .map((r) => ({ id: r.id, name: r.name }));
-    return { roles: pick("ROLE"), skills: pick("SKILL") };
+    return {
+      roles: pickRefsByType(rows.rows, "ROLE"),
+      skills: pickRefsByType(rows.rows, "SKILL"),
+    };
   }
 
   // Skills most common among the vacancies a preset matches, excluding the

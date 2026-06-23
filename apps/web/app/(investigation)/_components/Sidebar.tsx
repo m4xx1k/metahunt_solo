@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { Logo } from "@/ui";
 import { cn } from "@/lib/utils";
+import { pad2 } from "@/lib/format";
 import { RefreshButton } from "./RefreshButton";
 
 type NavItem = {
@@ -50,8 +51,7 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 function formatTime(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
 export function Sidebar({

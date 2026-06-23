@@ -7,6 +7,8 @@ import type { SkillStat } from "./types";
 
 const TOP_N = 8;
 
+const byCount = (a: SkillStat, b: SkillStat) => b.count - a.count;
+
 export function SkillsSection({
   skills,
   selectedIds,
@@ -25,7 +27,6 @@ export function SkillsSection({
     const sel: SkillStat[] = [];
     const unsel: SkillStat[] = [];
     for (const s of skills) (selSet.has(s.id) ? sel : unsel).push(s);
-    const byCount = (a: SkillStat, b: SkillStat) => b.count - a.count;
     return { selected: sel.sort(byCount), rest: unsel.sort(byCount) };
   }, [skills, selectedIds]);
 

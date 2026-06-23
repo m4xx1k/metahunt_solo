@@ -17,6 +17,9 @@ import type { TrackDto } from "@/lib/api/tracks";
 // two-level layout needs a per-row chevron + trailing count, which the flat
 // SelectRow `<li>` doesn't carry (and nesting `<li>` would be invalid).
 
+const bySortThenCount = (a: TrackDto, b: TrackDto) =>
+  a.sortOrder - b.sortOrder || b.count - a.count;
+
 export function TrackTree({
   tracks,
   activeSlug,
@@ -26,9 +29,6 @@ export function TrackTree({
   activeSlug: string | null;
   onSelect: (slug: string) => void;
 }) {
-  const bySortThenCount = (a: TrackDto, b: TrackDto) =>
-    a.sortOrder - b.sortOrder || b.count - a.count;
-
   const { roots, childrenOf } = useMemo(() => {
     const children = new Map<string, TrackDto[]>();
     const tops: TrackDto[] = [];

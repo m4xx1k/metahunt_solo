@@ -1,3 +1,8 @@
+// Zero-pad to two digits, for HH:MM[:SS] clock formatting.
+export function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);

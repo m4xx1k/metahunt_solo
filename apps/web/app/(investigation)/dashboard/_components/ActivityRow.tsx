@@ -1,14 +1,13 @@
 import Link from "next/link";
 import type { IngestListItem } from "@/lib/api/monitoring";
 import { cn } from "@/lib/utils";
-import { formatCount } from "@/lib/format";
+import { formatCount, pad2 } from "@/lib/format";
 
 function formatClockTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
 const STATUS_GLYPH: Record<IngestListItem["status"], string> = {

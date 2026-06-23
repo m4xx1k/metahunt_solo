@@ -1,10 +1,9 @@
 import { Injectable } from "@nestjs/common";
 
+import type { NodeType } from "@metahunt/database";
 import { normalizeAliasName } from "../../../platform/shared/normalize-alias";
 import { NodeRepository } from "../repositories/node.repository";
 import type { Executor } from "../repositories/executor";
-
-export type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 
 @Injectable()
 export class NodeResolverService {
@@ -13,7 +12,7 @@ export class NodeResolverService {
   // `executor` lets the caller run this inside the vacancy-load transaction;
   // omitted, the repository falls back to the root db handle.
   async resolve(
-    type: NodeTypeValue,
+    type: NodeType,
     name: string,
     executor?: Executor,
   ): Promise<string> {

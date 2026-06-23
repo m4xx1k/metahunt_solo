@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { joinNamesByType } from "../../platform/shared/node-names";
 import { b } from "../../baml_client";
 import type { ExtractedCandidate } from "../../baml_client";
 import type { CandidateExtractorPort } from "./candidate-extractor.port";
@@ -34,14 +35,8 @@ export class BamlCandidateExtractor implements CandidateExtractorPort {
       .select({ type: schema.nodes.type, name: schema.nodes.canonicalName })
       .from(schema.nodes)
       .where(eq(schema.nodes.status, "VERIFIED"));
-    const join = (t: string) =>
-      verified
-        .filter((n) => n.type === t)
-        .map((n) => n.name)
-        .sort((a, b) => a.localeCompare(b))
-        .join(", ");
-    const roles = join("ROLE");
-    const domains = join("DOMAIN");
+    const roles = joinNamesByType(verified, "ROLE");
+    const domains = joinNamesByType(verified, "DOMAIN");
     this.cache = { roles, domains, expiresAt: now + 60_000 };
     return { roles, domains };
   }

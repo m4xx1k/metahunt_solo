@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { joinNamesByType } from "../../platform/shared/node-names";
 import { b } from "../../baml_client";
 import type {
   ExtractionResult,
@@ -78,19 +79,10 @@ export class BamlVacancyExtractor implements VacancyExtractor {
       .from(schema.nodes)
       .where(eq(schema.nodes.status, "VERIFIED"));
 
-    const joinNames = (type: "ROLE" | "DOMAIN" | "SKILL") =>
-      verified
-        .filter((n) => n.type === type)
-        .map((n) => n.name)
-        // Stable order keeps the prompt prefix byte-identical between calls,
-        // which is what lets provider-side prompt caching kick in.
-        .sort((a, b) => a.localeCompare(b))
-        .join(", ");
-
     this.taxonomyCache = {
-      roles: joinNames("ROLE"),
-      domains: joinNames("DOMAIN"),
-      skills: joinNames("SKILL"),
+      roles: joinNamesByType(verified, "ROLE"),
+      domains: joinNamesByType(verified, "DOMAIN"),
+      skills: joinNamesByType(verified, "SKILL"),
       expiresAt: now + TAXONOMY_CACHE_TTL_MS,
     };
     return {

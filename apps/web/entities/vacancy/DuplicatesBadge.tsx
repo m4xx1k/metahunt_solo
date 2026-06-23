@@ -175,8 +175,10 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
   );
 }
 
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+const mark = (v: boolean | null) => (v === null ? "—" : v ? "✓" : "✗");
+
 function WhyMerged({ reason: r }: { reason: DedupReason }) {
-  const pct = (n: number) => `${Math.round(n * 100)}%`;
   const simColor =
     r.similarity >= 0.95
       ? "text-success"
@@ -191,7 +193,6 @@ function WhyMerged({ reason: r }: { reason: DedupReason }) {
         : "bg-text-muted";
 
   const pf = r.prefilterMatches;
-  const mark = (v: boolean | null) => (v === null ? "—" : v ? "✓" : "✗");
 
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-3">

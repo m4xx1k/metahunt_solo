@@ -1,10 +1,9 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
+import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import type { Executor } from "./executor";
-import type { NodeTypeValue } from "../services/node-resolver.service";
 
 // Thin DB gateway for taxonomy-node resolution. Mirrors CompanyRepository:
 // the resolve-or-create + race-recovery logic lives in NodeResolverService,
@@ -12,25 +11,25 @@ import type { NodeTypeValue } from "../services/node-resolver.service";
 // take an optional Executor so resolution can join the vacancy-load tx.
 export abstract class NodeRepository {
   abstract findIdByAlias(
-    type: NodeTypeValue,
+    type: NodeType,
     normalizedName: string,
     executor?: Executor,
   ): Promise<string | null>;
   // Insert with ON CONFLICT DO NOTHING; returns the new id, or null when a
   // concurrent insert won the race (RETURNING yields no row).
   abstract insertReturningId(
-    type: NodeTypeValue,
+    type: NodeType,
     canonicalName: string,
     executor?: Executor,
   ): Promise<string | null>;
   abstract findIdByCanonical(
-    type: NodeTypeValue,
+    type: NodeType,
     canonicalName: string,
     executor?: Executor,
   ): Promise<string | null>;
   abstract linkAlias(
     name: string,
-    type: NodeTypeValue,
+    type: NodeType,
     nodeId: string,
     executor?: Executor,
   ): Promise<void>;
@@ -43,7 +42,7 @@ export class DrizzleNodeRepository extends NodeRepository {
   }
 
   async findIdByAlias(
-    type: NodeTypeValue,
+    type: NodeType,
     normalizedName: string,
     executor: Executor = this.db,
   ): Promise<string | null> {
@@ -60,7 +59,7 @@ export class DrizzleNodeRepository extends NodeRepository {
   }
 
   async insertReturningId(
-    type: NodeTypeValue,
+    type: NodeType,
     canonicalName: string,
     executor: Executor = this.db,
   ): Promise<string | null> {
@@ -73,7 +72,7 @@ export class DrizzleNodeRepository extends NodeRepository {
   }
 
   async findIdByCanonical(
-    type: NodeTypeValue,
+    type: NodeType,
     canonicalName: string,
     executor: Executor = this.db,
   ): Promise<string | null> {
@@ -91,7 +90,7 @@ export class DrizzleNodeRepository extends NodeRepository {
 
   async linkAlias(
     name: string,
-    type: NodeTypeValue,
+    type: NodeType,
     nodeId: string,
     executor: Executor = this.db,
   ): Promise<void> {
