@@ -148,6 +148,13 @@
       "when": 1782169840554,
       "tag": "0020_redundant_husk",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782236672961,
+      "tag": "0021_add_subscription_candidate_id",
+      "breakpoints": true
     }
   ]
 }
