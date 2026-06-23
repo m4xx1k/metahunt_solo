@@ -51,3 +51,21 @@ export interface MatchBody {
 export const rankingApi = {
   match: (body: MatchBody) => apiPost<MatchResponse>("/ranking/match", body),
 };
+
+// "What to learn next" — mirrors ranking.contract RecommendItem/RecommendResponse.
+export interface RecommendItem {
+  nodeId: string;
+  name: string;
+  unlocks: number; // cohort vacancies crossing into >= GOOD if this skill is learned
+  toStrong: number; // subset crossing into STRONG
+  idf: number;
+  leverage: boolean; // rarer-than-average among the recommendations
+}
+
+export interface RecommendResponse {
+  cohortSize: number;
+  coveragePct: number;
+  reducedState: boolean; // cohort too small for a stable list — gauge only
+  items: RecommendItem[];
+  redundant: string[];
+}
