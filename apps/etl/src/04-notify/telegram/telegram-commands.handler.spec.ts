@@ -4,6 +4,9 @@ import type { Bot } from "grammy";
 import type { SubscriptionMatcherService } from "./subscription-matcher.service";
 import type { SubscriptionsService } from "./subscriptions.service";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
+import { copy } from "./telegram-copy";
+
+const WEB_URL = "https://metahunt.test";
 
 // A minimal stand-in for grammy's Bot that records the handlers `register()`
 // wires up, so each can be invoked with a fake context. This is exactly the
@@ -13,13 +16,15 @@ type Handler = (ctx: unknown) => Promise<void>;
 function fakeBot() {
   const commands = new Map<string, Handler>();
   const callbacks: { pattern: RegExp; handler: Handler }[] = [];
+  const events = new Map<string, Handler>();
   const bot = {
     command: (name: string, h: Handler) => commands.set(name, h),
     callbackQuery: (pattern: RegExp, h: Handler) =>
       callbacks.push({ pattern, handler: h }),
+    on: (event: string, h: Handler) => events.set(event, h),
     catch: () => undefined,
   };
-  return { bot: bot as unknown as Bot, commands, callbacks };
+  return { bot: bot as unknown as Bot, commands, callbacks, events };
 }
 
 function commandCtx(match: string, chatId = 42) {
@@ -47,6 +52,7 @@ describe("TelegramCommandsHandler", () => {
 
   let commands: Map<string, Handler>;
   let callbacks: { pattern: RegExp; handler: Handler }[];
+  let events: Map<string, Handler>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -57,6 +63,7 @@ describe("TelegramCommandsHandler", () => {
     handler.register(wired.bot);
     commands = wired.commands;
     callbacks = wired.callbacks;
+    events = wired.events;
   });
 
   describe("/start", () => {
@@ -66,26 +73,23 @@ describe("TelegramCommandsHandler", () => {
 
       expect(linkChat).not.toHaveBeenCalled();
       const [text, opts] = (ctx.reply as jest.Mock).mock.calls[0];
-      expect(text).toContain("створюються на сайті");
-      expect(text).toContain('<a href="https://metahunt.test">');
-      expect(opts).toEqual(
-        expect.objectContaining({ parse_mode: "HTML" }),
-      );
+      expect(text).toBe(copy.start.greeting(WEB_URL));
+      expect(opts).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
     });
 
     it.each([
-      ["linked", "активовано"],
-      ["already_active", "вже активна"],
-      ["duplicate", "вже підписаний"],
-      ["not_found", "недійсне або застаріле"],
-    ])("maps result %s to its reply", async (result, fragment) => {
+      ["linked", copy.start.linked],
+      ["already_active", copy.start.alreadyActive],
+      ["duplicate", copy.start.duplicate],
+      ["not_found", copy.start.invalidToken(WEB_URL)],
+    ])("routes link result %s to the right reply", async (result, expected) => {
       linkChat.mockResolvedValue(result);
       const ctx = commandCtx("the-token");
 
       await commands.get("start")!(ctx);
 
       expect(linkChat).toHaveBeenCalledWith("the-token", "42");
-      expect(ctx.reply).toHaveBeenCalledWith(expect.stringContaining(fragment));
+      expect((ctx.reply as jest.Mock).mock.calls[0][0]).toBe(expected);
     });
   });
 
@@ -96,7 +100,9 @@ describe("TelegramCommandsHandler", () => {
 
       await commands.get("list")!(ctx);
 
-      expect(ctx.reply).toHaveBeenCalledWith("У тебе немає активних підписок.");
+      // The fix: an empty list must still route the user to the site.
+      const [text] = (ctx.reply as jest.Mock).mock.calls[0];
+      expect(text).toBe(copy.list.empty(WEB_URL));
     });
 
     it("renders one labelled row with an unsubscribe button per sub", async () => {
@@ -109,7 +115,7 @@ describe("TelegramCommandsHandler", () => {
 
       expect(describe_).toHaveBeenCalledWith({}, null);
       expect(ctx.reply).toHaveBeenCalledWith(
-        "🔔 Backend",
+        copy.list.item("Backend"),
         expect.objectContaining({ reply_markup: expect.anything() }),
       );
     });
@@ -123,9 +129,7 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("stop")!(ctx);
 
       expect(deactivateByChat).toHaveBeenCalledWith("42");
-      expect(ctx.reply).toHaveBeenCalledWith(
-        expect.stringContaining("вимкнено"),
-      );
+      expect(ctx.reply).toHaveBeenCalledWith(copy.stop.done);
     });
 
     it("reports nothing to stop", async () => {
@@ -134,7 +138,7 @@ describe("TelegramCommandsHandler", () => {
 
       await commands.get("stop")!(ctx);
 
-      expect(ctx.reply).toHaveBeenCalledWith("У тебе немає активних підписок.");
+      expect(ctx.reply).toHaveBeenCalledWith(copy.stop.empty);
     });
   });
 
@@ -160,8 +164,8 @@ describe("TelegramCommandsHandler", () => {
       await cb.handler(ctx);
 
       expect(deactivateById).toHaveBeenCalledWith("sub-1", "42");
-      expect(ctx.answerCallbackQuery).toHaveBeenCalledWith("Відписано");
-      expect(ctx.editMessageText).toHaveBeenCalledWith("❌ Відписано.");
+      expect(ctx.answerCallbackQuery).toHaveBeenCalledWith(copy.unsub.done);
+      expect(ctx.editMessageText).toHaveBeenCalledWith(copy.unsub.confirmed);
     });
 
     it("does not edit when the sub wasn't found", async () => {
@@ -170,9 +174,7 @@ describe("TelegramCommandsHandler", () => {
 
       await cb.handler(ctx);
 
-      expect(ctx.answerCallbackQuery).toHaveBeenCalledWith(
-        "Підписку не знайдено",
-      );
+      expect(ctx.answerCallbackQuery).toHaveBeenCalledWith(copy.unsub.notFound);
       expect(ctx.editMessageText).not.toHaveBeenCalled();
     });
   });
@@ -185,9 +187,8 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("preview")!(ctx);
 
       expect(sample).not.toHaveBeenCalled();
-      expect(ctx.reply).toHaveBeenCalledWith(
-        expect.stringContaining("Створи на сайті"),
-      );
+      const [text] = (ctx.reply as jest.Mock).mock.calls[0];
+      expect(text).toBe(copy.preview.empty(WEB_URL));
     });
 
     it("sends a rendered HTML sample per subscription", async () => {
@@ -206,6 +207,19 @@ describe("TelegramCommandsHandler", () => {
       expect(ctx.reply).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ parse_mode: "HTML" }),
+      );
+    });
+  });
+
+  describe("free-text fallback", () => {
+    it("nudges back to /help instead of staying silent", async () => {
+      const ctx = { chat: { id: 42 }, reply: jest.fn() };
+
+      await events.get("message")!(ctx);
+
+      expect(ctx.reply).toHaveBeenCalledWith(
+        copy.fallback(WEB_URL),
+        expect.anything(),
       );
     });
   });

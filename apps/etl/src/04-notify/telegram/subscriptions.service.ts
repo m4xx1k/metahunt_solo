@@ -10,6 +10,7 @@ import {
   SUBSCRIPTION_PARAM_KEYS,
   type SubscriptionParams,
 } from "./subscriptions.contract";
+import { copy } from "./telegram-copy";
 
 const { subscriptions, nodes } = schema;
 
@@ -305,13 +306,13 @@ export class SubscriptionsService {
         : [];
 
     const parts: string[] = [];
-    if (candidateId) parts.push("за резюме");
+    if (candidateId) parts.push(copy.describe.byCv);
     if (roleNames.length > 0) {
       const shown = roleNames.slice(0, MAX_SUMMARY_ROLES).join(", ");
       const extra = roleNames.length - MAX_SUMMARY_ROLES;
       parts.push(extra > 0 ? `${shown} +${extra}` : shown);
     }
-    if (skillIds.length > 0) parts.push(`${skillIds.length} скіл.`);
+    if (skillIds.length > 0) parts.push(copy.describe.skills(skillIds.length));
 
     const seniorities = asEnumList(params.seniorities, params.seniority);
     if (seniorities.length > 0) {
@@ -321,11 +322,11 @@ export class SubscriptionsService {
     if (formats.length > 0) {
       parts.push(formats.map((f) => f.toLowerCase()).join("/"));
     }
-    if (params.hasReservation === true) parts.push("бронь");
+    if (params.hasReservation === true) parts.push(copy.describe.reservation);
     if (typeof params.minFitTier === "string") {
       parts.push(`fit≥${params.minFitTier.toLowerCase()}`);
     }
 
-    return parts.length > 0 ? parts.join(" · ") : "усі вакансії";
+    return parts.length > 0 ? parts.join(" · ") : copy.describe.all;
   }
 }

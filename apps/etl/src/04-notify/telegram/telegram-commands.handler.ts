@@ -2,9 +2,12 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Bot, InlineKeyboard } from "grammy";
 
+import { copy } from "./telegram-copy";
 import { renderDigest } from "./digest.renderer";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
 import { SubscriptionsService } from "./subscriptions.service";
+
+const NO_LINK_PREVIEW = { link_preview_options: { is_disabled: true } } as const;
 
 const DIGEST_WINDOW_DAYS = 14;
 const DIGEST_PREVIEW_SIZE = 3;
@@ -31,29 +34,24 @@ export class TelegramCommandsHandler {
 
       if (token.length === 0) {
         const webUrl = this.config.get<string>("WEB_BASE_URL")!;
-        await ctx.reply(
-          `👋 Привіт! Це <b>metahunt</b> — агрегатор IT-вакансій.\n` +
-            `🔗 <a href="${webUrl}">${webUrl.replace(/^https?:\/\//, "")}</a>\n\n` +
-            `Підписки створюються на сайті: обираєш фільтр і тиснеш ` +
-            `«Підписатись» — далі я надсилатиму нові вакансії сюди.`,
-          {
-            parse_mode: "HTML",
-            link_preview_options: { is_disabled: true },
-          },
-        );
+        await ctx.reply(copy.start.greeting(webUrl), {
+          parse_mode: "HTML",
+          ...NO_LINK_PREVIEW,
+        });
         return;
       }
 
       const result = await this.subscriptions.linkChat(token, chatId);
-      const reply =
-        result === "linked"
-          ? "✅ Підписку активовано. Надсилатиму нові вакансії за твоїм фільтром."
-          : result === "already_active"
-            ? "ℹ️ Ця підписка вже активна — нічого робити не треба."
-            : result === "duplicate"
-              ? "ℹ️ Ти вже підписаний на цей фільтр — нову підписку не створював."
-              : "⚠️ Це посилання недійсне або застаріле. Створи підписку на сайті ще раз.";
-      await ctx.reply(reply);
+      if (result === "linked") {
+        await ctx.reply(copy.start.linked);
+      } else if (result === "already_active") {
+        await ctx.reply(copy.start.alreadyActive);
+      } else if (result === "duplicate") {
+        await ctx.reply(copy.start.duplicate);
+      } else {
+        const webUrl = this.config.get<string>("WEB_BASE_URL")!;
+        await ctx.reply(copy.start.invalidToken(webUrl), NO_LINK_PREVIEW);
+      }
     });
 
     bot.command("preview", async (ctx) => {
@@ -61,7 +59,8 @@ export class TelegramCommandsHandler {
         String(ctx.chat.id),
       );
       if (subs.length === 0) {
-        await ctx.reply("У тебе немає активних підписок. Створи на сайті.");
+        const webUrl = this.config.get<string>("WEB_BASE_URL")!;
+        await ctx.reply(copy.preview.empty(webUrl), NO_LINK_PREVIEW);
         return;
       }
 
@@ -78,10 +77,7 @@ export class TelegramCommandsHandler {
             applyBaseUrl,
             label,
           }),
-          {
-            parse_mode: "HTML",
-            link_preview_options: { is_disabled: true },
-          },
+          { parse_mode: "HTML", ...NO_LINK_PREVIEW },
         );
       }
     });
@@ -91,7 +87,8 @@ export class TelegramCommandsHandler {
         String(ctx.chat.id),
       );
       if (subs.length === 0) {
-        await ctx.reply("У тебе немає активних підписок.");
+        const webUrl = this.config.get<string>("WEB_BASE_URL")!;
+        await ctx.reply(copy.list.empty(webUrl), NO_LINK_PREVIEW);
         return;
       }
 
@@ -100,9 +97,9 @@ export class TelegramCommandsHandler {
           sub.params,
           sub.candidateId,
         );
-        await ctx.reply(`🔔 ${label}`, {
+        await ctx.reply(copy.list.item(label), {
           reply_markup: new InlineKeyboard().text(
-            "❌ Відписатись",
+            copy.list.unsubButton,
             `unsub:${sub.id}`,
           ),
         });
@@ -116,33 +113,34 @@ export class TelegramCommandsHandler {
         chatId !== undefined &&
         (await this.subscriptions.deactivateById(id, String(chatId)));
       await ctx.answerCallbackQuery(
-        stopped ? "Відписано" : "Підписку не знайдено",
+        stopped ? copy.unsub.done : copy.unsub.notFound,
       );
-      if (stopped) await ctx.editMessageText("❌ Відписано.");
+      if (stopped) await ctx.editMessageText(copy.unsub.confirmed);
     });
 
     bot.command("stop", async (ctx) => {
       const stopped = await this.subscriptions.deactivateByChat(
         String(ctx.chat.id),
       );
-      await ctx.reply(
-        stopped > 0
-          ? "🛑 Сповіщення вимкнено."
-          : "У тебе немає активних підписок.",
-      );
+      await ctx.reply(stopped > 0 ? copy.stop.done : copy.stop.empty);
     });
 
     bot.command("help", async (ctx) => {
-      await ctx.reply(
-        "Команди:\n/start — активувати підписку за посиланням із сайту\n" +
-          "/list — мої підписки (з кнопкою відписки на кожну)\n" +
-          "/preview — показати приклад дайджесту за твоїм фільтром\n" +
-          "/stop — вимкнути всі сповіщення",
-      );
+      await ctx.reply(copy.help());
     });
 
-    bot.catch((err) => {
+    // Catch-all: any text that isn't a handled command. Registered last so the
+    // commands above take precedence; keeps the bot from silently ignoring input.
+    bot.on("message", async (ctx) => {
+      const webUrl = this.config.get<string>("WEB_BASE_URL")!;
+      await ctx.reply(copy.fallback(webUrl), NO_LINK_PREVIEW);
+    });
+
+    bot.catch(async (err) => {
       this.logger.error("Telegram update handler failed", err.error);
+      // Surface the failure to the user instead of leaving them hanging; the
+      // reply itself may fail (e.g. the original error was a send), so swallow it.
+      await err.ctx.reply(copy.error).catch(() => undefined);
     });
   }
 }

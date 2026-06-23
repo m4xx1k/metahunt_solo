@@ -9,6 +9,7 @@ import { Bot } from "grammy";
 
 import { RateLimiter, withRetryAfter } from "./rate-limiter";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
+import { BOT_COMMANDS } from "./telegram-copy";
 
 // Telegram caps outbound at ~30 msg/s globally; stay comfortably under it.
 const SEND_INTERVAL_MS = 50; // ≈20 msg/s
@@ -56,6 +57,14 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     this.bot = bot;
+
+    // Publish the native command menu from the single registry. Non-fatal: a
+    // failure here shouldn't keep the poller from starting.
+    try {
+      await bot.api.setMyCommands([...BOT_COMMANDS]);
+    } catch (err) {
+      this.logger.warn("Telegram setMyCommands failed", err);
+    }
 
     // bot.start() resolves only when the bot stops, so we deliberately don't
     // await it — that would block Nest bootstrap forever.
