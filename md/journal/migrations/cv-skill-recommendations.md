@@ -1,6 +1,7 @@
 # cv-skill-recommendations — "what to learn next" widget on reverse-ATS
 
-**Status:** 🚧 in progress — docs landed; backend + frontend pending.
+**Status:** ✅ implemented — etl + web build green, band/derive unit tests pass.
+Pending: manual SQL spot-check on prod DB + smoke, then merge.
 **Branch:** `feat/cv-skill-recommendations`
 **Sits atop:** ADR-0009, reverse-ats (ADR-0006), ranking (ADR-0006)
 **Date:** 2026-06-23
@@ -25,12 +26,22 @@ On `/reverse-ats`, beside the matched CV, show a ranked list of skills to learn 
 ## Plan (by commit)
 
 1. ✅ `docs` — ADR-0009, this tracker, STYLE no-Cyrillic rule.
-2. ⬜ `feat(ranking)` — `recommendation.service.ts` (cohort + counterfactual CTE + add-ons), `seniority-band.ts` helper, role resolver, contract DTOs/constants, `GET /cv/:id/recommendations`, unit test.
-3. ⬜ `feat(web)` — `cvApi.recommendations` + types, `SkillRecommendations` widget (horizontal bars), wired into `ReverseAtsClient` (sample + uploaded paths), reduced state when `cohortSize < 20`.
+2. ✅ `feat(ranking)` — `recommendation.service.ts` (cohort + counterfactual CTE + add-ons), `seniority-band.ts` + `recommendation.derive.ts` helpers, `RankingService.resolveRole`, contract DTOs/constants, `GET /cv/:id/recommendations`, `weightedMatchedNodes` reuse in the loader, unit tests for the band + derive helpers.
+3. ✅ `feat(web)` — `cvApi.recommendations` + `ranking.ts` types, `SkillRecommendations` widget (horizontal bars), wired into `ReverseAtsClient` (CV source only), reduced state via `reducedState`.
+
+## Outcome
+
+Marginal-counterfactual recommendations ship as a CV-rail widget. The cohort
+is role+seniority (no `buildFilters` reuse — YAGNI). `recommend()` takes resolved
+refs+role+seniority so `CvModule → RankingModule` stays one-way. Deep SQL math is
+covered by manual spot-check (verification step 3), not a unit test — the unit
+tests cover the pure band/derive logic, mirroring `ranking.contract.spec.ts`.
 
 ## Out of scope (fast-follow / future)
 
-- «майже там» expandable real vacancy cards (hydration).
+- **Sample-path recommendations** — v1 is CV-only (samples have no stored candidate / candidateId). Needs a recommend-by-skills variant.
+- «майже там» expandable real vacancy cards (`FeedService.hydrateByIds`).
+- A DB-backed integration test asserting hand-computed unlocks/toStrong.
 - Skill combos (greedy-2), target-role mode, effort-adjusted ranking, demand trend.
 
 ## Acceptance criteria
