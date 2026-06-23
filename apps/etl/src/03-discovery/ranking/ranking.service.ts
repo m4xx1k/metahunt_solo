@@ -346,6 +346,12 @@ export class RankingService {
         sql`coalesce(v.published_at, v.loaded_at) > now() - make_interval(days => ${f.postedWithinDays})`,
       );
     }
+
+    // Digest-only window (page UI never sets these).
+    if (f.loadedAfter) conds.push(sql`v.loaded_at > ${f.loadedAfter}`);
+    if (f.excludeIds?.length) {
+      conds.push(sql`v.id NOT IN (${uuidList(f.excludeIds)})`);
+    }
     return sql.join(conds, sql` AND `);
   }
 }
