@@ -5,6 +5,7 @@ import type {
   VacancyDto,
   WorkFormat,
 } from "../../03-discovery/feed/feed.contract";
+import { copy } from "./telegram-copy";
 
 // Rich-card digest rendering for Telegram HTML (`parse_mode: "HTML"`).
 // Principles (see md/journal/migrations/tg-notifications.md#decisions):
@@ -119,9 +120,19 @@ function renderCard(
   // are {brace} tags — a light CLI-ish structure over the old dot-joined prose.
   const body: string[] = [];
 
-  // Muted domain line, italic so it reads as a subtitle without competing with
-  // the bold headline. (Freshness lives in the footer, next to the apply link.)
-  if (v.domain) body.push(`<i>${escapeHtml(v.domain.name)}</i>`);
+  // One meta line — content self-labels. The company domain leads it (bold, as a
+  // light anchor), then format/location/salary/english. Accents kept light:
+  // salary bold (rare but a strong draw), a flag on the English level so it reads
+  // at a glance. (Freshness lives in the footer, next to the apply link.)
+  const salary = formatSalary(v.salary);
+  const meta = joinChips([
+    v.domain ? `<b>${escapeHtml(v.domain.name)}</b>` : null,
+    v.workFormat ? WORK_FORMAT_LABEL[v.workFormat] : null,
+    locationChip(v.locations.map(escapeHtml)),
+    salary ? `<b>${salary}</b>` : null,
+    v.englishLevel ? `🇬🇧 ${ENGLISH_CEFR[v.englishLevel]}` : null,
+  ]);
+  if (meta) body.push(meta);
 
   if (v.skills.required.length > 0) {
     const names = v.skills.required.slice(0, MAX_SKILLS).map((s) => s.name);
@@ -131,27 +142,16 @@ function renderCard(
     body.push(`${tags}${tail}`);
   }
 
-  // One meta line — content self-labels. Accents kept light: salary bold (rare
-  // but a strong draw), a flag on the English level so it reads at a glance.
-  const salary = formatSalary(v.salary);
-  const meta = joinChips([
-    v.workFormat ? WORK_FORMAT_LABEL[v.workFormat] : null,
-    locationChip(v.locations.map(escapeHtml)),
-    salary ? `<b>${salary}</b>` : null,
-    v.englishLevel ? `🇬🇧 ${ENGLISH_CEFR[v.englishLevel]}` : null,
-  ]);
-  if (meta) body.push(meta);
-
   // Perks line, framed the way candidates read them: reservation is a draw
   // (🪖 — deferment from mobilization), and "без тесту" is a plus, so the absence
   // of a test task is surfaced too, not just its presence. Both are bolded to
   // read as perks, dot-joined so they don't blur into the meta line above.
   const perks = joinChips([
-    v.hasReservation === true ? "🪖 <b>бронь</b>" : null,
+    v.hasReservation === true ? copy.digest.reservation : null,
     v.hasTestAssignment === false
-      ? "🧪 <b>без тесту</b>"
+      ? copy.digest.noTest
       : v.hasTestAssignment === true
-        ? "🧪 <b>тестове</b>"
+        ? copy.digest.hasTest
         : null,
   ]);
   if (perks) body.push(perks);
@@ -213,10 +213,10 @@ function renderHeader(
   { windowDays, label }: Pick<DigestMeta, "windowDays" | "label">,
   page?: { index: number; count: number },
 ): string {
-  const window = windowDays !== undefined ? ` за ${windowDays} дн` : "";
+  const window = windowDays !== undefined ? copy.digest.window(windowDays) : "";
   const filter = label ? ` · ${escapeHtml(label)}` : "";
   const pager = page && page.count > 1 ? ` (${page.index}/${page.count})` : "";
-  return `⌖ <b>${totalNew}</b> нових${window}${filter}${pager}`;
+  return copy.digest.header(totalNew, window, filter, pager);
 }
 
 /** Render a digest as a single message — headline + one card per vacancy (used by `/preview`). */
