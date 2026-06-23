@@ -10,7 +10,7 @@ import { FeedService } from "../feed/feed.service";
 import {
   FIT_GOOD_MIN,
   FIT_STRONG_MIN,
-  fitTier,
+  fitTierWeighted,
   type FitTier,
   type MatchFilters,
   type MatchResponse,
@@ -134,14 +134,18 @@ export class RankingService {
     // Shared CTE: per-vacancy relevance + tier_bucket. Both the page query and
     // the count query build on `ranked`, so the Fit-tier filter (which reads
     // the computed bucket, not a vacancy column) applies identically to both.
-    // tier_bucket mirrors fitTier: STRONG=2, GOOD=1, STRETCH=0 — the primary
-    // sort key, so a single rare skill can't catapult a weak-fit vacancy over
-    // a job you broadly qualify for; relevance (Σ IDF) only orders within a tier.
+    // tier_bucket mirrors fitTierWeighted: STRONG=2, GOOD=1, STRETCH=0 — the
+    // primary sort key. Coverage is IDF-WEIGHTED (Σ IDF(matched req) / Σ IDF(all
+    // req)), so matching trivial low-IDF required skills can't inflate the tier
+    // and a tiny required set no longer auto-hits 100%; relevance (Σ IDF) only
+    // orders within a tier. No required skills tagged → weighted coverage over
+    // ALL listed skills (relevance / all_w), never a free GOOD.
     const rankedCte = sql`
       cand(node_id) AS (VALUES ${cand}),
       scored AS (
         SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance,
-               count(*) FILTER (WHERE vn.is_required) AS matched_required
+               count(*) FILTER (WHERE vn.is_required) AS matched_required,
+               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS matched_required_w
         FROM vacancy_nodes vn
         JOIN cand c ON c.node_id = vn.node_id
         JOIN node_stats ns ON ns.node_id = vn.node_id
@@ -149,18 +153,26 @@ export class RankingService {
       ),
       req AS (
         SELECT vn.vacancy_id AS id,
-               count(*) FILTER (WHERE vn.is_required) AS required_total
+               count(*) FILTER (WHERE vn.is_required) AS required_total,
+               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS required_total_w,
+               COALESCE(SUM(ns.weight), 0)::float8 AS all_w
         FROM vacancy_nodes vn
         JOIN nodes n ON n.id = vn.node_id AND n.status <> 'HIDDEN'
+        JOIN node_stats ns ON ns.node_id = vn.node_id
         WHERE vn.vacancy_id IN (SELECT id FROM scored)
         GROUP BY vn.vacancy_id
       ),
       ranked AS (
         SELECT s.id, s.relevance,
                CASE
-                 WHEN COALESCE(r.required_total, 0) = 0 THEN 1
-                 WHEN s.matched_required::float8 / r.required_total >= ${FIT_STRONG_MIN} THEN 2
-                 WHEN s.matched_required::float8 / r.required_total >= ${FIT_GOOD_MIN} THEN 1
+                 WHEN COALESCE(r.required_total, 0) = 0 THEN
+                   CASE
+                     WHEN r.all_w > 0 AND s.relevance / r.all_w >= ${FIT_STRONG_MIN} THEN 2
+                     WHEN r.all_w > 0 AND s.relevance / r.all_w >= ${FIT_GOOD_MIN} THEN 1
+                     ELSE 0
+                   END
+                 WHEN r.required_total_w > 0 AND s.matched_required_w / r.required_total_w >= ${FIT_STRONG_MIN} THEN 2
+                 WHEN r.required_total_w > 0 AND s.matched_required_w / r.required_total_w >= ${FIT_GOOD_MIN} THEN 1
                  ELSE 0
                END AS tier_bucket
         FROM scored s
@@ -245,14 +257,29 @@ export class RankingService {
       const vacancyNodeIds = new Set(vskills.map((s) => s.node_id));
       const have: SkillRef[] = [];
       const missing: SkillRef[] = [];
+      // Counts stay for honest display ("X of Y required"); the *_w weighted
+      // sums drive the badge so it matches the IDF-weighted SQL tier.
       let requiredTotal = 0;
       let matchedRequired = 0;
+      let requiredW = 0;
+      let matchedRequiredW = 0;
+      let allW = 0;
+      let matchedAllW = 0;
       for (const s of vskills) {
-        const ref: SkillRef = { id: s.node_id, name: s.name, weight: s.weight ?? 0 };
-        if (s.is_required) requiredTotal += 1;
+        const w = s.weight ?? 0;
+        const ref: SkillRef = { id: s.node_id, name: s.name, weight: w };
+        allW += w;
+        if (s.is_required) {
+          requiredTotal += 1;
+          requiredW += w;
+        }
         if (s.in_candidate) {
           have.push(ref);
-          if (s.is_required) matchedRequired += 1;
+          matchedAllW += w;
+          if (s.is_required) {
+            matchedRequired += 1;
+            matchedRequiredW += w;
+          }
         } else if (s.is_required) {
           missing.push(ref);
         }
@@ -262,7 +289,7 @@ export class RankingService {
         vacancy,
         relevance: row.relevance,
         fit: {
-          tier: fitTier(matchedRequired, requiredTotal),
+          tier: fitTierWeighted(matchedRequiredW, requiredW, matchedAllW, allW),
           matchedRequired,
           requiredTotal,
         },

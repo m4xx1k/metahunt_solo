@@ -64,17 +64,29 @@ export interface MatchResponse {
 }
 
 // Fit-coverage thresholds. v1 expert guesses (no ground truth yet) — the SINGLE
-// source of truth, read by both `fitTier` (the badge) AND the ranked SQL's
-// tier-bucket sort (ranking.service): if these drift apart the displayed tier
-// stops matching the sort order. Calibrate here, once.
+// source of truth, read by both `fitTierWeighted` (the badge) AND the ranked
+// SQL's tier-bucket sort (ranking.service): if these drift apart the displayed
+// tier stops matching the sort order. Calibrate here, once. NOTE: coverage is
+// now IDF-WEIGHTED, so the distribution is more bimodal than the old unweighted
+// count — re-eyeball these two constants on real data.
 export const FIT_STRONG_MIN = 0.8;
 export const FIT_GOOD_MIN = 0.5;
 
-// Fit coverage → tier. |required| = 0 is neutral → GOOD (tracker: never emit a
-// fake %).
-export function fitTier(matchedRequired: number, requiredTotal: number): FitTier {
-  if (requiredTotal === 0) return "GOOD";
-  const coverage = matchedRequired / requiredTotal;
+// Fit tier from IDF-WEIGHTED required coverage (Σ IDF(matched req) / Σ IDF(all
+// req)) — so matching trivial low-IDF required skills can no longer inflate the
+// tier. When the vacancy tags NO required skills, fall back to weighted coverage
+// over ALL listed skills (matchedAllW / allW) — never a free GOOD pass. den<=0
+// (nothing to assess) → STRETCH, not a fake %. Mirrors the SQL CASE in
+// rankByRefs; keep the two in lockstep.
+export function fitTierWeighted(
+  matchedReqW: number,
+  reqW: number,
+  matchedAllW: number,
+  allW: number,
+): FitTier {
+  const [num, den] = reqW > 0 ? [matchedReqW, reqW] : [matchedAllW, allW];
+  if (den <= 0) return "STRETCH";
+  const coverage = num / den;
   if (coverage >= FIT_STRONG_MIN) return "STRONG";
   if (coverage >= FIT_GOOD_MIN) return "GOOD";
   return "STRETCH";
