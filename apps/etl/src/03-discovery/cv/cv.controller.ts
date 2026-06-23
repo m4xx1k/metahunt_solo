@@ -32,10 +32,12 @@ import {
   parsePageSize,
 } from "../../platform/shared/query-parsing";
 import { RankingService } from "../ranking/ranking.service";
+import { RecommendationService } from "../ranking/recommendation.service";
 import {
   FIT_TIER_VALUES,
   type FitTier,
   type MatchResponse,
+  type RecommendResponse,
 } from "../ranking/ranking.contract";
 import { CandidateLoaderService } from "./candidate-loader.service";
 import type { CandidateView, CvIngestResult } from "./cv.contract";
@@ -54,6 +56,7 @@ export class CvController {
   constructor(
     private readonly loader: CandidateLoaderService,
     private readonly ranking: RankingService,
+    private readonly recommendation: RecommendationService,
   ) {}
 
   // Upload a CV as a file (field "file": PDF or .txt) OR as raw JSON {text}.
@@ -117,5 +120,13 @@ export class CvController {
       parsePage(rawPage),
       parsePageSize(rawPageSize),
     );
+  }
+
+  // "What to learn next": skills that would unlock the most cohort vacancies.
+  @Get(":id/recommendations")
+  async recommendations(@Param("id") id: string): Promise<RecommendResponse> {
+    const { matched, role, seniority } = await this.loader.getRecommendInput(id);
+    const roleNodeId = await this.ranking.resolveRole(role);
+    return this.recommendation.recommend(matched, roleNodeId, seniority);
   }
 }

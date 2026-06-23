@@ -99,6 +99,36 @@ export class RankingService {
     return { matched, unmatched };
   }
 
+  // Resolve a candidate's role string to a single ROLE node id (canonical+alias,
+  // VERIFIED preferred — the recommendation cohort only holds VERIFIED-role
+  // vacancies). null when nothing matches → reduced state upstream.
+  async resolveRole(role: string | null): Promise<string | null> {
+    const key = role?.trim().toLowerCase();
+    if (!key) return null;
+    const result = await this.db.execute<{
+      id: string;
+      via: "canonical" | "alias";
+      status: string;
+    }>(sql`
+      SELECT n.id::text AS id, 'canonical' AS via, n.status AS status
+      FROM nodes n
+      WHERE n.type = 'ROLE' AND n.status <> 'HIDDEN'
+        AND lower(n.canonical_name) = ${key}
+      UNION ALL
+      SELECT n.id::text AS id, 'alias' AS via, n.status AS status
+      FROM node_aliases a
+      JOIN nodes n ON n.id = a.node_id
+      WHERE a.type = 'ROLE' AND n.status <> 'HIDDEN' AND lower(a.name) = ${key}
+    `);
+    const rows = result.rows;
+    const pick =
+      rows.find((r) => r.via === "canonical" && r.status === "VERIFIED") ??
+      rows.find((r) => r.status === "VERIFIED") ??
+      rows.find((r) => r.via === "canonical") ??
+      rows[0];
+    return pick?.id ?? null;
+  }
+
   // Rank for plain-text skills (the demo / mock-candidate path).
   async match(
     skills: string[],

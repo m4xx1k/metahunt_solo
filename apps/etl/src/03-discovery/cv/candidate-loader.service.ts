@@ -106,6 +106,35 @@ export class CandidateLoaderService {
       .where(eq(schema.candidates.id, id));
     if (!rows[0]) throw new NotFoundException(`candidate ${id} not found`);
 
+    const extracted = rows[0].extracted as Record<string, unknown>;
+    return {
+      matched: await this.weightedMatchedNodes(id),
+      unmatched: (extracted.unmatchedSkills as string[]) ?? [],
+    };
+  }
+
+  // Inputs for GET /cv/:id/recommendations: the candidate's weighted skill nodes
+  // plus the role/seniority that define the recommendation cohort.
+  async getRecommendInput(
+    id: string,
+  ): Promise<{ matched: SkillRef[]; role: string | null; seniority: string | null }> {
+    const rows = await this.db
+      .select({
+        role: schema.candidates.role,
+        seniority: schema.candidates.seniority,
+      })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, id));
+    const row = rows[0];
+    if (!row) throw new NotFoundException(`candidate ${id} not found`);
+    return {
+      matched: await this.weightedMatchedNodes(id),
+      role: row.role,
+      seniority: row.seniority,
+    };
+  }
+
+  private async weightedMatchedNodes(id: string): Promise<SkillRef[]> {
     const matched = await this.db
       .select({
         id: schema.nodes.id,
@@ -119,16 +148,7 @@ export class CandidateLoaderService {
         eq(schema.nodeStats.nodeId, schema.candidateNodes.nodeId),
       )
       .where(eq(schema.candidateNodes.candidateId, id));
-
-    const extracted = rows[0].extracted as Record<string, unknown>;
-    return {
-      matched: matched.map((m) => ({
-        id: m.id,
-        name: m.name,
-        weight: m.weight ?? 0,
-      })),
-      unmatched: (extracted.unmatchedSkills as string[]) ?? [],
-    };
+    return matched.map((m) => ({ id: m.id, name: m.name, weight: m.weight ?? 0 }));
   }
 
   async getById(id: string): Promise<CandidateView> {

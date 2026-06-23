@@ -3,11 +3,12 @@ import { Module } from "@nestjs/common";
 import { FeedModule } from "../feed/feed.module";
 import { RankingController } from "./ranking.controller";
 import { RankingService } from "./ranking.service";
+import { RecommendationService } from "./recommendation.service";
 
 @Module({
   imports: [FeedModule],
-  providers: [RankingService],
+  providers: [RankingService, RecommendationService],
   controllers: [RankingController],
-  exports: [RankingService],
+  exports: [RankingService, RecommendationService],
 })
 export class RankingModule {}
