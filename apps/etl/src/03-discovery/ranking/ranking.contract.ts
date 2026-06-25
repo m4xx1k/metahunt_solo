@@ -102,6 +102,12 @@ export const REC_DF_FLOOR = 5; // a skill must be required in >= this many cohor
 export const REC_GENERIC_DF_SHARE = 0.6; // drop "everyone has it" skills above this cohort share
 export const REC_MIN_COHORT = 20; // below this the cohort is too small for a stable list
 
+// Co-occurrence floor for the framework substitute-gate (ADR-0010): two
+// same-stack core frameworks below this npmi are substitutes (React/Angular
+// ~0.22 — drop the not-held one) vs complements above it (Selenium/Appium
+// ~0.36 — keep). Tuned on vacancy-tag co-occurrence; see skill-weighting-research §3.E.
+export const SUBSTITUTE_NPMI_MIN = 0.3;
+
 export interface RecommendItem {
   nodeId: string;
   name: string;

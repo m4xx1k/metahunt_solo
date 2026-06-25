@@ -13,6 +13,7 @@ import {
   REC_GENERIC_DF_SHARE,
   REC_MIN_COHORT,
   REC_TOP_N,
+  SUBSTITUTE_NPMI_MIN,
   type RecommendItem,
   type RecommendResponse,
   type SkillRef,
@@ -33,7 +34,8 @@ const reduced = (cohortSize: number, coveragePct: number): RecommendResponse => 
 // vacancy (required coverage < GOOD), a missing required skill S "unlocks" it
 // iff (matched_required_w + idf(S)) / required_total_w >= GOOD. Aggregated per S,
 // guarded to VERIFIED nodes with a cohort df-floor and a generic df-ceiling.
-// See md/journal/decisions/0009-cv-skill-recommendations.md.
+// Skill-metadata stack gates (foreign-stack / known-language / framework
+// substitute) filter the unlock list; see ADR-0009 and ADR-0010.
 @Injectable()
 export class RecommendationService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
@@ -69,8 +71,28 @@ export class RecommendationService {
     // Shared prefix: the cohort, its required-skill rows (VERIFIED-or-NEW, with
     // candidate membership), and per-vacancy required coverage weights. Reused by
     // the scalar, item, and redundant queries so all three see one cohort.
+    //
+    // The css/lang_stacks/fw_stacks CTEs derive the candidate's stack profile
+    // from node_tech_meta over the held refs — the basis for the ADR-0010 gates.
+    // A candidate with no classified core skills (e.g. embedded) yields empty
+    // sets, so the gates become safe no-ops. See ADR-0010.
     const cohortCte = sql`
       cand(node_id) AS (VALUES ${cand}),
+      css AS (
+        SELECT DISTINCT m.stack FROM cand c
+        JOIN node_tech_meta m ON m.node_id = c.node_id
+        WHERE m.is_core AND m.stack IS NOT NULL
+      ),
+      lang_stacks AS (
+        SELECT DISTINCT m.stack FROM cand c
+        JOIN node_tech_meta m ON m.node_id = c.node_id
+        WHERE m.is_core AND m.category = 'LANGUAGE' AND m.stack IS NOT NULL
+      ),
+      fw_stacks AS (
+        SELECT DISTINCT m.stack FROM cand c
+        JOIN node_tech_meta m ON m.node_id = c.node_id
+        WHERE m.is_core AND m.category = 'FRAMEWORK' AND m.stack IS NOT NULL
+      ),
       cohort AS (
         SELECT v.id FROM vacancies v WHERE ${cohortCond}
       ),
@@ -143,9 +165,33 @@ export class RecommendationService {
       JOIN sdf s ON s.node_id = a.node_id
       JOIN nodes n ON n.id = a.node_id
       JOIN node_stats ns ON ns.node_id = a.node_id
+      LEFT JOIN node_tech_meta m ON m.node_id = a.node_id
       WHERE a.unlocks >= 1
         AND s.cohort_df >= ${REC_DF_FLOOR}
         AND s.cohort_df::float8 / ${cohortSize} <= ${REC_GENERIC_DF_SHARE}
+        -- ADR-0010 stack gates. Pure subtractions over node_tech_meta — a skill
+        -- with no row (m.* NULL) passes every NOT (...), so unclassified skills
+        -- and metadata-absent candidates keep today's behaviour.
+        -- F2 foreign-stack tech: any concrete-stack language/framework/library
+        -- whose stack the candidate has no core skill in (Flask for a Go dev).
+        AND NOT (m.category IN ('LANGUAGE', 'FRAMEWORK', 'LIBRARY')
+                 AND m.stack IS NOT NULL
+                 AND m.stack NOT IN (SELECT stack FROM css))
+        -- F1 already-known primary language: a stack has one primary language, so
+        -- a core language in a stack the candidate already has one for is known (TS => JS).
+        AND NOT (m.category = 'LANGUAGE' AND COALESCE(m.is_core, false)
+                 AND m.stack IN (SELECT stack FROM lang_stacks))
+        -- Substitute gate: drop a same-stack core FRAMEWORK unless it co-occurs
+        -- (npmi >= SUBSTITUTE_NPMI_MIN) with a held same-stack core framework.
+        -- Drops Angular/Vue for a React dev; keeps Appium for a Selenium QA.
+        AND NOT (m.category = 'FRAMEWORK' AND COALESCE(m.is_core, false)
+                 AND m.stack IN (SELECT stack FROM fw_stacks)
+                 AND NOT EXISTS (
+                   SELECT 1 FROM cand h
+                   JOIN node_tech_meta hm ON hm.node_id = h.node_id
+                     AND hm.category = 'FRAMEWORK' AND hm.is_core AND hm.stack = m.stack
+                   JOIN node_skill_cooc xc ON xc.a_id = a.node_id AND xc.b_id = h.node_id
+                   WHERE xc.npmi >= ${SUBSTITUTE_NPMI_MIN}))
       ORDER BY a.unlocks DESC, ns.weight DESC
       LIMIT ${REC_TOP_N}
     `);
@@ -161,6 +207,11 @@ export class RecommendationService {
       JOIN cdf d ON d.node_id = c.node_id
       JOIN nodes n ON n.id = c.node_id
       WHERE d.cohort_df::float8 / ${cohortSize} > ${REC_GENERIC_DF_SHARE}
+        -- ADR-0010: only generic skills may be shamed as redundant, so a
+        -- ubiquitous-in-cohort core tech (React, Swift) is never flagged.
+        AND EXISTS (
+          SELECT 1 FROM node_tech_meta m WHERE m.node_id = c.node_id AND m.generic
+        )
       ORDER BY d.cohort_df DESC
     `);
 
