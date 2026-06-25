@@ -29,6 +29,8 @@ export default class TypeBuilder {
     
     CandidateSkills: ClassViewer<'CandidateSkills', "required" | "optional">;
     
+    ClassifiedSkill: ClassViewer<'ClassifiedSkill', "nodeId" | "category" | "stack" | "isCore" | "generic">;
+    
     ExtractedCandidate: ClassViewer<'ExtractedCandidate', "role" | "seniority" | "skills" | "experienceYears" | "englishLevel">;
     
     ExtractedLocation: ClassViewer<'ExtractedLocation', "city" | "country">;
@@ -36,6 +38,8 @@ export default class TypeBuilder {
     ExtractedVacancy: ClassViewer<'ExtractedVacancy', "role" | "isTech" | "seniority" | "skills" | "experienceYears" | "salary" | "englishLevel" | "employmentType" | "workFormat" | "locations" | "domain" | "engagementType" | "companyName" | "hasTestAssignment" | "hasReservation">;
     
     Salary: ClassViewer<'Salary', "min" | "max" | "currency">;
+    
+    SkillToClassify: ClassViewer<'SkillToClassify', "nodeId" | "name">;
     
     Skills: ClassViewer<'Skills', "required" | "optional">;
     
@@ -50,22 +54,28 @@ export default class TypeBuilder {
     
     Seniority: EnumViewer<'Seniority', "INTERN" | "JUNIOR" | "MIDDLE" | "SENIOR" | "LEAD" | "PRINCIPAL" | "C_LEVEL">;
     
+    SkillCategory: EnumViewer<'SkillCategory', "LANGUAGE" | "FRAMEWORK" | "LIBRARY" | "DATASTORE" | "CLOUD" | "TOOL" | "PRACTICE" | "SOFT">;
+    
     WorkFormat: EnumViewer<'WorkFormat', "REMOTE" | "OFFICE" | "HYBRID">;
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "CandidateSkills","ExtractedCandidate","ExtractedLocation","ExtractedVacancy","Salary","Skills",
+            "CandidateSkills","ClassifiedSkill","ExtractedCandidate","ExtractedLocation","ExtractedVacancy","Salary","SkillToClassify","Skills",
           ]),
           enums: new Set([
-            "Currency","EmploymentType","EngagementType","EnglishLevel","Seniority","WorkFormat",
+            "Currency","EmploymentType","EngagementType","EnglishLevel","Seniority","SkillCategory","WorkFormat",
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
         
         this.CandidateSkills = this.tb.classViewer("CandidateSkills", [
           "required","optional",
+        ]);
+        
+        this.ClassifiedSkill = this.tb.classViewer("ClassifiedSkill", [
+          "nodeId","category","stack","isCore","generic",
         ]);
         
         this.ExtractedCandidate = this.tb.classViewer("ExtractedCandidate", [
@@ -82,6 +92,10 @@ export default class TypeBuilder {
         
         this.Salary = this.tb.classViewer("Salary", [
           "min","max","currency",
+        ]);
+        
+        this.SkillToClassify = this.tb.classViewer("SkillToClassify", [
+          "nodeId","name",
         ]);
         
         this.Skills = this.tb.classViewer("Skills", [
@@ -107,6 +121,10 @@ export default class TypeBuilder {
         
         this.Seniority = this.tb.enumViewer("Seniority", [
           "INTERN","JUNIOR","MIDDLE","SENIOR","LEAD","PRINCIPAL","C_LEVEL",
+        ]);
+        
+        this.SkillCategory = this.tb.enumViewer("SkillCategory", [
+          "LANGUAGE","FRAMEWORK","LIBRARY","DATASTORE","CLOUD","TOOL","PRACTICE","SOFT",
         ]);
         
         this.WorkFormat = this.tb.enumViewer("WorkFormat", [

@@ -1,4 +1,5 @@
 import type { RecommendItem, RecommendResponse } from "@/lib/api/ranking";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
 // "What to learn next" — horizontal bars scaled to how many cohort vacancies
 // each missing skill would unlock (marginal counterfactual, see ADR-0009). Bars
@@ -25,7 +26,19 @@ export function SkillRecommendations({ rec }: { rec: RecommendResponse }) {
         {rec.cohortSize > 0 ? (
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-text-muted">
-              <span>покриття ніші</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help underline decoration-dotted decoration-from-font underline-offset-2">
+                    покриття ніші
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  «ніша» — вакансії твоєї ролі та суміжного рівня сеньорності. цей
+                  відсоток показує, скільки з них твій CV уже закриває на GOOD+
+                  (≥50% зваженого за рідкістю покриття обовʼязкових скілів). скіли
+                  нижче піднімають його найшвидше.
+                </TooltipContent>
+              </Tooltip>
               <span className="text-accent">{rec.coveragePct}%</span>
             </div>
             <div className="h-1.5 w-full bg-border">
