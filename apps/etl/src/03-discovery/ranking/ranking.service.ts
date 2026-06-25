@@ -245,9 +245,13 @@ export class RankingService {
     const tierCond =
       minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
 
-    const ranked = await this.db.execute<{ id: string; relevance: number }>(sql`
+    const ranked = await this.db.execute<{
+      id: string;
+      relevance: number;
+      on_stack: boolean;
+    }>(sql`
       WITH ${rankedCte}
-      SELECT v.id::text AS id, rk.relevance
+      SELECT v.id::text AS id, rk.relevance, rk.on_stack
       FROM ranked rk
       JOIN vacancies v ON v.id = rk.id
       WHERE ${where}${tierCond}
@@ -275,7 +279,7 @@ export class RankingService {
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: { id: string; relevance: number }[],
+    rows: { id: string; relevance: number; on_stack: boolean }[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
@@ -347,6 +351,7 @@ export class RankingService {
       items.push({
         vacancy,
         relevance: row.relevance,
+        onStack: row.on_stack,
         fit: {
           tier: fitTierWeighted(matchedRequiredW, requiredW, matchedAllW, allW),
           matchedRequired,
