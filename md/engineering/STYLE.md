@@ -21,6 +21,9 @@ Surface-level rules. Lint enforces most; the rest live here.
 | DB column | snake_case | `created_at` |
 | Foreign key column | `<referenced>_id` | `source_id` |
 
+### No Cyrillic outside UI copy
+**MUST: code, identifiers, comments, commit messages, branch names, doc filenames are ASCII/English.** The only place Cyrillic belongs is user-facing web text (rendered UI strings, e.g. `"Майже там"`). Name the symbol in English (`nearMissLabel`), put the Ukrainian in its value.
+
 ## TypeScript
 
 ### No `any` ever

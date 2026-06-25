@@ -6,12 +6,17 @@ import Link from "next/link";
 import { Logo } from "@/ui";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
-import { rankingApi, type MatchResponse } from "@/lib/api/ranking";
+import {
+  rankingApi,
+  type MatchResponse,
+  type RecommendResponse,
+} from "@/lib/api/ranking";
 import { nonEmpty, toCsv } from "@/lib/utils";
 import { CandidateProfile } from "./CandidateProfile";
 import { CvSubscribeButton } from "./CvSubscribeButton";
 import { MatchFilters } from "./MatchFilters";
 import { MatchCard } from "./MatchCard";
+import { SkillRecommendations } from "./SkillRecommendations";
 import { FRESH_DAYS, NO_FILTERS, type Filters } from "./filter-model";
 import { SAMPLES } from "./samples";
 
@@ -26,6 +31,7 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<MatchResponse | null>(initial);
+  const [rec, setRec] = useState<RecommendResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,12 +83,24 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
     }
   }, []);
 
+  // Recommendations depend only on the candidate (role + skills define the
+  // cohort), not the page filters — fetch once per uploaded CV. Non-critical:
+  // the page works without it, so a failure just hides the block.
+  const loadRec = useCallback(async (candidateId: string) => {
+    try {
+      setRec(await cvApi.recommendations(candidateId));
+    } catch {
+      setRec(null);
+    }
+  }, []);
+
   // Changing the candidate or any filter resets to page 1 (the old page may not
   // exist in the new, smaller result set).
   const runSample = useCallback(
     (index: number) => {
       const src: Source = { kind: "sample", index };
       setSource(src);
+      setRec(null); // samples aren't stored candidates — no recommendations
       setPage(1);
       void run(src, filters, 1);
     },
@@ -99,6 +117,7 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         setSource(src);
         setPage(1);
         await run(src, filters, 1);
+        void loadRec(info.candidateId);
       } catch (e) {
         setError(msg(e));
         setData(null);
@@ -106,7 +125,7 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         setUploading(false);
       }
     },
-    [run, filters],
+    [run, filters, loadRec],
   );
 
   // Apply a partial filter change, reset to page 1, and re-rank the active source.
@@ -278,7 +297,7 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
 
           {/* CV profile: right rail on xl+, first thing when stacked */}
           {data ? (
-            <div className="order-first xl:order-none xl:sticky xl:top-24">
+            <div className="order-first flex flex-col gap-4 xl:order-none xl:sticky xl:top-24">
               <CandidateProfile
                 title={profileTitle}
                 role={source.kind === "cv" ? source.info.role : null}
@@ -287,6 +306,10 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
                 unmatched={data.resolved.unmatched}
                 totalVacancies={data.total}
               />
+              {/* CV source only — samples have no stored candidate to recommend against. */}
+              {source.kind === "cv" && rec ? (
+                <SkillRecommendations rec={rec} />
+              ) : null}
             </div>
           ) : null}
         </div>

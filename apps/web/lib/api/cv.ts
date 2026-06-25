@@ -1,5 +1,10 @@
 import { apiBase, apiGet, buildQs } from "./client";
-import type { FitTier, MatchResponse, SkillRef } from "./ranking";
+import type {
+  FitTier,
+  MatchResponse,
+  RecommendResponse,
+  SkillRef,
+} from "./ranking";
 
 // CV ingestion + stored-candidate matching — mirrors apps/etl .../cv/.
 
@@ -43,4 +48,7 @@ export const cvApi = {
 
   matches: (id: string, query: CvMatchQuery = {}) =>
     apiGet<MatchResponse>(`/cv/${id}/matches${buildQs(query)}`),
+
+  recommendations: (id: string) =>
+    apiGet<RecommendResponse>(`/cv/${id}/recommendations`),
 };

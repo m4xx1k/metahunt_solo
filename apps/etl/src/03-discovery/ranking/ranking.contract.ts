@@ -93,3 +93,28 @@ export function fitTierWeighted(
   if (coverage >= FIT_GOOD_MIN) return "GOOD";
   return "STRETCH";
 }
+
+// "What to learn next" recommendations — see ADR-0009. A marginal counterfactual
+// over the candidate's role cohort: a missing required skill that crosses a
+// near-miss vacancy into >= GOOD coverage "unlocks" it.
+export const REC_TOP_N = 8;
+export const REC_DF_FLOOR = 5; // a skill must be required in >= this many cohort vacancies
+export const REC_GENERIC_DF_SHARE = 0.6; // drop "everyone has it" skills above this cohort share
+export const REC_MIN_COHORT = 20; // below this the cohort is too small for a stable list
+
+export interface RecommendItem {
+  nodeId: string;
+  name: string;
+  unlocks: number; // cohort vacancies crossing into >= GOOD when this skill is added
+  toStrong: number; // subset crossing into STRONG
+  idf: number; // IDF weight from node_stats
+  leverage: boolean; // rarer-than-average among the recommendations
+}
+
+export interface RecommendResponse {
+  cohortSize: number;
+  coveragePct: number; // % of cohort already in GOOD+STRONG
+  reducedState: boolean; // cohort too small for a stable list — show the gauge only
+  items: RecommendItem[];
+  redundant: string[]; // candidate skills generic in this cohort ("barely move the needle")
+}
