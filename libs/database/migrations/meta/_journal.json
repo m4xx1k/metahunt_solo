@@ -155,6 +155,13 @@
       "when": 1782236672961,
       "tag": "0021_add_subscription_candidate_id",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1782413325625,
+      "tag": "0022_volatile_famine",
+      "breakpoints": true
     }
   ]
 }

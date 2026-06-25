@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  CandidateSkills,  Currency,  EmploymentType,  EngagementType,  EnglishLevel,  ExtractedCandidate,  ExtractedLocation,  ExtractedVacancy,  Salary,  Seniority,  Skills,  WorkFormat } from "./types"
+import type {  CandidateSkills,  ClassifiedSkill,  Currency,  EmploymentType,  EngagementType,  EnglishLevel,  ExtractedCandidate,  ExtractedLocation,  ExtractedVacancy,  Salary,  Seniority,  SkillCategory,  SkillToClassify,  Skills,  WorkFormat } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -39,6 +39,13 @@ export namespace partial_types {
     export interface CandidateSkills {
       required: string[]
       optional: string[]
+    }
+    export interface ClassifiedSkill {
+      nodeId?: string | null
+      category?: types.SkillCategory | null
+      stack?: string | null
+      isCore?: boolean | null
+      generic?: boolean | null
     }
     export interface ExtractedCandidate {
       role?: string | null
@@ -72,6 +79,10 @@ export namespace partial_types {
       min?: number | null
       max?: number | null
       currency?: types.Currency | null
+    }
+    export interface SkillToClassify {
+      nodeId?: string | null
+      name?: string | null
     }
     export interface Skills {
       required: string[]

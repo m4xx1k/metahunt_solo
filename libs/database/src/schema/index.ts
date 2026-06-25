@@ -9,6 +9,8 @@ export * from './vacancies';
 export * from './vacancy-nodes';
 export * from './tracks';
 export * from './node-stats';
+export * from './node-tech-meta';
+export * from './node-skill-cooc';
 export * from './candidates';
 export * from './unique-vacancies';
 export * from './users';

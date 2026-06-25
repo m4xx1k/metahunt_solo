@@ -118,3 +118,49 @@ export interface RecommendResponse {
   items: RecommendItem[];
   redundant: string[]; // candidate skills generic in this cohort ("barely move the needle")
 }
+
+// Skill metadata for the recommendation stack-gates — see ADR-0010 and
+// md/journal/migrations/skill-metadata-recommendations.md. Populated in
+// `node_tech_meta` by the classify-skills backfill (BAML ClassifySkills).
+//
+// TECH_CATEGORIES mirrors the `skill_category` pgEnum (DB-enforced). TECH_STACKS
+// is the `stack` validation set — `stack` is a plain text column, so extending
+// this array later needs NO DB migration (the gates just gain a new stack value).
+export const TECH_CATEGORIES = [
+  "LANGUAGE",
+  "FRAMEWORK",
+  "LIBRARY",
+  "DATASTORE",
+  "CLOUD",
+  "TOOL",
+  "PRACTICE",
+  "SOFT",
+] as const;
+export const TECH_STACKS = [
+  "node",
+  "python",
+  "java",
+  "dotnet",
+  "go",
+  "php",
+  "ruby",
+  "cpp",
+  "rust",
+  "frontend",
+  "mobile-ios",
+  "mobile-android",
+  "mobile-cross",
+  "qa",
+  "data",
+  "devops",
+  "blockchain",
+  "game",
+] as const;
+export type SkillCategory = (typeof TECH_CATEGORIES)[number];
+export interface NodeTechMeta {
+  nodeId: string;
+  category: SkillCategory;
+  stack: string | null;
+  isCore: boolean;
+  generic: boolean;
+}

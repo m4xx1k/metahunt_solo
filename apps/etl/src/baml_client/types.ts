@@ -87,6 +87,17 @@ export enum Seniority {
   C_LEVEL = "C_LEVEL",
 }
 
+export enum SkillCategory {
+  LANGUAGE = "LANGUAGE",
+  FRAMEWORK = "FRAMEWORK",
+  LIBRARY = "LIBRARY",
+  DATASTORE = "DATASTORE",
+  CLOUD = "CLOUD",
+  TOOL = "TOOL",
+  PRACTICE = "PRACTICE",
+  SOFT = "SOFT",
+}
+
 export enum WorkFormat {
   REMOTE = "REMOTE",
   OFFICE = "OFFICE",
@@ -96,6 +107,15 @@ export enum WorkFormat {
 export interface CandidateSkills {
   required: string[]
   optional: string[]
+  
+}
+
+export interface ClassifiedSkill {
+  nodeId: string
+  category: SkillCategory
+  stack?: string | null
+  isCore: boolean
+  generic: boolean
   
 }
 
@@ -137,6 +157,12 @@ export interface Salary {
   min?: number | null
   max?: number | null
   currency?: Currency | null
+  
+}
+
+export interface SkillToClassify {
+  nodeId: string
+  name: string
   
 }
 
