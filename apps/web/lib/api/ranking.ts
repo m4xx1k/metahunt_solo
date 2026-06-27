@@ -22,6 +22,7 @@ export type FitTier = (typeof FIT_TIER_VALUES)[number];
 export interface RankedVacancy {
   vacancy: VacancyDto;
   relevance: number;
+  onStack: boolean; // false = off-stack, ranked below in-stack matches
   fit: { tier: FitTier; matchedRequired: number; requiredTotal: number };
   diff: { have: SkillRef[]; missing: SkillRef[]; bonus: SkillRef[] };
 }

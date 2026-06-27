@@ -1,6 +1,7 @@
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import { SkillChip, type SkillTone } from "@/entities/skill/SkillChip";
 import type { FitTier, RankedVacancy, SkillRef } from "@/lib/api/ranking";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
 const TIER: Record<FitTier, { cls: string; label: string }> = {
   STRONG: { cls: "border-success bg-success text-bg", label: "strong fit" },
@@ -21,6 +22,19 @@ export function MatchCard({ item, rank }: { item: RankedVacancy; rank: number })
         <span className={`border px-2 py-[2px] font-bold uppercase tracking-wider ${t.cls}`}>
           {t.label}
         </span>
+        {!item.onStack ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
+                інший стек
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              вакансія для іншого стеку, ніж твій основний — тому вона нижче за
+              вакансії твого стеку (за окремими скілами все одно може підходити).
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
         <span className="text-text-secondary">
           required <span className="text-text-primary">{item.fit.matchedRequired}/{item.fit.requiredTotal}</span>
         </span>

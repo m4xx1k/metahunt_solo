@@ -87,7 +87,7 @@ not cross-stage DI — which keeps each stage independently extractable later.
 
 - `DatabaseModule` — `@Global()`, provides the `DRIZZLE` token (typed Drizzle instance).
 - `drizzle.provider.ts` — builds `pg` pool from `DATABASE_URL` and returns `drizzle(pool, { schema })`.
-- `schema/*` — tables: `sources`, `rss_ingests`, `rss_records` (bronze); `companies`, `company_identifiers`, `nodes`, `node_aliases`, `vacancies`, `vacancy_nodes` (silver); `users` (waitlist). Enums: `seniority`, `work_format`, `employment_type`, `english_level`, `currency`, `engagement_type`, `node_type`, `node_status`.
+- `schema/*` — tables: `sources`, `rss_ingests`, `rss_records` (bronze); `companies`, `company_identifiers`, `nodes`, `node_aliases`, `vacancies`, `vacancy_nodes` (silver); `node_tech_meta` (LLM-classified skill metadata category/stack/is_core/generic — gates reverse-ATS recs + ranking demote, ADR-0010); `users` (waitlist). Materialized views: `node_stats` (IDF weights), `node_skill_cooc` (skill↔skill NPMI co-occurrence). Enums: `seniority`, `work_format`, `employment_type`, `english_level`, `currency`, `engagement_type`, `node_type`, `node_status`, `skill_category`.
 - `migrations/*` + `migrations/meta/*` — drizzle SQL + snapshots/journal.
 - `seeds/*` — initial reference seed (`sources`: Djinni, DOU).
 

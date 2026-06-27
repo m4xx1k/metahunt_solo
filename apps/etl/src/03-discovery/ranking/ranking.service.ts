@@ -174,6 +174,15 @@ export class RankingService {
     // ALL listed skills (relevance / all_w), never a free GOOD.
     const rankedCte = sql`
       cand(node_id) AS (VALUES ${cand}),
+      -- candidate stack-set (the stacks they hold a core skill in) and, per
+      -- scored vacancy, whether its REQUIRED core tech is in-stack. Drives the
+      -- soft role-fit demote — see ADR-0010 / reverse-ats v2. Empty stack-set
+      -- (no classified core skills) => on_stack is uniformly true => no reorder.
+      css AS (
+        SELECT DISTINCT m.stack FROM cand c
+        JOIN node_tech_meta m ON m.node_id = c.node_id
+        WHERE m.is_core AND m.stack IS NOT NULL
+      ),
       scored AS (
         SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance,
                count(*) FILTER (WHERE vn.is_required) AS matched_required,
@@ -194,6 +203,15 @@ export class RankingService {
         WHERE vn.vacancy_id IN (SELECT id FROM scored)
         GROUP BY vn.vacancy_id
       ),
+      vstack AS (
+        SELECT vn.vacancy_id AS id,
+               bool_or(m.is_core AND m.stack IS NOT NULL) AS has_concrete_core,
+               bool_or(m.is_core AND m.stack IN (SELECT stack FROM css)) AS has_instack_core
+        FROM vacancy_nodes vn
+        JOIN node_tech_meta m ON m.node_id = vn.node_id AND vn.is_required
+        WHERE vn.vacancy_id IN (SELECT id FROM scored)
+        GROUP BY vn.vacancy_id
+      ),
       ranked AS (
         SELECT s.id, s.relevance,
                CASE
@@ -206,9 +224,20 @@ export class RankingService {
                  WHEN r.required_total_w > 0 AND s.matched_required_w / r.required_total_w >= ${FIT_STRONG_MIN} THEN 2
                  WHEN r.required_total_w > 0 AND s.matched_required_w / r.required_total_w >= ${FIT_GOOD_MIN} THEN 1
                  ELSE 0
-               END AS tier_bucket
+               END AS tier_bucket,
+               -- on-stack unless the vacancy positively belongs to another stack
+               -- (requires concrete-stack core tech, none of it in the candidate's
+               -- stack-set). Stack-neutral / unclassified vacancies stay on-stack.
+               -- Gated on a non-empty stack-set so it's a no-op without metadata.
+               CASE
+                 WHEN NOT EXISTS (SELECT 1 FROM css) THEN true
+                 WHEN COALESCE(vs.has_concrete_core, false)
+                      AND NOT COALESCE(vs.has_instack_core, false) THEN false
+                 ELSE true
+               END AS on_stack
         FROM scored s
         LEFT JOIN req r ON r.id = s.id
+        LEFT JOIN vstack vs ON vs.id = s.id
       )`;
 
     const minBucket =
@@ -216,13 +245,17 @@ export class RankingService {
     const tierCond =
       minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
 
-    const ranked = await this.db.execute<{ id: string; relevance: number }>(sql`
+    const ranked = await this.db.execute<{
+      id: string;
+      relevance: number;
+      on_stack: boolean;
+    }>(sql`
       WITH ${rankedCte}
-      SELECT v.id::text AS id, rk.relevance
+      SELECT v.id::text AS id, rk.relevance, rk.on_stack
       FROM ranked rk
       JOIN vacancies v ON v.id = rk.id
       WHERE ${where}${tierCond}
-      ORDER BY rk.tier_bucket DESC, rk.relevance DESC, v.id
+      ORDER BY rk.on_stack DESC, rk.tier_bucket DESC, rk.relevance DESC, v.id
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
@@ -246,7 +279,7 @@ export class RankingService {
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: { id: string; relevance: number }[],
+    rows: { id: string; relevance: number; on_stack: boolean }[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
@@ -318,6 +351,7 @@ export class RankingService {
       items.push({
         vacancy,
         relevance: row.relevance,
+        onStack: row.on_stack,
         fit: {
           tier: fitTierWeighted(matchedRequiredW, requiredW, matchedAllW, allW),
           matchedRequired,

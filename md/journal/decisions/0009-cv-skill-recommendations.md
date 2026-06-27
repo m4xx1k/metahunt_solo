@@ -3,6 +3,7 @@
 **Status:** accepted
 **Date:** 2026-06-23
 **Context (in time):** reverse-ATS (ADR-0006) is live; this extends it.
+**Extended by:** ADR-0010 (skill-metadata stack gates that filter this engine's output).
 
 ## Context
 

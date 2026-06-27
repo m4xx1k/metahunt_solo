@@ -39,6 +39,7 @@ export interface SkillDiff {
 export interface RankedVacancy {
   vacancy: VacancyDto;
   relevance: number; // Σ weight over overlap — the sort key
+  onStack: boolean; // vacancy's required core tech is in the candidate's stack-set (ADR-0010 / v2 demote)
   fit: FitInfo;
   diff: SkillDiff;
 }

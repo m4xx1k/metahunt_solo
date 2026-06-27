@@ -1,7 +1,15 @@
 # Skill-metadata recommendations — implementation spec
 
-Status: **planned** (not started). Derived from the research in
-[`skill-weighting-research.md`](skill-weighting-research.md) (verdict = approach E).
+Status: ✅ **DONE — shipped & live on prod 2026-06-25** (PR #56, squash `9632b47`,
+branch `feat/recs-skill-metadata`). Shipped v1 = categorical gates (C) + co-occurrence
+substitute gate; the tiered-weight (E's IDF replacement) was deferred — ranking/IDF
+untouched. Migration 0022 (`skill_category` enum + `node_tech_meta` + `node_skill_cooc`)
+auto-applied via Railway preDeploy; `node_tech_meta` backfilled 1228 rows (TSV, 1216/1216
+verified skills). Gates in `recommendation.service.ts`; constants in `ranking.contract.ts`;
+governed by ADR-0010. Follow-on: ranking off-stack soft-demote reused this metadata
+(`feat/reverse-ats-v2-role-fit`). The spec below is the as-built plan (kept for reference).
+Derived from the research in [`skill-weighting-research.md`](skill-weighting-research.md)
+(verdict = approach E).
 
 ## Branch plan (decided)
 1. **First merge `feat/cv-skill-recommendations` → `main`** via PR (it's a finished feature +

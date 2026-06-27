@@ -57,6 +57,7 @@ function matchResponse(items: VacancyDto[], total = items.length): MatchResponse
     items: items.map((vacancy) => ({
       vacancy,
       relevance: 1,
+      onStack: true,
       fit: { tier: "STRONG", matchedRequired: 1, requiredTotal: 1 },
       diff: { have: [], missing: [], bonus: [] },
     })),

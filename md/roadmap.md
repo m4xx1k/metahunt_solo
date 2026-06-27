@@ -13,6 +13,8 @@ Stage 05 closed 2026-05-08 with the silver pipeline stable; Stage 06 has two thr
 
 **(2) Operator surface.** Read-only sidebar-driven dashboard inside `apps/web` (KPI strip · sources health · taxonomy coverage + queue) so pipeline + curation are observable without `psql`. **P1–P3 + polish shipped 2026-05-09** ([`operator-dashboard`](./journal/migrations/_done/operator-dashboard.md)). Builds atop the Stage 05 silver feed; the taxonomy SKILL backlog is visible only because Stage 05 wired `taxonomy.service.getCoverage()`.
 
+**(3) Candidate-facing matching (reverse-ATS).** CV → ranked vacancies + "що вчити далі" recommendations ([`reverse-ats`](./journal/migrations/reverse-ats.md), ADR-0006/0009). **2026-06-25:** recommendations gated by LLM skill metadata (`node_tech_meta`/`node_skill_cooc`, ADR-0010) and ranking soft-demotes off-stack vacancies — IDF/`node_stats` untouched ([`_done/skill-metadata-recommendations.md`](./journal/migrations/_done/skill-metadata-recommendations.md)). Deferred: role-fit blend (Phase 3, needs click-data); leadership-role extraction tuning. Plan: `.scratch/reverse-ats-v2`.
+
 **Trackers:**
 - [`journal/migrations/_done/operator-dashboard.md`](./journal/migrations/_done/operator-dashboard.md) — done 2026-05-09
 - [`journal/migrations/vacancy-lineage.md`](./journal/migrations/vacancy-lineage.md) — public drill-down (vacancy → record → ingest); spec only, not started

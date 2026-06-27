@@ -7,7 +7,12 @@ Ranking-quality pass landed (smoothed IDF + Fit-first sort + real filters — se
 **Branch:** `feat/reverse-ats`
 **Sits atop:** ADR-0006 (skills are a ranking signal, not a filter), taxonomy-navigation, semantic-dedup
 **Date:** 2026-06-03 (rev 2026-06-06: scoring runs in SQL over a `node_stats`
-materialized view · rev 2026-06-07: ranking-quality pass — *Quality pass* §)
+materialized view · rev 2026-06-07: ranking-quality pass — *Quality pass* §
+· rev 2026-06-25: **stack-fit soft-demote** — `rankByRefs` now sorts
+`on_stack DESC` first, sinking off-stack vacancies (required core tech outside
+the candidate's stack-set per `node_tech_meta`) below in-stack ones, soft not
+filter; web `MatchCard` shows an «інший стек» badge. IDF/`node_stats` unchanged.
+Recommendations gated by the same metadata — ADR-0010. v2 plan: `.scratch/reverse-ats-v2`)
 
 ## Problem
 
