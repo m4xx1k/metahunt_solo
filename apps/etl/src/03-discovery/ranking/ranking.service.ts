@@ -230,9 +230,11 @@ export class RankingService {
       id: string;
       relevance: number;
       on_stack: boolean;
+      total: number;
     }>(sql`
       WITH ${rankedCte}
-      SELECT v.id::text AS id, rk.relevance, rk.on_stack
+      SELECT v.id::text AS id, rk.relevance, rk.on_stack,
+             (count(*) OVER ())::int AS total
       FROM ranked rk
       JOIN vacancies v ON v.id = rk.id
       WHERE ${where}${tierCond}
@@ -241,14 +243,20 @@ export class RankingService {
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
-    const totalRes = await this.db.execute<{ count: number }>(sql`
-      WITH ${rankedCte}
-      SELECT count(*)::int AS count
-      FROM ranked rk
-      JOIN vacancies v ON v.id = rk.id
-      WHERE ${where}${tierCond}
-    `);
-    const total = totalRes.rows[0]?.count ?? 0;
+    // count(*) OVER () rides the page query — no second pass in the common case.
+    // An empty page (all filtered out, or OFFSET past the end) returns no row
+    // and thus no count, so fall back to a dedicated count there.
+    let total = ranked.rows[0]?.total ?? 0;
+    if (ranked.rows.length === 0) {
+      const totalRes = await this.db.execute<{ count: number }>(sql`
+        WITH ${rankedCte}
+        SELECT count(*)::int AS count
+        FROM ranked rk
+        JOIN vacancies v ON v.id = rk.id
+        WHERE ${where}${tierCond}
+      `);
+      total = totalRes.rows[0]?.count ?? 0;
+    }
 
     const items = await this.buildItems(
       ranked.rows,
