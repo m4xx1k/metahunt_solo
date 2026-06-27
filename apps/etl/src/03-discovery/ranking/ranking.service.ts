@@ -163,81 +163,62 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    // Shared CTE: per-vacancy relevance + tier_bucket. Both the page query and
-    // the count query build on `ranked`, so the Fit-tier filter (which reads
-    // the computed bucket, not a vacancy column) applies identically to both.
-    // tier_bucket mirrors fitTierWeighted: STRONG=2, GOOD=1, STRETCH=0 — the
-    // primary sort key. Coverage is IDF-WEIGHTED (Σ IDF(matched req) / Σ IDF(all
-    // req)), so matching trivial low-IDF required skills can't inflate the tier
-    // and a tiny required set no longer auto-hits 100%; relevance (Σ IDF) only
-    // orders within a tier. No required skills tagged → weighted coverage over
-    // ALL listed skills (relevance / all_w), never a free GOOD.
+    // Per-vacancy relevance + tier_bucket (mirrors fitTierWeighted: IDF-weighted
+    // required coverage; STRONG=2/GOOD=1/STRETCH=0). Shared by page + count query.
     const rankedCte = sql`
       cand(node_id) AS (VALUES ${cand}),
-      -- candidate stack-set (the stacks they hold a core skill in) and, per
-      -- scored vacancy, whether its REQUIRED core tech is in-stack. Drives the
-      -- soft role-fit demote — see ADR-0010 / reverse-ats v2. Empty stack-set
-      -- (no classified core skills) => on_stack is uniformly true => no reorder.
+      -- candidate stack-set; empty => on_stack uniformly true (no-op). ADR-0010.
       css AS (
         SELECT DISTINCT m.stack FROM cand c
         JOIN node_tech_meta m ON m.node_id = c.node_id
         WHERE m.is_core AND m.stack IS NOT NULL
       ),
-      scored AS (
-        SELECT vn.vacancy_id AS id, SUM(ns.weight)::float8 AS relevance,
-               count(*) FILTER (WHERE vn.is_required) AS matched_required,
-               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS matched_required_w
+      -- vacancies worth scoring: overlap probe (vacancy_nodes.node_id index).
+      ov AS (
+        SELECT DISTINCT vn.vacancy_id AS id
         FROM vacancy_nodes vn
         JOIN cand c ON c.node_id = vn.node_id
-        JOIN node_stats ns ON ns.node_id = vn.node_id
-        GROUP BY vn.vacancy_id
       ),
-      req AS (
+      -- one pass per scored vacancy: relevance + weighted denominators + stack
+      -- flags. node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
+      agg AS (
         SELECT vn.vacancy_id AS id,
+               SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
+               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND vn.is_required), 0)::float8 AS matched_required_w,
                count(*) FILTER (WHERE vn.is_required) AS required_total,
                COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS required_total_w,
-               COALESCE(SUM(ns.weight), 0)::float8 AS all_w
-        FROM vacancy_nodes vn
-        JOIN nodes n ON n.id = vn.node_id AND n.status <> 'HIDDEN'
+               COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
+               bool_or(tm.is_core AND vn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
+               bool_or(tm.is_core AND vn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
+        FROM ov
+        JOIN vacancy_nodes vn ON vn.vacancy_id = ov.id
         JOIN node_stats ns ON ns.node_id = vn.node_id
-        WHERE vn.vacancy_id IN (SELECT id FROM scored)
-        GROUP BY vn.vacancy_id
-      ),
-      vstack AS (
-        SELECT vn.vacancy_id AS id,
-               bool_or(m.is_core AND m.stack IS NOT NULL) AS has_concrete_core,
-               bool_or(m.is_core AND m.stack IN (SELECT stack FROM css)) AS has_instack_core
-        FROM vacancy_nodes vn
-        JOIN node_tech_meta m ON m.node_id = vn.node_id AND vn.is_required
-        WHERE vn.vacancy_id IN (SELECT id FROM scored)
+        LEFT JOIN cand c ON c.node_id = vn.node_id
+        LEFT JOIN node_tech_meta tm ON tm.node_id = vn.node_id
         GROUP BY vn.vacancy_id
       ),
       ranked AS (
-        SELECT s.id, s.relevance,
+        SELECT id, relevance,
                CASE
-                 WHEN COALESCE(r.required_total, 0) = 0 THEN
+                 WHEN required_total = 0 THEN
                    CASE
-                     WHEN r.all_w > 0 AND s.relevance / r.all_w >= ${FIT_STRONG_MIN} THEN 2
-                     WHEN r.all_w > 0 AND s.relevance / r.all_w >= ${FIT_GOOD_MIN} THEN 1
+                     WHEN all_w > 0 AND relevance / all_w >= ${FIT_STRONG_MIN} THEN 2
+                     WHEN all_w > 0 AND relevance / all_w >= ${FIT_GOOD_MIN} THEN 1
                      ELSE 0
                    END
-                 WHEN r.required_total_w > 0 AND s.matched_required_w / r.required_total_w >= ${FIT_STRONG_MIN} THEN 2
-                 WHEN r.required_total_w > 0 AND s.matched_required_w / r.required_total_w >= ${FIT_GOOD_MIN} THEN 1
+                 WHEN required_total_w > 0 AND matched_required_w / required_total_w >= ${FIT_STRONG_MIN} THEN 2
+                 WHEN required_total_w > 0 AND matched_required_w / required_total_w >= ${FIT_GOOD_MIN} THEN 1
                  ELSE 0
                END AS tier_bucket,
-               -- on-stack unless the vacancy positively belongs to another stack
-               -- (requires concrete-stack core tech, none of it in the candidate's
-               -- stack-set). Stack-neutral / unclassified vacancies stay on-stack.
-               -- Gated on a non-empty stack-set so it's a no-op without metadata.
+               -- off-stack only when the vacancy positively belongs to another
+               -- stack (concrete-stack required core, none in css); else on-stack.
                CASE
                  WHEN NOT EXISTS (SELECT 1 FROM css) THEN true
-                 WHEN COALESCE(vs.has_concrete_core, false)
-                      AND NOT COALESCE(vs.has_instack_core, false) THEN false
+                 WHEN COALESCE(has_concrete_core, false)
+                      AND NOT COALESCE(has_instack_core, false) THEN false
                  ELSE true
                END AS on_stack
-        FROM scored s
-        LEFT JOIN req r ON r.id = s.id
-        LEFT JOIN vstack vs ON vs.id = s.id
+        FROM agg
       )`;
 
     const minBucket =
@@ -255,7 +236,8 @@ export class RankingService {
       FROM ranked rk
       JOIN vacancies v ON v.id = rk.id
       WHERE ${where}${tierCond}
-      ORDER BY rk.on_stack DESC, rk.tier_bucket DESC, rk.relevance DESC, v.id
+      -- round so exact-IDF ties break by v.id (raw float-sum order is plan noise).
+      ORDER BY rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
