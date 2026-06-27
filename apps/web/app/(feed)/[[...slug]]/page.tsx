@@ -119,7 +119,9 @@ export default async function TrackPage({
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
     facetsApi.roles(),
     facetsApi.skills(),
-    facetsApi.domains(),
+    // Tolerate a missing /feed/domains during a deploy gap (web can ship before
+    // etl): degrade to an empty domain filter instead of 500-ing the whole feed.
+    facetsApi.domains().catch(() => ({ domains: [] })),
   ]);
 
   // Effective axes: the URL overrides the track's preset per axis.
