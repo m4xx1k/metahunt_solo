@@ -10,7 +10,6 @@ import { FeedService } from "../feed/feed.service";
 import {
   FIT_GOOD_MIN,
   FIT_STRONG_MIN,
-  fitTierWeighted,
   type FitTier,
   type MatchFilters,
   type MatchResponse,
@@ -22,6 +21,8 @@ import {
 // Ordinal of each Fit tier, mirroring the SQL tier_bucket CASE. The minFitTier
 // filter keeps rows with tier_bucket >= the requested tier's ordinal.
 const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRONG: 2 };
+// Inverse of TIER_BUCKET: SQL tier_bucket ordinal → Fit badge (index = bucket).
+const TIER_BY_BUCKET = ["STRETCH", "GOOD", "STRONG"] as const;
 
 const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
 
@@ -230,10 +231,11 @@ export class RankingService {
       id: string;
       relevance: number;
       on_stack: boolean;
+      tier_bucket: number;
       total: number;
     }>(sql`
       WITH ${rankedCte}
-      SELECT v.id::text AS id, rk.relevance, rk.on_stack,
+      SELECT v.id::text AS id, rk.relevance, rk.on_stack, rk.tier_bucket,
              (count(*) OVER ())::int AS total
       FROM ranked rk
       JOIN vacancies v ON v.id = rk.id
@@ -269,7 +271,7 @@ export class RankingService {
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: { id: string; relevance: number; on_stack: boolean }[],
+    rows: { id: string; relevance: number; on_stack: boolean; tier_bucket: number }[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
@@ -310,29 +312,15 @@ export class RankingService {
       const vacancyNodeIds = new Set(vskills.map((s) => s.node_id));
       const have: SkillRef[] = [];
       const missing: SkillRef[] = [];
-      // Counts stay for honest display ("X of Y required"); the *_w weighted
-      // sums drive the badge so it matches the IDF-weighted SQL tier.
+      // Counts feed the "X of Y required" label; the badge is the SQL tier_bucket.
       let requiredTotal = 0;
       let matchedRequired = 0;
-      let requiredW = 0;
-      let matchedRequiredW = 0;
-      let allW = 0;
-      let matchedAllW = 0;
       for (const s of vskills) {
-        const w = s.weight ?? 0;
-        const ref: SkillRef = { id: s.node_id, name: s.name, weight: w };
-        allW += w;
-        if (s.is_required) {
-          requiredTotal += 1;
-          requiredW += w;
-        }
+        const ref: SkillRef = { id: s.node_id, name: s.name, weight: s.weight ?? 0 };
+        if (s.is_required) requiredTotal += 1;
         if (s.in_candidate) {
           have.push(ref);
-          matchedAllW += w;
-          if (s.is_required) {
-            matchedRequired += 1;
-            matchedRequiredW += w;
-          }
+          if (s.is_required) matchedRequired += 1;
         } else if (s.is_required) {
           missing.push(ref);
         }
@@ -343,7 +331,7 @@ export class RankingService {
         relevance: row.relevance,
         onStack: row.on_stack,
         fit: {
-          tier: fitTierWeighted(matchedRequiredW, requiredW, matchedAllW, allW),
+          tier: TIER_BY_BUCKET[row.tier_bucket],
           matchedRequired,
           requiredTotal,
         },
