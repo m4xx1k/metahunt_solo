@@ -36,6 +36,8 @@ export interface FilterState {
   roleIds: string[];
   /** IDs of required (must-have) skills. */
   skillIds: string[];
+  /** IDs of domains to match (OR-combined). */
+  domainIds: string[];
   sourceCode: string | null;
   /** Raw API enum value or null. The widget layer stays string-typed; the
    *  API client narrows it before the request. */
@@ -48,6 +50,7 @@ export interface FilterState {
 export const EMPTY_FILTERS: FilterState = {
   roleIds: [],
   skillIds: [],
+  domainIds: [],
   sourceCode: null,
   seniority: null,
   workFormat: null,
@@ -62,6 +65,7 @@ export interface FiltersApi {
   filters: FilterState;
   toggleRole: (id: string) => void;
   toggleSkill: (id: string) => void;
+  toggleDomain: (id: string) => void;
   setSource: (code: string | null) => void;
   setSeniority: (v: string | null) => void;
   setWorkFormat: (v: string | null) => void;

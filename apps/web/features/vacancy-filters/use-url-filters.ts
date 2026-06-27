@@ -33,6 +33,7 @@ export function useUrlFilters(): UrlFiltersApi {
     return {
       roleIds: readList(searchParams.get("roles")),
       skillIds: readList(searchParams.get("skills")),
+      domainIds: readList(searchParams.get("domains")),
       sourceCode: searchParams.get("source"),
       seniority: searchParams.get("seniority"),
       workFormat: searchParams.get("workFormat"),
@@ -80,6 +81,19 @@ export function useUrlFilters(): UrlFiltersApi {
     [commit, filters.skillIds],
   );
 
+  const toggleDomain = useCallback(
+    (id: string) =>
+      commit((n) => {
+        const current = filters.domainIds;
+        const nextIds = current.includes(id)
+          ? current.filter((d) => d !== id)
+          : [...current, id];
+        if (nextIds.length === 0) n.delete("domains");
+        else n.set("domains", nextIds.join(LIST_SEP));
+      }),
+    [commit, filters.domainIds],
+  );
+
   const setSource = useCallback(
     (code: string | null) =>
       commit((n) => (code ? n.set("source", code) : n.delete("source"))),
@@ -121,6 +135,7 @@ export function useUrlFilters(): UrlFiltersApi {
       commit((n) => {
         n.delete("roles");
         n.delete("skills");
+        n.delete("domains");
         n.delete("source");
         n.delete("seniority");
         n.delete("workFormat");
@@ -133,6 +148,7 @@ export function useUrlFilters(): UrlFiltersApi {
   const activeCount =
     filters.roleIds.length +
     filters.skillIds.length +
+    filters.domainIds.length +
     (filters.sourceCode ? 1 : 0) +
     (filters.seniority ? 1 : 0) +
     (filters.workFormat ? 1 : 0) +
@@ -143,6 +159,7 @@ export function useUrlFilters(): UrlFiltersApi {
     filters,
     toggleRole,
     toggleSkill,
+    toggleDomain,
     setSource,
     setSeniority,
     setWorkFormat,

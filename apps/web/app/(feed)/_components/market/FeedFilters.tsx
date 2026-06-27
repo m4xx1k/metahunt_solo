@@ -45,6 +45,7 @@ export function FeedFilters({
   contextualSkills,
   roleCatalog,
   skillCatalog,
+  domainCatalog,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -59,6 +60,8 @@ export function FeedFilters({
   roleCatalog?: TrackAxis[];
   /** Full verified-skill catalog — search-and-add in the skill facet. */
   skillCatalog?: TrackAxis[];
+  /** Full verified-domain catalog. */
+  domainCatalog?: TrackAxis[];
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   // Role/skill options come from the full /feed catalog (search reaches every
@@ -72,6 +75,11 @@ export function FeedFilters({
     () =>
       (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
     [skillCatalog],
+  );
+  const domainOptions = useMemo<OptionRow[]>(
+    () =>
+      (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
+    [domainCatalog],
   );
   const api = useUrlFilters();
   const router = useRouter();
@@ -116,6 +124,7 @@ export function FeedFilters({
             agg={agg}
             roles={roleOptions}
             skills={skillOptions}
+            domains={domainOptions}
           />
         )}
         <aside className="flex flex-col border border-border bg-bg-card">
@@ -193,8 +202,14 @@ export function FeedFilters({
             activeId={api.filters.workFormat}
             onChange={api.setWorkFormat}
           />
-          {/* Domain MultiSelect slots here once the /feed/domains facet +
-              domainIds list filter land (separate commit). */}
+          <MultiSelect
+            title="domain"
+            options={domainOptions}
+            selected={api.filters.domainIds}
+            onToggle={api.toggleDomain}
+            searchable
+            searchPlaceholder="search domain…"
+          />
           <SourceSection
             sources={agg.sources}
             activeCode={api.filters.sourceCode}

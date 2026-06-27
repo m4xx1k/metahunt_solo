@@ -111,6 +111,7 @@ export default async function TrackPage({
     { skills: contextualSkills },
     { roles: roleCatalog },
     { skills: skillCatalog },
+    { domains: domainCatalog },
   ] = await Promise.all([
     trackSlug
       ? tracksApi.preset(trackSlug)
@@ -118,6 +119,7 @@ export default async function TrackPage({
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
     facetsApi.roles(),
     facetsApi.skills(),
+    facetsApi.domains(),
   ]);
 
   // Effective axes: the URL overrides the track's preset per axis.
@@ -129,6 +131,7 @@ export default async function TrackPage({
     sp.skills,
     preset.skills.map((s) => s.id),
   );
+  const domainIds = axisOr(sp.domains, []);
 
   const sourceId =
     sourceCode != null
@@ -147,6 +150,7 @@ export default async function TrackPage({
           pageSize: PAGE_SIZE,
           roleIds: roleIds.length > 0 ? roleIds : undefined,
           skillIds: skillIds.length > 0 ? skillIds : undefined,
+          domainIds: domainIds.length > 0 ? domainIds : undefined,
           includeOptionalSkills,
           sourceId: sourceId ?? undefined,
           seniority,
@@ -167,6 +171,7 @@ export default async function TrackPage({
   const subscriptionParams: SubscriptionParams = {
     roleIds: roleIds.length > 0 ? roleIds : undefined,
     skillIds: skillIds.length > 0 ? skillIds : undefined,
+    domainIds: domainIds.length > 0 ? domainIds : undefined,
     sourceId: sourceId ?? undefined,
     seniority,
     workFormat,
@@ -194,6 +199,7 @@ export default async function TrackPage({
                 contextualSkills={contextualSkills}
                 roleCatalog={roleCatalog}
                 skillCatalog={skillCatalog}
+                domainCatalog={domainCatalog}
               />
             </div>
             <VacancyList

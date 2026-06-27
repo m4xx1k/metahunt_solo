@@ -17,14 +17,16 @@ export function ActiveFiltersBar({
   agg,
   roles,
   skills,
+  domains,
 }: {
   api: FiltersApi;
   agg: FilterAggregates;
   /** Full role/skill catalogs (facets) — selected ids resolve their label here. */
   roles: OptionRow[];
   skills: OptionRow[];
+  domains: OptionRow[];
 }) {
-  const chips = buildChips(api, agg, roles, skills);
+  const chips = buildChips(api, agg, roles, skills, domains);
 
   return (
     <div
@@ -72,6 +74,7 @@ function buildChips(
   agg: FilterAggregates,
   roles: OptionRow[],
   skills: OptionRow[],
+  domains: OptionRow[],
 ): Chip[] {
   const { filters } = api;
   const chips: Chip[] = [];
@@ -95,6 +98,17 @@ function buildChips(
         label: `skill: ${s.label}`,
         tone: "border-accent text-accent",
         onRemove: () => api.toggleSkill(id),
+      });
+    }
+  }
+  for (const id of filters.domainIds) {
+    const d = domains.find((x) => x.id === id);
+    if (d) {
+      chips.push({
+        key: `domain-${id}`,
+        label: `domain: ${d.label}`,
+        tone: "border-accent text-accent",
+        onRemove: () => api.toggleDomain(id),
       });
     }
   }

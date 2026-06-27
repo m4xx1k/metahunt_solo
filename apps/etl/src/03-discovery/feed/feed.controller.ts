@@ -48,18 +48,21 @@ export class FeedController {
     @Query("roleIds") rawRoleIds?: string | string[],
     @Query("hasDuplicates") rawHasDuplicates?: string,
     @Query("includeOptionalSkills") rawIncludeOptionalSkills?: string,
+    @Query("domainIds") rawDomainIds?: string | string[],
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
     const roleId = rawRoleId?.trim();
     const roleIds = parseIdList(rawRoleIds);
     const skillIds = parseIdList(rawSkillIds);
+    const domainIds = parseIdList(rawDomainIds);
     return this.feed.search({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
       roleId: roleId && roleId.length > 0 ? roleId : undefined,
       roleIds: roleIds.length > 0 ? roleIds : undefined,
       skillIds: skillIds.length > 0 ? skillIds : undefined,
+      domainIds: domainIds.length > 0 ? domainIds : undefined,
       seniority: parseEnum("seniority", rawSeniority, SENIORITY_VALUES),
       workFormat: parseEnum("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
       hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment, { numeric: true }),
@@ -81,6 +84,11 @@ export class FeedController {
   @Get("roles")
   roles() {
     return this.facets.getRoleFacets();
+  }
+
+  @Get("domains")
+  domains() {
+    return this.facets.getDomainFacets();
   }
 
   // Members + "why merged" reasons for one dedup group — backs the feed's

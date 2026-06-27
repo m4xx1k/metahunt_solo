@@ -206,6 +206,8 @@ export interface ListVacanciesQuery {
    */
   roleIds?: string[];
   skillIds?: string[];
+  /** Match ANY of these DOMAIN node ids (OR). Serialized as repeated ?domainIds=. */
+  domainIds?: string[];
   /**
    * Skill-match scope. Omitted/false: a skill matches only when it's a
    * required (must-have) skill on the vacancy. true: nice-to-have skills also

@@ -63,6 +63,8 @@ export interface FeedSearchParams {
   roleId?: string;
   /** Match vacancies whose role is ANY of these ROLE node UUIDs (OR). */
   roleIds?: string[];
+  /** Match vacancies whose domain is ANY of these DOMAIN node UUIDs (OR). */
+  domainIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
   /**
@@ -325,6 +327,10 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   // Multi-role filter (OR): match any of the listed roles.
   if (params.roleIds && params.roleIds.length > 0) {
     conds.push(inArray(vacancies.roleNodeId, params.roleIds));
+  }
+  // Multi-domain filter (OR): match any of the listed domains.
+  if (params.domainIds && params.domainIds.length > 0) {
+    conds.push(inArray(vacancies.domainNodeId, params.domainIds));
   }
   if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
   if (params.workFormat) {
