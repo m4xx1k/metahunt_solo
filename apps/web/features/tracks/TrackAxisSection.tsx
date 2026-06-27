@@ -4,8 +4,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ChangeEvent, useCallback, useState, useTransition } from "react";
 
 import { cn } from "@/lib/utils";
-import { CollapsibleSection } from "./CollapsibleSection";
-import { chipClass } from "./pill";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
+import { chipClass } from "@/ui/inputs/pill";
 
 // One unified facet panel for either axis of an active track (roles or
 // skills). Three zones, top to bottom:

@@ -36,18 +36,15 @@ export function SkillScopeToggle() {
       onClick={toggle}
       aria-pressed={on}
       className={cn(
-        "flex items-center justify-between gap-2 border px-3 py-2 font-mono text-2xs uppercase tracking-wider transition-colors",
+        "inline-flex w-fit items-center gap-1.5 border px-2 py-[2px] font-mono text-2xs uppercase tracking-wide transition-colors",
         isPending && "pointer-events-none opacity-50",
         on
           ? "border-accent-secondary bg-accent-secondary/10 text-accent-secondary"
-          : "border-border bg-bg-card text-text-secondary hover:text-accent-secondary",
+          : "border-border text-text-muted hover:border-text-secondary hover:text-accent-secondary",
       )}
     >
-      <span className="flex items-center gap-2">
-        <span aria-hidden>✛</span>
-        враховувати nice-to-have
-      </span>
-      <span aria-hidden>{on ? "[on]" : "[off]"}</span>
+      <span aria-hidden>{on ? "☑" : "☐"}</span>
+      <span>nice-to-have</span>
     </button>
   );
 }

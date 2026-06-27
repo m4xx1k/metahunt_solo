@@ -103,8 +103,9 @@ export default async function TrackPage({
     notFound();
   }
 
-  // The preset, contextual skills, and full catalogs only matter once a track
-  // is active (the facet panels render only then) — skip them on the index.
+  // The full role/skill catalogs back the sidebar search on BOTH layouts (the
+  // landing MultiSelects and the track facets) — always fetch them (ISR-cached).
+  // The preset + contextual skills only matter once a track is active.
   const [
     preset,
     { skills: contextualSkills },
@@ -115,8 +116,8 @@ export default async function TrackPage({
       ? tracksApi.preset(trackSlug)
       : Promise.resolve({ roles: [], skills: [] }),
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
-    trackSlug ? facetsApi.roles() : Promise.resolve({ roles: [] }),
-    trackSlug ? facetsApi.skills() : Promise.resolve({ skills: [] }),
+    facetsApi.roles(),
+    facetsApi.skills(),
   ]);
 
   // Effective axes: the URL overrides the track's preset per axis.

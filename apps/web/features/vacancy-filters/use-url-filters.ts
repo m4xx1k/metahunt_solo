@@ -11,13 +11,17 @@ import type {
 export type UrlFiltersApi = FiltersApi & { isPending: boolean };
 
 // URL-backed FiltersApi for the landing page. Filter state lives in the
-// query string (?role=&skills=&source=&seniority=&workFormat=&test=
+// query string (?roles=&skills=&source=&seniority=&workFormat=&test=
 // &reservation=) so the server component can read it and fan out the
 // filtered vacancies query — exactly the pattern the old SourceTabs used.
 // Any filter change clears `offset`: a new filter context makes the
-// current page number meaningless.
+// current page number meaningless. roles/skills share the ?roles / ?skills
+// comma-joined array model the server page already reads (see page.tsx).
 
-const SKILLS_SEP = ",";
+const LIST_SEP = ",";
+
+const readList = (raw: string | null): string[] =>
+  raw ? raw.split(LIST_SEP).filter(Boolean) : [];
 
 export function useUrlFilters(): UrlFiltersApi {
   const router = useRouter();
@@ -26,10 +30,9 @@ export function useUrlFilters(): UrlFiltersApi {
   const [isPending, startTransition] = useTransition();
 
   const filters: FilterState = useMemo(() => {
-    const skills = searchParams.get("skills");
     return {
-      roleId: searchParams.get("role"),
-      skillIds: skills ? skills.split(SKILLS_SEP).filter(Boolean) : [],
+      roleIds: readList(searchParams.get("roles")),
+      skillIds: readList(searchParams.get("skills")),
       sourceCode: searchParams.get("source"),
       seniority: searchParams.get("seniority"),
       workFormat: searchParams.get("workFormat"),
@@ -51,10 +54,17 @@ export function useUrlFilters(): UrlFiltersApi {
     [router, pathname, searchParams],
   );
 
-  const setRole = useCallback(
-    (id: string | null) =>
-      commit((n) => (id ? n.set("role", id) : n.delete("role"))),
-    [commit],
+  const toggleRole = useCallback(
+    (id: string) =>
+      commit((n) => {
+        const current = filters.roleIds;
+        const nextIds = current.includes(id)
+          ? current.filter((r) => r !== id)
+          : [...current, id];
+        if (nextIds.length === 0) n.delete("roles");
+        else n.set("roles", nextIds.join(LIST_SEP));
+      }),
+    [commit, filters.roleIds],
   );
 
   const toggleSkill = useCallback(
@@ -65,7 +75,7 @@ export function useUrlFilters(): UrlFiltersApi {
           ? current.filter((s) => s !== id)
           : [...current, id];
         if (nextIds.length === 0) n.delete("skills");
-        else n.set("skills", nextIds.join(SKILLS_SEP));
+        else n.set("skills", nextIds.join(LIST_SEP));
       }),
     [commit, filters.skillIds],
   );
@@ -109,7 +119,7 @@ export function useUrlFilters(): UrlFiltersApi {
   const clear = useCallback(
     () =>
       commit((n) => {
-        n.delete("role");
+        n.delete("roles");
         n.delete("skills");
         n.delete("source");
         n.delete("seniority");
@@ -121,7 +131,7 @@ export function useUrlFilters(): UrlFiltersApi {
   );
 
   const activeCount =
-    (filters.roleId ? 1 : 0) +
+    filters.roleIds.length +
     filters.skillIds.length +
     (filters.sourceCode ? 1 : 0) +
     (filters.seniority ? 1 : 0) +
@@ -131,7 +141,7 @@ export function useUrlFilters(): UrlFiltersApi {
 
   return {
     filters,
-    setRole,
+    toggleRole,
     toggleSkill,
     setSource,
     setSeniority,

@@ -19,12 +19,11 @@ export interface SourceOption extends OptionRow {
   code: string;
 }
 
-export type SkillStat = OptionRow;
-
+// Derived from the /market/aggregates headline snapshot. Role/skill options
+// are NOT here — they come from the full /feed catalog (facetsApi), so search
+// can reach every node, not just the snapshot's top-N.
 export interface FilterAggregates {
   total: number;
-  roles: OptionRow[];
-  skills: SkillStat[];
   sources: SourceOption[];
   /** Enum-keyed: `id` is the raw API value (e.g. `SENIOR`). */
   seniorities: OptionRow[];
@@ -33,7 +32,8 @@ export interface FilterAggregates {
 }
 
 export interface FilterState {
-  roleId: string | null;
+  /** IDs of roles to match (OR-combined). */
+  roleIds: string[];
   /** IDs of required (must-have) skills. */
   skillIds: string[];
   sourceCode: string | null;
@@ -46,7 +46,7 @@ export interface FilterState {
 }
 
 export const EMPTY_FILTERS: FilterState = {
-  roleId: null,
+  roleIds: [],
   skillIds: [],
   sourceCode: null,
   seniority: null,
@@ -60,7 +60,7 @@ export const EMPTY_FILTERS: FilterState = {
 // driven through this, never through a concrete hook.
 export interface FiltersApi {
   filters: FilterState;
-  setRole: (id: string | null) => void;
+  toggleRole: (id: string) => void;
   toggleSkill: (id: string) => void;
   setSource: (code: string | null) => void;
   setSeniority: (v: string | null) => void;

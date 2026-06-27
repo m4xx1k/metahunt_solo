@@ -9,10 +9,9 @@ import type {
   OptionRow,
 } from "@/features/vacancy-filters/types";
 
-// Maps the real /market/aggregates response into the shape the filter
-// widgets expect. Counts are intentionally dropped — the widgets render
-// labels only; the count field is kept solely so skills can sort by
-// popularity in SkillsSection.
+// Maps the /market/aggregates headline snapshot into the filter shapes for the
+// closed-enum sections (sources, seniority, format). Role/skill options come
+// from the full /feed catalog instead (facetsApi), not from this snapshot.
 
 // Distribution → option rows in canonical enum order (not by count:
 // seniority has an inherent progression), dropping empty buckets so the
@@ -30,16 +29,6 @@ function distToOptions<T extends string>(
 export function toFilterAggregates(a: VacancyAggregates): FilterAggregates {
   return {
     total: a.total,
-    roles: a.topRoles.map((r) => ({
-      id: r.id,
-      label: r.name,
-      count: r.count,
-    })),
-    skills: a.topSkills.map((s) => ({
-      id: s.id,
-      label: s.name,
-      count: s.count,
-    })),
     sources: a.sources.map((s) => ({
       id: s.id,
       code: s.code,

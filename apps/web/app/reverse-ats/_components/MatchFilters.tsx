@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { EnumSection } from "@/features/vacancy-filters/EnumSection";
+import { EnumSection } from "@/ui/inputs/EnumSection";
 import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
-import { CollapsibleSection } from "@/features/vacancy-filters/CollapsibleSection";
-import { pillClass } from "@/features/vacancy-filters/pill";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
+import { pillClass } from "@/ui/inputs/pill";
 import { cn } from "@/lib/utils";
 import type { FitTier } from "@/lib/api/ranking";
 import type {

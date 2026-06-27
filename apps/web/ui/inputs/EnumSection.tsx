@@ -1,9 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CollapsibleSection } from "./CollapsibleSection";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 import { PILL_BASE, pillClass } from "./pill";
-import type { OptionRow } from "./types";
+import type { SelectOption } from "./types";
 
 // Pills for closed enum filters (seniority, work format…). `id` carries the raw
 // API value, never a label. Two modes, backward-compatible:
@@ -21,7 +21,7 @@ export function EnumSection({
   activeClassFor,
 }: {
   title: string;
-  options: OptionRow[];
+  options: SelectOption[];
   activeId?: string | null;
   onChange?: (id: string | null) => void;
   multiple?: boolean;

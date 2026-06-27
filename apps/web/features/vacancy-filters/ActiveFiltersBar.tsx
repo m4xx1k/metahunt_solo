@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
 import type { Seniority } from "@/lib/extracted-vacancy";
-import type { FilterAggregates, FiltersApi } from "./types";
+import type { FilterAggregates, FiltersApi, OptionRow } from "./types";
 
 interface Chip {
   key: string;
@@ -15,11 +15,16 @@ interface Chip {
 export function ActiveFiltersBar({
   api,
   agg,
+  roles,
+  skills,
 }: {
   api: FiltersApi;
   agg: FilterAggregates;
+  /** Full role/skill catalogs (facets) — selected ids resolve their label here. */
+  roles: OptionRow[];
+  skills: OptionRow[];
 }) {
-  const chips = buildChips(api, agg);
+  const chips = buildChips(api, agg, roles, skills);
 
   return (
     <div
@@ -62,23 +67,28 @@ export function ActiveFiltersBar({
   );
 }
 
-function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
+function buildChips(
+  api: FiltersApi,
+  agg: FilterAggregates,
+  roles: OptionRow[],
+  skills: OptionRow[],
+): Chip[] {
   const { filters } = api;
   const chips: Chip[] = [];
 
-  if (filters.roleId) {
-    const r = agg.roles.find((x) => x.id === filters.roleId);
+  for (const id of filters.roleIds) {
+    const r = roles.find((x) => x.id === id);
     if (r) {
       chips.push({
-        key: `role-${r.id}`,
+        key: `role-${id}`,
         label: `role: ${r.label}`,
         tone: "border-accent text-accent",
-        onRemove: () => api.setRole(null),
+        onRemove: () => api.toggleRole(id),
       });
     }
   }
   for (const id of filters.skillIds) {
-    const s = agg.skills.find((x) => x.id === id);
+    const s = skills.find((x) => x.id === id);
     if (s) {
       chips.push({
         key: `skill-${id}`,

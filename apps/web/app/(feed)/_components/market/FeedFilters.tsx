@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
-import { EnumSection } from "@/features/vacancy-filters/EnumSection";
-import { type TrackAxis, TrackAxisSection } from "@/features/vacancy-filters/TrackAxisSection";
+import { EnumSection } from "@/ui/inputs/EnumSection";
+import { MultiSelect } from "@/ui/inputs/MultiSelect";
+import { type TrackAxis, TrackAxisSection } from "@/features/tracks/TrackAxisSection";
 import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
-import { RoleSection } from "@/features/vacancy-filters/RoleSection";
-import { SkillsSection } from "@/features/vacancy-filters/SkillsSection";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
-import { TrackTree } from "@/features/vacancy-filters/TrackTree";
+import { TrackTree } from "@/features/tracks/TrackTree";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
 import type { Seniority } from "@/lib/extracted-vacancy";
+import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import { DedupeToggle } from "./DedupeToggle";
@@ -28,8 +28,9 @@ import { toFilterAggregates } from "./to-filter-aggregates";
 // always-visible column.
 
 // Two layouts share this component:
-// - Landing (no `tracks`): flat single-select RoleSection + skill multiselect,
-//   with the ActiveFiltersBar summary on top. Unchanged.
+// - Landing (no `tracks`): role + skill MultiSelects (both multi, searchable;
+//   the nice-to-have toggle rides the skill section's `extra` slot), with the
+//   ActiveFiltersBar summary on top.
 // - Track route (`tracks` passed): leads with the browse tree; once a track is
 //   active, both axes render as unified TrackAxisSections (preset chips on by
 //   default, contextual suggestions, search-add) writing ?roles / ?skills.
@@ -60,6 +61,18 @@ export function FeedFilters({
   skillCatalog?: TrackAxis[];
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
+  // Role/skill options come from the full /feed catalog (search reaches every
+  // node), not the aggregates top-N. Counts only order the empty-query view.
+  const roleOptions = useMemo<OptionRow[]>(
+    () =>
+      (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
+    [roleCatalog],
+  );
+  const skillOptions = useMemo<OptionRow[]>(
+    () =>
+      (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
+    [skillCatalog],
+  );
   const api = useUrlFilters();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -73,7 +86,6 @@ export function FeedFilters({
     (slug: string) => router.push(`/${encodeURIComponent(slug)}`),
     [router],
   );
-
   const handleToggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
 
   return (
@@ -98,7 +110,14 @@ export function FeedFilters({
 
       <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
         <DedupeToggle />
-        {trackMode ? null : <ActiveFiltersBar api={api} agg={agg} />}
+        {trackMode ? null : (
+          <ActiveFiltersBar
+            api={api}
+            agg={agg}
+            roles={roleOptions}
+            skills={skillOptions}
+          />
+        )}
         <aside className="flex flex-col border border-border bg-bg-card">
           {trackMode ? (
             <>
@@ -132,32 +151,27 @@ export function FeedFilters({
             </>
           ) : (
             <>
-              <RoleSection
-                roles={agg.roles}
-                activeId={api.filters.roleId}
-                onChange={api.setRole}
+              <MultiSelect
+                title="role"
+                options={roleOptions}
+                selected={api.filters.roleIds}
+                onToggle={api.toggleRole}
+                searchable
+                searchPlaceholder="search role…"
               />
-              <SkillsSection
-                skills={agg.skills}
-                selectedIds={api.filters.skillIds}
+              <MultiSelect
+                title="skills"
+                options={skillOptions}
+                selected={api.filters.skillIds}
                 onToggle={api.toggleSkill}
+                searchable
+                searchPlaceholder="search skill…"
+                extra={
+                  api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null
+                }
               />
-              {api.filters.skillIds.length > 0 ? (
-                <div className="border-b border-border px-4 py-3 last:border-b-0">
-                  <SkillScopeToggle />
-                </div>
-              ) : null}
             </>
           )}
-          {/* Perks sit right under the browse/refine block — high, but never
-              above the tracks. Reservation framed as a draw, test by its
-              desirable absence (see PerksFilter). */}
-          <PerksFilter
-            reservation={api.filters.reservation}
-            test={api.filters.test}
-            onReservation={api.setReservation}
-            onTest={api.setTest}
-          />
           <EnumSection
             title="seniority"
             options={agg.seniorities}
@@ -165,12 +179,22 @@ export function FeedFilters({
             onChange={api.setSeniority}
             activeClassFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
+          {/* Perks rank above format — reservation is a strong draw for the
+              UA market. */}
+          <PerksFilter
+            reservation={api.filters.reservation}
+            test={api.filters.test}
+            onReservation={api.setReservation}
+            onTest={api.setTest}
+          />
           <EnumSection
             title="format"
             options={agg.workFormats}
             activeId={api.filters.workFormat}
             onChange={api.setWorkFormat}
           />
+          {/* Domain MultiSelect slots here once the /feed/domains facet +
+              domainIds list filter land (separate commit). */}
           <SourceSection
             sources={agg.sources}
             activeCode={api.filters.sourceCode}
