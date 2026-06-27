@@ -1,8 +1,8 @@
 // Hand-mirrored types for VacancyAggregatesResponse from
-// apps/etl/src/market/market.contract.ts. Per ADR-0005 we duplicate
+// apps/etl/src/03-discovery/market/market.contract.ts. Per ADR-0005 we duplicate
 // types here until a second consumer justifies extracting libs/contracts.
 
-import type { EngagementType, Seniority, WorkFormat } from "./vacancies";
+import type { Seniority, WorkFormat } from "./vacancies";
 import { apiGet } from "./client";
 
 export interface AggregateSourceCount {
@@ -12,30 +12,12 @@ export interface AggregateSourceCount {
   count: number;
 }
 
-export interface AggregateSkillCount {
-  id: string;
-  name: string;
-  count: number;
-}
-
-/** Same shape for the global aggregate and any per-source slice. */
-export interface AggregatesPerSource {
+export interface VacancyAggregates {
   total: number;
   lastSyncAt: string | null;
-  topSkills: AggregateSkillCount[];
-  topRoles: AggregateSkillCount[];
   seniorityDist: Record<Seniority, number>;
   workFormatDist: Record<WorkFormat, number>;
-  engagementDist: Record<EngagementType, number>;
-  reservationKnownCount: number;
-  reservationTrueCount: number;
-  salaryDisclosedCount: number;
-}
-
-export interface VacancyAggregates extends AggregatesPerSource {
   sources: AggregateSourceCount[];
-  /** Keyed by `sources[].code`. */
-  bySource: Record<string, AggregatesPerSource>;
 }
 
 export const aggregatesApi = {
