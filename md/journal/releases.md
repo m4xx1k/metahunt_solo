@@ -115,3 +115,11 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 - **Tech-vacancy filter shipped** (`feat/tech-filter`, PR #48). Two hard-skip gates: Gate 1 (`passesTechGate`, recall-biased regex at ingest) + Gate 2 (LLM `isTech` at loader, precision-biased). No `is_tech` column; `rss_records` persist so dropped rows stay re-derivable. Gate 1 blacklist scans role **head** (parens stripped) with Unicode-safe word boundaries; `business-develop` added. `scripts/cleanup-nontech.ts` deleted 19 junk prod rows. → [migration tracker](./migrations/_done/tech-filter-implementation.md)
 - **Threshold auto-verify removed** (`refactor/skill-verify`). `autoVerifySkills` Temporal schedule deleted; skill verification is now a deliberate operator decision. Mention count survives only as a triage signal in the NEW queue. New policy doc: [taxonomy-verification-policy.md](../runbook/taxonomy-verification-policy.md). Tracker retired to [`_done/`](./migrations/_done/taxonomy-autoverify.md).
+
+---
+
+## 2026-06-25
+
+- **CV skill-recommendations widget shipped** (`feat/cv-skill-recommendations`, PR #55). "Що вчити далі" — marginal-counterfactual unlock list over the role cohort. → ADR-0009, [tracker](./migrations/cv-skill-recommendations.md)
+- **Recommendation skill-metadata gates shipped** (`feat/recs-skill-metadata`, PR #56). New `node_tech_meta` table (LLM-classified category/stack/is_core/generic) + `node_skill_cooc` matview (NPMI, refreshed with `node_stats`); BAML `ClassifySkills` + `classify-skills` backfill CLI. Gates drop foreign-stack (F2) + already-known language (F1, TS⇒JS) + substitute frameworks (cooc npmi≥0.30) from "learn next"; redundant footer limited to generic skills. Prod backfilled 1228 rows. IDF/`node_stats` untouched. → ADR-0010, [tracker](./migrations/_done/skill-metadata-recommendations.md)
+- **reverse-ATS stack-fit soft-demote** (`feat/reverse-ats-v2-role-fit`). `rankByRefs` sorts `on_stack DESC` first — off-stack vacancies (required core tech outside the candidate's stack-set) sink below in-stack ones (soft, not a filter); web `MatchCard` shows an «інший стек» badge. Fixes cross-stack match leak (e.g. QA/mobile in a backend CV). → [reverse-ats §rev 2026-06-25](./migrations/reverse-ats.md)

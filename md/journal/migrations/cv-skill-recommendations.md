@@ -1,9 +1,9 @@
 # cv-skill-recommendations — "what to learn next" widget on reverse-ATS
 
-**Status:** ✅ implemented — etl + web build green, band/derive unit tests pass.
-Pending: manual SQL spot-check on prod DB + smoke, then merge.
-**Branch:** `feat/cv-skill-recommendations`
-**Sits atop:** ADR-0009, reverse-ats (ADR-0006), ranking (ADR-0006)
+**Status:** ✅ MERGED (PR #55, 2026-06-25). Recommendation *quality* later gated by
+skill metadata — see [`_done/skill-metadata-recommendations.md`](_done/skill-metadata-recommendations.md) + ADR-0010.
+**Branch:** `feat/cv-skill-recommendations` (merged)
+**Sits atop:** ADR-0009 (+ ADR-0010 gates), reverse-ats (ADR-0006), ranking (ADR-0006)
 **Date:** 2026-06-23
 
 ## Goal
