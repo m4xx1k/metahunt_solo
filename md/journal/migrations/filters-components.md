@@ -1,12 +1,20 @@
 # filters-components — one filter store + shared filter DTO
 
 **Branch:** `refactor/filters-components`
-**Status:** in-progress
-**Started:** 2026-07-01 · **Closed:** —
+**Status:** done
+**Started:** 2026-07-01 · **Closed:** 2026-07-01
 
 ## Outcome
 
-*(fill in when closing)*
+One URL-backed filter store now serves both the feed and reverse-ATS. Backend: a
+class-validator `FilterParamsDto` (+ `FeedQueryDto`/`MatchDto`) validates `GET /feed`
+and `POST /ranking/match`; the feed gained multi seniority/format + english/employment/
+`postedWithinDays`. Frontend: one superset `FilterState`/`FiltersApi` (`useUrlFilters`,
+swappable to a state backend); reverse-ATS moved off local `useState` (filters now
+shareable), `filter-model.ts` deleted; a shared `<FilterRail lens>` drives both pages.
+5 commits (`005d5a5`, `acf92b0`, `aee5259`, `c193c13`, + docs). Verified: 263 etl tests,
+web prod build, feed+ranking APIs 200/400 with the new filters live. Deferred: the merged
+single page (lens tabs / warm CV widgets / saved-CV switcher) stays `feat/feed-reverse-ats-merge`.
 
 ## Context
 
@@ -27,10 +35,10 @@ Goal: **one store** (the existing `FiltersApi` seam — URL-backed now, swappabl
 
 ## Subtasks
 
-- [ ] **T0 — backend class-validator DTOs (feed + ranking) + feed gains cold filters** — *done when:* `class-validator`/`class-transformer` added; `FilterParamsDto` + `FeedQueryDto`/`MatchDto` in `platform/shared/`; both controllers bind the DTO under a scoped `ValidationPipe` (feed drops its 18 positional args, ranking drops `MatchBody`); `FeedSearchParams`+`buildWhere` take `seniorities[]`/`workFormats[]` (inArray) + `englishLevels[]`/`employmentTypes[]`/`postedWithinDays`; `feed.controller`, `subscription-matcher`, ranking jest green.
-- [ ] **T2 — frontend superset `FilterState` + `FiltersApi` (feed visually unchanged)** — *done when:* `types.ts` unifies to arrays + adds english/employment/fresh/includeNice/minFitTier; `use-url-filters.ts` toggles/setters + plural URL keys; `lib/api/*` maps to DTO param names; `FeedFilters` EnumSections go multi; web tsc + lint green; feed behaves the same (now multi seniority/format).
-- [ ] **T3 — reverse-ATS onto the shared store** — *done when:* `filter-model.ts` deleted (option catalogs moved into the feature); `ReverseAtsClient` uses `useUrlFilters()` with a `useEffect(filters)→run()` re-rank; `MatchFilters` consumes `FiltersApi` (no `toggleIn`/patch); reverse-ATS filters are URL-backed + shareable; tsc + lint green; manual re-rank verified.
-- [ ] **T4 — shared `FilterRail` widget + cleanup + docs** — *done when:* one `FilterRail` (`lens` prop) consumed by both feed + reverse-ATS, divergent sidebars deleted; `md/architecture/overview.md` updated if shape changed; `releases.md` entry; reviewer/verifier pass + comment-cleanup pass; tracker Outcome written.
+- [x] **T0 — backend class-validator DTOs (feed + ranking) + feed gains cold filters** — done `005d5a5` (263 etl tests green, tsc clean). *done when:* `class-validator`/`class-transformer` added; `FilterParamsDto` + `FeedQueryDto`/`MatchDto` in `platform/shared/`; both controllers bind the DTO under a scoped `ValidationPipe` (feed drops its 18 positional args, ranking drops `MatchBody`); `FeedSearchParams`+`buildWhere` take `seniorities[]`/`workFormats[]` (inArray) + `englishLevels[]`/`employmentTypes[]`/`postedWithinDays`; `feed.controller`, `subscription-matcher`, ranking jest green.
+- [x] **T2 — frontend superset `FilterState` + `FiltersApi` (feed visually unchanged)** — done `acf92b0` (web tsc + lint clean). *done when:* `types.ts` unifies to arrays + adds english/employment/fresh/includeNice/minFitTier; `use-url-filters.ts` toggles/setters + plural URL keys; `lib/api/*` maps to DTO param names; `FeedFilters` EnumSections go multi; web tsc + lint green; feed behaves the same (now multi seniority/format).
+- [x] **T3 — reverse-ATS onto the shared store** — done `aee5259` (web tsc + lint clean; runtime verify pending). *done when:* `filter-model.ts` deleted (option catalogs moved into the feature); `ReverseAtsClient` uses `useUrlFilters()` with a `useEffect(filters)→run()` re-rank; `MatchFilters` consumes `FiltersApi` (no `toggleIn`/patch); reverse-ATS filters are URL-backed + shareable; tsc + lint green; manual re-rank verified.
+- [x] **T4 — shared `FilterRail` widget + cleanup + docs** — done `c193c13` + docs. *done when:* one `FilterRail` (`lens` prop) consumed by both feed + reverse-ATS, divergent sidebars deleted; `md/architecture/overview.md` updated if shape changed; `releases.md` entry; reviewer/verifier pass + comment-cleanup pass; tracker Outcome written.
 
 ## Links
 
