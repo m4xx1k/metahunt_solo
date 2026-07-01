@@ -19,6 +19,7 @@ export function EnumSection({
   activeIds = [],
   onToggle,
   activeClassFor,
+  singleRow = false,
 }: {
   title: string;
   options: SelectOption[];
@@ -30,6 +31,9 @@ export function EnumSection({
   // Optional per-option colour for the active state (seniority uses the
   // card's per-level tones); falls back to the default accent pill.
   activeClassFor?: (id: string) => string | undefined;
+  // One horizontal row (overflow scrolls) instead of wrapping — for short,
+  // ordered scales like the experience buttons.
+  singleRow?: boolean;
 }) {
   const isActive = (id: string) =>
     multiple ? activeIds.includes(id) : activeId === id;
@@ -51,7 +55,12 @@ export function EnumSection({
 
   return (
     <CollapsibleSection title={title} summary={summary}>
-      <div className="flex flex-wrap gap-2">
+      <div
+        className={cn(
+          "flex gap-2",
+          singleRow ? "flex-nowrap overflow-x-auto" : "flex-wrap",
+        )}
+      >
         {options.map((o) => {
           const active = isActive(o.id);
           const tone = active ? activeClassFor?.(o.id) : undefined;
@@ -61,7 +70,10 @@ export function EnumSection({
               type="button"
               aria-pressed={active}
               onClick={() => handle(o.id, active)}
-              className={tone ? cn(PILL_BASE, "font-bold", tone) : pillClass(active)}
+              className={cn(
+                tone ? cn(PILL_BASE, "font-bold", tone) : pillClass(active),
+                singleRow && "shrink-0",
+              )}
             >
               {o.label}
             </button>

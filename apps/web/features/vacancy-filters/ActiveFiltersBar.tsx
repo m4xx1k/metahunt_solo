@@ -146,6 +146,14 @@ function buildChips(
       });
     }
   }
+  for (const value of filters.experienceYears) {
+    chips.push({
+      key: `exp-${value}`,
+      label: `exp: ${value}`,
+      tone: "border-accent text-accent",
+      onRemove: () => api.toggleExperience(value),
+    });
+  }
   if (filters.test !== null) {
     chips.push({
       key: "test",

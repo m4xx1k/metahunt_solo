@@ -219,8 +219,8 @@ export interface ListVacanciesQuery {
   employmentType?: EmploymentType;
   englishLevel?: EnglishLevel;
   engagementType?: EngagementType;
-  experienceMin?: number;
-  experienceMax?: number;
+  /** Discrete experience tokens ("0".."5" exact, "6+" = ≥6); OR-combined. */
+  experienceYears?: string[];
   salaryFloor?: number;
   currency?: Currency;
   hasTestAssignment?: boolean;

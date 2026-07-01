@@ -156,10 +156,9 @@ export interface FeedQuery {
   englishLevel?: EnglishLevel;
   engagementType?: EngagementType;
 
-  /** Lower bound on `experienceYears` (inclusive). */
-  experienceMin?: number;
-  /** Upper bound on `experienceYears` (inclusive). */
-  experienceMax?: number;
+  /** Discrete experience tokens (OR): exact "0".."5" + "6+" (≥6), matched
+   *  against the posting's stated minimum. NULL always passes. */
+  experienceYears?: string[];
 
   /** Vacancies whose `salaryMax` >= this (in `currency`). */
   salaryFloor?: number;

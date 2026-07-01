@@ -8,6 +8,7 @@ import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
 import { EnumSection } from "@/ui/inputs/EnumSection";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import { type TrackAxis, TrackAxisSection } from "@/features/tracks/TrackAxisSection";
+import { ExperienceSection } from "@/features/vacancy-filters/ExperienceSection";
 import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
 import { TrackTree } from "@/features/tracks/TrackTree";
@@ -187,6 +188,10 @@ export function FeedFilters({
             activeId={api.filters.seniority}
             onChange={api.setSeniority}
             activeClassFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
+          />
+          <ExperienceSection
+            selected={api.filters.experienceYears}
+            onToggle={api.toggleExperience}
           />
           {/* Perks rank above format — reservation is a strong draw for the
               UA market. */}

@@ -37,6 +37,7 @@ export function useUrlFilters(): UrlFiltersApi {
       sourceCode: searchParams.get("source"),
       seniority: searchParams.get("seniority"),
       workFormat: searchParams.get("workFormat"),
+      experienceYears: readList(searchParams.get("experience")),
       test: readBool(searchParams.get("test")),
       reservation: readBool(searchParams.get("reservation")),
     };
@@ -112,6 +113,20 @@ export function useUrlFilters(): UrlFiltersApi {
     [commit],
   );
 
+  // Multi-select toggle over the experience buttons. Mirrors toggleDomain.
+  const toggleExperience = useCallback(
+    (value: string) =>
+      commit((n) => {
+        const current = filters.experienceYears;
+        const nextIds = current.includes(value)
+          ? current.filter((v) => v !== value)
+          : [...current, value];
+        if (nextIds.length === 0) n.delete("experience");
+        else n.set("experience", nextIds.join(LIST_SEP));
+      }),
+    [commit, filters.experienceYears],
+  );
+
   const setTest = useCallback(
     (v: boolean | null) =>
       commit((n) =>
@@ -139,6 +154,7 @@ export function useUrlFilters(): UrlFiltersApi {
         n.delete("source");
         n.delete("seniority");
         n.delete("workFormat");
+        n.delete("experience");
         n.delete("test");
         n.delete("reservation");
       }),
@@ -152,6 +168,7 @@ export function useUrlFilters(): UrlFiltersApi {
     (filters.sourceCode ? 1 : 0) +
     (filters.seniority ? 1 : 0) +
     (filters.workFormat ? 1 : 0) +
+    filters.experienceYears.length +
     (filters.test !== null ? 1 : 0) +
     (filters.reservation !== null ? 1 : 0);
 
@@ -163,6 +180,7 @@ export function useUrlFilters(): UrlFiltersApi {
     setSource,
     setSeniority,
     setWorkFormat,
+    toggleExperience,
     setTest,
     setReservation,
     clear,

@@ -49,6 +49,7 @@ export class FeedController {
     @Query("hasDuplicates") rawHasDuplicates?: string,
     @Query("includeOptionalSkills") rawIncludeOptionalSkills?: string,
     @Query("domainIds") rawDomainIds?: string | string[],
+    @Query("experienceYears") rawExperienceYears?: string | string[],
   ) {
     const trimmed = q?.trim();
     const sourceId = rawSourceId?.trim();
@@ -56,6 +57,7 @@ export class FeedController {
     const roleIds = parseIdList(rawRoleIds);
     const skillIds = parseIdList(rawSkillIds);
     const domainIds = parseIdList(rawDomainIds);
+    const experienceYears = parseIdList(rawExperienceYears);
     return this.feed.search({
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
@@ -73,6 +75,7 @@ export class FeedController {
       includeRoleless: parseBool("includeRoleless", rawIncludeRoleless, { numeric: true }),
       includeAllSkills: parseBool("includeAllSkills", rawIncludeAllSkills, { numeric: true }),
       includeOptionalSkills: parseBool("includeOptionalSkills", rawIncludeOptionalSkills, { numeric: true }),
+      experienceYears: experienceYears.length > 0 ? experienceYears : undefined,
     });
   }
 

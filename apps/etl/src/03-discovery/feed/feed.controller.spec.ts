@@ -236,5 +236,59 @@ describe("FeedController", () => {
         }),
       );
     });
+
+    // experienceYears is the 17th positional arg (appended after domainIds).
+    // Discrete tokens: exact "0".."5" plus the open-ended "6+".
+    it("forwards experienceYears from repeated params into a trimmed list", async () => {
+      await controller.search(
+        undefined, // q
+        undefined, // page
+        undefined, // pageSize
+        undefined, // sourceId
+        undefined, // roleId
+        undefined, // skillIds
+        undefined, // seniority
+        undefined, // workFormat
+        undefined, // hasTestAssignment
+        undefined, // hasReservation
+        undefined, // includeRoleless
+        undefined, // includeAllSkills
+        undefined, // roleIds
+        undefined, // hasDuplicates
+        undefined, // includeOptionalSkills
+        undefined, // domainIds
+        [" 0 ", "3", "6+"], // experienceYears
+      );
+
+      expect(search).toHaveBeenCalledWith(
+        expect.objectContaining({ experienceYears: ["0", "3", "6+"] }),
+      );
+    });
+
+    it("treats an all-blank experienceYears list as no filter (undefined)", async () => {
+      await controller.search(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        ["", "   "], // experienceYears
+      );
+
+      expect(search).toHaveBeenCalledWith(
+        expect.objectContaining({ experienceYears: undefined }),
+      );
+    });
   });
 });

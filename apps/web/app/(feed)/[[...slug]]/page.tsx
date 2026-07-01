@@ -87,6 +87,9 @@ export default async function TrackPage({
   const workFormat = coerceWorkFormat(asString(sp.workFormat));
   const hasTestAssignment = coerceBool(asString(sp.test));
   const hasReservation = coerceBool(asString(sp.reservation));
+  // Experience buttons: comma-joined tokens in ?experience; empty = no filter.
+  const experienceList = (asString(sp.experience) ?? "").split(",").filter(Boolean);
+  const experienceYears = experienceList.length > 0 ? experienceList : undefined;
   const hasDuplicates = asString(sp.dupes) === "true" ? true : undefined;
   // Skill-scope toggle: by default skills match must-have only; ?nice=true
   // loosens the filter so nice-to-have skills count too.
@@ -157,6 +160,7 @@ export default async function TrackPage({
           sourceId: sourceId ?? undefined,
           seniority,
           workFormat,
+          experienceYears,
           hasTestAssignment,
           hasReservation,
           hasDuplicates,
@@ -177,6 +181,7 @@ export default async function TrackPage({
     sourceId: sourceId ?? undefined,
     seniority,
     workFormat,
+    experienceYears,
     hasTestAssignment,
     hasReservation,
   };

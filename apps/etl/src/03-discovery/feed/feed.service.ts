@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   gt,
+  gte,
   ilike,
   inArray,
   isNotNull,
@@ -53,6 +54,11 @@ const groupHasConfirmedEdge = sql`EXISTS (
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// The open-ended experience button: "6+" means ≥6 years. Mirrored client-side
+// in features/vacancy-filters/ExperienceSection.tsx.
+const EXPERIENCE_OPEN_TOKEN = "6+";
+const EXPERIENCE_OPEN_MIN = 6;
+
 export interface FeedSearchParams {
   page: number;
   pageSize: number;
@@ -75,6 +81,9 @@ export interface FeedSearchParams {
   includeOptionalSkills?: boolean;
   seniority?: Seniority;
   workFormat?: WorkFormat;
+  /** Discrete experience tokens (OR): exact "0".."5" + "6+" (≥6), matched
+   *  against the stated minimum. NULL always passes. */
+  experienceYears?: string[];
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   includeRoleless?: boolean;
@@ -335,6 +344,21 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
   if (params.workFormat) {
     conds.push(eq(vacancies.workFormat, params.workFormat));
+  }
+  // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
+  // — unstated experience always passes; only explicit non-matches are dropped.
+  if (params.experienceYears && params.experienceYears.length > 0) {
+    const exact = params.experienceYears
+      .filter((t) => /^\d+$/.test(t))
+      .map(Number);
+    const openEnded = params.experienceYears.includes(EXPERIENCE_OPEN_TOKEN);
+    const arms: SQL[] = [isNull(vacancies.experienceYears)];
+    if (exact.length > 0) arms.push(inArray(vacancies.experienceYears, exact));
+    if (openEnded) {
+      arms.push(gte(vacancies.experienceYears, EXPERIENCE_OPEN_MIN));
+    }
+    // No real token → skip, don't collapse the feed to NULL-only rows.
+    if (arms.length > 1) conds.push(or(...arms)!);
   }
   // "Without a test task" (false) includes unknowns: a null (unscored) vacancy
   // still counts as "no test", so only a confirmed-true is excluded. Filtering

@@ -43,6 +43,8 @@ export interface FilterState {
    *  API client narrows it before the request. */
   seniority: string | null;
   workFormat: string | null;
+  /** Selected experience tokens ("0".."5" exact, "6+" = ≥6), OR-combined. */
+  experienceYears: string[];
   test: boolean | null;
   reservation: boolean | null;
 }
@@ -54,6 +56,7 @@ export const EMPTY_FILTERS: FilterState = {
   sourceCode: null,
   seniority: null,
   workFormat: null,
+  experienceYears: [],
   test: null,
   reservation: null,
 };
@@ -69,6 +72,8 @@ export interface FiltersApi {
   setSource: (code: string | null) => void;
   setSeniority: (v: string | null) => void;
   setWorkFormat: (v: string | null) => void;
+  /** Toggle one experience token ("0".."5" or "6+") in the OR-set. */
+  toggleExperience: (value: string) => void;
   setTest: (v: boolean | null) => void;
   setReservation: (v: boolean | null) => void;
   clear: () => void;

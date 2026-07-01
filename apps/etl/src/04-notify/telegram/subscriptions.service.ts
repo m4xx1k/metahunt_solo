@@ -331,6 +331,10 @@ export class SubscriptionsService {
     if (formats.length > 0) {
       parts.push(formats.map((f) => f.toLowerCase()).join("/"));
     }
+    const experienceYears = asStringArray(params.experienceYears);
+    if (experienceYears.length > 0) {
+      parts.push(copy.describe.experience(experienceYears));
+    }
     if (params.hasReservation === true) parts.push(copy.describe.reservation);
     if (typeof params.minFitTier === "string") {
       parts.push(`fit≥${params.minFitTier.toLowerCase()}`);
