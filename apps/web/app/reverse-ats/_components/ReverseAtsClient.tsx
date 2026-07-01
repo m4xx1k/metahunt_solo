@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { Logo } from "@/ui";
@@ -8,16 +8,25 @@ import { Pagination } from "@/ui/navigation/Pagination";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
 import {
   rankingApi,
+  type FitTier,
   type MatchResponse,
   type RecommendResponse,
 } from "@/lib/api/ranking";
-import { nonEmpty, toCsv } from "@/lib/utils";
+import { toCsv } from "@/lib/utils";
+import { FRESH_DAYS } from "@/features/vacancy-filters/enum-options";
+import { asEnums, type FilterState } from "@/features/vacancy-filters/types";
+import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
+import type {
+  EmploymentType,
+  EnglishLevel,
+  Seniority,
+  WorkFormat,
+} from "@/lib/api/vacancies";
 import { CandidateProfile } from "./CandidateProfile";
 import { CvSubscribeButton } from "./CvSubscribeButton";
 import { MatchFilters } from "./MatchFilters";
 import { MatchCard } from "./MatchCard";
 import { SkillRecommendations } from "./SkillRecommendations";
-import { FRESH_DAYS, NO_FILTERS, type Filters } from "./filter-model";
 import { SAMPLES } from "./samples";
 
 const PAGE_SIZE = 20;
@@ -27,8 +36,8 @@ type Source =
   | { kind: "cv"; info: CvIngestResult };
 
 export function ReverseAtsClient({ initial }: { initial: MatchResponse | null }) {
+  const api = useUrlFilters();
   const [source, setSource] = useState<Source>({ kind: "sample", index: 0 });
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<MatchResponse | null>(initial);
   const [rec, setRec] = useState<RecommendResponse | null>(null);
@@ -41,13 +50,13 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
   // given page. Both the sample and CV cards share it, so a filter toggle or
   // page change re-runs whichever candidate is active. Source/filters/page are
   // passed in to dodge stale closures.
-  const run = useCallback(async (src: Source, f: Filters, p: number) => {
+  const run = useCallback(async (src: Source, f: FilterState, p: number) => {
     // Scalars shared by both paths; multi-value filters differ only in wire
     // format — JSON arrays for the POST body, CSV for the GET query.
     const scalar = {
-      hasTestAssignment: f.noTest ? false : undefined,
-      hasReservation: f.reservation ? true : undefined,
-      minFitTier: f.minFitTier ?? undefined,
+      hasTestAssignment: f.test ?? undefined,
+      hasReservation: f.reservation ?? undefined,
+      minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
       postedWithinDays: f.fresh ? FRESH_DAYS : undefined,
     };
     setError(null);
@@ -59,10 +68,10 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               skills: SAMPLES[src.index].skills,
               page: p,
               pageSize: PAGE_SIZE,
-              seniorities: nonEmpty(f.seniorities),
-              workFormats: nonEmpty(f.workFormats),
-              englishLevels: nonEmpty(f.englishLevels),
-              employmentTypes: nonEmpty(f.employmentTypes),
+              seniorities: asEnums<Seniority>(f.seniorities),
+              workFormats: asEnums<WorkFormat>(f.workFormats),
+              englishLevels: asEnums<EnglishLevel>(f.englishLevels),
+              employmentTypes: asEnums<EmploymentType>(f.employmentTypes),
               ...scalar,
             })
           : await cvApi.matches(src.info.candidateId, {
@@ -102,9 +111,9 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
       setSource(src);
       setRec(null); // samples aren't stored candidates — no recommendations
       setPage(1);
-      void run(src, filters, 1);
+      void run(src, api.filters, 1);
     },
-    [run, filters],
+    [run, api.filters],
   );
 
   const onFile = useCallback(
@@ -116,7 +125,7 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         const src: Source = { kind: "cv", info };
         setSource(src);
         setPage(1);
-        await run(src, filters, 1);
+        await run(src, api.filters, 1);
         void loadRec(info.candidateId);
       } catch (e) {
         setError(msg(e));
@@ -125,28 +134,37 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
         setUploading(false);
       }
     },
-    [run, filters, loadRec],
+    [run, api.filters, loadRec],
   );
 
-  // Apply a partial filter change, reset to page 1, and re-rank the active source.
-  const onFilterChange = useCallback(
-    (patch: Partial<Filters>) => {
-      const next = { ...filters, ...patch };
-      setFilters(next);
-      setPage(1);
-      void run(source, next, 1);
-    },
-    [run, source, filters],
-  );
+  // Filters live in the URL now; re-rank the active candidate whenever they
+  // change. Source is read via ref so a source switch doesn't double-fetch —
+  // runSample/onFile fetch that path themselves. Skip the initial mount: the
+  // server already sent `initial` for the default sample.
+  const sourceRef = useRef(source);
+  useEffect(() => {
+    sourceRef.current = source;
+  }, [source]);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      // `initial` is the unfiltered default sample — only re-fetch on mount when
+      // the URL arrived with active filters (a shared/deep link).
+      if (api.activeCount === 0) return;
+    }
+    setPage(1);
+    void run(sourceRef.current, api.filters, 1);
+  }, [api.filters, api.activeCount, run]);
 
   // Pagination drives offset; map it back to a 1-based page and refetch.
   const goToOffset = useCallback(
     (offset: number) => {
       const p = Math.floor(offset / PAGE_SIZE) + 1;
       setPage(p);
-      void run(source, filters, p);
+      void run(source, api.filters, p);
     },
-    [run, source, filters],
+    [run, source, api.filters],
   );
 
   const profileTitle =
@@ -249,14 +267,10 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
             {source.kind === "cv" && data ? (
               <CvSubscribeButton
                 candidateId={source.info.candidateId}
-                filters={filters}
+                filters={api.filters}
               />
             ) : null}
-            <MatchFilters
-              filters={filters}
-              onChange={onFilterChange}
-              disabled={busy}
-            />
+            <MatchFilters api={api} disabled={busy} />
           </div>
 
           <div className="flex flex-col gap-5">

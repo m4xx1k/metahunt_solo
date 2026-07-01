@@ -74,6 +74,12 @@ export const EMPTY_FILTERS: FilterState = {
   minFitTier: null,
 };
 
+// FilterState keeps enum fields string-typed; narrow to the wire enum at the API
+// boundary (values only ever come from the closed option sets). Empty → undefined
+// so the request omits the key entirely.
+export const asEnums = <T extends string>(v: string[]): T[] | undefined =>
+  v.length > 0 ? (v as T[]) : undefined;
+
 // The contract every filter-state backend satisfies (URL-backed on the feed;
 // a local-useState backend could implement the same shape). Sections are
 // driven through this, never through a concrete hook.

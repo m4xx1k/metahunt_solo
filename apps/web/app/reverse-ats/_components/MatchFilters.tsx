@@ -7,42 +7,29 @@ import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
 import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 import { pillClass } from "@/ui/inputs/pill";
 import { cn } from "@/lib/utils";
-import type { FitTier } from "@/lib/api/ranking";
-import type {
-  EmploymentType,
-  EnglishLevel,
-  Seniority,
-  WorkFormat,
-} from "@/lib/api/vacancies";
 import {
   EMPLOYMENT_OPTIONS,
   ENGLISH_OPTIONS,
   FIT_OPTIONS,
   SENIORITY_OPTIONS,
   WORK_FORMAT_OPTIONS,
-  activeFilterCount,
-  hasActiveFilters,
-  toggleIn,
-  type Filters,
-  NO_FILTERS,
-} from "./filter-model";
+} from "@/features/vacancy-filters/enum-options";
+import type { FiltersApi } from "@/features/vacancy-filters/types";
 
-// The reverse-ATS filter sidebar. Mirrors the feed's FeedFilters: a sticky
-// always-visible column on lg+, collapsed behind one toggle on <lg so it never
-// pushes the results below the fold. Reuses the same tier-2 section primitives
-// (EnumSection, PerksFilter, Section) the feed uses — the only difference is the
-// enum sections run in multi-select mode (a candidate can want middle ∪ senior).
+// The reverse-ATS filter sidebar. Consumes the shared FiltersApi (URL-backed),
+// so a filter is a bookmarkable query param — the same store the feed uses. A
+// sticky column on xl+, collapsed behind one toggle below. The enum sections run
+// multi-select (a candidate can want middle ∪ senior).
 export function MatchFilters({
-  filters,
-  onChange,
+  api,
   disabled = false,
 }: {
-  filters: Filters;
-  onChange: (patch: Partial<Filters>) => void;
+  api: FiltersApi;
   disabled?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const count = activeFilterCount(filters);
+  const { filters } = api;
+  const count = api.activeCount;
 
   return (
     <div
@@ -70,56 +57,46 @@ export function MatchFilters({
             multiple
             options={SENIORITY_OPTIONS}
             activeIds={filters.seniorities}
-            onToggle={(id) =>
-              onChange({ seniorities: toggleIn(filters.seniorities, id as Seniority) })
-            }
+            onToggle={api.toggleSeniority}
           />
           <EnumSection
             title="формат"
             multiple
             options={WORK_FORMAT_OPTIONS}
             activeIds={filters.workFormats}
-            onToggle={(id) =>
-              onChange({ workFormats: toggleIn(filters.workFormats, id as WorkFormat) })
-            }
+            onToggle={api.toggleWorkFormat}
           />
           <EnumSection
             title="англійська"
             multiple
             options={ENGLISH_OPTIONS}
             activeIds={filters.englishLevels}
-            onToggle={(id) =>
-              onChange({ englishLevels: toggleIn(filters.englishLevels, id as EnglishLevel) })
-            }
+            onToggle={api.toggleEnglishLevel}
           />
           <EnumSection
             title="зайнятість"
             multiple
             options={EMPLOYMENT_OPTIONS}
             activeIds={filters.employmentTypes}
-            onToggle={(id) =>
-              onChange({
-                employmentTypes: toggleIn(filters.employmentTypes, id as EmploymentType),
-              })
-            }
+            onToggle={api.toggleEmploymentType}
           />
           <EnumSection
             title="мін. fit"
             options={FIT_OPTIONS}
             activeId={filters.minFitTier}
-            onChange={(id) => onChange({ minFitTier: (id as FitTier) ?? null })}
+            onChange={api.setMinFitTier}
           />
           <PerksFilter
-            reservation={filters.reservation ? true : null}
-            test={filters.noTest ? false : null}
-            onReservation={(v) => onChange({ reservation: v === true })}
-            onTest={(v) => onChange({ noTest: v === false })}
+            reservation={filters.reservation}
+            test={filters.test}
+            onReservation={api.setReservation}
+            onTest={api.setTest}
           />
           <CollapsibleSection title="свіжість" summary={filters.fresh ? "≤ тиждень" : "any"}>
             <button
               type="button"
               aria-pressed={filters.fresh}
-              onClick={() => onChange({ fresh: !filters.fresh })}
+              onClick={() => api.setFresh(!filters.fresh)}
               className={pillClass(filters.fresh)}
             >
               ≤ тиждень
@@ -127,10 +104,10 @@ export function MatchFilters({
           </CollapsibleSection>
         </aside>
 
-        {hasActiveFilters(filters) ? (
+        {count > 0 ? (
           <button
             type="button"
-            onClick={() => onChange(NO_FILTERS)}
+            onClick={api.clear}
             className="self-start font-mono text-xs text-text-muted underline hover:text-accent"
           >
             скинути всі фільтри
