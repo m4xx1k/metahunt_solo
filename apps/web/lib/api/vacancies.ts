@@ -20,23 +20,23 @@ export type Seniority = (typeof SENIORITY_VALUES)[number];
 export const WORK_FORMAT_VALUES = ["REMOTE", "OFFICE", "HYBRID"] as const;
 export type WorkFormat = (typeof WORK_FORMAT_VALUES)[number];
 
-// URL/query params are user-controlled, so a bad ?seniority=foo must
-// degrade to "no filter", not a 400 that blanks the page. The backend
-// still validates as defense in depth.
-export function coerceSeniority(v: string | undefined): Seniority | undefined {
-  return SENIORITY_VALUES.find((s) => s === v);
-}
-
-export function coerceWorkFormat(
-  v: string | undefined,
-): WorkFormat | undefined {
-  return WORK_FORMAT_VALUES.find((w) => w === v);
-}
-
 export function coerceBool(v: string | undefined): boolean | undefined {
   if (v === "true") return true;
   if (v === "false") return false;
   return undefined;
+}
+
+// Comma-joined enum list from the URL → validated values (unknowns dropped, so a
+// bad ?seniorities=foo degrades to "no filter" rather than 400-ing the page).
+export function coerceEnumList<T extends string>(
+  values: readonly T[],
+  v: string | undefined,
+): T[] {
+  if (!v) return [];
+  return v
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s): s is T => (values as readonly string[]).includes(s));
 }
 
 export const EMPLOYMENT_TYPE_VALUES = [
@@ -214,10 +214,11 @@ export interface ListVacanciesQuery {
    * satisfy the filter.
    */
   includeOptionalSkills?: boolean;
-  seniority?: Seniority;
-  workFormat?: WorkFormat;
-  employmentType?: EmploymentType;
-  englishLevel?: EnglishLevel;
+  /** Match ANY listed value (OR). Serialized as repeated params. */
+  seniorities?: Seniority[];
+  workFormats?: WorkFormat[];
+  employmentTypes?: EmploymentType[];
+  englishLevels?: EnglishLevel[];
   engagementType?: EngagementType;
   /** Discrete experience tokens ("0".."5" exact, "6+" = ≥6); OR-combined. */
   experienceYears?: string[];
@@ -225,6 +226,8 @@ export interface ListVacanciesQuery {
   currency?: Currency;
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
+  /** Freshness gate — posted within the last N days. */
+  postedWithinDays?: number;
   /** When true, show ONLY deduped vacancies (canonical card of a collapsed gold group). */
   hasDuplicates?: boolean;
 

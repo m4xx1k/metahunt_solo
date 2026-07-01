@@ -18,9 +18,12 @@ import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
 import {
   coerceBool,
-  coerceSeniority,
-  coerceWorkFormat,
+  coerceEnumList,
+  EMPLOYMENT_TYPE_VALUES,
+  ENGLISH_LEVEL_VALUES,
+  SENIORITY_VALUES,
   vacanciesApi,
+  WORK_FORMAT_VALUES,
 } from "@/lib/api/vacancies";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import { FeedHero } from "../_components/market/FeedHero";
@@ -31,6 +34,7 @@ import { VacancyList } from "../_components/vacancy-list/VacancyList";
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
+const FRESH_WITHIN_DAYS = 7;
 
 const snapshotNav: NavItem[] = [
   { label: "вакансії", href: "#list" },
@@ -83,8 +87,15 @@ export default async function TrackPage({
   const page = Math.floor(offset / PAGE_SIZE) + 1;
 
   const sourceCode = asString(sp.source);
-  const seniority = coerceSeniority(asString(sp.seniority));
-  const workFormat = coerceWorkFormat(asString(sp.workFormat));
+  const seniorities = coerceEnumList(SENIORITY_VALUES, asString(sp.seniorities));
+  const workFormats = coerceEnumList(WORK_FORMAT_VALUES, asString(sp.workFormats));
+  const englishLevels = coerceEnumList(ENGLISH_LEVEL_VALUES, asString(sp.english));
+  const employmentTypes = coerceEnumList(
+    EMPLOYMENT_TYPE_VALUES,
+    asString(sp.employment),
+  );
+  const postedWithinDays =
+    asString(sp.fresh) === "true" ? FRESH_WITHIN_DAYS : undefined;
   const hasTestAssignment = coerceBool(asString(sp.test));
   const hasReservation = coerceBool(asString(sp.reservation));
   // Experience buttons: comma-joined tokens in ?experience; empty = no filter.
@@ -158,12 +169,16 @@ export default async function TrackPage({
           domainIds: domainIds.length > 0 ? domainIds : undefined,
           includeOptionalSkills,
           sourceId: sourceId ?? undefined,
-          seniority,
-          workFormat,
+          seniorities: seniorities.length > 0 ? seniorities : undefined,
+          workFormats: workFormats.length > 0 ? workFormats : undefined,
+          englishLevels: englishLevels.length > 0 ? englishLevels : undefined,
+          employmentTypes:
+            employmentTypes.length > 0 ? employmentTypes : undefined,
           experienceYears,
           hasTestAssignment,
           hasReservation,
           hasDuplicates,
+          postedWithinDays,
         })
       : { items: [], page, pageSize: PAGE_SIZE, total: 0 };
 
@@ -179,11 +194,14 @@ export default async function TrackPage({
     skillIds: skillIds.length > 0 ? skillIds : undefined,
     domainIds: domainIds.length > 0 ? domainIds : undefined,
     sourceId: sourceId ?? undefined,
-    seniority,
-    workFormat,
+    seniorities: seniorities.length > 0 ? seniorities : undefined,
+    workFormats: workFormats.length > 0 ? workFormats : undefined,
+    englishLevels: englishLevels.length > 0 ? englishLevels : undefined,
+    employmentTypes: employmentTypes.length > 0 ? employmentTypes : undefined,
     experienceYears,
     hasTestAssignment,
     hasReservation,
+    postedWithinDays,
   };
 
   return (

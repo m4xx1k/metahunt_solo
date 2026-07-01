@@ -185,8 +185,9 @@ export function FeedFilters({
           <EnumSection
             title="seniority"
             options={agg.seniorities}
-            activeId={api.filters.seniority}
-            onChange={api.setSeniority}
+            multiple
+            activeIds={api.filters.seniorities}
+            onToggle={api.toggleSeniority}
             activeClassFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
           <ExperienceSection
@@ -204,8 +205,9 @@ export function FeedFilters({
           <EnumSection
             title="format"
             options={agg.workFormats}
-            activeId={api.filters.workFormat}
-            onChange={api.setWorkFormat}
+            multiple
+            activeIds={api.filters.workFormats}
+            onToggle={api.toggleWorkFormat}
           />
           <MultiSelect
             title="domain"

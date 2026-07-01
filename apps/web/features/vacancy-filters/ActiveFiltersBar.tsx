@@ -123,26 +123,26 @@ function buildChips(
       });
     }
   }
-  if (filters.seniority) {
-    const o = agg.seniorities.find((x) => x.id === filters.seniority);
+  for (const id of filters.seniorities) {
+    const o = agg.seniorities.find((x) => x.id === id);
     if (o) {
       chips.push({
         key: `seniority-${o.id}`,
         label: `seniority: ${o.label}`,
         tone:
           SENIORITY_OUTLINE_TONE[o.id as Seniority] ?? "border-accent text-accent",
-        onRemove: () => api.setSeniority(null),
+        onRemove: () => api.toggleSeniority(o.id),
       });
     }
   }
-  if (filters.workFormat) {
-    const o = agg.workFormats.find((x) => x.id === filters.workFormat);
+  for (const id of filters.workFormats) {
+    const o = agg.workFormats.find((x) => x.id === id);
     if (o) {
       chips.push({
         key: `format-${o.id}`,
         label: `format: ${o.label}`,
         tone: "border-accent text-accent",
-        onRemove: () => api.setWorkFormat(null),
+        onRemove: () => api.toggleWorkFormat(o.id),
       });
     }
   }
