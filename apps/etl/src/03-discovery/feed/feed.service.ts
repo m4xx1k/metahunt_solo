@@ -22,6 +22,8 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { uuidList } from "../../platform/shared/sql";
 import type {
+  EmploymentType,
+  EnglishLevel,
   FeedResponse,
   NodeRef,
   Seniority,
@@ -79,8 +81,14 @@ export interface FeedSearchParams {
    * satisfies the filter — looser, surfaces vacancies where the skill is optional.
    */
   includeOptionalSkills?: boolean;
-  seniority?: Seniority;
-  workFormat?: WorkFormat;
+  /** Match ANY listed seniority (OR). */
+  seniorities?: Seniority[];
+  /** Match ANY listed work format (OR). */
+  workFormats?: WorkFormat[];
+  /** Match ANY listed english level (OR). */
+  englishLevels?: EnglishLevel[];
+  /** Match ANY listed employment type (OR). */
+  employmentTypes?: EmploymentType[];
   /** Discrete experience tokens (OR): exact "0".."5" + "6+" (≥6), matched
    *  against the stated minimum. NULL always passes. */
   experienceYears?: string[];
@@ -90,6 +98,8 @@ export interface FeedSearchParams {
   includeAllSkills?: boolean;
   /** When true, return ONLY the canonical card of a collapsed gold group (>1 member). */
   hasDuplicates?: boolean;
+  /** Freshness gate: coalesce(published_at, loaded_at) within N days. */
+  postedWithinDays?: number;
   /** Only vacancies first loaded after this instant (the digest "new since" window). */
   loadedAfter?: Date;
   /** Drop these vacancy ids from the result (digest anti-join: already-sent). */
@@ -341,9 +351,24 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.domainIds && params.domainIds.length > 0) {
     conds.push(inArray(vacancies.domainNodeId, params.domainIds));
   }
-  if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
-  if (params.workFormat) {
-    conds.push(eq(vacancies.workFormat, params.workFormat));
+  if (params.seniorities?.length) {
+    conds.push(inArray(vacancies.seniority, params.seniorities));
+  }
+  if (params.workFormats?.length) {
+    conds.push(inArray(vacancies.workFormat, params.workFormats));
+  }
+  if (params.englishLevels?.length) {
+    conds.push(inArray(vacancies.englishLevel, params.englishLevels));
+  }
+  if (params.employmentTypes?.length) {
+    conds.push(inArray(vacancies.employmentType, params.employmentTypes));
+  }
+  // Freshness gate — coalesce(published, loaded) mirrors the feed's sort; the
+  // day count stays a bound parameter via make_interval.
+  if (params.postedWithinDays !== undefined) {
+    conds.push(
+      sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt}) > now() - make_interval(days => ${params.postedWithinDays})`,
+    );
   }
   // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
   // — unstated experience always passes; only explicit non-matches are dropped.

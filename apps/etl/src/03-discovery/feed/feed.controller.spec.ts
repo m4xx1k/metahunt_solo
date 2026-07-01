@@ -1,7 +1,7 @@
-import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
+import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import type { FeedResponse } from "./feed.contract";
 import { FeedController } from "./feed.controller";
 import { FeedService } from "./feed.service";
@@ -14,6 +14,8 @@ const EMPTY: FeedResponse = {
   total: 0,
 };
 
+// The controller now only maps a validated FeedQueryDto → FeedSearchParams;
+// query parsing/validation lives in the DTO (see filter-params.dto.spec.ts).
 describe("FeedController", () => {
   const search = jest.fn();
   let controller: FeedController;
@@ -31,264 +33,48 @@ describe("FeedController", () => {
     controller = moduleRef.get(FeedController);
   });
 
-  describe("GET /feed — param parsing", () => {
-    it("forwards undefined for every optional filter when no params are given", async () => {
-      await controller.search();
+  const dto = (over: Partial<FeedQueryDto> = {}): FeedQueryDto =>
+    Object.assign(new FeedQueryDto(), over);
 
-      expect(search).toHaveBeenCalledWith({
-        q: undefined,
-        sourceId: undefined,
-        roleId: undefined,
-        roleIds: undefined,
-        skillIds: undefined,
-        seniority: undefined,
-        workFormat: undefined,
-        hasTestAssignment: undefined,
-        hasReservation: undefined,
+  it("defaults page/pageSize and forwards undefined for absent filters", async () => {
+    await controller.search(dto());
+
+    expect(search).toHaveBeenCalledWith(
+      expect.objectContaining({
         page: 1,
         pageSize: 20,
-        includeRoleless: undefined,
-        includeAllSkills: undefined,
-      });
-    });
+        seniorities: undefined,
+        workFormats: undefined,
+        englishLevels: undefined,
+        employmentTypes: undefined,
+        skillIds: undefined,
+      }),
+    );
+  });
 
-    it("forwards a valid seniority value", async () => {
-      await controller.search(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "SENIOR",
-      );
+  it("maps the validated DTO fields into FeedSearchParams", async () => {
+    await controller.search(
+      dto({
+        q: "react",
+        seniorities: ["MIDDLE", "SENIOR"],
+        workFormats: ["REMOTE"],
+        englishLevels: ["UPPER_INTERMEDIATE"],
+        skillIds: ["a", "b"],
+        postedWithinDays: 7,
+        page: 2,
+      }),
+    );
 
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ seniority: "SENIOR" }),
-      );
-    });
-
-    it("rejects an unknown seniority value with 400", () => {
-      expect(() =>
-        controller.search(
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          "BOGUS",
-        ),
-      ).toThrow(BadRequestException);
-      expect(search).not.toHaveBeenCalled();
-    });
-
-    it("treats a blank seniority as no filter", async () => {
-      await controller.search(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "   ",
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ seniority: undefined }),
-      );
-    });
-
-    it("forwards a valid workFormat value", async () => {
-      await controller.search(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "REMOTE",
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ workFormat: "REMOTE" }),
-      );
-    });
-
-    it("rejects an unknown workFormat value with 400", () => {
-      expect(() =>
-        controller.search(
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          "ONSITE",
-        ),
-      ).toThrow(BadRequestException);
-      expect(search).not.toHaveBeenCalled();
-    });
-
-    it("forwards hasTestAssignment / hasReservation booleans", async () => {
-      await controller.search(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "true",
-        "false",
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({
-          hasTestAssignment: true,
-          hasReservation: false,
-        }),
-      );
-    });
-
-    it("rejects a non-boolean hasTestAssignment with 400", () => {
-      expect(() =>
-        controller.search(
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          "maybe",
-        ),
-      ).toThrow(BadRequestException);
-      expect(search).not.toHaveBeenCalled();
-    });
-
-    it("parses roleIds from repeated params (array) into a trimmed list", async () => {
-      // roleIds is the 13th positional arg (appended after includeAllSkills).
-      await controller.search(
-        undefined, // q
-        undefined, // page
-        undefined, // pageSize
-        undefined, // sourceId
-        undefined, // roleId
-        undefined, // skillIds
-        undefined, // seniority
-        undefined, // workFormat
-        undefined, // hasTestAssignment
-        undefined, // hasReservation
-        undefined, // includeRoleless
-        undefined, // includeAllSkills
-        [" a ", "b", "  "], // roleIds — repeated query params
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ roleIds: ["a", "b"] }),
-      );
-    });
-
-    it("treats an all-blank roleIds list as no filter (undefined)", async () => {
-      await controller.search(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        ["", "   "],
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ roleIds: undefined }),
-      );
-    });
-
-    it("composes seniority and workFormat with the existing filters", async () => {
-      await controller.search(
-        "react",
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "MIDDLE",
-        "HYBRID",
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({
-          q: "react",
-          seniority: "MIDDLE",
-          workFormat: "HYBRID",
-        }),
-      );
-    });
-
-    // experienceYears is the 17th positional arg (appended after domainIds).
-    // Discrete tokens: exact "0".."5" plus the open-ended "6+".
-    it("forwards experienceYears from repeated params into a trimmed list", async () => {
-      await controller.search(
-        undefined, // q
-        undefined, // page
-        undefined, // pageSize
-        undefined, // sourceId
-        undefined, // roleId
-        undefined, // skillIds
-        undefined, // seniority
-        undefined, // workFormat
-        undefined, // hasTestAssignment
-        undefined, // hasReservation
-        undefined, // includeRoleless
-        undefined, // includeAllSkills
-        undefined, // roleIds
-        undefined, // hasDuplicates
-        undefined, // includeOptionalSkills
-        undefined, // domainIds
-        [" 0 ", "3", "6+"], // experienceYears
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ experienceYears: ["0", "3", "6+"] }),
-      );
-    });
-
-    it("treats an all-blank experienceYears list as no filter (undefined)", async () => {
-      await controller.search(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        ["", "   "], // experienceYears
-      );
-
-      expect(search).toHaveBeenCalledWith(
-        expect.objectContaining({ experienceYears: undefined }),
-      );
-    });
+    expect(search).toHaveBeenCalledWith(
+      expect.objectContaining({
+        q: "react",
+        seniorities: ["MIDDLE", "SENIOR"],
+        workFormats: ["REMOTE"],
+        englishLevels: ["UPPER_INTERMEDIATE"],
+        skillIds: ["a", "b"],
+        postedWithinDays: 7,
+        page: 2,
+      }),
+    );
   });
 });

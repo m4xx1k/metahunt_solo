@@ -4,18 +4,14 @@ import {
   NotFoundException,
   Param,
   Query,
+  UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
-import {
-  parseBool,
-  parseEnum,
-  parseIdList,
-  parsePage,
-  parsePageSize,
-} from "../../platform/shared/query-parsing";
-import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "./feed.contract";
-import { FeedService } from "./feed.service";
+import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
+import { DEFAULT_PAGE_SIZE } from "../../platform/shared/query-parsing";
+import { FeedService, type FeedSearchParams } from "./feed.service";
 import { FacetsService } from "./facets.service";
 
 const UUID_REGEX =
@@ -29,54 +25,13 @@ export class FeedController {
     private readonly dedup: DedupService,
   ) {}
 
+  // ValidationPipe (transform) turns the raw query into a validated FeedQueryDto:
+  // enum arrays are checked, bad values 400 at the boundary, and the list/bool
+  // transforms flatten repeated params, single values, and CSV to one shape.
   @Get()
-  search(
-    @Query("q") q?: string,
-    @Query("page") rawPage?: string,
-    @Query("pageSize") rawPageSize?: string,
-    @Query("sourceId") rawSourceId?: string,
-    @Query("roleId") rawRoleId?: string,
-    @Query("skillIds") rawSkillIds?: string | string[],
-    @Query("seniority") rawSeniority?: string,
-    @Query("workFormat") rawWorkFormat?: string,
-    @Query("hasTestAssignment") rawHasTestAssignment?: string,
-    @Query("hasReservation") rawHasReservation?: string,
-    @Query("includeRoleless") rawIncludeRoleless?: string,
-    @Query("includeAllSkills") rawIncludeAllSkills?: string,
-    // Appended (not grouped with roleId) to keep the positional argument
-    // order stable for existing callers/tests.
-    @Query("roleIds") rawRoleIds?: string | string[],
-    @Query("hasDuplicates") rawHasDuplicates?: string,
-    @Query("includeOptionalSkills") rawIncludeOptionalSkills?: string,
-    @Query("domainIds") rawDomainIds?: string | string[],
-    @Query("experienceYears") rawExperienceYears?: string | string[],
-  ) {
-    const trimmed = q?.trim();
-    const sourceId = rawSourceId?.trim();
-    const roleId = rawRoleId?.trim();
-    const roleIds = parseIdList(rawRoleIds);
-    const skillIds = parseIdList(rawSkillIds);
-    const domainIds = parseIdList(rawDomainIds);
-    const experienceYears = parseIdList(rawExperienceYears);
-    return this.feed.search({
-      q: trimmed && trimmed.length > 0 ? trimmed : undefined,
-      sourceId: sourceId && sourceId.length > 0 ? sourceId : undefined,
-      roleId: roleId && roleId.length > 0 ? roleId : undefined,
-      roleIds: roleIds.length > 0 ? roleIds : undefined,
-      skillIds: skillIds.length > 0 ? skillIds : undefined,
-      domainIds: domainIds.length > 0 ? domainIds : undefined,
-      seniority: parseEnum("seniority", rawSeniority, SENIORITY_VALUES),
-      workFormat: parseEnum("workFormat", rawWorkFormat, WORK_FORMAT_VALUES),
-      hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment, { numeric: true }),
-      hasReservation: parseBool("hasReservation", rawHasReservation, { numeric: true }),
-      hasDuplicates: parseBool("hasDuplicates", rawHasDuplicates, { numeric: true }),
-      page: parsePage(rawPage),
-      pageSize: parsePageSize(rawPageSize),
-      includeRoleless: parseBool("includeRoleless", rawIncludeRoleless, { numeric: true }),
-      includeAllSkills: parseBool("includeAllSkills", rawIncludeAllSkills, { numeric: true }),
-      includeOptionalSkills: parseBool("includeOptionalSkills", rawIncludeOptionalSkills, { numeric: true }),
-      experienceYears: experienceYears.length > 0 ? experienceYears : undefined,
-    });
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  search(@Query() dto: FeedQueryDto) {
+    return this.feed.search(toSearchParams(dto));
   }
 
   @Get("skills")
@@ -103,4 +58,29 @@ export class FeedController {
     if (!group) throw new NotFoundException();
     return group;
   }
+}
+
+function toSearchParams(dto: FeedQueryDto): FeedSearchParams {
+  return {
+    q: dto.q,
+    sourceId: dto.sourceId,
+    roleId: dto.roleId,
+    roleIds: dto.roleIds,
+    skillIds: dto.skillIds,
+    domainIds: dto.domainIds,
+    seniorities: dto.seniorities,
+    workFormats: dto.workFormats,
+    englishLevels: dto.englishLevels,
+    employmentTypes: dto.employmentTypes,
+    experienceYears: dto.experienceYears,
+    hasTestAssignment: dto.hasTestAssignment,
+    hasReservation: dto.hasReservation,
+    hasDuplicates: dto.hasDuplicates,
+    includeRoleless: dto.includeRoleless,
+    includeAllSkills: dto.includeAllSkills,
+    includeOptionalSkills: dto.includeOptionalSkills,
+    postedWithinDays: dto.postedWithinDays,
+    page: dto.page ?? 1,
+    pageSize: dto.pageSize ?? DEFAULT_PAGE_SIZE,
+  };
 }
