@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
-import { EnumSection } from "@/ui/inputs/EnumSection";
+import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import { type TrackAxis, TrackAxisSection } from "@/features/tracks/TrackAxisSection";
-import { ExperienceSection } from "@/features/vacancy-filters/ExperienceSection";
-import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
 import { TrackTree } from "@/features/tracks/TrackTree";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
@@ -182,32 +180,12 @@ export function FeedFilters({
               />
             </>
           )}
-          <EnumSection
-            title="seniority"
-            options={agg.seniorities}
-            multiple
-            activeIds={api.filters.seniorities}
-            onToggle={api.toggleSeniority}
-            activeClassFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
-          />
-          <ExperienceSection
-            selected={api.filters.experienceYears}
-            onToggle={api.toggleExperience}
-          />
-          {/* Perks rank above format — reservation is a strong draw for the
-              UA market. */}
-          <PerksFilter
-            reservation={api.filters.reservation}
-            test={api.filters.test}
-            onReservation={api.setReservation}
-            onTest={api.setTest}
-          />
-          <EnumSection
-            title="format"
-            options={agg.workFormats}
-            multiple
-            activeIds={api.filters.workFormats}
-            onToggle={api.toggleWorkFormat}
+          <FilterRail
+            api={api}
+            lens="cold"
+            seniorityOptions={agg.seniorities}
+            workFormatOptions={agg.workFormats}
+            seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
           <MultiSelect
             title="domain"
