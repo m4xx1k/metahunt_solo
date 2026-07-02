@@ -366,6 +366,30 @@ export class RankingService {
     if (f.employmentTypes?.length)
       inText(sql`v.employment_type`, f.employmentTypes);
 
+    // Domain (OR): keep vacancies tagged with any listed DOMAIN node — a vacancy
+    // filter, mirroring the feed (the candidate stays the query).
+    if (f.domainIds?.length) inText(sql`v.domain_node_id`, f.domainIds);
+
+    // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
+    // — unstated experience always passes; only explicit non-matches drop. Mirrors
+    // feed.service buildWhere.
+    if (f.experienceYears?.length) {
+      const exact = f.experienceYears.filter((t) => /^\d+$/.test(t)).map(Number);
+      const openEnded = f.experienceYears.includes("6+");
+      const arms: SQL[] = [sql`v.experience_years IS NULL`];
+      if (exact.length > 0) {
+        arms.push(
+          sql`v.experience_years IN (${sql.join(
+            exact.map((n) => sql`${n}`),
+            sql`, `,
+          )})`,
+        );
+      }
+      if (openEnded) arms.push(sql`v.experience_years >= 6`);
+      // No real token → skip, don't collapse results to NULL-only rows.
+      if (arms.length > 1) conds.push(sql`(${sql.join(arms, sql` OR `)})`);
+    }
+
     // Test task: "without" (false) keeps unknowns — a null (unscored) vacancy
     // still counts as no-test, so only a confirmed true is excluded (mirrors
     // the feed). "with" (true) stays strict.

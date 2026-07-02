@@ -2,12 +2,14 @@ import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from '../src/schema';
-import { seedSources } from './sources.seed';
-import { seedNodes } from './nodes.seed';
-import { seedTracks, type TrackSeed } from './tracks.seed';
 import { seedSampleCandidates } from './candidates.seed';
-import tracksData from './data/tracks.json';
 
+// Sample-candidates-only seed runner. Like tracks, samples are references over
+// existing SKILL nodes, so they must be re-runnable alone: the full `db:seed`
+// also runs `seedNodes`, which would revert moderated node statuses back to
+// VERIFIED (see taxonomy-navigation.md). Use this to (re)seed the reverse-ATS
+// demo profiles without touching nodes. Safe on prod data (only writes rows
+// with candidate.type='sample' + their candidate_nodes links).
 async function main(): Promise<void> {
   const connectionString =
     process.env.DATABASE_URL ??
@@ -15,12 +17,6 @@ async function main(): Promise<void> {
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });
   try {
-    await seedSources(db);
-    console.log('Seed: sources — done');
-    await seedNodes(db);
-    console.log('Seed: nodes — done');
-    await seedTracks(db, tracksData as TrackSeed[]);
-    console.log('Seed: tracks — done');
     await seedSampleCandidates(db);
     console.log('Seed: sample candidates — done');
   } finally {

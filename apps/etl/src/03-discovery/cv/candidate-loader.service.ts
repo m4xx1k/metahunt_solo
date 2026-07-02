@@ -16,6 +16,7 @@ import type {
   CandidateNodeRef,
   CandidateView,
   CvIngestResult,
+  SampleCandidate,
 } from "./cv.contract";
 
 // Ingest a CV: hash → (reuse | extract → resolve → store). The content hash
@@ -149,6 +150,31 @@ export class CandidateLoaderService {
       )
       .where(eq(schema.candidateNodes.candidateId, id));
     return matched.map((m) => ({ id: m.id, name: m.name, weight: m.weight ?? 0 }));
+  }
+
+  // Seeded demo profiles for the reverse-ATS picker (candidate.type = 'sample'),
+  // in seed order. Label/hint ride extracted.sample; role is the fallback label.
+  async listSamples(): Promise<SampleCandidate[]> {
+    const rows = await this.db
+      .select({
+        id: schema.candidates.id,
+        role: schema.candidates.role,
+        extracted: schema.candidates.extracted,
+      })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.type, "sample"))
+      .orderBy(schema.candidates.createdAt);
+    return rows.map((r) => {
+      const sample = ((r.extracted as Record<string, unknown>).sample ?? {}) as {
+        label?: string;
+        hint?: string;
+      };
+      return {
+        candidateId: r.id,
+        label: sample.label ?? r.role ?? "profile",
+        hint: sample.hint ?? "",
+      };
+    });
   }
 
   async getById(id: string): Promise<CandidateView> {
