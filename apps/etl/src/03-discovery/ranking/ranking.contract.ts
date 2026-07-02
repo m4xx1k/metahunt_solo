@@ -49,6 +49,8 @@ export interface MatchFilters {
   workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID …
   englishLevels?: EnglishLevel[]; // OR — the level the job requires
   employmentTypes?: EmploymentType[]; // OR — full-time ∪ contract …
+  domainIds?: string[]; // OR — keep vacancies in ANY listed DOMAIN node (like the feed)
+  experienceYears?: string[]; // discrete tokens "0".."5" (exact) + "6+" (≥6); NULL passes
   hasTestAssignment?: boolean; // false also keeps unknowns (no confirmed test); true is strict
   hasReservation?: boolean; // UA military deferment ("бронь")
   minFitTier?: FitTier; // hide vacancies below this coverage tier (STRONG > GOOD > STRETCH)

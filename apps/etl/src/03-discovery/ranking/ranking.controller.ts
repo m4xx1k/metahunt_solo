@@ -35,6 +35,8 @@ export class RankingController {
         workFormats: dto.workFormats,
         englishLevels: dto.englishLevels,
         employmentTypes: dto.employmentTypes,
+        domainIds: dto.domainIds,
+        experienceYears: dto.experienceYears,
         hasTestAssignment: dto.hasTestAssignment,
         hasReservation: dto.hasReservation,
         minFitTier: dto.minFitTier,
