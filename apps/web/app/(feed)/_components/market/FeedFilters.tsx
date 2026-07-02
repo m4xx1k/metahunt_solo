@@ -5,16 +5,15 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
-import { EnumSection } from "@/features/vacancy-filters/EnumSection";
-import { type TrackAxis, TrackAxisSection } from "@/features/vacancy-filters/TrackAxisSection";
-import { PerksFilter } from "@/features/vacancy-filters/PerksFilter";
-import { RoleSection } from "@/features/vacancy-filters/RoleSection";
-import { SkillsSection } from "@/features/vacancy-filters/SkillsSection";
+import { FilterRail } from "@/features/vacancy-filters/FilterRail";
+import { MultiSelect } from "@/ui/inputs/MultiSelect";
+import { type TrackAxis, TrackAxisSection } from "@/features/tracks/TrackAxisSection";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
-import { TrackTree } from "@/features/vacancy-filters/TrackTree";
+import { TrackTree } from "@/features/tracks/TrackTree";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
 import type { Seniority } from "@/lib/extracted-vacancy";
+import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import { DedupeToggle } from "./DedupeToggle";
@@ -28,8 +27,9 @@ import { toFilterAggregates } from "./to-filter-aggregates";
 // always-visible column.
 
 // Two layouts share this component:
-// - Landing (no `tracks`): flat single-select RoleSection + skill multiselect,
-//   with the ActiveFiltersBar summary on top. Unchanged.
+// - Landing (no `tracks`): role + skill MultiSelects (both multi, searchable;
+//   the nice-to-have toggle rides the skill section's `extra` slot), with the
+//   ActiveFiltersBar summary on top.
 // - Track route (`tracks` passed): leads with the browse tree; once a track is
 //   active, both axes render as unified TrackAxisSections (preset chips on by
 //   default, contextual suggestions, search-add) writing ?roles / ?skills.
@@ -44,6 +44,8 @@ export function FeedFilters({
   contextualSkills,
   roleCatalog,
   skillCatalog,
+  domainCatalog,
+  isFetching = false,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -58,8 +60,29 @@ export function FeedFilters({
   roleCatalog?: TrackAxis[];
   /** Full verified-skill catalog — search-and-add in the skill facet. */
   skillCatalog?: TrackAxis[];
+  /** Full verified-domain catalog. */
+  domainCatalog?: TrackAxis[];
+  /** The results query's fetching state — dims the rail while a refetch runs. */
+  isFetching?: boolean;
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
+  // Role/skill options come from the full /feed catalog (search reaches every
+  // node), not the aggregates top-N. Counts only order the empty-query view.
+  const roleOptions = useMemo<OptionRow[]>(
+    () =>
+      (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
+    [roleCatalog],
+  );
+  const skillOptions = useMemo<OptionRow[]>(
+    () =>
+      (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
+    [skillCatalog],
+  );
+  const domainOptions = useMemo<OptionRow[]>(
+    () =>
+      (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
+    [domainCatalog],
+  );
   const api = useUrlFilters();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -73,14 +96,13 @@ export function FeedFilters({
     (slug: string) => router.push(`/${encodeURIComponent(slug)}`),
     [router],
   );
-
   const handleToggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
 
   return (
     <div
       className={cn(
         "flex flex-col gap-3 transition-opacity",
-        api.isPending && "pointer-events-none opacity-50",
+        isFetching && "pointer-events-none opacity-50",
       )}
     >
       <button
@@ -98,7 +120,15 @@ export function FeedFilters({
 
       <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
         <DedupeToggle />
-        {trackMode ? null : <ActiveFiltersBar api={api} agg={agg} />}
+        {trackMode ? null : (
+          <ActiveFiltersBar
+            api={api}
+            agg={agg}
+            roles={roleOptions}
+            skills={skillOptions}
+            domains={domainOptions}
+          />
+        )}
         <aside className="flex flex-col border border-border bg-bg-card">
           {trackMode ? (
             <>
@@ -132,44 +162,34 @@ export function FeedFilters({
             </>
           ) : (
             <>
-              <RoleSection
-                roles={agg.roles}
-                activeId={api.filters.roleId}
-                onChange={api.setRole}
+              <MultiSelect
+                title="role"
+                options={roleOptions}
+                selected={api.filters.roleIds}
+                onToggle={api.toggleRole}
+                searchable
+                searchPlaceholder="search role…"
               />
-              <SkillsSection
-                skills={agg.skills}
-                selectedIds={api.filters.skillIds}
+              <MultiSelect
+                title="skills"
+                options={skillOptions}
+                selected={api.filters.skillIds}
                 onToggle={api.toggleSkill}
+                searchable
+                searchPlaceholder="search skill…"
+                extra={
+                  api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null
+                }
               />
-              {api.filters.skillIds.length > 0 ? (
-                <div className="border-b border-border px-4 py-3 last:border-b-0">
-                  <SkillScopeToggle />
-                </div>
-              ) : null}
             </>
           )}
-          {/* Perks sit right under the browse/refine block — high, but never
-              above the tracks. Reservation framed as a draw, test by its
-              desirable absence (see PerksFilter). */}
-          <PerksFilter
-            reservation={api.filters.reservation}
-            test={api.filters.test}
-            onReservation={api.setReservation}
-            onTest={api.setTest}
-          />
-          <EnumSection
-            title="seniority"
-            options={agg.seniorities}
-            activeId={api.filters.seniority}
-            onChange={api.setSeniority}
-            activeClassFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
-          />
-          <EnumSection
-            title="format"
-            options={agg.workFormats}
-            activeId={api.filters.workFormat}
-            onChange={api.setWorkFormat}
+          <FilterRail
+            api={api}
+            lens="cold"
+            seniorityOptions={agg.seniorities}
+            workFormatOptions={agg.workFormats}
+            domainOptions={domainOptions}
+            seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
           <SourceSection
             sources={agg.sources}

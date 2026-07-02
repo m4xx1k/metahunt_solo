@@ -1,9 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CollapsibleSection } from "./CollapsibleSection";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 import { PILL_BASE, pillClass } from "./pill";
-import type { OptionRow } from "./types";
+import type { SelectOption } from "./types";
 
 // Pills for closed enum filters (seniority, work format…). `id` carries the raw
 // API value, never a label. Two modes, backward-compatible:
@@ -19,9 +19,10 @@ export function EnumSection({
   activeIds = [],
   onToggle,
   activeClassFor,
+  singleRow = false,
 }: {
   title: string;
-  options: OptionRow[];
+  options: SelectOption[];
   activeId?: string | null;
   onChange?: (id: string | null) => void;
   multiple?: boolean;
@@ -30,6 +31,9 @@ export function EnumSection({
   // Optional per-option colour for the active state (seniority uses the
   // card's per-level tones); falls back to the default accent pill.
   activeClassFor?: (id: string) => string | undefined;
+  // One horizontal row (overflow scrolls) instead of wrapping — for short,
+  // ordered scales like the experience buttons.
+  singleRow?: boolean;
 }) {
   const isActive = (id: string) =>
     multiple ? activeIds.includes(id) : activeId === id;
@@ -51,7 +55,12 @@ export function EnumSection({
 
   return (
     <CollapsibleSection title={title} summary={summary}>
-      <div className="flex flex-wrap gap-2">
+      <div
+        className={cn(
+          "flex gap-2",
+          singleRow ? "flex-nowrap overflow-x-auto" : "flex-wrap",
+        )}
+      >
         {options.map((o) => {
           const active = isActive(o.id);
           const tone = active ? activeClassFor?.(o.id) : undefined;
@@ -61,7 +70,10 @@ export function EnumSection({
               type="button"
               aria-pressed={active}
               onClick={() => handle(o.id, active)}
-              className={tone ? cn(PILL_BASE, "font-bold", tone) : pillClass(active)}
+              className={cn(
+                tone ? cn(PILL_BASE, "font-bold", tone) : pillClass(active),
+                singleRow && "shrink-0",
+              )}
             >
               {o.label}
             </button>

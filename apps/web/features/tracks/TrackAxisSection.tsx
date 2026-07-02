@@ -1,11 +1,11 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type ChangeEvent, useCallback, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { type ChangeEvent, useCallback, useState } from "react";
 
-import { cn } from "@/lib/utils";
-import { CollapsibleSection } from "./CollapsibleSection";
-import { chipClass } from "./pill";
+import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
+import { chipClass } from "@/ui/inputs/pill";
 
 // One unified facet panel for either axis of an active track (roles or
 // skills). Three zones, top to bottom:
@@ -49,10 +49,8 @@ export function TrackAxisSection({
   /** Contextual ranked nodes (skills only); omitted for roles. */
   suggestions?: TrackAxis[];
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const push = useShallowSearchParams();
   const [query, setQuery] = useState("");
 
   const presetIds = presets.map((p) => p.id);
@@ -85,16 +83,13 @@ export function TrackAxisSection({
     : [];
 
   const commit = (nextIds: string[]) => {
-    const next = new URLSearchParams(searchParams.toString());
     const isPreset =
       nextIds.length === presetIds.length &&
       presetIds.every((id) => nextIds.includes(id));
-    if (isPreset) next.delete(urlKey);
-    else next.set(urlKey, nextIds.join(SEP)); // [] → "" (explicit empty)
-    next.delete("offset"); // a new refine context resets pagination
-    const qs = next.toString();
-    startTransition(() => {
-      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    push((next) => {
+      if (isPreset) next.delete(urlKey);
+      else next.set(urlKey, nextIds.join(SEP)); // [] → "" (explicit empty)
+      next.delete("offset"); // a new refine context resets pagination
     });
   };
 
@@ -120,13 +115,7 @@ export function TrackAxisSection({
 
   return (
     <CollapsibleSection title={title} summary={summary}>
-      <div
-        className={cn(
-          "flex flex-col gap-3",
-          isPending && "pointer-events-none opacity-50 transition-opacity",
-        )}
-        aria-busy={isPending || undefined}
-      >
+      <div className="flex flex-col gap-3">
         {chips.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {chips.map((id) => {

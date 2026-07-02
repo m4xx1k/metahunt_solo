@@ -71,6 +71,7 @@ export const copy = {
     byCv: "за резюме",
     skills: (n: number): string => `${n} скіл.`,
     reservation: "бронь",
+    experience: (years: string[]): string => `досвід ${years.join("/")}р`,
     all: "усі вакансії",
   },
 } as const;

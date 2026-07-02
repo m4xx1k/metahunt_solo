@@ -9,8 +9,19 @@ import {
   subscriptionsApi,
   type CvMatchParams,
 } from "@/lib/api/subscriptions";
-import { nonEmpty } from "@/lib/utils";
-import { FRESH_DAYS, type Filters } from "./filter-model";
+import {
+  asEnums,
+  DEFAULT_FRESHNESS,
+  FRESHNESS_DAYS,
+  type FilterState,
+} from "@/features/vacancy-filters/types";
+import type {
+  EmploymentType,
+  EnglishLevel,
+  Seniority,
+  WorkFormat,
+} from "@/lib/api/vacancies";
+import type { FitTier } from "@/lib/api/ranking";
 
 // CV counterpart of the feed's SubscribeButton: same Telegram handoff, plus a
 // candidateId so the digest ranks via rankByRefs. Tab opens in the click
@@ -20,7 +31,7 @@ export function CvSubscribeButton({
   filters,
 }: {
   candidateId: string;
-  filters: Filters;
+  filters: FilterState;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
@@ -62,15 +73,16 @@ export function CvSubscribeButton({
 }
 
 // Mirrors ReverseAtsClient's fetch mapping, so the sub replays what's on screen.
-function toCvMatchParams(f: Filters): CvMatchParams {
+function toCvMatchParams(f: FilterState): CvMatchParams {
   return {
-    seniorities: nonEmpty(f.seniorities),
-    workFormats: nonEmpty(f.workFormats),
-    englishLevels: nonEmpty(f.englishLevels),
-    employmentTypes: nonEmpty(f.employmentTypes),
-    hasTestAssignment: f.noTest ? false : undefined,
-    hasReservation: f.reservation ? true : undefined,
-    minFitTier: f.minFitTier ?? undefined,
-    postedWithinDays: f.fresh ? FRESH_DAYS : undefined,
+    seniorities: asEnums<Seniority>(f.seniorities),
+    workFormats: asEnums<WorkFormat>(f.workFormats),
+    englishLevels: asEnums<EnglishLevel>(f.englishLevels),
+    employmentTypes: asEnums<EmploymentType>(f.employmentTypes),
+    hasTestAssignment: f.test ?? undefined,
+    hasReservation: f.reservation ?? undefined,
+    minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
+    postedWithinDays:
+      FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
   };
 }

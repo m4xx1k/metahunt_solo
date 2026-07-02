@@ -294,24 +294,33 @@ export class SubscriptionsService {
   ): Promise<string> {
     const roleIds = asStringArray(params.roleIds);
     const skillIds = asStringArray(params.skillIds);
+    const domainIds = asStringArray(params.domainIds);
 
-    const roleNames =
-      roleIds.length > 0
+    const resolveNames = async (ids: string[]): Promise<string[]> =>
+      ids.length > 0
         ? (
             await this.db
               .select({ name: nodes.canonicalName })
               .from(nodes)
-              .where(inArray(nodes.id, roleIds))
+              .where(inArray(nodes.id, ids))
           ).map((r) => r.name)
         : [];
 
+    const [roleNames, domainNames] = await Promise.all([
+      resolveNames(roleIds),
+      resolveNames(domainIds),
+    ]);
+
     const parts: string[] = [];
-    if (candidateId) parts.push(copy.describe.byCv);
-    if (roleNames.length > 0) {
-      const shown = roleNames.slice(0, MAX_SUMMARY_ROLES).join(", ");
-      const extra = roleNames.length - MAX_SUMMARY_ROLES;
+    const pushNames = (names: string[]) => {
+      if (names.length === 0) return;
+      const shown = names.slice(0, MAX_SUMMARY_ROLES).join(", ");
+      const extra = names.length - MAX_SUMMARY_ROLES;
       parts.push(extra > 0 ? `${shown} +${extra}` : shown);
-    }
+    };
+    if (candidateId) parts.push(copy.describe.byCv);
+    pushNames(roleNames);
+    pushNames(domainNames);
     if (skillIds.length > 0) parts.push(copy.describe.skills(skillIds.length));
 
     const seniorities = asEnumList(params.seniorities, params.seniority);
@@ -321,6 +330,10 @@ export class SubscriptionsService {
     const formats = asEnumList(params.workFormats, params.workFormat);
     if (formats.length > 0) {
       parts.push(formats.map((f) => f.toLowerCase()).join("/"));
+    }
+    const experienceYears = asStringArray(params.experienceYears);
+    if (experienceYears.length > 0) {
+      parts.push(copy.describe.experience(experienceYears));
     }
     if (params.hasReservation === true) parts.push(copy.describe.reservation);
     if (typeof params.minFitTier === "string") {

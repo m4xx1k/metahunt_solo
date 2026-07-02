@@ -98,7 +98,7 @@ not cross-stage DI — which keeps each stage independently extractable later.
 | Package | Runtime deps |
 |---|---|
 | `@metahunt/database` | `@nestjs/common`, `@nestjs/config`, `drizzle-orm`, `pg` |
-| `@metahunt/etl` | `@nestjs/common`, `@nestjs/config`, `@nestjs/core`, `@nestjs/platform-express`, `reflect-metadata`, `rxjs`, `@metahunt/database`, `drizzle-orm`, `fast-xml-parser`, `zod`, `@aws-sdk/client-s3`, `nestjs-temporal-core`, `@temporalio/{client,worker,workflow,activity}`, `@boundaryml/baml` |
+| `@metahunt/etl` | `@nestjs/common`, `@nestjs/config`, `@nestjs/core`, `@nestjs/platform-express`, `reflect-metadata`, `class-validator`, `class-transformer`, `rxjs`, `@metahunt/database`, `drizzle-orm`, `fast-xml-parser`, `zod`, `@aws-sdk/client-s3`, `nestjs-temporal-core`, `@temporalio/{client,worker,workflow,activity}`, `@boundaryml/baml` |
 
 ## Runtime and env
 

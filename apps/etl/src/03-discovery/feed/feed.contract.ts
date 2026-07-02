@@ -141,6 +141,8 @@ export interface FeedQuery {
   roleIds?: string[];
   /** Match vacancies that have ALL listed skills (AND semantics). */
   skillIds?: string[];
+  /** Match vacancies whose domain is ANY of these DOMAIN node ids (OR). */
+  domainIds?: string[];
   /**
    * Skill-match scope. Default (false): a skill matches only when it's a
    * required (must-have) skill. When true, nice-to-have skills also satisfy
@@ -154,10 +156,9 @@ export interface FeedQuery {
   englishLevel?: EnglishLevel;
   engagementType?: EngagementType;
 
-  /** Lower bound on `experienceYears` (inclusive). */
-  experienceMin?: number;
-  /** Upper bound on `experienceYears` (inclusive). */
-  experienceMax?: number;
+  /** Discrete experience tokens (OR): exact "0".."5" + "6+" (≥6), matched
+   *  against the posting's stated minimum. NULL always passes. */
+  experienceYears?: string[];
 
   /** Vacancies whose `salaryMax` >= this (in `currency`). */
   salaryFloor?: number;
@@ -209,4 +210,8 @@ export interface RoleFacetsResponse {
 
 export interface SkillFacetsResponse {
   skills: NodeFacet[];
+}
+
+export interface DomainFacetsResponse {
+  domains: NodeFacet[];
 }
