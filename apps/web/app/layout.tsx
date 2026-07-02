@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { AppToaster } from "@/app/_components/AppToaster";
 import { VercelAnalytics } from '@/lib/vercel-analytics';
 import { PostHogProvider } from '@/lib/posthog';
+import { Providers } from "@/app/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({
@@ -47,10 +48,12 @@ export default function RootLayout({
       >
         <ClerkProvider afterSignOutUrl="/">
           <PostHogProvider>
-            <VercelAnalytics>
-            {children}
-            </VercelAnalytics>
-            <AppToaster />
+            <Providers>
+              <VercelAnalytics>
+              {children}
+              </VercelAnalytics>
+              <AppToaster />
+            </Providers>
           </PostHogProvider>
         </ClerkProvider>
       </body>

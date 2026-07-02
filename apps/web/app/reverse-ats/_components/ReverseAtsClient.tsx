@@ -1,31 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 
 import { Logo } from "@/ui";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
+import { useResults } from "@/features/vacancy-filters/use-results";
 import {
-  rankingApi,
-  type FitTier,
-  type MatchResponse,
-  type RecommendResponse,
-} from "@/lib/api/ranking";
-import { toCsv } from "@/lib/utils";
-import {
-  asEnums,
-  DEFAULT_FRESHNESS,
-  FRESHNESS_DAYS,
-  type FilterState,
-} from "@/features/vacancy-filters/types";
+  MATCH_PAGE_SIZE,
+  type WarmSource,
+} from "@/features/vacancy-filters/warm-query";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
-import type {
-  EmploymentType,
-  EnglishLevel,
-  Seniority,
-  WorkFormat,
-} from "@/lib/api/vacancies";
 import { CandidateProfile } from "./CandidateProfile";
 import { CvSubscribeButton } from "./CvSubscribeButton";
 import { MatchFilters } from "./MatchFilters";
@@ -33,148 +20,80 @@ import { MatchCard } from "./MatchCard";
 import { SkillRecommendations } from "./SkillRecommendations";
 import { SAMPLES } from "./samples";
 
-const PAGE_SIZE = 20;
-
 type Source =
   | { kind: "sample"; index: number }
   | { kind: "cv"; info: CvIngestResult };
 
-export function ReverseAtsClient({ initial }: { initial: MatchResponse | null }) {
+export function ReverseAtsClient() {
   const api = useUrlFilters();
   const [source, setSource] = useState<Source>({ kind: "sample", index: 0 });
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<MatchResponse | null>(initial);
-  const [rec, setRec] = useState<RecommendResponse | null>(null);
-  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Single fetch path: re-rank the given source under the given filters at the
-  // given page. Both the sample and CV cards share it, so a filter toggle or
-  // page change re-runs whichever candidate is active. Source/filters/page are
-  // passed in to dodge stale closures.
-  const run = useCallback(async (src: Source, f: FilterState, p: number) => {
-    // Scalars shared by both paths; multi-value filters differ only in wire
-    // format — JSON arrays for the POST body, CSV for the GET query.
-    const scalar = {
-      hasTestAssignment: f.test ?? undefined,
-      hasReservation: f.reservation ?? undefined,
-      minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
-      postedWithinDays:
-        FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
-    };
-    setError(null);
-    setLoading(true);
-    try {
-      const res =
-        src.kind === "sample"
-          ? await rankingApi.match({
-              skills: SAMPLES[src.index].skills,
-              page: p,
-              pageSize: PAGE_SIZE,
-              seniorities: asEnums<Seniority>(f.seniorities),
-              workFormats: asEnums<WorkFormat>(f.workFormats),
-              englishLevels: asEnums<EnglishLevel>(f.englishLevels),
-              employmentTypes: asEnums<EmploymentType>(f.employmentTypes),
-              ...scalar,
-            })
-          : await cvApi.matches(src.info.candidateId, {
-              page: p,
-              pageSize: PAGE_SIZE,
-              seniorities: toCsv(f.seniorities),
-              workFormats: toCsv(f.workFormats),
-              englishLevels: toCsv(f.englishLevels),
-              employmentTypes: toCsv(f.employmentTypes),
-              ...scalar,
-            });
-      setData(res);
-    } catch (e) {
-      setError(msg(e));
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // A filter change can shrink the result set below the current page — reset to
+  // 1 in the same render (React's "adjust state on prop change" pattern), so the
+  // results query never fires for an out-of-range page. `api.filters` is stable
+  // per URL, so this only trips on a real filter change.
+  const [prevFilters, setPrevFilters] = useState(api.filters);
+  if (prevFilters !== api.filters) {
+    setPrevFilters(api.filters);
+    setPage(1);
+  }
+
+  // The store carries cold-only axes too; warm ranks against the candidate, so
+  // map the active candidate into the app-agnostic WarmSource the hook fetches.
+  const warmSource: WarmSource =
+    source.kind === "sample"
+      ? { kind: "sample", skills: SAMPLES[source.index].skills }
+      : { kind: "cv", candidateId: source.info.candidateId };
+
+  const { data, isFetching, isError, error } = useResults({
+    lens: "warm",
+    source: warmSource,
+    filters: api.filters,
+    page,
+  });
 
   // Recommendations depend only on the candidate (role + skills define the
-  // cohort), not the page filters — fetch once per uploaded CV. Non-critical:
-  // the page works without it, so a failure just hides the block.
-  const loadRec = useCallback(async (candidateId: string) => {
+  // cohort), not the page filters — its own query, alive only for an uploaded CV.
+  const candidateId = source.kind === "cv" ? source.info.candidateId : null;
+  const { data: rec } = useQuery({
+    queryKey: ["recs", candidateId],
+    queryFn: () => cvApi.recommendations(candidateId as string),
+    enabled: candidateId != null,
+    staleTime: 30_000,
+  });
+
+  const runSample = useCallback((index: number) => {
+    setUploadError(null);
+    setPage(1);
+    setSource({ kind: "sample", index });
+  }, []);
+
+  const onFile = useCallback(async (file: File) => {
+    setUploadError(null);
+    setUploading(true);
     try {
-      setRec(await cvApi.recommendations(candidateId));
-    } catch {
-      setRec(null);
+      const info = await cvApi.uploadFile(file);
+      setPage(1);
+      setSource({ kind: "cv", info });
+    } catch (e) {
+      setUploadError(msg(e));
+    } finally {
+      setUploading(false);
     }
   }, []);
 
-  // Changing the candidate or any filter resets to page 1 (the old page may not
-  // exist in the new, smaller result set).
-  const runSample = useCallback(
-    (index: number) => {
-      const src: Source = { kind: "sample", index };
-      setSource(src);
-      setRec(null); // samples aren't stored candidates — no recommendations
-      setPage(1);
-      void run(src, api.filters, 1);
-    },
-    [run, api.filters],
-  );
-
-  const onFile = useCallback(
-    async (file: File) => {
-      setError(null);
-      setUploading(true);
-      try {
-        const info = await cvApi.uploadFile(file);
-        const src: Source = { kind: "cv", info };
-        setSource(src);
-        setPage(1);
-        await run(src, api.filters, 1);
-        void loadRec(info.candidateId);
-      } catch (e) {
-        setError(msg(e));
-        setData(null);
-      } finally {
-        setUploading(false);
-      }
-    },
-    [run, api.filters, loadRec],
-  );
-
-  // Filters live in the URL now; re-rank the active candidate whenever they
-  // change. Source is read via ref so a source switch doesn't double-fetch —
-  // runSample/onFile fetch that path themselves. Skip the initial mount: the
-  // server already sent `initial` for the default sample.
-  const sourceRef = useRef(source);
-  useEffect(() => {
-    sourceRef.current = source;
-  }, [source]);
-  const mounted = useRef(false);
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      // `initial` is the unfiltered default sample — only re-fetch on mount when
-      // the URL arrived with active filters (a shared/deep link).
-      if (api.activeCount === 0) return;
-    }
-    setPage(1);
-    void run(sourceRef.current, api.filters, 1);
-  }, [api.filters, api.activeCount, run]);
-
-  // Pagination drives offset; map it back to a 1-based page and refetch.
-  const goToOffset = useCallback(
-    (offset: number) => {
-      const p = Math.floor(offset / PAGE_SIZE) + 1;
-      setPage(p);
-      void run(source, api.filters, p);
-    },
-    [run, source, api.filters],
-  );
+  const goToOffset = useCallback((offset: number) => {
+    setPage(Math.floor(offset / MATCH_PAGE_SIZE) + 1);
+  }, []);
 
   const profileTitle =
     source.kind === "cv" ? "твоє CV" : `профіль · ${SAMPLES[source.index].label}`;
-  const busy = loading || uploading;
+  const busy = isFetching || uploading;
+  const errorMsg = uploadError ?? (isError ? msg(error) : null);
 
   return (
     <main className="min-h-screen bg-bg text-text-primary">
@@ -279,9 +198,9 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
           </div>
 
           <div className="flex flex-col gap-5">
-            {error ? (
+            {errorMsg ? (
               <p className="border border-danger/40 bg-danger/5 px-4 py-3 font-mono text-sm text-danger">
-                помилка: {error} — бекенд (NEXT_PUBLIC_API_URL) піднятий?
+                помилка: {errorMsg} — бекенд (NEXT_PUBLIC_API_URL) піднятий?
               </p>
             ) : null}
 
@@ -298,16 +217,16 @@ export function ReverseAtsClient({ initial }: { initial: MatchResponse | null })
               <MatchCard
                 key={item.vacancy.id}
                 item={item}
-                rank={(page - 1) * PAGE_SIZE + i + 1}
+                rank={(page - 1) * MATCH_PAGE_SIZE + i + 1}
               />
             ))}
 
-            {data && data.total > PAGE_SIZE ? (
+            {data && data.total > MATCH_PAGE_SIZE ? (
               <div className="mt-2 border-t border-border pt-5">
                 <Pagination
                   total={data.total}
-                  limit={PAGE_SIZE}
-                  offset={(page - 1) * PAGE_SIZE}
+                  limit={MATCH_PAGE_SIZE}
+                  offset={(page - 1) * MATCH_PAGE_SIZE}
                   onNavigate={goToOffset}
                 />
               </div>

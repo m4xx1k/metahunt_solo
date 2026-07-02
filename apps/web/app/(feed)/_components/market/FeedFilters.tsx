@@ -45,6 +45,7 @@ export function FeedFilters({
   roleCatalog,
   skillCatalog,
   domainCatalog,
+  isFetching = false,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -61,6 +62,8 @@ export function FeedFilters({
   skillCatalog?: TrackAxis[];
   /** Full verified-domain catalog. */
   domainCatalog?: TrackAxis[];
+  /** The results query's fetching state — dims the rail while a refetch runs. */
+  isFetching?: boolean;
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   // Role/skill options come from the full /feed catalog (search reaches every
@@ -99,7 +102,7 @@ export function FeedFilters({
     <div
       className={cn(
         "flex flex-col gap-3 transition-opacity",
-        api.isPending && "pointer-events-none opacity-50",
+        isFetching && "pointer-events-none opacity-50",
       )}
     >
       <button

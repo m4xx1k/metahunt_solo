@@ -1,24 +1,28 @@
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
+import { cn } from "@/lib/utils";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 
 type Props = {
   result: ListVacanciesResponse;
   offset: number;
-  flatSearchParams: Record<string, string | undefined>;
-  // The active track lives in the route segment, not the query string, so the
-  // page passes its route as the pagination base — otherwise paging drops it.
-  basePath: string;
+  // Client-driven pagination: the shell pushes ?offset shallowly and the query
+  // refetches — no RSC navigation, so this is a callback, not a link.
+  onNavigate: (offset: number) => void;
+  // From the results query; dims the (kept-visible) previous page while the
+  // next one loads.
+  isFetching?: boolean;
 };
 
-export function VacancyList({
-  result,
-  offset,
-  flatSearchParams,
-  basePath,
-}: Props) {
+export function VacancyList({ result, offset, onNavigate, isFetching }: Props) {
   return (
-    <section id="list" className="flex w-full min-w-0 flex-col gap-6">
+    <section
+      id="list"
+      className={cn(
+        "flex w-full min-w-0 flex-col gap-6 transition-opacity",
+        isFetching && "opacity-60",
+      )}
+    >
       <div className="flex items-baseline justify-between">
         <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">
           вакансії
@@ -47,8 +51,7 @@ export function VacancyList({
         total={result.total}
         limit={result.pageSize}
         offset={offset}
-        basePath={basePath}
-        searchParams={flatSearchParams}
+        onNavigate={onNavigate}
       />
     </section>
   );

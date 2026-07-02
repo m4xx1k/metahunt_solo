@@ -1,61 +1,35 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
 
-import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "./types";
-import type { FiltersApi, FilterState } from "./types";
-
-export type UrlFiltersApi = FiltersApi & { isPending: boolean };
+import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
+import { DEFAULT_FRESHNESS } from "./types";
+import type { FiltersApi } from "./types";
+import { LIST_SEP, readFilterState, readList } from "./url-params";
 
 // URL-backed FiltersApi — the one filter store. State lives in the query string
-// so the server component reads it and fans out the filtered query; a local
+// so a server component can seed it and the client refetches on change; a local
 // (useState) backend could satisfy the same interface with zero component
 // changes. Multi-value filters are comma-joined under a single key
-// (?seniorities=MIDDLE,SENIOR). Any change clears `offset`: a new filter context
-// makes the current page number meaningless.
+// (?seniorities=MIDDLE,SENIOR). Commits are shallow (pushState, no RSC nav), so
+// loading now comes from the results query's isFetching — not this hook.
 
-const LIST_SEP = ",";
-
-const readList = (raw: string | null): string[] =>
-  raw ? raw.split(LIST_SEP).filter(Boolean) : [];
-
-export function useUrlFilters(): UrlFiltersApi {
-  const router = useRouter();
-  const pathname = usePathname();
+export function useUrlFilters(): FiltersApi {
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const push = useShallowSearchParams();
 
-  const filters: FilterState = useMemo(
-    () => ({
-      roleIds: readList(searchParams.get("roles")),
-      skillIds: readList(searchParams.get("skills")),
-      domainIds: readList(searchParams.get("domains")),
-      sourceCode: searchParams.get("source"),
-      seniorities: readList(searchParams.get("seniorities")),
-      workFormats: readList(searchParams.get("workFormats")),
-      englishLevels: readList(searchParams.get("english")),
-      employmentTypes: readList(searchParams.get("employment")),
-      experienceYears: readList(searchParams.get("experience")),
-      freshness: readFreshness(searchParams.get("fresh")),
-      test: readBool(searchParams.get("test")),
-      reservation: readBool(searchParams.get("reservation")),
-      minFitTier: searchParams.get("minFitTier"),
-    }),
-    [searchParams],
-  );
+  const filters = useMemo(() => readFilterState(searchParams), [searchParams]);
 
+  // Any filter change clears ?offset: a new filter context makes the current
+  // page number meaningless.
   const commit = useCallback(
-    (mutate: (next: URLSearchParams) => void) => {
-      const next = new URLSearchParams(searchParams.toString());
-      mutate(next);
-      next.delete("offset");
-      const qs = next.toString();
-      startTransition(() => {
-        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-      });
-    },
-    [router, pathname, searchParams],
+    (mutate: (next: URLSearchParams) => void) =>
+      push((next) => {
+        mutate(next);
+        next.delete("offset");
+      }),
+    [push],
   );
 
   // Comma-joined multi-select over one URL key: add/remove `value`.
@@ -173,17 +147,5 @@ export function useUrlFilters(): UrlFiltersApi {
     ),
     clear,
     activeCount,
-    isPending,
   };
-}
-
-function readBool(raw: string | null): boolean | null {
-  if (raw === "true") return true;
-  if (raw === "false") return false;
-  return null;
-}
-
-// Absent or unknown → the default window; keeps a bad ?fresh from blanking it.
-function readFreshness(raw: string | null): string {
-  return raw && FRESHNESS_DAYS[raw] ? raw : DEFAULT_FRESHNESS;
 }
