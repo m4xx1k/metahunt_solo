@@ -9,8 +9,12 @@ import {
   subscriptionsApi,
   type CvMatchParams,
 } from "@/lib/api/subscriptions";
-import { FRESH_DAYS } from "@/features/vacancy-filters/enum-options";
-import { asEnums, type FilterState } from "@/features/vacancy-filters/types";
+import {
+  asEnums,
+  DEFAULT_FRESHNESS,
+  FRESHNESS_DAYS,
+  type FilterState,
+} from "@/features/vacancy-filters/types";
 import type {
   EmploymentType,
   EnglishLevel,
@@ -78,6 +82,7 @@ function toCvMatchParams(f: FilterState): CvMatchParams {
     hasTestAssignment: f.test ?? undefined,
     hasReservation: f.reservation ?? undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
-    postedWithinDays: f.fresh ? FRESH_DAYS : undefined,
+    postedWithinDays:
+      FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
   };
 }

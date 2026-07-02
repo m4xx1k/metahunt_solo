@@ -26,6 +26,10 @@ import {
   WORK_FORMAT_VALUES,
 } from "@/lib/api/vacancies";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
+import {
+  DEFAULT_FRESHNESS,
+  FRESHNESS_DAYS,
+} from "@/features/vacancy-filters/types";
 import { FeedHero } from "../_components/market/FeedHero";
 import { FeedFilters } from "../_components/market/FeedFilters";
 import { SubscribeButton } from "../_components/subscribe/SubscribeButton";
@@ -34,7 +38,6 @@ import { VacancyList } from "../_components/vacancy-list/VacancyList";
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
-const FRESH_WITHIN_DAYS = 7;
 
 const snapshotNav: NavItem[] = [
   { label: "вакансії", href: "#list" },
@@ -94,8 +97,10 @@ export default async function TrackPage({
     EMPLOYMENT_TYPE_VALUES,
     asString(sp.employment),
   );
+  // Freshness always applies; an absent/unknown ?fresh falls back to the default
+  // window (the feed shows the last month by default).
   const postedWithinDays =
-    asString(sp.fresh) === "true" ? FRESH_WITHIN_DAYS : undefined;
+    FRESHNESS_DAYS[asString(sp.fresh) ?? ""] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS];
   const hasTestAssignment = coerceBool(asString(sp.test));
   const hasReservation = coerceBool(asString(sp.reservation));
   // Experience buttons: comma-joined tokens in ?experience; empty = no filter.

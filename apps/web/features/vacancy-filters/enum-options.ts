@@ -10,10 +10,15 @@ import type { OptionRow } from "./types";
 // Distinct from the feed's aggregate-sourced seniority/format options (those carry
 // live counts); these are the static, candidate-facing label maps.
 
-// Freshness window used by the `fresh` filter → postedWithinDays.
-export const FRESH_DAYS = 7;
-
 const opt = (id: string, label: string): OptionRow => ({ id, label, count: 0 });
+
+// Freshness windows (ids match FRESHNESS_DAYS in types.ts). Single-select, no
+// "any" — the feed always applies a window, defaulting to the last month.
+export const FRESHNESS_OPTIONS: OptionRow[] = [
+  opt("month", "1 month"),
+  opt("2weeks", "2 weeks"),
+  opt("week", "1 week"),
+];
 
 // Seniority: drop the noisy tail (INTERN/PRINCIPAL/C_LEVEL) for a candidate UI.
 export const SENIORITY_OPTIONS: OptionRow[] = (

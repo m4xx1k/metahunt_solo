@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
 import type { Seniority } from "@/lib/extracted-vacancy";
+import { FRESHNESS_OPTIONS } from "./enum-options";
+import { DEFAULT_FRESHNESS } from "./types";
 import type { FilterAggregates, FiltersApi, OptionRow } from "./types";
 
 interface Chip {
@@ -170,6 +172,15 @@ function buildChips(
         ? "border-success text-success"
         : "border-text-secondary text-text-primary",
       onRemove: () => api.setReservation(null),
+    });
+  }
+  if (filters.freshness !== DEFAULT_FRESHNESS) {
+    const o = FRESHNESS_OPTIONS.find((x) => x.id === filters.freshness);
+    chips.push({
+      key: "freshness",
+      label: `fresh: ${o?.label ?? filters.freshness}`,
+      tone: "border-accent text-accent",
+      onRemove: () => api.setFreshness(DEFAULT_FRESHNESS),
     });
   }
 

@@ -31,6 +31,15 @@ export interface FilterAggregates {
   workFormats: OptionRow[];
 }
 
+// Freshness is always applied (no "any" window): the feed defaults to the last
+// month. `freshness` is one of these tokens; the days map is the wire value.
+export const FRESHNESS_DAYS: Record<string, number> = {
+  month: 30,
+  "2weeks": 14,
+  week: 7,
+};
+export const DEFAULT_FRESHNESS = "month";
+
 // One superset shared by the feed (cold) and reverse-ATS (warm). Every field is
 // cold-available except `minFitTier`, which needs a ranked result — so it is the
 // only warm-only field. Enum arrays stay string-typed; the API client narrows
@@ -50,8 +59,8 @@ export interface FilterState {
   employmentTypes: string[];
   /** Selected experience tokens ("0".."5" exact, "6+" = ≥6), OR-combined. */
   experienceYears: string[];
-  /** Freshness gate — posted within the last week. */
-  fresh: boolean;
+  /** Freshness window token (see FRESHNESS_DAYS); always set, defaults to month. */
+  freshness: string;
   test: boolean | null;
   reservation: boolean | null;
   /** Warm-only: minimum coverage tier; needs a ranked (CV) result. */
@@ -68,7 +77,7 @@ export const EMPTY_FILTERS: FilterState = {
   englishLevels: [],
   employmentTypes: [],
   experienceYears: [],
-  fresh: false,
+  freshness: DEFAULT_FRESHNESS,
   test: null,
   reservation: null,
   minFitTier: null,
@@ -95,7 +104,7 @@ export interface FiltersApi {
   toggleEmploymentType: (v: string) => void;
   /** Toggle one experience token ("0".."5" or "6+") in the OR-set. */
   toggleExperience: (value: string) => void;
-  setFresh: (v: boolean) => void;
+  setFreshness: (v: string) => void;
   setTest: (v: boolean | null) => void;
   setReservation: (v: boolean | null) => void;
   /** Warm-only coverage gate; a no-op source on the cold feed. */

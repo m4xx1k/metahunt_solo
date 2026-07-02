@@ -185,15 +185,8 @@ export function FeedFilters({
             lens="cold"
             seniorityOptions={agg.seniorities}
             workFormatOptions={agg.workFormats}
+            domainOptions={domainOptions}
             seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
-          />
-          <MultiSelect
-            title="domain"
-            options={domainOptions}
-            selected={api.filters.domainIds}
-            onToggle={api.toggleDomain}
-            searchable
-            searchPlaceholder="search domain…"
           />
           <SourceSection
             sources={agg.sources}

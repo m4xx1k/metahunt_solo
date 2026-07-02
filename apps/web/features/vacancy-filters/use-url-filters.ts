@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useTransition } from "react";
 
+import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "./types";
 import type { FiltersApi, FilterState } from "./types";
 
 export type UrlFiltersApi = FiltersApi & { isPending: boolean };
@@ -36,7 +37,7 @@ export function useUrlFilters(): UrlFiltersApi {
       englishLevels: readList(searchParams.get("english")),
       employmentTypes: readList(searchParams.get("employment")),
       experienceYears: readList(searchParams.get("experience")),
-      fresh: searchParams.get("fresh") === "true",
+      freshness: readFreshness(searchParams.get("fresh")),
       test: readBool(searchParams.get("test")),
       reservation: readBool(searchParams.get("reservation")),
       minFitTier: searchParams.get("minFitTier"),
@@ -71,9 +72,12 @@ export function useUrlFilters(): UrlFiltersApi {
     [commit],
   );
 
-  const setFlag = useCallback(
-    (key: string, on: boolean) =>
-      commit((n) => (on ? n.set(key, "true") : n.delete(key))),
+  // Freshness always resolves to a window; the default (month) is the clean URL.
+  const setFreshness = useCallback(
+    (v: string) =>
+      commit((n) =>
+        v === DEFAULT_FRESHNESS ? n.delete("fresh") : n.set("fresh", v),
+      ),
     [commit],
   );
 
@@ -123,7 +127,7 @@ export function useUrlFilters(): UrlFiltersApi {
     filters.englishLevels.length +
     filters.employmentTypes.length +
     filters.experienceYears.length +
-    (filters.fresh ? 1 : 0) +
+    (filters.freshness !== DEFAULT_FRESHNESS ? 1 : 0) +
     (filters.test !== null ? 1 : 0) +
     (filters.reservation !== null ? 1 : 0) +
     (filters.minFitTier ? 1 : 0);
@@ -157,7 +161,7 @@ export function useUrlFilters(): UrlFiltersApi {
       (v: string) => toggleList("experience", v),
       [toggleList],
     ),
-    setFresh: useCallback((v: boolean) => setFlag("fresh", v), [setFlag]),
+    setFreshness,
     setTest: useCallback((v: boolean | null) => setTristate("test", v), [setTristate]),
     setReservation: useCallback(
       (v: boolean | null) => setTristate("reservation", v),
@@ -177,4 +181,9 @@ function readBool(raw: string | null): boolean | null {
   if (raw === "true") return true;
   if (raw === "false") return false;
   return null;
+}
+
+// Absent or unknown → the default window; keeps a bad ?fresh from blanking it.
+function readFreshness(raw: string | null): string {
+  return raw && FRESHNESS_DAYS[raw] ? raw : DEFAULT_FRESHNESS;
 }
