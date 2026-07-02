@@ -17,6 +17,14 @@ export interface CvIngestResult {
   unmatched: string[];
 }
 
+// A seeded demo profile for the reverse-ATS picker — ranked via the same
+// candidateId path as an uploaded CV.
+export interface SampleCandidate {
+  candidateId: string;
+  label: string;
+  hint: string;
+}
+
 // Multi-value filters travel as CSV (e.g. "MIDDLE,SENIOR") to keep the GET URL
 // flat; booleans/enums as-is (buildQs stringifies them).
 export interface CvMatchQuery {
@@ -24,6 +32,10 @@ export interface CvMatchQuery {
   workFormats?: string;
   englishLevels?: string;
   employmentTypes?: string;
+  /** CSV of DOMAIN node ids. */
+  domainIds?: string;
+  /** CSV of experience tokens ("0".."5" exact, "6+" = ≥6). */
+  experienceYears?: string;
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   minFitTier?: FitTier;
@@ -34,6 +46,11 @@ export interface CvMatchQuery {
 }
 
 export const cvApi = {
+  // Seeded demo profiles for the picker. ISR-cached — the sample set is static
+  // (changes only on a re-seed / deploy).
+  samples: () =>
+    apiGet<SampleCandidate[]>("/cv/samples", { next: { revalidate: 300 } }),
+
   // Multipart upload (PDF/.txt) — not via apiPost, which is JSON-only.
   uploadFile: async (file: File): Promise<CvIngestResult> => {
     const form = new FormData();

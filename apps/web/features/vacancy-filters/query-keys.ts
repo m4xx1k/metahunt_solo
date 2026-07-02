@@ -5,9 +5,12 @@
 
 import type { ListVacanciesQuery } from "@/lib/api/vacancies";
 import type { FilterState } from "./types";
-import { warmFilterKey, type WarmSource } from "./warm-query";
+import { warmFilterKey } from "./warm-query";
 
 export const coldKey = (query: ListVacanciesQuery) => ["feed", query] as const;
 
-export const warmKey = (source: WarmSource, filters: FilterState, page: number) =>
-  ["match", source, warmFilterKey(filters), page] as const;
+export const warmKey = (
+  candidateId: string,
+  filters: FilterState,
+  page: number,
+) => ["match", candidateId, warmFilterKey(filters), page] as const;

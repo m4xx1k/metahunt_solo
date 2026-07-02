@@ -8,16 +8,19 @@ import {
   SENIORITY_OPTIONS,
   WORK_FORMAT_OPTIONS,
 } from "@/features/vacancy-filters/enum-options";
-import type { FiltersApi } from "@/features/vacancy-filters/types";
+import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
 
 // The reverse-ATS filter sidebar: the shared FilterRail (warm lens) in a sticky
 // column on xl+, collapsed behind one toggle below. Filters live in the URL via
 // the shared FiltersApi — the same store the feed uses.
 export function MatchFilters({
   api,
+  domainOptions,
   disabled = false,
 }: {
   api: FiltersApi;
+  /** Domain catalog for the domain section (same catalog the feed uses). */
+  domainOptions?: OptionRow[];
   disabled?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -49,6 +52,7 @@ export function MatchFilters({
             lens="warm"
             seniorityOptions={SENIORITY_OPTIONS}
             workFormatOptions={WORK_FORMAT_OPTIONS}
+            domainOptions={domainOptions}
           />
         </aside>
 
