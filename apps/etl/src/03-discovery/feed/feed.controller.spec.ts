@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import type { FeedResponse } from "./feed.contract";
 import { FeedController } from "./feed.controller";
@@ -18,6 +19,12 @@ const EMPTY: FeedResponse = {
 // query parsing/validation lives in the DTO (see filter-params.dto.spec.ts).
 describe("FeedController", () => {
   const search = jest.fn();
+  // Identity resolver: slug->id resolution is covered separately; here it must
+  // pass values through so the DTO→FeedSearchParams mapping stays assertable.
+  const slugs = {
+    toIds: jest.fn(async (_type: string, v?: string[]) => v),
+    toId: jest.fn(async (_type: string, v?: string) => v),
+  };
   let controller: FeedController;
 
   beforeEach(async () => {
@@ -28,6 +35,7 @@ describe("FeedController", () => {
         { provide: FeedService, useValue: { search } },
         { provide: FacetsService, useValue: {} },
         { provide: DedupService, useValue: {} },
+        { provide: NodeSlugResolver, useValue: slugs },
       ],
     }).compile();
     controller = moduleRef.get(FeedController);

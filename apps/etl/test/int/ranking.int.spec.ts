@@ -133,6 +133,13 @@ describe("RankingService.match (integration)", () => {
     const vac = await seedVacancy(sourceId, ingestId, role);
     await linkSkill(vac, go, true);
     await linkSkill(vac, k8s, true);
+    // Pad the corpus so smoothed IDF (ln(N/(df+5))) stays positive — otherwise
+    // every weight clamps to 0 and weighted required-coverage can't compute
+    // (see the rare-skill test above). Filler vacancies inflate N without
+    // touching Go/Kubernetes df, so both keep an equal positive weight → 1/2.
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
     await refreshNodeStats();
 
     const res = await ranking.match(["Go"], {}, 1, 20);
