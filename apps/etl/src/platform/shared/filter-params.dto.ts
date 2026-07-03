@@ -95,6 +95,18 @@ export class FilterParamsDto {
   hasReservation?: boolean;
 
   @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  domainIds?: string[];
+
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  experienceYears?: string[];
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -124,18 +136,6 @@ export class FeedQueryDto extends FilterParamsDto {
   @IsArray()
   @IsString({ each: true })
   skillIds?: string[];
-
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  domainIds?: string[];
-
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  experienceYears?: string[];
 
   @IsOptional()
   @toBool()

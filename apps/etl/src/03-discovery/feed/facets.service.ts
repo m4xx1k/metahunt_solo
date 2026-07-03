@@ -12,7 +12,9 @@ import type {
 } from "./feed.contract";
 
 // The full role/skill catalogs the filter sidebar searches — every VERIFIED
-// node over the eligible vacancy set, with its vacancy count.
+// node over the eligible vacancy set, with its vacancy count. `id` carries the
+// node slug (the URL-facing filter key `?roles=backend-engineer`), resolved back
+// to the UUID at the feed controller boundary.
 @Injectable()
 export class FacetsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
@@ -23,7 +25,7 @@ export class FacetsService {
       name: string;
       count: number;
     }>(sql`
-      SELECT n.id::text AS id,
+      SELECT COALESCE(n.slug, n.id::text) AS id,
              n.canonical_name AS name,
              COUNT(DISTINCT vn.vacancy_id)::int AS count
       FROM vacancy_nodes vn
@@ -44,7 +46,7 @@ export class FacetsService {
       name: string;
       count: number;
     }>(sql`
-      SELECT n.id::text AS id,
+      SELECT COALESCE(n.slug, n.id::text) AS id,
              n.canonical_name AS name,
              COUNT(*)::int AS count
       FROM vacancies v
@@ -63,7 +65,7 @@ export class FacetsService {
       name: string;
       count: number;
     }>(sql`
-      SELECT n.id::text AS id,
+      SELECT COALESCE(n.slug, n.id::text) AS id,
              n.canonical_name AS name,
              COUNT(*)::int AS count
       FROM vacancies v

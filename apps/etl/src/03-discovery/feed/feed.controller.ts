@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE } from "../../platform/shared/query-parsing";
 import { FeedService, type FeedSearchParams } from "./feed.service";
@@ -23,14 +24,23 @@ export class FeedController {
     private readonly feed: FeedService,
     private readonly facets: FacetsService,
     private readonly dedup: DedupService,
+    private readonly slugs: NodeSlugResolver,
   ) {}
 
   // ValidationPipe (transform) turns the raw query into a validated FeedQueryDto:
   // enum arrays are checked, bad values 400 at the boundary, and the list/bool
   // transforms flatten repeated params, single values, and CSV to one shape.
+  // The role/skill/domain axes arrive as slugs (?roles=backend-engineer); we
+  // resolve them to node ids here so everything downstream stays id-based.
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  search(@Query() dto: FeedQueryDto) {
+  async search(@Query() dto: FeedQueryDto) {
+    [dto.roleIds, dto.skillIds, dto.domainIds, dto.roleId] = await Promise.all([
+      this.slugs.toIds("ROLE", dto.roleIds),
+      this.slugs.toIds("SKILL", dto.skillIds),
+      this.slugs.toIds("DOMAIN", dto.domainIds),
+      this.slugs.toId("ROLE", dto.roleId),
+    ]);
     return this.feed.search(toSearchParams(dto));
   }
 

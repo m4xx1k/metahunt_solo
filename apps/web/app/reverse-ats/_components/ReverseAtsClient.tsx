@@ -1,99 +1,45 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
 
 import { Logo } from "@/ui";
 import { Pagination } from "@/ui/navigation/Pagination";
-import { cvApi, type CvIngestResult } from "@/lib/api/cv";
-import { useResults } from "@/features/vacancy-filters/use-results";
-import {
-  MATCH_PAGE_SIZE,
-  type WarmSource,
-} from "@/features/vacancy-filters/warm-query";
-import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
+import type { SampleCandidate } from "@/lib/api/cv";
+import type { OptionRow } from "@/features/vacancy-filters/types";
+import { useReverseAts } from "../_hooks/use-reverse-ats";
 import { CandidateProfile } from "./CandidateProfile";
 import { CvSubscribeButton } from "./CvSubscribeButton";
 import { MatchFilters } from "./MatchFilters";
 import { MatchCard } from "./MatchCard";
 import { SkillRecommendations } from "./SkillRecommendations";
-import { SAMPLES } from "./samples";
 
-type Source =
-  | { kind: "sample"; index: number }
-  | { kind: "cv"; info: CvIngestResult };
-
-export function ReverseAtsClient() {
-  const api = useUrlFilters();
-  const [source, setSource] = useState<Source>({ kind: "sample", index: 0 });
-  const [page, setPage] = useState(1);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  // A filter change can shrink the result set below the current page — reset to
-  // 1 in the same render (React's "adjust state on prop change" pattern), so the
-  // results query never fires for an out-of-range page. `api.filters` is stable
-  // per URL, so this only trips on a real filter change.
-  const [prevFilters, setPrevFilters] = useState(api.filters);
-  if (prevFilters !== api.filters) {
-    setPrevFilters(api.filters);
-    setPage(1);
-  }
-
-  // The store carries cold-only axes too; warm ranks against the candidate, so
-  // map the active candidate into the app-agnostic WarmSource the hook fetches.
-  const warmSource: WarmSource =
-    source.kind === "sample"
-      ? { kind: "sample", skills: SAMPLES[source.index].skills }
-      : { kind: "cv", candidateId: source.info.candidateId };
-
-  const { data, isFetching, isError, error } = useResults({
-    lens: "warm",
-    source: warmSource,
-    filters: api.filters,
+export function ReverseAtsClient({
+  samples,
+  domainOptions,
+}: {
+  samples: SampleCandidate[];
+  domainOptions: OptionRow[];
+}) {
+  const {
+    api,
+    active,
+    isUpload,
+    candidateId,
+    data,
+    rec,
     page,
-  });
-
-  // Recommendations depend only on the candidate (role + skills define the
-  // cohort), not the page filters — its own query, alive only for an uploaded CV.
-  const candidateId = source.kind === "cv" ? source.info.candidateId : null;
-  const { data: rec } = useQuery({
-    queryKey: ["recs", candidateId],
-    queryFn: () => cvApi.recommendations(candidateId as string),
-    enabled: candidateId != null,
-    staleTime: 30_000,
-  });
-
-  const runSample = useCallback((index: number) => {
-    setUploadError(null);
-    setPage(1);
-    setSource({ kind: "sample", index });
-  }, []);
-
-  const onFile = useCallback(async (file: File) => {
-    setUploadError(null);
-    setUploading(true);
-    try {
-      const info = await cvApi.uploadFile(file);
-      setPage(1);
-      setSource({ kind: "cv", info });
-    } catch (e) {
-      setUploadError(msg(e));
-    } finally {
-      setUploading(false);
-    }
-  }, []);
-
-  const goToOffset = useCallback((offset: number) => {
-    setPage(Math.floor(offset / MATCH_PAGE_SIZE) + 1);
-  }, []);
-
-  const profileTitle =
-    source.kind === "cv" ? "твоє CV" : `профіль · ${SAMPLES[source.index].label}`;
-  const busy = isFetching || uploading;
-  const errorMsg = uploadError ?? (isError ? msg(error) : null);
+    pageSize,
+    busy,
+    uploading,
+    errorMsg,
+    profileTitle,
+    profileRole,
+    profileSeniority,
+    fileRef,
+    selectSample,
+    onFile,
+    goToOffset,
+  } = useReverseAts(samples);
 
   return (
     <main className="min-h-screen bg-bg text-text-primary">
@@ -131,15 +77,17 @@ export function ReverseAtsClient() {
               готовий профіль
             </p>
             <div className="flex flex-wrap gap-2">
-              {SAMPLES.map((s, i) => {
-                const active = source.kind === "sample" && source.index === i;
+              {samples.map((s) => {
+                const isActive =
+                  active?.kind === "sample" &&
+                  active.candidateId === s.candidateId;
                 return (
                   <button
-                    key={s.label}
+                    key={s.candidateId}
                     type="button"
-                    onClick={() => runSample(i)}
+                    onClick={() => selectSample(s)}
                     className={`border px-3 py-2 text-left font-mono text-xs transition-colors ${
-                      active
+                      isActive
                         ? "border-accent bg-bg-card text-accent"
                         : "border-border text-text-secondary hover:border-accent"
                     }`}
@@ -187,14 +135,11 @@ export function ReverseAtsClient() {
       <section className="px-6 pb-20 pt-8 lg:px-12">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_300px] xl:items-start">
           <div className="flex flex-col gap-4 xl:sticky xl:top-24">
-            {/* CV source only — samples have no candidate to rank against. */}
-            {source.kind === "cv" && data ? (
-              <CvSubscribeButton
-                candidateId={source.info.candidateId}
-                filters={api.filters}
-              />
+            {/* Uploaded CV only — a demo sample has no owner to subscribe. */}
+            {isUpload && candidateId && data ? (
+              <CvSubscribeButton candidateId={candidateId} filters={api.filters} />
             ) : null}
-            <MatchFilters api={api} disabled={busy} />
+            <MatchFilters api={api} domainOptions={domainOptions} disabled={busy} />
           </div>
 
           <div className="flex flex-col gap-5">
@@ -217,16 +162,16 @@ export function ReverseAtsClient() {
               <MatchCard
                 key={item.vacancy.id}
                 item={item}
-                rank={(page - 1) * MATCH_PAGE_SIZE + i + 1}
+                rank={(page - 1) * pageSize + i + 1}
               />
             ))}
 
-            {data && data.total > MATCH_PAGE_SIZE ? (
+            {data && data.total > pageSize ? (
               <div className="mt-2 border-t border-border pt-5">
                 <Pagination
                   total={data.total}
-                  limit={MATCH_PAGE_SIZE}
-                  offset={(page - 1) * MATCH_PAGE_SIZE}
+                  limit={pageSize}
+                  offset={(page - 1) * pageSize}
                   onNavigate={goToOffset}
                 />
               </div>
@@ -238,24 +183,18 @@ export function ReverseAtsClient() {
             <div className="order-first flex flex-col gap-4 xl:order-none xl:sticky xl:top-24">
               <CandidateProfile
                 title={profileTitle}
-                role={source.kind === "cv" ? source.info.role : null}
-                seniority={source.kind === "cv" ? source.info.seniority : null}
+                role={profileRole}
+                seniority={profileSeniority}
                 matched={data.resolved.matched}
                 unmatched={data.resolved.unmatched}
                 totalVacancies={data.total}
               />
-              {/* CV source only — samples have no stored candidate to recommend against. */}
-              {source.kind === "cv" && rec ? (
-                <SkillRecommendations rec={rec} />
-              ) : null}
+              {/* Uploaded CV only — a demo sample has no stored owner to recommend against. */}
+              {isUpload && rec ? <SkillRecommendations rec={rec} /> : null}
             </div>
           ) : null}
         </div>
       </section>
     </main>
   );
-}
-
-function msg(e: unknown): string {
-  return e instanceof Error ? e.message : "request failed";
 }

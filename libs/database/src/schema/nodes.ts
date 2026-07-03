@@ -19,6 +19,9 @@ export const nodes = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     type: nodeType('type').notNull(),
     canonicalName: text('canonical_name').notNull(),
+    // URL-facing stable id: minted once from canonical_name, immutable on rename.
+    // Nullable only during the backfill window (db:seed:node-slugs fills it).
+    slug: text('slug'),
     status: nodeStatus('status').notNull().default('NEW'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -26,6 +29,7 @@ export const nodes = pgTable(
   },
   (t) => [
     unique('nodes_type_canonical_name_key').on(t.type, t.canonicalName),
+    unique('nodes_type_slug_key').on(t.type, t.slug),
     index('nodes_status_type_idx').on(t.status, t.type),
   ],
 );

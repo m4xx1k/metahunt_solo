@@ -53,6 +53,18 @@ export function parseEnumCsv<T extends string>(
   return out.length > 0 ? out : undefined;
 }
 
+// CSV of arbitrary non-empty strings (e.g. ?domainIds=uuid1,uuid2 or
+// ?experienceYears=3,6+) → deduped trimmed list. No allow-list — for open sets
+// (ids, discrete tokens) a GET query wants flat.
+export function parseCsv(name: string, raw: unknown): string[] | undefined {
+  const s = asString(name, raw);
+  if (s === undefined) return undefined;
+  const out = [
+    ...new Set(s.split(",").map((v) => v.trim()).filter((v) => v.length > 0)),
+  ];
+  return out.length > 0 ? out : undefined;
+}
+
 // JSON array of enum values (e.g. {"seniorities":["MIDDLE","SENIOR"]}) → deduped
 // T[]. For POST bodies.
 export function parseEnumArray<T extends string>(

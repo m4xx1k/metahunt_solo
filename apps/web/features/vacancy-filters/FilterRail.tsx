@@ -15,11 +15,12 @@ import type { FiltersApi, OptionRow } from "./types";
 type Lens = "cold" | "warm";
 
 // The shared closed-enum filter rail — one widget, both lenses, one FiltersApi.
-// Freshness leads (always applied, defaults to the last month). Cold and warm
-// differ only by data, not layout: seniority/format option source (aggregate
-// counts vs static), the domain search + experience (cold-only; the ranker has
-// no domain/experience filter — the CV is the query), and the fit gate
-// (warm-only). Section labels are English on both.
+// Freshness leads (always applied, defaults to the last month). Both lenses share
+// the same section order (seniority · format · english · employment · domain ·
+// experience · perks); they differ only in data (seniority/format counts vs
+// static) and the warm-only fit gate. Domain renders whenever a catalog is passed
+// (both lenses filter vacancies by domain); the fit gate needs a ranked result.
+// Section labels are English on both.
 export function FilterRail({
   api,
   lens,
@@ -32,7 +33,7 @@ export function FilterRail({
   lens: Lens;
   seniorityOptions: OptionRow[];
   workFormatOptions: OptionRow[];
-  /** Cold-only searchable domain catalog; omitted → the section is not rendered. */
+  /** Searchable domain catalog; omitted → the section is not rendered. */
   domainOptions?: OptionRow[];
   /** Cold seniority pills carry the per-level card tone; warm omits it. */
   seniorityToneFor?: (id: string) => string | undefined;
@@ -79,7 +80,7 @@ export function FilterRail({
         activeIds={filters.employmentTypes}
         onToggle={api.toggleEmploymentType}
       />
-      {lens === "cold" && domainOptions ? (
+      {domainOptions ? (
         <MultiSelect
           title="domain"
           options={domainOptions}
@@ -89,12 +90,10 @@ export function FilterRail({
           searchPlaceholder="search domain…"
         />
       ) : null}
-      {lens === "cold" ? (
-        <ExperienceSection
-          selected={filters.experienceYears}
-          onToggle={api.toggleExperience}
-        />
-      ) : null}
+      <ExperienceSection
+        selected={filters.experienceYears}
+        onToggle={api.toggleExperience}
+      />
       {lens === "warm" ? (
         <EnumSection
           title="min fit"
