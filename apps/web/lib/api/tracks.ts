@@ -42,6 +42,7 @@ export interface ContextualSkillsResponse {
 // default; toggle to narrow, search to widen. Empty arrays = pure grouping.
 
 export interface TrackNode {
+  /** Node slug — seeds the filter URL (`?roles`/`?skills`) as the preset. */
   id: string;
   name: string;
 }

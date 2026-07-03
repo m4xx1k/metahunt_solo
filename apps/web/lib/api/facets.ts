@@ -6,6 +6,7 @@
 import { apiGet } from "./client";
 
 export interface NodeFacet {
+  /** Node slug — the URL-facing filter key (`?roles=backend-engineer`). */
   id: string;
   name: string;
   count: number;

@@ -22,3 +22,11 @@ export interface CandidateView extends CvIngestResult {
   experienceYears: number | null;
   extracted: Record<string, unknown>;
 }
+
+// A seeded demo profile (candidate.type = 'sample') for the reverse-ATS picker.
+// The picker ranks it via the same GET /cv/:id/matches path as an uploaded CV.
+export interface SampleCandidate {
+  candidateId: string;
+  label: string;
+  hint: string;
+}

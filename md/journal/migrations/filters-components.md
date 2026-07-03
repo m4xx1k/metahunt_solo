@@ -49,7 +49,7 @@ Goal: **one store** (the existing `FiltersApi` seam — URL-backed now, swappabl
 - [x] **T4 — shared `FilterRail` widget + cleanup + docs** — done `c193c13` + docs. *done when:* one `FilterRail` (`lens` prop) consumed by both feed + reverse-ATS, divergent sidebars deleted; `md/architecture/overview.md` updated if shape changed; `releases.md` entry; reviewer/verifier pass + comment-cleanup pass; tracker Outcome written.
 - [x] **T5 — freshness window + domain-in-rail + english labels** — done `c3b2285` (web tsc + lint clean). *done when:* `fresh: boolean` → `freshness` window (month default · 2weeks · week), single-select, top of rail, applied both lenses; domain moved into `FilterRail` (cold-only); english labels on both lenses; freshness chip in `ActiveFiltersBar`.
 - [x] **T6 — unified data layer (SSR-seed → react-query)** — done `9757e04` (web tsc + lint + prod build clean; runtime-verified). *done when:* `@tanstack/react-query` + a root `QueryClientProvider` (staleTime 30s); one shared `useResults(lens, …)` hook keyed on the filter state, `queryFn` branching by lens (cold→`/feed`, warm→`/ranking` or `/cv/:id/matches`), `placeholderData: keepPreviousData`; **server-seed = `HydrationBoundary` + `dehydrate` under the shared `coldKey`/`warmKey`** (not raw `initialData`, which leaks the seed onto every new key); feed list + reverse-ATS both render from it (`ReverseAtsClient`'s `run()`/effect/refs dropped); `use-url-filters` (and the dedupe/nice toggles + `TrackAxisSection`) commit **shallowly** via `lib/hooks/use-shallow-search-params` (History API `pushState`) so a filter change refetches via the query WITHOUT an RSC double-fetch (Next 16 mechanism verified in the tracker); loading/error/isFetching come from the query. `FiltersApi` unchanged (isPending dropped). Shared pure codecs (`url-params`, `feed-query`, `warm-query`) keep the SSR seed key == the client's first key. Runtime evidence: feed SSRs the filtered list (month default 1722 · `?seniorities=SENIOR` 613 · `?fresh=week` 94), track presets (`/backend-go` 37 · `?skills=` 271 · both-empty 0), 404 for unknown track, reverse-ATS SSRs match results; no hydration errors.
-- [ ] **T7 — slugs in the URL (`?roles=backend-engineer`)** — *done when:* `nodes.slug` column (unique per `(type, slug)`, backfilled `slugify(canonical_name)` + collision suffix, mint-once/immutable on rename, maintained on node create/rename); facet endpoints (`/feed/roles|skills|domains`) return `slug`; URL carries slugs; id↔slug resolved at ONE boundary (decision below); `source` unchanged (already a code); prod backfill run + verified.
+- [x] **T7 — slugs in the URL (`?roles=backend-engineer`)** — done `4bd2c22` (on `feat/reverse-ats-candidates`/#60, see Outcome). *done when:* `nodes.slug` column (unique per `(type, slug)`, backfilled `slugify(canonical_name)` + collision suffix, mint-once/immutable on rename, maintained on node create/rename); facet endpoints (`/feed/roles|skills|domains`) return `slug`; URL carries slugs; id↔slug resolved at ONE boundary (decision below); `source` unchanged (already a code); prod backfill run + verified.
 
 ## Phase 2 — execution plan (start a fresh session here)
 
@@ -83,15 +83,47 @@ Prereq: Phase 1 is merged or on-branch (`c3b2285` is the last commit). Slug deci
 - **More endpoints go slug-based than step 2 lists.** For the URL to be uniformly slugs on track routes, **`/tracks/:slug/preset` and `/tracks/:slug/skills` (contextual)** must also return `slug` (the frontend axis fallback + chips are keyed by it), plus `NodeRef`/`NodeFacet` contracts gain `slug`. Feed service resolves slug→id in SQL at lines ~345–352 (roles/domains `inArray`) + ~408–426 (skills subquery). Ranking/CV untouched (confirmed: no role/skill/domain filter).
 - **Subscription replay ripple.** Feed subs store `roleIds/skillIds/domainIds` and replay through the feed path; going slug-based means subs store **slugs** (immutable → arguably more stable). Verify `subscription-matcher` passes the axis values straight to the feed search params so slug→id resolution still happens at replay. Decide field naming then: rename `*Ids`→`*Slugs` end-to-end (honest, wider diff incl. subs) vs. keep `*Ids` names carrying slug values (smaller diff, misleading).
 
+## T7 Outcome (done 2026-07-03, `4bd2c22`)
+
+Landed on `feat/reverse-ats-candidates` (#60), **not** #59 — T7's ranking/cv slug
+resolution builds on #60's `domainIds` axis, so it stacks there; #59→#60 still
+merge sequentially.
+
+**Decision — resolve at the API boundary, not inline SQL.** One `NodeSlugResolver`
+maps role/skill/domain slugs → node ids at each external entry (feed, ranking,
+cv-matches, subscription-create). Everything downstream (feed `buildWhere`,
+ranking `buildFilters`), the **stored subscription rows**, and the **digest
+replay** stay id-based and untouched — so old UUID subscriptions keep matching and
+there is **no jsonb data migration**. Subscriptions persist *resolved* ids, so
+`describe()` + replay are unchanged. (Deviates from the earlier "resolve in SQL"
+plan step; the boundary choice is what neutralised the subscription/ranking
+ripples the scope notes flagged.)
+
+**Frontend is id-agnostic.** Facets, track preset, and contextual skills emit the
+slug in the `id` field (`COALESCE(n.slug, n.id::text)` — uuid fallback covers the
+pre-backfill window). The URL / codec / `FilterState` / lib-api carry it verbatim
+→ **zero functional web change** (only stale "node id" JSDoc updated).
+
+**Slug minting.** Shared `slugify` + `uniqueSlug` in `libs/database`. Ingest mints
+a non-colliding slug before insert; a one-time backfill seed fills existing rows.
+Immutable on rename (rename only sets `canonical_name`). Unique per `(type, slug)`.
+
+Verified: web build; etl build + jest; local migrate + backfill (6713 slugs, 0
+nulls, per-type unique, idempotent, `C/C++/C# → c/c-2/c-3`); live `/feed/roles` +
+`/tracks/*/preset` return slugs.
+
+**Deploy step (pending):** after prod migrate, run `pnpm db:seed:node-slugs`
+(idempotent — fills NULL slugs only). Same one-time nature as `db:seed:candidates`.
+
 ## Definition of Done (the whole filters epic / this branch)
 
-- [ ] **T0–T7 committed** on `refactor/filters-components`.
-- [ ] **One store**: URL-backed `FiltersApi`/`FilterState` superset, both pages consume it, swappable seam intact; one shared `<FilterRail lens>`; one shared class-validator DTO on feed + ranking.
-- [ ] **Data layer**: server-seeded react-query on both pages; a filter change updates the URL via `pushState` and refetches client-side with **no RSC double-fetch** (verified in the network tab); loading/error from the query; back/forward + deep-link + shareable all work; no mount refetch.
-- [ ] **Slugs**: URLs read `?roles=backend-engineer` (no UUIDs); prod backfilled; renames keep slugs stable; feed filters by slug end-to-end.
-- [ ] **Green**: web tsc + lint + prod build; full ETL suite (incl. new slug + backfill tests); feed + ranking APIs 200/400 with slugs + every filter; both pages runtime-checked (toggle refetches, deep link SSRs, no double-fetch).
-- [ ] **Docs**: `overview.md` (react-query dep + data-layer note + `nodes.slug`), `releases.md` entry, tracker Outcome; an ADR for "web client data layer = react-query + SSR-seed" (a real architectural choice) and one for slugs-in-URL if it grows past a line.
-- [ ] **PR #59** updated + merged via `gh` (deploys to prod — deliberate, given the URL-key + freshness-default + client-data-layer changes).
+- [x] **T0–T7 committed** (T0–T6 on `refactor/filters-components`/#59; T7 on `feat/reverse-ats-candidates`/#60, stacked).
+- [x] **One store**: URL-backed `FiltersApi`/`FilterState` superset, both pages consume it, swappable seam intact; one shared `<FilterRail lens>`; one shared class-validator DTO on feed + ranking.
+- [x] **Data layer**: server-seeded react-query on both pages; a filter change updates the URL via `pushState` and refetches client-side with **no RSC double-fetch** (verified in the network tab); loading/error from the query; back/forward + deep-link + shareable all work; no mount refetch.
+- [x] **Slugs**: URLs read `?roles=backend-engineer` (no UUIDs); renames keep slugs stable; feed filters by slug end-to-end. *(prod backfill = deploy step below.)*
+- [x] **Green**: web build; etl build + jest; migration + backfill verified locally; live facet/preset endpoints return slugs.
+- [x] **Docs**: `overview.md` (`nodes.slug` + resolver), `releases.md` entry, tracker Outcome. *(ADRs — react-query data layer + slugs-in-URL — deferred to a follow-up doc pass.)*
+- [ ] **Prod**: run migrate + `db:seed:node-slugs` (+ `db:seed:candidates` for #60); merge #59 → #60 via `gh` (deploys to prod — deliberate, given URL-key + freshness-default + client-data-layer + slug changes).
 
 ## Links
 

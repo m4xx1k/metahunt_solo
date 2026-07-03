@@ -200,13 +200,14 @@ export interface ListVacanciesQuery {
   companyId?: string;
   roleId?: string;
   /**
-   * Match ANY of these ROLE node ids (OR). With `trackSlug` it overrides the
+   * Match ANY of these ROLE node slugs (OR). With `trackSlug` it overrides the
    * track's role axis (lazy-refine to specific roles) while the track's skill
-   * preset still applies. Serialized as repeated ?roleIds= params.
+   * preset still applies. Serialized as repeated ?roleIds= params; the feed
+   * controller resolves slugs -> node ids at the boundary.
    */
   roleIds?: string[];
   skillIds?: string[];
-  /** Match ANY of these DOMAIN node ids (OR). Serialized as repeated ?domainIds=. */
+  /** Match ANY of these DOMAIN node slugs (OR). Serialized as repeated ?domainIds=. */
   domainIds?: string[];
   /**
    * Skill-match scope. Omitted/false: a skill matches only when it's a

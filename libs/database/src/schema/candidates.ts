@@ -1,5 +1,6 @@
 import {
   pgTable,
+  pgEnum,
   uuid,
   text,
   jsonb,
@@ -14,6 +15,10 @@ import { nodes } from './nodes';
 // the pg type). They mirror the BAML enums in extract-candidate.baml.
 import { seniority, englishLevel } from './vacancies';
 
+// How a candidate row came to exist: `user` = a real uploaded CV; `sample` = a
+// seeded demo profile the reverse-ATS picker ranks against (no file, no LLM).
+export const candidateType = pgEnum('candidate_type', ['user', 'sample']);
+
 // A candidate parsed from an uploaded CV — the reverse-ATS counterpart of a
 // vacancy. See md/journal/migrations/reverse-ats.md (§3-4). `extracted` holds
 // the raw ExtractedCandidate JSON (incl. unmatchedSkills strings); resolved
@@ -27,6 +32,7 @@ export const candidates = pgTable(
     contentHash: text('content_hash').notNull(),
     sourceText: text('source_text').notNull(),
     extracted: jsonb('extracted').notNull().$type<Record<string, unknown>>(),
+    type: candidateType('type').notNull().default('user'),
     role: text('role'),
     seniority: seniority('seniority'),
     englishLevel: englishLevel('english_level'),

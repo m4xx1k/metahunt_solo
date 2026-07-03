@@ -24,6 +24,7 @@ import {
 } from "../../platform/shared/contract";
 import {
   parseBool,
+  parseCsv,
   parseDays,
   parseEnum,
   parseEnumCsv,
@@ -31,6 +32,7 @@ import {
   parsePage,
   parsePageSize,
 } from "../../platform/shared/query-parsing";
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { RankingService } from "../ranking/ranking.service";
 import { RecommendationService } from "../ranking/recommendation.service";
 import {
@@ -40,7 +42,11 @@ import {
   type RecommendResponse,
 } from "../ranking/ranking.contract";
 import { CandidateLoaderService } from "./candidate-loader.service";
-import type { CandidateView, CvIngestResult } from "./cv.contract";
+import type {
+  CandidateView,
+  CvIngestResult,
+  SampleCandidate,
+} from "./cv.contract";
 import { extractText } from "./text-extract";
 
 // CV upload is LLM-backed (a BAML extraction per new file) + accepts user
@@ -57,6 +63,7 @@ export class CvController {
     private readonly loader: CandidateLoaderService,
     private readonly ranking: RankingService,
     private readonly recommendation: RecommendationService,
+    private readonly slugs: NodeSlugResolver,
   ) {}
 
   // Upload a CV as a file (field "file": PDF or .txt) OR as raw JSON {text}.
@@ -82,6 +89,13 @@ export class CvController {
     return this.loader.loadFromText(text);
   }
 
+  // Demo profiles for the reverse-ATS picker. Declared before `:id` so the
+  // literal path wins over the param route.
+  @Get("samples")
+  samples(): Promise<SampleCandidate[]> {
+    return this.loader.listSamples();
+  }
+
   @Get(":id")
   get(@Param("id") id: string): Promise<CandidateView> {
     return this.loader.getById(id);
@@ -95,6 +109,8 @@ export class CvController {
     @Query("workFormats") rawWorkFormats?: string,
     @Query("englishLevels") rawEnglishLevels?: string,
     @Query("employmentTypes") rawEmploymentTypes?: string,
+    @Query("domainIds") rawDomainIds?: string,
+    @Query("experienceYears") rawExperienceYears?: string,
     @Query("hasTestAssignment") rawHasTestAssignment?: string,
     @Query("hasReservation") rawHasReservation?: string,
     @Query("minFitTier") rawMinFitTier?: string,
@@ -111,6 +127,8 @@ export class CvController {
         workFormats: parseEnumCsv<WorkFormat>("workFormats", rawWorkFormats, WORK_FORMAT_VALUES),
         englishLevels: parseEnumCsv<EnglishLevel>("englishLevels", rawEnglishLevels, ENGLISH_LEVEL_VALUES),
         employmentTypes: parseEnumCsv<EmploymentType>("employmentTypes", rawEmploymentTypes, EMPLOYMENT_TYPE_VALUES),
+        domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", rawDomainIds)),
+        experienceYears: parseCsv("experienceYears", rawExperienceYears),
         hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),
         hasReservation: parseBool("hasReservation", rawHasReservation),
         minFitTier: parseEnum<FitTier>("minFitTier", rawMinFitTier, FIT_TIER_VALUES),

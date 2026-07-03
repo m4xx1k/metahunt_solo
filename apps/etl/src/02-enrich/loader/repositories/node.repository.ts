@@ -1,6 +1,6 @@
 import { Injectable, Inject } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
-import { DRIZZLE, schema } from "@metahunt/database";
+import { and, eq, like, or } from "drizzle-orm";
+import { DRIZZLE, schema, slugify, uniqueSlug } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import type { Executor } from "./executor";
@@ -63,12 +63,41 @@ export class DrizzleNodeRepository extends NodeRepository {
     canonicalName: string,
     executor: Executor = this.db,
   ): Promise<string | null> {
+    const slug = await this.mintSlug(type, canonicalName, executor);
     const inserted = await executor
       .insert(schema.nodes)
-      .values({ type, canonicalName, status: "NEW" })
+      .values({ type, canonicalName, status: "NEW", slug })
       .onConflictDoNothing()
       .returning({ id: schema.nodes.id });
     return inserted[0]?.id ?? null;
+  }
+
+  // Mint a non-colliding slug for this type BEFORE insert: the new (type, slug)
+  // unique constraint would otherwise reject a distinct canonical whose slug
+  // matches an existing one (C, C++, C# all -> "c"). Single-worker ingest, so
+  // the read-then-insert gap is not raced.
+  private async mintSlug(
+    type: NodeType,
+    canonicalName: string,
+    executor: Executor,
+  ): Promise<string> {
+    const base = slugify(canonicalName);
+    const existing = await executor
+      .select({ slug: schema.nodes.slug })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.type, type),
+          or(
+            eq(schema.nodes.slug, base),
+            like(schema.nodes.slug, `${base}-%`),
+          ),
+        ),
+      );
+    const taken = new Set(
+      existing.map((r) => r.slug).filter((s): s is string => s !== null),
+    );
+    return uniqueSlug(base, taken);
   }
 
   async findIdByCanonical(

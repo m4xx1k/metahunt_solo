@@ -126,7 +126,7 @@ export class TracksRepository {
       name: string;
       type: string;
     }>(sql`
-      SELECT n.id::text AS id, n.canonical_name AS name, n.type::text AS type
+      SELECT COALESCE(n.slug, n.id::text) AS id, n.canonical_name AS name, n.type::text AS type
       FROM nodes n
       WHERE n.id IN (${uuidList(ids)})
       ORDER BY n.canonical_name
@@ -151,7 +151,7 @@ export class TracksRepository {
       name: string;
       count: number;
     }>(sql`
-      SELECT n.id::text AS id,
+      SELECT COALESCE(n.slug, n.id::text) AS id,
              n.canonical_name AS name,
              COUNT(DISTINCT vn.vacancy_id)::int AS count
       FROM vacancy_nodes vn
