@@ -8,62 +8,35 @@
 // and queries the feed by those two explicit axes — never trackSlug. So
 // removing a preset node (drop Go) honestly broadens the feed, and both axes
 // share one unified facet UI. See md/journal/migrations/taxonomy-navigation.md.
+//
+// Data layer: this server component fetches the filter-independent props
+// (aggregates, tracks, catalogs, preset) plus the initial list for the incoming
+// URL, then hands off to <FeedShell>, a client island that seeds react-query
+// with that list and refetches client-side on every filter change (no RSC
+// round-trip). See md/journal/migrations/filters-components.md (T6).
 
 import { notFound } from "next/navigation";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 
 import { Header, type NavItem } from "@/app/_components/Header";
 import { Footer } from "@/app/_components/Footer";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
-import {
-  coerceBool,
-  coerceSeniority,
-  coerceWorkFormat,
-  vacanciesApi,
-} from "@/lib/api/vacancies";
-import type { SubscriptionParams } from "@/lib/api/subscriptions";
+import { vacanciesApi } from "@/lib/api/vacancies";
+import { readerFrom } from "@/features/vacancy-filters/url-params";
+import { coldKey } from "@/features/vacancy-filters/query-keys";
 import { FeedHero } from "../_components/market/FeedHero";
-import { FeedFilters } from "../_components/market/FeedFilters";
-import { SubscribeButton } from "../_components/subscribe/SubscribeButton";
-import { VacancyList } from "../_components/vacancy-list/VacancyList";
+import { FeedShell } from "../_components/FeedShell";
+import { buildFeedListQuery } from "../_components/feed-query";
 
 export const dynamic = "force-dynamic";
-
-const PAGE_SIZE = 20;
 
 const snapshotNav: NavItem[] = [
   { label: "вакансії", href: "#list" },
   { label: "моніторинг", href: "/dashboard" },
   { label: "про проєкт", href: "/welcome" },
 ];
-
-function asString(v: string | string[] | undefined): string | undefined {
-  if (Array.isArray(v)) return v[0];
-  return v;
-}
-
-// An axis param: absent (undefined) → fall back to the track's preset node ids;
-// present (even "") → the explicit comma-joined set. Mirrors TrackAxisSection's
-// URL model so a fully-removed preset (?skills=) yields an empty axis.
-function axisOr(
-  v: string | string[] | undefined,
-  presetIds: string[],
-): string[] {
-  const s = asString(v);
-  if (s === undefined) return presetIds;
-  return s.split(",").filter(Boolean);
-}
-
-function asNonNegativeInt(
-  v: string | string[] | undefined,
-  fallback: number,
-): number {
-  const s = asString(v);
-  if (!s) return fallback;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
-}
 
 export default async function TrackPage({
   params,
@@ -79,19 +52,6 @@ export default async function TrackPage({
   // segment) is the index (no active track).
   const trackSlug = slug?.[0];
 
-  const offset = asNonNegativeInt(sp.offset, 0);
-  const page = Math.floor(offset / PAGE_SIZE) + 1;
-
-  const sourceCode = asString(sp.source);
-  const seniority = coerceSeniority(asString(sp.seniority));
-  const workFormat = coerceWorkFormat(asString(sp.workFormat));
-  const hasTestAssignment = coerceBool(asString(sp.test));
-  const hasReservation = coerceBool(asString(sp.reservation));
-  const hasDuplicates = asString(sp.dupes) === "true" ? true : undefined;
-  // Skill-scope toggle: by default skills match must-have only; ?nice=true
-  // loosens the filter so nice-to-have skills count too.
-  const includeOptionalSkills = asString(sp.nice) === "true" ? true : undefined;
-
   const [aggregates, { tracks }] = await Promise.all([
     aggregatesApi.get(),
     tracksApi.get(),
@@ -103,75 +63,41 @@ export default async function TrackPage({
     notFound();
   }
 
-  // The preset, contextual skills, and full catalogs only matter once a track
-  // is active (the facet panels render only then) — skip them on the index.
+  // The full role/skill catalogs back the sidebar search on BOTH layouts (the
+  // landing MultiSelects and the track facets) — always fetch them (ISR-cached).
+  // The preset + contextual skills only matter once a track is active.
   const [
     preset,
     { skills: contextualSkills },
     { roles: roleCatalog },
     { skills: skillCatalog },
+    { domains: domainCatalog },
   ] = await Promise.all([
     trackSlug
       ? tracksApi.preset(trackSlug)
       : Promise.resolve({ roles: [], skills: [] }),
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
-    trackSlug ? facetsApi.roles() : Promise.resolve({ roles: [] }),
-    trackSlug ? facetsApi.skills() : Promise.resolve({ skills: [] }),
+    facetsApi.roles(),
+    facetsApi.skills(),
+    // Tolerate a missing /feed/domains during a deploy gap (web can ship before
+    // etl): degrade to an empty domain filter instead of 500-ing the whole feed.
+    facetsApi.domains().catch(() => ({ domains: [] })),
   ]);
 
-  // Effective axes: the URL overrides the track's preset per axis.
-  const roleIds = axisOr(
-    sp.roles,
-    preset.roles.map((r) => r.id),
-  );
-  const skillIds = axisOr(
-    sp.skills,
-    preset.skills.map((s) => s.id),
-  );
-
-  const sourceId =
-    sourceCode != null
-      ? (aggregates.sources.find((s) => s.code === sourceCode)?.id ?? null)
-      : null;
-
-  // An active track whose effective axes are both empty (every preset node
-  // removed, or a pure-grouping track) matches nothing — mirror the count,
-  // don't fall through to the unfiltered set. The bare `/` index (no track)
-  // does show everything eligible.
-  const hasPreset = roleIds.length > 0 || skillIds.length > 0;
-  const list =
-    !trackSlug || hasPreset
-      ? await vacanciesApi.list({
-          page,
-          pageSize: PAGE_SIZE,
-          roleIds: roleIds.length > 0 ? roleIds : undefined,
-          skillIds: skillIds.length > 0 ? skillIds : undefined,
-          includeOptionalSkills,
-          sourceId: sourceId ?? undefined,
-          seniority,
-          workFormat,
-          hasTestAssignment,
-          hasReservation,
-          hasDuplicates,
-        })
-      : { items: [], page, pageSize: PAGE_SIZE, total: 0 };
-
-  const flatSearchParams: Record<string, string | undefined> = {};
-  for (const [k, v] of Object.entries(sp)) {
-    flatSearchParams[k] = asString(v);
+  // Seed react-query with the list for the incoming URL, under the SAME key the
+  // client computes (coldKey), so the first render is served from cache with no
+  // mount refetch. A track with no effective axes (query null) seeds nothing —
+  // the shell renders an empty list. Dehydration streams the seed to the client.
+  const { query } = buildFeedListQuery(readerFrom(sp), {
+    trackActive: trackSlug != null,
+    presetRoleIds: preset.roles.map((r) => r.id),
+    presetSkillIds: preset.skills.map((s) => s.id),
+    sources: aggregates.sources,
+  });
+  const queryClient = new QueryClient();
+  if (query) {
+    queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
   }
-
-  // The effective query a subscription would replay — same filter the list
-  // above ran, minus pagination. Mirrors the `vacanciesApi.list` call.
-  const subscriptionParams: SubscriptionParams = {
-    roleIds: roleIds.length > 0 ? roleIds : undefined,
-    skillIds: skillIds.length > 0 ? skillIds : undefined,
-    sourceId: sourceId ?? undefined,
-    seniority,
-    workFormat,
-    hasTestAssignment,
-    hasReservation,
-  };
 
   return (
     <>
@@ -179,31 +105,19 @@ export default async function TrackPage({
       <main className="flex min-h-screen flex-col bg-bg">
         <FeedHero aggregates={aggregates} showPipeline={!trackSlug} />
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
-            <div className="flex flex-col gap-4">
-              {(!trackSlug || hasPreset) && (
-                <SubscribeButton params={subscriptionParams} />
-              )}
-              <FeedFilters
-                aggregates={aggregates}
-                tracks={tracks}
-                activeTrackSlug={trackSlug ?? null}
-                presetRoles={preset.roles}
-                presetSkills={preset.skills}
-                contextualSkills={contextualSkills}
-                roleCatalog={roleCatalog}
-                skillCatalog={skillCatalog}
-              />
-            </div>
-            <VacancyList
-              result={list}
-              offset={offset}
-              flatSearchParams={flatSearchParams}
-              basePath={
-                trackSlug ? `/${encodeURIComponent(trackSlug)}` : "/"
-              }
+          <HydrationBoundary state={dehydrate(queryClient)}>
+            <FeedShell
+              aggregates={aggregates}
+              tracks={tracks}
+              activeTrackSlug={trackSlug ?? null}
+              presetRoles={preset.roles}
+              presetSkills={preset.skills}
+              contextualSkills={contextualSkills}
+              roleCatalog={roleCatalog}
+              skillCatalog={skillCatalog}
+              domainCatalog={domainCatalog}
             />
-          </div>
+          </HydrationBoundary>
         </div>
       </main>
       <Footer />

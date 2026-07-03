@@ -19,12 +19,11 @@ export interface SourceOption extends OptionRow {
   code: string;
 }
 
-export type SkillStat = OptionRow;
-
+// Derived from the /market/aggregates headline snapshot. Role/skill options
+// are NOT here — they come from the full /feed catalog (facetsApi), so search
+// can reach every node, not just the snapshot's top-N.
 export interface FilterAggregates {
   total: number;
-  roles: OptionRow[];
-  skills: SkillStat[];
   sources: SourceOption[];
   /** Enum-keyed: `id` is the raw API value (e.g. `SENIOR`). */
   seniorities: OptionRow[];
@@ -32,41 +31,84 @@ export interface FilterAggregates {
   workFormats: OptionRow[];
 }
 
+// Freshness is always applied (no "any" window): the feed defaults to the last
+// month. `freshness` is one of these tokens; the days map is the wire value.
+export const FRESHNESS_DAYS: Record<string, number> = {
+  month: 30,
+  "2weeks": 14,
+  week: 7,
+};
+export const DEFAULT_FRESHNESS = "month";
+
+// One superset shared by the feed (cold) and reverse-ATS (warm). Every field is
+// cold-available except `minFitTier`, which needs a ranked result — so it is the
+// only warm-only field. Enum arrays stay string-typed; the API client narrows
+// them before the request.
 export interface FilterState {
-  roleId: string | null;
+  /** IDs of roles to match (OR-combined). */
+  roleIds: string[];
   /** IDs of required (must-have) skills. */
   skillIds: string[];
+  /** IDs of domains to match (OR-combined). */
+  domainIds: string[];
   sourceCode: string | null;
-  /** Raw API enum value or null. The widget layer stays string-typed; the
-   *  API client narrows it before the request. */
-  seniority: string | null;
-  workFormat: string | null;
+  /** Raw API enum values (OR-combined). */
+  seniorities: string[];
+  workFormats: string[];
+  englishLevels: string[];
+  employmentTypes: string[];
+  /** Selected experience tokens ("0".."5" exact, "6+" = ≥6), OR-combined. */
+  experienceYears: string[];
+  /** Freshness window token (see FRESHNESS_DAYS); always set, defaults to month. */
+  freshness: string;
   test: boolean | null;
   reservation: boolean | null;
+  /** Warm-only: minimum coverage tier; needs a ranked (CV) result. */
+  minFitTier: string | null;
 }
 
 export const EMPTY_FILTERS: FilterState = {
-  roleId: null,
+  roleIds: [],
   skillIds: [],
+  domainIds: [],
   sourceCode: null,
-  seniority: null,
-  workFormat: null,
+  seniorities: [],
+  workFormats: [],
+  englishLevels: [],
+  employmentTypes: [],
+  experienceYears: [],
+  freshness: DEFAULT_FRESHNESS,
   test: null,
   reservation: null,
+  minFitTier: null,
 };
+
+// FilterState keeps enum fields string-typed; narrow to the wire enum at the API
+// boundary (values only ever come from the closed option sets). Empty → undefined
+// so the request omits the key entirely.
+export const asEnums = <T extends string>(v: string[]): T[] | undefined =>
+  v.length > 0 ? (v as T[]) : undefined;
 
 // The contract every filter-state backend satisfies (URL-backed on the feed;
 // a local-useState backend could implement the same shape). Sections are
 // driven through this, never through a concrete hook.
 export interface FiltersApi {
   filters: FilterState;
-  setRole: (id: string | null) => void;
+  toggleRole: (id: string) => void;
   toggleSkill: (id: string) => void;
+  toggleDomain: (id: string) => void;
   setSource: (code: string | null) => void;
-  setSeniority: (v: string | null) => void;
-  setWorkFormat: (v: string | null) => void;
+  toggleSeniority: (v: string) => void;
+  toggleWorkFormat: (v: string) => void;
+  toggleEnglishLevel: (v: string) => void;
+  toggleEmploymentType: (v: string) => void;
+  /** Toggle one experience token ("0".."5" or "6+") in the OR-set. */
+  toggleExperience: (value: string) => void;
+  setFreshness: (v: string) => void;
   setTest: (v: boolean | null) => void;
   setReservation: (v: boolean | null) => void;
+  /** Warm-only coverage gate; a no-op source on the cold feed. */
+  setMinFitTier: (v: string | null) => void;
   clear: () => void;
   activeCount: number;
 }

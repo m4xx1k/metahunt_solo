@@ -6,6 +6,7 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 import type {
+  DomainFacetsResponse,
   RoleFacetsResponse,
   SkillFacetsResponse,
 } from "./feed.contract";
@@ -53,6 +54,26 @@ export class FacetsService {
     `);
     return {
       roles: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
+    };
+  }
+
+  async getDomainFacets(): Promise<DomainFacetsResponse> {
+    const rows = await this.db.execute<{
+      id: string;
+      name: string;
+      count: number;
+    }>(sql`
+      SELECT n.id::text AS id,
+             n.canonical_name AS name,
+             COUNT(*)::int AS count
+      FROM vacancies v
+      JOIN nodes n ON n.id = v.domain_node_id AND n.type = 'DOMAIN' AND n.status = 'VERIFIED'
+      WHERE ${ELIGIBLE_VACANCY}
+      GROUP BY n.id, n.canonical_name
+      ORDER BY COUNT(*) DESC, n.canonical_name
+    `);
+    return {
+      domains: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
     };
   }
 }

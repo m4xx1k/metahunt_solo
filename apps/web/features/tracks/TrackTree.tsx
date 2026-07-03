@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { CollapsibleSection } from "./CollapsibleSection";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 import type { TrackDto } from "@/lib/api/tracks";
 
 // Nested browse tree (disciplines → stack/language children) that replaces

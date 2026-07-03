@@ -3,7 +3,9 @@
 import { cn } from "@/lib/utils";
 import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
 import type { Seniority } from "@/lib/extracted-vacancy";
-import type { FilterAggregates, FiltersApi } from "./types";
+import { FRESHNESS_OPTIONS } from "./enum-options";
+import { DEFAULT_FRESHNESS } from "./types";
+import type { FilterAggregates, FiltersApi, OptionRow } from "./types";
 
 interface Chip {
   key: string;
@@ -15,11 +17,18 @@ interface Chip {
 export function ActiveFiltersBar({
   api,
   agg,
+  roles,
+  skills,
+  domains,
 }: {
   api: FiltersApi;
   agg: FilterAggregates;
+  /** Full role/skill catalogs (facets) — selected ids resolve their label here. */
+  roles: OptionRow[];
+  skills: OptionRow[];
+  domains: OptionRow[];
 }) {
-  const chips = buildChips(api, agg);
+  const chips = buildChips(api, agg, roles, skills, domains);
 
   return (
     <div
@@ -62,29 +71,46 @@ export function ActiveFiltersBar({
   );
 }
 
-function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
+function buildChips(
+  api: FiltersApi,
+  agg: FilterAggregates,
+  roles: OptionRow[],
+  skills: OptionRow[],
+  domains: OptionRow[],
+): Chip[] {
   const { filters } = api;
   const chips: Chip[] = [];
 
-  if (filters.roleId) {
-    const r = agg.roles.find((x) => x.id === filters.roleId);
+  for (const id of filters.roleIds) {
+    const r = roles.find((x) => x.id === id);
     if (r) {
       chips.push({
-        key: `role-${r.id}`,
+        key: `role-${id}`,
         label: `role: ${r.label}`,
         tone: "border-accent text-accent",
-        onRemove: () => api.setRole(null),
+        onRemove: () => api.toggleRole(id),
       });
     }
   }
   for (const id of filters.skillIds) {
-    const s = agg.skills.find((x) => x.id === id);
+    const s = skills.find((x) => x.id === id);
     if (s) {
       chips.push({
         key: `skill-${id}`,
         label: `skill: ${s.label}`,
         tone: "border-accent text-accent",
         onRemove: () => api.toggleSkill(id),
+      });
+    }
+  }
+  for (const id of filters.domainIds) {
+    const d = domains.find((x) => x.id === id);
+    if (d) {
+      chips.push({
+        key: `domain-${id}`,
+        label: `domain: ${d.label}`,
+        tone: "border-accent text-accent",
+        onRemove: () => api.toggleDomain(id),
       });
     }
   }
@@ -99,28 +125,36 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
       });
     }
   }
-  if (filters.seniority) {
-    const o = agg.seniorities.find((x) => x.id === filters.seniority);
+  for (const id of filters.seniorities) {
+    const o = agg.seniorities.find((x) => x.id === id);
     if (o) {
       chips.push({
         key: `seniority-${o.id}`,
         label: `seniority: ${o.label}`,
         tone:
           SENIORITY_OUTLINE_TONE[o.id as Seniority] ?? "border-accent text-accent",
-        onRemove: () => api.setSeniority(null),
+        onRemove: () => api.toggleSeniority(o.id),
       });
     }
   }
-  if (filters.workFormat) {
-    const o = agg.workFormats.find((x) => x.id === filters.workFormat);
+  for (const id of filters.workFormats) {
+    const o = agg.workFormats.find((x) => x.id === id);
     if (o) {
       chips.push({
         key: `format-${o.id}`,
         label: `format: ${o.label}`,
         tone: "border-accent text-accent",
-        onRemove: () => api.setWorkFormat(null),
+        onRemove: () => api.toggleWorkFormat(o.id),
       });
     }
+  }
+  for (const value of filters.experienceYears) {
+    chips.push({
+      key: `exp-${value}`,
+      label: `exp: ${value}`,
+      tone: "border-accent text-accent",
+      onRemove: () => api.toggleExperience(value),
+    });
   }
   if (filters.test !== null) {
     chips.push({
@@ -138,6 +172,15 @@ function buildChips(api: FiltersApi, agg: FilterAggregates): Chip[] {
         ? "border-success text-success"
         : "border-text-secondary text-text-primary",
       onRemove: () => api.setReservation(null),
+    });
+  }
+  if (filters.freshness !== DEFAULT_FRESHNESS) {
+    const o = FRESHNESS_OPTIONS.find((x) => x.id === filters.freshness);
+    chips.push({
+      key: "freshness",
+      label: `fresh: ${o?.label ?? filters.freshness}`,
+      tone: "border-accent text-accent",
+      onRemove: () => api.setFreshness(DEFAULT_FRESHNESS),
     });
   }
 

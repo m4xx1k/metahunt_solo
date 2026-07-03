@@ -1,7 +1,7 @@
 "use client";
 
-import { CollapsibleSection } from "./CollapsibleSection";
-import { pillClass } from "./pill";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
+import { pillClass } from "@/ui/inputs/pill";
 import type { SourceOption } from "./types";
 
 export function SourceSection({

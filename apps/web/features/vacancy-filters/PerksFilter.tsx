@@ -3,7 +3,7 @@
 import { ClipboardList, ShieldCheck } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { CollapsibleSection } from "./CollapsibleSection";
+import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 
 // PerksFilter — the two market "perks" (бронь, тестове) merged into a single
 // two-column quick-filter row, styled to mirror the card pills in

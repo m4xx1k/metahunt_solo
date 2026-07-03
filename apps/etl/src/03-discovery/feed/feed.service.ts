@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   gt,
+  gte,
   ilike,
   inArray,
   isNotNull,
@@ -21,6 +22,8 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { uuidList } from "../../platform/shared/sql";
 import type {
+  EmploymentType,
+  EnglishLevel,
   FeedResponse,
   NodeRef,
   Seniority,
@@ -53,6 +56,11 @@ const groupHasConfirmedEdge = sql`EXISTS (
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// The open-ended experience button: "6+" means ≥6 years. Mirrored client-side
+// in features/vacancy-filters/ExperienceSection.tsx.
+const EXPERIENCE_OPEN_TOKEN = "6+";
+const EXPERIENCE_OPEN_MIN = 6;
+
 export interface FeedSearchParams {
   page: number;
   pageSize: number;
@@ -63,6 +71,8 @@ export interface FeedSearchParams {
   roleId?: string;
   /** Match vacancies whose role is ANY of these ROLE node UUIDs (OR). */
   roleIds?: string[];
+  /** Match vacancies whose domain is ANY of these DOMAIN node UUIDs (OR). */
+  domainIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
   /**
@@ -71,14 +81,25 @@ export interface FeedSearchParams {
    * satisfies the filter — looser, surfaces vacancies where the skill is optional.
    */
   includeOptionalSkills?: boolean;
-  seniority?: Seniority;
-  workFormat?: WorkFormat;
+  /** Match ANY listed seniority (OR). */
+  seniorities?: Seniority[];
+  /** Match ANY listed work format (OR). */
+  workFormats?: WorkFormat[];
+  /** Match ANY listed english level (OR). */
+  englishLevels?: EnglishLevel[];
+  /** Match ANY listed employment type (OR). */
+  employmentTypes?: EmploymentType[];
+  /** Discrete experience tokens (OR): exact "0".."5" + "6+" (≥6), matched
+   *  against the stated minimum. NULL always passes. */
+  experienceYears?: string[];
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
   /** When true, return ONLY the canonical card of a collapsed gold group (>1 member). */
   hasDuplicates?: boolean;
+  /** Freshness gate: coalesce(published_at, loaded_at) within N days. */
+  postedWithinDays?: number;
   /** Only vacancies first loaded after this instant (the digest "new since" window). */
   loadedAfter?: Date;
   /** Drop these vacancy ids from the result (digest anti-join: already-sent). */
@@ -326,9 +347,43 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.roleIds && params.roleIds.length > 0) {
     conds.push(inArray(vacancies.roleNodeId, params.roleIds));
   }
-  if (params.seniority) conds.push(eq(vacancies.seniority, params.seniority));
-  if (params.workFormat) {
-    conds.push(eq(vacancies.workFormat, params.workFormat));
+  // Multi-domain filter (OR): match any of the listed domains.
+  if (params.domainIds && params.domainIds.length > 0) {
+    conds.push(inArray(vacancies.domainNodeId, params.domainIds));
+  }
+  if (params.seniorities?.length) {
+    conds.push(inArray(vacancies.seniority, params.seniorities));
+  }
+  if (params.workFormats?.length) {
+    conds.push(inArray(vacancies.workFormat, params.workFormats));
+  }
+  if (params.englishLevels?.length) {
+    conds.push(inArray(vacancies.englishLevel, params.englishLevels));
+  }
+  if (params.employmentTypes?.length) {
+    conds.push(inArray(vacancies.employmentType, params.employmentTypes));
+  }
+  // Freshness gate — coalesce(published, loaded) mirrors the feed's sort; the
+  // day count stays a bound parameter via make_interval.
+  if (params.postedWithinDays !== undefined) {
+    conds.push(
+      sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt}) > now() - make_interval(days => ${params.postedWithinDays})`,
+    );
+  }
+  // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
+  // — unstated experience always passes; only explicit non-matches are dropped.
+  if (params.experienceYears && params.experienceYears.length > 0) {
+    const exact = params.experienceYears
+      .filter((t) => /^\d+$/.test(t))
+      .map(Number);
+    const openEnded = params.experienceYears.includes(EXPERIENCE_OPEN_TOKEN);
+    const arms: SQL[] = [isNull(vacancies.experienceYears)];
+    if (exact.length > 0) arms.push(inArray(vacancies.experienceYears, exact));
+    if (openEnded) {
+      arms.push(gte(vacancies.experienceYears, EXPERIENCE_OPEN_MIN));
+    }
+    // No real token → skip, don't collapse the feed to NULL-only rows.
+    if (arms.length > 1) conds.push(or(...arms)!);
   }
   // "Without a test task" (false) includes unknowns: a null (unscored) vacancy
   // still counts as "no test", so only a confirmed-true is excluded. Filtering

@@ -19,6 +19,10 @@ export interface SkillFacetsResponse {
   skills: NodeFacet[];
 }
 
+export interface DomainFacetsResponse {
+  domains: NodeFacet[];
+}
+
 // ISR-cache the catalogs: they only change on the hourly RSS ingest, but the
 // filter sidebar re-fetches them on every role/skill toggle (a URL change
 // re-runs the server page). Without this they hit the backend each toggle.
@@ -27,4 +31,5 @@ const ISR = { next: { revalidate: 60 } } satisfies RequestInit;
 export const facetsApi = {
   roles: () => apiGet<RoleFacetsResponse>("/feed/roles", ISR),
   skills: () => apiGet<SkillFacetsResponse>("/feed/skills", ISR),
+  domains: () => apiGet<DomainFacetsResponse>("/feed/domains", ISR),
 };

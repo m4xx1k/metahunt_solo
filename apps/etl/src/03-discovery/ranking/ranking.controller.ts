@@ -1,42 +1,17 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Post,
+  UsePipes,
+  ValidationPipe,
+} from "@nestjs/common";
 
+import { MatchDto } from "../../platform/shared/filter-params.dto";
 import {
-  EMPLOYMENT_TYPE_VALUES,
-  ENGLISH_LEVEL_VALUES,
-  SENIORITY_VALUES,
-  WORK_FORMAT_VALUES,
-  type EmploymentType,
-  type EnglishLevel,
-  type Seniority,
-  type WorkFormat,
-} from "../../platform/shared/contract";
-import {
-  parseBool,
-  parseDays,
-  parseEnum,
-  parseEnumArray,
-  parseId,
-  parsePage,
-  parsePageSize,
+  DEFAULT_PAGE_SIZE,
   parseStringArray,
 } from "../../platform/shared/query-parsing";
-import { FIT_TIER_VALUES, type FitTier } from "./ranking.contract";
 import { RankingService } from "./ranking.service";
-
-interface MatchBody {
-  skills?: unknown;
-  seniorities?: unknown;
-  workFormats?: unknown;
-  englishLevels?: unknown;
-  employmentTypes?: unknown;
-  hasTestAssignment?: unknown;
-  hasReservation?: unknown;
-  minFitTier?: unknown;
-  sourceId?: unknown;
-  postedWithinDays?: unknown;
-  page?: unknown;
-  pageSize?: unknown;
-}
 
 @Controller("ranking")
 export class RankingController {
@@ -48,24 +23,26 @@ export class RankingController {
     return this.ranking.resolveSkills(parseStringArray("skills", body?.skills));
   }
 
-  // Rank vacancies for a candidate's plain-text skills.
+  // Rank vacancies for a candidate's plain-text skills. The DTO validates the
+  // shared filters (same contract as GET /feed) + the warm-only fit gate.
   @Post("match")
-  match(@Body() body: MatchBody) {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  match(@Body() dto: MatchDto) {
     return this.ranking.match(
-      parseStringArray("skills", body?.skills),
+      dto.skills ?? [],
       {
-        seniorities: parseEnumArray<Seniority>("seniorities", body?.seniorities, SENIORITY_VALUES),
-        workFormats: parseEnumArray<WorkFormat>("workFormats", body?.workFormats, WORK_FORMAT_VALUES),
-        englishLevels: parseEnumArray<EnglishLevel>("englishLevels", body?.englishLevels, ENGLISH_LEVEL_VALUES),
-        employmentTypes: parseEnumArray<EmploymentType>("employmentTypes", body?.employmentTypes, EMPLOYMENT_TYPE_VALUES),
-        hasTestAssignment: parseBool("hasTestAssignment", body?.hasTestAssignment),
-        hasReservation: parseBool("hasReservation", body?.hasReservation),
-        minFitTier: parseEnum<FitTier>("minFitTier", body?.minFitTier, FIT_TIER_VALUES),
-        sourceId: parseId("sourceId", body?.sourceId),
-        postedWithinDays: parseDays("postedWithinDays", body?.postedWithinDays),
+        seniorities: dto.seniorities,
+        workFormats: dto.workFormats,
+        englishLevels: dto.englishLevels,
+        employmentTypes: dto.employmentTypes,
+        hasTestAssignment: dto.hasTestAssignment,
+        hasReservation: dto.hasReservation,
+        minFitTier: dto.minFitTier,
+        sourceId: dto.sourceId,
+        postedWithinDays: dto.postedWithinDays,
       },
-      parsePage(body?.page),
-      parsePageSize(body?.pageSize),
+      dto.page ?? 1,
+      dto.pageSize ?? DEFAULT_PAGE_SIZE,
     );
   }
 }
