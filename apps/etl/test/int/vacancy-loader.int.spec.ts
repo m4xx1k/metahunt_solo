@@ -114,6 +114,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const recordId = await seedRecord(sourceId, ingestId, fullExtracted);
 
     const vacancyId = await loader.loadFromRecord(recordId);
+    if (!vacancyId) throw new Error("loadFromRecord returned null");
 
     const [vac] = await db
       .select()
@@ -144,6 +145,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const { sourceId, ingestId } = await seedSource();
     const first = await seedRecord(sourceId, ingestId, fullExtracted);
     const vacancyId = await loader.loadFromRecord(first);
+    if (!vacancyId) throw new Error("loadFromRecord returned null");
 
     // Same source + external_id, new title + a different skill set.
     const second = await seedRecord(
