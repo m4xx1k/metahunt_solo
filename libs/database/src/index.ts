@@ -6,3 +6,4 @@ export type { RssIngest, NewRssIngest } from "./schema/rss-ingests";
 export type { RssRecord, NewRssRecord } from "./schema/rss-records";
 export type { User, NewUser } from "./schema/users";
 export type { NodeType } from "./schema/nodes";
+export { slugify, uniqueSlug } from "./slug";

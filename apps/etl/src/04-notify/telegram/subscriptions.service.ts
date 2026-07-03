@@ -5,6 +5,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { asString, asStringArray } from "../../platform/shared/coerce";
 import {
   SUBSCRIPTION_PARAM_KEYS,
@@ -15,6 +16,17 @@ import { copy } from "./telegram-copy";
 const { subscriptions, nodes } = schema;
 
 const MAX_SUMMARY_ROLES = 2;
+
+// Store a resolved node-id axis, or drop the key entirely when nothing resolved
+// (an empty array would persist as a no-op filter).
+function setAxis(
+  params: SubscriptionParams,
+  key: "roleIds" | "skillIds" | "domainIds",
+  ids: string[] | undefined,
+): void {
+  if (ids && ids.length > 0) params[key] = ids;
+  else delete params[key];
+}
 
 // CV subs store array filters (`seniorities`), feed subs a scalar (`seniority`).
 function asEnumList(arrayVal: unknown, scalarVal: unknown): string[] {
@@ -60,6 +72,7 @@ export class SubscriptionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
+    private readonly slugs: NodeSlugResolver,
   ) {}
 
   // Pending (inactive, unlinked) until `/start <id>`. Persists only whitelisted
@@ -73,6 +86,19 @@ export class SubscriptionsService {
       const value = rawParams[key];
       if (value !== undefined && value !== null) params[key] = value;
     }
+
+    // The role/skill/domain axes arrive as URL slugs; persist resolved node ids
+    // so replay (FeedService.search) and describe() keep matching on ids — old
+    // rows already store ids, so the stored shape stays uniform.
+    const [roleIds, skillIds, domainIds] = await Promise.all([
+      this.slugs.toIds("ROLE", asStringArray(rawParams.roleIds)),
+      this.slugs.toIds("SKILL", asStringArray(rawParams.skillIds)),
+      this.slugs.toIds("DOMAIN", asStringArray(rawParams.domainIds)),
+    ]);
+    setAxis(params, "roleIds", roleIds);
+    setAxis(params, "skillIds", skillIds);
+    setAxis(params, "domainIds", domainIds);
+
     if (candidateId !== undefined && !UUID_REGEX.test(candidateId)) {
       throw new Error(`invalid candidateId: ${candidateId}`);
     }

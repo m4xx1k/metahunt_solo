@@ -41,7 +41,7 @@ export interface MatchBody {
   workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID
   englishLevels?: EnglishLevel[];
   employmentTypes?: EmploymentType[];
-  domainIds?: string[]; // OR — DOMAIN node ids
+  domainIds?: string[]; // OR — DOMAIN node slugs (resolved -> ids server-side)
   experienceYears?: string[]; // discrete tokens "0".."5" + "6+"
   hasTestAssignment?: boolean; // false keeps unknowns; true strict
   hasReservation?: boolean;

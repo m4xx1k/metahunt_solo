@@ -32,6 +32,7 @@ import {
   parsePage,
   parsePageSize,
 } from "../../platform/shared/query-parsing";
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { RankingService } from "../ranking/ranking.service";
 import { RecommendationService } from "../ranking/recommendation.service";
 import {
@@ -62,6 +63,7 @@ export class CvController {
     private readonly loader: CandidateLoaderService,
     private readonly ranking: RankingService,
     private readonly recommendation: RecommendationService,
+    private readonly slugs: NodeSlugResolver,
   ) {}
 
   // Upload a CV as a file (field "file": PDF or .txt) OR as raw JSON {text}.
@@ -125,7 +127,7 @@ export class CvController {
         workFormats: parseEnumCsv<WorkFormat>("workFormats", rawWorkFormats, WORK_FORMAT_VALUES),
         englishLevels: parseEnumCsv<EnglishLevel>("englishLevels", rawEnglishLevels, ENGLISH_LEVEL_VALUES),
         employmentTypes: parseEnumCsv<EmploymentType>("employmentTypes", rawEmploymentTypes, EMPLOYMENT_TYPE_VALUES),
-        domainIds: parseCsv("domainIds", rawDomainIds),
+        domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", rawDomainIds)),
         experienceYears: parseCsv("experienceYears", rawExperienceYears),
         hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),
         hasReservation: parseBool("hasReservation", rawHasReservation),

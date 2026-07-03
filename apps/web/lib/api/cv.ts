@@ -32,7 +32,7 @@ export interface CvMatchQuery {
   workFormats?: string;
   englishLevels?: string;
   employmentTypes?: string;
-  /** CSV of DOMAIN node ids. */
+  /** CSV of DOMAIN node slugs (resolved -> ids server-side). */
   domainIds?: string;
   /** CSV of experience tokens ("0".."5" exact, "6+" = ≥6). */
   experienceYears?: string;

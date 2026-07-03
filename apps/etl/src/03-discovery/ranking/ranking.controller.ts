@@ -6,6 +6,7 @@ import {
   ValidationPipe,
 } from "@nestjs/common";
 
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { MatchDto } from "../../platform/shared/filter-params.dto";
 import {
   DEFAULT_PAGE_SIZE,
@@ -15,7 +16,10 @@ import { RankingService } from "./ranking.service";
 
 @Controller("ranking")
 export class RankingController {
-  constructor(private readonly ranking: RankingService) {}
+  constructor(
+    private readonly ranking: RankingService,
+    private readonly slugs: NodeSlugResolver,
+  ) {}
 
   // Debug/verify the skill→node mapping for a CV (no ranking).
   @Post("resolve")
@@ -27,7 +31,7 @@ export class RankingController {
   // shared filters (same contract as GET /feed) + the warm-only fit gate.
   @Post("match")
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  match(@Body() dto: MatchDto) {
+  async match(@Body() dto: MatchDto) {
     return this.ranking.match(
       dto.skills ?? [],
       {
@@ -35,7 +39,7 @@ export class RankingController {
         workFormats: dto.workFormats,
         englishLevels: dto.englishLevels,
         employmentTypes: dto.employmentTypes,
-        domainIds: dto.domainIds,
+        domainIds: await this.slugs.toIds("DOMAIN", dto.domainIds),
         experienceYears: dto.experienceYears,
         hasTestAssignment: dto.hasTestAssignment,
         hasReservation: dto.hasReservation,

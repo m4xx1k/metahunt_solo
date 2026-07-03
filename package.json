@@ -24,6 +24,7 @@
     "db:seed": "ts-node --project tsconfig.json libs/database/seeds/run.ts",
     "db:seed:tracks": "ts-node --project tsconfig.json libs/database/seeds/tracks.run.ts",
     "db:seed:candidates": "ts-node --project tsconfig.json libs/database/seeds/candidates.run.ts",
+    "db:seed:node-slugs": "ts-node --project tsconfig.json libs/database/seeds/node-slugs.run.ts",
     "db:studio": "drizzle-kit studio",
     "dedup:embed": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js embed",
     "dedup:resolve": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js resolve",
