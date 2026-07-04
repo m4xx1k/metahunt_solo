@@ -10,6 +10,40 @@ browse by tracks) and a **WARM** lens (CV loaded → ranked list + recs). Locked
 design + prototypes: `.scratch/feed-merge-v2/README.md`; phased build:
 `.scratch/feed-merge-v2/implementation-plan.md` (V1 = tracks top-band).
 
+## ⚠️ Kickoff prompt — paste this at the start of next session
+
+> We're building the feed⊕reverse-ATS page merge. This is a **planning-first,
+> interview-first** session. **Before writing a single line of code, GRILL me —
+> relentlessly, as hard and as much as you can.** I *want* to be interrogated;
+> do not be agreeable.
+>
+> Rules for this session:
+> 1. First read `.scratch/feed-merge-v2/{README,implementation-plan,user-flow,widgets,state-model,filters-and-multiselect}.md` and this tracker (`md/journal/migrations/feed-reverse-ats-merge.md`). Then read the "Foundation already shipped" section so you don't re-ask what's decided.
+> 2. Work through **every** open question below, and any you discover. Use `AskUserQuestion` for concrete trade-offs (with real options + previews). One decision at a time is fine — depth over speed.
+> 3. **Challenge my answers.** If I'm vague ("whatever you think", "make it clean", "you decide"), refuse the hand-wave and force a specific choice with a concrete recommendation + why. Steel-man the alternative I'm rejecting.
+> 4. **Re-litigate even the "locked" decisions** (persistent tabs, V1 tracks-top-band, localStorage switcher) — the foundation is built now, so pressure-test whether they still hold. Override the usual "don't re-open settled decisions" default: for THIS session I'm explicitly asking you to.
+> 5. Assume **nothing**. Prefer five sharp questions over one assumption. Surface hidden coupling, edge cases, and failure modes I haven't thought about.
+> 6. Only after every open question has a firm answer I've committed to do you (a) write an implementation plan, get my sign-off, then (b) build the **smallest shippable slice first** — never the whole thing at once.
+> 7. KISS/YAGNI throughout (see my memory). No new abstractions until a second consumer is real.
+
+## Open questions to grill me on (get a firm answer on each before building)
+
+**A. Routing & URLs** — Does the merged page replace `/` (today's feed), or live at a new route behind a flag? What happens to `/reverse-ats` — 308 redirect, alias, or deleted? Warm-lens URL: `?cv=<id>` on `/` vs a `/cv/<id>` path — which is canonical + shareable? A shared warm link is server-fetchable by candidate id (DB row) — confirm that's the intent. How does clicking a track reconcile with the existing `[[...slug]]` catch-all (`/track/<slug>` must keep working)?
+
+**B. Lens vs tab state (the subtle one)** — Tabs flip freely, but "which tab is active" ≠ "do I have a CV". Is the active tab a 2nd URL param (`?lens=`), or does `?cv` present default to warm while a toggle shows browse *without* dropping `?cv`? What does `/?cv=X` vs `/?cv=X&lens=browse` each render on a cold load? Is the CV remembered in the URL (survives refresh) or only localStorage?
+
+**C. localStorage switcher** — Exact schema + a `version` field? What happens when a saved CV's `candidate_id` 404s (do uploaded `type='user'` candidate rows persist forever, or get GC'd)? Build throwaway-local now vs shape it to migrate to the coming [[project_auth_initiative]] server-side model? Does subscribing add the sub to the switcher, and how does picking a sub replay its stored filters back into the URL?
+
+**D. Widgets & composition** — Exact shape of the `VacancyCard` `matched`/`skillsSlot` prop: does the card understand have/missing/matched, or is it a dumb slot the page fills? Fold `MatchCard` into `VacancyCard` via the slot, or keep the wrapper? Where do `CvDetails`/`CvRecommendations` live — promote to `features/`, or stay page-private until a 2nd consumer (per apps/web/CLAUDE.md promotion rule)?
+
+**E. Subscribe** — One `SubscribeTg` with a lens prop (filter-sub vs CV-sub params)? Fix the known **CvSubscribeButton domain/experience replay gap** now or defer? Warm subscribe needs a real uploaded CV (not a sample) — how is that enforced in the UI?
+
+**F. Tracks band & responsive** — Re-confirm **V1 (tracks top-band)** now that the FilterRail exists, or revisit? Warm lens = no tracks band, right rail = cv-info — confirm. Mobile (breakpoints 1100/760): filters + tracks in one bottom sheet or two separate sheets?
+
+**G. Scope / sequencing / MVP** — One big branch or incremental behind a new route? What's the smallest shippable slice (e.g. Phase 2 chrome on a hidden route, old pages untouched)? Are lens-switch + cv-upload analytics events required for v1? Do we delete `/reverse-ats` + its `_components` in this initiative or run both routes during a transition?
+
+**H. Carry-over debt to decide on** — The two deferred **ADRs** (react-query data layer; slugs-in-URL) — write them this session or keep deferring? Confirm the merged page reuses the existing react-query SSR seed (coldKey/warmKey) with no new data layer.
+
 ## Foundation already shipped (do NOT rebuild)
 
 The last two branches built the merge's substrate on the *existing* two pages:
