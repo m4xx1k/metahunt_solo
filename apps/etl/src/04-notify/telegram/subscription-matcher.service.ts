@@ -149,6 +149,10 @@ function paramsToMatchFilters(params: SubscriptionParams): MatchFilters {
     workFormats: asStringArray(params.workFormats) as WorkFormat[],
     englishLevels: asStringArray(params.englishLevels) as EnglishLevel[],
     employmentTypes: asStringArray(params.employmentTypes) as EmploymentType[],
+    // Domain + experience are stored on warm subs (via FEED_PARAM_KEYS) but were
+    // dropped here, so CV digests ignored them — thread them to the ranker.
+    domainIds: asStringArray(params.domainIds),
+    experienceYears: asStringArray(params.experienceYears),
     hasTestAssignment: asBoolean(params.hasTestAssignment),
     hasReservation: asBoolean(params.hasReservation),
     minFitTier: asString(params.minFitTier) as FitTier | undefined,
