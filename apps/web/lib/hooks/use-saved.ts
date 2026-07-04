@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 // Throwaway localStorage: recent uploaded CVs + created subscriptions + the
 // active CV. Lets the CV tab stay unlocked across visits (1-click re-rank) and
@@ -108,5 +108,10 @@ export function useSaved() {
     set({ ...cache, subs: cache.subs.filter((s) => s.id !== id) });
   }, []);
 
-  return { ...state, addCv, removeCv, setActiveCv, addSub, removeSub };
+  // Stable identity across renders (mutators are already stable; state only
+  // changes on a real mutation) — consumers list this in effect/callback deps.
+  return useMemo(
+    () => ({ ...state, addCv, removeCv, setActiveCv, addSub, removeSub }),
+    [state, addCv, removeCv, setActiveCv, addSub, removeSub],
+  );
 }

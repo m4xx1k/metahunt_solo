@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { CandidateProfile } from "@/app/reverse-ats/_components/CandidateProfile";
 import { SkillRecommendations } from "@/app/reverse-ats/_components/SkillRecommendations";
@@ -38,8 +38,14 @@ export function WarmBody({
   const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } =
     useMergedWarm(candidateId, api.filters, !isSample);
 
+  // Fire at most once per candidate — dropping it flips to cold and unmounts
+  // this component, so a re-fire would loop against its own state updates.
+  const goneRef = useRef<string | null>(null);
   useEffect(() => {
-    if (notFound) onCandidateGone(candidateId);
+    if (notFound && goneRef.current !== candidateId) {
+      goneRef.current = candidateId;
+      onCandidateGone(candidateId);
+    }
   }, [notFound, candidateId, onCandidateGone]);
 
   const candidateSkillIds = data?.resolved.matched.map((s) => s.id) ?? [];
