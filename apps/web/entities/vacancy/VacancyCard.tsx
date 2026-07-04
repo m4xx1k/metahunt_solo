@@ -4,7 +4,7 @@ import { ClipboardList, ShieldCheck } from "lucide-react";
 
 import { DuplicatesBadge } from "./DuplicatesBadge";
 import { SeniorityBadge } from "./SeniorityBadge";
-import { VacancySkills } from "./VacancySkills";
+import { VacancySkills, type VacancyMatch } from "./VacancySkills";
 import { FlagPill } from "./FlagPill";
 import { formatLocations } from "./format-locations";
 import {
@@ -17,7 +17,9 @@ import {
 import { formatRelative } from "@/lib/format";
 import type { VacancyDto } from "@/lib/api/vacancies";
 
-type Props = { vacancy: VacancyDto };
+// `match` (warm lens only) colours the card's own skill chips by what the
+// candidate has; cold passes nothing → the card renders exactly as before.
+type Props = { vacancy: VacancyDto; match?: VacancyMatch };
 
 // Variant B: one reflowing card, ranked by what a candidate scans. Eight
 // meaning-groups, grouped by space, never by Label:Value. The role is the one
@@ -25,7 +27,7 @@ type Props = { vacancy: VacancyDto };
 // green=salary, accent=seniority+required skills+years, all else neutral.
 // Top = main column (groups 1–5) + a narrow provenance rail (6); a full-width
 // footer carries flags (7, left) and posted/apply (8, right).
-export function VacancyCard({ vacancy: v }: Props) {
+export function VacancyCard({ vacancy: v, match }: Props) {
   const role = v.role?.name ?? "untitled role";
   const company = v.company?.name ?? null;
   const domain = v.domain?.name ?? null;
@@ -115,6 +117,7 @@ export function VacancyCard({ vacancy: v }: Props) {
           <VacancySkills
             required={v.skills.required}
             optional={v.skills.optional}
+            match={match}
           />
         </div>
 

@@ -1,14 +1,25 @@
 "use client";
 
 import { useMemo } from "react";
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { TrackDto } from "@/lib/api/tracks";
 
 // Top-band track nav for /merged: disciplines on one row, the active
 // discipline's children on a second. Same tree/hide-zero rules as the sidebar
-// TrackTree, laid out horizontally. Mobile gets this as a bottom sheet in PR4.
+// TrackTree, laid out horizontally as the page's primary "pick your track"
+// selector. A single accent puck (shared layoutId) slides between whichever
+// pill is exactly selected — "усі", a discipline, or a child — so switching
+// tracks reads as one continuous, tactile motion instead of a colour flip.
+// Mobile gets this as a bottom sheet in PR4.
 const bySortThenCount = (a: TrackDto, b: TrackDto) =>
   a.sortOrder - b.sortOrder || b.count - a.count;
+
+// matches --animate-sheet-up easing elsewhere in the app (PipelineCard, etc.)
+const SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.6 } as const;
+
+const SCROLL_ROW =
+  "flex min-w-0 flex-1 items-stretch gap-2 overflow-x-auto scroll-px-3 [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent] [&::-webkit-scrollbar]:h-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border";
 
 export function TracksBand({
   tracks,
@@ -19,6 +30,8 @@ export function TracksBand({
   activeSlug: string | null;
   onSelect: (slug: string | null) => void;
 }) {
+  const reduceMotion = useReducedMotion();
+
   const { roots, childrenOf } = useMemo(() => {
     const children = new Map<string, TrackDto[]>();
     const tops: TrackDto[] = [];
@@ -41,6 +54,8 @@ export function TracksBand({
     (r) => r.count > 0 || childrenOf(r.slug).length > 0,
   );
 
+  const maxCount = Math.max(1, ...visibleRoots.map((r) => r.count));
+
   // The discipline whose children to expand: the active node's parent, or the
   // active root itself.
   const activeParent = useMemo(() => {
@@ -50,55 +65,94 @@ export function TracksBand({
   }, [tracks, activeSlug]);
 
   const kids = activeParent ? childrenOf(activeParent) : [];
+  const parentLabel =
+    activeParent != null
+      ? (tracks.find((t) => t.slug === activeParent)?.label ?? "")
+      : "";
+  const activeLabel =
+    activeSlug != null
+      ? (tracks.find((t) => t.slug === activeSlug)?.label ?? "усі")
+      : "усі";
 
   return (
-    <nav aria-label="tracks" className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
-        <Chip active={activeSlug == null} onClick={() => onSelect(null)}>
-          усі
-        </Chip>
-        {visibleRoots.map((disc) => (
-          <Chip
-            key={disc.slug}
-            active={activeParent === disc.slug}
-            count={disc.count}
-            onClick={() => onSelect(disc.slug)}
-          >
-            {disc.label}
-          </Chip>
-        ))}
-      </div>
-      {kids.length > 0 ? (
-        <div className="flex flex-wrap gap-2 border-l-2 border-border/60 pl-3">
-          {kids.map((kid) => (
-            <Chip
-              key={kid.slug}
-              active={activeSlug === kid.slug}
-              count={kid.count}
-              onClick={() => onSelect(kid.slug)}
-              subtle
-            >
-              {kid.label}
-            </Chip>
-          ))}
-        </div>
-      ) : null}
+    <nav aria-label="tracks" className="flex flex-col gap-2.5">
+      <LayoutGroup id="tracks-band">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+          className="border border-border bg-bg-card shadow-brut-sm"
+        >
+          <div className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-2">
+            <span className="font-mono text-2xs font-bold uppercase tracking-wider text-text-primary">
+              track
+            </span>
+            <span className="min-w-0 truncate font-mono text-2xs text-text-secondary">
+              {activeLabel}
+            </span>
+          </div>
+
+          <div className="flex items-stretch gap-2 p-3">
+            <AllPill
+              active={activeSlug == null}
+              onClick={() => onSelect(null)}
+              reduceMotion={!!reduceMotion}
+            />
+            <span aria-hidden className="w-px shrink-0 self-stretch bg-border" />
+            <div className={SCROLL_ROW}>
+              {visibleRoots.map((disc) => (
+                <DisciplinePill
+                  key={disc.slug}
+                  label={disc.label}
+                  count={disc.count}
+                  pct={Math.round((disc.count / maxCount) * 100)}
+                  isExact={activeSlug === disc.slug}
+                  isGroupFocus={
+                    activeParent === disc.slug && activeSlug !== disc.slug
+                  }
+                  ariaPressed={activeParent === disc.slug}
+                  onClick={() => onSelect(disc.slug)}
+                  reduceMotion={!!reduceMotion}
+                />
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {kids.length > 0 ? (
+          <div className="flex items-stretch gap-2 pl-1">
+            <span className="flex shrink-0 items-center gap-1.5 self-center font-mono text-2xs uppercase tracking-wider text-text-muted">
+              <span aria-hidden>↳</span>
+              {parentLabel}
+            </span>
+            <span aria-hidden className="w-px shrink-0 self-stretch bg-border" />
+            <div className={SCROLL_ROW}>
+              {kids.map((kid) => (
+                <ChildPill
+                  key={kid.slug}
+                  label={kid.label}
+                  count={kid.count}
+                  isExact={activeSlug === kid.slug}
+                  onClick={() => onSelect(kid.slug)}
+                  reduceMotion={!!reduceMotion}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </LayoutGroup>
     </nav>
   );
 }
 
-function Chip({
+function AllPill({
   active,
-  count,
-  subtle = false,
   onClick,
-  children,
+  reduceMotion,
 }: {
   active: boolean;
-  count?: number;
-  subtle?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  reduceMotion: boolean;
 }) {
   return (
     <button
@@ -106,17 +160,144 @@ function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 border px-3 py-1.5 font-mono text-2xs uppercase tracking-wider transition-colors",
+        "relative flex shrink-0 items-center gap-2 border px-3.5 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-[transform,color,border-color] duration-150",
         active
-          ? "border-accent bg-accent text-bg"
-          : "border-border bg-bg-card text-text-secondary hover:border-accent hover:text-accent",
-        subtle && !active && "text-text-muted",
+          ? "border-transparent text-bg"
+          : "border-dashed border-border-strong text-text-secondary hover:border-solid hover:border-accent hover:text-accent",
       )}
     >
-      <span>{children}</span>
-      {count != null ? (
-        <span className="tabular-nums opacity-70">{count}</span>
+      {active ? (
+        <motion.span
+          layoutId="tracks-puck"
+          transition={reduceMotion ? { duration: 0 } : SPRING}
+          className="absolute inset-0 bg-accent shadow-brut-sm"
+        />
       ) : null}
+      <span
+        aria-hidden
+        className={cn(
+          "relative z-10 grid shrink-0 grid-cols-2 gap-[2px]",
+          active ? "opacity-90" : "opacity-60",
+        )}
+      >
+        <span className="h-[3px] w-[3px] bg-current" />
+        <span className="h-[3px] w-[3px] bg-current" />
+        <span className="h-[3px] w-[3px] bg-current" />
+        <span className="h-[3px] w-[3px] bg-current" />
+      </span>
+      <span className="relative z-10">усі</span>
+    </button>
+  );
+}
+
+function DisciplinePill({
+  label,
+  count,
+  pct,
+  isExact,
+  isGroupFocus,
+  ariaPressed,
+  onClick,
+  reduceMotion,
+}: {
+  label: string;
+  count: number;
+  pct: number;
+  isExact: boolean;
+  isGroupFocus: boolean;
+  ariaPressed: boolean;
+  onClick: () => void;
+  reduceMotion: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={ariaPressed}
+      onClick={onClick}
+      className={cn(
+        "group relative flex shrink-0 flex-col items-start gap-1 border px-3.5 py-2 text-left transition-[transform,color,border-color,background-color] duration-150",
+        isExact
+          ? "border-transparent text-bg"
+          : isGroupFocus
+            ? "border-accent bg-accent-subtle-bg text-accent"
+            : "border-border bg-bg text-text-secondary hover:-translate-y-[2px] hover:border-border-strong hover:text-text-primary",
+      )}
+    >
+      {isExact ? (
+        <motion.span
+          layoutId="tracks-puck"
+          transition={reduceMotion ? { duration: 0 } : SPRING}
+          className="absolute inset-0 bg-accent shadow-brut-sm"
+        />
+      ) : null}
+      <span className="relative z-10 font-mono text-xs font-bold uppercase tracking-wider">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "relative z-10 font-mono text-2xs tabular-nums",
+          isExact
+            ? "text-bg/70"
+            : isGroupFocus
+              ? "text-accent/70"
+              : "text-text-muted",
+        )}
+      >
+        {count}
+      </span>
+      {!isExact ? (
+        <span
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-[3px] bg-border/60"
+        >
+          <span className="block h-full bg-accent/50" style={{ width: `${pct}%` }} />
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function ChildPill({
+  label,
+  count,
+  isExact,
+  onClick,
+  reduceMotion,
+}: {
+  label: string;
+  count: number;
+  isExact: boolean;
+  onClick: () => void;
+  reduceMotion: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={isExact}
+      onClick={onClick}
+      className={cn(
+        "relative inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wider transition-colors duration-150",
+        isExact
+          ? "border-transparent text-bg"
+          : "border-border bg-bg text-text-secondary hover:border-accent hover:text-accent",
+      )}
+    >
+      {isExact ? (
+        <motion.span
+          layoutId="tracks-puck"
+          transition={reduceMotion ? { duration: 0 } : SPRING}
+          className="absolute inset-0 bg-accent shadow-brut-2xs"
+        />
+      ) : null}
+      <span className="relative z-10">{label}</span>
+      <span
+        className={cn(
+          "relative z-10 tabular-nums",
+          isExact ? "text-bg/70" : "text-text-muted",
+        )}
+      >
+        {count}
+      </span>
     </button>
   );
 }

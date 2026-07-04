@@ -10,7 +10,7 @@ export function Pipeline({ aggregates }: { aggregates: VacancyAggregates }) {
   const { collect, parse, match } = pipeline.steps;
 
   return (
-    <div className="flex flex-col items-stretch gap-4 md:flex-row md:justify-center md:gap-0">
+    <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:justify-center xl:gap-0">
       <PipelineCard {...collect} index={0}>
         <SourcesVisual sources={aggregates.sources} accent={collect.accent} />
       </PipelineCard>
@@ -34,7 +34,7 @@ function Connector() {
   return (
     <div
       aria-hidden
-      className="hidden items-center px-4 font-mono text-2xl text-text-muted md:flex"
+      className="hidden items-center px-4 font-mono text-2xl text-text-muted xl:flex"
     >
       →
     </div>

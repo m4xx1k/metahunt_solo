@@ -47,7 +47,7 @@ export function PipelineCard({
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.5, delay: index * 0.12, ease: EASE }}
       whileHover={{ y: -4 }}
-      className="group relative flex w-full flex-col gap-4 overflow-hidden border border-border bg-bg-card p-6 shadow-brut-lg md:w-[320px]"
+      className="group relative flex w-full flex-col gap-4 overflow-hidden border border-border bg-bg-card p-6 shadow-brut-lg xl:w-[320px]"
     >
       <motion.span
         aria-hidden

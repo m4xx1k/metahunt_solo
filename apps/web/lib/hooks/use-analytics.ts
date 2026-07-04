@@ -11,6 +11,7 @@ import type {
 const ANALYTICS_EVENTS = {
   subscribeClicked: "subscribe_clicked",
   lensSwitch: "lens_switch",
+  cvUpload: "cv_upload",
 } as const;
 
 export type Lens = "cold" | "warm";
@@ -42,6 +43,11 @@ export function useAnalytics() {
       // The visitor toggled the feed/CV lens. `to` is the lens now shown.
       lensSwitched(from: Lens, to: Lens) {
         posthog?.capture(ANALYTICS_EVENTS.lensSwitch, { from, to });
+      },
+
+      // A CV was uploaded and resolved to a candidate (the warm-lens entry).
+      cvUpload(candidateId: string, reused: boolean) {
+        posthog?.capture(ANALYTICS_EVENTS.cvUpload, { candidateId, reused });
       },
     }),
     [posthog],

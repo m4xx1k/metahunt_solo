@@ -1,7 +1,8 @@
-// The merged feed+CV route (listed beta at /merged). PR1 renders the COLD
-// experience: the feed's server fetch + body reused via <FeedShell>, wrapped in
-// lens chrome. Importing the feed's _components is a deliberate, temporary
-// coupling that dissolves at the PR4 flip; warm lens + upload land in PR2.
+// The merged feed+CV route (listed beta at /merged). Cold = the feed's server
+// fetch + body reused via <FeedShell>; warm (?cv) = the ranked list under a CV,
+// seeded server-side so shared /merged?cv=X links render warm on first paint.
+// Importing the feed's/reverse-ATS's _components is a deliberate, temporary
+// coupling that dissolves at the PR4 flip.
 
 import { notFound } from "next/navigation";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
@@ -12,8 +13,10 @@ import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
 import { vacanciesApi } from "@/lib/api/vacancies";
-import { readerFrom } from "@/features/vacancy-filters/url-params";
-import { coldKey } from "@/features/vacancy-filters/query-keys";
+import { cvApi } from "@/lib/api/cv";
+import { readerFrom, readFilterState } from "@/features/vacancy-filters/url-params";
+import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
+import { fetchMatch } from "@/features/vacancy-filters/warm-query";
 import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
 import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
 import { MergedShell } from "../_components/MergedShell";
@@ -53,6 +56,7 @@ export default async function MergedPage({
     { roles: roleCatalog },
     { skills: skillCatalog },
     { domains: domainCatalog },
+    samples,
   ] = await Promise.all([
     trackSlug
       ? tracksApi.preset(trackSlug)
@@ -61,7 +65,14 @@ export default async function MergedPage({
     facetsApi.roles(),
     facetsApi.skills(),
     facetsApi.domains().catch(() => ({ domains: [] })),
+    cvApi.samples().catch(() => []),
   ]);
+
+  const domainOptions = domainCatalog.map((d) => ({
+    id: d.id,
+    label: d.name,
+    count: d.count,
+  }));
 
   const { query } = buildFeedListQuery(readerFrom(sp), {
     trackActive: trackSlug != null,
@@ -74,13 +85,26 @@ export default async function MergedPage({
     queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
   }
 
+  // Warm seed: a shared /merged?cv=X link should render ranked on first paint.
+  // Tolerate a bad id / backend gap — the client degrades to an empty warm list.
+  const cv = typeof sp.cv === "string" ? sp.cv : null;
+  if (cv) {
+    const filters = readFilterState(readerFrom(sp));
+    try {
+      queryClient.setQueryData(
+        warmKey(cv, filters, 1),
+        await fetchMatch(cv, filters, 1),
+      );
+    } catch {
+      /* no seed */
+    }
+  }
+
   return (
     <>
       <Header links={mergedNav} />
       <main className="flex min-h-screen flex-col bg-bg">
-        {/* No pipeline intro here: the merged landing leads with the lens
-            tabs + tracks, and the feed's 3-card pipeline overflows at tablet. */}
-        <FeedHero aggregates={aggregates} showPipeline={false} />
+        <FeedHero aggregates={aggregates} showPipeline={!trackSlug} />
         <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <MergedShell
@@ -93,6 +117,8 @@ export default async function MergedPage({
               roleCatalog={roleCatalog}
               skillCatalog={skillCatalog}
               domainCatalog={domainCatalog}
+              domainOptions={domainOptions}
+              samples={samples}
             />
           </HydrationBoundary>
         </div>
