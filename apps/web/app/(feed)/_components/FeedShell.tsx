@@ -29,6 +29,7 @@ export function FeedShell({
   roleCatalog,
   skillCatalog,
   domainCatalog,
+  hideTrackTree,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -39,6 +40,8 @@ export function FeedShell({
   roleCatalog?: TrackAxis[];
   skillCatalog?: TrackAxis[];
   domainCatalog?: TrackAxis[];
+  /** Drop the sidebar browse tree (the merged route uses a top-band instead). */
+  hideTrackTree?: boolean;
 }) {
   const searchParams = useSearchParams();
   const push = useShallowSearchParams();
@@ -100,6 +103,7 @@ export function FeedShell({
           roleCatalog={roleCatalog}
           skillCatalog={skillCatalog}
           domainCatalog={domainCatalog}
+          hideTrackTree={hideTrackTree}
           isFetching={isFetching}
         />
       </div>

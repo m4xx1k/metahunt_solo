@@ -10,7 +10,10 @@ import type {
 // events.ts) — no event-name string literals in components.
 const ANALYTICS_EVENTS = {
   subscribeClicked: "subscribe_clicked",
+  lensSwitch: "lens_switch",
 } as const;
+
+export type Lens = "cold" | "warm";
 
 // The single client-side analytics seam — domain methods only, so components
 // never touch raw event names or the PostHog client (mirrors the backend
@@ -34,6 +37,11 @@ export function useAnalytics() {
       ) {
         posthog?.capture(ANALYTICS_EVENTS.subscribeClicked, { params });
         posthog?.alias(subscriptionUuid);
+      },
+
+      // The visitor toggled the feed/CV lens. `to` is the lens now shown.
+      lensSwitched(from: Lens, to: Lens) {
+        posthog?.capture(ANALYTICS_EVENTS.lensSwitch, { from, to });
       },
     }),
     [posthog],
