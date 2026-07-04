@@ -25,19 +25,19 @@ export function VacancyList({ result, offset, onNavigate, isFetching }: Props) {
     >
       <div className="flex items-baseline justify-between">
         <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">
-          вакансії
+          jobs
         </h2>
         <span className="font-mono text-xs text-text-muted">
-          <span className="text-text-secondary">{result.total}</span> знайдено ·
-          стор. {result.page}
+          <span className="text-text-secondary">{result.total}</span> found ·
+          page {result.page}
         </span>
       </div>
 
       {result.items.length === 0 ? (
         <div className="border border-border bg-bg-card p-8 text-center font-mono text-sm text-text-secondary">
           {result.total === 0
-            ? "Нічого не знайдено за поточними фільтрами — спробуй прибрати частину."
-            : "Ця сторінка порожня — повернись на попередню."}
+            ? "Nothing found with the current filters — try removing some."
+            : "This page is empty — go back to the previous one."}
         </div>
       ) : (
         <div className="flex flex-col gap-4">

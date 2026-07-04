@@ -116,6 +116,22 @@ describe("digest.renderer", () => {
       expect(out).toContain("Dev &lt;script&gt;");
       expect(out).not.toContain("<script>");
     });
+
+    it("collapses same-country locations into 'Country (City, City)'", () => {
+      const out = renderDigest(
+        [createVacancy({ locations: ["Kyiv, Ukraine", "Lviv, Ukraine"] })],
+        META,
+      );
+      expect(out).toContain("Ukraine (Kyiv, Lviv)");
+    });
+
+    it("keeps mixed-country locations as a capped 'City, Country' list", () => {
+      const out = renderDigest(
+        [createVacancy({ locations: ["Kyiv, Ukraine", "Warsaw, Poland"] })],
+        META,
+      );
+      expect(out).toContain("Kyiv, Ukraine · Warsaw, Poland");
+    });
   });
 
   describe("renderDigest — header", () => {

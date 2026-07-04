@@ -154,14 +154,14 @@ export function VacancyCard({ vacancy: v, match }: Props) {
           {v.hasTestAssignment === true ? (
             <FlagPill
               icon={<ClipboardList className="h-3.5 w-3.5" strokeWidth={2.5} />}
-              value="тестове"
+              value="test task"
               tone="info"
             />
           ) : null}
           {v.hasReservation === true ? (
             <FlagPill
               icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
-              value="бронь"
+              value="reservation"
               tone="ok"
             />
           ) : null}
@@ -184,7 +184,7 @@ export function VacancyCard({ vacancy: v, match }: Props) {
               rel="noreferrer noopener"
               className="font-mono text-sm text-accent hover:underline"
             >
-              ↗ оригінал на {sourceName}
+              ↗ original on {sourceName}
             </a>
           ) : null}
         </div>

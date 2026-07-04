@@ -2,12 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
+import { cn } from "@/lib/utils";
 import { CandidateProfile } from "@/app/reverse-ats/_components/CandidateProfile";
 import { SkillRecommendations } from "@/app/reverse-ats/_components/SkillRecommendations";
 import { MatchFilters } from "@/app/reverse-ats/_components/MatchFilters";
 import { Pagination } from "@/ui/navigation/Pagination";
 import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
 import { useMergedWarm } from "../_hooks/use-merged-warm";
+import { CvSelect } from "./CvSelect";
 import { WarmCard } from "./WarmCard";
 import { WarmSubscribe } from "./WarmSubscribe";
 
@@ -25,6 +27,7 @@ export function WarmBody({
   profileSeniority,
   isSample,
   onCandidateGone,
+  onPickCv,
 }: {
   api: FiltersApi;
   candidateId: string;
@@ -34,6 +37,7 @@ export function WarmBody({
   profileSeniority?: string | null;
   isSample: boolean;
   onCandidateGone: (candidateId: string) => void;
+  onPickCv: (candidateId: string) => void;
 }) {
   const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } =
     useMergedWarm(candidateId, api.filters, !isSample);
@@ -51,8 +55,8 @@ export function WarmBody({
   const candidateSkillIds = data?.resolved.matched.map((s) => s.id) ?? [];
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_300px] xl:items-start">
-      <div className="flex flex-col gap-4 xl:sticky xl:top-24">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[300px_minmax(0,1fr)_300px] xl:items-start">
+      <div className={cn("flex flex-col gap-4", STICKY_RAIL)}>
         <WarmSubscribe
           candidateId={candidateId}
           filters={api.filters}
@@ -65,13 +69,13 @@ export function WarmBody({
       <div className="flex flex-col gap-5">
         {errorMsg ? (
           <p className="border border-danger/40 bg-danger/5 px-4 py-3 font-mono text-sm text-danger">
-            помилка: {errorMsg}
+            Error: {errorMsg}
           </p>
         ) : null}
-        {busy ? <p className="font-mono text-sm text-text-muted">ранжуємо…</p> : null}
+        {busy ? <p className="font-mono text-sm text-text-muted">Ranking…</p> : null}
         {!busy && data && data.items.length === 0 ? (
           <p className="border border-border bg-bg-card px-4 py-6 text-center font-mono text-sm text-text-muted">
-            Немає збігів під це резюме — спробуй зняти фільтри або завантажити інше CV.
+            No matches for this CV — try clearing the filters or uploading another.
           </p>
         ) : null}
 
@@ -97,7 +101,8 @@ export function WarmBody({
       </div>
 
       {data ? (
-        <div className="order-first flex flex-col gap-4 xl:order-none xl:sticky xl:top-24">
+        <div className={cn("order-first flex flex-col gap-4 xl:order-none", STICKY_RAIL)}>
+          <CvSelect activeId={candidateId} onPick={onPickCv} />
           <CandidateProfile
             title={profileTitle}
             role={profileRole}
@@ -112,3 +117,8 @@ export function WarmBody({
     </div>
   );
 }
+
+// Sticky side rails cap their height and self-scroll, so a rail taller than the
+// viewport keeps its bottom reachable instead of being clipped below the fold.
+const STICKY_RAIL =
+  "xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:overscroll-contain [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]";

@@ -66,7 +66,7 @@ export function VacancySkills({
           onClick={() => setExpanded((v) => !v)}
           className="w-fit font-mono text-2xs uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
         >
-          {expanded ? "− згорнути" : `+ показати всі (${hidden})`}
+          {expanded ? "− collapse" : `+ show all (${hidden})`}
         </button>
       ) : null}
     </div>

@@ -40,9 +40,9 @@ export function MatchFilters({
         className="flex items-center justify-between border border-border bg-bg-card px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent xl:hidden"
       >
         <span>
-          &gt; фільтри{count > 0 ? ` · ${count}` : ""}
+          &gt; filters{count > 0 ? ` · ${count}` : ""}
         </span>
-        <span aria-hidden>{mobileOpen ? "[− сховати]" : "[+ показати]"}</span>
+        <span aria-hidden>{mobileOpen ? "[− hide]" : "[+ show]"}</span>
       </button>
 
       <div className={cn("flex-col gap-3 xl:flex", mobileOpen ? "flex" : "hidden")}>
@@ -62,7 +62,7 @@ export function MatchFilters({
             onClick={api.clear}
             className="self-start font-mono text-xs text-text-muted underline hover:text-accent"
           >
-            скинути всі фільтри
+            reset all filters
           </button>
         ) : null}
       </div>

@@ -64,7 +64,7 @@ export function WarmSubscribe({
       }
     } catch {
       tab?.close();
-      toast.error("Не вдалося створити підписку");
+      toast.error("Failed to create alert");
     } finally {
       setIsSubmitting(false);
     }
@@ -73,7 +73,7 @@ export function WarmSubscribe({
   if (disabled) {
     return (
       <p className="border border-border bg-bg-card px-3 py-2 font-mono text-2xs leading-relaxed text-text-muted">
-        завантаж своє резюме, щоб підписатись на збіги
+        Upload your own CV to subscribe to matches
       </p>
     );
   }
@@ -87,7 +87,7 @@ export function WarmSubscribe({
       disabled={isSubmitting}
       onClick={handleSubscribe}
     >
-      Сповіщення в Telegram
+      Get alerts on Telegram
     </Button>
   );
 }

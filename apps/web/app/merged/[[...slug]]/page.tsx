@@ -24,9 +24,9 @@ import { MergedShell } from "../_components/MergedShell";
 export const dynamic = "force-dynamic";
 
 const mergedNav: NavItem[] = [
-  { label: "класичний фід", href: "/" },
-  { label: "моніторинг", href: "/dashboard" },
-  { label: "про проєкт", href: "/welcome" },
+  { label: "classic feed", href: "/" },
+  { label: "monitoring", href: "/dashboard" },
+  { label: "about", href: "/welcome" },
 ];
 
 export default async function MergedPage({
@@ -102,10 +102,21 @@ export default async function MergedPage({
 
   return (
     <>
-      <Header links={mergedNav} />
-      <main className="flex min-h-screen flex-col bg-bg">
-        <FeedHero aggregates={aggregates} showPipeline={!trackSlug} />
-        <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
+      <Header links={mergedNav} cta={null} />
+      <main
+        className="flex min-h-screen flex-col bg-bg"
+        style={{
+          backgroundImage:
+            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
+          backgroundSize: "auto, 22px 22px",
+        }}
+      >
+        <FeedHero
+          aggregates={aggregates}
+          showPipeline={!trackSlug}
+          matchCta={{ label: "Upload your CV", event: "merged:upload-cv" }}
+        />
+        <div className="mx-auto w-full max-w-7xl px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <MergedShell
               aggregates={aggregates}

@@ -30,6 +30,7 @@ export function PipelineCard({
   accent,
   index,
   cta,
+  ctaEvent,
   children,
 }: {
   n: string;
@@ -38,6 +39,9 @@ export function PipelineCard({
   accent: PipelineAccent;
   index: number;
   cta?: { label: string; href: string };
+  /** Fires a window event instead of navigating (merged uses it to open the CV
+   *  picker). Takes precedence over `cta`. */
+  ctaEvent?: { label: string; event: string };
   children: React.ReactNode;
 }) {
   return (
@@ -79,7 +83,16 @@ export function PipelineCard({
       {/* stage-specific visual — the part that reads in a second */}
       <div className="py-2">{children}</div>
 
-      {cta && (
+      {ctaEvent ? (
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(ctaEvent.event))}
+          className="mt-auto inline-flex items-center justify-center gap-2 border border-dashed border-accent px-5 py-3 font-body text-sm font-semibold text-accent transition-colors hover:bg-accent-subtle-bg"
+        >
+          {ctaEvent.label}
+          <span aria-hidden>{"=>"}</span>
+        </button>
+      ) : cta ? (
         <a
           href={cta.href}
           className={cn(
@@ -90,7 +103,7 @@ export function PipelineCard({
           {cta.label}
           <span aria-hidden>{"=>"}</span>
         </a>
-      )}
+      ) : null}
     </motion.div>
   );
 }

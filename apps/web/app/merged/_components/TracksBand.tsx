@@ -7,7 +7,8 @@ import type { TrackDto } from "@/lib/api/tracks";
 
 // Top-band track nav for /merged: disciplines + the active discipline's
 // children, same tree/hide-zero rules as the sidebar TrackTree. One accent puck
-// (shared layoutId) slides between the selected pill. Mobile sheet lands in PR4.
+// (shared layoutId) slides to the selected pill. Counts are intentionally
+// omitted — an all-time pill count over-promised vs the freshness-windowed feed.
 const bySortThenCount = (a: TrackDto, b: TrackDto) =>
   a.sortOrder - b.sortOrder || b.count - a.count;
 
@@ -50,8 +51,6 @@ export function TracksBand({
     (r) => r.count > 0 || childrenOf(r.slug).length > 0,
   );
 
-  const maxCount = Math.max(1, ...visibleRoots.map((r) => r.count));
-
   // The discipline whose children to expand: the active node's parent, or the
   // active root itself.
   const activeParent = useMemo(() => {
@@ -65,55 +64,36 @@ export function TracksBand({
     activeParent != null
       ? (tracks.find((t) => t.slug === activeParent)?.label ?? "")
       : "";
-  const activeLabel =
-    activeSlug != null
-      ? (tracks.find((t) => t.slug === activeSlug)?.label ?? "усі")
-      : "усі";
 
   return (
-    <nav aria-label="tracks" className="flex flex-col gap-2.5">
+    <nav aria-label="tracks" className="flex flex-col gap-2">
+      <p className="font-mono text-2xs uppercase tracking-[0.18em] text-text-muted">
+        Browse by track
+      </p>
       <LayoutGroup id="tracks-band">
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-          className="border border-border bg-bg-card shadow-brut-sm"
-        >
-          <div className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-2">
-            <span className="font-mono text-2xs font-bold uppercase tracking-wider text-text-primary">
-              track
-            </span>
-            <span className="min-w-0 truncate font-mono text-2xs text-text-secondary">
-              {activeLabel}
-            </span>
+        <div className="flex items-stretch gap-2">
+          <AllPill
+            active={activeSlug == null}
+            onClick={() => onSelect(null)}
+            reduceMotion={!!reduceMotion}
+          />
+          <span aria-hidden className="w-px shrink-0 self-stretch bg-border" />
+          <div className={SCROLL_ROW}>
+            {visibleRoots.map((disc) => (
+              <DisciplinePill
+                key={disc.slug}
+                label={disc.label}
+                isExact={activeSlug === disc.slug}
+                isGroupFocus={
+                  activeParent === disc.slug && activeSlug !== disc.slug
+                }
+                ariaPressed={activeParent === disc.slug}
+                onClick={() => onSelect(disc.slug)}
+                reduceMotion={!!reduceMotion}
+              />
+            ))}
           </div>
-
-          <div className="flex items-stretch gap-2 p-3">
-            <AllPill
-              active={activeSlug == null}
-              onClick={() => onSelect(null)}
-              reduceMotion={!!reduceMotion}
-            />
-            <span aria-hidden className="w-px shrink-0 self-stretch bg-border" />
-            <div className={SCROLL_ROW}>
-              {visibleRoots.map((disc) => (
-                <DisciplinePill
-                  key={disc.slug}
-                  label={disc.label}
-                  count={disc.count}
-                  pct={Math.round((disc.count / maxCount) * 100)}
-                  isExact={activeSlug === disc.slug}
-                  isGroupFocus={
-                    activeParent === disc.slug && activeSlug !== disc.slug
-                  }
-                  ariaPressed={activeParent === disc.slug}
-                  onClick={() => onSelect(disc.slug)}
-                  reduceMotion={!!reduceMotion}
-                />
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        </div>
 
         {kids.length > 0 ? (
           <div className="flex items-stretch gap-2 pl-1">
@@ -127,7 +107,6 @@ export function TracksBand({
                 <ChildPill
                   key={kid.slug}
                   label={kid.label}
-                  count={kid.count}
                   isExact={activeSlug === kid.slug}
                   onClick={() => onSelect(kid.slug)}
                   reduceMotion={!!reduceMotion}
@@ -159,7 +138,7 @@ function AllPill({
         "relative flex shrink-0 items-center gap-2 border px-3.5 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-[transform,color,border-color] duration-150",
         active
           ? "border-transparent text-bg"
-          : "border-dashed border-border-strong text-text-secondary hover:border-solid hover:border-accent hover:text-accent",
+          : "border-border bg-bg text-text-secondary hover:border-border-strong hover:text-text-primary",
       )}
     >
       {active ? (
@@ -181,15 +160,13 @@ function AllPill({
         <span className="h-[3px] w-[3px] bg-current" />
         <span className="h-[3px] w-[3px] bg-current" />
       </span>
-      <span className="relative z-10">усі</span>
+      <span className="relative z-10">all</span>
     </button>
   );
 }
 
 function DisciplinePill({
   label,
-  count,
-  pct,
   isExact,
   isGroupFocus,
   ariaPressed,
@@ -197,8 +174,6 @@ function DisciplinePill({
   reduceMotion,
 }: {
   label: string;
-  count: number;
-  pct: number;
   isExact: boolean;
   isGroupFocus: boolean;
   ariaPressed: boolean;
@@ -211,7 +186,7 @@ function DisciplinePill({
       aria-pressed={ariaPressed}
       onClick={onClick}
       className={cn(
-        "group relative flex shrink-0 flex-col items-start gap-1 border px-3.5 py-2 text-left transition-[transform,color,border-color,background-color] duration-150",
+        "relative flex shrink-0 items-center border px-3.5 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-[transform,color,border-color,background-color] duration-150",
         isExact
           ? "border-transparent text-bg"
           : isGroupFocus
@@ -226,42 +201,18 @@ function DisciplinePill({
           className="absolute inset-0 bg-accent shadow-brut-sm"
         />
       ) : null}
-      <span className="relative z-10 font-mono text-xs font-bold uppercase tracking-wider">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "relative z-10 font-mono text-2xs tabular-nums",
-          isExact
-            ? "text-bg/70"
-            : isGroupFocus
-              ? "text-accent/70"
-              : "text-text-muted",
-        )}
-      >
-        {count}
-      </span>
-      {!isExact ? (
-        <span
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-[3px] bg-border/60"
-        >
-          <span className="block h-full bg-accent/50" style={{ width: `${pct}%` }} />
-        </span>
-      ) : null}
+      <span className="relative z-10">{label}</span>
     </button>
   );
 }
 
 function ChildPill({
   label,
-  count,
   isExact,
   onClick,
   reduceMotion,
 }: {
   label: string;
-  count: number;
   isExact: boolean;
   onClick: () => void;
   reduceMotion: boolean;
@@ -272,7 +223,7 @@ function ChildPill({
       aria-pressed={isExact}
       onClick={onClick}
       className={cn(
-        "relative inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wider transition-colors duration-150",
+        "relative inline-flex shrink-0 items-center border px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wider transition-colors duration-150",
         isExact
           ? "border-transparent text-bg"
           : "border-border bg-bg text-text-secondary hover:border-accent hover:text-accent",
@@ -286,14 +237,6 @@ function ChildPill({
         />
       ) : null}
       <span className="relative z-10">{label}</span>
-      <span
-        className={cn(
-          "relative z-10 tabular-nums",
-          isExact ? "text-bg/70" : "text-text-muted",
-        )}
-      >
-        {count}
-      </span>
     </button>
   );
 }

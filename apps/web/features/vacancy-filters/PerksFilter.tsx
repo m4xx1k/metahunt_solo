@@ -29,7 +29,7 @@ export function PerksFilter({
   const reservationOn = reservation === true;
   const testOn = test === false;
   const summary =
-    [reservationOn ? "бронь" : null, testOn ? "без тесту" : null]
+    [reservationOn ? "reservation" : null, testOn ? "no test" : null]
       .filter(Boolean)
       .join(" · ") || "any";
 
@@ -38,14 +38,14 @@ export function PerksFilter({
       <div className="grid grid-cols-2 gap-2">
         <PerkPill
           icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
-          label="бронь"
+          label="reservation"
           tone="ok"
           active={reservationOn}
           onClick={() => onReservation(reservationOn ? null : true)}
         />
         <PerkPill
           icon={<ClipboardList className="h-3.5 w-3.5" strokeWidth={2.5} />}
-          label="без тесту"
+          label="no test"
           tone="info"
           active={testOn}
           onClick={() => onTest(testOn ? null : false)}

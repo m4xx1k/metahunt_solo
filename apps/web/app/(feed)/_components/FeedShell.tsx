@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { cn } from "@/lib/utils";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
@@ -30,6 +31,7 @@ export function FeedShell({
   skillCatalog,
   domainCatalog,
   hideTrackTree,
+  rightRail,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -42,6 +44,9 @@ export function FeedShell({
   domainCatalog?: TrackAxis[];
   /** Drop the sidebar browse tree (the merged route uses a top-band instead). */
   hideTrackTree?: boolean;
+  /** Optional third column (merged cold lens: the CV-recs teaser). Its presence
+   *  switches the grid to 3-col and makes both side rails self-scroll. */
+  rightRail?: ReactNode;
 }) {
   const searchParams = useSearchParams();
   const push = useShallowSearchParams();
@@ -89,9 +94,18 @@ export function FeedShell({
     [push],
   );
 
+  const threeCol = rightRail != null;
+
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
-      <div className="flex flex-col gap-4">
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-8 lg:items-start",
+        threeCol
+          ? "xl:grid-cols-[300px_minmax(0,1fr)_300px]"
+          : "lg:grid-cols-[300px_minmax(0,1fr)]",
+      )}
+    >
+      <div className={cn("flex flex-col gap-4", threeCol && STICKY_RAIL)}>
         {subscriptionParams ? <SubscribeButton params={subscriptionParams} /> : null}
         <FeedFilters
           aggregates={aggregates}
@@ -113,6 +127,13 @@ export function FeedShell({
         onNavigate={goToOffset}
         isFetching={isFetching}
       />
+      {threeCol ? <div className={STICKY_RAIL}>{rightRail}</div> : null}
     </div>
   );
 }
+
+// A tall sidebar was getting its bottom clipped: sticky pins it, but content
+// past the viewport was only reachable by scrolling the whole page. Capping the
+// height and letting the rail scroll itself keeps its bottom always reachable.
+const STICKY_RAIL =
+  "xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:overscroll-contain [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]";

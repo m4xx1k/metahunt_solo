@@ -20,30 +20,30 @@ export interface PipelineMatch {
 }
 
 export const pipeline = {
-  tag: "як це працює",
+  tag: "how it works",
   steps: {
     collect: {
       n: "01",
-      title: "Збір",
-      lead: "Усі джерела зливаються в один потік — щогодини, цілодобово.",
+      title: "Collect",
+      lead: "Every source flows into one stream — hourly, around the clock.",
       accent: "secondary" as PipelineAccent,
     },
     parse: {
       n: "02",
-      title: "Розбір",
-      lead: "LLM читає кожне оголошення й розкладає на поля. Дублікати — в одну картку.",
+      title: "Parse",
+      lead: "An LLM reads each posting and breaks it into fields. Duplicates merge into one card.",
       accent: "accent" as PipelineAccent,
     },
     match: {
       n: "03",
-      title: "Підбір",
-      lead: "Завантаж резюме — і фід ранжується під твій профіль.",
+      title: "Match",
+      lead: "Upload your CV — the feed re-ranks itself around your profile.",
       accent: "success" as PipelineAccent,
-      cta: { label: "спробувати CV-Match", href: "/reverse-ats" },
+      cta: { label: "try CV-Match", href: "/reverse-ats" },
     },
   },
   // Sample fields the parser pulls out — illustrative, shown as popping tags.
-  extracted: ["Python", "Senior", "Remote", "$4000+", "тестове"],
+  extracted: ["Python", "Senior", "Remote", "$4000+", "Test task"],
   // Sample CV-Match verdict — illustrative skill diff in the matching stage.
   match: {
     fit: "good fit",

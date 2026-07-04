@@ -166,10 +166,10 @@ describe("formatSalaryRange", () => {
 
   it("renders a single open bound with a prefix", () => {
     expect(formatSalaryRange({ min: 100, max: null, currency: "USD" })).toBe(
-      "від 100 USD",
+      "from 100 USD",
     );
     expect(formatSalaryRange({ min: null, max: 200, currency: "USD" })).toBe(
-      "до 200 USD",
+      "up to 200 USD",
     );
   });
 

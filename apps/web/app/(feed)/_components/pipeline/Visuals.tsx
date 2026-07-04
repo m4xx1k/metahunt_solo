@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { accentBg, accentText, EASE } from "./PipelineCard";
 import type { PipelineAccent, PipelineMatch } from "./data";
 
-const NUM = new Intl.NumberFormat("uk-UA");
+const NUM = new Intl.NumberFormat("en-US");
 const VIEWPORT = { once: true, margin: "-60px" } as const;
 
 const accentBorder: Record<PipelineAccent, string> = {
@@ -64,7 +64,7 @@ export function SourcesVisual({
           {sources.length}
         </span>
         <span className="font-body text-xs text-text-muted">
-          джерел · оновлення щогодини
+          sources · updated hourly
         </span>
       </motion.div>
     </div>
@@ -131,7 +131,7 @@ export function ExtractVisual({
           <span aria-hidden className="text-2xs leading-none">
             🛡
           </span>
-          бронь
+          reservation
         </motion.span>
       </div>
     </div>

@@ -35,7 +35,7 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
       }
     } catch {
       tab?.close();
-      toast.error("Не вдалося створити підписку");
+      toast.error("Failed to create alert");
     } finally {
       setIsSubmitting(false);
     }
@@ -50,7 +50,7 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
       disabled={isSubmitting}
       onClick={handleSubscribe}
     >
-      Сповіщення в Telegram
+      Get alerts on Telegram
     </Button>
   );
 }

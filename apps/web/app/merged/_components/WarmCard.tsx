@@ -1,31 +1,36 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import type { FitTier, RankedVacancy } from "@/lib/api/ranking";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
-const TIER: Record<FitTier, { cls: string; label: string; hint: string }> = {
+const TIER: Record<FitTier, { fill: string; text: string; label: string; hint: string }> = {
   STRONG: {
-    cls: "border-success bg-success text-bg",
-    label: "strong fit",
-    hint: "ти покриваєш майже всі обовʼязкові скіли цієї вакансії",
+    fill: "border-success bg-success",
+    text: "text-success",
+    label: "strong",
+    hint: "You cover almost all of this job's required skills",
   },
   GOOD: {
-    cls: "border-accent text-accent",
-    label: "good fit",
-    hint: "ти покриваєш більшість обовʼязкових скілів",
+    fill: "border-accent bg-accent",
+    text: "text-accent",
+    label: "good",
+    hint: "You cover most of the required skills",
   },
   STRETCH: {
-    cls: "border-text-muted text-text-muted",
+    fill: "border-text-muted bg-text-muted",
+    text: "text-text-muted",
     label: "stretch",
-    hint: "збігів мало — вакансія на виріст",
+    hint: "Few matches — a stretch role",
   },
 };
 
-// One ranked vacancy: a compact fit strip (tier · coverage · relevance, each
-// tooltipped) merged into the top border of the exact feed card. The card's own
-// skill chips carry the green/red have-lacks borders via its `match` prop, so
-// no separate diff block is needed. `candidateSkillIds` is the CV's resolved
+// One ranked vacancy: a compact fit strip merged into the top border of the
+// exact feed card. Fit + required coverage are one widget — a pip per required
+// skill (filled = covered), tier-coloured, with the tier word below. The card's
+// own skill chips carry the green/red have-lacks borders via its `match` prop,
+// so no separate diff block is needed. `candidateSkillIds` is the CV's resolved
 // skill set (shared across the list).
 export function WarmCard({
   item,
@@ -39,56 +44,52 @@ export function WarmCard({
   const t = TIER[item.fit.tier];
   return (
     <div className="flex flex-col">
-      <div className="flex flex-wrap items-center gap-3 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
-        <span className="text-text-muted">#{rank}</span>
+      <div className="flex flex-wrap items-center gap-4 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
+        {/* <span className="text-text-muted">#{rank}</span> */}
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className={`cursor-help border px-2 py-[2px] font-bold uppercase tracking-wider ${t.cls}`}>
-              {t.label}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{t.hint}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-help text-text-secondary">
-              стек{" "}
-              <span className="text-text-primary">
-                {item.fit.matchedRequired}/{item.fit.requiredTotal}
+            <span className="inline-flex cursor-help flex-col gap-1">
+              <span
+                className="flex gap-1"
+                aria-label={`${item.fit.matchedRequired} of ${item.fit.requiredTotal} required skills`}
+              >
+                {Array.from({ length: item.fit.requiredTotal }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-2.5 w-2.5 border",
+                      i < item.fit.matchedRequired ? t.fill : "border-border-strong",
+                    )}
+                  />
+                ))}
+              </span>
+              <span
+                className={cn(
+                  "text-2xs font-bold uppercase leading-none tracking-wider",
+                  t.text,
+                )}
+              >
+                {t.label}
               </span>
             </span>
           </TooltipTrigger>
-          <TooltipContent>
-            скільки обовʼязкових скілів вакансії ти вже маєш
-          </TooltipContent>
+          <TooltipContent>{t.hint}</TooltipContent>
         </Tooltip>
 
         {!item.onStack ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="cursor-help border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
-                інший стек
+                off-stack
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              вакансія для іншого стеку, ніж твій основний — тому нижче за вакансії
-              твого стеку (за окремими скілами все одно може підходити).
+              This job targets a different stack than your main one, so it ranks
+              below jobs in your stack (individual skills may still fit).
             </TooltipContent>
           </Tooltip>
         ) : null}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="ml-auto cursor-help text-accent">
-              relevance <span className="font-bold">{item.relevance.toFixed(1)}</span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            загальна оцінка збігу твоїх скілів із цією вакансією
-          </TooltipContent>
-        </Tooltip>
       </div>
 
       <VacancyCard vacancy={item.vacancy} match={{ haveSkillIds: candidateSkillIds }} />

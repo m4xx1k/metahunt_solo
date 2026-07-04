@@ -3,8 +3,10 @@
 import { cn } from "@/lib/utils";
 import { useAnalytics, type Lens } from "@/lib/hooks/use-analytics";
 
-// The feed/CV lens switch. Warm is locked until a CV resolves (`cvLocked`);
-// colour is never the only signal — the locked tab carries a lock glyph.
+// The feed/CV lens switch — a segmented toggle that lives inside the control
+// bar. Medium emphasis (soft accent), so it doesn't compete with the primary
+// Upload CTA. Warm is locked until a CV resolves (`cvLocked`); colour is never
+// the only signal — the locked tab carries a lock glyph.
 export function LensTabs({
   lens,
   cvLocked,
@@ -27,17 +29,17 @@ export function LensTabs({
     <div
       role="tablist"
       aria-label="feed lens"
-      className="flex items-stretch gap-0 border border-border bg-bg-card font-mono text-2xs uppercase tracking-wider"
+      className="flex items-stretch self-start border border-border font-mono text-2xs uppercase tracking-wider"
     >
       <Tab active={lens === "cold"} onClick={() => select("cold")}>
-        вакансії
+        All jobs
       </Tab>
       <Tab
         active={lens === "warm"}
         disabled={cvLocked}
         onClick={() => select("warm")}
       >
-        під моє CV{cvLocked ? " \u{1F512}" : ""}
+        Your matches{cvLocked ? " \u{1F512}" : ""}
       </Tab>
     </div>
   );
@@ -62,9 +64,9 @@ function Tab({
       aria-disabled={disabled || undefined}
       onClick={onClick}
       className={cn(
-        "flex-1 border-r border-border px-4 py-2 transition-colors last:border-r-0",
+        "border-r border-border px-4 py-2 transition-colors last:border-r-0",
         active
-          ? "bg-accent text-bg"
+          ? "bg-accent-subtle-bg font-bold text-accent shadow-[inset_0_-2px_0_0_var(--color-accent)]"
           : "text-text-secondary hover:text-accent",
         disabled && "cursor-not-allowed text-text-muted hover:text-text-muted",
       )}

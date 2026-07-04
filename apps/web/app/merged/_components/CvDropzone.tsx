@@ -1,69 +1,21 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+// Shared dashed-border upload CTA styling — the "drop your CV here" affordance.
+export const UPLOAD_BTN =
+  "inline-flex shrink-0 items-center justify-center gap-1.5 border border-dashed border-accent px-3.5 py-2 font-mono text-2xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent-subtle-bg disabled:cursor-not-allowed disabled:opacity-60";
 
-const ACCEPT = ".pdf,.txt,application/pdf,text/plain";
-
-// The warm-lens unlock affordance: drop or pick a CV. PR1 wires the UI only;
-// the `onFile` handler (upload → candidateId → warm) lands in PR2.
+// The upload button. Drag-and-drop is handled by the surrounding control bar and
+// the file input lives in <MergedShell>; this just triggers the picker.
 export function CvDropzone({
-  onFile,
+  onClick,
   busy = false,
 }: {
-  onFile: (file: File) => void;
+  onClick: () => void;
   busy?: boolean;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const pick = useCallback(() => inputRef.current?.click(), []);
-
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragging(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file) onFile(file);
-    },
-    [onFile],
-  );
-
   return (
-    <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragging(true);
-      }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={onDrop}
-      className={cn(
-        "flex items-center justify-between gap-3 border border-dashed px-4 py-3 transition-colors",
-        dragging ? "border-accent bg-accent/5" : "border-border bg-bg-card",
-      )}
-    >
-      <span className="font-mono text-2xs uppercase tracking-wider text-text-secondary">
-        {busy ? "обробляю резюме…" : "завантаж резюме — побач свій фіт"}
-      </span>
-      <button
-        type="button"
-        onClick={pick}
-        disabled={busy}
-        className="border border-border px-3 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-primary transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        обрати файл
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPT}
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onFile(file);
-          e.target.value = "";
-        }}
-      />
-    </div>
+    <button type="button" onClick={onClick} disabled={busy} className={UPLOAD_BTN}>
+      {busy ? "Reading…" : "+ Upload CV"}
+    </button>
   );
 }

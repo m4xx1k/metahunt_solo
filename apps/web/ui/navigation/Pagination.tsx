@@ -70,11 +70,11 @@ export function Pagination({
   return (
     <div className="flex items-center justify-between gap-4">
       <p className="font-mono text-xs text-text-muted">
-        показано {from}–{to} з {total}
+        showing {from}–{to} of {total}
       </p>
       <div className="flex items-center gap-2">
-        {cell("← попер.", prevOffset, hasPrev)}
-        {cell("наст. →", nextOffset, hasNext)}
+        {cell("← prev", prevOffset, hasPrev)}
+        {cell("next →", nextOffset, hasNext)}
       </div>
     </div>
   );

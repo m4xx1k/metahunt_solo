@@ -6,7 +6,15 @@ import { pipeline } from "./data";
 // The 3-stage explainer (Збір → Розбір → Підбір). Renders just the cards row —
 // no section/background of its own; it lives inside the feed's intro block
 // (Snapshot) so the whole "what is this" story reads as one piece.
-export function Pipeline({ aggregates }: { aggregates: VacancyAggregates }) {
+// `matchCta` overrides the Match step's default link (used by /merged to open
+// the CV picker via a window event instead of navigating to reverse-ATS).
+export function Pipeline({
+  aggregates,
+  matchCta,
+}: {
+  aggregates: VacancyAggregates;
+  matchCta?: { label: string; event: string };
+}) {
   const { collect, parse, match } = pipeline.steps;
 
   return (
@@ -23,7 +31,7 @@ export function Pipeline({ aggregates }: { aggregates: VacancyAggregates }) {
 
       <Connector />
 
-      <PipelineCard {...match} index={2}>
+      <PipelineCard {...match} index={2} ctaEvent={matchCta}>
         <MatchVisual match={pipeline.match} accent={match.accent} />
       </PipelineCard>
     </div>
