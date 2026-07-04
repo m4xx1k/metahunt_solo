@@ -5,13 +5,9 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { TrackDto } from "@/lib/api/tracks";
 
-// Top-band track nav for /merged: disciplines on one row, the active
-// discipline's children on a second. Same tree/hide-zero rules as the sidebar
-// TrackTree, laid out horizontally as the page's primary "pick your track"
-// selector. A single accent puck (shared layoutId) slides between whichever
-// pill is exactly selected — "усі", a discipline, or a child — so switching
-// tracks reads as one continuous, tactile motion instead of a colour flip.
-// Mobile gets this as a bottom sheet in PR4.
+// Top-band track nav for /merged: disciplines + the active discipline's
+// children, same tree/hide-zero rules as the sidebar TrackTree. One accent puck
+// (shared layoutId) slides between the selected pill. Mobile sheet lands in PR4.
 const bySortThenCount = (a: TrackDto, b: TrackDto) =>
   a.sortOrder - b.sortOrder || b.count - a.count;
 

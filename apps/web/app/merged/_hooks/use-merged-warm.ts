@@ -13,7 +13,11 @@ import type { FilterState } from "@/features/vacancy-filters/types";
 // local (warm pagination isn't deep-linked); it resets when the candidate or the
 // filters change (React's adjust-state-on-prop-change), so the query never fires
 // for an out-of-range page.
-export function useMergedWarm(candidateId: string | null, filters: FilterState) {
+export function useMergedWarm(
+  candidateId: string | null,
+  filters: FilterState,
+  showRecs: boolean,
+) {
   const [page, setPage] = useState(1);
   const [prev, setPrev] = useState({ candidateId, filters });
   if (prev.candidateId !== candidateId || prev.filters !== filters) {
@@ -32,7 +36,7 @@ export function useMergedWarm(candidateId: string | null, filters: FilterState) 
   const { data: rec } = useQuery({
     queryKey: ["recs", candidateId],
     queryFn: () => cvApi.recommendations(candidateId as string),
-    enabled: candidateId != null,
+    enabled: candidateId != null && showRecs,
     staleTime: 30_000,
   });
 
@@ -41,17 +45,17 @@ export function useMergedWarm(candidateId: string | null, filters: FilterState) 
     [],
   );
 
+  const errMessage = error instanceof Error ? error.message : "";
   return {
     data,
     rec,
     page,
     pageSize: MATCH_PAGE_SIZE,
     busy: isFetching,
-    errorMsg: isError
-      ? error instanceof Error
-        ? error.message
-        : "request failed"
-      : null,
+    errorMsg: isError ? errMessage || "request failed" : null,
+    // A true 404 means the candidate row is gone (DB reset / GC) — the caller
+    // drops it from localStorage and falls back to cold. An empty 200 is not this.
+    notFound: isError && /^api 404\b/.test(errMessage),
     goToOffset,
   };
 }

@@ -13,7 +13,7 @@ const OPTIONAL_SHOWN = 5;
 export type VacancyMatch = { haveSkillIds: readonly string[] };
 
 // Required and optional skills on their own rows (colour is the label), each
-// capped so a Kubernetes-shop posting doesn't dump 12 chips. One "показати всі"
+// capped so a Kubernetes-shop posting doesn't dump 12 chips. One show-all
 // button reveals the rest in place — the count never floats mid-row.
 export function VacancySkills({
   required,

@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { FeedShell } from "@/app/(feed)/_components/FeedShell";
 import { cvApi, type CvIngestResult, type SampleCandidate } from "@/lib/api/cv";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useSaved, type SavedSub } from "@/lib/hooks/use-saved";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
@@ -12,6 +15,7 @@ import type { TrackDto } from "@/lib/api/tracks";
 import { useMergedSearch } from "../_hooks/use-merged-search";
 import { CvDropzone } from "./CvDropzone";
 import { LensTabs } from "./LensTabs";
+import { SavedSwitcher } from "./SavedSwitcher";
 import { TracksBand } from "./TracksBand";
 import { WarmBody } from "./WarmBody";
 
@@ -47,16 +51,21 @@ export function MergedShell({
   const search = useMergedSearch();
   const { lens, cv, setCv, setTrack } = search;
   const analytics = useAnalytics();
+  const saved = useSaved();
+  const router = useRouter();
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadInfo, setUploadInfo] = useState<CvIngestResult | null>(null);
 
+  // Browse drops ?cv (keeps activeCv); the CV tab, unlocked by a remembered
+  // activeCv, re-ranks it in one click.
   const onLens = useCallback(
     (to: "cold" | "warm") => {
       if (to === "cold") setCv(null);
+      else if (cv == null && saved.activeCv) setCv(saved.activeCv);
     },
-    [setCv],
+    [setCv, cv, saved.activeCv],
   );
 
   const onFile = useCallback(
@@ -67,6 +76,11 @@ export function MergedShell({
         const info = await cvApi.uploadFile(file);
         setUploadInfo(info);
         analytics.cvUpload(info.candidateId, info.reused);
+        saved.addCv({
+          candidateId: info.candidateId,
+          label: info.role ?? "твоє CV",
+          addedAt: Date.now(),
+        });
         setCv(info.candidateId);
       } catch (e) {
         setUploadError(e instanceof Error ? e.message : "не вдалося обробити файл");
@@ -74,7 +88,33 @@ export function MergedShell({
         setUploading(false);
       }
     },
-    [analytics, setCv],
+    [analytics, saved, setCv],
+  );
+
+  const onPickCv = useCallback(
+    (id: string) => {
+      saved.setActiveCv(id);
+      setCv(id);
+    },
+    [saved, setCv],
+  );
+
+  const onPickSub = useCallback(
+    (sub: SavedSub) => {
+      if (sub.candidateId) saved.setActiveCv(sub.candidateId);
+      router.push(sub.query ? `/merged?${sub.query}` : "/merged");
+    },
+    [saved, router],
+  );
+
+  // A saved CV whose row no longer resolves (DB reset / GC): drop it + fall back.
+  const onCandidateGone = useCallback(
+    (id: string) => {
+      saved.removeCv(id);
+      setCv(null);
+      toast.error("Це CV більше недоступне");
+    },
+    [saved, setCv],
   );
 
   const isSample = cv != null && samples.some((s) => s.candidateId === cv);
@@ -89,8 +129,15 @@ export function MergedShell({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <LensTabs lens={lens} cvLocked={cv == null} onSelect={onLens} />
-        <CvDropzone onFile={onFile} busy={uploading} />
+        <LensTabs
+          lens={lens}
+          cvLocked={cv == null && saved.activeCv == null}
+          onSelect={onLens}
+        />
+        <div className="flex items-center gap-2">
+          <SavedSwitcher onPickCv={onPickCv} onPickSub={onPickSub} />
+          <CvDropzone onFile={onFile} busy={uploading} />
+        </div>
       </div>
 
       {uploadError ? (
@@ -107,7 +154,8 @@ export function MergedShell({
           profileTitle={profileTitle}
           profileRole={uploaded?.role}
           profileSeniority={uploaded?.seniority}
-          showRecs={!isSample}
+          isSample={isSample}
+          onCandidateGone={onCandidateGone}
         />
       ) : (
         <>

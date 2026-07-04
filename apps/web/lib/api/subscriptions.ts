@@ -21,6 +21,10 @@ export interface CvMatchParams {
   workFormats?: WorkFormat[];
   englishLevels?: EnglishLevel[];
   employmentTypes?: EmploymentType[];
+  // Persisted via FEED_PARAM_KEYS and replayed by the CV digest (paired with the
+  // ETL matcher fix) so a warm sub re-matches on the domain + experience filters.
+  domainIds?: string[];
+  experienceYears?: string[];
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   minFitTier?: FitTier;

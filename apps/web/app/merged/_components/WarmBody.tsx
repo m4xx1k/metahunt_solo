@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { CandidateProfile } from "@/app/reverse-ats/_components/CandidateProfile";
 import { SkillRecommendations } from "@/app/reverse-ats/_components/SkillRecommendations";
 import { MatchFilters } from "@/app/reverse-ats/_components/MatchFilters";
@@ -7,11 +9,13 @@ import { Pagination } from "@/ui/navigation/Pagination";
 import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
 import { useMergedWarm } from "../_hooks/use-merged-warm";
 import { WarmCard } from "./WarmCard";
+import { WarmSubscribe } from "./WarmSubscribe";
 
-// Warm lens body: ranked list under the active CV. Filters (warm) on the left,
-// ranked WarmCards in the centre, CV profile + recommendations on the right.
-// Reverse-ATS widgets are reused via import — a temporary coupling that
-// dissolves at the PR4 flip. Uploaded CVs (not demo samples) get recommendations.
+// Warm lens body: ranked list under the active CV. Subscribe + filters on the
+// left, ranked WarmCards in the centre, CV profile + recommendations on the
+// right. Reverse-ATS widgets are reused via import — a temporary coupling that
+// dissolves at the PR4 flip. Demo samples have no owner, so they skip subscribe
+// and recommendations (both are owner-scoped).
 export function WarmBody({
   api,
   candidateId,
@@ -19,7 +23,8 @@ export function WarmBody({
   profileTitle,
   profileRole,
   profileSeniority,
-  showRecs,
+  isSample,
+  onCandidateGone,
 }: {
   api: FiltersApi;
   candidateId: string;
@@ -27,18 +32,27 @@ export function WarmBody({
   profileTitle: string;
   profileRole?: string | null;
   profileSeniority?: string | null;
-  showRecs: boolean;
+  isSample: boolean;
+  onCandidateGone: (candidateId: string) => void;
 }) {
-  const { data, rec, page, pageSize, busy, errorMsg, goToOffset } = useMergedWarm(
-    candidateId,
-    api.filters,
-  );
+  const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } =
+    useMergedWarm(candidateId, api.filters, !isSample);
+
+  useEffect(() => {
+    if (notFound) onCandidateGone(candidateId);
+  }, [notFound, candidateId, onCandidateGone]);
 
   const candidateSkillIds = data?.resolved.matched.map((s) => s.id) ?? [];
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[240px_minmax(0,1fr)_300px] xl:items-start">
       <div className="flex flex-col gap-4 xl:sticky xl:top-24">
+        <WarmSubscribe
+          candidateId={candidateId}
+          filters={api.filters}
+          label={profileTitle}
+          disabled={isSample}
+        />
         <MatchFilters api={api} domainOptions={domainOptions} disabled={busy} />
       </div>
 
@@ -86,7 +100,7 @@ export function WarmBody({
             unmatched={data.resolved.unmatched}
             totalVacancies={data.total}
           />
-          {showRecs && rec ? <SkillRecommendations rec={rec} /> : null}
+          {!isSample && rec ? <SkillRecommendations rec={rec} /> : null}
         </div>
       ) : null}
     </div>
