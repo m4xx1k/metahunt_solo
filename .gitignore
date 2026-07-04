@@ -3,6 +3,8 @@ dist
 .env
 .DS_Store
 .codex
+.scratch
+.omc
 # .claude is local state except skills, which are versioned project tooling
 .claude/*
 !.claude/skills/
