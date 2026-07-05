@@ -26,7 +26,7 @@ export const SENIORITY_OPTIONS: OptionRow[] = (
 ).map((s) => opt(s, s.toLowerCase()));
 
 export const WORK_FORMAT_OPTIONS: OptionRow[] = WORK_FORMAT_VALUES.map((v) =>
-  opt(v, { REMOTE: "remote", OFFICE: "офіс", HYBRID: "гібрид" }[v]),
+  opt(v, { REMOTE: "remote", OFFICE: "on-site", HYBRID: "hybrid" }[v]),
 );
 
 // CEFR labels users recognise, mapped from the DB english enum.

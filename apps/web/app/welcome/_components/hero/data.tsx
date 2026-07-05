@@ -1,7 +1,7 @@
 export const hero = {
-  title: "ВЕСЬ IT-РИНОК. ОДНА ВКЛАДКА.",
+  title: "THE WHOLE IT MARKET. ONE TAB.",
   subtitle:
-    "агрегатор і ai-асистент: збираємо вакансії з усіх джерел, чистимо від дублікатів і допомагаємо подати заявку за хвилини.",
-  cta: "Отримати ранній доступ",
-  microCopy: "без спаму. тільки коли буде готово.",
+    "aggregator and ai assistant: we pull jobs from every source, dedupe them, and help you apply in minutes.",
+  cta: "Get early access",
+  microCopy: "no spam. only when it's ready.",
 };

@@ -5,15 +5,15 @@ import { ClipboardList, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 
-// PerksFilter — the two market "perks" (бронь, тестове) merged into a single
-// two-column quick-filter row, styled to mirror the card pills in
+// PerksFilter — the two market "perks" (reservation, test task) merged into a
+// single two-column quick-filter row, styled to mirror the card pills in
 // VacancyCard. Framed the way candidates read them: reservation as a draw
-// ("бронь") and the test task by its desirable absence ("без тесту").
+// ("reservation") and the test task by its desirable absence ("no test").
 //
 // Each pill is an independent on/off toggle: active → the meaningful filter,
 // click again → cleared (any). No tri-state — "show only WITH a test task" is a
 // non-goal, so reservation toggles true⇄null and test toggles false⇄null. The
-// "без тесту" filter (false) also matches unscored vacancies (null) — the
+// "no test" filter (false) also matches unscored vacancies (null) — the
 // backend treats "no test" as "not confirmed-true" (see feed.service buildWhere).
 export function PerksFilter({
   reservation,
@@ -29,7 +29,7 @@ export function PerksFilter({
   const reservationOn = reservation === true;
   const testOn = test === false;
   const summary =
-    [reservationOn ? "бронь" : null, testOn ? "без тесту" : null]
+    [reservationOn ? "reservation" : null, testOn ? "no test" : null]
       .filter(Boolean)
       .join(" · ") || "any";
 
@@ -38,14 +38,14 @@ export function PerksFilter({
       <div className="grid grid-cols-2 gap-2">
         <PerkPill
           icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
-          label="бронь"
+          label="reservation"
           tone="ok"
           active={reservationOn}
           onClick={() => onReservation(reservationOn ? null : true)}
         />
         <PerkPill
           icon={<ClipboardList className="h-3.5 w-3.5" strokeWidth={2.5} />}
-          label="без тесту"
+          label="no test"
           tone="info"
           active={testOn}
           onClick={() => onTest(testOn ? null : false)}

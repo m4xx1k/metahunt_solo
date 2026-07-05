@@ -15,12 +15,12 @@ export function FlagPills({
     [];
 
   if (hasTestAssignment === true) {
-    pills.push({ label: "тестове", value: "так", tone: "warn" });
+    pills.push({ label: "test task", value: "yes", tone: "warn" });
   } else if (hasTestAssignment === false) {
-    pills.push({ label: "тестове", value: "ні", tone: "ok" });
+    pills.push({ label: "test task", value: "no", tone: "ok" });
   }
   if (hasReservation === true) {
-    pills.push({ label: "бронювання", value: "так", tone: "ok" });
+    pills.push({ label: "reservation", value: "yes", tone: "ok" });
   }
 
   if (pills.length === 0) return null;

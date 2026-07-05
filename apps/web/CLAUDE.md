@@ -37,11 +37,13 @@ Background + full rationale: [`md/journal/migrations/front-refactor/rules.md`](.
 app/
   layout.tsx                       # root: html, body, fonts, analytics
   _components/                     # app chrome: Header, Footer, AppToaster
-  (feed)/
-    [[...slug]]/page.tsx           # public feed (catch-all: /, /track/<slug>…)
-    _components/                   # feed-owned only: market/ (FeedHero,
-                                   #   FeedFilters, toggles), pipeline/,
-                                   #   subscribe/, vacancy-list/
+  (feed)/                          # the home feed — cold (market list) + warm
+    [[...slug]]/page.tsx           #   (?cv → ranked list) lenses; catch-all
+    _components/                   #   (/, /track/<slug>…). market/, pipeline/,
+                                   #   subscribe/, vacancy-list/ + the lens shell
+                                   #   (MergedShell, LensTabs, TracksBand, Warm*,
+                                   #   Cv*, ColdRecsTeaser)
+    _hooks/                        # use-merged-search, use-merged-warm
   welcome/                         # marketing landing (/welcome)
     page.tsx
     _components/<section>/         # one folder per static section: hero, how,
@@ -52,14 +54,15 @@ app/
     <route>/
       page.tsx                     # server component, fetches lib/api
       _components/                 # page-private components, columns, etc
-  reverse-ats/                     # CV-match page + its private components
 entities/
   vacancy/                         # VacancyCard, SeniorityBadge, DuplicatesBadge,
                                    #   Fact, FlagPill(s), format-locations
   skill/                           # SkillChip
 features/
   vacancy-filters/                 # filter sections + adapter types + use-url-filters,
-                                   #   consumed by the feed and reverse-ATS
+                                   #   consumed by the feed's cold + warm lenses
+  cv-match/                        # CandidateProfile, SkillRecommendations —
+                                   #   warm-lens CV display widgets
 ui/                                # shared domain-free primitives
   badges/ buttons/ cards/ charts/ icons/ inputs/ layout/ navigation/ typography/
 lib/
@@ -103,4 +106,4 @@ Vercel builds from `apps/web/` of this monorepo (Root Directory setting). The Ig
 
 ## API integration
 
-`lib/api/` is the single backend boundary: one typed fetcher per resource, all going through the shared `lib/api/client.ts` (`apiBase` + `apiFetch` + `buildQs`). Pages (server components) call the fetchers and pass data as props; components stay dumb. `NEXT_PUBLIC_API_URL` must point at `@metahunt/etl` (set in `.env.local` locally, on Vercel for deploys). The welcome landing is fully static; the feed page is live (market filters + vacancy list); investigation pages are fully API-driven. See ADR-0005 consequences.
+`lib/api/` is the single backend boundary: one typed fetcher per resource, all going through the shared `lib/api/client.ts` (`apiBase` + `apiFetch` + `buildQs`). Pages (server components) call the fetchers and pass data as props; components stay dumb. `NEXT_PUBLIC_API_URL` must point at `@metahunt/etl` (set in `.env.local` locally, on Vercel for deploys). The welcome landing is fully static; the home feed is live (market filters + vacancy list, plus the `?cv` warm lens that ranks the feed against an uploaded CV); investigation pages are fully API-driven. See ADR-0005 consequences.

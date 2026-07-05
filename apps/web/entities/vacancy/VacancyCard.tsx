@@ -4,7 +4,7 @@ import { ClipboardList, ShieldCheck } from "lucide-react";
 
 import { DuplicatesBadge } from "./DuplicatesBadge";
 import { SeniorityBadge } from "./SeniorityBadge";
-import { VacancySkills } from "./VacancySkills";
+import { VacancySkills, type VacancyMatch } from "./VacancySkills";
 import { FlagPill } from "./FlagPill";
 import { formatLocations } from "./format-locations";
 import {
@@ -17,7 +17,9 @@ import {
 import { formatRelative } from "@/lib/format";
 import type { VacancyDto } from "@/lib/api/vacancies";
 
-type Props = { vacancy: VacancyDto };
+// `match` (warm lens only) colours the card's own skill chips by what the
+// candidate has; cold passes nothing → the card renders exactly as before.
+type Props = { vacancy: VacancyDto; match?: VacancyMatch };
 
 // Variant B: one reflowing card, ranked by what a candidate scans. Eight
 // meaning-groups, grouped by space, never by Label:Value. The role is the one
@@ -25,7 +27,7 @@ type Props = { vacancy: VacancyDto };
 // green=salary, accent=seniority+required skills+years, all else neutral.
 // Top = main column (groups 1–5) + a narrow provenance rail (6); a full-width
 // footer carries flags (7, left) and posted/apply (8, right).
-export function VacancyCard({ vacancy: v }: Props) {
+export function VacancyCard({ vacancy: v, match }: Props) {
   const role = v.role?.name ?? "untitled role";
   const company = v.company?.name ?? null;
   const domain = v.domain?.name ?? null;
@@ -56,10 +58,10 @@ export function VacancyCard({ vacancy: v }: Props) {
     );
 
   return (
-    <article className="flex w-full flex-col gap-4 border border-border bg-bg-card p-5 transition-colors hover:border-accent">
+    <article className="flex w-full flex-col gap-3 border border-border bg-bg-card p-4 transition-colors hover:border-accent">
       {/* TOP — main column (1–5) + provenance rail (6) */}
-      <div className="flex flex-col gap-4 md:flex-row md:gap-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           {/* 1 — eyebrow */}
           {eyebrow.length > 0 ? (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
@@ -115,18 +117,19 @@ export function VacancyCard({ vacancy: v }: Props) {
           <VacancySkills
             required={v.skills.required}
             optional={v.skills.optional}
+            match={match}
           />
         </div>
 
         {/* 6 — provenance rail: company · domain (source moved to apply) */}
         {company || domain ? (
-          <aside className="flex flex-col gap-3 md:w-[160px] md:flex-shrink-0 md:border-l md:border-border md:pl-6">
+          <aside className="flex min-w-0 flex-col gap-3 md:w-[132px] md:flex-shrink-0 md:border-l md:border-border md:pl-4">
             {company ? (
               <div className="flex flex-col gap-1">
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   company
                 </span>
-                <span className="font-mono text-xs text-text-primary">
+                <span className="break-words font-mono text-xs text-text-primary">
                   {company}
                 </span>
               </div>
@@ -136,7 +139,7 @@ export function VacancyCard({ vacancy: v }: Props) {
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   domain
                 </span>
-                <span className="w-fit border border-border-strong bg-bg-elev px-2.5 py-1 font-mono text-xs font-medium text-text-primary">
+                <span className="w-fit max-w-full break-words border border-border-strong bg-bg-elev px-2.5 py-1 font-mono text-xs font-medium text-text-primary">
                   {domain}
                 </span>
               </div>
@@ -146,19 +149,19 @@ export function VacancyCard({ vacancy: v }: Props) {
       </div>
 
       {/* FOOTER — flags (left) · posted + apply (right) */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {v.hasTestAssignment === true ? (
             <FlagPill
               icon={<ClipboardList className="h-3.5 w-3.5" strokeWidth={2.5} />}
-              value="тестове"
+              value="test task"
               tone="info"
             />
           ) : null}
           {v.hasReservation === true ? (
             <FlagPill
               icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
-              value="бронь"
+              value="reservation"
               tone="ok"
             />
           ) : null}
@@ -181,7 +184,7 @@ export function VacancyCard({ vacancy: v }: Props) {
               rel="noreferrer noopener"
               className="font-mono text-sm text-accent hover:underline"
             >
-              ↗ оригінал на {sourceName}
+              ↗ original on {sourceName}
             </a>
           ) : null}
         </div>

@@ -49,19 +49,19 @@ export function CandidateProfile({
         </div>
 
         <div className="grid grid-cols-2 gap-px border border-border bg-border">
-          <Stat value={matched.length} label="навичок" tone="text-success" />
-          <Stat value={totalVacancies} label="вакансій" tone="text-accent" />
+          <Stat value={matched.length} label="skills" tone="text-success" />
+          <Stat value={totalVacancies} label="jobs" tone="text-accent" />
         </div>
         {unmatched.length > 0 ? (
           <p className="-mt-2 font-mono text-[10px] text-text-muted">
-            {unmatched.length} не розпізнано
+            {unmatched.length} unrecognized
           </p>
         ) : null}
 
         {skills.length > 0 ? (
           <div className="flex flex-col gap-2">
             <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-              навички
+              skills
             </p>
             <div className="flex flex-wrap gap-1.5">
               {skills.slice(0, SHOWN).map((s) => (
@@ -84,7 +84,7 @@ export function CandidateProfile({
         {unmatched.length > 0 ? (
           <div className="flex flex-col gap-2">
             <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-              не в таксономії
+              not in taxonomy
             </p>
             <div className="flex flex-wrap gap-1.5">
               {unmatched.slice(0, 10).map((s) => (

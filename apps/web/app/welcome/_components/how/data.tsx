@@ -4,27 +4,27 @@ import type { StepCard } from "./StepCard";
 export type StepItem = ComponentProps<typeof StepCard>;
 
 export const howSection = {
-  tag: "> як це працює",
-  title: "від сирих оголошень до золотої картки.",
+  tag: "> how it works",
+  title: "from raw listings to the golden record.",
 };
 
 export const steps: StepItem[] = [
   {
     number: "01",
-    title: "01 · агрегація",
+    title: "01 · aggregation",
     description:
-      "збираємо вакансії з Djinni, DOU та інших джерел щогодини, 24/7.",
+      "we pull jobs from Djinni, DOU, and other sources every hour, 24/7.",
   },
   {
     number: "02",
-    title: "02 · ai-парсинг",
+    title: "02 · ai parsing",
     description:
-      "llm читає повний текст і витягує стек (must vs nice-to-have), формат, зарплату, тестове, тип компанії.",
+      "an llm reads the full text and extracts the stack (must vs nice-to-have), format, salary, test task, and company type.",
   },
   {
     number: "03",
     title: "03 · golden record",
     description:
-      "дублікати з різних платформ зливаються в одну картку з посиланнями на всі першоджерела.",
+      "duplicates from different platforms merge into a single card with links back to every original source.",
   },
 ];

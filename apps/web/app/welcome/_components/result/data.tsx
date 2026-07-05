@@ -10,10 +10,10 @@ import type { GoldenJob } from "./GoldenJobCard";
 export type RawJob = ComponentProps<typeof RawJobCard>;
 
 export const resultSection = {
-  tag: "> результат",
-  title: "одна вакансія — одна картка.",
+  tag: "> result",
+  title: "one job. one card.",
   subtitle:
-    "те, що на Djinni, DOU і LinkedIn виглядало як три різні оголошення, зводиться в один запис зі структурованими даними.",
+    "what looked like three separate postings on Djinni, DOU, and LinkedIn gets merged into one record with structured data.",
 };
 
 export const rawJobs: RawJob[] = [
@@ -31,7 +31,7 @@ export const goldenJob: GoldenJob = {
   facts: [
     [
       { label: "salary:", value: "$3.5k – $4k", highlight: true },
-      { label: "test task:", value: "ні" },
+      { label: "test task:", value: "no" },
     ],
     {
       label: "must-have:",
@@ -50,7 +50,7 @@ export const goldenJob: GoldenJob = {
       icon: <RobotIcon weight="bold" className="h-4 w-4" />,
     },
     {
-      label: "в трекер",
+      label: "to tracker",
       icon: <PlusIcon weight="bold" className="h-4 w-4" />,
     },
   ],

@@ -1,19 +1,6 @@
-// The home feed. Served at `/` (all disciplines) and `/<trackSlug>` (a
-// browse-tree track) via the group-root optional catch-all. The active track
-// is the first route segment, e.g. /backend-go.
-//
-// Feed model (Variant C): the track is a *preset*, not the feed driver. Its
-// preset endpoint resolves the effective ROLE + SKILL nodes; the page reads
-// ?roles / ?skills (absent → the track's preset, present → the explicit set)
-// and queries the feed by those two explicit axes — never trackSlug. So
-// removing a preset node (drop Go) honestly broadens the feed, and both axes
-// share one unified facet UI. See md/journal/migrations/taxonomy-navigation.md.
-//
-// Data layer: this server component fetches the filter-independent props
-// (aggregates, tracks, catalogs, preset) plus the initial list for the incoming
-// URL, then hands off to <FeedShell>, a client island that seeds react-query
-// with that list and refetches client-side on every filter change (no RSC
-// round-trip). See md/journal/migrations/filters-components.md (T6).
+// The home feed. Cold = the market feed body (<FeedShell>); warm (?cv) = the
+// ranked list under a CV, seeded server-side so a shared /?cv=X link renders
+// warm on first paint. The lens is derived from ?cv inside <FeedLensShell>.
 
 import { notFound } from "next/navigation";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
@@ -24,21 +11,22 @@ import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
 import { vacanciesApi } from "@/lib/api/vacancies";
-import { readerFrom } from "@/features/vacancy-filters/url-params";
-import { coldKey } from "@/features/vacancy-filters/query-keys";
-import { FeedHero } from "../_components/market/FeedHero";
-import { FeedShell } from "../_components/FeedShell";
-import { buildFeedListQuery } from "../_components/feed-query";
+import { cvApi } from "@/lib/api/cv";
+import { readerFrom, readFilterState } from "@/features/vacancy-filters/url-params";
+import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
+import { fetchMatch } from "@/features/vacancy-filters/warm-query";
+import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
+import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
+import { FeedLensShell } from "../_components/FeedLensShell";
 
 export const dynamic = "force-dynamic";
 
-const snapshotNav: NavItem[] = [
-  { label: "вакансії", href: "#list" },
-  { label: "моніторинг", href: "/dashboard" },
-  { label: "про проєкт", href: "/welcome" },
+const feedNav: NavItem[] = [
+  { label: "monitoring", href: "/dashboard" },
+  { label: "about", href: "/welcome" },
 ];
 
-export default async function TrackPage({
+export default async function FeedPage({
   params,
   searchParams,
 }: {
@@ -48,8 +36,6 @@ export default async function TrackPage({
   const { slug } = await params;
   const sp = await searchParams;
 
-  // Flat slug: one segment == the track slug. First segment wins; `/` (no
-  // segment) is the index (no active track).
   const trackSlug = slug?.[0];
 
   const [aggregates, { tracks }] = await Promise.all([
@@ -57,21 +43,17 @@ export default async function TrackPage({
     tracksApi.get(),
   ]);
 
-  // The catch-all serves every `/<slug>`, so an unknown slug is a real 404 —
-  // not a feed scoped to a track that doesn't exist.
   if (trackSlug && !tracks.some((t) => t.slug === trackSlug)) {
     notFound();
   }
 
-  // The full role/skill catalogs back the sidebar search on BOTH layouts (the
-  // landing MultiSelects and the track facets) — always fetch them (ISR-cached).
-  // The preset + contextual skills only matter once a track is active.
   const [
     preset,
     { skills: contextualSkills },
     { roles: roleCatalog },
     { skills: skillCatalog },
     { domains: domainCatalog },
+    samples,
   ] = await Promise.all([
     trackSlug
       ? tracksApi.preset(trackSlug)
@@ -79,15 +61,16 @@ export default async function TrackPage({
     trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
     facetsApi.roles(),
     facetsApi.skills(),
-    // Tolerate a missing /feed/domains during a deploy gap (web can ship before
-    // etl): degrade to an empty domain filter instead of 500-ing the whole feed.
     facetsApi.domains().catch(() => ({ domains: [] })),
+    cvApi.samples().catch(() => []),
   ]);
 
-  // Seed react-query with the list for the incoming URL, under the SAME key the
-  // client computes (coldKey), so the first render is served from cache with no
-  // mount refetch. A track with no effective axes (query null) seeds nothing —
-  // the shell renders an empty list. Dehydration streams the seed to the client.
+  const domainOptions = domainCatalog.map((d) => ({
+    id: d.id,
+    label: d.name,
+    count: d.count,
+  }));
+
   const { query } = buildFeedListQuery(readerFrom(sp), {
     trackActive: trackSlug != null,
     presetRoleIds: preset.roles.map((r) => r.id),
@@ -99,14 +82,40 @@ export default async function TrackPage({
     queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
   }
 
+  // Warm seed: a shared /?cv=X link should render ranked on first paint.
+  // Tolerate a bad id / backend gap — the client degrades to an empty warm list.
+  const cv = typeof sp.cv === "string" ? sp.cv : null;
+  if (cv) {
+    const filters = readFilterState(readerFrom(sp));
+    try {
+      queryClient.setQueryData(
+        warmKey(cv, filters, 1),
+        await fetchMatch(cv, filters, 1),
+      );
+    } catch {
+      /* no seed */
+    }
+  }
+
   return (
     <>
-      <Header links={snapshotNav} />
-      <main className="flex min-h-screen flex-col bg-bg">
-        <FeedHero aggregates={aggregates} showPipeline={!trackSlug} />
-        <div className="mx-auto w-full max-w-7xl px-6 pb-20 lg:px-12">
+      <Header links={feedNav} cta={null} />
+      <main
+        className="flex min-h-screen flex-col bg-bg"
+        style={{
+          backgroundImage:
+            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
+          backgroundSize: "auto, 22px 22px",
+        }}
+      >
+        <FeedHero
+          aggregates={aggregates}
+          showPipeline={!trackSlug}
+          matchCta={{ label: "Upload your CV", event: "feed:upload-cv" }}
+        />
+        <div className="mx-auto w-full max-w-7xl px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
-            <FeedShell
+            <FeedLensShell
               aggregates={aggregates}
               tracks={tracks}
               activeTrackSlug={trackSlug ?? null}
@@ -116,6 +125,8 @@ export default async function TrackPage({
               roleCatalog={roleCatalog}
               skillCatalog={skillCatalog}
               domainCatalog={domainCatalog}
+              domainOptions={domainOptions}
+              samples={samples}
             />
           </HydrationBoundary>
         </div>

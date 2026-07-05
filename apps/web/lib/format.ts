@@ -75,8 +75,8 @@ export function formatDateRange(firstIso: string, lastIso: string): string {
   return first === last ? first : `${first} → ${last}`;
 }
 
-// Salary band where either bound may be missing: "min-max c" / "від min c"
-// / "до max c" / "—".
+// Salary band where either bound may be missing: "min-max c" / "from min c"
+// / "up to max c" / "—".
 export function formatSalaryRange({
   min,
   max,
@@ -88,8 +88,8 @@ export function formatSalaryRange({
 }): string {
   const c = currency ?? "";
   if (min !== null && max !== null) return `${min}-${max} ${c}`.trim();
-  if (min !== null) return `від ${min} ${c}`.trim();
-  if (max !== null) return `до ${max} ${c}`.trim();
+  if (min !== null) return `from ${min} ${c}`.trim();
+  if (max !== null) return `up to ${max} ${c}`.trim();
   return "—";
 }
 

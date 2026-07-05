@@ -5,14 +5,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/ui";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useSaved } from "@/lib/hooks/use-saved";
+import { subscriptionsApi, type CvMatchParams } from "@/lib/api/subscriptions";
 import {
-  subscriptionsApi,
-  type CvMatchParams,
-} from "@/lib/api/subscriptions";
-import {
-  asEnums,
   DEFAULT_FRESHNESS,
   FRESHNESS_DAYS,
+  asEnums,
   type FilterState,
 } from "@/features/vacancy-filters/types";
 import type {
@@ -23,18 +21,24 @@ import type {
 } from "@/lib/api/vacancies";
 import type { FitTier } from "@/lib/api/ranking";
 
-// CV counterpart of the feed's SubscribeButton: same Telegram handoff, plus a
-// candidateId so the digest ranks via rankByRefs. Tab opens in the click
+// Warm subscribe: replays the on-screen CV filters — including domain +
+// experience (the replay-gap fix) — into a Telegram digest ranked by the CV.
+// Disabled on demo samples (no owner to notify). The tab opens inside the click
 // gesture so the popup blocker doesn't eat the post-fetch navigation.
-export function CvSubscribeButton({
+export function WarmSubscribe({
   candidateId,
   filters,
+  label,
+  disabled = false,
 }: {
   candidateId: string;
   filters: FilterState;
+  label: string;
+  disabled?: boolean;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
+  const { addSub } = useSaved();
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
@@ -44,6 +48,14 @@ export function CvSubscribeButton({
       const params = toCvMatchParams(filters);
       const res = await subscriptionsApi.create(params, candidateId);
       analytics.subscriptionCreated(res.id, params);
+      addSub({
+        id: res.id,
+        lens: "warm",
+        label,
+        query: window.location.search.replace(/^\?/, ""),
+        candidateId,
+        addedAt: Date.now(),
+      });
       if (tab) {
         tab.opener = null;
         tab.location.href = res.deepLink;
@@ -52,11 +64,19 @@ export function CvSubscribeButton({
       }
     } catch {
       tab?.close();
-      toast.error("Не вдалося створити підписку");
+      toast.error("Failed to create alert");
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, candidateId, filters, analytics]);
+  }, [isSubmitting, candidateId, filters, label, analytics, addSub]);
+
+  if (disabled) {
+    return (
+      <p className="border border-border bg-bg-card px-3 py-2 font-mono text-2xs leading-relaxed text-text-muted">
+        Upload your own CV to subscribe to matches
+      </p>
+    );
+  }
 
   return (
     <Button
@@ -67,18 +87,19 @@ export function CvSubscribeButton({
       disabled={isSubmitting}
       onClick={handleSubscribe}
     >
-      Сповіщення в Telegram
+      Get alerts on Telegram
     </Button>
   );
 }
 
-// Mirrors ReverseAtsClient's fetch mapping, so the sub replays what's on screen.
 function toCvMatchParams(f: FilterState): CvMatchParams {
   return {
     seniorities: asEnums<Seniority>(f.seniorities),
     workFormats: asEnums<WorkFormat>(f.workFormats),
     englishLevels: asEnums<EnglishLevel>(f.englishLevels),
     employmentTypes: asEnums<EmploymentType>(f.employmentTypes),
+    domainIds: f.domainIds.length ? f.domainIds : undefined,
+    experienceYears: f.experienceYears.length ? f.experienceYears : undefined,
     hasTestAssignment: f.test ?? undefined,
     hasReservation: f.reservation ?? undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,

@@ -19,13 +19,9 @@ type Props = {
   sourceCount: number;
 };
 
-// Ukrainian plural: [one, few (2-4), many (5+)].
-function plural(n: number, forms: [string, string, string]): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return forms[0];
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
-  return forms[2];
+// English plural: singular for 1, plural form otherwise.
+function plural(n: number, singular: string, pluralForm: string): string {
+  return n === 1 ? singular : pluralForm;
 }
 
 export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) {
@@ -57,7 +53,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
 
   const sourceSuffix =
     sourceCount > 1
-      ? ` · ${sourceCount} ${plural(sourceCount, ["джерело", "джерела", "джерел"])}`
+      ? ` · ${sourceCount} ${plural(sourceCount, "source", "sources")}`
       : "";
 
   return (
@@ -68,11 +64,11 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
         aria-haspopup="dialog"
         aria-expanded={open}
         className="inline-flex w-fit items-center gap-1.5 border border-accent-secondary px-2 py-[2px] font-mono text-xs text-accent-secondary transition-colors hover:bg-accent-secondary/10"
-        title="Показати об'єднані дублікати"
+        title="Show merged duplicates"
       >
         <span aria-hidden>⧉</span>
         <span>
-          {count} {plural(count, ["копія", "копії", "копій"])}
+          {count} {plural(count, "copy", "copies")}
           {sourceSuffix}
         </span>
         <span aria-hidden className="text-2xs">
@@ -85,7 +81,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
           className="fixed inset-0 z-50 flex animate-overlay-in justify-end bg-black/60"
           role="dialog"
           aria-modal="true"
-          aria-label="об'єднані дублікати вакансії"
+          aria-label="merged job duplicates"
           onClick={() => setOpen(false)}
         >
           <div
@@ -95,12 +91,12 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
             <header className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-                  семантичний дедуп
+                  semantic dedup
                 </span>
                 <div className="flex items-center gap-3">
                   <h2 className="font-display text-2xl font-bold text-text-primary">
-                    Об&apos;єднано {count}{" "}
-                    {plural(count, ["вакансію", "вакансії", "вакансій"])}
+                    Merged {count}{" "}
+                    {plural(count, "job", "jobs")}
                   </h2>
                   <span className="border border-accent px-2 py-[1px] font-mono text-2xs font-bold uppercase tracking-[0.15em] text-accent">
                     gold
@@ -112,16 +108,16 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
                 onClick={() => setOpen(false)}
                 className="shrink-0 border border-border px-3 py-1 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent"
               >
-                закрити [esc]
+                close [esc]
               </button>
             </header>
 
             {error ? (
               <p className="border border-danger bg-bg p-4 font-mono text-sm text-danger">
-                не вдалося завантажити групу
+                failed to load group
               </p>
             ) : !group ? (
-              <p className="font-mono text-sm text-text-muted">завантаження…</p>
+              <p className="font-mono text-sm text-text-muted">loading…</p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {group.members.map((m) => (
@@ -150,7 +146,7 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
         <span className="font-bold text-accent">{m.source.displayName}</span>
         {m.isCanonical ? (
           <span className="border border-border-strong px-2 py-[1px] text-2xs text-text-secondary">
-            основна
+            canonical
           </span>
         ) : (
           <span className="text-text-muted">{formatRelative(m.publishedAt)}</span>
@@ -166,7 +162,7 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
           rel="noreferrer noopener"
           className="w-fit font-mono text-xs text-accent hover:underline"
         >
-          ↗ відкрити оригінал
+          ↗ open original
         </a>
       ) : null}
 
@@ -197,13 +193,13 @@ function WhyMerged({ reason: r }: { reason: DedupReason }) {
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-3">
       <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-        чому об&apos;єднано
+        why merged
       </span>
 
       {/* similarity bar */}
       <div className="flex items-center gap-2">
         <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-          схожість
+          similarity
         </span>
         <div className="h-1.5 flex-1 bg-bg">
           <div
@@ -219,19 +215,19 @@ function WhyMerged({ reason: r }: { reason: DedupReason }) {
       {/* corroboration chips */}
       <div className="flex flex-wrap gap-2">
         {r.corroboration.companyMatch ? (
-          <Chip icon="🏢" label="та сама компанія" strong />
+          <Chip icon="🏢" label="same company" strong />
         ) : null}
         {r.corroboration.skillJaccard > 0 ? (
           <Chip
             icon="🧩"
-            label={`скіли ${pct(r.corroboration.skillJaccard)}`}
+            label={`skills ${pct(r.corroboration.skillJaccard)}`}
             strong={r.corroboration.skillJaccard >= 0.5}
           />
         ) : null}
         {r.corroboration.titleJaccard > 0 ? (
           <Chip
             icon="📝"
-            label={`назва ${pct(r.corroboration.titleJaccard)}`}
+            label={`title ${pct(r.corroboration.titleJaccard)}`}
             strong={r.corroboration.titleJaccard >= 0.5}
           />
         ) : null}
@@ -239,8 +235,8 @@ function WhyMerged({ reason: r }: { reason: DedupReason }) {
 
       {/* prefilter facts — quiet */}
       <p className="font-mono text-2xs text-text-muted">
-        роль {mark(pf.role)} · рівень {mark(pf.seniority)} · формат{" "}
-        {mark(pf.workFormat)} · вікно {pf.dateWindowDays}д
+        role {mark(pf.role)} · seniority {mark(pf.seniority)} · format{" "}
+        {mark(pf.workFormat)} · window {pf.dateWindowDays}d
       </p>
     </div>
   );

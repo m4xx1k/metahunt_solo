@@ -12,22 +12,22 @@ type Props = {
 };
 
 function relativeMinutes(iso: string | null): string {
-  if (!iso) return "не оновлено";
+  if (!iso) return "not updated";
   const diffMs = Date.now() - new Date(iso).getTime();
   const min = Math.max(0, Math.round(diffMs / 60000));
-  if (min < 1) return "оновлено щойно";
-  if (min < 60) return `оновлено ${min} хв тому`;
+  if (min < 1) return "updated just now";
+  if (min < 60) return `updated ${min}m ago`;
   const hr = Math.round(min / 60);
-  if (hr < 24) return `оновлено ${hr} год тому`;
+  if (hr < 24) return `updated ${hr}h ago`;
   const d = Math.round(hr / 24);
-  return `оновлено ${d} дн тому`;
+  return `updated ${d}d ago`;
 }
 
 // Computes the relative-time label on the client only, avoiding a
 // server/client hydration mismatch when Date.now() differs across the
 // SSR/CSR boundary. Refreshes every minute so the label stays accurate.
 function RelativeTime({ iso }: { iso: string | null }) {
-  const [label, setLabel] = useState("оновлено…");
+  const [label, setLabel] = useState("updating…");
   useEffect(() => {
     const update = () => setLabel(relativeMinutes(iso));
     update();
@@ -37,7 +37,7 @@ function RelativeTime({ iso }: { iso: string | null }) {
   return <>{label}</>;
 }
 
-const FORMATTER = new Intl.NumberFormat("uk-UA");
+const FORMATTER = new Intl.NumberFormat("en-US");
 
 function CountUp({ value }: { value: number }) {
   const reduced = useReducedMotion();
@@ -88,7 +88,7 @@ export function TotalCounter({ total, lastSyncAt, sources }: Props) {
         <CountUp value={total} />
       </span>
       <span className="font-body text-sm text-text-secondary">
-        вакансій у базі
+        jobs indexed
       </span>
       <span className="flex items-center gap-2 font-mono text-xs text-text-muted">
         <StatusDot />

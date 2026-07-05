@@ -15,17 +15,23 @@ const TONES = {
 
 export type SkillTone = keyof typeof TONES;
 
+// A ✓/✗ mark pairs with the have/missing colour so it is never the only signal.
+const GLYPHS: Partial<Record<SkillTone, string>> = { have: "✓", missing: "✗" };
+
 export function SkillChip({
   name,
   tone,
   compact = false,
   hash = false,
+  glyph = false,
 }: {
   name: string;
   tone: SkillTone;
   compact?: boolean;
   hash?: boolean;
+  glyph?: boolean;
 }) {
+  const mark = glyph ? GLYPHS[tone] : undefined;
   return (
     <span
       className={cn(
@@ -34,6 +40,7 @@ export function SkillChip({
         TONES[tone],
       )}
     >
+      {mark ? <span aria-hidden>{mark} </span> : null}
       {hash ? "#" : null}
       {name.toLowerCase()}
     </span>

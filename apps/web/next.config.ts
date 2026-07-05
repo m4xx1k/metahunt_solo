@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/monitoring", destination: "/dashboard", permanent: true },
       { source: "/monitoring/:path*", destination: "/dashboard", permanent: true },
+      // /merged (former beta) and standalone /reverse-ats folded into the home feed.
+      { source: "/merged", destination: "/", permanent: false },
+      { source: "/merged/:slug*", destination: "/:slug*", permanent: false },
+      { source: "/reverse-ats", destination: "/", permanent: false },
     ];
   },
 };

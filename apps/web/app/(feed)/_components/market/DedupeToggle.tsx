@@ -9,7 +9,7 @@ import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 // Feed-only toggle: when on, the server page passes ?dupes=true and the feed
 // shows only the canonical card of collapsed gold groups (the deduped
 // cross-source vacancies). Kept self-contained — writes the `dupes` URL param
-// directly — so it stays out of the shared FilterState the reverse-ATS bar
+// directly — so it stays out of the shared FilterState the warm-lens filter bar
 // also consumes.
 export function DedupeToggle() {
   const searchParams = useSearchParams();
@@ -39,7 +39,7 @@ export function DedupeToggle() {
     >
       <span className="flex items-center gap-2">
         <span aria-hidden>⧉</span>
-        лише дубльовані
+        duplicates only
       </span>
       <span aria-hidden>{on ? "[on]" : "[off]"}</span>
     </button>

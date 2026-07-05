@@ -18,7 +18,7 @@ export function EmailInput({
   onValueChange,
   onSubmit,
   placeholder = "your@email.com",
-  cta = "Отримати доступ",
+  cta = "Get access",
   isSubmitting = false,
   className,
 }: Props) {

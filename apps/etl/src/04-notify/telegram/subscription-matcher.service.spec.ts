@@ -169,6 +169,18 @@ describe("SubscriptionMatcherService", () => {
 
       expect(rankByRefs.mock.calls[0][1].minFitTier).toBe("STRONG");
     });
+
+    // Replay-gap regression: a warm sub's stored domain + experience must reach
+    // the ranker, or the CV digest silently ignores what the user filtered on.
+    it("threads stored domain and experience filters into the CV match", async () => {
+      await service.matchNew(
+        cvSub({ domainIds: ["dom-fintech"], experienceYears: ["3", "6+"] }),
+      );
+
+      const [, filters] = rankByRefs.mock.calls[0];
+      expect(filters.domainIds).toEqual(["dom-fintech"]);
+      expect(filters.experienceYears).toEqual(["3", "6+"]);
+    });
   });
 
   describe("sample", () => {

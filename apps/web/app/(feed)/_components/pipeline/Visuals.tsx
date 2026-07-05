@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { accentBg, accentText, EASE } from "./PipelineCard";
 import type { PipelineAccent, PipelineMatch } from "./data";
 
-const NUM = new Intl.NumberFormat("uk-UA");
+const NUM = new Intl.NumberFormat("en-US");
 const VIEWPORT = { once: true, margin: "-60px" } as const;
 
 const accentBorder: Record<PipelineAccent, string> = {
@@ -23,7 +23,7 @@ const accentBorder: Record<PipelineAccent, string> = {
   success: "border-success",
 };
 
-// ── 01 · Збір ────────────────────────────────────────────────────────────────
+// ── 01 · Collect ─────────────────────────────────────────────────────────────
 export function SourcesVisual({
   sources,
   accent,
@@ -64,14 +64,14 @@ export function SourcesVisual({
           {sources.length}
         </span>
         <span className="font-body text-xs text-text-muted">
-          джерел · оновлення щогодини
+          sources · updated hourly
         </span>
       </motion.div>
     </div>
   );
 }
 
-// ── 02 · Розбір ──────────────────────────────────────────────────────────────
+// ── 02 · Parse ───────────────────────────────────────────────────────────────
 const RAW_BARS = ["92%", "78%", "64%"]; // skeleton widths for the "raw text"
 
 export function ExtractVisual({
@@ -131,15 +131,15 @@ export function ExtractVisual({
           <span aria-hidden className="text-2xs leading-none">
             🛡
           </span>
-          бронь
+          reservation
         </motion.span>
       </div>
     </div>
   );
 }
 
-// ── 03 · Підбір ──────────────────────────────────────────────────────────────
-// Mirrors the reverse-ats MatchCard verdict: a fit tier + must-have count, then
+// ── 03 · Match ───────────────────────────────────────────────────────────────
+// Mirrors the ranked match card verdict: a fit tier + must-have count, then
 // the ✅ have / ❌ missing / ➕ bonus skill diff (same colour language as there).
 const MATCH_LINES = [
   { key: "have", sign: "✅", cls: "border-success text-success" },

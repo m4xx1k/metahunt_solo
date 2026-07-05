@@ -9,29 +9,29 @@ import type { ProblemCard } from "./ProblemCard";
 export type ProblemItem = ComponentProps<typeof ProblemCard>;
 
 export const problemSection = {
-  tag: "> проблема",
-  title: "пошук роботи зламано.",
+  tag: "> problem",
+  title: "job hunting is broken.",
   subtitle:
-    "10 вкладок щоранку, фільтри з неточними даними, кавер-летери вручну. знайомо?",
+    "10 tabs every morning, filters running on stale data, cover letters written by hand. sound familiar?",
 };
 
 export const problems: ProblemItem[] = [
   {
     icon: <StackIcon weight="bold" className="h-6 w-6" />,
-    title: "розкиданий ринок",
+    title: "a scattered market",
     description:
-      "вакансії живуть на 10+ платформах, та сама позиція дублюється одночасно на трьох. побачити ринок цілим неможливо.",
+      "jobs live across 10+ platforms, and the same posting gets duplicated on three of them at once. seeing the whole market is impossible.",
   },
   {
     icon: <FunnelIcon weight="bold" className="h-6 w-6" />,
-    title: "дані без стандарту",
+    title: "data with no standard",
     description:
-      "remote означає офіс, must-have стек схований у середині опису, тестове ніяк не позначене. формальні фільтри не працюють.",
+      "\"remote\" means office, the must-have stack is buried mid-description, test tasks go unmarked. formal filters just don't work.",
   },
   {
     icon: <HourglassIcon weight="bold" className="h-6 w-6" />,
-    title: "пошук як друга робота",
+    title: "job hunting as a second job",
     description:
-      "кавер-летер під кожну вакансію, адаптація резюме, таблички в notion для трекінгу — усе вручну, без жодного ai.",
+      "a cover letter for every posting, resume tweaks, spreadsheets in notion for tracking — all by hand, with zero ai.",
   },
 ];

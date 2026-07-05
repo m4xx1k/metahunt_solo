@@ -5,7 +5,7 @@ import { Pipeline } from "../pipeline/Pipeline";
 
 // Intro / hero for the feed. One cohesive block (no separate background band):
 // the headline + live counter say *what this is*, and the 3-stage pipeline
-// below says *how it works* (Збір → Розбір → Підбір). The pipeline only shows
+// below says *how it works* (Collect → Parse → Match). The pipeline only shows
 // on the bare index (`showPipeline`), not on track pages. The old stat widgets
 // (TopSkills / SeniorityBars / …) were deleted as unrendered dead code — git
 // history has them if a stats band ever comes back.
@@ -13,19 +13,21 @@ import { Pipeline } from "../pipeline/Pipeline";
 type Props = {
   aggregates: VacancyAggregates;
   showPipeline?: boolean;
+  /** Overrides the pipeline's Match CTA (merged: open the CV picker). */
+  matchCta?: { label: string; event: string };
 };
 
-export function FeedHero({ aggregates: a, showPipeline = false }: Props) {
+export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Props) {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
         <div className="flex flex-col justify-center gap-5">
           <h1 className="font-display text-4xl font-bold leading-tight tracking-tight text-text-primary md:text-5xl">
-            Всі IT-вакансії — <span className="text-accent">в одному списку</span>.
+            Ukrainian tech jobs — <span className="text-accent">in one list</span>.
           </h1>
           <p className="max-w-[560px] font-body text-base leading-[1.55] text-text-secondary md:text-lg">
-            Збираємо з усіх джерел, структуруємо через AI та підбираємо під твоє
-            резюме.
+            We pull from every source, structure it with AI, and match it to
+            your CV.
           </p>
         </div>
         <TotalCounter
@@ -37,8 +39,8 @@ export function FeedHero({ aggregates: a, showPipeline = false }: Props) {
 
       {showPipeline && (
         <div className="flex flex-col items-center gap-6">
-          <Tag>{"> як це працює"}</Tag>
-          <Pipeline aggregates={a} />
+          <Tag>{"> how it works"}</Tag>
+          <Pipeline aggregates={a} matchCta={matchCta} />
         </div>
       )}
 

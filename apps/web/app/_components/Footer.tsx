@@ -15,7 +15,7 @@ export function Footer() {
               <CrosshairIcon weight="bold" className="h-3.5 w-3.5" />
             </div>
             <span className="font-mono text-sm text-text-muted">
-              metahunt · йоу
+              metahunt · yo
             </span>
           </div>
         </div>
@@ -25,7 +25,7 @@ export function Footer() {
             href="/"
             className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
-            продукт
+            product
           </Link>
           <a
             href="#roadmap"
@@ -37,7 +37,7 @@ export function Footer() {
             href="https://t.me/m4xx1k"
             className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >
-            для партнерів
+            for partners
           </a>
         </nav>
 

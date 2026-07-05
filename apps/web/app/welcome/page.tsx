@@ -10,14 +10,14 @@ import { AboutMe } from "./_components/about/AboutMe";
 import { FinalCTA } from "./_components/cta/FinalCTA";
 
 const welcomeNav: NavItem[] = [
-  { label: "проблема", href: "#problem" },
-  { label: "рішення", href: "#how" },
-  { label: "результат", href: "#result" },
-  { label: "фічі", href: "#ai" },
-  { label: "роадмапа", href: "#roadmap" },
-  { label: "хто я", href: "#about" },
-  { label: "вакансії", href: "/" },
-  { label: "моніторинг", href: "/dashboard" },
+  { label: "problem", href: "#problem" },
+  { label: "solution", href: "#how" },
+  { label: "result", href: "#result" },
+  { label: "features", href: "#ai" },
+  { label: "roadmap", href: "#roadmap" },
+  { label: "about", href: "#about" },
+  { label: "jobs", href: "/" },
+  { label: "monitoring", href: "/dashboard" },
 ];
 
 export default function WelcomePage() {

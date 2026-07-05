@@ -20,6 +20,17 @@ export function PostHogProvider({ children }: PropsWithChildren) {
       // Real UI host so toolbar / "view in PostHog" links resolve correctly.
       ui_host: "https://eu.posthog.com",
       person_profiles: "identified_only",
+      // The shareable ?cv=<uuid> is a bearer capability — redact it from
+      // auto-captured URL properties so it never lands in analytics.
+      sanitize_properties: (props) => {
+        for (const k of ["$current_url", "$referrer"]) {
+          const v = props[k];
+          if (typeof v === "string") {
+            props[k] = v.replace(/([?&]cv=)[^&#]+/gi, "$1redacted");
+          }
+        }
+        return props;
+      },
     });
   }, []);
 

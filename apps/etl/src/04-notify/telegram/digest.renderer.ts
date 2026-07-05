@@ -91,11 +91,45 @@ function joinChips(parts: (string | null | undefined)[]): string | null {
   return present.length > 0 ? present.join(" · ") : null;
 }
 
+const LOCATION_CITIES_MAX = 3;
+const LOCATION_ITEMS_MAX = 2;
+
+// Mirrors apps/web/entities/vacancy/format-locations.ts. Inputs are already
+// escaped at the call site — don't escape again when re-embedding.
 function locationChip(locations: string[]): string | null {
   if (locations.length === 0) return null;
-  const shown = locations.slice(0, 2).join(" · ");
-  const extra = locations.length - 2;
-  return extra > 0 ? `${shown} +${extra}` : shown;
+
+  const parsed = locations.map((raw) => {
+    const idx = raw.indexOf(",");
+    return idx === -1
+      ? { city: raw.trim(), country: null as string | null }
+      : { city: raw.slice(0, idx).trim(), country: raw.slice(idx + 1).trim() };
+  });
+
+  const sharedCountry =
+    parsed.every((p) => p.country) &&
+    new Set(parsed.map((p) => p.country)).size === 1
+      ? parsed[0].country
+      : null;
+
+  if (sharedCountry) {
+    const cities = parsed.map((p) => p.city);
+    if (cities.length === 1) return `${cities[0]}, ${sharedCountry}`;
+    const head = cities.slice(0, LOCATION_CITIES_MAX).join(", ");
+    const overflow =
+      cities.length > LOCATION_CITIES_MAX
+        ? `, +${cities.length - LOCATION_CITIES_MAX}`
+        : "";
+    return `${sharedCountry} (${head}${overflow})`;
+  }
+
+  const items = parsed.map((p) => (p.country ? `${p.city}, ${p.country}` : p.city));
+  const head = items.slice(0, LOCATION_ITEMS_MAX).join(" · ");
+  const overflow =
+    items.length > LOCATION_ITEMS_MAX
+      ? ` +${items.length - LOCATION_ITEMS_MAX}`
+      : "";
+  return `${head}${overflow}`;
 }
 
 // Build the outbound apply URL. Carries `?s=<subscriptionId>` when known so the

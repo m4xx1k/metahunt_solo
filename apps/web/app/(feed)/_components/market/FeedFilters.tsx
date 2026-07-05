@@ -45,6 +45,7 @@ export function FeedFilters({
   roleCatalog,
   skillCatalog,
   domainCatalog,
+  hideTrackTree = false,
   isFetching = false,
 }: {
   aggregates: VacancyAggregates;
@@ -62,6 +63,8 @@ export function FeedFilters({
   skillCatalog?: TrackAxis[];
   /** Full verified-domain catalog. */
   domainCatalog?: TrackAxis[];
+  /** Drop the browse tree (the merged route drives tracks from a top-band). */
+  hideTrackTree?: boolean;
   /** The results query's fetching state — dims the rail while a refetch runs. */
   isFetching?: boolean;
 }) {
@@ -120,7 +123,10 @@ export function FeedFilters({
 
       <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
         <DedupeToggle />
-        {trackMode ? null : (
+        {/* Track-mode drops the bar (axis sections show their own state) —
+            except when the tree is hidden (merged), where it is the only
+            active-filter summary + clear-all. */}
+        {trackMode && !hideTrackTree ? null : (
           <ActiveFiltersBar
             api={api}
             agg={agg}
@@ -132,11 +138,13 @@ export function FeedFilters({
         <aside className="flex flex-col border border-border bg-bg-card">
           {trackMode ? (
             <>
-              <TrackTree
-                tracks={tracks}
-                activeSlug={activeTrackSlug ?? null}
-                onSelect={handleSelectTrack}
-              />
+              {hideTrackTree ? null : (
+                <TrackTree
+                  tracks={tracks}
+                  activeSlug={activeTrackSlug ?? null}
+                  onSelect={handleSelectTrack}
+                />
+              )}
               {showFacets ? (
                 <>
                   <TrackAxisSection

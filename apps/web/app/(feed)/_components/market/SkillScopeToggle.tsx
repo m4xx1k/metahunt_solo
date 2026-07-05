@@ -10,7 +10,7 @@ import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 // must be must-have on the vacancy. On: the server page passes
 // ?nice=true → includeOptionalSkills, so nice-to-have skills also match.
 // Self-contained (writes the `nice` URL param directly) so it stays out of the
-// shared FilterState the reverse-ATS bar also consumes — same pattern as
+// shared FilterState the warm-lens filter bar also consumes — same pattern as
 // DedupeToggle.
 export function SkillScopeToggle() {
   const searchParams = useSearchParams();

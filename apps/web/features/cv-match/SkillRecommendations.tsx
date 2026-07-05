@@ -14,11 +14,11 @@ export function SkillRecommendations({ rec }: { rec: RecommendResponse }) {
       <div className="flex flex-col gap-4 px-5 py-4">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-success">
-            що вчити далі
+            what to learn next
           </p>
           {rec.cohortSize > 0 ? (
             <p className="mt-1 font-mono text-[10px] text-text-muted">
-              ніша · {rec.cohortSize} вакансій
+              niche · {rec.cohortSize} jobs
             </p>
           ) : null}
         </div>
@@ -29,14 +29,14 @@ export function SkillRecommendations({ rec }: { rec: RecommendResponse }) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-help underline decoration-dotted decoration-from-font underline-offset-2">
-                    покриття ніші
+                    niche coverage
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  «ніша» — вакансії твоєї ролі та суміжного рівня сеньорності. цей
-                  відсоток показує, скільки з них твій CV уже закриває на GOOD+
-                  (≥50% зваженого за рідкістю покриття обовʼязкових скілів). скіли
-                  нижче піднімають його найшвидше.
+                  A &quot;niche&quot; = jobs for your role and adjacent seniority. The %
+                  = the share of them your CV already covers at GOOD+ (≥50%
+                  rarity-weighted coverage of required skills). The skills
+                  below raise it fastest.
                 </TooltipContent>
               </Tooltip>
               <span className="text-accent">{rec.coveragePct}%</span>
@@ -52,11 +52,11 @@ export function SkillRecommendations({ rec }: { rec: RecommendResponse }) {
 
         {rec.reducedState ? (
           <p className="font-mono text-[11px] leading-relaxed text-text-muted">
-            замало даних для рекомендацій по твоїй ніші
+            not enough data for recommendations in your niche
           </p>
         ) : rec.items.length === 0 ? (
           <p className="font-mono text-[11px] leading-relaxed text-text-muted">
-            твій стек уже покриває цю нішу — чітких скілів для прокачки немає
+            your stack already covers this niche — nothing sharp to level up
           </p>
         ) : (
           <>
@@ -66,14 +66,14 @@ export function SkillRecommendations({ rec }: { rec: RecommendResponse }) {
               ))}
             </div>
             <p className="font-mono text-[10px] text-text-muted">
-              ⚡ висока віддача · рідкісний скіл у попиті
+              ⚡ high payoff · rare skill in demand
             </p>
           </>
         )}
 
         {rec.redundant.length > 0 ? (
           <p className="border-t border-border pt-3 font-mono text-[10px] leading-relaxed text-text-muted">
-            майже не впливають: {rec.redundant.map(lower).join(" · ")}
+            barely moves the needle: {rec.redundant.map(lower).join(" · ")}
           </p>
         ) : null}
       </div>
@@ -100,7 +100,7 @@ function Bar({ item, max }: { item: RecommendItem; max: number }) {
       </div>
       {item.toStrong > 0 ? (
         <span className="font-mono text-[10px] text-text-muted">
-          → {item.toStrong} у STRONG
+          → {item.toStrong} to STRONG
         </span>
       ) : null}
     </div>
