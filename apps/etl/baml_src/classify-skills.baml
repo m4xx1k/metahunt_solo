@@ -56,7 +56,7 @@ class ClassifiedSkill {
 }
 
 function ClassifySkills(skills: SkillToClassify[]) -> ClassifiedSkill[] {
-  client OpenAIClient
+  client DeepSeekClient
   prompt #"
     You classify software skills into structural metadata used to gate reverse-ATS
     "what to learn next" recommendations for a Ukrainian dev-jobs platform. For each
