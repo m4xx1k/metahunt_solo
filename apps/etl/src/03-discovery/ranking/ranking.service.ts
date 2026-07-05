@@ -234,14 +234,27 @@ export class RankingService {
       tier_bucket: number;
       total: number;
     }>(sql`
-      WITH ${rankedCte}
-      SELECT v.id::text AS id, rk.relevance, rk.on_stack, rk.tier_bucket,
-             (count(*) OVER ())::int AS total
-      FROM ranked rk
-      JOIN vacancies v ON v.id = rk.id
-      WHERE ${where}${tierCond}
-      -- round so exact-IDF ties break by v.id (raw float-sum order is plan noise).
-      ORDER BY rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id
+      WITH ${rankedCte},
+      -- Collapse dedup groups: keep one representative per group — its
+      -- best-ranked member — so duplicate postings never occupy adjacent
+      -- slots on the ranked page. Ungrouped rows partition on their own id
+      -- (rn = 1 trivially). Partition order mirrors the final ORDER BY.
+      collapsed AS (
+        SELECT v.id::text AS id, rk.relevance, rk.on_stack, rk.tier_bucket,
+               row_number() OVER (
+                 PARTITION BY coalesce(v.unique_vacancy_id, v.id)
+                 ORDER BY rk.on_stack DESC, rk.tier_bucket DESC,
+                          round(rk.relevance::numeric, 9) DESC, v.id
+               ) AS rn
+        FROM ranked rk
+        JOIN vacancies v ON v.id = rk.id
+        WHERE ${where}${tierCond}
+      )
+      SELECT id, relevance, on_stack, tier_bucket, (count(*) OVER ())::int AS total
+      FROM collapsed
+      WHERE rn = 1
+      -- round so exact-IDF ties break by id (raw float-sum order is plan noise).
+      ORDER BY on_stack DESC, tier_bucket DESC, round(relevance::numeric, 9) DESC, id
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
@@ -252,7 +265,7 @@ export class RankingService {
     if (ranked.rows.length === 0) {
       const totalRes = await this.db.execute<{ count: number }>(sql`
         WITH ${rankedCte}
-        SELECT count(*)::int AS count
+        SELECT count(DISTINCT coalesce(v.unique_vacancy_id, v.id))::int AS count
         FROM ranked rk
         JOIN vacancies v ON v.id = rk.id
         WHERE ${where}${tierCond}

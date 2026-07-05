@@ -32,7 +32,11 @@ const HARD_THRESHOLD = 0.92;
 const GOLD_THRESHOLD = 0.95;
 const SKILL_JACCARD_GOLD = 0.5;
 const TITLE_JACCARD_GOLD = 0.5;
-const PREFILTER_DATE_WINDOW_DAYS = 14;
+// 45d (was 14d): true duplicates drift up to ~44 days apart via republish
+// bumps, and the prod audit showed the ±14d prefilter was the single biggest
+// recall gap (froze pairs whose sides bumped out of the window). Gates keep
+// precision; 45d ≈ no-window for recall on the labelled set.
+const PREFILTER_DATE_WINDOW_DAYS = 45;
 const PREFILTER_TOP_N = 20;
 const EMBED_BATCH_SIZE = 100;
 
@@ -315,8 +319,10 @@ export class DedupService {
         END AS centroid_similarity
       FROM vacancies cand
       LEFT JOIN unique_vacancies uv ON uv.id = cand.unique_vacancy_id
+      -- Same-source candidates are allowed: a board republishing the same job
+      -- under a new external id is a true duplicate. The 0.92 + gates keep it
+      -- safe (same-source, different-team pairs sit below 0.92).
       WHERE cand.id != ${v.id}
-        AND cand.source_id != ${v.sourceId}
         AND cand.embedding IS NOT NULL
         AND cand.published_at IS NOT NULL
         AND cand.published_at BETWEEN ${windowStart} AND ${windowEnd}

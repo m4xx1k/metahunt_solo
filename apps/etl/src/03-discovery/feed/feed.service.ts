@@ -41,14 +41,28 @@ const {
   uniqueVacancies,
 } = schema;
 
-// "This vacancy's dedup group still has a confirmed-only (non-gold) edge."
-// Gold collapse only fires when this is false — confirmed groups stay
-// expanded (every member is its own card). Reused by the collapse predicate
-// and the badge projection so the two never drift.
-const groupHasConfirmedEdge = sql`EXISTS (
-  SELECT 1 FROM vacancies m
-  WHERE m.unique_vacancy_id = ${vacancies.uniqueVacancyId}
-    AND m.dedup_reason->>'confidence' = 'confirmed'
+// This vacancy is the display representative of its dedup group — no other
+// member is fresher (published_at, then loaded_at, then id as a stable
+// tiebreak). Ungrouped rows and singletons trivially qualify. Every group
+// (gold or confirmed) collapses to exactly this row; collapsing to the
+// freshest member keeps a bumped repost at the top of the freshness-sorted
+// feed. Reused by the collapse predicate and the badge projection so the two
+// never drift. Safe pre-resolve: NULL unique_vacancy_id → first arm passes.
+const isGroupRepresentative = sql`(
+  ${vacancies.uniqueVacancyId} IS NULL
+  OR NOT EXISTS (
+    SELECT 1 FROM vacancies fresher
+    WHERE fresher.unique_vacancy_id = ${vacancies.uniqueVacancyId}
+      AND (
+        coalesce(fresher.published_at, fresher.loaded_at)
+          > coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})
+        OR (
+          coalesce(fresher.published_at, fresher.loaded_at)
+            = coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})
+          AND fresher.id > ${vacancies.id}
+        )
+      )
+  )
 )`;
 
 // Postgres `uuid` columns reject malformed input at the driver level, so screen
@@ -263,18 +277,14 @@ export class FeedService {
         rssRecordId: rssRecords.id,
 
         uniqueVacancyId: vacancies.uniqueVacancyId,
-        // Badge counters — non-null only on the canonical card of a collapsed
-        // gold group (>1 member). Confirmed groups stay expanded, so their
-        // members get null and render as plain cards.
+        // Badge counters — the surviving row of a multi-member group is the
+        // representative (the collapse predicate drops every other member), so
+        // "vacancyCount > 1" is both necessary and sufficient here.
         duplicateCount: sql<number | null>`CASE
-          WHEN ${uniqueVacancies.canonicalVacancyId} = ${vacancies.id}
-            AND ${uniqueVacancies.vacancyCount} > 1
-            AND NOT ${groupHasConfirmedEdge}
+          WHEN ${uniqueVacancies.vacancyCount} > 1
           THEN ${uniqueVacancies.vacancyCount} ELSE NULL END`,
         duplicateSourceCount: sql<number | null>`CASE
-          WHEN ${uniqueVacancies.canonicalVacancyId} = ${vacancies.id}
-            AND ${uniqueVacancies.vacancyCount} > 1
-            AND NOT ${groupHasConfirmedEdge}
+          WHEN ${uniqueVacancies.vacancyCount} > 1
           THEN ${uniqueVacancies.sourceCount} ELSE NULL END`,
       })
       .from(vacancies)
@@ -428,29 +438,20 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   // join to have matched. The join itself enforces VERIFIED, so this also
   // excludes vacancies whose role is unverified.
   if (params.includeRoleless !== true) conds.push(isNotNull(roleNode.id));
-  // "Only duplicates" toggle: restrict to the canonical card of a collapsed
-  // gold group — same condition that makes `duplicateCount` non-null. Lets the
-  // demo show just the deduped cross-source vacancies.
+  // "Only duplicates" toggle: restrict to multi-member groups. The collapse
+  // predicate below already keeps just the representative row, so this only
+  // has to drop singletons and ungrouped vacancies.
   if (params.hasDuplicates === true) {
     conds.push(
       and(
-        eq(uniqueVacancies.canonicalVacancyId, vacancies.id),
+        isNotNull(vacancies.uniqueVacancyId),
         gt(uniqueVacancies.vacancyCount, 1),
-        sql`NOT ${groupHasConfirmedEdge}`,
       )!,
     );
   }
-  // Gold collapse: drop a non-canonical member only when its whole group is
-  // gold-tier. Keep singletons, every canonical member, and every member of a
-  // confirmed (non-gold) group. Safe pre-resolve: all unique_vacancy_id are
-  // NULL → the first arm passes and the feed behaves as before.
-  conds.push(
-    or(
-      isNull(vacancies.uniqueVacancyId),
-      eq(uniqueVacancies.canonicalVacancyId, vacancies.id),
-      groupHasConfirmedEdge,
-    )!,
-  );
+  // Collapse every dedup group (gold and confirmed alike) to its freshest
+  // member. Keeps singletons and ungrouped rows untouched.
+  conds.push(isGroupRepresentative);
   if (conds.length === 0) return undefined;
   if (conds.length === 1) return conds[0];
   return and(...conds);

@@ -110,13 +110,13 @@ export interface VacancyDto {
    */
   uniqueVacancyId: string | null;
   /**
-   * Total postings in this vacancy's gold-tier group — non-null ONLY on the
-   * canonical card of a collapsed group (>1 member). Null on singletons and on
-   * members of confirmed (non-collapsed) groups. Frontend shows the dedup badge
-   * when non-null.
+   * Total postings in this vacancy's dedup group — non-null ONLY on the single
+   * representative card of a collapsed group (>1 member). Null on singletons.
+   * Every group collapses now (gold and confirmed alike). Frontend shows the
+   * dedup badge when non-null.
    */
   duplicateCount: number | null;
-  /** Distinct sources across the same gold group; non-null on the same rows as `duplicateCount`. */
+  /** Distinct sources across the same group; non-null on the same rows as `duplicateCount`. */
   duplicateSourceCount: number | null;
 }
 
