@@ -1,8 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   and,
-  count,
-  desc,
   eq,
   gt,
   gte,
@@ -40,30 +38,6 @@ const {
   rssRecords,
   uniqueVacancies,
 } = schema;
-
-// This vacancy is the display representative of its dedup group — no other
-// member is fresher (published_at, then loaded_at, then id as a stable
-// tiebreak). Ungrouped rows and singletons trivially qualify. Every group
-// (gold or confirmed) collapses to exactly this row; collapsing to the
-// freshest member keeps a bumped repost at the top of the freshness-sorted
-// feed. Reused by the collapse predicate and the badge projection so the two
-// never drift. Safe pre-resolve: NULL unique_vacancy_id → first arm passes.
-const isGroupRepresentative = sql`(
-  ${vacancies.uniqueVacancyId} IS NULL
-  OR NOT EXISTS (
-    SELECT 1 FROM vacancies fresher
-    WHERE fresher.unique_vacancy_id = ${vacancies.uniqueVacancyId}
-      AND (
-        coalesce(fresher.published_at, fresher.loaded_at)
-          > coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})
-        OR (
-          coalesce(fresher.published_at, fresher.loaded_at)
-            = coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})
-          AND fresher.id > ${vacancies.id}
-        )
-      )
-  )
-)`;
 
 // Postgres `uuid` columns reject malformed input at the driver level, so screen
 // path params before they reach a query.
@@ -110,7 +84,7 @@ export interface FeedSearchParams {
   hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
-  /** When true, return ONLY the canonical card of a collapsed gold group (>1 member). */
+  /** When true, return ONLY the representative card of a multi-member dedup group. */
   hasDuplicates?: boolean;
   /** Freshness gate: coalesce(published_at, loaded_at) within N days. */
   postedWithinDays?: number;
@@ -187,36 +161,61 @@ export class FeedService {
   async search(params: FeedSearchParams): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params);
+    // Shared FROM + filter for the collapse. Mirrors selectVacancies' population
+    // (inner sources+rss, verified-role + group left joins); buildWhere renders
+    // its column refs against these exact aliases.
+    const base = sql`
+      FROM vacancies
+      JOIN sources ON sources.id = vacancies.source_id
+      JOIN rss_records ON rss_records.id = vacancies.last_rss_record_id
+      LEFT JOIN nodes role_node
+        ON role_node.id = vacancies.role_node_id AND role_node.status = 'VERIFIED'
+      LEFT JOIN unique_vacancies ON unique_vacancies.id = vacancies.unique_vacancy_id
+      WHERE ${where ?? sql`true`}`;
 
-    const rows = (await this.selectVacancies(where)
-      // Freshest by publish date first (bump = alive). Fall back to loadedAt when
-      // publishedAt is null; id as a stable tiebreaker for offset pagination.
-      .orderBy(
-        desc(sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt})`),
-        desc(vacancies.id),
+    // Collapse each dedup group to its freshest member (rn = 1) over the
+    // FILTERED set, then paginate. Same idiom as ranking.rankByRefs.
+    const pageRes = await this.db.execute<{ id: string }>(sql`
+      WITH filtered AS (
+        SELECT vacancies.id AS id,
+               coalesce(vacancies.published_at, vacancies.loaded_at) AS freshness,
+               row_number() OVER (
+                 PARTITION BY coalesce(vacancies.unique_vacancy_id, vacancies.id)
+                 ORDER BY coalesce(vacancies.published_at, vacancies.loaded_at) DESC, vacancies.id DESC
+               ) AS rn
+        ${base}
       )
-      .limit(params.pageSize)
-      .offset(offset)) as VacancyRow[];
+      SELECT id FROM filtered WHERE rn = 1
+      ORDER BY freshness DESC, id DESC
+      LIMIT ${params.pageSize} OFFSET ${offset}
+    `);
+    const ids = pageRes.rows.map((r) => r.id);
 
-    const totalRow = await this.db
-      .select({ value: count() })
-      .from(vacancies)
-      .leftJoin(roleNode, roleJoin)
-      .leftJoin(uniqueVacancies, eq(uniqueVacancies.id, vacancies.uniqueVacancyId))
-      .where(where);
-    const total = totalRow[0]?.value ?? 0;
+    // Total = number of groups (one card each) among the filtered set.
+    const totalRes = await this.db.execute<{ count: number }>(sql`
+      SELECT count(DISTINCT coalesce(vacancies.unique_vacancy_id, vacancies.id))::int AS count
+      ${base}
+    `);
+    const total = totalRes.rows[0]?.count ?? 0;
 
-    const skillsByVacancy = await this.fetchSkills(
-      rows.map((r) => r.id),
-      params.includeAllSkills === true,
-    );
+    if (ids.length === 0) {
+      return { items: [], page: params.page, pageSize: params.pageSize, total };
+    }
 
-    return {
-      items: rows.map((row) => toDto(row, skillsByVacancy.get(row.id))),
-      page: params.page,
-      pageSize: params.pageSize,
-      total,
-    };
+    // Hydrate the page's representative rows, preserving the freshness order.
+    const rows = (await this.selectVacancies(
+      inArray(vacancies.id, ids),
+    )) as VacancyRow[];
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const skills = await this.fetchSkills(ids, params.includeAllSkills === true);
+    const items = ids
+      .map((id) => {
+        const row = byId.get(id);
+        return row ? toDto(row, skills.get(id)) : null;
+      })
+      .filter((x): x is VacancyDto => x !== null);
+
+    return { items, page: params.page, pageSize: params.pageSize, total };
   }
 
   // Hydrate full vacancy DTOs by id — feed-identical cards for the reverse-ATS
@@ -449,9 +448,6 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
       )!,
     );
   }
-  // Collapse every dedup group (gold and confirmed alike) to its freshest
-  // member. Keeps singletons and ungrouped rows untouched.
-  conds.push(isGroupRepresentative);
   if (conds.length === 0) return undefined;
   if (conds.length === 1) return conds[0];
   return and(...conds);

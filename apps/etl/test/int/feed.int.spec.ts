@@ -133,6 +133,47 @@ describe("FeedService.search — dedup collapse (integration)", () => {
     expect(singletonCard.duplicateCount).toBeNull();
   });
 
+  it("keeps a filtered-in older member when the freshest member is filtered out", async () => {
+    const s1 = await seedSource();
+    const s2 = await seedSource();
+    const role = await seedRole();
+    const base = new Date("2026-06-01T00:00:00Z");
+    const older = await seedVacancy({
+      sourceId: s1.sourceId,
+      ingestId: s1.ingestId,
+      roleNodeId: role,
+      publishedAt: base,
+    });
+    const newer = await seedVacancy({
+      sourceId: s2.sourceId,
+      ingestId: s2.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(base.getTime() + DAY),
+    });
+    const [group] = await db
+      .insert(schema.uniqueVacancies)
+      .values({
+        canonicalVacancyId: older,
+        sourceCount: 2,
+        vacancyCount: 2,
+        firstSeenAt: base,
+        lastSeenAt: new Date(base.getTime() + DAY),
+      })
+      .returning({ id: schema.uniqueVacancies.id });
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: group.id })
+      .where(inArray(schema.vacancies.id, [older, newer]));
+
+    // Filter to the OLDER member's source; the freshest member (newer, on s2)
+    // is filtered out. The collapse must fall back to the older member, not
+    // drop the whole group.
+    const res = await feed.search({ page: 1, pageSize: 50, sourceId: s1.sourceId });
+
+    expect(res.items.map((i) => i.id)).toEqual([older]);
+    expect(res.total).toBe(1);
+  });
+
   it("returns only group representatives when hasDuplicates is set", async () => {
     const s1 = await seedSource();
     const s2 = await seedSource();

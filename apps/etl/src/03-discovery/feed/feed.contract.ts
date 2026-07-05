@@ -168,7 +168,7 @@ export interface FeedQuery {
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
 
-  /** When true, show ONLY deduped vacancies (canonical card of a collapsed gold group). */
+  /** When true, show ONLY deduped vacancies (representative card of a multi-member group). */
   hasDuplicates?: boolean;
 
   /**

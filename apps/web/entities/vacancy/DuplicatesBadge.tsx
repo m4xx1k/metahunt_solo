@@ -93,15 +93,9 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   semantic dedup
                 </span>
-                <div className="flex items-center gap-3">
-                  <h2 className="font-display text-2xl font-bold text-text-primary">
-                    Merged {count}{" "}
-                    {plural(count, "job", "jobs")}
-                  </h2>
-                  <span className="border border-accent px-2 py-[1px] font-mono text-2xs font-bold uppercase tracking-[0.15em] text-accent">
-                    gold
-                  </span>
-                </div>
+                <h2 className="font-display text-2xl font-bold text-text-primary">
+                  Merged {count} {plural(count, "job", "jobs")}
+                </h2>
               </div>
               <button
                 type="button"
