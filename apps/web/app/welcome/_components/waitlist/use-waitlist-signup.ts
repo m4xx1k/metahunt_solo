@@ -28,12 +28,12 @@ export function useWaitlistSignup(source: SignupSource = "landing-cta"): UseWait
         const result = await usersApi.subscribe(normalized, source);
         setEmail("");
         if (result.status === "already_subscribed") {
-          toast.info("Ви вже у waitlist");
+          toast.info("You're already on the waitlist");
         } else {
-          toast.success("Заявку надіслано");
+          toast.success("Request sent");
         }
       } catch {
-        toast.error("Не вдалося надіслати");
+        toast.error("Failed to send");
       } finally {
         setIsSubmitting(false);
       }

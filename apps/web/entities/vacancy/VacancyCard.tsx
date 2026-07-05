@@ -58,10 +58,10 @@ export function VacancyCard({ vacancy: v, match }: Props) {
     );
 
   return (
-    <article className="flex w-full flex-col gap-4 border border-border bg-bg-card p-5 transition-colors hover:border-accent">
+    <article className="flex w-full flex-col gap-3 border border-border bg-bg-card p-4 transition-colors hover:border-accent">
       {/* TOP — main column (1–5) + provenance rail (6) */}
-      <div className="flex flex-col gap-4 md:flex-row md:gap-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           {/* 1 — eyebrow */}
           {eyebrow.length > 0 ? (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
@@ -123,13 +123,13 @@ export function VacancyCard({ vacancy: v, match }: Props) {
 
         {/* 6 — provenance rail: company · domain (source moved to apply) */}
         {company || domain ? (
-          <aside className="flex flex-col gap-3 md:w-[160px] md:flex-shrink-0 md:border-l md:border-border md:pl-6">
+          <aside className="flex min-w-0 flex-col gap-3 md:w-[132px] md:flex-shrink-0 md:border-l md:border-border md:pl-4">
             {company ? (
               <div className="flex flex-col gap-1">
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   company
                 </span>
-                <span className="font-mono text-xs text-text-primary">
+                <span className="break-words font-mono text-xs text-text-primary">
                   {company}
                 </span>
               </div>
@@ -139,7 +139,7 @@ export function VacancyCard({ vacancy: v, match }: Props) {
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   domain
                 </span>
-                <span className="w-fit border border-border-strong bg-bg-elev px-2.5 py-1 font-mono text-xs font-medium text-text-primary">
+                <span className="w-fit max-w-full break-words border border-border-strong bg-bg-elev px-2.5 py-1 font-mono text-xs font-medium text-text-primary">
                   {domain}
                 </span>
               </div>
@@ -149,7 +149,7 @@ export function VacancyCard({ vacancy: v, match }: Props) {
       </div>
 
       {/* FOOTER — flags (left) · posted + apply (right) */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {v.hasTestAssignment === true ? (
             <FlagPill

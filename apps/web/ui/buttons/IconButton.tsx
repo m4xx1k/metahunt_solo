@@ -9,7 +9,7 @@ export function IconButton({
   return (
     <button
       className={cn(
-        "inline-flex h-12 w-12 items-center justify-center border border-border bg-accent text-bg shadow-brut-xs transition-[transform,box-shadow] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[2px] active:translate-y-[2px]",
+        "inline-flex h-12 w-12 items-center justify-center border border-border bg-accent text-bg shadow-brut-xs transition-[transform,box-shadow] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[2px] active:translate-y-[2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         className,
       )}
       {...props}

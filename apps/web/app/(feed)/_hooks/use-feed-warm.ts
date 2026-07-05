@@ -8,12 +8,12 @@ import { useResults } from "@/features/vacancy-filters/use-results";
 import { MATCH_PAGE_SIZE } from "@/features/vacancy-filters/warm-query";
 import type { FilterState } from "@/features/vacancy-filters/types";
 
-// Warm-lens data for /merged: the candidate comes from ?cv (not internal state),
+// Warm-lens data for the feed: the candidate comes from ?cv (not internal state),
 // so this hook is a thin layer over useResults(warm) + recommendations. Page is
 // local (warm pagination isn't deep-linked); it resets when the candidate or the
 // filters change (React's adjust-state-on-prop-change), so the query never fires
 // for an out-of-range page.
-export function useMergedWarm(
+export function useFeedWarm(
   candidateId: string | null,
   filters: FilterState,
   showRecs: boolean,

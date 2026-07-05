@@ -1,6 +1,6 @@
 export const aboutMeSection = {
   tag: "// about.me",
-  title: "хто будує metahunt.",
+  title: "who's building metahunt.",
   subtitle: "",
   terminalTitle: "maxxik@metahunt: ~/about",
   buildInPublicTitle: "build in public on:",
@@ -28,19 +28,19 @@ export const aboutMeSection = {
     },
   ],
   streamNote:
-    "стрімлю, як будую metahunt: фічі, експерименти, факапи і прогрес у реальному часі.",
+    "I stream how I'm building metahunt: features, experiments, screwups, and progress in real time.",
   profile: [
-    "name: макс (mAxxIk)",
+    "name: max (mAxxIk)",
     "role: founder & lead developer of metahunt",
-    "location: львів, україна",
-    "focus: rag, ai-агенти, fullstack architecture",
+    "location: lviv, ukraine",
+    "focus: rag, ai agents, fullstack architecture",
   ],
   story:
-    "за 3 роки пройшов шлях від фрілансу в 18 років через різні проєкти до mid+ fullstack у ai-стартапі. \nзараз на 4 курсі політеху і будую власні продукти solo.",
+    "over 3 years, went from freelancing at 18 through various projects to mid+ fullstack at an ai startup. \nnow in my 4th year at a technical university, building my own products solo.",
   achievements: [
-    "[2026-04] 3 місце на ai hackathon mono x skelar",
-    "[gaming] апнув мортіса на 2 прайм в brawl stars",
-    "[build] metahunt як core-проєкт: ai-агрегатор вакансій",
-    "[mindset] раціональність · ентузіазм · швидкість",
+    "[2026-04] 3rd place at the ai hackathon mono x skelar",
+    "[gaming] pushed mortis to prime 2 in brawl stars",
+    "[build] metahunt as the core project: ai job aggregator",
+    "[mindset] rationality · enthusiasm · speed",
   ],
 };

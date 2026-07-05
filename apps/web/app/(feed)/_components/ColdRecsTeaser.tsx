@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { cvApi } from "@/lib/api/cv";
-import { SkillRecommendations } from "@/app/reverse-ats/_components/SkillRecommendations";
+import { SkillRecommendations } from "@/features/cv-match/SkillRecommendations";
 import { UPLOAD_BTN } from "./CvDropzone";
 
 // Cold-lens teaser for the ranked experience. With a saved CV we blur its real

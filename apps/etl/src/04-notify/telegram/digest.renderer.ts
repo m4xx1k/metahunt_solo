@@ -94,10 +94,8 @@ function joinChips(parts: (string | null | undefined)[]): string | null {
 const LOCATION_CITIES_MAX = 3;
 const LOCATION_ITEMS_MAX = 2;
 
-// Mirrors apps/web/entities/vacancy/format-locations.ts: locations sharing one
-// country collapse into "Country (City, City)" instead of repeating it per chip.
-// Inputs already went through escapeHtml at the call site — split on "," and
-// re-embed the pieces as-is, don't escape again.
+// Mirrors apps/web/entities/vacancy/format-locations.ts. Inputs are already
+// escaped at the call site — don't escape again when re-embedding.
 function locationChip(locations: string[]): string | null {
   if (locations.length === 0) return null;
 

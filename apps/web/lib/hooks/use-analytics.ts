@@ -46,8 +46,10 @@ export function useAnalytics() {
       },
 
       // A CV was uploaded and resolved to a candidate (the warm-lens entry).
-      cvUpload(candidateId: string, reused: boolean) {
-        posthog?.capture(ANALYTICS_EVENTS.cvUpload, { candidateId, reused });
+      // The candidateId is a shareable bearer capability, so it is deliberately
+      // NOT sent as a property.
+      cvUpload(reused: boolean) {
+        posthog?.capture(ANALYTICS_EVENTS.cvUpload, { reused });
       },
     }),
     [posthog],

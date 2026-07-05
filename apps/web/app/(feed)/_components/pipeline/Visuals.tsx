@@ -23,7 +23,7 @@ const accentBorder: Record<PipelineAccent, string> = {
   success: "border-success",
 };
 
-// ── 01 · Збір ────────────────────────────────────────────────────────────────
+// ── 01 · Collect ─────────────────────────────────────────────────────────────
 export function SourcesVisual({
   sources,
   accent,
@@ -71,7 +71,7 @@ export function SourcesVisual({
   );
 }
 
-// ── 02 · Розбір ──────────────────────────────────────────────────────────────
+// ── 02 · Parse ───────────────────────────────────────────────────────────────
 const RAW_BARS = ["92%", "78%", "64%"]; // skeleton widths for the "raw text"
 
 export function ExtractVisual({
@@ -138,8 +138,8 @@ export function ExtractVisual({
   );
 }
 
-// ── 03 · Підбір ──────────────────────────────────────────────────────────────
-// Mirrors the reverse-ats MatchCard verdict: a fit tier + must-have count, then
+// ── 03 · Match ───────────────────────────────────────────────────────────────
+// Mirrors the ranked match card verdict: a fit tier + must-have count, then
 // the ✅ have / ❌ missing / ➕ bonus skill diff (same colour language as there).
 const MATCH_LINES = [
   { key: "have", sign: "✅", cls: "border-success text-success" },

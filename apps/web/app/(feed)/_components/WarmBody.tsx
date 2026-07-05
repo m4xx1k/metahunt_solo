@@ -2,22 +2,21 @@
 
 import { useEffect, useRef } from "react";
 
-import { cn } from "@/lib/utils";
-import { CandidateProfile } from "@/app/reverse-ats/_components/CandidateProfile";
-import { SkillRecommendations } from "@/app/reverse-ats/_components/SkillRecommendations";
-import { MatchFilters } from "@/app/reverse-ats/_components/MatchFilters";
+import { cn, STICKY_RAIL } from "@/lib/utils";
+import { CandidateProfile } from "@/features/cv-match/CandidateProfile";
+import { SkillRecommendations } from "@/features/cv-match/SkillRecommendations";
+import { MatchFilters } from "./MatchFilters";
 import { Pagination } from "@/ui/navigation/Pagination";
 import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
-import { useMergedWarm } from "../_hooks/use-merged-warm";
+import { useFeedWarm } from "../_hooks/use-feed-warm";
 import { CvSelect } from "./CvSelect";
 import { WarmCard } from "./WarmCard";
 import { WarmSubscribe } from "./WarmSubscribe";
 
 // Warm lens body: ranked list under the active CV. Subscribe + filters on the
 // left, ranked WarmCards in the centre, CV profile + recommendations on the
-// right. Reverse-ATS widgets are reused via import — a temporary coupling that
-// dissolves at the PR4 flip. Demo samples have no owner, so they skip subscribe
-// and recommendations (both are owner-scoped).
+// right. Demo samples have no owner, so they skip subscribe and recommendations
+// (both are owner-scoped).
 export function WarmBody({
   api,
   candidateId,
@@ -40,7 +39,7 @@ export function WarmBody({
   onPickCv: (candidateId: string) => void;
 }) {
   const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } =
-    useMergedWarm(candidateId, api.filters, !isSample);
+    useFeedWarm(candidateId, api.filters, !isSample);
 
   // Fire at most once per candidate — dropping it flips to cold and unmounts
   // this component, so a re-fire would loop against its own state updates.
@@ -79,11 +78,10 @@ export function WarmBody({
           </p>
         ) : null}
 
-        {data?.items.map((item, i) => (
+        {data?.items.map((item) => (
           <WarmCard
             key={item.vacancy.id}
             item={item}
-            rank={(page - 1) * pageSize + i + 1}
             candidateSkillIds={candidateSkillIds}
           />
         ))}
@@ -117,8 +115,3 @@ export function WarmBody({
     </div>
   );
 }
-
-// Sticky side rails cap their height and self-scroll, so a rail taller than the
-// viewport keeps its bottom reachable instead of being clipped below the fold.
-const STICKY_RAIL =
-  "xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:overscroll-contain [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]";

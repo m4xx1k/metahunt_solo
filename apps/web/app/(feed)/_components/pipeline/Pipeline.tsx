@@ -3,11 +3,11 @@ import { PipelineCard } from "./PipelineCard";
 import { SourcesVisual, ExtractVisual, MatchVisual } from "./Visuals";
 import { pipeline } from "./data";
 
-// The 3-stage explainer (Збір → Розбір → Підбір). Renders just the cards row —
+// The 3-stage explainer (Collect → Parse → Match). Renders just the cards row —
 // no section/background of its own; it lives inside the feed's intro block
 // (Snapshot) so the whole "what is this" story reads as one piece.
-// `matchCta` overrides the Match step's default link (used by /merged to open
-// the CV picker via a window event instead of navigating to reverse-ATS).
+// `matchCta` overrides the Match step's default link so the feed opens the CV
+// picker via a window event instead of navigating away.
 export function Pipeline({
   aggregates,
   matchCta,

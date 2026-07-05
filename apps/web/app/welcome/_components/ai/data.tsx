@@ -11,10 +11,10 @@ import type { FeatureCard } from "./FeatureCard";
 export type FeatureItem = ComponentProps<typeof FeatureCard>;
 
 export const aiCopilotSection = {
-  tag: "> можливості",
-  title: "все що потрібно для пошуку.",
+  tag: "> features",
+  title: "everything you need for the job search.",
   subtitle:
-    "ai-асистент, розумні алерти, трекер відгуків і аналітика ринку — в одному місці.",
+    "ai assistant, smart alerts, application tracker, and market analytics — all in one place.",
 };
 
 export const aiFeatures: FeatureItem[] = [
@@ -22,30 +22,30 @@ export const aiFeatures: FeatureItem[] = [
     icon: <GitMergeIcon weight="bold" className="h-7 w-7" />,
     title: "gap analysis",
     description:
-      "порівнюємо твоє резюме з текстом вакансії й показуємо покриття у відсотках плюс те, чого саме бракує.",
+      "we compare your resume against the job description and show your coverage as a percentage, plus exactly what's missing.",
   },
   {
     icon: <FileTextIcon weight="bold" className="h-7 w-7" />,
     title: "cover letter + cv",
     description:
-      "генеруємо персоналізований лист і адаптуємо резюме під лексику вакансії на основі реальних збігів досвіду.",
+      "we generate a personalized cover letter and tailor your resume to the job's language, based on real matches with your experience.",
   },
   {
     icon: <BellIcon weight="bold" className="h-7 w-7" />,
-    title: "smart alerts у telegram",
+    title: "smart alerts in telegram",
     description:
-      "підписка на точну комбінацію фільтрів (react обов'язковий, без тестового, не аутстаф, від $3k). пуш одразу, як з'являється збіг.",
+      "subscribe to the exact filter combo you want (react required, no test task, not staff augmentation, from $3k). get a push the moment a match appears.",
   },
   {
     icon: <ListChecksIcon weight="bold" className="h-7 w-7" />,
     title: "application tracker",
     description:
-      "усі твої відгуки в одній воронці зі статусами, дедлайнами й нагадуваннями. без паралельних табличок у notion.",
+      "all your applications in one pipeline with statuses, deadlines, and reminders. no more parallel spreadsheets in notion.",
   },
   {
     icon: <TrendUpIcon weight="bold" className="h-7 w-7" />,
-    title: "динаміка попиту",
+    title: "demand trends",
     description:
-      "які стеки ростуть, які падають, скільки нових вакансій з'явилося сьогодні. node.js vs python, react vs vue — в цифрах.",
+      "which stacks are rising, which are falling, how many new jobs appeared today. node.js vs python, react vs vue — in numbers.",
   },
 ];

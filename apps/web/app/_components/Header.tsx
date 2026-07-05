@@ -4,9 +4,8 @@ import { Button, Logo, NavLink } from "@/ui";
 
 export type NavItem = { label: string; href: string };
 
-// `cta` fills the top-right slot. Omitted → the reverse-ATS button (the default
-// on the classic feed / marketing pages); pass `null` to drop it (e.g. /merged,
-// which has upload built in).
+// `cta` fills the top-right slot. Omitted → the "match my CV" button (default on
+// marketing pages); pass `null` to drop it (the feed has upload built in).
 export function Header({ links, cta }: { links?: NavItem[]; cta?: ReactNode }) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-bg/80 px-6 py-4 backdrop-blur-md md:px-12">
@@ -24,7 +23,7 @@ export function Header({ links, cta }: { links?: NavItem[]; cta?: ReactNode }) {
           </nav>
         )}
         {cta === undefined ? (
-          <Link href="/reverse-ats" aria-label="reverse-ATS — jobs matched to your CV">
+          <Link href="/" aria-label="match my CV — jobs ranked to your resume">
             <Button variant="nav" size="sm">
               match my CV →
             </Button>

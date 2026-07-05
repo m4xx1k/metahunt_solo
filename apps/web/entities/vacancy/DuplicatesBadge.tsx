@@ -19,13 +19,9 @@ type Props = {
   sourceCount: number;
 };
 
-// Ukrainian plural: [one, few (2-4), many (5+)].
-function plural(n: number, forms: [string, string, string]): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return forms[0];
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
-  return forms[2];
+// English plural: singular for 1, plural form otherwise.
+function plural(n: number, singular: string, pluralForm: string): string {
+  return n === 1 ? singular : pluralForm;
 }
 
 export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) {
@@ -57,7 +53,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
 
   const sourceSuffix =
     sourceCount > 1
-      ? ` · ${sourceCount} ${plural(sourceCount, ["source", "sources", "sources"])}`
+      ? ` · ${sourceCount} ${plural(sourceCount, "source", "sources")}`
       : "";
 
   return (
@@ -72,7 +68,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
       >
         <span aria-hidden>⧉</span>
         <span>
-          {count} {plural(count, ["copy", "copies", "copies"])}
+          {count} {plural(count, "copy", "copies")}
           {sourceSuffix}
         </span>
         <span aria-hidden className="text-2xs">
@@ -100,7 +96,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
                 <div className="flex items-center gap-3">
                   <h2 className="font-display text-2xl font-bold text-text-primary">
                     Merged {count}{" "}
-                    {plural(count, ["job", "jobs", "jobs"])}
+                    {plural(count, "job", "jobs")}
                   </h2>
                   <span className="border border-accent px-2 py-[1px] font-mono text-2xs font-bold uppercase tracking-[0.15em] text-accent">
                     gold

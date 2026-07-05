@@ -1,15 +1,12 @@
 // Copy + sample data for the 3-stage explainer band on the feed index.
-// Everything textual lives here so it can be swapped (e.g. to EN) in one place.
-// The three stages rhyme in Ukrainian (Збір → Розбір → Підбір) and map to
+// Everything textual lives here so it can be swapped in one place. Stages map to
 // Collect → Parse → Match. Live numbers (source list, totals) are NOT here —
 // they come from `aggregates` at render time so we never invent counts.
-//
-// Stage 3's dedup story is folded into stage 2's lead, not its own pillar.
 
 export type PipelineAccent = "secondary" | "accent" | "success";
 
 // Sample CV-Match verdict — mirrors the real RankedVacancy.diff (have/missing/
-// bonus) + fit tier shown on the reverse-ats MatchCard, just with static skills.
+// bonus) + fit tier shown on the ranked match cards, just with static skills.
 export interface PipelineMatch {
   fit: string;
   matched: number;
@@ -39,7 +36,7 @@ export const pipeline = {
       title: "Match",
       lead: "Upload your CV — the feed re-ranks itself around your profile.",
       accent: "success" as PipelineAccent,
-      cta: { label: "try CV-Match", href: "/reverse-ats" },
+      cta: { label: "try CV-Match", href: "/" },
     },
   },
   // Sample fields the parser pulls out — illustrative, shown as popping tags.

@@ -1,8 +1,13 @@
-# feed ⊕ reverse-ats merge — one page, two lenses (NEXT SESSION)
+# feed ⊕ reverse-ats merge — one page, two lenses
 
-Status: **planned, not started.** This is the entry point for the next session.
-Branch to create: `feat/feed-reverse-ats-merge` (off `main`, after the current
-stack is merged — see Prereqs).
+Status: **BUILT + FLIPPED.** Shipped on branch `feat/merged-cold-lens`; the former
+`/merged` beta is now the home feed at `/`. The standalone classic-feed and
+`/reverse-ats` routes were folded in — reverse-ATS widgets promoted to
+`features/cv-match/`, both old paths 307-redirect to `/`. UI is fully English
+(except the Clerk-gated internal dashboard). Not pushed / not PR'd. Remaining:
+pre-GA follow-ups from the pre-merge audit (a11y gaps, pip/tier coherence,
+CV-endpoint auth + TTL). Move this tracker to `_done/` once those are triaged.
+The planning notes below are kept for history.
 
 Goal: merge `app/(feed)/[[...slug]]` (browse by tracks + filters) and
 `app/reverse-ats` into one page that toggles between a **COLD** lens (no CV →

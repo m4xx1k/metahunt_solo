@@ -1,5 +1,13 @@
 # TODO — Auth (Telegram Login) + CV-based subscriptions + candidate dashboard
 
+> **Post-flip note (2026-07-05):** the standalone `/reverse-ats` route was removed —
+> the CV-match experience is now the **warm lens of the home feed at `/`**
+> (`app/(feed)/_components/FeedLensShell.tsx` + `features/cv-match/`). The anonymous
+> CV/subscription state already lives in `apps/web/lib/hooks/use-saved.ts`
+> (localStorage `metahunt.saved`) — that is the claim seam this auth work hooks into.
+> References below to `app/reverse-ats/**` / `ReverseAtsClient` predate the flip;
+> read them as "the warm-lens upload flow".
+
 **Target files:**
 
 _Schema (`libs/database/src/schema/`)_

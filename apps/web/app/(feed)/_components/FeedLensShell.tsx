@@ -12,10 +12,10 @@ import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
-import { useMergedSearch } from "../_hooks/use-merged-search";
+import { useFeedSearch } from "../_hooks/use-feed-search";
 import { ColdRecsTeaser } from "./ColdRecsTeaser";
 import { CvDropzone } from "./CvDropzone";
-import { LensTabs } from "./LensTabs";
+import { LensTabs, LENS_PANEL_ID, lensTabId } from "./LensTabs";
 import { TracksBand } from "./TracksBand";
 import { WarmBody } from "./WarmBody";
 
@@ -23,7 +23,7 @@ import { WarmBody } from "./WarmBody";
 // the feed body reused via <FeedShell> (no fork; hideTrackTree — the top-band
 // replaces the sidebar tree); warm = the ranked <WarmBody> under the active CV.
 // Upload/sample selection sets ?cv (→ warm); the browse tab drops it (→ cold).
-export function MergedShell({
+export function FeedLensShell({
   aggregates,
   tracks,
   activeTrackSlug,
@@ -48,7 +48,7 @@ export function MergedShell({
   domainOptions?: OptionRow[];
   samples: SampleCandidate[];
 }) {
-  const search = useMergedSearch();
+  const search = useFeedSearch();
   const { lens, cv, setCv, setTrack } = search;
   const analytics = useAnalytics();
   const saved = useSaved();
@@ -73,7 +73,8 @@ export function MergedShell({
         const target = window.matchMedia("(min-width: 640px)").matches
           ? barRef.current
           : contentRef.current;
-        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        target?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
       }),
     );
   }, []);
@@ -81,8 +82,8 @@ export function MergedShell({
   // The "how it works" CTA lives in the hero (a server subtree above this
   // island), so it reaches upload via a window event rather than a shared store.
   useEffect(() => {
-    window.addEventListener("merged:upload-cv", triggerUpload);
-    return () => window.removeEventListener("merged:upload-cv", triggerUpload);
+    window.addEventListener("feed:upload-cv", triggerUpload);
+    return () => window.removeEventListener("feed:upload-cv", triggerUpload);
   }, [triggerUpload]);
 
   // Browse drops ?cv (keeps activeCv); the CV tab, unlocked by a remembered
@@ -103,7 +104,7 @@ export function MergedShell({
       try {
         const info = await cvApi.uploadFile(file);
         setUploadInfo(info);
-        analytics.cvUpload(info.candidateId, info.reused);
+        analytics.cvUpload(info.reused);
         saved.addCv({
           candidateId: info.candidateId,
           label: info.role ?? "Your CV",
@@ -183,7 +184,13 @@ export function MergedShell({
         </div>
       </div>
 
-      <div ref={contentRef} className="flex scroll-mt-24 flex-col gap-4">
+      <div
+        ref={contentRef}
+        role="tabpanel"
+        id={LENS_PANEL_ID}
+        aria-labelledby={lensTabId(lens)}
+        className="flex scroll-mt-24 flex-col gap-4"
+      >
         {uploadError ? (
           <p className="border border-danger/40 bg-danger/5 px-4 py-2 font-mono text-xs text-danger">
             {uploadError}

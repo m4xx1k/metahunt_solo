@@ -3,7 +3,7 @@
 import { useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { cn } from "@/lib/utils";
+import { cn, STICKY_RAIL } from "@/lib/utils";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
@@ -131,9 +131,3 @@ export function FeedShell({
     </div>
   );
 }
-
-// A tall sidebar was getting its bottom clipped: sticky pins it, but content
-// past the viewport was only reachable by scrolling the whole page. Capping the
-// height and letting the rail scroll itself keeps its bottom always reachable.
-const STICKY_RAIL =
-  "xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:overscroll-contain [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]";

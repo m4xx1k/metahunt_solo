@@ -11,7 +11,7 @@ export function FlagPill({
 }: {
   icon?: React.ReactNode;
   // Optional: the feed card drops the label (position/colour is the label),
-  // the investigation FlagPills row keeps it ("тестове: так").
+  // the investigation FlagPills row keeps it ("test: yes").
   label?: string;
   value: string;
   tone: "ok" | "warn" | "info" | "muted";

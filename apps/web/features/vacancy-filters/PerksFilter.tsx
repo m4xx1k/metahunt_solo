@@ -5,15 +5,15 @@ import { ClipboardList, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 
-// PerksFilter — the two market "perks" (бронь, тестове) merged into a single
-// two-column quick-filter row, styled to mirror the card pills in
+// PerksFilter — the two market "perks" (reservation, test task) merged into a
+// single two-column quick-filter row, styled to mirror the card pills in
 // VacancyCard. Framed the way candidates read them: reservation as a draw
-// ("бронь") and the test task by its desirable absence ("без тесту").
+// ("reservation") and the test task by its desirable absence ("no test").
 //
 // Each pill is an independent on/off toggle: active → the meaningful filter,
 // click again → cleared (any). No tri-state — "show only WITH a test task" is a
 // non-goal, so reservation toggles true⇄null and test toggles false⇄null. The
-// "без тесту" filter (false) also matches unscored vacancies (null) — the
+// "no test" filter (false) also matches unscored vacancies (null) — the
 // backend treats "no test" as "not confirmed-true" (see feed.service buildWhere).
 export function PerksFilter({
   reservation,

@@ -1,17 +1,20 @@
 import { BadRequestException } from "@nestjs/common";
 import { extractText as pdfExtractText, getDocumentProxy } from "unpdf";
 
-// Uploaded CV → plain text. PDF via unpdf (pure-JS, no native binaries);
-// text/plain read straight off the buffer. Everything else is rejected.
+const PDF_MAGIC = "%PDF-";
+
+// Uploaded CV -> plain text. Trust file CONTENT, not the client-declared MIME:
+// sniff the PDF magic header, else require a NUL-free (i.e. text) buffer.
 export async function extractText(file: Express.Multer.File): Promise<string> {
-  const mime = file.mimetype;
-  if (mime === "application/pdf") {
-    const pdf = await getDocumentProxy(new Uint8Array(file.buffer));
+  const buf = file.buffer;
+  if (buf.subarray(0, PDF_MAGIC.length).toString("latin1") === PDF_MAGIC) {
+    const pdf = await getDocumentProxy(new Uint8Array(buf));
     const { text } = await pdfExtractText(pdf, { mergePages: true });
     return text;
   }
-  if (mime === "text/plain" || mime === "application/octet-stream") {
-    return file.buffer.toString("utf8");
+  // A NUL byte marks binary content, not a text CV.
+  if (buf.includes(0)) {
+    throw new BadRequestException("unsupported file: expected a PDF or UTF-8 text CV");
   }
-  throw new BadRequestException(`unsupported file type: ${mime}`);
+  return buf.toString("utf8");
 }

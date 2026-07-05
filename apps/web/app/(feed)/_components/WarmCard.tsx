@@ -5,55 +5,50 @@ import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import type { FitTier, RankedVacancy } from "@/lib/api/ranking";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
+// Hints frame the tier as weighted fit (importance-adjusted), NOT a raw count —
+// the pip strip already shows the literal "N of M required" via its aria-label.
 const TIER: Record<FitTier, { fill: string; text: string; label: string; hint: string }> = {
   STRONG: {
     fill: "border-success bg-success",
     text: "text-success",
     label: "strong",
-    hint: "You cover almost all of this job's required skills",
+    hint: "Strong fit — you have the most important skills this role requires.",
   },
   GOOD: {
     fill: "border-accent bg-accent",
     text: "text-accent",
     label: "good",
-    hint: "You cover most of the required skills",
+    hint: "Good fit — you have many of the key required skills.",
   },
   STRETCH: {
     fill: "border-text-muted bg-text-muted",
     text: "text-text-muted",
     label: "stretch",
-    hint: "Few matches — a stretch role",
+    hint: "A stretch — you're missing several of the more important required skills.",
   },
 };
 
-// One ranked vacancy: a compact fit strip merged into the top border of the
-// exact feed card. Fit + required coverage are one widget — a pip per required
-// skill (filled = covered), tier-coloured, with the tier word below. The card's
-// own skill chips carry the green/red have-lacks borders via its `match` prop,
-// so no separate diff block is needed. `candidateSkillIds` is the CV's resolved
-// skill set (shared across the list).
+// Pips show required-skill coverage; skip a separate diff block since the
+// card's own chips already carry have/lack colors via `match`.
 export function WarmCard({
   item,
-  rank,
   candidateSkillIds,
 }: {
   item: RankedVacancy;
-  rank: number;
   candidateSkillIds: readonly string[];
 }) {
   const t = TIER[item.fit.tier];
   return (
     <div className="flex flex-col">
       <div className="flex flex-wrap items-center gap-4 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
-        {/* <span className="text-text-muted">#{rank}</span> */}
-
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex cursor-help flex-col gap-1">
-              <span
-                className="flex gap-1"
-                aria-label={`${item.fit.matchedRequired} of ${item.fit.requiredTotal} required skills`}
-              >
+            <span
+              tabIndex={0}
+              aria-label={`${t.label} fit — ${item.fit.matchedRequired} of ${item.fit.requiredTotal} required skills covered`}
+              className="inline-flex cursor-help flex-col gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              <span className="flex gap-1" aria-hidden>
                 {Array.from({ length: item.fit.requiredTotal }).map((_, i) => (
                   <span
                     key={i}
@@ -65,6 +60,7 @@ export function WarmCard({
                 ))}
               </span>
               <span
+                aria-hidden
                 className={cn(
                   "text-2xs font-bold uppercase leading-none tracking-wider",
                   t.text,
@@ -80,7 +76,10 @@ export function WarmCard({
         {!item.onStack ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="cursor-help border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
+              <span
+                tabIndex={0}
+                className="cursor-help border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
                 off-stack
               </span>
             </TooltipTrigger>

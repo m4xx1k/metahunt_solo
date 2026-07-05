@@ -5,7 +5,7 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { TrackDto } from "@/lib/api/tracks";
 
-// Top-band track nav for /merged: disciplines + the active discipline's
+// Top-band track nav for the feed: disciplines + the active discipline's
 // children, same tree/hide-zero rules as the sidebar TrackTree. One accent puck
 // (shared layoutId) slides to the selected pill. Counts are intentionally
 // omitted — an all-time pill count over-promised vs the freshness-windowed feed.

@@ -1,7 +1,7 @@
 export const ctaSection = {
   tag: "// waitlist",
-  title: "не шукай як у 2015-му.",
-  subtitle: "перші 200 користувачів отримають premium безкоштовно на рік.",
-  cta: "Отримати ранній доступ",
+  title: "stop job hunting like it's 2015.",
+  subtitle: "the first 200 users get premium free for a year.",
+  cta: "Get early access",
   placeholder: "your@email.com",
 };

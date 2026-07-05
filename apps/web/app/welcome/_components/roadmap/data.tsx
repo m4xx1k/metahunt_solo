@@ -7,20 +7,20 @@ export type RoadmapItem = {
 
 export const roadmapSection = {
   tag: "> roadmap",
-  title: "куди рухаємось.",
+  title: "where we're headed.",
 };
 
 export const roadmapItems: RoadmapItem[] = [
   {
     tag: "now · foundation",
     title: "foundation",
-    description: "etl з Djinni та DOU, ai-парсинг, golden record.",
+    description: "etl from Djinni and DOU, ai parsing, golden record.",
     status: "current",
   },
   {
     tag: "next · mvp",
     title: "mvp",
-    description: "публічний пошук, smart alerts у telegram, pulse of the market.",
+    description: "public search, smart alerts in telegram, pulse of the market.",
     status: "next",
   },
   {
@@ -33,14 +33,14 @@ export const roadmapItems: RoadmapItem[] = [
   {
     tag: "b2b",
     title: "b2b",
-    description: "market intelligence для рекрутерів, data-as-a-service api.",
+    description: "market intelligence for recruiters, data-as-a-service api.",
     status: "next",
   },
   {
     tag: "global",
     title: "global",
     description:
-      "LinkedIn, Glassdoor, Wellfound, Indeed. вихід на ринки Польщі та ЄС.",
+      "LinkedIn, Glassdoor, Wellfound, Indeed. expanding into Poland and the EU.",
     status: "next",
   },
 ];

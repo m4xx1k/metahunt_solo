@@ -10,7 +10,7 @@ import {
 } from "@/features/vacancy-filters/enum-options";
 import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
 
-// The reverse-ATS filter sidebar: the shared FilterRail (warm lens) in a sticky
+// The warm-lens filter sidebar: the shared FilterRail (warm lens) in a sticky
 // column on xl+, collapsed behind one toggle below. Filters live in the URL via
 // the shared FiltersApi — the same store the feed uses.
 export function MatchFilters({
