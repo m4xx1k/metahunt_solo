@@ -133,7 +133,7 @@ export interface VacancyDto {
 
   /** Dedup group id (`unique_vacancies.id`), or null. Drives the "show group" drawer. */
   uniqueVacancyId: string | null;
-  /** Group size — non-null ONLY on the canonical card of a collapsed gold group (>1). */
+  /** Group size — non-null ONLY on the representative card of a multi-member group. */
   duplicateCount: number | null;
   /** Distinct sources in that group; non-null on the same rows as `duplicateCount`. */
   duplicateSourceCount: number | null;
@@ -229,7 +229,7 @@ export interface ListVacanciesQuery {
   hasReservation?: boolean;
   /** Freshness gate — posted within the last N days. */
   postedWithinDays?: number;
-  /** When true, show ONLY deduped vacancies (canonical card of a collapsed gold group). */
+  /** When true, show ONLY deduped vacancies (representative card of a multi-member group). */
   hasDuplicates?: boolean;
 
   /** When false (default), exclude vacancies that lack a VERIFIED role. */

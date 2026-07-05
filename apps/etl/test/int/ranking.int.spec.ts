@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
@@ -152,6 +152,40 @@ describe("RankingService.match (integration)", () => {
     });
     expect(res.items[0].diff.have.map((s) => s.name)).toEqual(["Go"]);
     expect(res.items[0].diff.missing.map((s) => s.name)).toEqual(["Kubernetes"]);
+  });
+
+  it("collapses a dedup group to a single ranked card", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const skill = await seedNode("SKILL", "Python");
+    const original = await seedVacancy(sourceId, ingestId, role, "Original");
+    const repost = await seedVacancy(sourceId, ingestId, role, "Repost");
+    await linkSkill(original, skill);
+    await linkSkill(repost, skill);
+    await refreshNodeStats();
+    // Put both postings in one dedup group — the matcher must surface only one.
+    const [group] = await db
+      .insert(schema.uniqueVacancies)
+      .values({
+        canonicalVacancyId: original,
+        sourceCount: 1,
+        vacancyCount: 2,
+        firstSeenAt: new Date(),
+        lastSeenAt: new Date(),
+      })
+      .returning({ id: schema.uniqueVacancies.id });
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: group.id })
+      .where(inArray(schema.vacancies.id, [original, repost]));
+
+    const res = await ranking.match(["Python"], {}, 1, 20);
+
+    expect(res.total).toBe(1);
+    const fromGroup = res.items
+      .map((i) => i.vacancy.id)
+      .filter((id) => id === original || id === repost);
+    expect(fromGroup).toHaveLength(1);
   });
 
   it("excludes a vacancy whose role is not VERIFIED", async () => {

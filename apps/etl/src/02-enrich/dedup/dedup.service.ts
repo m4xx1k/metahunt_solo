@@ -32,7 +32,9 @@ const HARD_THRESHOLD = 0.92;
 const GOLD_THRESHOLD = 0.95;
 const SKILL_JACCARD_GOLD = 0.5;
 const TITLE_JACCARD_GOLD = 0.5;
-const PREFILTER_DATE_WINDOW_DAYS = 14;
+// 45d (was 14d): republish bumps drift true duplicates up to ~44 days apart;
+// the ±14d prefilter was the audit's biggest recall gap. Gates hold precision.
+const PREFILTER_DATE_WINDOW_DAYS = 45;
 const PREFILTER_TOP_N = 20;
 const EMBED_BATCH_SIZE = 100;
 
@@ -56,7 +58,6 @@ interface CandidateRow {
   seniority: string | null;
   workFormat: string | null;
   companyId: string | null;
-  sourceId: string;
   publishedAt: Date;
   title: string;
   requiredSkillIds: string[];
@@ -67,7 +68,6 @@ interface CandidateRow {
 
 interface VacancyForResolve {
   id: string;
-  sourceId: string;
   publishedAt: Date;
   embedding: number[];
   roleNodeId: string | null;
@@ -290,7 +290,6 @@ export class DedupService {
       seniority: string | null;
       work_format: string | null;
       company_id: string | null;
-      source_id: string;
       published_at: Date;
       title: string;
       required_skill_ids: string[] | null;
@@ -304,7 +303,6 @@ export class DedupService {
         cand.seniority::text AS seniority,
         cand.work_format::text AS work_format,
         cand.company_id,
-        cand.source_id,
         cand.published_at,
         cand.title,
         ${requiredSkillIdsSubquery(sql`cand.id`)} AS required_skill_ids,
@@ -315,8 +313,9 @@ export class DedupService {
         END AS centroid_similarity
       FROM vacancies cand
       LEFT JOIN unique_vacancies uv ON uv.id = cand.unique_vacancy_id
+      -- Same-source allowed: a board reposting a job under a new id is a true
+      -- duplicate; the 0.92 threshold + gates keep distinct openings apart.
       WHERE cand.id != ${v.id}
-        AND cand.source_id != ${v.sourceId}
         AND cand.embedding IS NOT NULL
         AND cand.published_at IS NOT NULL
         AND cand.published_at BETWEEN ${windowStart} AND ${windowEnd}
@@ -355,7 +354,6 @@ export class DedupService {
       seniority: r.seniority,
       workFormat: r.work_format,
       companyId: r.company_id,
-      sourceId: r.source_id,
       publishedAt: toDate(r.published_at),
       title: r.title,
       requiredSkillIds: Array.isArray(r.required_skill_ids)
@@ -455,7 +453,6 @@ export class DedupService {
   ): Promise<VacancyForResolve | null> {
     const res = await this.db.execute<{
       id: string;
-      source_id: string;
       published_at: Date;
       embedding: string;
       role_node_id: string | null;
@@ -469,7 +466,6 @@ export class DedupService {
     }>(sql`
       SELECT
         v.id,
-        v.source_id,
         v.published_at,
         v.embedding::text AS embedding,
         v.role_node_id,
@@ -487,7 +483,6 @@ export class DedupService {
     if (!r) return null;
     return {
       id: r.id,
-      sourceId: r.source_id,
       publishedAt: toDate(r.published_at),
       embedding: parseVectorText(r.embedding),
       roleNodeId: r.role_node_id,
