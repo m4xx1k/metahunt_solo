@@ -64,7 +64,7 @@ describe("BamlVacancyExtractor", () => {
   }
 
   it("passes alphabetised canonical roles + domains + skills to BAML and returns usage meta", async () => {
-    process.env.OPENAI_MODEL = "gpt-5.4-mini";
+    process.env.DEEPSEEK_MODEL = "deepseek-v4-flash";
     const { extractor } = await bootstrap();
     extractVacancy.mockResolvedValue(sampleVacancy);
 
@@ -77,7 +77,7 @@ describe("BamlVacancyExtractor", () => {
       in: 0,
       out: 0,
       cached: 0,
-      model: "gpt-5.4-mini",
+      model: "deepseek-v4-flash",
     });
 
     expect(extractVacancy).toHaveBeenCalledTimes(1);

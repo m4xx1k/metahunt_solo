@@ -132,7 +132,9 @@ class ExtractedVacancy {
     Seniority level inferred from title or requirements.
     Rules:
       1. If the title contains Junior / Middle / Senior / Lead / Architect /
-         "Head of", the TITLE wins over the body text.
+         "Head of", the TITLE wins over the body text — even when the body
+         contradicts it. E.g. title "Middle QA" with body "5+ years, mentors
+         the team" → MIDDLE, not SENIOR.
       2. "Architect" → PRINCIPAL.
       3. "Head of" / "VP" → C_LEVEL or LEAD depending on context.
       4. If not explicit and cannot be inferred from years of experience → null.
@@ -172,7 +174,8 @@ class ExtractedVacancy {
 
   employmentType EmploymentType? @description(#"
     FULL_TIME | PART_TIME | CONTRACT | FREELANCE | INTERNSHIP.
-    null if not specified.
+    null UNLESS the posting EXPLICITLY names the employment type. FULL_TIME is
+    NOT a default — most postings never state it, so null is the common answer.
   "#)
 
   workFormat WorkFormat? @description(#"
@@ -186,7 +189,10 @@ class ExtractedVacancy {
   locations ExtractedLocation[] @description(#"
     Office or hub locations as {city, country}.
     Empty [] if fully remote with no specific office.
-    Include all mentioned cities.
+    Include ALL mentioned cities — one entry per city. Do NOT collapse a
+    multi-city posting to a single city.
+    E.g. "offices in Kyiv, Warsaw and Berlin" → three entries
+    (Kyiv/Ukraine, Warsaw/Poland, Berlin/Germany), not just Kyiv.
   "#)
 
   domain string? @description(#"
@@ -240,7 +246,7 @@ function ExtractVacancy(
   knownDomains: string,
   knownSkills: string,
 ) -> ExtractedVacancy {
-  client OpenAIClient
+  client DeepSeekClient
   prompt #"
     You extract structured data from job postings for the Ukrainian IT market.
     Read the posting and produce a value matching the schema below.

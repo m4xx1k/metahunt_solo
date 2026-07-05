@@ -15,29 +15,27 @@ import type { CandidateExtractorPort } from "./candidate-extractor.port";
 // name when one fits.
 @Injectable()
 export class BamlCandidateExtractor implements CandidateExtractorPort {
-  private cache: { roles: string; domains: string; expiresAt: number } | null =
-    null;
+  private cache: { roles: string; expiresAt: number } | null = null;
 
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async extract(text: string): Promise<ExtractedCandidate> {
-    const { roles, domains } = await this.loadTaxonomy();
+    const { roles } = await this.loadTaxonomy();
     const collector = new Collector("candidate-extract");
-    return b.ExtractCandidate(text, roles, domains, { collector });
+    return b.ExtractCandidate(text, roles, { collector });
   }
 
-  private async loadTaxonomy(): Promise<{ roles: string; domains: string }> {
+  private async loadTaxonomy(): Promise<{ roles: string }> {
     const now = Date.now();
     if (this.cache && this.cache.expiresAt > now) {
-      return { roles: this.cache.roles, domains: this.cache.domains };
+      return { roles: this.cache.roles };
     }
     const verified = await this.db
       .select({ type: schema.nodes.type, name: schema.nodes.canonicalName })
       .from(schema.nodes)
       .where(eq(schema.nodes.status, "VERIFIED"));
     const roles = joinNamesByType(verified, "ROLE");
-    const domains = joinNamesByType(verified, "DOMAIN");
-    this.cache = { roles, domains, expiresAt: now + 60_000 };
-    return { roles, domains };
+    this.cache = { roles, expiresAt: now + 60_000 };
+    return { roles };
   }
 }

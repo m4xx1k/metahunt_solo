@@ -154,7 +154,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async ExtractCandidate(
-        text: string,knownRoles: string,knownDomains: string,
+        text: string,knownRoles: string,
         __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ExtractedCandidate> {
           try {
@@ -168,7 +168,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (__options__.onTick) {
           const __stream__ = this.stream.ExtractCandidate(
-          text,knownRoles,knownDomains,
+          text,knownRoles,
           __baml_options__
           );
 
@@ -192,7 +192,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const __raw__ = await this.runtime.callFunction(
             "ExtractCandidate",
             {
-            "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+            "text": text,"knownRoles": knownRoles
             },
             this.ctxManager.cloneContext(),
             __options__.tb?.__tb(),
@@ -354,7 +354,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             ExtractCandidate(
-            text: string,knownRoles: string,knownDomains: string,
+            text: string,knownRoles: string,
             __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ExtractedCandidate, types.ExtractedCandidate>
               {
@@ -403,7 +403,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const __raw__ = this.runtime.streamFunction(
                 "ExtractCandidate",
                 {
-                "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+                "text": text,"knownRoles": knownRoles
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

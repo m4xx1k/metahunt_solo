@@ -73,9 +73,8 @@ class ExtractedCandidate {
 function ExtractCandidate(
   text: string,
   knownRoles: string,
-  knownDomains: string,
 ) -> ExtractedCandidate {
-  client OpenAIClient
+  client DeepSeekClient
   prompt #"
     You extract structured data from a software engineer's CV / resume for the
     Ukrainian IT market. Read the CV and produce a value matching the schema.
@@ -108,6 +107,5 @@ test cv_fullstack {
       tool-calling; Elasticsearch hybrid search. English: B2.
     "#
     knownRoles "Backend Developer, Frontend Developer, Full Stack Developer, DevOps Engineer, QA Engineer"
-    knownDomains "Fintech, E-commerce, HealthTech, GameDev"
   }
 }

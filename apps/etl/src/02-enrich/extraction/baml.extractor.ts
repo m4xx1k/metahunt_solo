@@ -103,10 +103,10 @@ function readUsage(collector: Collector): ExtractionUsage {
     cached: u.cachedInputTokens ?? 0,
     client: call?.clientName ?? "unknown",
     provider: call?.provider ?? "unknown",
-    // BAML's LlmCall exposes the BAML client name, not the underlying OpenAI
-    // model. The model is configured at the BAML client level via the
-    // OPENAI_MODEL env var (see baml_src/clients.baml), so read it directly.
-    model: process.env.OPENAI_MODEL ?? "unknown",
+    // BAML's LlmCall exposes the client name, not the underlying model.
+    // ExtractVacancy runs on DeepSeekClient (see baml_src/clients.baml), whose
+    // model comes from DEEPSEEK_MODEL; this string keys the extraction_cost view.
+    model: process.env.DEEPSEEK_MODEL ?? "unknown",
     ms: last?.timing?.durationMs ?? null,
   };
 }

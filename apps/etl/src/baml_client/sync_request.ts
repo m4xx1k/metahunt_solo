@@ -72,7 +72,7 @@ export class HttpRequest {
   }
   
   ExtractCandidate(
-      text: string,knownRoles: string,knownDomains: string,
+      text: string,knownRoles: string,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -91,7 +91,7 @@ export class HttpRequest {
       return this.runtime.buildRequestSync(
         "ExtractCandidate",
         {
-          "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+          "text": text,"knownRoles": knownRoles
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -177,7 +177,7 @@ export class HttpStreamRequest {
   }
   
   ExtractCandidate(
-      text: string,knownRoles: string,knownDomains: string,
+      text: string,knownRoles: string,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -196,7 +196,7 @@ export class HttpStreamRequest {
       return this.runtime.buildRequestSync(
         "ExtractCandidate",
         {
-          "text": text,"knownRoles": knownRoles,"knownDomains": knownDomains
+          "text": text,"knownRoles": knownRoles
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
