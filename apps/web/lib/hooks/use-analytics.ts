@@ -13,6 +13,8 @@ const ANALYTICS_EVENTS = {
   lensSwitch: "lens_switch",
   cvUpload: "cv_upload",
   loggedIn: "logged_in",
+  vacancyFeedback: "vacancy_feedback",
+  baitClick: "bait_click",
 } as const;
 
 export type Lens = "cold" | "warm";
@@ -65,6 +67,24 @@ export function useAnalytics() {
           });
         }
         posthog?.capture(ANALYTICS_EVENTS.loggedIn, { method: "telegram" });
+      },
+
+      // Up/down vote on a vacancy card (demand signal, gated by the
+      // feedback-buttons flag). Fired once per real sentiment change.
+      vacancyFeedback(vacancyId: string, sentiment: "up" | "down") {
+        posthog?.capture(ANALYTICS_EVENTS.vacancyFeedback, {
+          vacancy_id: vacancyId,
+          sentiment,
+        });
+      },
+
+      // Tapped a not-yet-built AI helper (cover letter / CV tuning) — measures
+      // demand before we build it. vacancyId is absent for the CV-level bait.
+      baitClick(feature: "cover_letter" | "tune_cv", vacancyId?: string) {
+        posthog?.capture(ANALYTICS_EVENTS.baitClick, {
+          feature,
+          vacancy_id: vacancyId,
+        });
       },
     }),
     [posthog],

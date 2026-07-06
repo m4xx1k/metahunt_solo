@@ -20,7 +20,13 @@ import type { VacancyDto } from "@/lib/api/vacancies";
 
 // `match` (warm lens only) colours the card's own skill chips by what the
 // candidate has; cold passes nothing → the card renders exactly as before.
-type Props = { vacancy: VacancyDto; match?: VacancyMatch };
+// `feedbackSlot` is an app-injected node (e.g. the warm-lens vote) rendered in
+// the footer flags row — the entity stays dumb and never imports the feature.
+type Props = {
+  vacancy: VacancyDto;
+  match?: VacancyMatch;
+  feedbackSlot?: React.ReactNode;
+};
 
 // Variant B: one reflowing card, ranked by what a candidate scans. Eight
 // meaning-groups, grouped by space, never by Label:Value. The role is the one
@@ -28,7 +34,7 @@ type Props = { vacancy: VacancyDto; match?: VacancyMatch };
 // green=salary, accent=seniority+required skills+years, all else neutral.
 // Top = main column (groups 1–5) + a narrow provenance rail (6); a full-width
 // footer carries flags (7, left) and posted/apply (8, right).
-export function VacancyCard({ vacancy: v, match }: Props) {
+export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
   const role = v.role?.name ?? "untitled role";
   const company = v.company?.name ?? null;
   const domain = v.domain?.name ?? null;
@@ -173,6 +179,7 @@ export function VacancyCard({ vacancy: v, match }: Props) {
               sourceCount={v.duplicateSourceCount ?? 1}
             />
           ) : null}
+          {feedbackSlot}
         </div>
         <div className="flex items-center gap-4">
           <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">

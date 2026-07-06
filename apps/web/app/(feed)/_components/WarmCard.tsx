@@ -2,6 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
+import { BaitButtons } from "@/features/vacancy-feedback/bait-buttons";
+import { VacancyFeedback } from "@/features/vacancy-feedback/vacancy-feedback";
 import type { FitTier, RankedVacancy } from "@/lib/api/ranking";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
@@ -89,9 +91,17 @@ export function WarmCard({
             </TooltipContent>
           </Tooltip>
         ) : null}
+
+        <div className="ml-auto">
+          <BaitButtons vacancyId={item.vacancy.id} />
+        </div>
       </div>
 
-      <VacancyCard vacancy={item.vacancy} match={{ haveSkillIds: candidateSkillIds }} />
+      <VacancyCard
+        vacancy={item.vacancy}
+        match={{ haveSkillIds: candidateSkillIds }}
+        feedbackSlot={<VacancyFeedback vacancyId={item.vacancy.id} />}
+      />
     </div>
   );
 }
