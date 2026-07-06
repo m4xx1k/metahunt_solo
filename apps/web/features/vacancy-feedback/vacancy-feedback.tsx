@@ -4,6 +4,7 @@ import { useCallback, useSyncExternalStore } from "react";
 
 import { useAnalytics } from "@/lib/hooks/use-analytics";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
 import { useFeatureFlag } from "./use-feature-flag";
 
@@ -65,7 +66,8 @@ export function VacancyFeedback({ vacancyId }: { vacancyId: string }) {
   const current = votes[vacancyId];
 
   // Mutually exclusive; same-vote clicks are a no-op so we count each sentiment
-  // change exactly once.
+  // change exactly once (the client-side spam guard — a public analytics key
+  // can't be truly rate-limited without a backend).
   const vote = useCallback(
     (sentiment: Sentiment) => {
       if (cache[vacancyId] === sentiment) return;
@@ -77,34 +79,45 @@ export function VacancyFeedback({ vacancyId }: { vacancyId: string }) {
 
   if (!on) return null;
 
-  const btn = "flex h-6 w-6 items-center justify-center border border-border-strong font-mono text-xs leading-none transition-colors";
+  const btn =
+    "flex h-6 w-6 items-center justify-center border border-border-strong font-mono text-xs leading-none transition-colors";
 
   return (
     <div className="flex items-center gap-1">
-      <button
-        type="button"
-        aria-label="Interested"
-        aria-pressed={current === "up"}
-        onClick={() => vote("up")}
-        className={cn(
-          btn,
-          current === "up" ? "bg-success text-bg" : "text-text-muted hover:text-text-primary",
-        )}
-      >
-        ▲
-      </button>
-      <button
-        type="button"
-        aria-label="Not interested"
-        aria-pressed={current === "down"}
-        onClick={() => vote("down")}
-        className={cn(
-          btn,
-          current === "down" ? "bg-danger text-bg" : "text-text-muted hover:text-text-primary",
-        )}
-      >
-        ▼
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="Good fit"
+            aria-pressed={current === "up"}
+            onClick={() => vote("up")}
+            className={cn(
+              btn,
+              current === "up" ? "bg-success text-bg" : "text-text-muted hover:text-text-primary",
+            )}
+          >
+            ▲
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Good fit — surface more roles like this</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="Not for me"
+            aria-pressed={current === "down"}
+            onClick={() => vote("down")}
+            className={cn(
+              btn,
+              current === "down" ? "bg-danger text-bg" : "text-text-muted hover:text-text-primary",
+            )}
+          >
+            ▼
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Not for me — show fewer like this</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
