@@ -55,10 +55,16 @@ export function useAnalytics() {
 
       // Telegram login succeeded. `tg:<id>` is already the canonical person
       // (backend telegramLinked), so identifying onto it merges this browser in
-      // without breaking the existing funnel; user_id rides as a property.
+      // without breaking the existing funnel; user_id + login_method ride as
+      // person properties so we can see how each user authenticated.
       loggedIn(telegramId: string | null, userId: string) {
-        if (telegramId) posthog?.identify(`tg:${telegramId}`, { user_id: userId });
-        posthog?.capture(ANALYTICS_EVENTS.loggedIn);
+        if (telegramId) {
+          posthog?.identify(`tg:${telegramId}`, {
+            user_id: userId,
+            login_method: "telegram",
+          });
+        }
+        posthog?.capture(ANALYTICS_EVENTS.loggedIn, { method: "telegram" });
       },
     }),
     [posthog],

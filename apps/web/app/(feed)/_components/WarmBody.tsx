@@ -57,7 +57,6 @@ export function WarmBody({
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[300px_minmax(0,1fr)_300px] xl:items-start">
       <div className={cn("flex flex-col gap-4", STICKY_RAIL)}>
-        {!isSample ? <SaveCvNudge /> : null}
         <WarmSubscribe
           candidateId={candidateId}
           filters={api.filters}
@@ -102,6 +101,7 @@ export function WarmBody({
 
       {data ? (
         <div className={cn("order-first flex flex-col gap-4 xl:order-none", STICKY_RAIL)}>
+          {!isSample ? <SaveCvNudge /> : null}
           <CvSelect activeId={candidateId} onPick={onPickCv} />
           <CandidateProfile
             title={profileTitle}
