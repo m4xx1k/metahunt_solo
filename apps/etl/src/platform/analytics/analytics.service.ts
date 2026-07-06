@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PostHog } from "posthog-node";
@@ -79,12 +81,21 @@ export class AnalyticsService implements OnModuleDestroy {
     this.capture(`tg:${chatId}`, ANALYTICS_EVENTS.digestSent, props);
   }
 
-  /** Apply link in a digest was tapped (server-side: the `/go/:id` redirect).
-   * Keyed on the referring subscription uuid, which the alias has already
-   * folded into the person — so the click lands on the right human. */
-  applyClicked(subscriptionUuid: string, vacancyId: string): void {
-    this.capture(subscriptionUuid, ANALYTICS_EVENTS.digestLinkClicked, {
+  /** Apply link tapped via the `/go/:id` redirect. A `?s=` digest tap stays on
+   * the historical `digest_link_clicked` event (keyed on that uuid the alias has
+   * folded into the person) so the live funnel is untouched. An anonymous web tap
+   * emits `apply_clicked` with `$process_person_profile: false` — every apply is
+   * counted without minting a throwaway person per click. */
+  applyClicked(vacancyId: string, subscriptionUuid?: string): void {
+    if (subscriptionUuid) {
+      this.capture(subscriptionUuid, ANALYTICS_EVENTS.digestLinkClicked, {
+        vacancyId,
+      });
+      return;
+    }
+    this.capture(randomUUID(), ANALYTICS_EVENTS.applyClicked, {
       vacancyId,
+      $process_person_profile: false,
     });
   }
 

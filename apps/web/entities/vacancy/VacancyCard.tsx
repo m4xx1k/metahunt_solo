@@ -15,6 +15,7 @@ import {
   formatSalary,
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
+import { apiBase } from "@/lib/api/client";
 import type { VacancyDto } from "@/lib/api/vacancies";
 
 // `match` (warm lens only) colours the card's own skill chips by what the
@@ -178,8 +179,10 @@ export function VacancyCard({ vacancy: v, match }: Props) {
             posted {formatRelative(v.publishedAt)}
           </span>
           {v.link ? (
+            // Route through our `/go/:id` redirect (not straight to source) so
+            // every apply tap passes through metahunt and gets logged.
             <a
-              href={v.link}
+              href={`${apiBase()}/go/${v.id}`}
               target="_blank"
               rel="noreferrer noopener"
               className="font-mono text-sm text-accent hover:underline"
