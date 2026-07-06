@@ -6,6 +6,6 @@ export const ANALYTICS_EVENTS = {
   subscriptionCreated: "subscription_created",
   telegramLinked: "telegram_linked",
   digestSent: "digest_sent",
-  digestLinkClicked: "digest_link_clicked",
+  applyClicked: "apply_clicked",
   unsubscribed: "unsubscribed",
 } as const;
