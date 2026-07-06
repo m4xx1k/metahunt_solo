@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/ui";
+import { cn } from "@/lib/utils";
 import { authApi, type TelegramAuthPayload } from "@/lib/api/auth";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
@@ -51,10 +52,16 @@ function loadWidget(): Promise<void> {
   });
 }
 
-// House-styled trigger (not Telegram's blue iframe button) that opens the
-// Telegram auth popup, then trades the payload for our session via /auth/telegram
-// and claims any anonymous CVs held in localStorage.
-export function TelegramLoginButton({ onDone }: { onDone?: () => void }) {
+// House-styled trigger (blue ui-kit accent, not Telegram's iframe button) that
+// opens the Telegram auth popup on click, then trades the payload for our
+// session via /auth/telegram and claims any anonymous CVs held in localStorage.
+export function TelegramLoginButton({
+  onDone,
+  className,
+}: {
+  onDone?: () => void;
+  className?: string;
+}) {
   const { login } = useSession();
   const saved = useSaved();
   const analytics = useAnalytics();
@@ -104,7 +111,7 @@ export function TelegramLoginButton({ onDone }: { onDone?: () => void }) {
       size="sm"
       onClick={handleClick}
       disabled={busy}
-      className="w-full"
+      className={cn("bg-accent-secondary hover:bg-accent-secondary", className)}
     >
       {busy ? "opening telegram…" : "log in with telegram →"}
     </Button>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/ui";
 import { TelegramLoginButton } from "@/features/auth/telegram-login-button";
 import { useSession } from "@/features/auth/use-session";
 import { MyCvPanel } from "./_components/MyCvPanel";
@@ -9,7 +12,8 @@ import { SubscriptionList } from "./_components/SubscriptionList";
 // localStorage (Bearer) — SSR has no token. Guards inline: prompt to log in when
 // there's no session rather than hard-redirecting.
 export default function MePage() {
-  const { isLoggedIn, isLoading } = useSession();
+  const { isLoggedIn, isLoading, user, logout } = useSession();
+  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -35,6 +39,21 @@ export default function MePage() {
 
   return (
     <div className="flex flex-col gap-12">
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+          {user?.username ? `@${user.username}` : "logged in"}
+        </span>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            void logout();
+            router.replace("/");
+          }}
+        >
+          log out
+        </Button>
+      </div>
       <MyCvPanel />
       <SubscriptionList />
     </div>

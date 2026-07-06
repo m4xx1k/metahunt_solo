@@ -7,7 +7,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 
 import { Header, type NavItem } from "@/app/_components/Header";
 import { Footer } from "@/app/_components/Footer";
-import { AccountMenu } from "@/features/auth/account-menu";
+import { HeaderAuth } from "@/features/auth/header-auth";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
@@ -100,7 +100,7 @@ export default async function FeedPage({
 
   return (
     <>
-      <Header links={feedNav} cta={<AccountMenu />} />
+      <Header links={feedNav} cta={<HeaderAuth />} />
       <main
         className="flex min-h-screen flex-col bg-bg"
         style={{

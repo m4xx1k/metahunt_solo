@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
-import { Logo } from "@/ui";
+import { usePathname, useRouter } from "next/navigation";
+import { Button, Logo } from "@/ui";
 import { cn } from "@/lib/utils";
 import { pad2 } from "@/lib/format";
+import { useSession } from "@/features/auth/use-session";
 import { RefreshButton } from "./RefreshButton";
 
 type NavItem = {
@@ -62,6 +62,8 @@ export function Sidebar({
   taxonomyQueueCount?: number;
 }) {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
+  const { user, logout } = useSession();
   const [open, setOpen] = useState(false);
   const closeMobile = () => setOpen(false);
 
@@ -160,11 +162,20 @@ export function Sidebar({
             станом на {formatTime(asOf)}
           </span>
           <RefreshButton />
-          <div className="flex items-center gap-2">
-            <UserButton />
+          <div className="flex flex-col gap-2">
             <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-              оператор
+              {user?.username ? `@${user.username}` : "оператор"}
             </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void logout();
+                router.replace("/");
+              }}
+            >
+              вийти
+            </Button>
           </div>
           <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
             {VERSION_LABEL}
