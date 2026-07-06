@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 // "machine learning").
 const TONES = {
   required: "border-accent text-accent",
-  optional: "border-border text-text-secondary",
+  optional: "border-border-strong text-text-secondary",
   have: "border-success text-success",
   missing: "border-danger text-danger",
   bonus: "border-border text-text-muted",
@@ -24,12 +24,14 @@ export function SkillChip({
   compact = false,
   hash = false,
   glyph = false,
+  dotted = false,
 }: {
   name: string;
   tone: SkillTone;
   compact?: boolean;
   hash?: boolean;
   glyph?: boolean;
+  dotted?: boolean;
 }) {
   const mark = glyph ? GLYPHS[tone] : undefined;
   return (
@@ -37,6 +39,7 @@ export function SkillChip({
       className={cn(
         "border font-mono",
         compact ? "px-1.5 py-[1px] text-2xs" : "px-2 py-[2px] text-xs",
+        dotted && "border-dotted",
         TONES[tone],
       )}
     >
