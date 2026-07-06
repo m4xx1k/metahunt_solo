@@ -1,8 +1,15 @@
 import { Test } from "@nestjs/testing";
 
+import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { RolesGuard } from "../../platform/auth/roles.guard";
 import { RssBackfillService } from "./rss-backfill.service";
 import { RssIngestService } from "./rss-ingest.service";
 import { RssController } from "./rss.controller";
+
+// The @AdminOnly() mutations are gated by these guards; auth is exercised
+// separately (telegram-verify.spec + e2e). Stub them so this suite tests only
+// the controller's parsing/delegation logic.
+const allow = { canActivate: () => true };
 
 describe("RssController", () => {
   const ingestAll = jest.fn();
@@ -28,7 +35,12 @@ describe("RssController", () => {
           useValue: { extractMissing },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(allow)
+      .overrideGuard(RolesGuard)
+      .useValue(allow)
+      .compile();
     controller = moduleRef.get(RssController);
   });
 

@@ -4,6 +4,15 @@
 // wire types + endpoint paths. (Taxonomy mutations keep their own typed
 // error path — see TaxonomyApiError.)
 
+import { getToken } from "./auth-token";
+
+// Attach the session JWT when present (client-side only — server renders have
+// no token, which is correct: authed calls run in the browser).
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function apiBase(): string {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) {
@@ -39,7 +48,11 @@ export function buildQs(params?: object): string {
 }
 
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${apiBase()}${path}`, init ?? { cache: "no-store" });
+  const base = init ?? { cache: "no-store" };
+  const res = await fetch(`${apiBase()}${path}`, {
+    ...base,
+    headers: { ...authHeaders(), ...(base.headers ?? {}) },
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`api ${res.status} ${path}: ${body}`);
@@ -47,11 +60,15 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+async function apiWrite<T>(
+  method: "POST" | "PATCH" | "DELETE",
+  path: string,
+  body?: unknown,
+): Promise<T> {
   const res = await fetch(`${apiBase()}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    method,
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -59,3 +76,12 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   }
   return (await res.json()) as T;
 }
+
+export const apiPost = <T>(path: string, body: unknown): Promise<T> =>
+  apiWrite<T>("POST", path, body);
+
+export const apiPatch = <T>(path: string, body: unknown): Promise<T> =>
+  apiWrite<T>("PATCH", path, body);
+
+export const apiDelete = <T>(path: string): Promise<T> =>
+  apiWrite<T>("DELETE", path);

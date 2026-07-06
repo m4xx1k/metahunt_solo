@@ -12,6 +12,7 @@ const ANALYTICS_EVENTS = {
   subscribeClicked: "subscribe_clicked",
   lensSwitch: "lens_switch",
   cvUpload: "cv_upload",
+  loggedIn: "logged_in",
 } as const;
 
 export type Lens = "cold" | "warm";
@@ -50,6 +51,14 @@ export function useAnalytics() {
       // NOT sent as a property.
       cvUpload(reused: boolean) {
         posthog?.capture(ANALYTICS_EVENTS.cvUpload, { reused });
+      },
+
+      // Telegram login succeeded. `tg:<id>` is already the canonical person
+      // (backend telegramLinked), so identifying onto it merges this browser in
+      // without breaking the existing funnel; user_id rides as a property.
+      loggedIn(telegramId: string | null, userId: string) {
+        if (telegramId) posthog?.identify(`tg:${telegramId}`, { user_id: userId });
+        posthog?.capture(ANALYTICS_EVENTS.loggedIn);
       },
     }),
     [posthog],

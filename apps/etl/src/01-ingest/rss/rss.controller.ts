@@ -6,6 +6,7 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { AdminOnly } from "../../platform/auth/decorators/admin-only.decorator";
 import { RssBackfillService } from "./rss-backfill.service";
 import { RssIngestService } from "./rss-ingest.service";
 
@@ -33,6 +34,7 @@ export class RssController {
    * counts; bound the work via `?limit=` to avoid HTTP timeouts.
    */
   @Post("extract-missing")
+  @AdminOnly()
   async extractMissing(
     @Query("limit") rawLimit?: string,
   ): Promise<{ attempted: number; succeeded: number; failed: number }> {

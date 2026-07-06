@@ -1,10 +1,16 @@
 import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { RolesGuard } from "../../platform/auth/roles.guard";
 import { TaxonomyController } from "./taxonomy.controller";
 import { TaxonomyService } from "./taxonomy.service";
 
 const NODE_ID = "11111111-1111-1111-1111-111111111111";
+
+// The mutation routes are @AdminOnly(); stub the guards so this suite tests only
+// controller logic (auth is covered by telegram-verify.spec + e2e).
+const allow = { canActivate: () => true };
 
 describe("TaxonomyController", () => {
   const listNodes = jest.fn();
@@ -24,7 +30,12 @@ describe("TaxonomyController", () => {
           useValue: { listNodes, renameNode, setStatus },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(allow)
+      .overrideGuard(RolesGuard)
+      .useValue(allow)
+      .compile();
     controller = moduleRef.get(TaxonomyController);
   });
 

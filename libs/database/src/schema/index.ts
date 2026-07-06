@@ -14,5 +14,7 @@ export * from './node-skill-cooc';
 export * from './candidates';
 export * from './unique-vacancies';
 export * from './users';
+export * from './auth-identities';
+export * from './user-cvs';
 export * from './subscriptions';
 export * from './sent-notifications';

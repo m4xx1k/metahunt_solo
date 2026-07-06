@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { AuthModule } from "../../platform/auth/auth.module";
 import { ExtractionModule } from "../../02-enrich/extraction/extraction.module";
 import { StorageModule } from "../../platform/storage/storage.module";
 import { RSS_ACTIVITIES } from "./activities";
@@ -14,7 +15,7 @@ import { RssController } from "./rss.controller";
 // container can resolve them when the worker instantiates them and when
 // services like RssBackfillService inject them directly.
 @Module({
-  imports: [StorageModule, ExtractionModule],
+  imports: [StorageModule, ExtractionModule, AuthModule],
   providers: [
     RssParserService,
     RssSchedulerService,
