@@ -81,15 +81,14 @@ export class AnalyticsService implements OnModuleDestroy {
     this.capture(`tg:${chatId}`, ANALYTICS_EVENTS.digestSent, props);
   }
 
-  /** Apply link tapped via the `/go/:id` redirect — on either surface (a web
-   * vacancy card or a Telegram digest tap, which can't run JS). Attributed to the
-   * referring subscription when `?s=` was present, keyed on that uuid which the
-   * alias has already folded into the person. Anonymous otherwise (web taps carry
-   * no subscription): logged with `$process_person_profile: false` so every apply
-   * is counted without minting a throwaway person per click. */
+  /** Apply link tapped via the `/go/:id` redirect. A `?s=` digest tap stays on
+   * the historical `digest_link_clicked` event (keyed on that uuid the alias has
+   * folded into the person) so the live funnel is untouched. An anonymous web tap
+   * emits `apply_clicked` with `$process_person_profile: false` — every apply is
+   * counted without minting a throwaway person per click. */
   applyClicked(vacancyId: string, subscriptionUuid?: string): void {
     if (subscriptionUuid) {
-      this.capture(subscriptionUuid, ANALYTICS_EVENTS.applyClicked, {
+      this.capture(subscriptionUuid, ANALYTICS_EVENTS.digestLinkClicked, {
         vacancyId,
       });
       return;
