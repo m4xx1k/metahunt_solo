@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { cn, STICKY_RAIL } from "@/lib/utils";
+import { SaveCvNudge } from "@/features/auth/save-cv-nudge";
 import { CandidateProfile } from "@/features/cv-match/CandidateProfile";
 import { SkillRecommendations } from "@/features/cv-match/SkillRecommendations";
 import { MatchFilters } from "./MatchFilters";
@@ -100,6 +101,7 @@ export function WarmBody({
 
       {data ? (
         <div className={cn("order-first flex flex-col gap-4 xl:order-none", STICKY_RAIL)}>
+          {!isSample ? <SaveCvNudge /> : null}
           <CvSelect activeId={candidateId} onPick={onPickCv} />
           <CandidateProfile
             title={profileTitle}

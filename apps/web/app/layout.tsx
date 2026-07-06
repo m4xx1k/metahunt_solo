@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AppToaster } from "@/app/_components/AppToaster";
@@ -46,16 +45,14 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-full flex flex-col bg-bg text-text-primary"
       >
-        <ClerkProvider afterSignOutUrl="/">
-          <PostHogProvider>
-            <Providers>
-              <VercelAnalytics>
-              {children}
-              </VercelAnalytics>
-              <AppToaster />
-            </Providers>
-          </PostHogProvider>
-        </ClerkProvider>
+        <PostHogProvider>
+          <Providers>
+            <VercelAnalytics>
+            {children}
+            </VercelAnalytics>
+            <AppToaster />
+          </Providers>
+        </PostHogProvider>
       </body>
     </html>
   );

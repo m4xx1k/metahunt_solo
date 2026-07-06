@@ -7,7 +7,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 
 import { Header, type NavItem } from "@/app/_components/Header";
 import { Footer } from "@/app/_components/Footer";
-import { AccountMenu } from "@/features/auth/account-menu";
+import { HeaderAuth } from "@/features/auth/header-auth";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { facetsApi } from "@/lib/api/facets";
@@ -100,7 +100,7 @@ export default async function FeedPage({
 
   return (
     <>
-      <Header links={feedNav} cta={<AccountMenu />} />
+      <Header links={feedNav} cta={<HeaderAuth />} />
       <main
         className="flex min-h-screen flex-col bg-bg"
         style={{
@@ -114,7 +114,7 @@ export default async function FeedPage({
           showPipeline={!trackSlug}
           matchCta={{ label: "Upload your CV", event: "feed:upload-cv" }}
         />
-        <div className="mx-auto w-full max-w-7xl px-6 pb-24 sm:pb-20 lg:px-12">
+        <div className="mx-auto w-full max-w-[1536px] px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <FeedLensShell
               aggregates={aggregates}
