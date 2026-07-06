@@ -6,6 +6,7 @@ import { DatabaseModule } from "@metahunt/database";
 import { AppController } from "./app.controller";
 import { validateEnv } from "./platform/config/env.validation";
 import { AnalyticsModule } from "./platform/analytics/analytics.module";
+import { AuthModule } from "./platform/auth/auth.module";
 import { DedupModule } from "./02-enrich/dedup/dedup.module";
 import { ExtractionCostModule } from "./02-enrich/extraction-cost/extraction-cost.module";
 import { HealthController } from "./platform/health/health.controller";
@@ -22,6 +23,7 @@ import { TemporalInfraModule } from "./platform/temporal/temporal.module";
 import { TracksModule } from "./03-discovery/tracks/tracks.module";
 import { UsersModule } from "./04-notify/users/users.module";
 import { TelegramModule } from "./04-notify/telegram/telegram.module";
+import { AccountModule } from "./account/account.module";
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { TelegramModule } from "./04-notify/telegram/telegram.module";
     ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 300 }]),
     DatabaseModule.forRoot(),
     AnalyticsModule,
+    AuthModule,
     TemporalInfraModule,
     StorageModule,
     RssModule,
@@ -52,6 +55,7 @@ import { TelegramModule } from "./04-notify/telegram/telegram.module";
     ExtractionCostModule,
     UsersModule,
     TelegramModule,
+    AccountModule,
   ],
   controllers: [AppController, HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

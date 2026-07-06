@@ -147,6 +147,18 @@ export function validateEnv(config: RawEnv): RawEnv {
   const posthogHost = asString(config.POSTHOG_HOST) ?? "https://eu.i.posthog.com";
   assertUrl("POSTHOG_HOST", posthogHost);
 
+  // Session JWT signing secret. Required in production; a fixed insecure default
+  // keeps local/test/CI booting without ceremony (tokens never leave the machine).
+  const rawJwtSecret = asString(config.JWT_SECRET) ?? "";
+  if (nodeEnv === "production" && rawJwtSecret.length === 0) {
+    throw new Error("JWT_SECRET is required in production");
+  }
+  const jwtSecret =
+    rawJwtSecret.length > 0 ? rawJwtSecret : "dev-insecure-jwt-secret-change-me";
+
+  // CSV of Telegram user ids granted the 'admin' role at login. Empty = no admins.
+  const adminTelegramIds = asString(config.ADMIN_TELEGRAM_IDS) ?? "";
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -170,5 +182,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     WEB_BASE_URL: webBaseUrl,
     POSTHOG_API_KEY: posthogApiKey,
     POSTHOG_HOST: posthogHost,
+    JWT_SECRET: jwtSecret,
+    ADMIN_TELEGRAM_IDS: adminTelegramIds,
   };
 }

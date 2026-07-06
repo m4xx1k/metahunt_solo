@@ -11,6 +11,7 @@ import {
 
 import type { NodeType } from "@metahunt/database";
 
+import { AdminOnly } from "../../platform/auth/decorators/admin-only.decorator";
 import {
   parseLimit,
   parsePage,
@@ -93,18 +94,21 @@ export class TaxonomyController {
   }
 
   @Patch("nodes/:id/verify")
+  @AdminOnly()
   verifyNode(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.setStatus(id, "VERIFIED");
   }
 
   @Patch("nodes/:id/hide")
+  @AdminOnly()
   hideNode(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.setStatus(id, "HIDDEN");
   }
 
   @Patch("nodes/:id/rename")
+  @AdminOnly()
   renameNode(
     @Param("id") id: string,
     @Body() body: { name?: unknown } | undefined,
@@ -118,6 +122,7 @@ export class TaxonomyController {
   }
 
   @Post("nodes/:id/merge-into/:targetId")
+  @AdminOnly()
   mergeNode(
     @Param("id") id: string,
     @Param("targetId") targetId: string,
