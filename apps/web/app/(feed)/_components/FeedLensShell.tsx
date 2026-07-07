@@ -169,7 +169,10 @@ export function FeedLensShell({
         }}
         className={cn(
           // Fixed thumb-bar at the bottom on mobile; a static top bar from sm up.
-          "z-40 flex items-center gap-3 border-t px-3 py-2.5 transition-colors",
+          // z-40 only matters for the mobile fixed bar; as a static flex item on
+          // sm+ the z-index is still honoured, so drop below the sticky header
+          // (z-40) or it paints over the header on scroll.
+          "z-40 sm:z-30 flex items-center gap-3 border-t px-3 py-2.5 transition-colors",
           "fixed inset-x-0 bottom-0 sm:static sm:border sm:scroll-mt-24",
           dragging ? "border-accent bg-accent/5" : "border-border bg-bg-card",
         )}
