@@ -16,7 +16,6 @@ const JSON_LINES: { key: string; value: string; str?: boolean }[] = [
   { key: "salary", value: '{ "min": 6000, "max": 8000 }' },
   { key: "workFormat", value: '"remote"', str: true },
   { key: "hasTestAssignment", value: "true" },
-  { key: "hasReservation", value: "true" },
 ];
 
 export function ParseSection() {
