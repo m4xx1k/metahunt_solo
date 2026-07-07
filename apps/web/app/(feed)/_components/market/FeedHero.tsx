@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import { Tag, Divider } from "@/ui";
 import { TotalCounter } from "./TotalCounter";
-import { Pipeline } from "../pipeline/Pipeline";
+import { HowItWorks } from "../how/HowItWorks";
 
 // Intro / hero for the feed. One cohesive block (no separate background band):
 // the headline + live counter say *what this is*, and the 3-stage pipeline
@@ -29,6 +31,12 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Prop
             We pull from every source, structure it with AI, and match it to
             your CV.
           </p>
+          <Link
+            href="/how-it-works"
+            className="w-fit font-mono text-xs uppercase tracking-wider text-text-muted underline-offset-4 transition-colors hover:text-accent hover:underline"
+          >
+            &gt; how it works
+          </Link>
         </div>
         <TotalCounter
           total={a.total}
@@ -38,9 +46,11 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Prop
       </div>
 
       {showPipeline && (
-        <div className="flex flex-col items-center gap-6">
-          <Tag>{"> how it works"}</Tag>
-          <Pipeline aggregates={a} matchCta={matchCta} />
+        <div className="flex flex-col gap-6">
+          <div className="flex justify-center">
+            <Tag>{"> how it works"}</Tag>
+          </div>
+          <HowItWorks aggregates={a} matchCta={matchCta} />
         </div>
       )}
 

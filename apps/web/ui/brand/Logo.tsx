@@ -10,7 +10,7 @@ export function Logo({
 }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <Image src={'/logo.webp'} alt="logo" width={32} height={32} className='rounded-full animate-pulse' />
+      <Image src={'/logo.webp'} alt="logo" width={32} height={32} className='rounded-full' />
       <span className="font-display text-3xl font-black tracking-tight text-text-primary">
         <span className="text-accent">[</span>
         {label.toLowerCase()}

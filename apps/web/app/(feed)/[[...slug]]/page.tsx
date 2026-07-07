@@ -3,9 +3,10 @@
 // warm on first paint. The lens is derived from ?cv inside <FeedLensShell>.
 
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 
-import { Header, type NavItem } from "@/app/_components/Header";
+import { Header } from "@/app/_components/Header";
 import { Footer } from "@/app/_components/Footer";
 import { HeaderAuth } from "@/features/auth/header-auth";
 import { aggregatesApi } from "@/lib/api/aggregates";
@@ -22,10 +23,18 @@ import { FeedLensShell } from "../_components/FeedLensShell";
 
 export const dynamic = "force-dynamic";
 
-const feedNav: NavItem[] = [
-  { label: "monitoring", href: "/dashboard" },
-  { label: "about", href: "/welcome" },
-];
+// force-dynamic makes every fetch no-store, so these hourly-changing catalogs hit
+// the ETL each request. Cache them in the Data Cache (the list + ?cv seed below
+// stay live, per-request).
+const CATALOG_TTL = 3600;
+const getAggregates = unstable_cache(() => aggregatesApi.get(), ["feed:aggregates"], { revalidate: CATALOG_TTL });
+const getTracks = unstable_cache(() => tracksApi.get(), ["feed:tracks"], { revalidate: CATALOG_TTL });
+const getRoleCatalog = unstable_cache(() => facetsApi.roles(), ["feed:facets-roles"], { revalidate: CATALOG_TTL });
+const getSkillCatalog = unstable_cache(() => facetsApi.skills(), ["feed:facets-skills"], { revalidate: CATALOG_TTL });
+const getDomainCatalog = unstable_cache(() => facetsApi.domains(), ["feed:facets-domains"], { revalidate: CATALOG_TTL });
+const getSamples = unstable_cache(() => cvApi.samples(), ["feed:cv-samples"], { revalidate: CATALOG_TTL });
+const getTrackPreset = unstable_cache((s: string) => tracksApi.preset(s), ["feed:track-preset"], { revalidate: CATALOG_TTL });
+const getTrackSkills = unstable_cache((s: string) => tracksApi.skills(s), ["feed:track-skills"], { revalidate: CATALOG_TTL });
 
 export default async function FeedPage({
   params,
@@ -40,8 +49,8 @@ export default async function FeedPage({
   const trackSlug = slug?.[0];
 
   const [aggregates, { tracks }] = await Promise.all([
-    aggregatesApi.get(),
-    tracksApi.get(),
+    getAggregates(),
+    getTracks(),
   ]);
 
   if (trackSlug && !tracks.some((t) => t.slug === trackSlug)) {
@@ -57,13 +66,13 @@ export default async function FeedPage({
     samples,
   ] = await Promise.all([
     trackSlug
-      ? tracksApi.preset(trackSlug)
+      ? getTrackPreset(trackSlug)
       : Promise.resolve({ roles: [], skills: [] }),
-    trackSlug ? tracksApi.skills(trackSlug) : Promise.resolve({ skills: [] }),
-    facetsApi.roles(),
-    facetsApi.skills(),
-    facetsApi.domains().catch(() => ({ domains: [] })),
-    cvApi.samples().catch(() => []),
+    trackSlug ? getTrackSkills(trackSlug) : Promise.resolve({ skills: [] }),
+    getRoleCatalog(),
+    getSkillCatalog(),
+    getDomainCatalog().catch(() => ({ domains: [] })),
+    getSamples().catch(() => []),
   ]);
 
   const domainOptions = domainCatalog.map((d) => ({
@@ -100,7 +109,7 @@ export default async function FeedPage({
 
   return (
     <>
-      <Header links={feedNav} cta={<HeaderAuth />} />
+      <Header cta={<HeaderAuth />} />
       <main
         className="flex min-h-screen flex-col bg-bg"
         style={{

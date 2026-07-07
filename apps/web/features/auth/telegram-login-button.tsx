@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { Button } from "@/ui";
 import { cn } from "@/lib/utils";
@@ -111,9 +112,11 @@ export function TelegramLoginButton({
       size="sm"
       onClick={handleClick}
       disabled={busy}
-      className={cn("bg-accent-secondary hover:bg-accent-secondary", className)}
+      aria-label="Log in with Telegram"
+      className={cn("gap-1.5 bg-accent-secondary hover:bg-accent-secondary", className)}
     >
-      {busy ? "opening telegram…" : "log in with telegram →"}
+      <PaperPlaneTiltIcon weight="fill" className="h-3.5 w-3.5" aria-hidden />
+      {busy ? "opening…" : "log in"}
     </Button>
   );
 }
