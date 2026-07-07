@@ -9,9 +9,12 @@ export interface ParseSample {
 }
 
 // Stage 02: a raw posting types out, then the parsed fields pop in as badges.
+// Every badge is grounded in its own text — extraction is the point, so the demo
+// must never claim a field the posting doesn't state (e.g. reservation only where
+// «бронювання» actually appears, on a real office/hybrid role).
 export const PARSE_SAMPLES: ParseSample[] = [
   {
-    text: "Senior Full Stack JS Engineer. Product startup, remote. You own features end-to-end: Node.js, React, TypeScript, Postgres, AWS. $5–7k.",
+    text: "Senior Full-Stack Engineer at a remote-first product startup. Own features end to end — Node.js + React + TypeScript on Postgres, shipped to AWS. $5,000–7,000/mo.",
     badges: [
       { label: "Senior", tone: "sen" },
       { label: "Full-stack", tone: "role" },
@@ -25,21 +28,20 @@ export const PARSE_SAMPLES: ParseSample[] = [
     ],
   },
   {
-    text: "Шукаємо Senior Golang інженера. Go, PostgreSQL, Kafka; буде плюсом gRPC. Remote, вилка $6000–8000. Є тестове завдання.",
+    text: "Embedded-інженер у команду, що будує продукт для оборонки. Стек: C, C++, RTOS, STM32. Офіс у Києві, гібрид. Офіційне працевлаштування та бронювання з першого дня. Є тестове завдання.",
     badges: [
-      { label: "Senior", tone: "sen" },
-      { label: "Backend", tone: "role" },
-      { label: "Go", tone: "plain" },
-      { label: "PostgreSQL", tone: "plain" },
-      { label: "Kafka", tone: "plain" },
-      { label: "Remote", tone: "plain" },
-      { label: "$6–8k", tone: "money" },
+      { label: "Embedded", tone: "role" },
+      { label: "C", tone: "plain" },
+      { label: "C++", tone: "plain" },
+      { label: "RTOS", tone: "plain" },
+      { label: "STM32", tone: "plain" },
+      { label: "Hybrid", tone: "plain" },
       { label: "test task", tone: "plain" },
       { label: "reservation", tone: "reservation" },
     ],
   },
   {
-    text: "Data Engineer. Build the data platform: Python, Airflow, dbt, Snowflake. Nice to have: Spark. Remote EU, $6–8k.",
+    text: "Middle+ Data Engineer to build the data platform from scratch: Python, Airflow, dbt, Snowflake (Spark a plus). Remote across the EU, $6,000–8,000/mo.",
     badges: [
       { label: "Middle+", tone: "sen" },
       { label: "Data Eng", tone: "role" },
