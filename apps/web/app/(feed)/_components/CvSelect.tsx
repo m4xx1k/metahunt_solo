@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { useSaved } from "@/lib/hooks/use-saved";
+import { useMyCvs } from "../_hooks/use-my-cvs";
 
 // Absolute date + time, so two CVs with the same role label are still distinct.
 const formatUploadedAt = (ts: number) =>
@@ -24,7 +24,7 @@ export function CvSelect({
   activeId: string;
   onPick: (candidateId: string) => void;
 }) {
-  const { cvs } = useSaved();
+  const cvs = useMyCvs();
   const [open, setOpen] = useState(false);
 
   if (cvs.length === 0) return null;

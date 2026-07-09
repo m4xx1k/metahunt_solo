@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { FeedShell } from "@/app/(feed)/_components/FeedShell";
 import { cn } from "@/lib/utils";
 import { cvApi, type CvIngestResult, type SampleCandidate } from "@/lib/api/cv";
+import { meApi } from "@/lib/api/me";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
+import { useSession } from "@/features/auth/use-session";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
@@ -52,6 +55,8 @@ export function FeedLensShell({
   const { lens, cv, setCv, setTrack } = search;
   const analytics = useAnalytics();
   const saved = useSaved();
+  const { isLoggedIn } = useSession();
+  const qc = useQueryClient();
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -110,6 +115,17 @@ export function FeedLensShell({
           label: info.role ?? "Your CV",
           addedAt: Date.now(),
         });
+        // Logged in → persist to the account so the CV shows on every device,
+        // not just this browser. Best effort: on failure it stays in localStorage
+        // and gets claimed at next login.
+        if (isLoggedIn) {
+          try {
+            await meApi.claimCv(info.candidateId);
+            void qc.invalidateQueries({ queryKey: ["me", "cv"] });
+          } catch {
+            /* keep the upload flow green — local copy already saved */
+          }
+        }
         setCv(info.candidateId);
         scrollToControls();
       } catch (e) {
@@ -118,7 +134,7 @@ export function FeedLensShell({
         setUploading(false);
       }
     },
-    [analytics, saved, setCv, scrollToControls],
+    [analytics, saved, setCv, scrollToControls, isLoggedIn, qc],
   );
 
   const onPickCv = useCallback(

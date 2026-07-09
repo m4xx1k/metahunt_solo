@@ -38,6 +38,32 @@ export class MeService {
     return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
   }
 
+  // Link an already-ingested candidate to this user (upload-while-logged-in).
+  // Mirrors auth.claim(): unknown candidate is a no-op, dup (userId,candidateId)
+  // is swallowed, and it only becomes active if the user has no active CV yet.
+  async linkCv(userId: string, candidateId: string): Promise<void> {
+    const [cand] = await this.db
+      .select({ role: candidates.role })
+      .from(candidates)
+      .where(eq(candidates.id, candidateId));
+    if (!cand) return;
+
+    const [active] = await this.db
+      .select({ id: userCvs.id })
+      .from(userCvs)
+      .where(and(eq(userCvs.userId, userId), eq(userCvs.isActive, true)));
+
+    await this.db
+      .insert(userCvs)
+      .values({
+        userId,
+        candidateId,
+        label: cand.role ?? "CV",
+        isActive: !active,
+      })
+      .onConflictDoNothing();
+  }
+
   async deleteCv(userId: string, id: string): Promise<boolean> {
     const deleted = await this.db
       .delete(userCvs)
