@@ -2,7 +2,7 @@
 // Source of truth: apps/etl/src/account/me.contract.ts. All calls carry the
 // Bearer token via lib/api/client.ts and run client-side.
 
-import { apiDelete, apiGet, apiPatch } from "./client";
+import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
 
 export interface MeCv {
   id: string;
@@ -25,6 +25,9 @@ export interface MeSubscription {
 
 export const meApi = {
   listCvs: () => apiGet<MeCv[]>("/me/cv"),
+  // Persist an uploaded CV to the account (server derives the label).
+  claimCv: (candidateId: string) =>
+    apiPost<{ ok: true }>("/me/cv", { candidateId }),
   deleteCv: (id: string) => apiDelete<{ ok: true }>(`/me/cv/${id}`),
   listSubscriptions: () => apiGet<MeSubscription[]>("/me/subscriptions"),
   setSubscriptionActive: (id: string, isActive: boolean) =>

@@ -8,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   UseGuards,
 } from "@nestjs/common";
 
@@ -27,6 +28,17 @@ export class MeController {
   @Get("cv")
   listCvs(@CurrentUser() user: JwtUser): Promise<MeCv[]> {
     return this.me.listCvs(user.userId);
+  }
+
+  // Claim an anonymously-uploaded CV for the logged-in user so it persists to
+  // the account (cross-device), not just this browser's localStorage.
+  @Post("cv")
+  async claimCv(
+    @CurrentUser() user: JwtUser,
+    @Body("candidateId", ParseUUIDPipe) candidateId: string,
+  ): Promise<{ ok: true }> {
+    await this.me.linkCv(user.userId, candidateId);
+    return { ok: true };
   }
 
   @Delete("cv/:id")
