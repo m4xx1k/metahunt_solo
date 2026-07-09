@@ -25,24 +25,41 @@ describe("buildQs", () => {
 
 describe("apiBase", () => {
   const KEY = "NEXT_PUBLIC_API_URL";
+  const INTERNAL = "API_INTERNAL_URL";
   const original = process.env[KEY];
+  const originalInternal = process.env[INTERNAL];
+  const restore = (k: string, v: string | undefined) => {
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  };
   afterEach(() => {
-    if (original === undefined) delete process.env[KEY];
-    else process.env[KEY] = original;
+    restore(KEY, original);
+    restore(INTERNAL, originalInternal);
   });
 
   it("throws a helpful error when the base URL is unset", () => {
     delete process.env[KEY];
+    delete process.env[INTERNAL];
     expect(() => apiBase()).toThrow(/NEXT_PUBLIC_API_URL is not set/);
   });
 
   it("strips trailing slashes", () => {
+    delete process.env[INTERNAL];
     process.env[KEY] = "http://localhost:3000/";
     expect(apiBase()).toBe("http://localhost:3000");
   });
 
   it("returns the base unchanged when already clean", () => {
+    delete process.env[INTERNAL];
     process.env[KEY] = "http://localhost:3000";
     expect(apiBase()).toBe("http://localhost:3000");
+  });
+
+  // jest runs in node (no window) → the server branch, which prefers the
+  // internal URL so in-container SSR reaches etl over the docker network.
+  it("prefers API_INTERNAL_URL over the public URL server-side", () => {
+    process.env[KEY] = "http://localhost:3333";
+    process.env[INTERNAL] = "http://etl:3333/";
+    expect(apiBase()).toBe("http://etl:3333");
   });
 });

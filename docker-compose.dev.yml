@@ -1,0 +1,96 @@
+# Dev app services with live watch. Layered ON TOP of docker-compose.infra.yml
+# and always launched together (`pnpm dev:docker`), so both files form one
+# compose project sharing a default network — etl/web reach db/temporal/minio
+# by service name. Source is bind-mounted; node_modules live in named volumes
+# (never the host's) so pnpm symlinks + native bins stay container-native.
+# Only `etl` installs; `web` waits for it (shared volumes) then just runs next.
+# Setup + rationale: md/runbook/docker-dev.md.
+services:
+  etl:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: metahunt-etl-dev
+    working_dir: /app
+    command: sh -c "pnpm install --frozen-lockfile && pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl dev"
+    env_file: .env
+    environment:
+      # Reach infra by compose service name, not the host's localhost. NODE_ENV
+      # stays development (NOT local — that would pin temporal to localhost:7233
+      # and ignore the address below); empty api key = plaintext to the compose
+      # temporal.
+      NODE_ENV: development
+      DATABASE_URL: postgresql://metahunt:${POSTGRES_PASSWORD:-metahunt}@db:5432/metahunt_railway
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      TEMPORAL_API_KEY: ""
+      STORAGE_ENDPOINT: http://minio:9000
+      PORT: "3333"
+      # nest --watch under a bind mount on Docker Desktop can miss inotify events.
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "3333:3333"
+    volumes:
+      - .:/app
+      - metahunt-root-nm:/app/node_modules
+      - metahunt-etl-nm:/app/apps/etl/node_modules
+      - metahunt-web-nm:/app/apps/web/node_modules
+      - metahunt-db-nm:/app/libs/database/node_modules
+      # pnpm defaults its store to a repo-root dir; keep it in a volume so it
+      # doesn't get written onto the host bind mount.
+      - metahunt-pnpm-store:/app/.pnpm-store
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Ready once nest is listening — implies install + db build already ran, so
+      # web (sharing the node_modules volumes) can start without its own install.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('net').connect(3333,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: metahunt-web-dev
+    working_dir: /app
+    command: sh -c "pnpm --filter @metahunt/web dev"
+    environment:
+      # Browser (client fetches) hits etl via the host-published port; SSR inside
+      # this container hits it over the compose network (see lib/api/client.ts).
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+      API_INTERNAL_URL: http://etl:3333
+      NEXT_PUBLIC_TELEGRAM_BOT_ID: ${NEXT_PUBLIC_TELEGRAM_BOT_ID:-}
+      NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-}
+      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app
+      - metahunt-root-nm:/app/node_modules
+      - metahunt-etl-nm:/app/apps/etl/node_modules
+      - metahunt-web-nm:/app/apps/web/node_modules
+      - metahunt-db-nm:/app/libs/database/node_modules
+      # pnpm defaults its store to a repo-root dir; keep it in a volume so it
+      # doesn't get written onto the host bind mount.
+      - metahunt-pnpm-store:/app/.pnpm-store
+    depends_on:
+      etl:
+        condition: service_healthy
+
+volumes:
+  metahunt-root-nm:
+  metahunt-etl-nm:
+  metahunt-web-nm:
+  metahunt-db-nm:
+  metahunt-pnpm-store:

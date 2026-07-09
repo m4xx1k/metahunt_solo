@@ -1,18 +1,21 @@
 services:
   db:
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:pg18
     container_name: metahunt-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: metahunt
+      POSTGRES_DB: metahunt_railway
       POSTGRES_USER: metahunt
-      POSTGRES_PASSWORD: metahunt
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metahunt}
+      # PG18's image moved the default data dir under a version subdir; this
+      # (external) volume already holds the prod restore at .../18/docker.
+      PGDATA: /var/lib/postgresql/18/docker
     ports:
-      - "54322:5432"
+      - "54323:5432"
     volumes:
-      - metahunt-db-data:/var/lib/postgresql/data
+      - metahunt_railway_pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U metahunt -d metahunt"]
+      test: ["CMD-SHELL", "pg_isready -U metahunt -d metahunt_railway"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -54,7 +57,7 @@ services:
       - DB=postgres12
       - DB_PORT=5432
       - POSTGRES_USER=metahunt
-      - POSTGRES_PWD=metahunt
+      - POSTGRES_PWD=${POSTGRES_PASSWORD:-metahunt}
       - POSTGRES_SEEDS=db
     ports:
       - "7233:7233"
@@ -74,5 +77,8 @@ services:
       - temporal
 
 volumes:
-  metahunt-db-data:
+  # Created outside compose (manual prod restore); reused as-is so there's no
+  # data migration — see md/runbook/docker-dev.md.
+  metahunt_railway_pgdata:
+    external: true
   metahunt-minio-data:
