@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { XMLParser } from 'fast-xml-parser';
-import { createHash } from 'crypto';
-import { z } from 'zod';
-import { passesTechGate } from './utils/vacancy-filter';
+import { createHash } from "crypto";
+
+import { Injectable } from "@nestjs/common";
+
+import { XMLParser } from "fast-xml-parser";
+import { z } from "zod";
+
+import { passesTechGate } from "./utils/vacancy-filter";
 
 export const RawRssItem = z.object({
   title: z.string(),
@@ -24,7 +27,9 @@ export class RssParserService {
   });
 
   parseXml(xml: string): RawRssItem[] {
-    const parsed = this.parser.parse(xml);
+    const parsed = this.parser.parse(xml) as {
+      rss?: { channel?: { item?: unknown[] } };
+    };
     const items: unknown[] = parsed?.rss?.channel?.item ?? [];
     return items.flatMap((raw) => {
       const result = RawRssItem.safeParse(raw);
@@ -38,8 +43,8 @@ export class RssParserService {
 
   computeHash(item: RawRssItem): string {
     const publishedAt = new Date(item.pubDate).toISOString();
-    return createHash('sha256')
-      .update(item.title + (item.description ?? '') + publishedAt)
-      .digest('hex');
+    return createHash("sha256")
+      .update(item.title + (item.description ?? "") + publishedAt)
+      .digest("hex");
   }
 }

@@ -27,9 +27,7 @@ export class OpenAIEmbeddingsClient {
   constructor(config: ConfigService) {
     const key = config.get<string>("OPENAI_API_KEY") ?? "";
     if (key.length === 0) {
-      throw new Error(
-        "OPENAI_API_KEY is empty — required for the dedup embedding pipeline",
-      );
+      throw new Error("OPENAI_API_KEY is empty — required for the dedup embedding pipeline");
     }
     this.apiKey = key;
   }
@@ -43,13 +41,10 @@ export class OpenAIEmbeddingsClient {
    * SAME order as inputs. Caller is responsible for matching each
    * vector back to its vacancy.
    */
-  async embed(
-    inputs: string[],
-    batchSize: number = DEFAULT_BATCH_SIZE,
-  ): Promise<number[][]> {
+  async embed(inputs: string[], batchSize: number = DEFAULT_BATCH_SIZE): Promise<number[][]> {
     if (inputs.length === 0) return [];
 
-    const out: number[][] = new Array(inputs.length);
+    const out: number[][] = new Array<number[]>(inputs.length);
     for (let i = 0; i < inputs.length; i += batchSize) {
       const chunk = inputs.slice(i, i + batchSize);
       const vectors = await this.embedBatch(chunk);
@@ -83,15 +78,13 @@ export class OpenAIEmbeddingsClient {
             await sleep(backoffMs(attempt, res.headers.get("retry-after")));
             continue;
           }
-          throw new Error(
-            `OpenAI embeddings ${res.status}: ${body.slice(0, 500)}`,
-          );
+          throw new Error(`OpenAI embeddings ${res.status}: ${body.slice(0, 500)}`);
         }
 
         const json = (await res.json()) as OpenAIEmbeddingResponse;
         // The API guarantees data[].index matches input position, but
         // it's not guaranteed to be returned in order — sort defensively.
-        const ordered: number[][] = new Array(chunk.length);
+        const ordered: number[][] = new Array<number[]>(chunk.length);
         for (const item of json.data) {
           ordered[item.index] = item.embedding;
         }
@@ -100,9 +93,7 @@ export class OpenAIEmbeddingsClient {
         lastError = err;
         if (attempt >= MAX_RETRIES) break;
         // Network errors (fetch throws) — same backoff.
-        this.logger.warn(
-          `embed batch attempt ${attempt + 1} failed: ${(err as Error).message}`,
-        );
+        this.logger.warn(`embed batch attempt ${attempt + 1} failed: ${(err as Error).message}`);
         await sleep(backoffMs(attempt, null));
       }
     }

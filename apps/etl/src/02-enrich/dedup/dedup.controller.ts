@@ -6,10 +6,8 @@ import {
   parsePage,
   parsePageSize,
 } from "../../platform/shared/query-parsing";
-import type {
-  DedupConfidence,
-  UniqueVacanciesResponse,
-} from "./dedup.contract";
+
+import type { UniqueVacanciesResponse } from "./dedup.contract";
 import { DedupService } from "./dedup.service";
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -30,10 +28,7 @@ export class DedupController {
     return this.dedup.listGroups({
       crossSource: parseBool("crossSource", rawCrossSource),
       minSimilarity: parseSimilarity(rawMinSimilarity),
-      confidence: parseEnum("confidence", rawConfidence, CONFIDENCE_VALUES) as
-        | DedupConfidence
-        | "all"
-        | undefined,
+      confidence: parseEnum("confidence", rawConfidence, CONFIDENCE_VALUES),
       page: parsePage(rawPage),
       pageSize: parsePageSize(rawPageSize, { default: DEFAULT_PAGE_SIZE }),
     });
@@ -44,9 +39,7 @@ function parseSimilarity(raw: string | undefined): number | undefined {
   if (raw === undefined) return undefined;
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0 || n > 1) {
-    throw new BadRequestException(
-      `minSimilarity must be a number in [0, 1], got "${raw}"`,
-    );
+    throw new BadRequestException(`minSimilarity must be a number in [0, 1], got "${raw}"`);
   }
   return n;
 }
