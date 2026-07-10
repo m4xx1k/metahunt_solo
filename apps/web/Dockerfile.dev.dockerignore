@@ -1,0 +1,21 @@
+# Ignore file for apps/web/Dockerfile.dev (BuildKit prefers it over the repo-root
+# .dockerignore). Web is standalone, so keep apps/web + root manifests and drop
+# everything else — including apps/etl and libs — from the build context.
+**/node_modules
+**/dist
+**/.next
+**/coverage
+.git
+.pnpm-store
+.scratch
+.omc
+.claude
+.github
+apps/etl
+libs
+docs
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+**/.DS_Store

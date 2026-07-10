@@ -1,0 +1,72 @@
+# App services (etl + web) with live watch via `docker compose watch`: source
+# edits are synced into the containers and dependency changes trigger a rebuild
+# — no bind mount, so nothing is written back to the host. One baked dev image,
+# two commands. Requires the shared infra + its network first:
+#   docker compose -f compose.infra.yaml up -d   (or `pnpm db:up`)
+#   docker compose watch                         (or `pnpm dev:docker`)
+
+networks:
+  metahunt-infra:
+    name: metahunt-infra
+    external: true
+
+services:
+  etl:
+    build:
+      context: .
+      dockerfile: apps/etl/Dockerfile.dev
+    image: metahunt-etl-dev:latest
+    container_name: metahunt-etl-dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Reach infra by service name, not the host's localhost. NODE_ENV stays
+      # development (NOT local — that pins temporal to localhost:7233 and ignores
+      # the address); empty api key = plaintext to the compose temporal.
+      NODE_ENV: development
+      DATABASE_URL: postgresql://metahunt:${POSTGRES_PASSWORD:-metahunt}@db:5432/metahunt_railway
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      TEMPORAL_API_KEY: ""
+      STORAGE_ENDPOINT: http://minio:9000
+      PORT: "3333"
+    ports:
+      - "3333:3333"
+    networks: [metahunt-infra]
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/etl
+          target: /app/apps/etl
+          ignore: [node_modules/, dist/]
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    image: metahunt-web-dev:latest
+    container_name: metahunt-web-dev
+    restart: unless-stopped
+    depends_on:
+      - etl
+    env_file:
+      - ./apps/web/.env.local
+    environment:
+      # Browser (client fetches) hits etl via the host-published port; SSR inside
+      # this container hits it over the compose network (see lib/api/client.ts).
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+      API_INTERNAL_URL: http://etl:3333
+    ports:
+      - "4000:4000"
+    networks: [metahunt-infra]
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web
+          target: /app/apps/web
+          ignore: [node_modules/, .next/]
+        - action: rebuild
+          path: ./pnpm-lock.yaml

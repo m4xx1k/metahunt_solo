@@ -1,0 +1,23 @@
+# Dev image for @metahunt/web (Next.js). Standalone — no workspace deps — so it
+# carries only web's dependencies (next/react), no temporal/baml/nest/aws. Runs
+# as the non-root `node` user; `docker compose watch` syncs edits in. Build
+# context is the repo root (the pnpm workspace); this Dockerfile's sidecar
+# ignore file keeps apps/web (the repo-root .dockerignore excludes it).
+FROM node:22-slim
+
+RUN npm install -g pnpm@10 \
+ && mkdir -p /app && chown node:node /app
+
+USER node
+WORKDIR /app
+
+# Manifests only → cached install layer. Only web is copied, so the workspace
+# resolves to just web.
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json ./
+COPY --chown=node:node apps/web/package.json apps/web/package.json
+RUN pnpm install -r --frozen-lockfile
+
+COPY --chown=node:node . .
+
+ENV NODE_ENV=development
+CMD ["pnpm", "--filter", "@metahunt/web", "dev"]
