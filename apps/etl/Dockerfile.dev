@@ -27,4 +27,8 @@ COPY --chown=node:node . .
 RUN pnpm --filter @metahunt/database build
 
 ENV NODE_ENV=development
-CMD ["pnpm", "--filter", "@metahunt/etl", "dev"]
+# No in-container --watch: nest's watch orphans the app under a shell wrapper in
+# Docker (old process keeps port 3333 → EADDRINUSE). Instead build once and
+# `exec node` (so it's PID 1's direct child and dies cleanly on stop); compose
+# watch does a clean container restart on source changes (see compose.yaml).
+CMD ["sh", "-c", "pnpm build && exec node --enable-source-maps apps/etl/dist/main.js"]

@@ -5,7 +5,7 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Bot } from "grammy";
+import { Bot, GrammyError } from "grammy";
 
 import { RateLimiter, withRetryAfter } from "./rate-limiter";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
@@ -28,6 +28,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
   private readonly limiter = new RateLimiter(SEND_INTERVAL_MS);
   private bot?: Bot;
+  private stopping = false;
 
   constructor(
     private readonly config: ConfigService,
@@ -68,12 +69,39 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
     // bot.start() resolves only when the bot stops, so we deliberately don't
     // await it — that would block Nest bootstrap forever.
-    void bot.start({
-      onStart: (me) => this.logger.log(`Telegram bot @${me.username} polling`),
-    });
+    this.startPolling(bot);
+  }
+
+  // A hot-reload or redeploy briefly overlaps the previous poller, so Telegram
+  // 409s one of them ("terminated by other getUpdates request"). Swallow that
+  // rejection (an unhandled one would crash the process) and re-acquire the poll
+  // — unless we're shutting down, where onModuleDestroy stops the bot on purpose.
+  private startPolling(bot: Bot): void {
+    void bot
+      .start({
+        onStart: (me) => this.logger.log(`Telegram bot @${me.username} polling`),
+      })
+      .catch((err: unknown) => {
+        if (this.stopping) return;
+        // 409 = a newer poller (a hot-reload or redeploy) has taken over this
+        // bot. We've been superseded, so stop quietly — retrying would only
+        // fight the newer instance for the poll (and an unhandled rejection
+        // would crash the process). Other errors are transient: retry.
+        if (err instanceof GrammyError && err.error_code === 409) {
+          this.logger.warn(
+            "Telegram poll taken over by a newer instance (409) — this poller is stopping.",
+          );
+          return;
+        }
+        this.logger.warn(`Telegram polling error; retrying in 3s: ${String(err)}`);
+        setTimeout(() => {
+          if (!this.stopping && !bot.isRunning()) this.startPolling(bot);
+        }, 3000);
+      });
   }
 
   async onModuleDestroy(): Promise<void> {
+    this.stopping = true;
     await this.bot?.stop();
   }
 

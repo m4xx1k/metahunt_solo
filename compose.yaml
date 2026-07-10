@@ -18,6 +18,9 @@ services:
     image: metahunt-etl-dev:latest
     container_name: metahunt-etl-dev
     restart: unless-stopped
+    # tini as PID 1: forwards SIGTERM to node on stop (so sync+restart is a clean,
+    # fast container restart) and reaps the short-lived build step's children.
+    init: true
     env_file:
       - .env
     environment:
@@ -36,9 +39,16 @@ services:
     networks: [metahunt-infra]
     develop:
       watch:
-        - action: sync
+        # etl is a stateful poller (Telegram + Temporal) that holds port 3333;
+        # a clean container restart avoids the orphaned-process / EADDRINUSE mess
+        # that in-container --watch hits. Rebuild happens in the container CMD.
+        - action: sync+restart
           path: ./apps/etl
           target: /app/apps/etl
+          ignore: [node_modules/, dist/]
+        - action: sync+restart
+          path: ./libs/database
+          target: /app/libs/database
           ignore: [node_modules/, dist/]
         - action: rebuild
           path: ./pnpm-lock.yaml
@@ -50,6 +60,7 @@ services:
     image: metahunt-web-dev:latest
     container_name: metahunt-web-dev
     restart: unless-stopped
+    init: true
     depends_on:
       - etl
     env_file:
