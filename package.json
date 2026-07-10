@@ -16,6 +16,9 @@
     "dev:stop": "bash scripts/dev-stop.sh",
     "dev:restart": "pnpm dev:stop && sleep 1 && pnpm dev",
     "lint:web": "pnpm --filter @metahunt/web lint",
+    "lint": "pnpm -r --if-present run lint",
+    "format": "prettier --write .",
+    "prepare": "husky",
     "test:web": "pnpm --filter @metahunt/web test",
     "docker:infra": "docker compose -f compose.infra.yaml up -d",
     "docker:infra:down": "docker compose -f compose.infra.yaml down",
@@ -37,10 +40,30 @@
   "engines": {
     "node": ">=22"
   },
+  "lint-staged": {
+    "apps/web/**/*.{ts,tsx,js,jsx}": [
+      "bash -c 'cd apps/web && pnpm exec eslint --fix \"$@\"' _",
+      "bash -c 'cd apps/web && pnpm exec prettier --write \"$@\"' _"
+    ],
+    "apps/etl/**/*.ts": [
+      "bash -c 'cd apps/etl && pnpm exec eslint --fix \"$@\"' _",
+      "bash -c 'cd apps/etl && pnpm exec prettier --write \"$@\"' _"
+    ],
+    "libs/database/**/*.ts": [
+      "bash -c 'cd libs/database && pnpm exec eslint --fix \"$@\"' _",
+      "bash -c 'cd libs/database && pnpm exec prettier --write \"$@\"' _"
+    ],
+    "**/*.json": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
   }

@@ -15,7 +15,5 @@ export function asNumber(v: unknown): number | undefined {
 }
 
 export function asStringArray(v: unknown): string[] {
-  return Array.isArray(v)
-    ? v.filter((x): x is string => typeof x === "string")
-    : [];
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 }

@@ -1,9 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 
+import type { RequestWithUser } from "./auth.types";
 import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 import { ROLES_KEY } from "./decorators/roles.decorator";
-import type { RequestWithUser } from "./auth.types";
 
 // Role gate. Contract: MUST run after JwtAuthGuard (which sets request.user and
 // 401s unauthenticated requests) — the order in @UseGuards(JwtAuthGuard,

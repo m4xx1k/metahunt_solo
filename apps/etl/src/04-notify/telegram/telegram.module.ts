@@ -4,6 +4,7 @@ import { CvModule } from "../../03-discovery/cv/cv.module";
 import { FeedModule } from "../../03-discovery/feed/feed.module";
 import { RankingModule } from "../../03-discovery/ranking/ranking.module";
 import { NodeSlugModule } from "../../platform/nodes/node-slug.module";
+
 import { TELEGRAM_ACTIVITIES } from "./activities";
 import { DigestController } from "./digest.controller";
 import { DigestService } from "./digest.service";

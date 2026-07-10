@@ -1,12 +1,13 @@
-import { VacancyLoaderService } from "./vacancy-loader.service";
-import { CompanyResolverService } from "./company-resolver.service";
-import { NodeResolverService } from "./node-resolver.service";
 import type { Executor } from "../repositories/executor";
 import {
   VacancyRepository,
   type SkillLink,
   type VacancyUpsertValues,
 } from "../repositories/vacancy.repository";
+
+import { CompanyResolverService } from "./company-resolver.service";
+import { NodeResolverService } from "./node-resolver.service";
+import { VacancyLoaderService } from "./vacancy-loader.service";
 
 const RECORD_ID = "33333333-3333-3333-3333-333333333333";
 const SOURCE_ID = "11111111-1111-1111-1111-111111111111";
@@ -50,9 +51,7 @@ const baseRecord = {
 // chain to fake — runInTransaction just runs the callback with a sentinel tx.
 function makeRepo(): jest.Mocked<VacancyRepository> {
   return {
-    runInTransaction: jest.fn((work: (tx: Executor) => Promise<unknown>) =>
-      work(TX),
-    ),
+    runInTransaction: jest.fn((work: (tx: Executor) => Promise<unknown>) => work(TX)),
     findRecord: jest.fn().mockResolvedValue(null),
     upsertWithSkills: jest.fn().mockResolvedValue(VACANCY_ID),
   } as unknown as jest.Mocked<VacancyRepository>;
@@ -97,11 +96,7 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     expect(nodeResolve).toHaveBeenCalledWith("ROLE", "Backend Engineer", TX);
     expect(nodeResolve).toHaveBeenCalledWith("DOMAIN", "FinTech", TX);
     expect(nodeResolve).toHaveBeenCalledWith("SKILL", "Go", TX);
-    expect(repo.upsertWithSkills).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      TX,
-    );
+    expect(repo.upsertWithSkills).toHaveBeenCalledWith(expect.anything(), expect.anything(), TX);
 
     expect(valuesArg(repo)).toMatchObject({
       sourceId: SOURCE_ID,
@@ -121,9 +116,7 @@ describe("VacancyLoaderService.loadFromRecord", () => {
       hasReservation: false,
       publishedAt: PUBLISHED_AT,
     });
-    expect(valuesArg(repo).locations).toEqual([
-      { city: "Kyiv", country: "Ukraine" },
-    ]);
+    expect(valuesArg(repo).locations).toEqual([{ city: "Kyiv", country: "Ukraine" }]);
 
     // required wins; dedup by node; ordering required-then-optional.
     expect(skillsArg(repo)).toEqual([
@@ -183,16 +176,8 @@ describe("VacancyLoaderService.loadFromRecord", () => {
 
     await service.loadFromRecord(RECORD_ID);
 
-    expect(nodeResolve).not.toHaveBeenCalledWith(
-      "ROLE",
-      expect.anything(),
-      expect.anything(),
-    );
-    expect(nodeResolve).not.toHaveBeenCalledWith(
-      "DOMAIN",
-      expect.anything(),
-      expect.anything(),
-    );
+    expect(nodeResolve).not.toHaveBeenCalledWith("ROLE", expect.anything(), expect.anything());
+    expect(nodeResolve).not.toHaveBeenCalledWith("DOMAIN", expect.anything(), expect.anything());
     expect(valuesArg(repo).roleNodeId).toBeNull();
     expect(valuesArg(repo).domainNodeId).toBeNull();
   });
@@ -248,9 +233,7 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     repo.findRecord.mockResolvedValue(null);
     const { service } = makeService(repo);
 
-    await expect(service.loadFromRecord(RECORD_ID)).rejects.toThrow(
-      /rss_record/,
-    );
+    await expect(service.loadFromRecord(RECORD_ID)).rejects.toThrow(/rss_record/);
     expect(repo.runInTransaction).not.toHaveBeenCalled();
     expect(repo.upsertWithSkills).not.toHaveBeenCalled();
   });

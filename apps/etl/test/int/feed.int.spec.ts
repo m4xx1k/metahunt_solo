@@ -1,8 +1,10 @@
-import { inArray, sql } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
+import { inArray } from "drizzle-orm";
 import type { Pool } from "pg";
 
+import { schema, type DrizzleDB } from "@metahunt/database";
+
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
+
 import { makeTestDb, truncateAll } from "./db";
 
 let db: DrizzleDB;

@@ -1,11 +1,14 @@
 import { Injectable, Inject, Logger } from "@nestjs/common";
+
 import { eq, inArray } from "drizzle-orm";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
+
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
+
+import { extractExternalId } from "../../../02-enrich/loader/external-id/source-external-id";
 import { StorageService } from "../../../platform/storage/storage.service";
 import { RssParserService } from "../rss-parser.service";
-import { extractExternalId } from "../../../02-enrich/loader/external-id/source-external-id";
 
 @Injectable()
 @Activity()
@@ -32,14 +35,11 @@ export class RssParseActivity {
       .from(schema.sources)
       .where(eq(schema.sources.id, ingest.sourceId));
 
-    const xml = (
-      await this.storage.download(ingest.payloadStorageKey)
-    ).toString("utf-8");
+    const xml = (await this.storage.download(ingest.payloadStorageKey)).toString("utf-8");
     const allItems = this.parser.parseXml(xml);
     const itItems = this.parser.filterItItems(allItems);
 
-    const itemsWithExternalId: { item: (typeof itItems)[number]; externalId: string }[] =
-      [];
+    const itemsWithExternalId: { item: (typeof itItems)[number]; externalId: string }[] = [];
     for (const item of itItems) {
       try {
         const externalId = extractExternalId(source.code, {
@@ -59,9 +59,7 @@ export class RssParseActivity {
       return [];
     }
 
-    const hashes = itemsWithExternalId.map(({ item }) =>
-      this.parser.computeHash(item),
-    );
+    const hashes = itemsWithExternalId.map(({ item }) => this.parser.computeHash(item));
 
     const existing = await this.db
       .select({ hash: schema.rssRecords.hash })
@@ -89,9 +87,7 @@ export class RssParseActivity {
           title: item.title,
           description: item.description,
           link: item.link,
-          category: Array.isArray(item.category)
-            ? item.category.join(", ")
-            : item.category,
+          category: Array.isArray(item.category) ? item.category.join(", ") : item.category,
           externalId,
         })),
       )

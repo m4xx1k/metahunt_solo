@@ -1,4 +1,5 @@
 import { Injectable, Inject, Logger } from "@nestjs/common";
+
 import { sql } from "drizzle-orm";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
@@ -21,9 +22,7 @@ export class RefreshNodeStatsActivity {
 
   @ActivityMethod()
   async refreshNodeStats(): Promise<void> {
-    await this.db.execute(
-      sql`REFRESH MATERIALIZED VIEW CONCURRENTLY node_stats`,
-    );
+    await this.db.execute(sql`REFRESH MATERIALIZED VIEW CONCURRENTLY node_stats`);
     // node_skill_cooc rides the same cadence — it derives from vacancy_nodes too
     // and feeds the recommendation substitute-gate. Plain REFRESH (no unique
     // index); a brief read-lock here is fine at ingest-tail frequency.

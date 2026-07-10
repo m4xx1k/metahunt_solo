@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 
-import { AuthModule } from "../platform/auth/auth.module";
 import { TelegramModule } from "../04-notify/telegram/telegram.module";
+import { AuthModule } from "../platform/auth/auth.module";
+
 import { MeController } from "./me.controller";
 import { MeService } from "./me.service";
 

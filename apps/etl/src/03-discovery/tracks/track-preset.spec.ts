@@ -1,8 +1,4 @@
-import {
-  presetMatchesNothing,
-  resolveTrackPreset,
-  type TrackNodeIds,
-} from "./track-preset";
+import { presetMatchesNothing, resolveTrackPreset, type TrackNodeIds } from "./track-preset";
 
 const empty = { roleIds: [], skillIds: [] };
 

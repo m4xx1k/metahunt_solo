@@ -1,10 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { sql } from "drizzle-orm";
 
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
+
 import type { VacancyAggregatesResponse } from "./market.contract";
 
 // Market-snapshot aggregates over the eligible vacancy set: one global pass

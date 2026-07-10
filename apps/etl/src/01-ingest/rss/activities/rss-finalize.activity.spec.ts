@@ -17,10 +17,7 @@ describe("RssFinalizeActivity", () => {
   async function bootstrap() {
     const mocks = buildDbMocks();
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        RssFinalizeActivity,
-        { provide: DRIZZLE, useValue: mocks.db },
-      ],
+      providers: [RssFinalizeActivity, { provide: DRIZZLE, useValue: mocks.db }],
     }).compile();
     return { activity: moduleRef.get(RssFinalizeActivity), mocks };
   }

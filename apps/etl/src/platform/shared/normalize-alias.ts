@@ -6,5 +6,8 @@
 // reader of node_aliases.name must go through this function; migration
 // 0019 re-normalized the existing rows to the same key.
 export function normalizeAliasName(name: string): string {
-  return name.trim().toLowerCase().replace(/[\s_./-]+/g, "");
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_./-]+/g, "");
 }

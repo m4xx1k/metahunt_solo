@@ -12,6 +12,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Throttle } from "@nestjs/throttler";
 
+import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import {
   EMPLOYMENT_TYPE_VALUES,
   ENGLISH_LEVEL_VALUES,
@@ -32,21 +33,17 @@ import {
   parsePage,
   parsePageSize,
 } from "../../platform/shared/query-parsing";
-import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
-import { RankingService } from "../ranking/ranking.service";
-import { RecommendationService } from "../ranking/recommendation.service";
 import {
   FIT_TIER_VALUES,
   type FitTier,
   type MatchResponse,
   type RecommendResponse,
 } from "../ranking/ranking.contract";
+import { RankingService } from "../ranking/ranking.service";
+import { RecommendationService } from "../ranking/recommendation.service";
+
 import { CandidateLoaderService } from "./candidate-loader.service";
-import type {
-  CandidateView,
-  CvIngestResult,
-  SampleCandidate,
-} from "./cv.contract";
+import type { CandidateView, CvIngestResult, SampleCandidate } from "./cv.contract";
 import { extractText } from "./text-extract";
 
 // CV upload is LLM-backed (a BAML extraction per new file) + accepts user
@@ -69,9 +66,7 @@ export class CvController {
   // Upload a CV as a file (field "file": PDF or .txt) OR as raw JSON {text}.
   @Post()
   @Throttle(CV_THROTTLE)
-  @UseInterceptors(
-    FileInterceptor("file", { limits: { fileSize: CV_UPLOAD_MAX_BYTES } }),
-  )
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: CV_UPLOAD_MAX_BYTES } }))
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: { text?: unknown } | undefined,
@@ -82,9 +77,7 @@ export class CvController {
     } else if (typeof body?.text === "string" && body.text.trim().length > 0) {
       text = body.text;
     } else {
-      throw new BadRequestException(
-        "provide a file (field 'file') or a non-empty 'text'",
-      );
+      throw new BadRequestException("provide a file (field 'file') or a non-empty 'text'");
     }
     return this.loader.loadFromText(text);
   }
@@ -125,8 +118,16 @@ export class CvController {
       {
         seniorities: parseEnumCsv<Seniority>("seniorities", rawSeniorities, SENIORITY_VALUES),
         workFormats: parseEnumCsv<WorkFormat>("workFormats", rawWorkFormats, WORK_FORMAT_VALUES),
-        englishLevels: parseEnumCsv<EnglishLevel>("englishLevels", rawEnglishLevels, ENGLISH_LEVEL_VALUES),
-        employmentTypes: parseEnumCsv<EmploymentType>("employmentTypes", rawEmploymentTypes, EMPLOYMENT_TYPE_VALUES),
+        englishLevels: parseEnumCsv<EnglishLevel>(
+          "englishLevels",
+          rawEnglishLevels,
+          ENGLISH_LEVEL_VALUES,
+        ),
+        employmentTypes: parseEnumCsv<EmploymentType>(
+          "employmentTypes",
+          rawEmploymentTypes,
+          EMPLOYMENT_TYPE_VALUES,
+        ),
         domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", rawDomainIds)),
         experienceYears: parseCsv("experienceYears", rawExperienceYears),
         hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),

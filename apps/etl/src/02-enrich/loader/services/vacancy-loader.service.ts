@@ -7,6 +7,7 @@ import {
   type SkillLink,
   type VacancyUpsertValues,
 } from "../repositories/vacancy.repository";
+
 import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
 
@@ -28,13 +29,9 @@ export class VacancyLoaderService {
       throw new Error(`rss_record ${rssRecordId} not found`);
     }
 
-    const extracted = (record.extractedData ?? null) as
-      | ExtractedVacancy
-      | null;
+    const extracted = (record.extractedData ?? null) as ExtractedVacancy | null;
     if (!extracted) {
-      throw new Error(
-        `rss_record ${rssRecordId} has no extractedData; cannot load`,
-      );
+      throw new Error(`rss_record ${rssRecordId} has no extractedData; cannot load`);
     }
 
     // Serve gate (Gate 2): the LLM read the full posting and flagged it
@@ -50,11 +47,7 @@ export class VacancyLoaderService {
     // orphan company/node rows behind a vacancy that never landed.
     return this.repo.runInTransaction(async (tx) => {
       const companyId = extracted.companyName
-        ? await this.companyResolver.resolve(
-            record.sourceId,
-            extracted.companyName,
-            tx,
-          )
+        ? await this.companyResolver.resolve(record.sourceId, extracted.companyName, tx)
         : null;
       const roleNodeId = extracted.role
         ? await this.nodeResolver.resolve("ROLE", extracted.role, tx)
@@ -79,17 +72,9 @@ export class VacancyLoaderService {
         employmentType: extracted.employmentType ?? null,
         englishLevel: extracted.englishLevel ?? null,
         experienceYears:
-          extracted.experienceYears != null
-            ? Math.round(extracted.experienceYears)
-            : null,
-        salaryMin:
-          extracted.salary?.min != null
-            ? Math.round(extracted.salary.min)
-            : null,
-        salaryMax:
-          extracted.salary?.max != null
-            ? Math.round(extracted.salary.max)
-            : null,
+          extracted.experienceYears != null ? Math.round(extracted.experienceYears) : null,
+        salaryMin: extracted.salary?.min != null ? Math.round(extracted.salary.min) : null,
+        salaryMax: extracted.salary?.max != null ? Math.round(extracted.salary.max) : null,
         currency: extracted.salary?.currency ?? null,
         engagementType: extracted.engagementType ?? null,
         hasTestAssignment: extracted.hasTestAssignment ?? null,

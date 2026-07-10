@@ -1,5 +1,7 @@
 import { Injectable, Inject } from "@nestjs/common";
+
 import { and, eq } from "drizzle-orm";
+
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
@@ -56,10 +58,7 @@ export class DrizzleCompanyRepository extends CompanyRepository {
     return hits[0]?.companyId ?? null;
   }
 
-  async findIdBySlug(
-    slug: string,
-    executor: Executor = this.db,
-  ): Promise<string | null> {
+  async findIdBySlug(slug: string, executor: Executor = this.db): Promise<string | null> {
     const hits = await executor
       .select({ id: schema.companies.id })
       .from(schema.companies)

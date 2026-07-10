@@ -1,10 +1,6 @@
-import {
-  Injectable,
-  Logger,
-  type OnModuleDestroy,
-  type OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+
 import { Bot, GrammyError } from "grammy";
 
 import { RateLimiter, withRetryAfter } from "./rate-limiter";
@@ -38,9 +34,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     const token = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
     if (token.length === 0) {
-      this.logger.warn(
-        "TELEGRAM_BOT_TOKEN not set — Telegram bot is dormant (no poller).",
-      );
+      this.logger.warn("TELEGRAM_BOT_TOKEN not set — Telegram bot is dormant (no poller).");
       return;
     }
 

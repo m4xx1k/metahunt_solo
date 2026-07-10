@@ -1,4 +1,5 @@
 import { proxyActivities } from "@temporalio/workflow";
+
 import type { LoadVacancyActivity } from "../activities/load-vacancy.activity";
 
 const { loadVacancy } = proxyActivities<typeof LoadVacancyActivity.prototype>({
@@ -6,8 +7,6 @@ const { loadVacancy } = proxyActivities<typeof LoadVacancyActivity.prototype>({
   retry: { maximumAttempts: 3, initialInterval: "5s", backoffCoefficient: 2 },
 });
 
-export async function vacancyPipelineWorkflow(
-  rssRecordId: string,
-): Promise<void> {
+export async function vacancyPipelineWorkflow(rssRecordId: string): Promise<void> {
   await loadVacancy(rssRecordId);
 }

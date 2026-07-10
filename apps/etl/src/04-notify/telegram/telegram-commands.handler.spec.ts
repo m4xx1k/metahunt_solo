@@ -1,4 +1,5 @@
 import type { ConfigService } from "@nestjs/config";
+
 import type { Bot } from "grammy";
 
 import type { SubscriptionMatcherService } from "./subscription-matcher.service";
@@ -19,8 +20,7 @@ function fakeBot() {
   const events = new Map<string, Handler>();
   const bot = {
     command: (name: string, h: Handler) => commands.set(name, h),
-    callbackQuery: (pattern: RegExp, h: Handler) =>
-      callbacks.push({ pattern, handler: h }),
+    callbackQuery: (pattern: RegExp, h: Handler) => callbacks.push({ pattern, handler: h }),
     on: (event: string, h: Handler) => events.set(event, h),
     catch: () => undefined,
   };
@@ -72,7 +72,7 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("start")!(ctx);
 
       expect(linkChat).not.toHaveBeenCalled();
-      const [text, opts] = (ctx.reply as jest.Mock).mock.calls[0];
+      const [text, opts] = ctx.reply.mock.calls[0];
       expect(text).toBe(copy.start.greeting(WEB_URL));
       expect(opts).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
     });
@@ -89,7 +89,7 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("start")!(ctx);
 
       expect(linkChat).toHaveBeenCalledWith("the-token", "42");
-      expect((ctx.reply as jest.Mock).mock.calls[0][0]).toBe(expected);
+      expect(ctx.reply.mock.calls[0][0]).toBe(expected);
     });
   });
 
@@ -101,14 +101,12 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("list")!(ctx);
 
       // The fix: an empty list must still route the user to the site.
-      const [text] = (ctx.reply as jest.Mock).mock.calls[0];
+      const [text] = ctx.reply.mock.calls[0];
       expect(text).toBe(copy.list.empty(WEB_URL));
     });
 
     it("renders one labelled row with an unsubscribe button per sub", async () => {
-      listActiveByChat.mockResolvedValue([
-        { id: "sub-1", params: {}, candidateId: null },
-      ]);
+      listActiveByChat.mockResolvedValue([{ id: "sub-1", params: {}, candidateId: null }]);
       const ctx = commandCtx("");
 
       await commands.get("list")!(ctx);
@@ -187,23 +185,18 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("preview")!(ctx);
 
       expect(sample).not.toHaveBeenCalled();
-      const [text] = (ctx.reply as jest.Mock).mock.calls[0];
+      const [text] = ctx.reply.mock.calls[0];
       expect(text).toBe(copy.preview.empty(WEB_URL));
     });
 
     it("sends a rendered HTML sample per subscription", async () => {
-      listActiveByChat.mockResolvedValue([
-        { id: "sub-1", params: { q: "go" }, candidateId: null },
-      ]);
+      listActiveByChat.mockResolvedValue([{ id: "sub-1", params: { q: "go" }, candidateId: null }]);
       sample.mockResolvedValue({ items: [], total: 0, label: "go" });
       const ctx = commandCtx("");
 
       await commands.get("preview")!(ctx);
 
-      expect(sample).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "sub-1" }),
-        14,
-      );
+      expect(sample).toHaveBeenCalledWith(expect.objectContaining({ id: "sub-1" }), 14);
       expect(ctx.reply).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ parse_mode: "HTML" }),
@@ -217,10 +210,7 @@ describe("TelegramCommandsHandler", () => {
 
       await events.get("message")!(ctx);
 
-      expect(ctx.reply).toHaveBeenCalledWith(
-        copy.fallback(WEB_URL),
-        expect.anything(),
-      );
+      expect(ctx.reply).toHaveBeenCalledWith(copy.fallback(WEB_URL), expect.anything());
     });
   });
 });

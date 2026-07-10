@@ -4,15 +4,11 @@ import { validate } from "class-validator";
 import { FeedQueryDto, MatchDto } from "./filter-params.dto";
 
 const feed = (raw: Record<string, unknown>) => plainToInstance(FeedQueryDto, raw);
-const feedErrors = async (raw: Record<string, unknown>) =>
-  (await validate(feed(raw))).length;
+const feedErrors = async (raw: Record<string, unknown>) => (await validate(feed(raw))).length;
 
 describe("FeedQueryDto transforms", () => {
   it("splits a CSV enum string into an array", () => {
-    expect(feed({ seniorities: "MIDDLE,SENIOR" }).seniorities).toEqual([
-      "MIDDLE",
-      "SENIOR",
-    ]);
+    expect(feed({ seniorities: "MIDDLE,SENIOR" }).seniorities).toEqual(["MIDDLE", "SENIOR"]);
   });
 
   it("wraps a single repeated-param value into an array", () => {
@@ -40,9 +36,7 @@ describe("FeedQueryDto transforms", () => {
 
 describe("FeedQueryDto validation", () => {
   it("accepts a valid query", async () => {
-    expect(
-      await feedErrors({ seniorities: "MIDDLE", workFormats: "REMOTE", page: "2" }),
-    ).toBe(0);
+    expect(await feedErrors({ seniorities: "MIDDLE", workFormats: "REMOTE", page: "2" })).toBe(0);
   });
 
   it("rejects an unknown seniority", async () => {

@@ -1,5 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from './schema';
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
-export const DRIZZLE = Symbol('DRIZZLE');
+import * as schema from "./schema";
+
+export const DRIZZLE = Symbol("DRIZZLE");
 export type DrizzleDB = NodePgDatabase<typeof schema>;

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { sql } from "drizzle-orm";
 
 import { DRIZZLE } from "@metahunt/database";
@@ -77,9 +78,8 @@ export class ExtractionCostService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   async summary(): Promise<ExtractionCostSummary> {
-    const [totalRes, last24hRes, versionRes, modelRes, recentRes] =
-      await Promise.all([
-        this.db.execute<TotalsRow>(sql`
+    const [totalRes, last24hRes, versionRes, modelRes, recentRes] = await Promise.all([
+      this.db.execute<TotalsRow>(sql`
           SELECT
             COUNT(*)                                  AS count,
             COUNT(*) FILTER (WHERE is_failure)        AS failures,
@@ -89,7 +89,7 @@ export class ExtractionCostService {
             COALESCE(SUM(cost_usd), 0)                AS cost_usd
           FROM extraction_cost
         `),
-        this.db.execute<TotalsRow>(sql`
+      this.db.execute<TotalsRow>(sql`
           SELECT
             COUNT(*)                                  AS count,
             COUNT(*) FILTER (WHERE is_failure)        AS failures,
@@ -100,7 +100,7 @@ export class ExtractionCostService {
           FROM extraction_cost
           WHERE extracted_at >= NOW() - INTERVAL '24 hours'
         `),
-        this.db.execute<TotalsRow & { prompt_version: number | null }>(sql`
+      this.db.execute<TotalsRow & { prompt_version: number | null }>(sql`
           SELECT
             prompt_version,
             COUNT(*)                                  AS count,
@@ -113,7 +113,7 @@ export class ExtractionCostService {
           GROUP BY prompt_version
           ORDER BY prompt_version NULLS LAST
         `),
-        this.db.execute<TotalsRow & { model: string | null }>(sql`
+      this.db.execute<TotalsRow & { model: string | null }>(sql`
           SELECT
             model,
             COUNT(*)                                  AS count,
@@ -126,25 +126,25 @@ export class ExtractionCostService {
           GROUP BY model
           ORDER BY count DESC
         `),
-        this.db.execute<{
-          id: string;
-          extracted_at: Date;
-          prompt_version: number | null;
-          model: string | null;
-          client: string | null;
-          tokens_in: number;
-          tokens_out: number;
-          tokens_cached: number;
-          is_failure: boolean;
-          cost_usd: string | number | null;
-        }>(sql`
+      this.db.execute<{
+        id: string;
+        extracted_at: Date;
+        prompt_version: number | null;
+        model: string | null;
+        client: string | null;
+        tokens_in: number;
+        tokens_out: number;
+        tokens_cached: number;
+        is_failure: boolean;
+        cost_usd: string | number | null;
+      }>(sql`
           SELECT id, extracted_at, prompt_version, model, client,
                  tokens_in, tokens_out, tokens_cached, is_failure, cost_usd
           FROM extraction_cost
           ORDER BY extracted_at DESC
           LIMIT 50
         `),
-      ]);
+    ]);
 
     return {
       total: toTotals(totalRes.rows[0]),
@@ -160,9 +160,7 @@ export class ExtractionCostService {
       recent: recentRes.rows.map((r) => ({
         id: r.id,
         extractedAt:
-          r.extracted_at instanceof Date
-            ? r.extracted_at.toISOString()
-            : String(r.extracted_at),
+          r.extracted_at instanceof Date ? r.extracted_at.toISOString() : String(r.extracted_at),
         promptVersion: r.prompt_version,
         model: r.model,
         client: r.client,

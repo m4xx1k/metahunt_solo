@@ -1,15 +1,12 @@
-import {
-  Injectable,
-  Logger,
-  type OnApplicationBootstrap,
-} from "@nestjs/common";
+import { Injectable, Logger, type OnApplicationBootstrap } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { TemporalService } from "nestjs-temporal-core";
+
 import {
   ScheduleAlreadyRunning,
   ScheduleOverlapPolicy,
   type ScheduleOptions,
 } from "@temporalio/client";
+import { TemporalService } from "nestjs-temporal-core";
 
 const SCHEDULE_ID = "rss-ingest-hourly";
 const SCHEDULE_TIMEZONE = "Europe/Kyiv";
@@ -69,12 +66,10 @@ export class RssSchedulerService implements OnApplicationBootstrap {
       workflowId: "rss-ingest-all",
     };
     const policies = { overlap: ScheduleOverlapPolicy.SKIP };
-    const description = `RSS ingest every ${intervalHours}h, ${String(
-      SCHEDULE_HOUR_START,
-    ).padStart(2, "0")}:00–${String(SCHEDULE_HOUR_END).padStart(
+    const description = `RSS ingest every ${intervalHours}h, ${String(SCHEDULE_HOUR_START).padStart(
       2,
       "0",
-    )}:00 ${SCHEDULE_TIMEZONE}`;
+    )}:00–${String(SCHEDULE_HOUR_END).padStart(2, "0")}:00 ${SCHEDULE_TIMEZONE}`;
 
     try {
       await raw.schedule.create({

@@ -6,6 +6,7 @@ jest.mock("../../baml_client", () => ({
 }));
 
 import { DRIZZLE } from "@metahunt/database";
+
 import { b } from "../../baml_client";
 import type { ExtractedVacancy } from "../../baml_client";
 
@@ -55,10 +56,7 @@ describe("BamlVacancyExtractor", () => {
     extractVacancy.mockReset();
     const db = buildDbMock(rows);
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        BamlVacancyExtractor,
-        { provide: DRIZZLE, useValue: db },
-      ],
+      providers: [BamlVacancyExtractor, { provide: DRIZZLE, useValue: db }],
     }).compile();
     return { extractor: moduleRef.get(BamlVacancyExtractor), db };
   }

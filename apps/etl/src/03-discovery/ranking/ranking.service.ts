@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { sql, type SQL } from "drizzle-orm";
 
 import { DRIZZLE } from "@metahunt/database";
@@ -7,6 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
+
 import {
   FIT_GOOD_MIN,
   FIT_STRONG_MIN,
@@ -222,10 +224,8 @@ export class RankingService {
         FROM agg
       )`;
 
-    const minBucket =
-      filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
-    const tierCond =
-      minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
+    const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
+    const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
 
     const ranked = await this.db.execute<{
       id: string;
@@ -273,11 +273,7 @@ export class RankingService {
       total = totalRes.rows[0]?.count ?? 0;
     }
 
-    const items = await this.buildItems(
-      ranked.rows,
-      candIds,
-      resolved.matched,
-    );
+    const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
     return { resolved, items, page, pageSize, total };
   }
 
@@ -376,8 +372,7 @@ export class RankingService {
     if (f.seniorities?.length) inText(sql`v.seniority`, f.seniorities);
     if (f.workFormats?.length) inText(sql`v.work_format`, f.workFormats);
     if (f.englishLevels?.length) inText(sql`v.english_level`, f.englishLevels);
-    if (f.employmentTypes?.length)
-      inText(sql`v.employment_type`, f.employmentTypes);
+    if (f.employmentTypes?.length) inText(sql`v.employment_type`, f.employmentTypes);
 
     // Domain (OR): keep vacancies tagged with any listed DOMAIN node — a vacancy
     // filter, mirroring the feed (the candidate stays the query).
@@ -409,9 +404,7 @@ export class RankingService {
     if (f.hasTestAssignment === true) {
       conds.push(sql`v.has_test_assignment = true`);
     } else if (f.hasTestAssignment === false) {
-      conds.push(
-        sql`(v.has_test_assignment = false OR v.has_test_assignment IS NULL)`,
-      );
+      conds.push(sql`(v.has_test_assignment = false OR v.has_test_assignment IS NULL)`);
     }
     if (f.hasReservation !== undefined) {
       conds.push(sql`v.has_reservation = ${f.hasReservation}`);

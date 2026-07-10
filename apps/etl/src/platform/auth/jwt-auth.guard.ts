@@ -1,14 +1,9 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 
-import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 import type { JwtPayload, RequestWithUser } from "./auth.types";
+import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 
 // Authenticates a request from its `Authorization: Bearer <jwt>` header and
 // attaches the decoded user as `request.user`. @Public() routes skip it.

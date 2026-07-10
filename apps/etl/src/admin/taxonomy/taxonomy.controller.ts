@@ -12,11 +12,8 @@ import {
 import type { NodeType } from "@metahunt/database";
 
 import { AdminOnly } from "../../platform/auth/decorators/admin-only.decorator";
-import {
-  parseLimit,
-  parsePage,
-  parsePageSize,
-} from "../../platform/shared/query-parsing";
+import { parseLimit, parsePage, parsePageSize } from "../../platform/shared/query-parsing";
+
 import {
   TAXONOMY_LIST_DEFAULT,
   TAXONOMY_LIST_MAX,
@@ -109,10 +106,7 @@ export class TaxonomyController {
 
   @Patch("nodes/:id/rename")
   @AdminOnly()
-  renameNode(
-    @Param("id") id: string,
-    @Body() body: { name?: unknown } | undefined,
-  ) {
+  renameNode(@Param("id") id: string, @Body() body: { name?: unknown } | undefined) {
     assertUuid(id, "id");
     const name = body?.name;
     if (typeof name !== "string") {
@@ -123,10 +117,7 @@ export class TaxonomyController {
 
   @Post("nodes/:id/merge-into/:targetId")
   @AdminOnly()
-  mergeNode(
-    @Param("id") id: string,
-    @Param("targetId") targetId: string,
-  ) {
+  mergeNode(@Param("id") id: string, @Param("targetId") targetId: string) {
     assertUuid(id, "id");
     assertUuid(targetId, "targetId");
     return this.service.mergeInto(id, targetId);
@@ -174,15 +165,12 @@ function parseMinBlocked(raw: string | undefined): number {
   if (raw === undefined) return 0;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) {
-    throw new BadRequestException(
-      `blocked must be a non-negative integer, got "${raw}"`,
-    );
+    throw new BadRequestException(`blocked must be a non-negative integer, got "${raw}"`);
   }
   return n;
 }
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function assertUuid(value: string, field: string): void {
   if (!UUID_RE.test(value)) {

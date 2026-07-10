@@ -1,0 +1,12 @@
+node_modules
+**/dist
+**/.next
+**/out
+**/build
+**/coverage
+pnpm-lock.yaml
+backups
+.scratch
+.omc
+apps/etl/baml_client
+**/*.min.js

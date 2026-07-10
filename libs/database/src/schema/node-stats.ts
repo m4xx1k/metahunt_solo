@@ -1,10 +1,5 @@
-import {
-  uuid,
-  integer,
-  doublePrecision,
-  pgMaterializedView,
-} from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sql } from "drizzle-orm";
+import { uuid, integer, doublePrecision, pgMaterializedView } from "drizzle-orm/pg-core";
 
 // IDF skill weights for the reverse-ATS matcher. See
 // md/journal/migrations/reverse-ats.md (Engine v1 — "Why IDF").
@@ -37,10 +32,10 @@ import { sql } from 'drizzle-orm';
 // Materialized so the matcher is a plain join + SUM. Refreshed CONCURRENTLY as
 // the final step of ingest (the UNIQUE index on node_id, added in the
 // migration, is what CONCURRENTLY requires).
-export const nodeStats = pgMaterializedView('node_stats', {
-  nodeId: uuid('node_id'),
-  df: integer('df'),
-  weight: doublePrecision('weight'),
+export const nodeStats = pgMaterializedView("node_stats", {
+  nodeId: uuid("node_id"),
+  df: integer("df"),
+  weight: doublePrecision("weight"),
 }).as(
   sql`
     SELECT vn.node_id,

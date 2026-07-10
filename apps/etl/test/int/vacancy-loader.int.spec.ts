@@ -1,6 +1,7 @@
 import { count, eq } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
+
+import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { DrizzleCompanyRepository } from "../../src/02-enrich/loader/repositories/company.repository";
 import { DrizzleNodeRepository } from "../../src/02-enrich/loader/repositories/node.repository";
@@ -8,6 +9,7 @@ import { DrizzleVacancyRepository } from "../../src/02-enrich/loader/repositorie
 import { CompanyResolverService } from "../../src/02-enrich/loader/services/company-resolver.service";
 import { NodeResolverService } from "../../src/02-enrich/loader/services/node-resolver.service";
 import { VacancyLoaderService } from "../../src/02-enrich/loader/services/vacancy-loader.service";
+
 import { makeTestDb, truncateAll } from "./db";
 
 const PUBLISHED_AT = new Date("2026-04-24T10:00:00.000Z");
@@ -178,9 +180,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
 
     // Make the vacancy upsert throw AFTER company/node resolution has already
     // written rows on the transaction. The single tx must roll back all of it.
-    jest
-      .spyOn(vacancyRepo, "upsertWithSkills")
-      .mockRejectedValueOnce(new Error("boom"));
+    jest.spyOn(vacancyRepo, "upsertWithSkills").mockRejectedValueOnce(new Error("boom"));
 
     await expect(loader.loadFromRecord(recordId)).rejects.toThrow("boom");
 

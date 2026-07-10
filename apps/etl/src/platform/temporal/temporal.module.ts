@@ -1,12 +1,15 @@
 import { resolve } from "node:path";
+
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+
 import { TemporalModule } from "nestjs-temporal-core";
 
+import { RSS_ACTIVITIES } from "../../01-ingest/rss/activities";
 import { DEDUP_ACTIVITIES } from "../../02-enrich/dedup/activities";
 import { LOADER_ACTIVITIES } from "../../02-enrich/loader/activities";
-import { RSS_ACTIVITIES } from "../../01-ingest/rss/activities";
 import { TELEGRAM_ACTIVITIES } from "../../04-notify/telegram/activities";
+
 import { appendTsLoaderRule } from "./webpack-workflow.hook";
 
 @Module({

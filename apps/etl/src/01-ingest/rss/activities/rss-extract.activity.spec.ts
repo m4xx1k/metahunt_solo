@@ -1,13 +1,14 @@
 import { Test } from "@nestjs/testing";
 
 import { DRIZZLE, schema } from "@metahunt/database";
-import type { ExtractedVacancy } from "../../../baml_client";
+
 import {
   VACANCY_EXTRACTOR,
   type ExtractionResult,
   type ExtractionUsage,
   type VacancyExtractor,
 } from "../../../02-enrich/extraction/vacancy-extractor";
+import type { ExtractedVacancy } from "../../../baml_client";
 
 import { RssExtractActivity } from "./rss-extract.activity";
 
@@ -118,7 +119,7 @@ describe("RssExtractActivity", () => {
     expect(extractor.extract).toHaveBeenCalledTimes(1);
     const passedText = extractor.extract.mock.calls[0][0];
     expect(passedText).toContain(baseRecord.title);
-    expect(passedText).toContain(baseRecord.description!);
+    expect(passedText).toContain(baseRecord.description);
 
     expect(mocks.db.update).toHaveBeenCalledWith(schema.rssRecords);
     const setArg = mocks.updateSet.mock.calls[0][0];
@@ -149,9 +150,7 @@ describe("RssExtractActivity", () => {
     extractor.extract.mockResolvedValue(failureResult);
     const { activity, mocks } = await bootstrap(baseRecord);
 
-    await expect(activity.extractAndInsert(RECORD_ID)).rejects.toThrow(
-      "BAML extraction: boom",
-    );
+    await expect(activity.extractAndInsert(RECORD_ID)).rejects.toThrow("BAML extraction: boom");
 
     // Failure-row written BEFORE the throw — Temporal retries get fresh data,
     // but the cost of this specific attempt is captured.
@@ -168,9 +167,7 @@ describe("RssExtractActivity", () => {
   it("throws when the record does not exist", async () => {
     const { activity } = await bootstrap(undefined);
 
-    await expect(activity.extractAndInsert(RECORD_ID)).rejects.toThrow(
-      /Record .* not found/,
-    );
+    await expect(activity.extractAndInsert(RECORD_ID)).rejects.toThrow(/Record .* not found/);
     expect(extractor.extract).not.toHaveBeenCalled();
   });
 });

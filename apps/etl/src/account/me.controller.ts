@@ -12,9 +12,10 @@ import {
   UseGuards,
 } from "@nestjs/common";
 
+import type { JwtUser } from "../platform/auth/auth.types";
 import { CurrentUser } from "../platform/auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../platform/auth/jwt-auth.guard";
-import type { JwtUser } from "../platform/auth/auth.types";
+
 import type { MeCv, MeSubscription } from "./me.contract";
 import { MeService } from "./me.service";
 

@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json -w",
-    "dev": "tsc -p tsconfig.json -w"
+    "dev": "tsc -p tsconfig.json -w",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -17,7 +18,14 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
     "@types/pg": "^8.20.0",
-    "typescript": "^5.7.0"
+    "eslint": "^9.18.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^16.0.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.29.1"
   }
 }

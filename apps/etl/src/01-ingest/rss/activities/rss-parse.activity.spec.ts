@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 
 import { DRIZZLE, schema } from "@metahunt/database";
+
 import { StorageService } from "../../../platform/storage/storage.service";
 import { RssParserService } from "../rss-parser.service";
 
@@ -104,9 +105,7 @@ function buildDbMocks(
   const select = jest.fn().mockReturnValue({ from: selectFrom });
 
   const insertReturning = jest.fn().mockResolvedValue(insertedIds);
-  const insertOnConflictDoNothing = jest
-    .fn()
-    .mockReturnValue({ returning: insertReturning });
+  const insertOnConflictDoNothing = jest.fn().mockReturnValue({ returning: insertReturning });
   const insertValues = jest
     .fn()
     .mockReturnValue({ onConflictDoNothing: insertOnConflictDoNothing });
@@ -149,11 +148,7 @@ describe("RssParseActivity", () => {
     const itItems = parser.filterItItems(parser.parseXml(xml));
     expect(itItems).toHaveLength(3);
 
-    const expectedIds = [
-      { id: "rec-1" },
-      { id: "rec-2" },
-      { id: "rec-3" },
-    ];
+    const expectedIds = [{ id: "rec-1" }, { id: "rec-2" }, { id: "rec-3" }];
     const mocks = buildDbMocks(baseIngest, "djinni", [], expectedIds);
     await bootstrap(mocks);
 
@@ -179,11 +174,7 @@ describe("RssParseActivity", () => {
     expect(valuesArg.every((v) => v.sourceId === SOURCE_ID)).toBe(true);
     expect(valuesArg.every((v) => v.rssIngestId === INGEST_ID)).toBe(true);
     expect(valuesArg[0].hash).toBe(parser.computeHash(itItems[0]));
-    expect(valuesArg.map((v) => v.externalId)).toEqual([
-      "100001",
-      "100002",
-      "100003",
-    ]);
+    expect(valuesArg.map((v) => v.externalId)).toEqual(["100001", "100002", "100003"]);
   });
 
   it("skips items whose hash already exists", async () => {
@@ -194,12 +185,7 @@ describe("RssParseActivity", () => {
     const existingHash = parser.computeHash(itItems[0]);
 
     const expectedIds = [{ id: "rec-2" }, { id: "rec-3" }];
-    const mocks = buildDbMocks(
-      baseIngest,
-      "djinni",
-      [{ hash: existingHash }],
-      expectedIds,
-    );
+    const mocks = buildDbMocks(baseIngest, "djinni", [{ hash: existingHash }], expectedIds);
     await bootstrap(mocks);
 
     const result = await activity.parseAndDedup(INGEST_ID);
@@ -210,10 +196,7 @@ describe("RssParseActivity", () => {
       hash: string;
     }>;
     expect(valuesArg).toHaveLength(2);
-    expect(valuesArg.map((v) => v.title)).toEqual([
-      "Frontend Developer",
-      "Python Developer",
-    ]);
+    expect(valuesArg.map((v) => v.title)).toEqual(["Frontend Developer", "Python Developer"]);
     expect(valuesArg.find((v) => v.hash === existingHash)).toBeUndefined();
   });
 
@@ -244,10 +227,7 @@ describe("RssParseActivity", () => {
       externalId: string;
     }>;
     expect(valuesArg).toHaveLength(2);
-    expect(valuesArg.map((v) => v.title)).toEqual([
-      "Senior Backend Engineer",
-      "Python Developer",
-    ]);
+    expect(valuesArg.map((v) => v.title)).toEqual(["Senior Backend Engineer", "Python Developer"]);
     expect(valuesArg.map((v) => v.externalId)).toEqual(["100001", "100003"]);
   });
 });

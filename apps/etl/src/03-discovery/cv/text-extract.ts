@@ -1,4 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
+
 import { extractText as pdfExtractText, getDocumentProxy } from "unpdf";
 
 const PDF_MAGIC = "%PDF-";

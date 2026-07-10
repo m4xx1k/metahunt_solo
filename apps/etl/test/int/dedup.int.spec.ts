@@ -1,9 +1,11 @@
 import { sql } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
+
+import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { DedupService } from "../../src/02-enrich/dedup/dedup.service";
 import { OpenAIEmbeddingsClient } from "../../src/02-enrich/dedup/openai-embeddings.client";
+
 import { makeTestDb, truncateAll } from "./db";
 
 let db: DrizzleDB;
@@ -77,9 +79,7 @@ async function seedVacancy(opts: {
 }
 
 async function groupCount(): Promise<number> {
-  const r = await db.execute<{ c: string }>(
-    sql`SELECT count(*)::text AS c FROM unique_vacancies`,
-  );
+  const r = await db.execute<{ c: string }>(sql`SELECT count(*)::text AS c FROM unique_vacancies`);
   return Number(r.rows[0]?.c ?? 0);
 }
 

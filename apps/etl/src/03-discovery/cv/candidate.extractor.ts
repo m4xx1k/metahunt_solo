@@ -1,13 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { Collector } from "@boundaryml/baml";
 import { eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { joinNamesByType } from "../../platform/shared/node-names";
 import { b } from "../../baml_client";
 import type { ExtractedCandidate } from "../../baml_client";
+import { joinNamesByType } from "../../platform/shared/node-names";
+
 import type { CandidateExtractorPort } from "./candidate-extractor.port";
 
 // CV → structured candidate via BAML (mirror of BamlVacancyExtractor). Feeds the

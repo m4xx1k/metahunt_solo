@@ -1,11 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { and, desc, eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { SubscriptionsService } from "../04-notify/telegram/subscriptions.service";
 import type { SubscriptionParams } from "../04-notify/telegram/subscriptions.contract";
+import { SubscriptionsService } from "../04-notify/telegram/subscriptions.service";
+
 import type { MeCv, MeSubscription } from "./me.contract";
 
 const { userCvs, candidates, subscriptions } = schema;
@@ -87,10 +89,7 @@ export class MeService {
     return Promise.all(
       rows.map(async (r) => ({
         id: r.id,
-        label: await this.subscriptionsSvc.describe(
-          r.params as SubscriptionParams,
-          r.candidateId,
-        ),
+        label: await this.subscriptionsSvc.describe(r.params as SubscriptionParams, r.candidateId),
         isActive: r.isActive,
         isCv: r.candidateId !== null,
         createdAt: r.createdAt.toISOString(),
@@ -98,11 +97,7 @@ export class MeService {
     );
   }
 
-  async setSubscriptionActive(
-    userId: string,
-    id: string,
-    isActive: boolean,
-  ): Promise<boolean> {
+  async setSubscriptionActive(userId: string, id: string, isActive: boolean): Promise<boolean> {
     const updated = await this.db
       .update(subscriptions)
       .set({ isActive })

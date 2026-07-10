@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -29,10 +25,7 @@ function emptyDbMock(): DbMock {
 
 async function bootstrap(db: DbMock): Promise<TaxonomyService> {
   const moduleRef = await Test.createTestingModule({
-    providers: [
-      TaxonomyService,
-      { provide: DRIZZLE, useValue: db },
-    ],
+    providers: [TaxonomyService, { provide: DRIZZLE, useValue: db }],
   }).compile();
   return moduleRef.get(TaxonomyService);
 }
@@ -167,9 +160,7 @@ describe("TaxonomyService", () => {
         .mockResolvedValue(undefined);
 
       // tx.update().set().where().returning()
-      const updateReturning = jest
-        .fn()
-        .mockResolvedValue(opts.updated ? [opts.updated] : []);
+      const updateReturning = jest.fn().mockResolvedValue(opts.updated ? [opts.updated] : []);
       const updateWhere = jest.fn().mockReturnValue({ returning: updateReturning });
       const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
       const update = jest.fn().mockReturnValue({ set: updateSet });
@@ -218,9 +209,7 @@ describe("TaxonomyService", () => {
       const db = emptyDbMock();
       const svc = await bootstrap(db);
 
-      await expect(svc.renameNode(NODE_ID, " a ")).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(svc.renameNode(NODE_ID, " a ")).rejects.toBeInstanceOf(BadRequestException);
       expect(db.transaction).not.toHaveBeenCalled();
     });
 
@@ -237,9 +226,7 @@ describe("TaxonomyService", () => {
       wireTx(db, tx);
       const svc = await bootstrap(db);
 
-      await expect(svc.renameNode(NODE_ID, "React")).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(svc.renameNode(NODE_ID, "React")).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it("404s when the node id is unknown", async () => {
@@ -248,9 +235,7 @@ describe("TaxonomyService", () => {
       wireTx(db, tx);
       const svc = await bootstrap(db);
 
-      await expect(svc.renameNode(NODE_ID, "Anything")).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(svc.renameNode(NODE_ID, "Anything")).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it("surfaces a canonical-of-other conflict with mergeTargetId suggestion", async () => {
@@ -296,9 +281,7 @@ describe("TaxonomyService", () => {
       wireTx(db, tx);
       const svc = await bootstrap(db);
 
-      await expect(
-        svc.renameNode(NODE_ID, "Backend Engineer"),
-      ).rejects.toMatchObject({
+      await expect(svc.renameNode(NODE_ID, "Backend Engineer")).rejects.toMatchObject({
         response: {
           message: expect.stringContaining("alias"),
           suggestion: { mergeTargetId: OTHER_ID },
@@ -318,28 +301,20 @@ describe("TaxonomyService", () => {
       });
       const execute = jest.fn().mockResolvedValue(undefined);
       const update = jest.fn().mockReturnValue({
-        set: jest
-          .fn()
-          .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
+        set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
       });
-      const del = jest
-        .fn()
-        .mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) });
+      const del = jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) });
       return { select, execute, update, delete: del };
     }
 
     function wireMergeTx(db: DbMock, tx: ReturnType<typeof buildMergeTx>): void {
-      db.transaction.mockImplementation(
-        async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
-      );
+      db.transaction.mockImplementation(async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx));
     }
 
     it("rejects merging a node into itself without touching the DB", async () => {
       const db = emptyDbMock();
       const svc = await bootstrap(db);
-      await expect(svc.mergeInto(SRC, SRC)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(svc.mergeInto(SRC, SRC)).rejects.toBeInstanceOf(BadRequestException);
       expect(db.transaction).not.toHaveBeenCalled();
     });
 
@@ -351,9 +326,7 @@ describe("TaxonomyService", () => {
       );
       wireMergeTx(db, tx);
       const svc = await bootstrap(db);
-      await expect(svc.mergeInto(SRC, DST)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(svc.mergeInto(SRC, DST)).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it("repoints candidate_nodes (CV skill links) onto the target", async () => {
@@ -376,5 +349,4 @@ describe("TaxonomyService", () => {
       expect(updatedTables).toContain(schema.vacancyNodes);
     });
   });
-
 });

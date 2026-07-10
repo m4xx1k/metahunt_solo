@@ -1,13 +1,15 @@
 import { sql } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
-import { TracksRepository } from "../../src/03-discovery/tracks/tracks.repository";
+import { schema, type DrizzleDB } from "@metahunt/database";
+
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import {
   resolveTrackPreset,
   presetMatchesNothing,
 } from "../../src/03-discovery/tracks/track-preset";
+import { TracksRepository } from "../../src/03-discovery/tracks/tracks.repository";
+
 import { makeTestDb, truncateAll } from "./db";
 
 // The headline invariant of the browse tree: a track's displayed count (from

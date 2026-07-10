@@ -3,18 +3,9 @@ import { Module } from "@nestjs/common";
 import { LOADER_ACTIVITIES } from "./activities";
 import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
 import { LoaderController } from "./loader.controller";
-import {
-  CompanyRepository,
-  DrizzleCompanyRepository,
-} from "./repositories/company.repository";
-import {
-  NodeRepository,
-  DrizzleNodeRepository,
-} from "./repositories/node.repository";
-import {
-  VacancyRepository,
-  DrizzleVacancyRepository,
-} from "./repositories/vacancy.repository";
+import { CompanyRepository, DrizzleCompanyRepository } from "./repositories/company.repository";
+import { NodeRepository, DrizzleNodeRepository } from "./repositories/node.repository";
+import { VacancyRepository, DrizzleVacancyRepository } from "./repositories/vacancy.repository";
 import { CompanyResolverService } from "./services/company-resolver.service";
 import { LoaderBackfillService } from "./services/loader-backfill.service";
 import { NodeResolverService } from "./services/node-resolver.service";

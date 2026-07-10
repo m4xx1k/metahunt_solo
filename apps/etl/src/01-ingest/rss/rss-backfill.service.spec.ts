@@ -11,9 +11,7 @@ type DbMock = {
 };
 
 function buildDbMock(missingIds: string[]): DbMock {
-  const executeMissing = jest
-    .fn()
-    .mockResolvedValue(missingIds.map((id) => ({ id })));
+  const executeMissing = jest.fn().mockResolvedValue(missingIds.map((id) => ({ id })));
   const limit = jest.fn().mockReturnValue({ execute: executeMissing });
   const orderBy = jest.fn().mockReturnValue({ limit });
   const where = jest.fn().mockReturnValue({ orderBy });
@@ -59,9 +57,7 @@ describe("RssBackfillService", () => {
     const result = await service.extractMissing(50);
 
     expect(extractAndInsert).toHaveBeenCalledTimes(3);
-    ids.forEach((id, i) =>
-      expect(extractAndInsert).toHaveBeenNthCalledWith(i + 1, id),
-    );
+    ids.forEach((id, i) => expect(extractAndInsert).toHaveBeenNthCalledWith(i + 1, id));
     expect(result).toEqual({ attempted: 3, succeeded: 3, failed: 0 });
   });
 

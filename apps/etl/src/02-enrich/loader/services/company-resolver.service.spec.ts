@@ -1,6 +1,7 @@
-import { CompanyResolverService } from "./company-resolver.service";
 import { CompanyRepository } from "../repositories/company.repository";
 import type { Executor } from "../repositories/executor";
+
+import { CompanyResolverService } from "./company-resolver.service";
 
 const SOURCE_ID = "11111111-1111-1111-1111-111111111111";
 const COMPANY_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
@@ -17,7 +18,7 @@ function makeRepo(): jest.Mocked<CompanyRepository> {
     findIdBySlug: jest.fn().mockResolvedValue(null),
     insertReturningId: jest.fn().mockResolvedValue(null),
     linkIdentifier: jest.fn().mockResolvedValue(undefined),
-  } as unknown as jest.Mocked<CompanyRepository>;
+  };
 }
 
 describe("CompanyResolverService.resolve", () => {
@@ -29,11 +30,7 @@ describe("CompanyResolverService.resolve", () => {
     const result = await svc.resolve(SOURCE_ID, "Acme Corp", TX);
 
     expect(result).toBe(EXISTING_COMPANY_ID);
-    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(
-      SOURCE_ID,
-      "Acme Corp",
-      TX,
-    );
+    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp", TX);
     expect(repo.findIdBySlug).not.toHaveBeenCalled();
     expect(repo.insertReturningId).not.toHaveBeenCalled();
     expect(repo.linkIdentifier).not.toHaveBeenCalled();
@@ -65,17 +62,8 @@ describe("CompanyResolverService.resolve", () => {
     const result = await svc.resolve(SOURCE_ID, "Acme Corp", TX);
 
     expect(result).toBe(COMPANY_ID);
-    expect(repo.insertReturningId).toHaveBeenCalledWith(
-      "Acme Corp",
-      "acme-corp",
-      TX,
-    );
-    expect(repo.linkIdentifier).toHaveBeenCalledWith(
-      SOURCE_ID,
-      "Acme Corp",
-      COMPANY_ID,
-      TX,
-    );
+    expect(repo.insertReturningId).toHaveBeenCalledWith("Acme Corp", "acme-corp", TX);
+    expect(repo.linkIdentifier).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp", COMPANY_ID, TX);
   });
 
   it("slugifies the name and preserves the raw display name", async () => {
@@ -85,11 +73,7 @@ describe("CompanyResolverService.resolve", () => {
 
     await svc.resolve(SOURCE_ID, "  Hello World, Inc!  ", TX);
 
-    expect(repo.insertReturningId).toHaveBeenCalledWith(
-      "Hello World, Inc!",
-      "hello-world-inc",
-      TX,
-    );
+    expect(repo.insertReturningId).toHaveBeenCalledWith("Hello World, Inc!", "hello-world-inc", TX);
   });
 
   it("recovers via re-read when a concurrent insert wins the race", async () => {
@@ -120,10 +104,6 @@ describe("CompanyResolverService.resolve", () => {
     const result = await svc.resolve(SOURCE_ID, "Acme Corp");
 
     expect(result).toBe(EXISTING_COMPANY_ID);
-    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(
-      SOURCE_ID,
-      "Acme Corp",
-      undefined,
-    );
+    expect(repo.findIdByIdentifier).toHaveBeenCalledWith(SOURCE_ID, "Acme Corp", undefined);
   });
 });

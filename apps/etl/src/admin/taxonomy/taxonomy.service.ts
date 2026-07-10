@@ -5,7 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+
 import { sql, eq, and, inArray } from "drizzle-orm";
+
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
@@ -213,10 +215,7 @@ export class TaxonomyService {
   async listNodes(filters: NodeListFilters): Promise<NodeListResult> {
     const offset = (filters.page - 1) * filters.pageSize;
     const trimmedQ = filters.q?.trim() ?? "";
-    const like =
-      trimmedQ.length > 0
-        ? `%${trimmedQ.replace(/[\\%_]/g, "\\$&")}%`
-        : null;
+    const like = trimmedQ.length > 0 ? `%${trimmedQ.replace(/[\\%_]/g, "\\$&")}%` : null;
 
     // Drizzle binds `${array}` as a row literal `($1, $2, $3)` — Postgres
     // can't cast that to `text[]`. `sql.join` keeps each value as its own
@@ -229,9 +228,7 @@ export class TaxonomyService {
     // `(NULL OR ...)` short-circuits — that pattern needs explicit casts
     // for the bound NULLs, which is more friction than just not emitting
     // the clause at all.
-    const typeClause = filters.type
-      ? sql`AND n.type = ${filters.type}`
-      : sql``;
+    const typeClause = filters.type ? sql`AND n.type = ${filters.type}` : sql``;
     const searchClause = like
       ? sql`AND (
           n.canonical_name ILIKE ${like}
@@ -325,10 +322,7 @@ export class TaxonomyService {
   }
 
   async getNodeDetail(id: string) {
-    const [node] = await this.db
-      .select()
-      .from(schema.nodes)
-      .where(eq(schema.nodes.id, id));
+    const [node] = await this.db.select().from(schema.nodes).where(eq(schema.nodes.id, id));
     if (!node) throw new NotFoundException(`Node ${id} not found`);
 
     const aliases = await this.db
@@ -358,13 +352,10 @@ export class TaxonomyService {
   // length floor on both sides + a per-type similarity threshold so
   // short tokens like "C" don't false-match "C++"/"C#" at sim=1.
   async getFuzzyMatches(id: string) {
-    const [node] = await this.db
-      .select()
-      .from(schema.nodes)
-      .where(eq(schema.nodes.id, id));
+    const [node] = await this.db.select().from(schema.nodes).where(eq(schema.nodes.id, id));
     if (!node) throw new NotFoundException(`Node ${id} not found`);
 
-    const cfg = FUZZY[node.type as NodeType];
+    const cfg = FUZZY[node.type];
     const name = node.canonicalName;
     if (name.length < cfg.minLen) {
       return {
@@ -484,16 +475,11 @@ export class TaxonomyService {
   async renameNode(id: string, rawName: string) {
     const newName = rawName.trim();
     if (newName.length < RENAME_MIN_LEN) {
-      throw new BadRequestException(
-        `name must be at least ${RENAME_MIN_LEN} characters`,
-      );
+      throw new BadRequestException(`name must be at least ${RENAME_MIN_LEN} characters`);
     }
 
     return this.db.transaction(async (tx) => {
-      const [node] = await tx
-        .select()
-        .from(schema.nodes)
-        .where(eq(schema.nodes.id, id));
+      const [node] = await tx.select().from(schema.nodes).where(eq(schema.nodes.id, id));
       if (!node) throw new NotFoundException(`Node ${id} not found`);
 
       if (newName === node.canonicalName) {
@@ -565,9 +551,7 @@ export class TaxonomyService {
       if (!source) throw new NotFoundException(`Source node ${sourceId} not found`);
       if (!target) throw new NotFoundException(`Target node ${targetId} not found`);
       if (source.type !== target.type) {
-        throw new BadRequestException(
-          `cannot merge across types: ${source.type} → ${target.type}`,
-        );
+        throw new BadRequestException(`cannot merge across types: ${source.type} → ${target.type}`);
       }
       if (source.status === "NEW" && target.status !== "VERIFIED") {
         throw new BadRequestException(
@@ -637,13 +621,7 @@ export class TaxonomyService {
         .where(eq(schema.candidateNodes.nodeId, sourceId));
 
       // 5) Delete source. Any lingering aliases cascade automatically.
-      await tx
-        .delete(schema.nodeAliases)
-        .where(
-          and(
-            eq(schema.nodeAliases.nodeId, sourceId),
-          ),
-        );
+      await tx.delete(schema.nodeAliases).where(and(eq(schema.nodeAliases.nodeId, sourceId)));
       await tx.delete(schema.nodes).where(eq(schema.nodes.id, sourceId));
 
       return { mergedInto: targetId, source: source.canonicalName, target: target.canonicalName };
@@ -656,12 +634,7 @@ function pct(num: number, denom: number): number {
   return Number(((num / denom) * 100).toFixed(1));
 }
 
-function trimNode(n: {
-  id: string;
-  canonicalName: string;
-  type: string;
-  status: string;
-}) {
+function trimNode(n: { id: string; canonicalName: string; type: string; status: string }) {
   return {
     id: n.id,
     canonicalName: n.canonicalName,
@@ -670,11 +643,7 @@ function trimNode(n: {
   };
 }
 
-async function countVacanciesForNode(
-  db: DrizzleDB,
-  nodeId: string,
-  type: string,
-): Promise<number> {
+async function countVacanciesForNode(db: DrizzleDB, nodeId: string, type: string): Promise<number> {
   if (type === "SKILL") {
     const r = await db.execute<{ c: string }>(sql`
       SELECT COUNT(DISTINCT vacancy_id)::text AS c

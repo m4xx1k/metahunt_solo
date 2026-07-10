@@ -1,12 +1,14 @@
 import { count } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
-import type { ExtractedCandidate } from "../../src/baml_client";
+import { schema, type DrizzleDB } from "@metahunt/database";
+
+import type { CandidateExtractorPort } from "../../src/03-discovery/cv/candidate-extractor.port";
+import { CandidateLoaderService } from "../../src/03-discovery/cv/candidate-loader.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
-import { CandidateLoaderService } from "../../src/03-discovery/cv/candidate-loader.service";
-import type { CandidateExtractorPort } from "../../src/03-discovery/cv/candidate-extractor.port";
+import type { ExtractedCandidate } from "../../src/baml_client";
+
 import { makeTestDb, truncateAll } from "./db";
 
 let db: DrizzleDB;
@@ -14,9 +16,10 @@ let pool: Pool;
 
 // Real loader + real RankingService against the live db; only the LLM extractor
 // is stubbed — its return is the dial each test sets (TESTING.md: mock the seam).
-function buildLoader(
-  extract: (text: string) => Promise<ExtractedCandidate>,
-): { loader: CandidateLoaderService; extract: jest.Mock } {
+function buildLoader(extract: (text: string) => Promise<ExtractedCandidate>): {
+  loader: CandidateLoaderService;
+  extract: jest.Mock;
+} {
   const mock = jest.fn(extract);
   const extractor: CandidateExtractorPort = { extract: mock };
   const loader = new CandidateLoaderService(
@@ -38,17 +41,13 @@ function extracted(overrides: Partial<ExtractedCandidate> = {}): ExtractedCandid
   } as ExtractedCandidate;
 }
 
-async function rowCount(
-  table: typeof schema.nodes | typeof schema.candidates,
-): Promise<number> {
+async function rowCount(table: typeof schema.nodes | typeof schema.candidates): Promise<number> {
   const [{ n }] = await db.select({ n: count() }).from(table);
   return n;
 }
 
 async function seedSkill(name: string): Promise<void> {
-  await db
-    .insert(schema.nodes)
-    .values({ type: "SKILL", canonicalName: name, status: "VERIFIED" });
+  await db.insert(schema.nodes).values({ type: "SKILL", canonicalName: name, status: "VERIFIED" });
 }
 
 beforeAll(() => {

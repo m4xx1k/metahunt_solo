@@ -3,10 +3,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import type {
-  SignupSource,
-  SubscribeResponse,
-} from "./users.contract";
+import type { SignupSource, SubscribeResponse } from "./users.contract";
 
 const { users } = schema;
 
@@ -19,10 +16,7 @@ export class UsersService {
    * concurrent retry never produces a 5xx, and so we can distinguish a
    * first-time signup from a repeat one by the size of `returning`.
    */
-  async subscribe(
-    rawEmail: string,
-    source: SignupSource,
-  ): Promise<SubscribeResponse> {
+  async subscribe(rawEmail: string, source: SignupSource): Promise<SubscribeResponse> {
     const email = rawEmail.trim().toLowerCase();
     const inserted = await this.db
       .insert(users)

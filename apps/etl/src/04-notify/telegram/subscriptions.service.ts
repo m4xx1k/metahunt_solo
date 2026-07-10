@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -7,10 +8,8 @@ import type { DrizzleDB } from "@metahunt/database";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { asString, asStringArray } from "../../platform/shared/coerce";
-import {
-  SUBSCRIPTION_PARAM_KEYS,
-  type SubscriptionParams,
-} from "./subscriptions.contract";
+
+import { SUBSCRIPTION_PARAM_KEYS, type SubscriptionParams } from "./subscriptions.contract";
 import { copy } from "./telegram-copy";
 
 const { subscriptions, nodes } = schema;
@@ -38,14 +37,9 @@ function asEnumList(arrayVal: unknown, scalarVal: unknown): string[] {
 
 // Postgres `uuid` columns reject malformed input at the driver level, so we
 // screen the deep-link token before it reaches a query.
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type LinkResult =
-  | "linked"
-  | "already_active"
-  | "duplicate"
-  | "not_found";
+export type LinkResult = "linked" | "already_active" | "duplicate" | "not_found";
 
 // What the digest needs to match a subscription, independent of delivery — so
 // matching can run for preview on an unlinked row. createdAt is the new-since floor.
@@ -77,10 +71,7 @@ export class SubscriptionsService {
 
   // Pending (inactive, unlinked) until `/start <id>`. Persists only whitelisted
   // keys. Returns the id, which doubles as the deep-link token.
-  async create(
-    rawParams: SubscriptionParams,
-    candidateId?: string,
-  ): Promise<string> {
+  async create(rawParams: SubscriptionParams, candidateId?: string): Promise<string> {
     const params: SubscriptionParams = {};
     for (const key of SUBSCRIPTION_PARAM_KEYS) {
       const value = rawParams[key];
@@ -194,9 +185,7 @@ export class SubscriptionsService {
         createdAt: subscriptions.createdAt,
       })
       .from(subscriptions)
-      .where(
-        and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)),
-      );
+      .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)));
   }
 
   /** Ids of every active subscription — the digest workflow's work-list. */
@@ -247,9 +236,7 @@ export class SubscriptionsService {
     const stopped = await this.db
       .update(subscriptions)
       .set({ isActive: false })
-      .where(
-        and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)),
-      )
+      .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
       .returning({ id: subscriptions.id });
 
     if (stopped.length > 0) {
@@ -314,10 +301,7 @@ export class SubscriptionsService {
 
   // Human label distinguishing one sub from another: CV marker, roles/skills,
   // then the headline filters (seniority, format, бронь, fit gate).
-  async describe(
-    params: SubscriptionParams,
-    candidateId?: string | null,
-  ): Promise<string> {
+  async describe(params: SubscriptionParams, candidateId?: string | null): Promise<string> {
     const roleIds = asStringArray(params.roleIds);
     const skillIds = asStringArray(params.skillIds);
     const domainIds = asStringArray(params.domainIds);

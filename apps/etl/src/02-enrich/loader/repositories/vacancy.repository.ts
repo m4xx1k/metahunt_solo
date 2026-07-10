@@ -1,5 +1,7 @@
 import { Injectable, Inject } from "@nestjs/common";
+
 import { eq, sql } from "drizzle-orm";
+
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
@@ -14,10 +16,7 @@ export type VacancyUpsertValues = typeof schema.vacancies.$inferInsert;
 // (source_id, external_id) identifies the row, loaded_at is first-seen.
 const IMMUTABLE_ON_UPDATE = ["sourceId", "externalId", "loadedAt"] as const;
 
-function omit<T extends object, K extends keyof T>(
-  obj: T,
-  keys: readonly K[],
-): Omit<T, K> {
+function omit<T extends object, K extends keyof T>(obj: T, keys: readonly K[]): Omit<T, K> {
   const clone = { ...obj };
   for (const k of keys) delete (clone as Record<string, unknown>)[k as string];
   return clone;
@@ -29,9 +28,7 @@ function omit<T extends object, K extends keyof T>(
 // on whatever executor (tx) it's handed. The VacancyLoaderService just maps
 // extracted data to values + skill links.
 export abstract class VacancyRepository {
-  abstract runInTransaction<T>(
-    work: (tx: Executor) => Promise<T>,
-  ): Promise<T>;
+  abstract runInTransaction<T>(work: (tx: Executor) => Promise<T>): Promise<T>;
   abstract findRecord(rssRecordId: string): Promise<RssRecordRow | null>;
   // Insert-or-update the vacancy, then fully rewrite its skill links, all on
   // the supplied executor. Returns the vacancy id.
@@ -78,9 +75,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
 
     const vacancyId = upserted.id;
 
-    await executor
-      .delete(schema.vacancyNodes)
-      .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
+    await executor.delete(schema.vacancyNodes).where(eq(schema.vacancyNodes.vacancyId, vacancyId));
 
     if (skillLinks.length > 0) {
       await executor.insert(schema.vacancyNodes).values(

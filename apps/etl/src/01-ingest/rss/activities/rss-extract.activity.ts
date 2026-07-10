@@ -1,14 +1,16 @@
 import { Injectable, Inject } from "@nestjs/common";
+
 import { eq } from "drizzle-orm";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
+
+import { cleanDescription } from "../../../02-enrich/dedup/sanitize";
 import {
   VACANCY_EXTRACTOR,
   type VacancyExtractor,
 } from "../../../02-enrich/extraction/vacancy-extractor";
-import { cleanDescription } from "../../../02-enrich/dedup/sanitize";
 
 @Injectable()
 @Activity()

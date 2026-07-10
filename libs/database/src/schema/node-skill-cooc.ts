@@ -1,5 +1,5 @@
-import { uuid, integer, doublePrecision, pgMaterializedView } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sql } from "drizzle-orm";
+import { uuid, integer, doublePrecision, pgMaterializedView } from "drizzle-orm/pg-core";
 
 // Skill<->skill co-occurrence over per-vacancy skill-sets, with NPMI in [-1,1].
 // See md/journal/migrations/skill-metadata-recommendations.md (Migration 2).
@@ -12,11 +12,11 @@ import { sql } from 'drizzle-orm';
 //
 // Plain (non-CONCURRENT) REFRESH alongside node_stats — read by a join on a_id;
 // no unique index required. Index node_skill_cooc_a(a_id) added in the migration.
-export const nodeSkillCooc = pgMaterializedView('node_skill_cooc', {
-  aId: uuid('a_id'),
-  bId: uuid('b_id'),
-  cooc: integer('cooc'),
-  npmi: doublePrecision('npmi'),
+export const nodeSkillCooc = pgMaterializedView("node_skill_cooc", {
+  aId: uuid("a_id"),
+  bId: uuid("b_id"),
+  cooc: integer("cooc"),
+  npmi: doublePrecision("npmi"),
 }).as(
   sql`
     WITH df AS (

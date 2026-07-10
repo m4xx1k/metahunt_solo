@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+
 import {
   S3Client,
   PutObjectCommand,
@@ -26,9 +27,7 @@ export class StorageService {
   }
 
   async upload(key: string, body: Buffer): Promise<void> {
-    await this.client.send(
-      new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: body }),
-    );
+    await this.client.send(new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: body }));
   }
 
   async ping(): Promise<void> {
@@ -36,9 +35,7 @@ export class StorageService {
   }
 
   async download(key: string): Promise<Buffer> {
-    const res = await this.client.send(
-      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-    );
+    const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
     const chunks: Uint8Array[] = [];
     for await (const chunk of res.Body as AsyncIterable<Uint8Array>) {
       chunks.push(chunk);

@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+
 import { paginateDigest } from "./digest.renderer";
 import { SentNotificationsService } from "./sent-notifications.service";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
@@ -28,9 +29,7 @@ export class DigestService {
   }
 
   // Match without sending — read-only debug hook, works on any (even unlinked) row.
-  async preview(
-    id: string,
-  ): Promise<{ total: number; label: string; titles: string[] } | null> {
+  async preview(id: string): Promise<{ total: number; label: string; titles: string[] } | null> {
     const sub = await this.subscriptions.getMatchTarget(id);
     if (!sub) return null;
     const { items, total, label } = await this.matcher.matchNew(sub);
@@ -68,9 +67,7 @@ export class DigestService {
       vacancies: total,
       pages: pages.length,
     });
-    this.logger.log(
-      `digest → sub ${sub.id}: ${total} new in ${pages.length} page(s)`,
-    );
+    this.logger.log(`digest → sub ${sub.id}: ${total} new in ${pages.length} page(s)`);
     return total;
   }
 

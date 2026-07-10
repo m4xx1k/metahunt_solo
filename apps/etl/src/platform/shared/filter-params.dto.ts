@@ -1,14 +1,7 @@
 import { Transform, Type } from "class-transformer";
-import {
-  IsArray,
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from "class-validator";
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+
+import { FIT_TIER_VALUES, type FitTier } from "../../03-discovery/ranking/ranking.contract";
 
 import {
   EMPLOYMENT_TYPE_VALUES,
@@ -20,7 +13,6 @@ import {
   type Seniority,
   type WorkFormat,
 } from "./contract";
-import { FIT_TIER_VALUES, type FitTier } from "../../03-discovery/ranking/ranking.contract";
 
 // Shared, validated filter contract for the endpoints that consume the vacancy
 // filters — GET /feed (query) and POST /ranking/match (body). One transport
@@ -43,14 +35,12 @@ const toBool = () =>
     if (value === undefined || value === null || value === "") return undefined;
     if (value === true || value === "true" || value === "1") return true;
     if (value === false || value === "false" || value === "0") return false;
-    return value; // anything else → let @IsBoolean reject it (400)
+    return value as unknown; // anything else → let @IsBoolean reject it (400)
   });
 
 const trimmed = () =>
   Transform(({ value }) =>
-    typeof value === "string" && value.trim().length > 0
-      ? value.trim()
-      : undefined,
+    typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined,
   );
 
 // Fields both endpoints share. Subclasses add their transport-specific extras.
@@ -176,9 +166,7 @@ export class FeedQueryDto extends FilterParamsDto {
 export class MatchDto extends FilterParamsDto {
   @IsOptional()
   @Transform(({ value }) =>
-    Array.isArray(value)
-      ? value.map((v) => String(v).trim()).filter((v) => v.length > 0)
-      : [],
+    Array.isArray(value) ? value.map((v) => String(v).trim()).filter((v) => v.length > 0) : [],
   )
   @IsArray()
   @IsString({ each: true })

@@ -1,5 +1,7 @@
 import { Controller, Get, Inject } from "@nestjs/common";
+
 import { sql } from "drizzle-orm";
+
 import { DRIZZLE, type DrizzleDB } from "@metahunt/database";
 
 @Controller()

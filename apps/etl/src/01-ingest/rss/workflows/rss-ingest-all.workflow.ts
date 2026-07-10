@@ -5,19 +5,16 @@ import {
   startChild,
   workflowInfo,
 } from "@temporalio/workflow";
+
 import type { RefreshNodeStatsActivity } from "../activities/refresh-node-stats.activity";
 import type { RssListSourcesActivity } from "../activities/rss-list-sources.activity";
 
-const { listRemoteSources } = proxyActivities<
-  typeof RssListSourcesActivity.prototype
->({
+const { listRemoteSources } = proxyActivities<typeof RssListSourcesActivity.prototype>({
   startToCloseTimeout: "30s",
   retry: { maximumAttempts: 3 },
 });
 
-const { refreshNodeStats } = proxyActivities<
-  typeof RefreshNodeStatsActivity.prototype
->({
+const { refreshNodeStats } = proxyActivities<typeof RefreshNodeStatsActivity.prototype>({
   startToCloseTimeout: "5m",
   retry: { maximumAttempts: 2 },
 });
@@ -26,7 +23,10 @@ const { refreshNodeStats } = proxyActivities<
 // the resulting workflowId stays readable in the Temporal UI without making
 // shells choke on the `:` separator.
 function formatStamp(d: Date): string {
-  return d.toISOString().replace(/[:.]/g, "-").replace(/-\d{3}Z$/, "Z");
+  return d
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .replace(/-\d{3}Z$/, "Z");
 }
 
 export async function rssIngestAllWorkflow(): Promise<{ started: number }> {

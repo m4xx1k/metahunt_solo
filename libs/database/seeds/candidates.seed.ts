@@ -1,8 +1,9 @@
-import { createHash } from 'node:crypto';
-import { eq, sql } from 'drizzle-orm';
+import { createHash } from "node:crypto";
 
-import type { DrizzleDB } from '../src/tokens';
-import { candidates, candidateNodes } from '../src/schema';
+import { eq, sql } from "drizzle-orm";
+
+import { candidates, candidateNodes } from "../src/schema";
+import type { DrizzleDB } from "../src/tokens";
 
 // Seed the reverse-ATS demo profiles as real `sample` candidate rows, so the
 // picker ranks them through the SAME /cv/:id/matches path as an uploaded CV (no
@@ -10,20 +11,8 @@ import { candidates, candidateNodes } from '../src/schema';
 // resolve to existing SKILL nodes — run AFTER seedNodes. Idempotent on
 // contentHash. Presentation (label/hint) rides `extracted.sample`.
 
-type Seniority =
-  | 'INTERN'
-  | 'JUNIOR'
-  | 'MIDDLE'
-  | 'SENIOR'
-  | 'LEAD'
-  | 'PRINCIPAL'
-  | 'C_LEVEL';
-type EnglishLevel =
-  | 'BEGINNER'
-  | 'INTERMEDIATE'
-  | 'UPPER_INTERMEDIATE'
-  | 'ADVANCED'
-  | 'NATIVE';
+type Seniority = "INTERN" | "JUNIOR" | "MIDDLE" | "SENIOR" | "LEAD" | "PRINCIPAL" | "C_LEVEL";
+type EnglishLevel = "BEGINNER" | "INTERMEDIATE" | "UPPER_INTERMEDIATE" | "ADVANCED" | "NATIVE";
 
 interface SampleSeed {
   label: string;
@@ -37,49 +26,99 @@ interface SampleSeed {
 
 const SAMPLES: SampleSeed[] = [
   {
-    label: 'Python Backend',
-    hint: 'Django · infra',
-    role: 'Backend Developer',
-    seniority: 'MIDDLE',
-    englishLevel: 'UPPER_INTERMEDIATE',
+    label: "Python Backend",
+    hint: "Django · infra",
+    role: "Backend Developer",
+    seniority: "MIDDLE",
+    englishLevel: "UPPER_INTERMEDIATE",
     experienceYears: 4,
-    skills: ['Python', 'Django', 'FastAPI', 'PostgreSQL', 'Redis', 'Celery', 'Docker', 'Kubernetes', 'AWS', 'RabbitMQ', 'REST API', 'GraphQL'],
+    skills: [
+      "Python",
+      "Django",
+      "FastAPI",
+      "PostgreSQL",
+      "Redis",
+      "Celery",
+      "Docker",
+      "Kubernetes",
+      "AWS",
+      "RabbitMQ",
+      "REST API",
+      "GraphQL",
+    ],
   },
   {
-    label: 'React Frontend',
-    hint: 'UI-focused',
-    role: 'Frontend Developer',
-    seniority: 'MIDDLE',
-    englishLevel: 'UPPER_INTERMEDIATE',
+    label: "React Frontend",
+    hint: "UI-focused",
+    role: "Frontend Developer",
+    seniority: "MIDDLE",
+    englishLevel: "UPPER_INTERMEDIATE",
     experienceYears: 3,
-    skills: ['React', 'TypeScript', 'JavaScript', 'Next.js', 'Redux', 'TailwindCSS', 'HTML', 'CSS', 'GraphQL', 'Jest', 'Webpack', 'Storybook'],
+    skills: [
+      "React",
+      "TypeScript",
+      "JavaScript",
+      "Next.js",
+      "Redux",
+      "TailwindCSS",
+      "HTML",
+      "CSS",
+      "GraphQL",
+      "Jest",
+      "Webpack",
+      "Storybook",
+    ],
   },
   {
-    label: 'Full-Stack JS',
-    hint: 'node + react',
-    role: 'Fullstack Developer',
-    seniority: 'SENIOR',
-    englishLevel: 'ADVANCED',
+    label: "Full-Stack JS",
+    hint: "node + react",
+    role: "Fullstack Developer",
+    seniority: "SENIOR",
+    englishLevel: "ADVANCED",
     experienceYears: 5,
-    skills: ['TypeScript', 'React', 'Next.js', 'Node.js', 'NestJS', 'Express.js', 'PostgreSQL', 'Prisma', 'GraphQL', 'Docker', 'AWS', 'Redis'],
+    skills: [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "NestJS",
+      "Express.js",
+      "PostgreSQL",
+      "Prisma",
+      "GraphQL",
+      "Docker",
+      "AWS",
+      "Redis",
+    ],
   },
   {
-    label: 'Data / ML',
-    hint: 'niche stack',
-    role: 'Data Scientist',
-    seniority: 'MIDDLE',
-    englishLevel: 'UPPER_INTERMEDIATE',
+    label: "Data / ML",
+    hint: "niche stack",
+    role: "Data Scientist",
+    seniority: "MIDDLE",
+    englishLevel: "UPPER_INTERMEDIATE",
     experienceYears: 3,
-    skills: ['Python', 'PyTorch', 'TensorFlow', 'Pandas', 'NumPy', 'SQL', 'Spark', 'Airflow', 'scikit-learn', 'Docker'],
+    skills: [
+      "Python",
+      "PyTorch",
+      "TensorFlow",
+      "Pandas",
+      "NumPy",
+      "SQL",
+      "Spark",
+      "Airflow",
+      "scikit-learn",
+      "Docker",
+    ],
   },
   {
-    label: 'Junior JS',
-    hint: 'entry-level',
-    role: 'Frontend Developer',
-    seniority: 'JUNIOR',
-    englishLevel: 'INTERMEDIATE',
+    label: "Junior JS",
+    hint: "entry-level",
+    role: "Frontend Developer",
+    seniority: "JUNIOR",
+    englishLevel: "INTERMEDIATE",
     experienceYears: 1,
-    skills: ['JavaScript', 'React', 'HTML', 'CSS', 'Node.js', 'Git', 'TypeScript'],
+    skills: ["JavaScript", "React", "HTML", "CSS", "Node.js", "Git", "TypeScript"],
   },
 ];
 
@@ -92,8 +131,8 @@ function sampleText(s: SampleSeed): string {
     `Seniority: ${s.seniority}`,
     `Experience: ${s.experienceYears} years`,
     `English: ${s.englishLevel}`,
-    `Skills: ${s.skills.join(', ')}`,
-  ].join('\n');
+    `Skills: ${s.skills.join(", ")}`,
+  ].join("\n");
 }
 
 // Resolve skill names → SKILL node ids via canonical + alias (canonical wins),
@@ -123,8 +162,8 @@ async function resolveSkillIds(
       AND lower(a.name) IN (${inList})
   `);
   const byKey = new Map<string, string>();
-  for (const r of res.rows) if (r.via === 'canonical') byKey.set(r.key, r.id);
-  for (const r of res.rows) if (r.via === 'alias' && !byKey.has(r.key)) byKey.set(r.key, r.id);
+  for (const r of res.rows) if (r.via === "canonical") byKey.set(r.key, r.id);
+  for (const r of res.rows) if (r.via === "alias" && !byKey.has(r.key)) byKey.set(r.key, r.id);
 
   const ids = new Set<string>();
   const unmatched: string[] = [];
@@ -139,9 +178,9 @@ async function resolveSkillIds(
 export async function seedSampleCandidates(db: DrizzleDB): Promise<void> {
   for (const s of SAMPLES) {
     const sourceText = sampleText(s);
-    const contentHash = createHash('sha256')
-      .update(sourceText.replace(/\s+/g, ' ').toLowerCase())
-      .digest('hex');
+    const contentHash = createHash("sha256")
+      .update(sourceText.replace(/\s+/g, " ").toLowerCase())
+      .digest("hex");
     const { ids, unmatched } = await resolveSkillIds(db, s.skills);
 
     const extracted = {
@@ -157,7 +196,7 @@ export async function seedSampleCandidates(db: DrizzleDB): Promise<void> {
       contentHash,
       sourceText,
       extracted,
-      type: 'sample' as const,
+      type: "sample" as const,
       role: s.role,
       seniority: s.seniority,
       englishLevel: s.englishLevel,
@@ -171,7 +210,7 @@ export async function seedSampleCandidates(db: DrizzleDB): Promise<void> {
         target: candidates.contentHash,
         set: {
           extracted,
-          type: 'sample',
+          type: "sample",
           role: s.role,
           seniority: s.seniority,
           englishLevel: s.englishLevel,

@@ -1,13 +1,7 @@
-import {
-  Controller,
-  Get,
-  NotFoundException,
-  Param,
-  Query,
-  Redirect,
-} from "@nestjs/common";
+import { Controller, Get, NotFoundException, Param, Query, Redirect } from "@nestjs/common";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+
 import { FeedService } from "./feed.service";
 
 // Outbound "apply" redirect. Web cards and digest cards link here (`/go/:id`)

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { isNotNull } from "drizzle-orm";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
@@ -25,9 +26,7 @@ export class RssListSourcesActivity {
       .where(isNotNull(schema.sources.rssUrl))
       .execute();
     this.logger.log(
-      `listRemoteSources → ${rows.length} source(s): ${rows
-        .map((r) => r.code)
-        .join(", ")}`,
+      `listRemoteSources → ${rows.length} source(s): ${rows.map((r) => r.code).join(", ")}`,
     );
     return rows;
   }

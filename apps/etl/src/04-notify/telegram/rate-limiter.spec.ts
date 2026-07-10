@@ -1,9 +1,4 @@
-import {
-  isChatUnreachable,
-  RateLimiter,
-  retryAfterMs,
-  withRetryAfter,
-} from "./rate-limiter";
+import { isChatUnreachable, RateLimiter, retryAfterMs, withRetryAfter } from "./rate-limiter";
 
 describe("RateLimiter", () => {
   // Drive the limiter with a virtual clock + a wait() that advances it, so the
@@ -61,11 +56,7 @@ describe("RateLimiter", () => {
     const limiter = new RateLimiter(50, clock.now, clock.wait);
 
     // Slots are reserved synchronously, so firing three at once still spaces them.
-    await Promise.all([
-      limiter.acquire(),
-      limiter.acquire(),
-      limiter.acquire(),
-    ]);
+    await Promise.all([limiter.acquire(), limiter.acquire(), limiter.acquire()]);
 
     expect(clock.waits).toEqual([50, 100]);
   });
@@ -73,21 +64,15 @@ describe("RateLimiter", () => {
 
 describe("retryAfterMs", () => {
   it("returns the delay in ms for a 429 with retry_after", () => {
-    expect(
-      retryAfterMs({ error_code: 429, parameters: { retry_after: 3 } }),
-    ).toBe(3000);
+    expect(retryAfterMs({ error_code: 429, parameters: { retry_after: 3 } })).toBe(3000);
   });
 
   it("treats retry_after: 0 as a real (zero) delay", () => {
-    expect(
-      retryAfterMs({ error_code: 429, parameters: { retry_after: 0 } }),
-    ).toBe(0);
+    expect(retryAfterMs({ error_code: 429, parameters: { retry_after: 0 } })).toBe(0);
   });
 
   it("returns null for non-429 errors", () => {
-    expect(
-      retryAfterMs({ error_code: 400, parameters: { retry_after: 3 } }),
-    ).toBeNull();
+    expect(retryAfterMs({ error_code: 400, parameters: { retry_after: 3 } })).toBeNull();
   });
 
   it("returns null for a 429 without retry_after", () => {

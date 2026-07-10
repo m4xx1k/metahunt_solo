@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+
 import { PostHog } from "posthog-node";
 
 import { ANALYTICS_EVENTS } from "./events";
@@ -112,11 +113,7 @@ export class AnalyticsService implements OnModuleDestroy {
     this.capture(`tg:${chatId}`, ANALYTICS_EVENTS.unsubscribed, props);
   }
 
-  private capture(
-    distinctId: string,
-    event: string,
-    properties: Record<string, unknown>,
-  ): void {
+  private capture(distinctId: string, event: string, properties: Record<string, unknown>): void {
     this.client?.capture({ distinctId, event, properties });
   }
 

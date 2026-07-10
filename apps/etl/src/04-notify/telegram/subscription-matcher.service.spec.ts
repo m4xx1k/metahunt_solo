@@ -5,12 +5,10 @@ import type { FeedResponse, VacancyDto } from "../../03-discovery/feed/feed.cont
 import { FeedService } from "../../03-discovery/feed/feed.service";
 import type { MatchResponse } from "../../03-discovery/ranking/ranking.contract";
 import { RankingService } from "../../03-discovery/ranking/ranking.service";
+
 import { SentNotificationsService } from "./sent-notifications.service";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
-import {
-  SubscriptionsService,
-  type SubscriptionMatchTarget,
-} from "./subscriptions.service";
+import { SubscriptionsService, type SubscriptionMatchTarget } from "./subscriptions.service";
 
 const DAY_MS = 86_400_000;
 const SCAN_WINDOW_DAYS = 14;
@@ -67,9 +65,7 @@ function matchResponse(items: VacancyDto[], total = items.length): MatchResponse
   };
 }
 
-function target(
-  overrides: Partial<SubscriptionMatchTarget> = {},
-): SubscriptionMatchTarget {
+function target(overrides: Partial<SubscriptionMatchTarget> = {}): SubscriptionMatchTarget {
   return {
     id: "sub-1",
     candidateId: null,
@@ -117,14 +113,10 @@ describe("SubscriptionMatcherService", () => {
     });
 
     it("floors the scan at the window when the sub is older", async () => {
-      await service.matchNew(
-        target({ createdAt: new Date(Date.now() - 100 * DAY_MS) }),
-      );
+      await service.matchNew(target({ createdAt: new Date(Date.now() - 100 * DAY_MS) }));
 
       const expected = Date.now() - SCAN_WINDOW_DAYS * DAY_MS;
-      expect(
-        Math.abs(search.mock.calls[0][0].loadedAfter.getTime() - expected),
-      ).toBeLessThan(5000);
+      expect(Math.abs(search.mock.calls[0][0].loadedAfter.getTime() - expected)).toBeLessThan(5000);
     });
 
     it("passes the already-sent ids as the anti-join exclusion", async () => {
@@ -173,9 +165,7 @@ describe("SubscriptionMatcherService", () => {
     // Replay-gap regression: a warm sub's stored domain + experience must reach
     // the ranker, or the CV digest silently ignores what the user filtered on.
     it("threads stored domain and experience filters into the CV match", async () => {
-      await service.matchNew(
-        cvSub({ domainIds: ["dom-fintech"], experienceYears: ["3", "6+"] }),
-      );
+      await service.matchNew(cvSub({ domainIds: ["dom-fintech"], experienceYears: ["3", "6+"] }));
 
       const [, filters] = rankByRefs.mock.calls[0];
       expect(filters.domainIds).toEqual(["dom-fintech"]);

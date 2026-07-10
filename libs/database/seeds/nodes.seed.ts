@@ -1,15 +1,16 @@
-import type { DrizzleDB } from '../src/tokens';
-import { nodes, nodeAliases } from '../src/schema';
-import nodesData from './data/nodes.json';
+import { nodes, nodeAliases } from "../src/schema";
+import type { DrizzleDB } from "../src/tokens";
 
-type NodeTypeValue = 'ROLE' | 'SKILL' | 'DOMAIN';
+import nodesData from "./data/nodes.json";
+
+type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 
 type SectionItem = { name: string; aliases: string[] };
 
 export async function seedNodes(db: DrizzleDB): Promise<void> {
-  await seedSection(db, 'SKILL', nodesData.skills);
-  await seedSection(db, 'DOMAIN', nodesData.domains);
-  await seedSection(db, 'ROLE', nodesData.roles);
+  await seedSection(db, "SKILL", nodesData.skills);
+  await seedSection(db, "DOMAIN", nodesData.domains);
+  await seedSection(db, "ROLE", nodesData.roles);
 }
 
 async function seedSection(
@@ -22,10 +23,10 @@ async function seedSection(
 
     const [{ id: nodeId }] = await db
       .insert(nodes)
-      .values({ type, canonicalName, status: 'VERIFIED' })
+      .values({ type, canonicalName, status: "VERIFIED" })
       .onConflictDoUpdate({
         target: [nodes.type, nodes.canonicalName],
-        set: { status: 'VERIFIED' },
+        set: { status: "VERIFIED" },
       })
       .returning({ id: nodes.id });
 
@@ -42,7 +43,5 @@ async function seedSection(
 }
 
 function uniqueLower(values: string[]): string[] {
-  return Array.from(
-    new Set(values.map((v) => v.trim().toLowerCase()).filter(Boolean)),
-  );
+  return Array.from(new Set(values.map((v) => v.trim().toLowerCase()).filter(Boolean)));
 }

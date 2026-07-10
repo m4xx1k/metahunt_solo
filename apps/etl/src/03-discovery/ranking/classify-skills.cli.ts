@@ -18,6 +18,7 @@ import "reflect-metadata";
 import { Logger, Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
+
 import { sql } from "drizzle-orm";
 
 import { DRIZZLE, DatabaseModule, schema } from "@metahunt/database";
@@ -25,6 +26,7 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { b } from "../../baml_client";
 import { validateEnv } from "../../platform/config/env.validation";
+
 import { TECH_STACKS } from "./ranking.contract";
 
 @Module({
@@ -45,10 +47,9 @@ const STACKS = new Set<string>(TECH_STACKS);
 async function main(): Promise<void> {
   const force = process.argv.includes("--force");
   const logger = new Logger("classify-skills");
-  const app = await NestFactory.createApplicationContext(
-    ClassifySkillsCliModule,
-    { logger: ["log", "warn", "error"] },
-  );
+  const app = await NestFactory.createApplicationContext(ClassifySkillsCliModule, {
+    logger: ["log", "warn", "error"],
+  });
 
   try {
     const db = app.get<DrizzleDB>(DRIZZLE);
@@ -72,9 +73,7 @@ async function main(): Promise<void> {
     let coerced = 0; // off-vocab stacks coerced to null (conservative)
     for (let i = 0; i < skills.length; i += BATCH) {
       const batch = skills.slice(i, i + BATCH);
-      const out = await b.ClassifySkills(
-        batch.map((s) => ({ nodeId: s.node_id, name: s.name })),
-      );
+      const out = await b.ClassifySkills(batch.map((s) => ({ nodeId: s.node_id, name: s.name })));
       const byId = new Map(out.map((c) => [c.nodeId, c]));
 
       const values = batch.flatMap((s) => {
@@ -88,13 +87,15 @@ async function main(): Promise<void> {
           coerced += 1;
           stack = null;
         }
-        return [{
-          nodeId: s.node_id,
-          category: c.category,
-          stack,
-          isCore: c.isCore,
-          generic: c.generic,
-        }];
+        return [
+          {
+            nodeId: s.node_id,
+            category: c.category,
+            stack,
+            isCore: c.isCore,
+            generic: c.generic,
+          },
+        ];
       });
 
       if (values.length > 0) {

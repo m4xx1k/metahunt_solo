@@ -1,17 +1,9 @@
-import {
-  Body,
-  Controller,
-  Post,
-  UsePipes,
-  ValidationPipe,
-} from "@nestjs/common";
+import { Body, Controller, Post, UsePipes, ValidationPipe } from "@nestjs/common";
 
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { MatchDto } from "../../platform/shared/filter-params.dto";
-import {
-  DEFAULT_PAGE_SIZE,
-  parseStringArray,
-} from "../../platform/shared/query-parsing";
+import { DEFAULT_PAGE_SIZE, parseStringArray } from "../../platform/shared/query-parsing";
+
 import { RankingService } from "./ranking.service";
 
 @Controller("ranking")

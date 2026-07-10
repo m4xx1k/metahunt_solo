@@ -1,14 +1,15 @@
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+
 import { schema } from "@metahunt/database";
+
 import { extractExternalId } from "../src/loader/external-id/source-external-id";
 
 async function main(): Promise<void> {
   const connectionString =
-    process.env.DATABASE_URL ??
-    "postgres://metahunt:metahunt@localhost:54322/metahunt";
+    process.env.DATABASE_URL ?? "postgres://metahunt:metahunt@localhost:54322/metahunt";
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });
 
@@ -34,9 +35,7 @@ async function main(): Promise<void> {
     for (const row of rows) {
       const code = sourceCodeById.get(row.sourceId);
       if (!code) {
-        console.warn(
-          `Skipping rss_records.id=${row.id}: source ${row.sourceId} not found`,
-        );
+        console.warn(`Skipping rss_records.id=${row.id}: source ${row.sourceId} not found`);
         unparseable++;
         continue;
       }

@@ -1,8 +1,9 @@
 import { Module } from "@nestjs/common";
 
-import { AuthModule } from "../../platform/auth/auth.module";
 import { ExtractionModule } from "../../02-enrich/extraction/extraction.module";
+import { AuthModule } from "../../platform/auth/auth.module";
 import { StorageModule } from "../../platform/storage/storage.module";
+
 import { RSS_ACTIVITIES } from "./activities";
 import { RssBackfillService } from "./rss-backfill.service";
 import { RssIngestService } from "./rss-ingest.service";

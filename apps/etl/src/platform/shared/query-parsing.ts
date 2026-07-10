@@ -7,11 +7,13 @@ import { BadRequestException } from "@nestjs/common";
 // present-but-invalid is a client error (400). One home, one error-message
 // shape — controllers stay thin and never re-roll these.
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
+
+// Render an unknown input for error messages without collapsing objects to "[object Object]".
+const show = (raw: unknown): string => (typeof raw === "string" ? raw : JSON.stringify(raw));
 
 // Empty/absent → undefined; a non-blank string → trimmed; anything else throws.
 function asString(name: string, raw: unknown): string | undefined {
@@ -31,9 +33,7 @@ export function parseEnum<T extends string>(
   const s = asString(name, raw);
   if (s === undefined) return undefined;
   if (!(allowed as readonly string[]).includes(s)) {
-    throw new BadRequestException(
-      `${name} must be one of ${allowed.join(", ")}, got "${s}"`,
-    );
+    throw new BadRequestException(`${name} must be one of ${allowed.join(", ")}, got "${s}"`);
   }
   return s as T;
 }
@@ -47,9 +47,7 @@ export function parseEnumCsv<T extends string>(
 ): T[] | undefined {
   const s = asString(name, raw);
   if (s === undefined) return undefined;
-  const out = [
-    ...new Set(s.split(",").map((v) => parseEnum<T>(name, v, allowed)!)),
-  ];
+  const out = [...new Set(s.split(",").map((v) => parseEnum<T>(name, v, allowed)!))];
   return out.length > 0 ? out : undefined;
 }
 
@@ -60,7 +58,12 @@ export function parseCsv(name: string, raw: unknown): string[] | undefined {
   const s = asString(name, raw);
   if (s === undefined) return undefined;
   const out = [
-    ...new Set(s.split(",").map((v) => v.trim()).filter((v) => v.length > 0)),
+    ...new Set(
+      s
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0),
+    ),
   ];
   return out.length > 0 ? out : undefined;
 }
@@ -132,23 +135,18 @@ export function parsePage(raw: unknown, name = "page"): number {
   if (raw === undefined || raw === null) return 1;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 1) {
-    throw new BadRequestException(`${name} must be a positive integer, got "${String(raw)}"`);
+    throw new BadRequestException(`${name} must be a positive integer, got "${show(raw)}"`);
   }
   return n;
 }
 
-export function parsePageSize(
-  raw: unknown,
-  opts: { default?: number; max?: number } = {},
-): number {
+export function parsePageSize(raw: unknown, opts: { default?: number; max?: number } = {}): number {
   const def = opts.default ?? DEFAULT_PAGE_SIZE;
   const max = opts.max ?? MAX_PAGE_SIZE;
   if (raw === undefined || raw === null) return def;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 1 || n > max) {
-    throw new BadRequestException(
-      `pageSize must be an integer in 1..${max}, got "${String(raw)}"`,
-    );
+    throw new BadRequestException(`pageSize must be an integer in 1..${max}, got "${show(raw)}"`);
   }
   return n;
 }
@@ -157,7 +155,7 @@ export function parseLimit(raw: unknown, defaultValue = 50, max = 200): number {
   if (raw === undefined || raw === null) return defaultValue;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 1 || n > max) {
-    throw new BadRequestException(`limit must be an integer in 1..${max}, got "${String(raw)}"`);
+    throw new BadRequestException(`limit must be an integer in 1..${max}, got "${show(raw)}"`);
   }
   return n;
 }
@@ -166,7 +164,7 @@ export function parseOffset(raw: unknown, defaultValue = 0): number {
   if (raw === undefined || raw === null) return defaultValue;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) {
-    throw new BadRequestException(`offset must be a non-negative integer, got "${String(raw)}"`);
+    throw new BadRequestException(`offset must be a non-negative integer, got "${show(raw)}"`);
   }
   return n;
 }
@@ -176,7 +174,7 @@ export function parseDays(name: string, raw: unknown): number | undefined {
   if (raw === undefined || raw === null || raw === "") return undefined;
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 1) {
-    throw new BadRequestException(`${name} must be a positive integer, got "${String(raw)}"`);
+    throw new BadRequestException(`${name} must be a positive integer, got "${show(raw)}"`);
   }
   return n;
 }
@@ -201,5 +199,5 @@ export function parseBool(
   if (raw === true || raw === false) return raw;
   if (raw === "true" || (opts.numeric && raw === "1")) return true;
   if (raw === "false" || (opts.numeric && raw === "0")) return false;
-  throw new BadRequestException(`${name} must be "true" or "false", got "${String(raw)}"`);
+  throw new BadRequestException(`${name} must be "true" or "false", got "${show(raw)}"`);
 }

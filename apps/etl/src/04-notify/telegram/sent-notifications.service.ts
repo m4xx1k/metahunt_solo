@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { and, eq, gt } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -21,10 +22,7 @@ export class SentNotificationsService {
    * `loadedAfter` — i.e. the ones that could still be candidates this run.
    * Bounded by the scan window so the exclusion list stays small.
    */
-  async sentVacancyIds(
-    subscriptionId: string,
-    loadedAfter: Date,
-  ): Promise<string[]> {
+  async sentVacancyIds(subscriptionId: string, loadedAfter: Date): Promise<string[]> {
     const rows = await this.db
       .select({ vacancyId: sentNotifications.vacancyId })
       .from(sentNotifications)

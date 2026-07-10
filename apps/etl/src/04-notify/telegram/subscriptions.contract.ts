@@ -44,10 +44,7 @@ export const CV_MATCH_PARAM_KEYS = [
 ] as const;
 
 // Persisted whitelist; anything else in the body is dropped.
-export const SUBSCRIPTION_PARAM_KEYS = [
-  ...FEED_PARAM_KEYS,
-  ...CV_MATCH_PARAM_KEYS,
-] as const;
+export const SUBSCRIPTION_PARAM_KEYS = [...FEED_PARAM_KEYS, ...CV_MATCH_PARAM_KEYS] as const;
 
 export type SubscriptionParamKey = (typeof SUBSCRIPTION_PARAM_KEYS)[number];
 

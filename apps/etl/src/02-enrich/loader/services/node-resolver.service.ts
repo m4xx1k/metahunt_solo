@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
 
 import type { NodeType } from "@metahunt/database";
+
 import { normalizeAliasName } from "../../../platform/shared/normalize-alias";
-import { NodeRepository } from "../repositories/node.repository";
 import type { Executor } from "../repositories/executor";
+import { NodeRepository } from "../repositories/node.repository";
 
 @Injectable()
 export class NodeResolverService {
@@ -11,11 +12,7 @@ export class NodeResolverService {
 
   // `executor` lets the caller run this inside the vacancy-load transaction;
   // omitted, the repository falls back to the root db handle.
-  async resolve(
-    type: NodeType,
-    name: string,
-    executor?: Executor,
-  ): Promise<string> {
+  async resolve(type: NodeType, name: string, executor?: Executor): Promise<string> {
     const trimmed = name.trim();
     const normalized = normalizeAliasName(trimmed);
 
@@ -24,7 +21,7 @@ export class NodeResolverService {
 
     // resolve-or-create with race recovery: insert, else re-read by
     // canonical name (a concurrent insert won and RETURNING came back empty).
-    let nodeId =
+    const nodeId =
       (await this.repo.insertReturningId(type, trimmed, executor)) ??
       (await this.repo.findIdByCanonical(type, trimmed, executor));
     if (!nodeId) {

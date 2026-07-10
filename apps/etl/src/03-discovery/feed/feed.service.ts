@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import {
   and,
   eq,
@@ -19,6 +20,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { uuidList } from "../../platform/shared/sql";
+
 import type {
   EmploymentType,
   EnglishLevel,
@@ -29,20 +31,11 @@ import type {
   WorkFormat,
 } from "./feed.contract";
 
-const {
-  vacancies,
-  vacancyNodes,
-  nodes,
-  sources,
-  companies,
-  rssRecords,
-  uniqueVacancies,
-} = schema;
+const { vacancies, vacancyNodes, nodes, sources, companies, rssRecords, uniqueVacancies } = schema;
 
 // Postgres `uuid` columns reject malformed input at the driver level, so screen
 // path params before they reach a query.
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // The open-ended experience button: "6+" means ≥6 years. Mirrored client-side
 // in features/vacancy-filters/ExperienceSection.tsx.
@@ -145,10 +138,7 @@ const domainNode = alias(nodes, "domain_node");
 
 // VERIFIED-gated role/domain joins, shared by the list, count, and hydrate
 // queries. Module-level so selectVacancies and the count query reuse one defn.
-const roleJoin = and(
-  eq(roleNode.id, vacancies.roleNodeId),
-  eq(roleNode.status, "VERIFIED"),
-);
+const roleJoin = and(eq(roleNode.id, vacancies.roleNodeId), eq(roleNode.status, "VERIFIED"));
 const domainJoin = and(
   eq(domainNode.id, vacancies.domainNodeId),
   eq(domainNode.status, "VERIFIED"),
@@ -203,9 +193,7 @@ export class FeedService {
     }
 
     // Hydrate the page's representative rows, preserving the freshness order.
-    const rows = (await this.selectVacancies(
-      inArray(vacancies.id, ids),
-    )) as VacancyRow[];
+    const rows = (await this.selectVacancies(inArray(vacancies.id, ids))) as VacancyRow[];
     const byId = new Map(rows.map((r) => [r.id, r]));
     const skills = await this.fetchSkills(ids, params.includeAllSkills === true);
     const items = ids
@@ -224,9 +212,7 @@ export class FeedService {
   async hydrateByIds(ids: string[]): Promise<Map<string, VacancyDto>> {
     const out = new Map<string, VacancyDto>();
     if (ids.length === 0) return out;
-    const rows = (await this.selectVacancies(
-      inArray(vacancies.id, ids),
-    )) as VacancyRow[];
+    const rows = (await this.selectVacancies(inArray(vacancies.id, ids))) as VacancyRow[];
     const skills = await this.fetchSkills(ids, false);
     for (const row of rows) out.set(row.id, toDto(row, skills.get(row.id)));
     return out;
@@ -382,9 +368,7 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
   // — unstated experience always passes; only explicit non-matches are dropped.
   if (params.experienceYears && params.experienceYears.length > 0) {
-    const exact = params.experienceYears
-      .filter((t) => /^\d+$/.test(t))
-      .map(Number);
+    const exact = params.experienceYears.filter((t) => /^\d+$/.test(t)).map(Number);
     const openEnded = params.experienceYears.includes(EXPERIENCE_OPEN_TOKEN);
     const arms: SQL[] = [isNull(vacancies.experienceYears)];
     if (exact.length > 0) arms.push(inArray(vacancies.experienceYears, exact));
@@ -400,12 +384,7 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.hasTestAssignment === true) {
     conds.push(eq(vacancies.hasTestAssignment, true));
   } else if (params.hasTestAssignment === false) {
-    conds.push(
-      or(
-        eq(vacancies.hasTestAssignment, false),
-        isNull(vacancies.hasTestAssignment),
-      )!,
-    );
+    conds.push(or(eq(vacancies.hasTestAssignment, false), isNull(vacancies.hasTestAssignment))!);
   }
   if (params.hasReservation !== undefined) {
     conds.push(eq(vacancies.hasReservation, params.hasReservation));
@@ -421,9 +400,7 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
     // By default a skill must be `required`; the optional-scope toggle drops
     // that gate so nice-to-have links also satisfy the filter.
     const ids = params.skillIds;
-    const requiredGate = params.includeOptionalSkills
-      ? sql``
-      : sql`AND vn.is_required`;
+    const requiredGate = params.includeOptionalSkills ? sql`` : sql`AND vn.is_required`;
     conds.push(sql`${vacancies.id} IN (
       SELECT vn.vacancy_id
       FROM vacancy_nodes vn
@@ -441,12 +418,7 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   // predicate below already keeps just the representative row, so this only
   // has to drop singletons and ungrouped vacancies.
   if (params.hasDuplicates === true) {
-    conds.push(
-      and(
-        isNotNull(vacancies.uniqueVacancyId),
-        gt(uniqueVacancies.vacancyCount, 1),
-      )!,
-    );
+    conds.push(and(isNotNull(vacancies.uniqueVacancyId), gt(uniqueVacancies.vacancyCount, 1))!);
   }
   if (conds.length === 0) return undefined;
   if (conds.length === 1) return conds[0];
@@ -479,14 +451,9 @@ function toDto(
       row.companyId && row.companyName && row.companySlug
         ? { id: row.companyId, name: row.companyName, slug: row.companySlug }
         : null,
-    role:
-      row.roleNodeId && row.roleName
-        ? { id: row.roleNodeId, name: row.roleName }
-        : null,
+    role: row.roleNodeId && row.roleName ? { id: row.roleNodeId, name: row.roleName } : null,
     domain:
-      row.domainNodeId && row.domainName
-        ? { id: row.domainNodeId, name: row.domainName }
-        : null,
+      row.domainNodeId && row.domainName ? { id: row.domainNodeId, name: row.domainName } : null,
     skills: skills ?? { required: [], optional: [] },
 
     seniority: row.seniority,

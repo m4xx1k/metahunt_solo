@@ -5,10 +5,11 @@ import {
   startChild,
   WorkflowIdReusePolicy,
 } from "@temporalio/workflow";
-import type { RssFetchActivity } from "../activities/rss-fetch.activity";
-import type { RssParseActivity } from "../activities/rss-parse.activity";
+
 import type { RssExtractActivity } from "../activities/rss-extract.activity";
+import type { RssFetchActivity } from "../activities/rss-fetch.activity";
 import type { RssFinalizeActivity } from "../activities/rss-finalize.activity";
+import type { RssParseActivity } from "../activities/rss-parse.activity";
 
 const { fetchAndStore } = proxyActivities<typeof RssFetchActivity.prototype>({
   startToCloseTimeout: "2m",
@@ -20,16 +21,12 @@ const { parseAndDedup } = proxyActivities<typeof RssParseActivity.prototype>({
   retry: { maximumAttempts: 3, initialInterval: "5s", backoffCoefficient: 2 },
 });
 
-const { extractAndInsert } = proxyActivities<
-  typeof RssExtractActivity.prototype
->({
+const { extractAndInsert } = proxyActivities<typeof RssExtractActivity.prototype>({
   startToCloseTimeout: "3m",
   retry: { maximumAttempts: 3, initialInterval: "5s", backoffCoefficient: 2 },
 });
 
-const { finalizeIngest } = proxyActivities<
-  typeof RssFinalizeActivity.prototype
->({
+const { finalizeIngest } = proxyActivities<typeof RssFinalizeActivity.prototype>({
   startToCloseTimeout: "30s",
   retry: { maximumAttempts: 5, initialInterval: "2s", backoffCoefficient: 2 },
 });
@@ -43,12 +40,8 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
     // muffs the schema) must not fail the surrounding good records. Activity
     // already retries 3× internally; we collect the outcomes and only count
     // the failures into the finalize note.
-    const results = await Promise.allSettled(
-      newItemIds.map((id) => extractAndInsert(id)),
-    );
-    const failures = results.filter(
-      (r): r is PromiseRejectedResult => r.status === "rejected",
-    );
+    const results = await Promise.allSettled(newItemIds.map((id) => extractAndInsert(id)));
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
     if (failures.length > 0) {
       log.warn(
         `Extraction failed for ${failures.length}/${newItemIds.length} record(s); ingest still finalizing as completed.`,
@@ -63,17 +56,14 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
     // safe — Temporal rejects duplicates by default. ALLOW_DUPLICATE_FAILED_ONLY
     // lets a failed pipeline be retried by the next ingest pass without
     // blocking the happy path.
-    const successfulIds = newItemIds.filter(
-      (_, i) => results[i].status === "fulfilled",
-    );
+    const successfulIds = newItemIds.filter((_, i) => results[i].status === "fulfilled");
     const childResults = await Promise.allSettled(
       successfulIds.map((rssRecordId) =>
         startChild("vacancyPipelineWorkflow", {
           args: [rssRecordId],
           workflowId: `vacancy-pipeline-${rssRecordId}`,
           parentClosePolicy: ParentClosePolicy.ABANDON,
-          workflowIdReusePolicy:
-            WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
+          workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
         }),
       ),
     );
@@ -93,11 +83,7 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
         : undefined;
     await finalizeIngest(ingestId, "completed", note);
   } catch (err) {
-    await finalizeIngest(
-      ingestId,
-      "failed",
-      err instanceof Error ? err.message : String(err),
-    );
+    await finalizeIngest(ingestId, "failed", err instanceof Error ? err.message : String(err));
     throw err;
   }
 }

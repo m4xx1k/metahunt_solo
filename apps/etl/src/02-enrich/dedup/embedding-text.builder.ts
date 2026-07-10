@@ -29,9 +29,7 @@ export interface EmbeddingTextResult {
   hash: string;
 }
 
-export function buildEmbeddingText(
-  input: EmbeddingTextInput,
-): EmbeddingTextResult {
+export function buildEmbeddingText(input: EmbeddingTextInput): EmbeddingTextResult {
   const parts: string[] = [];
 
   parts.push(`Title: ${input.title.trim()}`);

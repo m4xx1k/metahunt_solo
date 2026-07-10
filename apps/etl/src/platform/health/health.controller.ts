@@ -1,16 +1,11 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  HttpException,
-  HttpStatus,
-  Inject,
-} from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpException, HttpStatus, Inject } from "@nestjs/common";
+
 import { sql } from "drizzle-orm";
 import { TemporalService } from "nestjs-temporal-core";
 
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
+
 import { StorageService } from "../storage/storage.service";
 
 type CheckResult = { ok: true; latencyMs: number } | { ok: false; error: string };
@@ -47,8 +42,7 @@ export class HealthController {
     ]);
 
     const body: HealthResponse = {
-      status:
-        postgres.ok && storage.ok && temporal.ok ? "ok" : "degraded",
+      status: postgres.ok && storage.ok && temporal.ok ? "ok" : "degraded",
       checks: { postgres, storage, temporal },
     };
 
