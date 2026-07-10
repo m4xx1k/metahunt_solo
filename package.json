@@ -17,10 +17,10 @@
     "dev:restart": "pnpm dev:stop && sleep 1 && pnpm dev",
     "lint:web": "pnpm --filter @metahunt/web lint",
     "test:web": "pnpm --filter @metahunt/web test",
-    "db:up": "docker compose -f compose.infra.yaml up -d",
-    "db:down": "docker compose -f compose.infra.yaml down",
-    "dev:docker": "docker compose -f compose.infra.yaml up -d && docker compose watch",
-    "dev:docker:down": "docker compose down",
+    "docker:infra": "docker compose -f compose.infra.yaml up -d",
+    "docker:infra:down": "docker compose -f compose.infra.yaml down",
+    "docker:dev": "docker compose -f compose.infra.yaml up -d && docker compose watch",
+    "docker:dev:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "ts-node --project tsconfig.json libs/database/migrate.ts",
     "db:seed": "ts-node --project tsconfig.json libs/database/seeds/run.ts",
@@ -31,7 +31,7 @@
     "dedup:embed": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js embed",
     "dedup:resolve": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js resolve",
     "dedup:reset": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js reset",
-    "classify-skills": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
+    "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
     "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int"
   },
   "engines": {

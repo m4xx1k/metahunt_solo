@@ -112,11 +112,15 @@ not cross-stage DI — which keeps each stage independently extractable later.
 
 ## Local infra (docker-compose)
 
-`pnpm db:up` brings up the full local stack (`docker compose up -d`):
+Split in two: `compose.infra.yaml` (the shared services below) + `compose.yaml`
+(the etl + web app stack, live-reloaded via Docker Compose Watch). `pnpm
+docker:infra` brings up just the shared services (for running the apps natively);
+`pnpm docker:dev` brings up infra + apps with hot-reload. Full guide:
+[`md/runbook/docker-dev.md`](../runbook/docker-dev.md).
 
 | Service | Image | Ports | Purpose |
 |---|---|---|---|
-| `db` | `pgvector/pgvector:pg16` | `54322:5432` | App + Temporal Postgres |
+| `db` | `pgvector/pgvector:pg18` | `54323:5432` | App + Temporal Postgres (external volume `metahunt_railway_pgdata`) |
 | `minio` | `minio/minio:latest` | `9000` (S3), `9001` (console) | S3-compatible object store for raw RSS payloads |
 | `minio-init` | `minio/mc:latest` | — | One-shot: creates `rss-payloads` bucket idempotently, then exits |
 | `temporal` | `temporalio/auto-setup:1.26` | `7233` (gRPC) | Temporal server; auto-creates `temporal` + `temporal_visibility` databases inside `db` |

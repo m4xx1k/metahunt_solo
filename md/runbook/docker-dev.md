@@ -1,50 +1,59 @@
 # Runbook — dockerized dev with live watch
 
-Run the whole stack in Docker with hot-reload. Both apps watch natively
-(`nest --watch`, `next dev`); `docker compose watch` syncs host edits into the
-containers and rebuilds on dependency changes. Modelled on beana-ai's setup
-(shared infra on an external network, a baked dev image, non-root containers),
-upgraded to Compose Watch — the current best practice for Docker Desktop, which
-avoids bind-mount permission/perf quirks (no root-owned files on the host, no
-polling).
+## What / why / how
+
+**What.** Run the entire local stack — Postgres, MinIO, Temporal, plus the `etl`
+and `web` apps — in Docker, with your source edits reloading live.
+
+**Why.** No local Node/Postgres/Temporal/MinIO setup to maintain, parity with how
+the services actually run, and one command to bring everything up. Edits are
+picked up automatically; you don't restart anything by hand.
+
+**How.** Two commands (infra once, then the app stack):
+
+```bash
+pnpm docker:infra      # shared infra only (also for running the apps natively)
+pnpm docker:dev        # infra (detached) + etl + web with live reload (foreground)
+pnpm docker:dev:down   # stop the app containers (infra stays up)
+pnpm docker:infra:down # stop infra
+```
+
+`docker:dev` brings infra up first (it creates the `metahunt-infra` network the
+apps join), then runs `docker compose watch` — which builds the images if needed,
+starts `etl` + `web`, and streams your edits in. Ctrl-C stops watching.
+
+Ports (host): web `4000`, etl `3333`, Postgres `54323`, MinIO `9000`/`9001`,
+Temporal `7233`, Temporal UI `8080`.
+
+Built on [Docker Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/);
+the `develop.watch` / `init` keys are in the
+[Compose file reference](https://docs.docker.com/reference/compose-file/).
 
 ## Layout
 
 | File | What |
 |---|---|
 | `compose.infra.yaml` | shared infra: `db` (pg18), `minio`, `minio-init`, `temporal`, `temporal-ui`. Creates the external network `metahunt-infra`. |
-| `compose.yaml` | app stack: `etl` + `web`, one dev image, joins `metahunt-infra`. `docker compose` finds it by default. |
+| `compose.yaml` | app stack: `etl` + `web`, joined to `metahunt-infra`. `docker compose` finds it by default. |
 | `apps/etl/Dockerfile.dev` | etl image: etl + `@metahunt/database` deps baked and the lib built, non-root `node`. Uses the repo-root `.dockerignore` (already excludes apps/web). |
-| `apps/web/Dockerfile.dev` (+ `.dockerignore` sidecar) | web image: only web's deps (next/react), non-root `node`. Sidecar keeps apps/web and drops apps/etl + libs. |
-
-## Commands
-
-```bash
-pnpm db:up          # infra only (also for running apps natively)
-pnpm dev:docker     # infra (detached) + `docker compose watch` (etl + web, foreground)
-pnpm dev:docker:down  # stop the app containers (infra stays up)
-pnpm db:down        # stop infra
-```
-
-Order matters: infra creates the `metahunt-infra` network the apps join, so it
-comes up first (`dev:docker` does this for you). `docker compose watch` builds
-the image if needed, starts etl + web, then syncs your edits live.
-
-Ports (host): web `4000`, etl `3333`, Postgres `54323`, MinIO `9000`/`9001`,
-Temporal `7233`, Temporal UI `8080`.
+| `apps/web/Dockerfile.dev` (+ `.dockerignore` sidecar) | web image: only web's deps (next/react), non-root `node`. Sidecar keeps apps/web, drops apps/etl + libs. |
 
 ## How it works
 
-- **Two lean baked images.** Each app has its own `Dockerfile.dev` that installs
+- **Two lean, non-root images.** Each app has its own `Dockerfile.dev` that bakes
   only that app's deps at build time (web is standalone; etl also builds
-  `@metahunt/database`). Both build from the repo root (the pnpm workspace).
-- **Compose Watch, not bind mounts.** Each service's `develop.watch` `sync`
-  copies changed source into the container (one-way, host → container), so the
-  in-container `nest`/`next` watchers recompile — no bind mount, no polling, and
-  nothing written back to the host. `rebuild` on `pnpm-lock.yaml` re-bakes the
-  image when dependencies change. `node_modules` stay the image's copy (ignored
-  by sync).
-- **Non-root.** The image runs as `node`, so nothing lands root-owned anywhere.
+  `@metahunt/database`). Both build from the repo root (the pnpm workspace) and
+  run as the `node` user, so nothing they write lands root-owned on the host.
+- **Reload differs per app, by design:**
+  - **web** uses `develop.watch: sync` → the edited file is copied into the
+    container and Next.js Fast Refresh handles it in-process (fast, no restart).
+  - **etl** uses `develop.watch: sync+restart` → a clean **container restart** on
+    any `apps/etl` or `libs/database` change. etl is a stateful poller (Telegram
+    long-poll + Temporal worker) holding port 3333; an in-container `nest --watch`
+    orphaned its process under a shell wrapper (old process kept the port →
+    `EADDRINUSE`), so it instead builds once and `exec`s node, and Compose does the
+    restart. `init: true` (tini) makes that stop fast and clean.
+  - A dependency change (`pnpm-lock.yaml`) triggers `rebuild` (re-bakes the image).
 - **etl → infra by service name.** `DATABASE_URL` → `db:5432`, `TEMPORAL_ADDRESS`
   → `temporal:7233`, `STORAGE_ENDPOINT` → `http://minio:9000`. `NODE_ENV=development`
   (not `local`, which would pin Temporal to `localhost:7233`) + empty
@@ -52,11 +61,10 @@ Temporal `7233`, Temporal UI `8080`.
 - **web → etl, two URLs.** `lib/api/client.ts` `apiBase()` uses `API_INTERNAL_URL`
   (`http://etl:3333`) for in-container SSR and `NEXT_PUBLIC_API_URL`
   (`http://localhost:3333`) for the browser. Native dev sets neither → unchanged.
-
-**Dependency or `libs/database` changes** aren't hot-synced — bump
-`pnpm-lock.yaml` (a dep change) triggers an automatic `rebuild`; for a
-`libs/database` source edit run `docker compose up --build` (native `pnpm dev`
-has the same one-shot-lib-build behaviour).
+- **Telegram bot is reload-safe.** On a restart the new poller briefly overlaps
+  the old, so Telegram 409s one of them. `TelegramService` treats a 409 as "a
+  newer instance took over" and stops quietly instead of crashing (also hardens
+  prod redeploys); transient network errors retry.
 
 ## Database (pg17 → pg18)
 
@@ -70,7 +78,7 @@ One-time cutover from the old hand-run container:
 
 ```bash
 docker rm -f metahunt-railway-db   # stopped manual pg18 container; frees 54323 + the volume
-pnpm db:up                          # infra db adopts the same volume
+pnpm docker:infra                   # infra db adopts the same volume
 ```
 
 **Password.** The prod-restore cluster's `pg_hba.conf` trusts localhost but
@@ -80,7 +88,7 @@ the infra db, Temporal's `POSTGRES_PWD`, and the etl container's `DATABASE_URL`.
 
 **Temporal schemas.** The prod-restore cluster has no `temporal` /
 `temporal_visibility` databases; `temporalio/auto-setup` creates them on first
-`db:up` (metahunt is superuser). They coexist with app data by design.
+`docker:infra` (metahunt is superuser). They coexist with app data by design.
 
 ## Notes
 

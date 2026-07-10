@@ -11,7 +11,7 @@ There are two ways to smoke this locally: a fast **programmatic** path that exer
 Self-contained: spins up an isolated `metahunt_loader_smoke` database, applies every migration, seeds two `rss_records` with realistic `extractedData` payloads, runs the loader, asserts the silver-layer rows, then drops the DB.
 
 ```bash
-pnpm db:up   # if not already running — needs metahunt-db at :54322
+pnpm docker:infra   # if not already running — needs metahunt-db at :54323
 npx ts-node --project apps/etl/tsconfig.json apps/etl/scripts/loader-smoke.ts
 ```
 
@@ -39,7 +39,7 @@ Exercises the real `rssIngestWorkflow` → `vacancyPipelineWorkflow` chain. Use 
 Prereqs: full local stack up, ETL booted with the worker.
 
 ```bash
-pnpm db:up
+pnpm docker:infra
 pnpm db:migrate
 pnpm db:seed                         # populates `sources` (Djinni, DOU)
 EXTRACTOR_PROVIDER=placeholder pnpm dev:etl    # starts Nest + Temporal worker
