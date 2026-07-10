@@ -1,15 +1,12 @@
-import {
-  Injectable,
-  Logger,
-  type OnApplicationBootstrap,
-} from "@nestjs/common";
+import { Injectable, Logger, type OnApplicationBootstrap } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { TemporalService } from "nestjs-temporal-core";
+
 import {
   ScheduleAlreadyRunning,
   ScheduleOverlapPolicy,
   type ScheduleOptions,
 } from "@temporalio/client";
+import { TemporalService } from "nestjs-temporal-core";
 
 const SCHEDULE_ID = "dedup-sweep";
 const SWEEP_INTERVAL_MINUTES = 5;

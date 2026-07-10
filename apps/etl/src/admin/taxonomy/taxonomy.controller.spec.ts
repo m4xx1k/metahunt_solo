@@ -3,6 +3,7 @@ import { Test } from "@nestjs/testing";
 
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { RolesGuard } from "../../platform/auth/roles.guard";
+
 import { TaxonomyController } from "./taxonomy.controller";
 import { TaxonomyService } from "./taxonomy.service";
 
@@ -58,14 +59,7 @@ describe("TaxonomyController", () => {
     it("parses comma-separated statuses, dedupes, and uppercases", async () => {
       listNodes.mockResolvedValue({ items: [], page: 1, pageSize: 50, total: 0 });
 
-      await controller.listNodes(
-        "ROLE",
-        "new,verified,new",
-        "  back  ",
-        "3",
-        "2",
-        "25",
-      );
+      await controller.listNodes("ROLE", "new,verified,new", "  back  ", "3", "2", "25");
 
       expect(listNodes).toHaveBeenCalledWith({
         type: "ROLE",
@@ -78,9 +72,7 @@ describe("TaxonomyController", () => {
     });
 
     it("rejects an unknown status value", () => {
-      expect(() => controller.listNodes(undefined, "PENDING")).toThrow(
-        BadRequestException,
-      );
+      expect(() => controller.listNodes(undefined, "PENDING")).toThrow(BadRequestException);
     });
 
     it("rejects pageSize beyond the cap", () => {
@@ -106,18 +98,16 @@ describe("TaxonomyController", () => {
     });
 
     it("rejects a missing body.name", () => {
-      expect(() => controller.renameNode(NODE_ID, undefined)).toThrow(
+      expect(() => controller.renameNode(NODE_ID, undefined)).toThrow(BadRequestException);
+      expect(() => controller.renameNode(NODE_ID, { name: 42 as unknown as string })).toThrow(
         BadRequestException,
       );
-      expect(() =>
-        controller.renameNode(NODE_ID, { name: 42 as unknown as string }),
-      ).toThrow(BadRequestException);
     });
 
     it("rejects a non-UUID id before reaching the service", () => {
-      expect(() =>
-        controller.renameNode("not-a-uuid", { name: "ok name" }),
-      ).toThrow(BadRequestException);
+      expect(() => controller.renameNode("not-a-uuid", { name: "ok name" })).toThrow(
+        BadRequestException,
+      );
       expect(renameNode).not.toHaveBeenCalled();
     });
   });

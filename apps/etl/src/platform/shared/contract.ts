@@ -41,12 +41,7 @@ export type EnglishLevel = (typeof ENGLISH_LEVEL_VALUES)[number];
 
 export type Currency = "USD" | "EUR" | "UAH";
 
-export type EngagementType =
-  | "PRODUCT"
-  | "OUTSOURCE"
-  | "OUTSTAFF"
-  | "STARTUP"
-  | "AGENCY";
+export type EngagementType = "PRODUCT" | "OUTSOURCE" | "OUTSTAFF" | "STARTUP" | "AGENCY";
 
 // ───────────────────────── Resolved refs ─────────────────────────
 // Server resolves FKs to {id, name}-shaped refs so the UI never has to do a

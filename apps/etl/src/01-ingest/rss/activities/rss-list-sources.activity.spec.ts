@@ -16,10 +16,7 @@ describe("RssListSourcesActivity", () => {
   async function bootstrap(rows: { id: string; code: string }[]) {
     const mocks = buildDbMock(rows);
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        RssListSourcesActivity,
-        { provide: DRIZZLE, useValue: mocks.db },
-      ],
+      providers: [RssListSourcesActivity, { provide: DRIZZLE, useValue: mocks.db }],
     }).compile();
     return { activity: moduleRef.get(RssListSourcesActivity), mocks };
   }

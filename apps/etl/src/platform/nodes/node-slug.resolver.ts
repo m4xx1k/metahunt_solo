@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { and, eq, inArray } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Maps URL-facing node slugs (?roles=backend-engineer) back to node UUIDs at the
 // API boundary — so every downstream query, the stored subscription rows, and
@@ -16,17 +16,12 @@ const UUID_REGEX =
 export class NodeSlugResolver {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async toIds(
-    type: NodeType,
-    slugs: string[] | undefined,
-  ): Promise<string[] | undefined> {
+  async toIds(type: NodeType, slugs: string[] | undefined): Promise<string[] | undefined> {
     if (!slugs || slugs.length === 0) return slugs;
     const rows = await this.db
       .select({ id: schema.nodes.id, slug: schema.nodes.slug })
       .from(schema.nodes)
-      .where(
-        and(eq(schema.nodes.type, type), inArray(schema.nodes.slug, slugs)),
-      );
+      .where(and(eq(schema.nodes.type, type), inArray(schema.nodes.slug, slugs)));
     const bySlug = new Map<string, string>();
     for (const r of rows) if (r.slug) bySlug.set(r.slug, r.id);
     return slugs
@@ -35,10 +30,7 @@ export class NodeSlugResolver {
   }
 
   // Single-value convenience for the legacy `?role=` scalar.
-  async toId(
-    type: NodeType,
-    slug: string | undefined,
-  ): Promise<string | undefined> {
+  async toId(type: NodeType, slug: string | undefined): Promise<string | undefined> {
     if (!slug) return slug;
     return (await this.toIds(type, [slug]))?.[0];
   }

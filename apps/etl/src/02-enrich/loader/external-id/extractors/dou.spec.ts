@@ -5,22 +5,19 @@ describe("douExtractor", () => {
     it.each([
       [
         {
-          guid:
-            "https://jobs.dou.ua/companies/talanovyti-agency/vacancies/350774/?1777055493",
+          guid: "https://jobs.dou.ua/companies/talanovyti-agency/vacancies/350774/?1777055493",
         },
         "350774",
       ],
       [
         {
-          guid:
-            "https://jobs.dou.ua/companies/acme/vacancies/356789/",
+          guid: "https://jobs.dou.ua/companies/acme/vacancies/356789/",
         },
         "356789",
       ],
       [
         {
-          link:
-            "https://jobs.dou.ua/companies/talanovyti-agency/vacancies/350774/?utm_source=jobsrss",
+          link: "https://jobs.dou.ua/companies/talanovyti-agency/vacancies/350774/?utm_source=jobsrss",
         },
         "350774",
       ],
@@ -39,9 +36,7 @@ describe("douExtractor", () => {
   });
 
   it("throws on a URL without /vacancies/<id>", () => {
-    expect(() =>
-      douExtractor({ guid: "https://jobs.dou.ua/companies/acme/" }),
-    ).toThrow(/dou/);
+    expect(() => douExtractor({ guid: "https://jobs.dou.ua/companies/acme/" })).toThrow(/dou/);
   });
 
   it("throws when both guid and link are absent", () => {

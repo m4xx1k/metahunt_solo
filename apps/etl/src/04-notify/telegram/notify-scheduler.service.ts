@@ -1,15 +1,12 @@
-import {
-  Injectable,
-  Logger,
-  type OnApplicationBootstrap,
-} from "@nestjs/common";
+import { Injectable, Logger, type OnApplicationBootstrap } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { TemporalService } from "nestjs-temporal-core";
+
 import {
   ScheduleAlreadyRunning,
   ScheduleOverlapPolicy,
   type ScheduleOptions,
 } from "@temporalio/client";
+import { TemporalService } from "nestjs-temporal-core";
 
 const SCHEDULE_ID = "tg-digest-daytime";
 const SCHEDULE_TIMEZONE = "Europe/Kyiv";
@@ -83,12 +80,10 @@ export class NotifySchedulerService implements OnApplicationBootstrap {
     };
     const policies = { overlap: ScheduleOverlapPolicy.SKIP };
     const mm = String(SCHEDULE_MINUTE).padStart(2, "0");
-    const description = `TG digests hourly, ${String(
-      SCHEDULE_HOUR_START,
-    ).padStart(2, "0")}:${mm}–${String(SCHEDULE_HOUR_END).padStart(
+    const description = `TG digests hourly, ${String(SCHEDULE_HOUR_START).padStart(
       2,
       "0",
-    )}:${mm} ${SCHEDULE_TIMEZONE}`;
+    )}:${mm}–${String(SCHEDULE_HOUR_END).padStart(2, "0")}:${mm} ${SCHEDULE_TIMEZONE}`;
 
     try {
       await raw.schedule.create({

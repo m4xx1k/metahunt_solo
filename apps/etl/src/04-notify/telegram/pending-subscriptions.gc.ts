@@ -20,9 +20,7 @@ const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
 // single-instance too. No token → no `POST /subscriptions` → no pending rows to
 // sweep, so we don't even start the timer.
 @Injectable()
-export class PendingSubscriptionsGc
-  implements OnApplicationBootstrap, OnModuleDestroy
-{
+export class PendingSubscriptionsGc implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(PendingSubscriptionsGc.name);
   private cleanupTimer?: NodeJS.Timeout;
 
@@ -46,8 +44,7 @@ export class PendingSubscriptionsGc
 
   private async purge(): Promise<void> {
     try {
-      const removed =
-        await this.subscriptions.purgeStalePending(PENDING_TTL_HOURS);
+      const removed = await this.subscriptions.purgeStalePending(PENDING_TTL_HOURS);
       if (removed > 0) {
         this.logger.log(`Purged ${removed} stale pending subscription(s)`);
       }

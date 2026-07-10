@@ -8,10 +8,8 @@ import {
   WorkFormat,
 } from "../../baml_client";
 import type { ExtractedVacancy } from "../../baml_client";
-import type {
-  ExtractionResult,
-  VacancyExtractor,
-} from "./vacancy-extractor";
+
+import type { ExtractionResult, VacancyExtractor } from "./vacancy-extractor";
 
 const PLACEHOLDER: ExtractedVacancy = {
   role: "Backend Developer",

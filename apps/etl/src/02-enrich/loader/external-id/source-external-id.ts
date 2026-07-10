@@ -9,10 +9,7 @@ const EXTRACTORS: Record<string, ExternalIdExtractor> = {
   dou: douExtractor,
 };
 
-export function extractExternalId(
-  sourceCode: string,
-  item: RssIdInputs,
-): string {
+export function extractExternalId(sourceCode: string, item: RssIdInputs): string {
   const fn = EXTRACTORS[sourceCode];
   if (!fn) {
     throw new Error(`No external_id extractor for source '${sourceCode}'`);

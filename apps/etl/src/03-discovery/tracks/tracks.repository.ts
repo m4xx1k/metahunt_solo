@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { sql } from "drizzle-orm";
 
 import { DRIZZLE } from "@metahunt/database";
@@ -6,20 +7,15 @@ import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import type { NodeRef } from "../../platform/shared/contract";
 import { uuidList } from "../../platform/shared/sql";
+
+import { presetCondition, type TrackNodeIds, type TrackPreset } from "./track-preset";
 import type { ContextualSkill, TrackDto } from "./tracks.contract";
-import {
-  presetCondition,
-  type TrackNodeIds,
-  type TrackPreset,
-} from "./track-preset";
 
 function pickRefsByType(
   rows: readonly { id: string; name: string; type: string }[],
   type: NodeType,
 ): NodeRef[] {
-  return rows
-    .filter((r) => r.type === type)
-    .map((r) => ({ id: r.id, name: r.name }));
+  return rows.filter((r) => r.type === type).map((r) => ({ id: r.id, name: r.name }));
 }
 
 // Thin DB gateway for the browse-tree (tracks) read side: the SQL lives here,
@@ -115,9 +111,7 @@ export class TracksRepository {
 
   // The id + canonical name of each node in a preset, split by axis and ordered
   // by name — the named preset the filter sidebar shows on by default.
-  async findPresetNodes(
-    preset: TrackPreset,
-  ): Promise<{ roles: NodeRef[]; skills: NodeRef[] }> {
+  async findPresetNodes(preset: TrackPreset): Promise<{ roles: NodeRef[]; skills: NodeRef[] }> {
     const ids = [...preset.roleIds, ...preset.skillIds];
     if (ids.length === 0) return { roles: [], skills: [] };
 
@@ -142,9 +136,7 @@ export class TracksRepository {
   // Top 12 by distinct-vacancy count. Caller guards the empty-preset case.
   async findContextualSkills(preset: TrackPreset): Promise<ContextualSkill[]> {
     const excludeOwn =
-      preset.skillIds.length > 0
-        ? sql`AND n.id NOT IN (${uuidList(preset.skillIds)})`
-        : sql``;
+      preset.skillIds.length > 0 ? sql`AND n.id NOT IN (${uuidList(preset.skillIds)})` : sql``;
 
     const rows = await this.db.execute<{
       id: string;

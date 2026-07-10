@@ -38,18 +38,19 @@
 // md/runbook/loader-pipeline-smoke.md for the recovery path.
 
 import "dotenv/config";
+
 import { Test } from "@nestjs/testing";
-import { drizzle } from "drizzle-orm/node-postgres";
+
 import { sql, and, eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 
+import type { ExtractedVacancy } from "../src/baml_client/types";
 import { CompanyResolverService } from "../src/loader/services/company-resolver.service";
 import { NodeResolverService } from "../src/loader/services/node-resolver.service";
 import { VacancyLoaderService } from "../src/loader/services/vacancy-loader.service";
-
-import type { ExtractedVacancy } from "../src/baml_client/types";
 
 type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 type Outcome = "matched-verified" | "matched-new" | "created-new";
@@ -75,8 +76,7 @@ async function main(): Promise<void> {
   }
 
   const connectionString =
-    process.env.DATABASE_URL ??
-    "postgres://metahunt:metahunt@localhost:54322/metahunt";
+    process.env.DATABASE_URL ?? "postgres://metahunt:metahunt@localhost:54322/metahunt";
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });
 
@@ -160,9 +160,7 @@ async function main(): Promise<void> {
         (SELECT count(*) FROM nodes WHERE status = 'NEW')::text AS new_nodes
     `);
     const c = counts.rows[0];
-    console.log(
-      `\nFill done — attempted=${ids.length} succeeded=${succeeded} failed=${failed}`,
-    );
+    console.log(`\nFill done — attempted=${ids.length} succeeded=${succeeded} failed=${failed}`);
     console.log(
       `Silver totals — vacancies=${c.vacancies} companies=${c.companies} nodes=${c.nodes} (status='NEW' awaiting moderation: ${c.new_nodes})`,
     );
@@ -196,8 +194,7 @@ async function scoreMentions(
 
   const mentions: Array<{ type: NodeTypeValue; name: string }> = [];
   if (extracted.role) mentions.push({ type: "ROLE", name: extracted.role });
-  if (extracted.domain)
-    mentions.push({ type: "DOMAIN", name: extracted.domain });
+  if (extracted.domain) mentions.push({ type: "DOMAIN", name: extracted.domain });
   for (const s of extracted.skills?.required ?? []) {
     mentions.push({ type: "SKILL", name: s });
   }
@@ -226,20 +223,12 @@ async function probeMention(
     .select({ status: schema.nodes.status })
     .from(schema.nodeAliases)
     .innerJoin(schema.nodes, eq(schema.nodes.id, schema.nodeAliases.nodeId))
-    .where(
-      and(
-        eq(schema.nodeAliases.name, normalized),
-        eq(schema.nodeAliases.type, type),
-      ),
-    );
+    .where(and(eq(schema.nodeAliases.name, normalized), eq(schema.nodeAliases.type, type)));
   if (hits.length === 0) return "created-new";
   return hits[0].status === "VERIFIED" ? "matched-verified" : "matched-new";
 }
 
-function printCoverageReport(
-  coverage: CoverageStats,
-  uncovered: Map<string, number>,
-): void {
+function printCoverageReport(coverage: CoverageStats, uncovered: Map<string, number>): void {
   console.log("\n=== Taxonomy match coverage ===");
   for (const type of ["ROLE", "SKILL", "DOMAIN"] as const) {
     const s = coverage[type];
@@ -275,9 +264,7 @@ function printCoverageReport(
   }
 }
 
-async function assertSilverSchemaExists(
-  db: ReturnType<typeof drizzle>,
-): Promise<void> {
+async function assertSilverSchemaExists(db: ReturnType<typeof drizzle>): Promise<void> {
   const result = await db.execute<{ has_silver: boolean }>(sql`
     SELECT to_regclass('public.vacancies') IS NOT NULL AS has_silver
   `);

@@ -27,13 +27,10 @@ export class SubscriptionsController {
     // is dormant (no/invalid TELEGRAM_BOT_TOKEN), so a deep link is useless.
     const username = this.telegram.botUsername;
     if (!username) {
-      throw new BadRequestException(
-        "Telegram bot is not available — check TELEGRAM_BOT_TOKEN",
-      );
+      throw new BadRequestException("Telegram bot is not available — check TELEGRAM_BOT_TOKEN");
     }
 
-    const candidateId =
-      typeof body?.candidateId === "string" ? body.candidateId : undefined;
+    const candidateId = typeof body?.candidateId === "string" ? body.candidateId : undefined;
 
     const id = await this.subscriptions.create(params, candidateId);
     return { id, deepLink: `https://t.me/${username}?start=${id}` };

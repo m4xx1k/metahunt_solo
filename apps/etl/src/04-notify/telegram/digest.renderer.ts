@@ -5,6 +5,7 @@ import type {
   VacancyDto,
   WorkFormat,
 } from "../../03-discovery/feed/feed.contract";
+
 import { copy } from "./telegram-copy";
 
 // Rich-card digest rendering for Telegram HTML (`parse_mode: "HTML"`).
@@ -71,10 +72,7 @@ const CURRENCY_SYMBOL: Record<Currency, string> = {
 };
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function formatSalary(salary: VacancyDto["salary"]): string | null {
@@ -107,8 +105,7 @@ function locationChip(locations: string[]): string | null {
   });
 
   const sharedCountry =
-    parsed.every((p) => p.country) &&
-    new Set(parsed.map((p) => p.country)).size === 1
+    parsed.every((p) => p.country) && new Set(parsed.map((p) => p.country)).size === 1
       ? parsed[0].country
       : null;
 
@@ -117,38 +114,26 @@ function locationChip(locations: string[]): string | null {
     if (cities.length === 1) return `${cities[0]}, ${sharedCountry}`;
     const head = cities.slice(0, LOCATION_CITIES_MAX).join(", ");
     const overflow =
-      cities.length > LOCATION_CITIES_MAX
-        ? `, +${cities.length - LOCATION_CITIES_MAX}`
-        : "";
+      cities.length > LOCATION_CITIES_MAX ? `, +${cities.length - LOCATION_CITIES_MAX}` : "";
     return `${sharedCountry} (${head}${overflow})`;
   }
 
   const items = parsed.map((p) => (p.country ? `${p.city}, ${p.country}` : p.city));
   const head = items.slice(0, LOCATION_ITEMS_MAX).join(" · ");
   const overflow =
-    items.length > LOCATION_ITEMS_MAX
-      ? ` +${items.length - LOCATION_ITEMS_MAX}`
-      : "";
+    items.length > LOCATION_ITEMS_MAX ? ` +${items.length - LOCATION_ITEMS_MAX}` : "";
   return `${head}${overflow}`;
 }
 
 // Build the outbound apply URL. Carries `?s=<subscriptionId>` when known so the
 // `/go/:id` redirect can attribute the click back to the referring subscription
 // (omitted for the `/preview` sample, which has no subscription).
-function applyUrl(
-  applyBaseUrl: string,
-  vacancyId: string,
-  subscriptionId?: string,
-): string {
+function applyUrl(applyBaseUrl: string, vacancyId: string, subscriptionId?: string): string {
   const base = `${applyBaseUrl}/go/${vacancyId}`;
   return subscriptionId ? `${base}?s=${subscriptionId}` : base;
 }
 
-function renderCard(
-  v: VacancyDto,
-  applyBaseUrl: string,
-  subscriptionId?: string,
-): string {
+function renderCard(v: VacancyDto, applyBaseUrl: string, subscriptionId?: string): string {
   // The ◆ headline stays flush-left; everything else is a 2-space-indented body
   // so each card reads as a titled block. Skills are [bracket] tags and perks
   // are {brace} tags — a light CLI-ish structure over the old dot-joined prose.
@@ -274,10 +259,7 @@ export interface DigestPage {
  * with a per-page header (and `(i/n)` once it spans more than one). Pure: the
  * scheduled engine sends each page and records its `vacancyIds`.
  */
-export function paginateDigest(
-  vacancies: VacancyDto[],
-  meta: DigestMeta,
-): DigestPage[] {
+export function paginateDigest(vacancies: VacancyDto[], meta: DigestMeta): DigestPage[] {
   if (vacancies.length === 0) return [];
 
   const cards = vacancies.map((v) => ({
@@ -291,8 +273,7 @@ export function paginateDigest(
   let chars = 0;
   for (const card of cards) {
     const projected = chars + card.text.length + CARD_SEPARATOR.length;
-    const wouldOverflow =
-      current.length >= MAX_CARDS_PER_MESSAGE || projected > MAX_MESSAGE_CHARS;
+    const wouldOverflow = current.length >= MAX_CARDS_PER_MESSAGE || projected > MAX_MESSAGE_CHARS;
     if (current.length > 0 && wouldOverflow) {
       groups.push(current);
       current = [];

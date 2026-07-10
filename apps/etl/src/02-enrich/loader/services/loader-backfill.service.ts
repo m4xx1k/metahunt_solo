@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { and, asc, eq, isNotNull, notExists, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -47,9 +48,7 @@ export class LoaderBackfillService {
       } catch (err) {
         failed += 1;
         this.logger.warn(
-          `loadMissing: record ${id} failed — ${
-            err instanceof Error ? err.message : String(err)
-          }`,
+          `loadMissing: record ${id} failed — ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -142,9 +141,7 @@ export class LoaderBackfillService {
       );
     } catch (err) {
       this.logger.error(
-        `loadAllInBackground crashed — ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+        `loadAllInBackground crashed — ${err instanceof Error ? err.message : String(err)}`,
       );
     } finally {
       this.running = false;
@@ -161,10 +158,7 @@ export class LoaderBackfillService {
           .where(
             and(
               eq(schema.vacancies.sourceId, schema.rssRecords.sourceId),
-              eq(
-                schema.vacancies.externalId,
-                schema.rssRecords.externalId,
-              ),
+              eq(schema.vacancies.externalId, schema.rssRecords.externalId),
             ),
           ),
       ),

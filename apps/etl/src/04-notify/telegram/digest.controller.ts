@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-} from "@nestjs/common";
+import { Controller, Get, NotFoundException, Param, Post } from "@nestjs/common";
 
 import { DigestService } from "./digest.service";
 
@@ -31,9 +25,7 @@ export class DigestController {
 
   /** Deliver to one subscription. `{ sent }` (0 if gone or nothing new). */
   @Post("run/:subscriptionId")
-  async runOne(
-    @Param("subscriptionId") subscriptionId: string,
-  ): Promise<{ sent: number }> {
+  async runOne(@Param("subscriptionId") subscriptionId: string): Promise<{ sent: number }> {
     return { sent: await this.digest.deliver(subscriptionId) };
   }
 }

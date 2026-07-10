@@ -1,17 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { Collector } from "@boundaryml/baml";
 import { eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { joinNamesByType } from "../../platform/shared/node-names";
 import { b } from "../../baml_client";
-import type {
-  ExtractionResult,
-  ExtractionUsage,
-  VacancyExtractor,
-} from "./vacancy-extractor";
+import { joinNamesByType } from "../../platform/shared/node-names";
+
+import type { ExtractionResult, ExtractionUsage, VacancyExtractor } from "./vacancy-extractor";
 
 export const PROMPT_VERSION = 3;
 

@@ -1,15 +1,11 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 
+import { presetMatchesNothing, resolveTrackPreset, type TrackPreset } from "./track-preset";
 import type {
   ContextualSkillsResponse,
   TrackPresetResponse,
   TracksResponse,
 } from "./tracks.contract";
-import {
-  presetMatchesNothing,
-  resolveTrackPreset,
-  type TrackPreset,
-} from "./track-preset";
 import { TracksRepository } from "./tracks.repository";
 
 // Browse-tree read API: resolves a track to its preset and serves the tree,

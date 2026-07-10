@@ -13,11 +13,7 @@
  */
 
 export type TechGateStage =
-  | 'dept_pass'
-  | 'dept_block'
-  | 'blacklist'
-  | 'whitelist'
-  | 'unknown_block';
+  "dept_pass" | "dept_block" | "blacklist" | "whitelist" | "unknown_block";
 
 export interface TechGateInput {
   title: string;
@@ -35,8 +31,8 @@ export interface TechGateResult {
 function normalize(s: string): string {
   return s
     .toLowerCase()
-    .normalize('NFC')
-    .replace(/[\s_/|,–—-]+/g, ' ')
+    .normalize("NFC")
+    .replace(/[\s_/|,–—-]+/g, " ")
     .trim();
 }
 
@@ -57,8 +53,8 @@ function rolePart(normalized: string): string {
 // through to the LLM `isTech` gate, which reads the full body.
 function roleHead(normalized: string): string {
   return normalized
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -67,43 +63,43 @@ function roleHead(normalized: string): string {
 // false-match as substrings (hr, pr, ai, ml, qa, ui, ux …). Stems that are
 // safe as substrings (develop, engineer, recruit) stay bare.
 const word = (body: string): RegExp =>
-  new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})(?![\\p{L}\\p{N}])`, 'iu');
+  new RegExp(`(?<![\\p{L}\\p{N}])(?:${body})(?![\\p{L}\\p{N}])`, "iu");
 
 const TECH_DEPTS = new Set([
-  'engineering',
-  'software',
-  'development',
-  'data',
-  'it',
-  'r&d',
-  'research and development',
-  'devops',
-  'infrastructure',
-  'platform',
-  'security',
-  'qa',
-  'quality',
+  "engineering",
+  "software",
+  "development",
+  "data",
+  "it",
+  "r&d",
+  "research and development",
+  "devops",
+  "infrastructure",
+  "platform",
+  "security",
+  "qa",
+  "quality",
 ]);
 
 const NONTECH_DEPTS = new Set([
-  'sales',
-  'marketing',
-  'growth',
-  'people',
-  'hr',
-  'human resources',
-  'talent',
-  'recruiting',
-  'finance',
-  'legal',
-  'support',
-  'customer success',
-  'customer service',
-  'operations',
-  'administrative',
-  'design',
-  'product',
-  'project management',
+  "sales",
+  "marketing",
+  "growth",
+  "people",
+  "hr",
+  "human resources",
+  "talent",
+  "recruiting",
+  "finance",
+  "legal",
+  "support",
+  "customer success",
+  "customer service",
+  "operations",
+  "administrative",
+  "design",
+  "product",
+  "project management",
 ]);
 
 // Match FUNCTION STEMS, not exact titles — kills "Media Buying Team Lead"
@@ -111,28 +107,28 @@ const NONTECH_DEPTS = new Set([
 const BLACKLIST: RegExp[] = [
   /media\s?buy/iu,
   /user\s?acquisition/iu,
-  word('aso'),
+  word("aso"),
   /influencer/iu,
-  word('ppc'),
-  word('seo'),
-  word('smm'),
+  word("ppc"),
+  word("seo"),
+  word("smm"),
   /affiliate/iu,
   // end-boundary so "Lead Generation" matches but "Lead General QA" does not
   /lead\s?gen(eration)?(?![\p{L}\p{N}])/iu,
   /copywrit/iu,
   /content/iu,
   /brand/iu,
-  word('pr'),
+  word("pr"),
   /retention/iu,
-  word('crm'),
+  word("crm"),
   /recruit/iu,
   // word-bounded so the company "Growe Talents" doesn't block the role
-  word('talent'),
-  word('hr'),
+  word("talent"),
+  word("hr"),
   /human\s?resources/iu,
   /headhunt/iu,
   /people\s?(partner|ops)/iu,
-  word('sales'),
+  word("sales"),
   /account\s?manager/iu,
   /bizdev/iu,
   // "Business Development" is sales, not dev — block it before the whitelist's
@@ -148,8 +144,8 @@ const BLACKLIST: RegExp[] = [
   /teacher/iu,
   /trainer/iu,
   /(?<![\p{L}\p{N}])(?:product|project)\s?manager/iu,
-  word('pm'),
-  word('po'),
+  word("pm"),
+  word("po"),
   /scrum\s?master/iu,
   /delivery\s?manager/iu,
   /designer/iu,
@@ -174,20 +170,20 @@ const WHITELIST: RegExp[] = [
   /engineer/iu,
   /інженер/iu,
   /programmer/iu,
-  word('coder'),
+  word("coder"),
   /architect/iu,
   /архітектор/iu,
   /tech\s?lead/iu,
   /team\s?lead/iu,
-  word('cto'),
-  word('qa'),
+  word("cto"),
+  word("qa"),
   /tester/iu,
   /quality\s?assurance/iu,
-  word('sdet'),
-  word('aqa'),
+  word("sdet"),
+  word("aqa"),
   /тестувальник/iu,
   /devops/iu,
-  word('sre'),
+  word("sre"),
   /reliability/iu,
   /sysadmin/iu,
   /administrator/iu,
@@ -200,37 +196,37 @@ const WHITELIST: RegExp[] = [
   /full\s?stack/iu,
   /mobile/iu,
   /android/iu,
-  word('ios'),
+  word("ios"),
   /data\s?(scientist|analyst|engineer)/iu,
   /machine\s?learning/iu,
-  word('ml'),
-  word('ai'),
-  word('dba'),
+  word("ml"),
+  word("ai"),
+  word("dba"),
   /database/iu,
   /аналітик\s?даних/iu,
   /embedded/iu,
   /firmware/iu,
   /hardware/iu,
   word(
-    'python|javascript|typescript|java|golang|rust|php|ruby|kotlin|swift|solidity|react|angular|vue|nodejs|node|django|laravel|spring|flutter|kubernetes|terraform|c\\+\\+|c#|\\.net',
+    "python|javascript|typescript|java|golang|rust|php|ruby|kotlin|swift|solidity|react|angular|vue|nodejs|node|django|laravel|spring|flutter|kubernetes|terraform|c\\+\\+|c#|\\.net",
   ),
 ];
 
 export function passesTechGate(input: TechGateInput): TechGateResult {
   if (input.department) {
     const dept = normalize(input.department);
-    if (TECH_DEPTS.has(dept)) return { pass: true, stage: 'dept_pass' };
-    if (NONTECH_DEPTS.has(dept)) return { pass: false, stage: 'dept_block' };
+    if (TECH_DEPTS.has(dept)) return { pass: true, stage: "dept_pass" };
+    if (NONTECH_DEPTS.has(dept)) return { pass: false, stage: "dept_block" };
   }
 
   const title = normalize(input.title);
   const head = roleHead(rolePart(title));
 
   for (const re of BLACKLIST) {
-    if (re.test(head)) return { pass: false, stage: 'blacklist' };
+    if (re.test(head)) return { pass: false, stage: "blacklist" };
   }
   for (const re of WHITELIST) {
-    if (re.test(title)) return { pass: true, stage: 'whitelist' };
+    if (re.test(title)) return { pass: true, stage: "whitelist" };
   }
-  return { pass: false, stage: 'unknown_block' };
+  return { pass: false, stage: "unknown_block" };
 }

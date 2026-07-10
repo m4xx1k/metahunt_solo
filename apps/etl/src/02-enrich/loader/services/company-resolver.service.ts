@@ -9,18 +9,10 @@ export class CompanyResolverService {
 
   // `executor` lets the caller run this inside the vacancy-load transaction;
   // omitted, the repository falls back to the root db handle.
-  async resolve(
-    sourceId: string,
-    rawName: string,
-    executor?: Executor,
-  ): Promise<string> {
+  async resolve(sourceId: string, rawName: string, executor?: Executor): Promise<string> {
     const sourceCompanyName = rawName.trim();
 
-    const byIdentifier = await this.repo.findIdByIdentifier(
-      sourceId,
-      sourceCompanyName,
-      executor,
-    );
+    const byIdentifier = await this.repo.findIdByIdentifier(sourceId, sourceCompanyName, executor);
     if (byIdentifier) return byIdentifier;
 
     const slug = slugify(sourceCompanyName);
@@ -30,22 +22,14 @@ export class CompanyResolverService {
     let companyId = await this.repo.findIdBySlug(slug, executor);
     if (!companyId) {
       companyId =
-        (await this.repo.insertReturningId(
-          sourceCompanyName,
-          slug,
-          executor,
-        )) ?? (await this.repo.findIdBySlug(slug, executor));
+        (await this.repo.insertReturningId(sourceCompanyName, slug, executor)) ??
+        (await this.repo.findIdBySlug(slug, executor));
     }
     if (!companyId) {
       throw new Error(`failed to resolve company for slug "${slug}"`);
     }
 
-    await this.repo.linkIdentifier(
-      sourceId,
-      sourceCompanyName,
-      companyId,
-      executor,
-    );
+    await this.repo.linkIdentifier(sourceId, sourceCompanyName, companyId, executor);
     return companyId;
   }
 }

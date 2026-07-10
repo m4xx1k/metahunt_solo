@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
+
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -19,8 +20,7 @@ import { verifyTelegramAuth, type TelegramAuthPayload } from "./telegram-verify"
 const { users, authIdentities, userCvs, subscriptions, candidates } = schema;
 
 const PROVIDER = "telegram";
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Telegram login: verify the widget payload, upsert the user + identity, claim
 // any anonymous CVs/subscriptions onto them, and mint the app's own session JWT.
@@ -56,10 +56,8 @@ export class AuthService {
     }
 
     const telegramId = String(payload.id);
-    const username =
-      typeof payload.username === "string" ? payload.username : null;
-    const firstName =
-      typeof payload.first_name === "string" ? payload.first_name : null;
+    const username = typeof payload.username === "string" ? payload.username : null;
+    const firstName = typeof payload.first_name === "string" ? payload.first_name : null;
     // Admin membership is env-driven and re-evaluated every login, so promoting
     // or removing an admin is just an ADMIN_TELEGRAM_IDS change + re-login.
     const roles = this.adminIds.has(telegramId) ? ["user", "admin"] : ["user"];
@@ -72,9 +70,7 @@ export class AuthService {
       tid: telegramId,
       roles,
     } satisfies JwtPayload);
-    this.logger.log(
-      `login tg:${telegramId} -> user ${userId} roles=[${roles.join(",")}]`,
-    );
+    this.logger.log(`login tg:${telegramId} -> user ${userId} roles=[${roles.join(",")}]`);
     return { token, user: { id: userId, telegramId, username, firstName, roles } };
   }
 
@@ -90,10 +86,7 @@ export class AuthService {
       .from(users)
       .leftJoin(
         authIdentities,
-        and(
-          eq(authIdentities.userId, users.id),
-          eq(authIdentities.provider, PROVIDER),
-        ),
+        and(eq(authIdentities.userId, users.id), eq(authIdentities.provider, PROVIDER)),
       )
       .where(eq(users.id, userId));
     if (!row) return null;
@@ -118,25 +111,16 @@ export class AuthService {
       .select({ userId: authIdentities.userId })
       .from(authIdentities)
       .where(
-        and(
-          eq(authIdentities.provider, PROVIDER),
-          eq(authIdentities.providerUserId, telegramId),
-        ),
+        and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, telegramId)),
       );
 
     if (identity) {
-      await this.db
-        .update(users)
-        .set({ roles })
-        .where(eq(users.id, identity.userId));
+      await this.db.update(users).set({ roles }).where(eq(users.id, identity.userId));
       await this.db
         .update(authIdentities)
         .set({ username, firstName })
         .where(
-          and(
-            eq(authIdentities.provider, PROVIDER),
-            eq(authIdentities.providerUserId, telegramId),
-          ),
+          and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, telegramId)),
         );
       return identity.userId;
     }
@@ -159,20 +143,11 @@ export class AuthService {
   // telegram id (private-chat id == user id — server-trusted), (b) CVs the
   // browser holds in localStorage. Newest claimed CV becomes active iff the user
   // has none yet (never clobbers an existing active choice).
-  private async claim(
-    userId: string,
-    telegramId: string,
-    candidateIds: string[],
-  ): Promise<void> {
+  private async claim(userId: string, telegramId: string, candidateIds: string[]): Promise<void> {
     await this.db
       .update(subscriptions)
       .set({ userId })
-      .where(
-        and(
-          eq(subscriptions.chatId, telegramId),
-          isNull(subscriptions.userId),
-        ),
-      );
+      .where(and(eq(subscriptions.chatId, telegramId), isNull(subscriptions.userId)));
 
     const ids = candidateIds.filter((id) => UUID_REGEX.test(id));
     if (ids.length === 0) return;

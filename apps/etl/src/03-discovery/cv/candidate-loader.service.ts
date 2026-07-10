@@ -1,17 +1,16 @@
 import { createHash } from "node:crypto";
 
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+
 import { eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { RankingService } from "../ranking/ranking.service";
 import type { SkillRef } from "../ranking/ranking.contract";
-import {
-  CANDIDATE_EXTRACTOR,
-  type CandidateExtractorPort,
-} from "./candidate-extractor.port";
+import { RankingService } from "../ranking/ranking.service";
+
+import { CANDIDATE_EXTRACTOR, type CandidateExtractorPort } from "./candidate-extractor.port";
 import type {
   CandidateNodeRef,
   CandidateView,
@@ -47,10 +46,7 @@ export class CandidateLoaderService {
     if (existing[0]) return this.buildResult(existing[0].id, true);
 
     const extracted = await this.extractor.extract(sourceText);
-    const skills = [
-      ...(extracted.skills?.required ?? []),
-      ...(extracted.skills?.optional ?? []),
-    ];
+    const skills = [...(extracted.skills?.required ?? []), ...(extracted.skills?.optional ?? [])];
     const resolved = await this.ranking.resolveSkills(skills);
 
     const id = await this.db.transaction(async (tx) => {
@@ -64,9 +60,7 @@ export class CandidateLoaderService {
           seniority: extracted.seniority ?? null,
           englishLevel: extracted.englishLevel ?? null,
           experienceYears:
-            extracted.experienceYears != null
-              ? Math.round(extracted.experienceYears)
-              : null,
+            extracted.experienceYears != null ? Math.round(extracted.experienceYears) : null,
         })
         .onConflictDoNothing({ target: schema.candidates.contentHash })
         .returning({ id: schema.candidates.id });
@@ -85,9 +79,7 @@ export class CandidateLoaderService {
       if (inserted[0] && resolved.matched.length > 0) {
         await tx
           .insert(schema.candidateNodes)
-          .values(
-            resolved.matched.map((m) => ({ candidateId, nodeId: m.id })),
-          )
+          .values(resolved.matched.map((m) => ({ candidateId, nodeId: m.id })))
           .onConflictDoNothing();
       }
       return candidateId;
@@ -98,16 +90,14 @@ export class CandidateLoaderService {
 
   // Skill inputs for ranking a stored candidate (GET /cv/:id/matches): resolved
   // nodes with their IDF weight + the unmatched strings kept on the candidate.
-  async getMatchInput(
-    id: string,
-  ): Promise<{ matched: SkillRef[]; unmatched: string[] }> {
+  async getMatchInput(id: string): Promise<{ matched: SkillRef[]; unmatched: string[] }> {
     const rows = await this.db
       .select({ extracted: schema.candidates.extracted })
       .from(schema.candidates)
       .where(eq(schema.candidates.id, id));
     if (!rows[0]) throw new NotFoundException(`candidate ${id} not found`);
 
-    const extracted = rows[0].extracted as Record<string, unknown>;
+    const extracted = rows[0].extracted;
     return {
       matched: await this.weightedMatchedNodes(id),
       unmatched: (extracted.unmatchedSkills as string[]) ?? [],
@@ -144,10 +134,7 @@ export class CandidateLoaderService {
       })
       .from(schema.candidateNodes)
       .innerJoin(schema.nodes, eq(schema.nodes.id, schema.candidateNodes.nodeId))
-      .leftJoin(
-        schema.nodeStats,
-        eq(schema.nodeStats.nodeId, schema.candidateNodes.nodeId),
-      )
+      .leftJoin(schema.nodeStats, eq(schema.nodeStats.nodeId, schema.candidateNodes.nodeId))
       .where(eq(schema.candidateNodes.candidateId, id));
     return matched.map((m) => ({ id: m.id, name: m.name, weight: m.weight ?? 0 }));
   }
@@ -165,7 +152,7 @@ export class CandidateLoaderService {
       .where(eq(schema.candidates.type, "sample"))
       .orderBy(schema.candidates.createdAt);
     return rows.map((r) => {
-      const sample = ((r.extracted as Record<string, unknown>).sample ?? {}) as {
+      const sample = (r.extracted.sample ?? {}) as {
         label?: string;
         hint?: string;
       };
@@ -178,14 +165,11 @@ export class CandidateLoaderService {
   }
 
   async getById(id: string): Promise<CandidateView> {
-    const rows = await this.db
-      .select()
-      .from(schema.candidates)
-      .where(eq(schema.candidates.id, id));
+    const rows = await this.db.select().from(schema.candidates).where(eq(schema.candidates.id, id));
     const row = rows[0];
     if (!row) throw new NotFoundException(`candidate ${id} not found`);
     const matched = await this.matchedNodes(id);
-    const extracted = row.extracted as Record<string, unknown>;
+    const extracted = row.extracted;
     return {
       candidateId: id,
       reused: false,
@@ -199,10 +183,7 @@ export class CandidateLoaderService {
     };
   }
 
-  private async buildResult(
-    id: string,
-    reused: boolean,
-  ): Promise<CvIngestResult> {
+  private async buildResult(id: string, reused: boolean): Promise<CvIngestResult> {
     const rows = await this.db
       .select({
         role: schema.candidates.role,
@@ -213,7 +194,7 @@ export class CandidateLoaderService {
       .where(eq(schema.candidates.id, id));
     const row = rows[0];
     const matched = await this.matchedNodes(id);
-    const extracted = (row?.extracted as Record<string, unknown>) ?? {};
+    const extracted = row?.extracted ?? {};
     return {
       candidateId: id,
       reused,

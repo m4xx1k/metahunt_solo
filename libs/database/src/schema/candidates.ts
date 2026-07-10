@@ -9,15 +9,16 @@ import {
   unique,
   primaryKey,
   index,
-} from 'drizzle-orm/pg-core';
-import { nodes } from './nodes';
+} from "drizzle-orm/pg-core";
+
+import { nodes } from "./nodes";
 // Reuse the existing enums — do NOT redeclare (drizzle would try to recreate
 // the pg type). They mirror the BAML enums in extract-candidate.baml.
-import { seniority, englishLevel } from './vacancies';
+import { seniority, englishLevel } from "./vacancies";
 
 // How a candidate row came to exist: `user` = a real uploaded CV; `sample` = a
 // seeded demo profile the reverse-ATS picker ranks against (no file, no LLM).
-export const candidateType = pgEnum('candidate_type', ['user', 'sample']);
+export const candidateType = pgEnum("candidate_type", ["user", "sample"]);
 
 // A candidate parsed from an uploaded CV — the reverse-ATS counterpart of a
 // vacancy. See md/journal/migrations/reverse-ats.md (§3-4). `extracted` holds
@@ -26,38 +27,36 @@ export const candidateType = pgEnum('candidate_type', ['user', 'sample']);
 // flags only (not scored). `contentHash` makes re-upload idempotent — the same
 // CV text never hits the LLM twice.
 export const candidates = pgTable(
-  'candidates',
+  "candidates",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    contentHash: text('content_hash').notNull(),
-    sourceText: text('source_text').notNull(),
-    extracted: jsonb('extracted').notNull().$type<Record<string, unknown>>(),
-    type: candidateType('type').notNull().default('user'),
-    role: text('role'),
-    seniority: seniority('seniority'),
-    englishLevel: englishLevel('english_level'),
-    experienceYears: integer('experience_years'),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    id: uuid("id").primaryKey().defaultRandom(),
+    contentHash: text("content_hash").notNull(),
+    sourceText: text("source_text").notNull(),
+    extracted: jsonb("extracted").notNull().$type<Record<string, unknown>>(),
+    type: candidateType("type").notNull().default("user"),
+    role: text("role"),
+    seniority: seniority("seniority"),
+    englishLevel: englishLevel("english_level"),
+    experienceYears: integer("experience_years"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [unique('candidates_content_hash_key').on(t.contentHash)],
+  (t) => [unique("candidates_content_hash_key").on(t.contentHash)],
 );
 
 // Presence-only skill links (no is_required — a CV just lists what it has).
 export const candidateNodes = pgTable(
-  'candidate_nodes',
+  "candidate_nodes",
   {
-    candidateId: uuid('candidate_id')
+    candidateId: uuid("candidate_id")
       .notNull()
-      .references(() => candidates.id, { onDelete: 'cascade' }),
-    nodeId: uuid('node_id')
+      .references(() => candidates.id, { onDelete: "cascade" }),
+    nodeId: uuid("node_id")
       .notNull()
       .references(() => nodes.id),
   },
   (t) => [
     primaryKey({ columns: [t.candidateId, t.nodeId] }),
-    index('candidate_nodes_node_id_idx').on(t.nodeId),
+    index("candidate_nodes_node_id_idx").on(t.nodeId),
   ],
 );
 

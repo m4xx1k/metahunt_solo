@@ -3,14 +3,10 @@ import { djinniExtractor } from "./djinni";
 describe("djinniExtractor", () => {
   describe("extracts numeric id from /jobs/ URLs", () => {
     it.each([
-      [
-        { guid: "https://djinni.co/jobs/821163-blockchain-developer/" },
-        "821163",
-      ],
+      [{ guid: "https://djinni.co/jobs/821163-blockchain-developer/" }, "821163"],
       [
         {
-          guid:
-            "https://djinni.co/jobs/821162-short-form-video-editor-tiktok-meta-ads-reels/",
+          guid: "https://djinni.co/jobs/821162-short-form-video-editor-tiktok-meta-ads-reels/",
         },
         "821162",
       ],
@@ -21,9 +17,7 @@ describe("djinniExtractor", () => {
   });
 
   it("falls back to link when guid is missing", () => {
-    expect(
-      djinniExtractor({ link: "https://djinni.co/jobs/555000-go-engineer/" }),
-    ).toBe("555000");
+    expect(djinniExtractor({ link: "https://djinni.co/jobs/555000-go-engineer/" })).toBe("555000");
   });
 
   it("prefers guid over link", () => {
@@ -36,9 +30,7 @@ describe("djinniExtractor", () => {
   });
 
   it("throws on a URL without /jobs/<id>", () => {
-    expect(() =>
-      djinniExtractor({ guid: "https://djinni.co/companies/acme/" }),
-    ).toThrow(/djinni/);
+    expect(() => djinniExtractor({ guid: "https://djinni.co/companies/acme/" })).toThrow(/djinni/);
   });
 
   it("throws when both guid and link are absent", () => {

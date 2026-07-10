@@ -22,8 +22,8 @@ describe("extractText", () => {
 
   it("rejects binary content (NUL byte) even when mislabeled as text", async () => {
     const binary = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x1a]);
-    await expect(
-      extractText(file("text/plain", binary)),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(extractText(file("text/plain", binary))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });

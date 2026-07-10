@@ -24,17 +24,14 @@ describe("UsersController", () => {
         source: "landing-cta",
       });
 
-      expect(subscribe).toHaveBeenCalledWith(
-        "hello@example.com",
-        "landing-cta",
-      );
+      expect(subscribe).toHaveBeenCalledWith("hello@example.com", "landing-cta");
       expect(result).toEqual({ status: "subscribed" });
     });
 
     it("rejects a missing email", async () => {
-      await expect(
-        controller.subscribe({ source: "landing-cta" }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(controller.subscribe({ source: "landing-cta" })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
       expect(subscribe).not.toHaveBeenCalled();
     });
 

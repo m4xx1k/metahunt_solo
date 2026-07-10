@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import { Pool } from "pg";
+
+import { schema, type DrizzleDB } from "@metahunt/database";
 
 // Connect to the container started in global-setup (URL via DATABASE_URL).
 export function makeTestDb(): { db: DrizzleDB; pool: Pool } {

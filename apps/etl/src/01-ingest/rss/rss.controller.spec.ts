@@ -2,6 +2,7 @@ import { Test } from "@nestjs/testing";
 
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { RolesGuard } from "../../platform/auth/roles.guard";
+
 import { RssBackfillService } from "./rss-backfill.service";
 import { RssIngestService } from "./rss-ingest.service";
 import { RssController } from "./rss.controller";
@@ -20,9 +21,7 @@ describe("RssController", () => {
   beforeEach(async () => {
     ingestAll.mockReset().mockResolvedValue(undefined);
     ingestRemote.mockReset().mockResolvedValue(undefined);
-    extractMissing
-      .mockReset()
-      .mockResolvedValue({ attempted: 0, succeeded: 0, failed: 0 });
+    extractMissing.mockReset().mockResolvedValue({ attempted: 0, succeeded: 0, failed: 0 });
     const moduleRef = await Test.createTestingModule({
       controllers: [RssController],
       providers: [
@@ -73,17 +72,13 @@ describe("RssController", () => {
     });
 
     it("rejects a non-integer limit", async () => {
-      await expect(controller.extractMissing("abc")).rejects.toThrow(
-        /limit must be an integer/,
-      );
+      await expect(controller.extractMissing("abc")).rejects.toThrow(/limit must be an integer/);
       expect(extractMissing).not.toHaveBeenCalled();
     });
 
     it("rejects a limit out of range", async () => {
       await expect(controller.extractMissing("0")).rejects.toThrow(/1\.\.500/);
-      await expect(controller.extractMissing("501")).rejects.toThrow(
-        /1\.\.500/,
-      );
+      await expect(controller.extractMissing("501")).rejects.toThrow(/1\.\.500/);
     });
   });
 });

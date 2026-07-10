@@ -1,9 +1,11 @@
 import { inArray, sql } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
+
+import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
+
 import { makeTestDb, truncateAll } from "./db";
 
 let db: DrizzleDB;
@@ -85,9 +87,7 @@ afterEach(async () => {
 describe("RankingService.resolveSkills (integration)", () => {
   it("resolves canonical and alias names to the same node and reports misses", async () => {
     const react = await seedNode("SKILL", "React");
-    await db
-      .insert(schema.nodeAliases)
-      .values({ name: "react.js", type: "SKILL", nodeId: react });
+    await db.insert(schema.nodeAliases).values({ name: "react.js", type: "SKILL", nodeId: react });
     await seedNode("SKILL", "Secret", "HIDDEN");
 
     const res = await ranking.resolveSkills(["React", "react.js", "Nope", "Secret"]);

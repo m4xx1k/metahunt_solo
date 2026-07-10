@@ -18,8 +18,8 @@
 // Costs real money (OpenAI calls). At gpt-4o-mini pricing ~ $0.001/record.
 
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { asc, eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 import { schema } from "@metahunt/database";
@@ -38,8 +38,7 @@ async function main(): Promise<void> {
   }
 
   const connectionString =
-    process.env.DATABASE_URL ??
-    "postgres://metahunt:metahunt@localhost:54322/metahunt";
+    process.env.DATABASE_URL ?? "postgres://metahunt:metahunt@localhost:54322/metahunt";
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });
 
@@ -129,15 +128,10 @@ async function main(): Promise<void> {
     console.log(`Tokens:    in=${totalIn} out=${totalOut} cached=${totalCached}`);
 
     const model = process.env.OPENAI_MODEL ?? "unknown";
-    const rates =
-      MODEL_PRICING_USD_PER_MTOK[
-        model as keyof typeof MODEL_PRICING_USD_PER_MTOK
-      ];
+    const rates = MODEL_PRICING_USD_PER_MTOK[model as keyof typeof MODEL_PRICING_USD_PER_MTOK];
     if (rates) {
       const cost =
-        ((totalIn - totalCached) * rates.in +
-          totalOut * rates.out +
-          totalCached * rates.cachedIn) /
+        ((totalIn - totalCached) * rates.in + totalOut * rates.out + totalCached * rates.cachedIn) /
         1e6;
       console.log(`Cost:      $${cost.toFixed(4)} (${model})`);
     } else {

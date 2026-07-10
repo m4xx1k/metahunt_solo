@@ -13,9 +13,7 @@ describe("LoaderController", () => {
   let controller: LoaderController;
 
   beforeEach(async () => {
-    loadMissing
-      .mockReset()
-      .mockResolvedValue({ attempted: 0, succeeded: 0, failed: 0 });
+    loadMissing.mockReset().mockResolvedValue({ attempted: 0, succeeded: 0, failed: 0 });
     isRunning.mockReset().mockReturnValue(false);
     countPending.mockReset().mockResolvedValue(0);
     loadAllInBackground.mockReset().mockResolvedValue(undefined);
@@ -61,9 +59,7 @@ describe("LoaderController", () => {
     });
 
     it("rejects a non-integer limit", async () => {
-      await expect(controller.backfill("abc")).rejects.toThrow(
-        /limit must be an integer/,
-      );
+      await expect(controller.backfill("abc")).rejects.toThrow(/limit must be an integer/);
       expect(loadMissing).not.toHaveBeenCalled();
     });
 
@@ -96,9 +92,7 @@ describe("LoaderController", () => {
     it("rejects when a backfill is already running", async () => {
       isRunning.mockReturnValueOnce(true);
 
-      await expect(controller.backfillAll(undefined)).rejects.toBeInstanceOf(
-        ConflictException,
-      );
+      await expect(controller.backfillAll(undefined)).rejects.toBeInstanceOf(ConflictException);
       expect(countPending).not.toHaveBeenCalled();
       expect(loadAllInBackground).not.toHaveBeenCalled();
     });
@@ -115,9 +109,7 @@ describe("LoaderController", () => {
     });
 
     it("rejects a non-integer batchSize", async () => {
-      await expect(controller.backfillAll("abc")).rejects.toThrow(
-        /batchSize must be an integer/,
-      );
+      await expect(controller.backfillAll("abc")).rejects.toThrow(/batchSize must be an integer/);
     });
   });
 });

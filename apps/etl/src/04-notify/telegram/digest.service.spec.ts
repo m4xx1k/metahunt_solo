@@ -3,16 +3,11 @@ import { Test } from "@nestjs/testing";
 
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+
 import { DigestService } from "./digest.service";
 import { SentNotificationsService } from "./sent-notifications.service";
-import {
-  SubscriptionMatcherService,
-  type DigestMatch,
-} from "./subscription-matcher.service";
-import {
-  SubscriptionsService,
-  type ActiveSubscription,
-} from "./subscriptions.service";
+import { SubscriptionMatcherService, type DigestMatch } from "./subscription-matcher.service";
+import { SubscriptionsService, type ActiveSubscription } from "./subscriptions.service";
 import { TelegramService } from "./telegram.service";
 
 const BASE = "https://api.metahunt.io";
@@ -126,9 +121,7 @@ describe("DigestService", () => {
 
     it("splits a large match into multiple sent pages", async () => {
       getActiveById.mockResolvedValue(activeSub());
-      const items = Array.from({ length: 11 }, (_, i) =>
-        createVacancy({ id: `v${i}` }),
-      );
+      const items = Array.from({ length: 11 }, (_, i) => createVacancy({ id: `v${i}` }));
       matchNew.mockResolvedValue(digestMatch(items, 11));
 
       await expect(service.deliver("sub-1")).resolves.toBe(11);

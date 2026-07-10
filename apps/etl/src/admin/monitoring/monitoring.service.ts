@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+
 import {
   and,
   count,
@@ -87,10 +88,7 @@ export class MonitoringService {
       .limit(params.limit)
       .offset(params.offset);
 
-    const totalRow = await this.db
-      .select({ value: count() })
-      .from(rssIngests)
-      .where(where);
+    const totalRow = await this.db.select({ value: count() }).from(rssIngests).where(where);
     const total = totalRow[0]?.value ?? 0;
 
     const items = rows.map(decorateIngest);
@@ -149,10 +147,7 @@ export class MonitoringService {
       .limit(params.limit)
       .offset(params.offset);
 
-    const totalRow = await this.db
-      .select({ value: count() })
-      .from(rssRecords)
-      .where(where);
+    const totalRow = await this.db.select({ value: count() }).from(rssRecords).where(where);
     const total = totalRow[0]?.value ?? 0;
 
     const items = rows.map((r) => ({ ...r, extracted: r.extractedAt !== null }));
@@ -201,9 +196,7 @@ export class MonitoringService {
     const since = periodSince(period);
     const bronzeFilter = since ? gte(rssRecords.createdAt, since) : undefined;
     const silverFilter = since ? gte(vacancies.loadedAt, since) : undefined;
-    const goldFilter = since
-      ? gte(uniqueVacancies.createdAt, since)
-      : undefined;
+    const goldFilter = since ? gte(uniqueVacancies.createdAt, since) : undefined;
     const ingestFilter = since ? gte(rssIngests.startedAt, since) : undefined;
 
     const [
@@ -220,10 +213,7 @@ export class MonitoringService {
       // Silver — structured vacancies loaded in period.
       this.db.select({ value: count() }).from(vacancies).where(silverFilter),
       // Gold — NEW Golden Record groups born in period.
-      this.db
-        .select({ value: count() })
-        .from(uniqueVacancies)
-        .where(goldFilter),
+      this.db.select({ value: count() }).from(uniqueVacancies).where(goldFilter),
       // Ingest total in period (used for header context).
       this.db.select({ value: count() }).from(rssIngests).where(ingestFilter),
       // Ingest status breakdown in period.
@@ -351,11 +341,9 @@ function buildRecordWhere(params: ListRecordsParams): SQL | undefined {
   return and(...filters);
 }
 
-function decorateIngest<
-  T extends { startedAt: Date; finishedAt: Date | null },
->(row: T): T & { durationMs: number | null } {
-  const durationMs = row.finishedAt
-    ? row.finishedAt.getTime() - row.startedAt.getTime()
-    : null;
+function decorateIngest<T extends { startedAt: Date; finishedAt: Date | null }>(
+  row: T,
+): T & { durationMs: number | null } {
+  const durationMs = row.finishedAt ? row.finishedAt.getTime() - row.startedAt.getTime() : null;
   return { ...row, durationMs };
 }

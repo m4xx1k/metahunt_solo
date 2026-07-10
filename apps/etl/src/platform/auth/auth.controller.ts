@@ -8,13 +8,9 @@ import {
   UseGuards,
 } from "@nestjs/common";
 
-import type {
-  AuthUser,
-  TelegramLoginRequest,
-  TelegramLoginResponse,
-} from "./auth.contract";
-import type { JwtUser } from "./auth.types";
+import type { AuthUser, TelegramLoginRequest, TelegramLoginResponse } from "./auth.contract";
 import { AuthService } from "./auth.service";
+import type { JwtUser } from "./auth.types";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 
@@ -23,9 +19,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post("telegram")
-  async telegram(
-    @Body() body: Partial<TelegramLoginRequest>,
-  ): Promise<TelegramLoginResponse> {
+  async telegram(@Body() body: Partial<TelegramLoginRequest>): Promise<TelegramLoginResponse> {
     const tg = body?.telegram;
     if (
       !tg ||

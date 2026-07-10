@@ -1,8 +1,9 @@
-import { eq, and, notInArray } from 'drizzle-orm';
-import type { DrizzleDB } from '../src/tokens';
-import { tracks, trackNodes, nodes } from '../src/schema';
+import { eq, and, notInArray } from "drizzle-orm";
 
-type NodeTypeValue = 'ROLE' | 'SKILL' | 'DOMAIN';
+import { tracks, trackNodes, nodes } from "../src/schema";
+import type { DrizzleDB } from "../src/tokens";
+
+type NodeTypeValue = "ROLE" | "SKILL" | "DOMAIN";
 type NodeRef = { type: NodeTypeValue; canonicalName: string };
 
 export type TrackSeed = {
@@ -16,10 +17,7 @@ export type TrackSeed = {
 // Idempotent: re-runnable, relinks parents and re-syncs node membership.
 // A node ref that does not resolve fails loudly — that is a curation error
 // (the canonicalName must match an existing nodes.canonical_name exactly).
-export async function seedTracks(
-  db: DrizzleDB,
-  data: TrackSeed[],
-): Promise<void> {
+export async function seedTracks(db: DrizzleDB, data: TrackSeed[]): Promise<void> {
   // Pass 0 — prune tracks no longer in the seed so the JSON is the full source
   // of truth (track_nodes cascade on delete). Children go before parents would
   // matter for ON DELETE, but parent_id is ON DELETE no-action, so delete leaves
@@ -53,9 +51,7 @@ export async function seedTracks(
     if (t.parentSlug) {
       parentId = idBySlug.get(t.parentSlug) ?? null;
       if (!parentId) {
-        throw new Error(
-          `Track "${t.slug}" references unknown parent "${t.parentSlug}"`,
-        );
+        throw new Error(`Track "${t.slug}" references unknown parent "${t.parentSlug}"`);
       }
     }
     await db.update(tracks).set({ parentId }).where(eq(tracks.id, trackId));
@@ -66,22 +62,14 @@ export async function seedTracks(
       const [node] = await db
         .select({ id: nodes.id })
         .from(nodes)
-        .where(
-          and(
-            eq(nodes.type, ref.type),
-            eq(nodes.canonicalName, ref.canonicalName),
-          ),
-        )
+        .where(and(eq(nodes.type, ref.type), eq(nodes.canonicalName, ref.canonicalName)))
         .limit(1);
       if (!node) {
         throw new Error(
           `Track "${t.slug}" references missing ${ref.type} node "${ref.canonicalName}"`,
         );
       }
-      await db
-        .insert(trackNodes)
-        .values({ trackId, nodeId: node.id })
-        .onConflictDoNothing();
+      await db.insert(trackNodes).values({ trackId, nodeId: node.id }).onConflictDoNothing();
     }
   }
 }

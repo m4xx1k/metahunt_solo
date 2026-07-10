@@ -1,12 +1,10 @@
-import { Test } from "@nestjs/testing";
-import { ConfigService } from "@nestjs/config";
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { mockClient } from "aws-sdk-client-mock";
 import { Readable } from "node:stream";
+
+import { ConfigService } from "@nestjs/config";
+import { Test } from "@nestjs/testing";
+
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { mockClient } from "aws-sdk-client-mock";
 
 import { StorageService } from "./storage.service";
 
@@ -30,8 +28,7 @@ describe("StorageService", () => {
         {
           provide: ConfigService,
           useValue: {
-            get: <T>(key: string): T | undefined =>
-              STORAGE_CONFIG[key] as T | undefined,
+            get: <T>(key: string): T | undefined => STORAGE_CONFIG[key] as T | undefined,
           },
         },
       ],

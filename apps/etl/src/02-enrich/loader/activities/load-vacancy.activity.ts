@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
 import { VacancyLoaderService } from "../services/vacancy-loader.service";

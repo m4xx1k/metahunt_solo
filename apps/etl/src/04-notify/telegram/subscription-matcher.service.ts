@@ -3,29 +3,19 @@ import { Injectable, Logger } from "@nestjs/common";
 import { CandidateLoaderService } from "../../03-discovery/cv/candidate-loader.service";
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { FeedService, type FeedSearchParams } from "../../03-discovery/feed/feed.service";
-import type {
-  FitTier,
-  MatchFilters,
-} from "../../03-discovery/ranking/ranking.contract";
+import type { FitTier, MatchFilters } from "../../03-discovery/ranking/ranking.contract";
 import { RankingService } from "../../03-discovery/ranking/ranking.service";
-import {
-  asBoolean,
-  asNumber,
-  asString,
-  asStringArray,
-} from "../../platform/shared/coerce";
+import { asBoolean, asNumber, asString, asStringArray } from "../../platform/shared/coerce";
 import type {
   EmploymentType,
   EnglishLevel,
   Seniority,
   WorkFormat,
 } from "../../platform/shared/contract";
-import type { SubscriptionParams } from "./subscriptions.contract";
-import {
-  SubscriptionsService,
-  type SubscriptionMatchTarget,
-} from "./subscriptions.service";
+
 import { SentNotificationsService } from "./sent-notifications.service";
+import type { SubscriptionParams } from "./subscriptions.contract";
+import { SubscriptionsService, type SubscriptionMatchTarget } from "./subscriptions.service";
 
 const DAY_MS = 86_400_000;
 
@@ -68,10 +58,7 @@ export class SubscriptionMatcherService {
   }
 
   // Example over a flat window, ignoring the floor and the sent anti-join.
-  async sample(
-    sub: SubscriptionMatchTarget,
-    windowDays: number,
-  ): Promise<DigestMatch> {
+  async sample(sub: SubscriptionMatchTarget, windowDays: number): Promise<DigestMatch> {
     return this.match(sub, new Date(Date.now() - windowDays * DAY_MS), []);
   }
 

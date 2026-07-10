@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { and, eq, like } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -40,10 +41,7 @@ export class ExternalIdCleanupService {
           externalId: schema.vacancies.externalId,
         })
         .from(schema.vacancies)
-        .innerJoin(
-          schema.sources,
-          eq(schema.sources.id, schema.vacancies.sourceId),
-        )
+        .innerJoin(schema.sources, eq(schema.sources.id, schema.vacancies.sourceId))
         .where(like(schema.vacancies.externalId, "http%"));
 
       for (const row of urlVacancies) {
@@ -72,9 +70,7 @@ export class ExternalIdCleanupService {
 
         if (twin) {
           if (!dryRun) {
-            await tx
-              .delete(schema.vacancies)
-              .where(eq(schema.vacancies.id, row.id));
+            await tx.delete(schema.vacancies).where(eq(schema.vacancies.id, row.id));
           }
           deleted++;
         } else {
@@ -95,10 +91,7 @@ export class ExternalIdCleanupService {
           externalId: schema.rssRecords.externalId,
         })
         .from(schema.rssRecords)
-        .innerJoin(
-          schema.sources,
-          eq(schema.sources.id, schema.rssRecords.sourceId),
-        )
+        .innerJoin(schema.sources, eq(schema.sources.id, schema.rssRecords.sourceId))
         .where(like(schema.rssRecords.externalId, "http%"));
 
       let rssRecordsUpdated = 0;

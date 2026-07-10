@@ -16,9 +16,7 @@ type LoadMissingDb = {
 // `.orderBy(...)` (loadAllInBackground); both terminals share the same
 // `executePending` mock.
 function buildLoadMissingDb(pendingIds: string[]): LoadMissingDb {
-  const executePending = jest
-    .fn()
-    .mockResolvedValue(pendingIds.map((id) => ({ id })));
+  const executePending = jest.fn().mockResolvedValue(pendingIds.map((id) => ({ id })));
   const limit = jest.fn().mockReturnValue({ execute: executePending });
   const orderBy = jest.fn().mockReturnValue({ limit, execute: executePending });
   const where = jest.fn().mockReturnValue({ orderBy });
@@ -30,9 +28,7 @@ function buildLoadMissingDb(pendingIds: string[]): LoadMissingDb {
 // `countPending` runs a different chain: select(count).from(...).where(...).execute().
 // Build a simpler mock that returns a single { count: '<n>' } row.
 function buildCountDb(count: number): { db: { select: jest.Mock } } {
-  const execute = jest
-    .fn()
-    .mockResolvedValue([{ count: String(count) }]);
+  const execute = jest.fn().mockResolvedValue([{ count: String(count) }]);
   const where = jest.fn().mockReturnValue({ execute });
   const from = jest.fn().mockReturnValue({ where });
   const select = jest.fn().mockReturnValue({ from });
@@ -80,9 +76,7 @@ describe("LoaderBackfillService", () => {
       const result = await service.loadMissing(50);
 
       expect(loadFromRecord).toHaveBeenCalledTimes(3);
-      ids.forEach((id, i) =>
-        expect(loadFromRecord).toHaveBeenNthCalledWith(i + 1, id),
-      );
+      ids.forEach((id, i) => expect(loadFromRecord).toHaveBeenNthCalledWith(i + 1, id));
       expect(result).toEqual({ attempted: 3, succeeded: 3, failed: 0 });
     });
 
@@ -129,9 +123,7 @@ describe("LoaderBackfillService", () => {
       await service.loadAllInBackground(2);
 
       expect(loadFromRecord).toHaveBeenCalledTimes(5);
-      ids.forEach((id, i) =>
-        expect(loadFromRecord).toHaveBeenNthCalledWith(i + 1, id),
-      );
+      ids.forEach((id, i) => expect(loadFromRecord).toHaveBeenNthCalledWith(i + 1, id));
     });
 
     it("does not throw when an individual record fails", async () => {
@@ -163,9 +155,7 @@ describe("LoaderBackfillService", () => {
       const select = jest.fn().mockReturnValue({ from });
       await bootstrap({ select });
 
-      await expect(
-        service.loadAllInBackground(10),
-      ).resolves.toBeUndefined();
+      await expect(service.loadAllInBackground(10)).resolves.toBeUndefined();
       expect(service.isRunning()).toBe(false);
     });
 
@@ -178,9 +168,10 @@ describe("LoaderBackfillService", () => {
       // observes `running === true`.
       let release: () => void = () => {};
       loadFromRecord.mockImplementationOnce(
-        () => new Promise<string>((resolve) => {
-          release = () => resolve("v1");
-        }),
+        () =>
+          new Promise<string>((resolve) => {
+            release = () => resolve("v1");
+          }),
       );
 
       const first = service.loadAllInBackground(10);

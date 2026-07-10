@@ -6,10 +6,7 @@ const BOT_TOKEN = "123456:test-bot-token";
 
 // Reproduce Telegram's signing so we can assert the verifier accepts genuine
 // payloads and rejects tampered/stale/wrong-token ones.
-function sign(
-  fields: Record<string, string | number>,
-  token = BOT_TOKEN,
-): TelegramAuthPayload {
+function sign(fields: Record<string, string | number>, token = BOT_TOKEN): TelegramAuthPayload {
   const dcs = Object.keys(fields)
     .sort()
     .map((k) => `${k}=${String(fields[k])}`)
@@ -35,9 +32,7 @@ describe("verifyTelegramAuth", () => {
   it("rejects a tampered hash", () => {
     const payload = sign({ id: 42, auth_date: nowSec() });
     const flipped = (payload.hash[0] === "a" ? "b" : "a") + payload.hash.slice(1);
-    expect(verifyTelegramAuth({ ...payload, hash: flipped }, BOT_TOKEN)).toBe(
-      false,
-    );
+    expect(verifyTelegramAuth({ ...payload, hash: flipped }, BOT_TOKEN)).toBe(false);
   });
 
   it("rejects a payload whose field changed after signing", () => {

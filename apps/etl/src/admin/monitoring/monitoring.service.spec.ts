@@ -38,10 +38,7 @@ describe("MonitoringService", () => {
     async function bootstrap(input: RowsThenTotal) {
       const mocks = buildListRecordsDbMock(input);
       const moduleRef = await Test.createTestingModule({
-        providers: [
-          MonitoringService,
-          { provide: DRIZZLE, useValue: mocks.db },
-        ],
+        providers: [MonitoringService, { provide: DRIZZLE, useValue: mocks.db }],
       }).compile();
       return { service: moduleRef.get(MonitoringService), mocks };
     }

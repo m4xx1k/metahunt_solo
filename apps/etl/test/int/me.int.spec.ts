@@ -1,8 +1,10 @@
 import { eq, sql } from "drizzle-orm";
-import { schema, type DrizzleDB } from "@metahunt/database";
 import type { Pool } from "pg";
 
+import { schema, type DrizzleDB } from "@metahunt/database";
+
 import { MeService } from "../../src/account/me.service";
+
 import { makeTestDb } from "./db";
 
 const { users, candidates, userCvs } = schema;
@@ -17,10 +19,7 @@ function makeService(): MeService {
 }
 
 async function seedUser(): Promise<string> {
-  const [u] = await db
-    .insert(users)
-    .values({ source: "test" })
-    .returning({ id: users.id });
+  const [u] = await db.insert(users).values({ source: "test" }).returning({ id: users.id });
   return u.id;
 }
 
@@ -48,9 +47,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  await db.execute(
-    sql`TRUNCATE TABLE user_cvs, candidates, users RESTART IDENTITY CASCADE`,
-  );
+  await db.execute(sql`TRUNCATE TABLE user_cvs, candidates, users RESTART IDENTITY CASCADE`);
 });
 
 describe("MeService.linkCv (integration)", () => {
@@ -92,10 +89,7 @@ describe("MeService.linkCv (integration)", () => {
     await me.linkCv(userId, candidateId);
     await me.linkCv(userId, candidateId);
 
-    const rows = await db
-      .select()
-      .from(userCvs)
-      .where(eq(userCvs.userId, userId));
+    const rows = await db.select().from(userCvs).where(eq(userCvs.userId, userId));
     expect(rows).toHaveLength(1);
   });
 
@@ -106,10 +100,7 @@ describe("MeService.linkCv (integration)", () => {
 
     await me.linkCv(userId, ghost);
 
-    const rows = await db
-      .select()
-      .from(userCvs)
-      .where(eq(userCvs.userId, userId));
+    const rows = await db.select().from(userCvs).where(eq(userCvs.userId, userId));
     expect(rows).toHaveLength(0);
   });
 });

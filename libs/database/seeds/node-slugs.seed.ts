@@ -1,8 +1,8 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull } from "drizzle-orm";
 
-import type { DrizzleDB } from '../src/tokens';
-import { nodes } from '../src/schema';
-import { slugify, uniqueSlug } from '../src/slug';
+import { nodes } from "../src/schema";
+import { slugify, uniqueSlug } from "../src/slug";
+import type { DrizzleDB } from "../src/tokens";
 
 // Backfill nodes.slug for rows minted before the column existed. Idempotent
 // (only fills NULLs, never rewrites an existing slug -> slugs stay immutable)

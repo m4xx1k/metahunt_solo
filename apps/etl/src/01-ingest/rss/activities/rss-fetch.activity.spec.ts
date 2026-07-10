@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 
 import { DRIZZLE, schema } from "@metahunt/database";
+
 import { StorageService } from "../../../platform/storage/storage.service";
 
 jest.mock("@temporalio/activity", () => ({
@@ -12,6 +13,7 @@ jest.mock("node:fs/promises", () => ({
 }));
 
 import { activityInfo } from "@temporalio/activity";
+
 import { readFile } from "node:fs/promises";
 
 import { RssFetchActivity } from "./rss-fetch.activity";
@@ -30,10 +32,7 @@ type ChainedDbMocks = {
 };
 
 function buildDbMocks(source: unknown, ingest: unknown): ChainedDbMocks {
-  const selectWhere = jest
-    .fn()
-    .mockResolvedValueOnce([source])
-    .mockResolvedValueOnce([ingest]);
+  const selectWhere = jest.fn().mockResolvedValueOnce([source]).mockResolvedValueOnce([ingest]);
   const selectFrom = jest.fn().mockReturnValue({ where: selectWhere });
   const select = jest.fn().mockReturnValue({ from: selectFrom });
 
@@ -122,10 +121,7 @@ describe("RssFetchActivity", () => {
     expect(result).toBe(INGEST_ID);
     expect(globalThis.fetch).toHaveBeenCalledWith(baseSource.rssUrl);
     expect(readFile).not.toHaveBeenCalled();
-    expect(upload).toHaveBeenCalledWith(
-      `rss/${SOURCE_ID}/${INGEST_ID}.xml`,
-      Buffer.from(xml),
-    );
+    expect(upload).toHaveBeenCalledWith(`rss/${SOURCE_ID}/${INGEST_ID}.xml`, Buffer.from(xml));
     expect(mocks.db.insert).toHaveBeenCalledWith(schema.rssIngests);
     expect(mocks.insertValues).toHaveBeenCalledWith(
       expect.objectContaining({

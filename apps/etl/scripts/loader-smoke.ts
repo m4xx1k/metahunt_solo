@@ -8,10 +8,13 @@
 // Idempotent: drops the smoke DB at the end. Safe to re-run.
 
 import "dotenv/config";
+
 import { execSync } from "node:child_process";
+
 import { Test } from "@nestjs/testing";
-import { drizzle } from "drizzle-orm/node-postgres";
+
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -21,8 +24,7 @@ import { NodeResolverService } from "../src/loader/services/node-resolver.servic
 import { VacancyLoaderService } from "../src/loader/services/vacancy-loader.service";
 
 const ADMIN_URL =
-  process.env.LOADER_SMOKE_ADMIN_URL ??
-  "postgres://metahunt:metahunt@localhost:54322/postgres";
+  process.env.LOADER_SMOKE_ADMIN_URL ?? "postgres://metahunt:metahunt@localhost:54322/postgres";
 const SMOKE_DB = "metahunt_loader_smoke";
 const SMOKE_URL = ADMIN_URL.replace(/\/postgres$/, `/${SMOKE_DB}`);
 
@@ -185,9 +187,7 @@ async function assertResults(): Promise<void> {
 
     const companies = await db.select().from(schema.companies);
     if (companies.length !== 1) {
-      throw new Error(
-        `Expected 1 company (both records share Acme Corp), got ${companies.length}`,
-      );
+      throw new Error(`Expected 1 company (both records share Acme Corp), got ${companies.length}`);
     }
 
     const nodes = await db.select().from(schema.nodes);
@@ -198,8 +198,7 @@ async function assertResults(): Promise<void> {
     // ROLE: Backend Engineer, Frontend Developer (2)
     // SKILL: Go, PostgreSQL, Docker, TypeScript, React (5)
     // DOMAIN: FinTech (1)
-    if (nodesByType.ROLE !== 2)
-      throw new Error(`Expected 2 ROLE nodes, got ${nodesByType.ROLE}`);
+    if (nodesByType.ROLE !== 2) throw new Error(`Expected 2 ROLE nodes, got ${nodesByType.ROLE}`);
     if (nodesByType.SKILL !== 5)
       throw new Error(`Expected 5 SKILL nodes, got ${nodesByType.SKILL}`);
     if (nodesByType.DOMAIN !== 1)
@@ -220,9 +219,7 @@ async function assertResults(): Promise<void> {
     }
     for (const alias of aliases) {
       if (alias.name !== alias.name.toLowerCase()) {
-        throw new Error(
-          `Alias not normalized to lowercase: '${alias.name}'`,
-        );
+        throw new Error(`Alias not normalized to lowercase: '${alias.name}'`);
       }
     }
 
@@ -232,9 +229,7 @@ async function assertResults(): Promise<void> {
       .where(eq(schema.vacancyNodes.isRequired, true));
     // RECORD_A: Go, PostgreSQL required (2). RECORD_B: TypeScript, React (2). Total 4.
     if (skillLinks.length !== 4) {
-      throw new Error(
-        `Expected 4 required skill links, got ${skillLinks.length}`,
-      );
+      throw new Error(`Expected 4 required skill links, got ${skillLinks.length}`);
     }
 
     const optionalLinks = await db
@@ -243,9 +238,7 @@ async function assertResults(): Promise<void> {
       .where(eq(schema.vacancyNodes.isRequired, false));
     // Docker only on RECORD_A.
     if (optionalLinks.length !== 1) {
-      throw new Error(
-        `Expected 1 optional skill link, got ${optionalLinks.length}`,
-      );
+      throw new Error(`Expected 1 optional skill link, got ${optionalLinks.length}`);
     }
 
     console.log(

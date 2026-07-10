@@ -22,6 +22,7 @@ import { NestFactory } from "@nestjs/core";
 import { DatabaseModule } from "@metahunt/database";
 
 import { validateEnv } from "../../platform/config/env.validation";
+
 import { DedupService } from "./dedup.service";
 import { OpenAIEmbeddingsClient } from "./openai-embeddings.client";
 
@@ -86,6 +87,6 @@ function ms(d: number): string {
 
 void main().catch((err) => {
   // Surface as plain text so npm scripts show it directly.
-  console.error(err instanceof Error ? err.stack ?? err.message : String(err));
+  console.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
   process.exit(1);
 });

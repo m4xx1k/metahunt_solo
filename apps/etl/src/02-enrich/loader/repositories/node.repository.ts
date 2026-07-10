@@ -1,5 +1,7 @@
 import { Injectable, Inject } from "@nestjs/common";
+
 import { and, eq, like, or } from "drizzle-orm";
+
 import { DRIZZLE, schema, slugify, uniqueSlug } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
@@ -49,12 +51,7 @@ export class DrizzleNodeRepository extends NodeRepository {
     const hits = await executor
       .select({ nodeId: schema.nodeAliases.nodeId })
       .from(schema.nodeAliases)
-      .where(
-        and(
-          eq(schema.nodeAliases.name, normalizedName),
-          eq(schema.nodeAliases.type, type),
-        ),
-      );
+      .where(and(eq(schema.nodeAliases.name, normalizedName), eq(schema.nodeAliases.type, type)));
     return hits[0]?.nodeId ?? null;
   }
 
@@ -88,15 +85,10 @@ export class DrizzleNodeRepository extends NodeRepository {
       .where(
         and(
           eq(schema.nodes.type, type),
-          or(
-            eq(schema.nodes.slug, base),
-            like(schema.nodes.slug, `${base}-%`),
-          ),
+          or(eq(schema.nodes.slug, base), like(schema.nodes.slug, `${base}-%`)),
         ),
       );
-    const taken = new Set(
-      existing.map((r) => r.slug).filter((s): s is string => s !== null),
-    );
+    const taken = new Set(existing.map((r) => r.slug).filter((s): s is string => s !== null));
     return uniqueSlug(base, taken);
   }
 
@@ -108,12 +100,7 @@ export class DrizzleNodeRepository extends NodeRepository {
     const hits = await executor
       .select({ id: schema.nodes.id })
       .from(schema.nodes)
-      .where(
-        and(
-          eq(schema.nodes.type, type),
-          eq(schema.nodes.canonicalName, canonicalName),
-        ),
-      );
+      .where(and(eq(schema.nodes.type, type), eq(schema.nodes.canonicalName, canonicalName)));
     return hits[0]?.id ?? null;
   }
 
@@ -123,9 +110,6 @@ export class DrizzleNodeRepository extends NodeRepository {
     nodeId: string,
     executor: Executor = this.db,
   ): Promise<void> {
-    await executor
-      .insert(schema.nodeAliases)
-      .values({ name, type, nodeId })
-      .onConflictDoNothing();
+    await executor.insert(schema.nodeAliases).values({ name, type, nodeId }).onConflictDoNothing();
   }
 }

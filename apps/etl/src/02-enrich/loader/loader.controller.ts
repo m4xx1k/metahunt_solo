@@ -55,9 +55,7 @@ export class LoaderController {
     @Query("batchSize") rawBatchSize?: string,
   ): Promise<{ accepted: true; pending: number; batchSize: number }> {
     if (this.backfillService.isRunning()) {
-      throw new ConflictException(
-        "backfill already running on this instance",
-      );
+      throw new ConflictException("backfill already running on this instance");
     }
     const batchSize = parseBoundedInt(rawBatchSize, "batchSize");
     const pending = await this.backfillService.countPending();
@@ -74,9 +72,7 @@ export class LoaderController {
    * writing. Idempotent once everything is numeric.
    */
   @Post("external-id/cleanup")
-  async cleanupExternalIds(
-    @Query("dryRun") rawDryRun?: string,
-  ): Promise<ExternalIdCleanupResult> {
+  async cleanupExternalIds(@Query("dryRun") rawDryRun?: string): Promise<ExternalIdCleanupResult> {
     return this.externalIdCleanup.run(rawDryRun === "true");
   }
 }

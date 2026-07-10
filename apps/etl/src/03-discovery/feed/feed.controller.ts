@@ -12,11 +12,11 @@ import { DedupService } from "../../02-enrich/dedup/dedup.service";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE } from "../../platform/shared/query-parsing";
-import { FeedService, type FeedSearchParams } from "./feed.service";
-import { FacetsService } from "./facets.service";
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { FacetsService } from "./facets.service";
+import { FeedService, type FeedSearchParams } from "./feed.service";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Controller("feed")
 export class FeedController {

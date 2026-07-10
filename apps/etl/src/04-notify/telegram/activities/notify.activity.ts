@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { ApplicationFailure } from "@temporalio/activity";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 

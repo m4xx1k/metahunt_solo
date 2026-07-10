@@ -1,6 +1,7 @@
-import { NodeResolverService } from "./node-resolver.service";
-import { NodeRepository } from "../repositories/node.repository";
 import type { Executor } from "../repositories/executor";
+import { NodeRepository } from "../repositories/node.repository";
+
+import { NodeResolverService } from "./node-resolver.service";
 
 const NODE_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const EXISTING_NODE_ID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -15,7 +16,7 @@ function makeRepo(): jest.Mocked<NodeRepository> {
     insertReturningId: jest.fn().mockResolvedValue(null),
     findIdByCanonical: jest.fn().mockResolvedValue(null),
     linkAlias: jest.fn().mockResolvedValue(undefined),
-  } as unknown as jest.Mocked<NodeRepository>;
+  };
 }
 
 describe("NodeResolverService.resolve", () => {
@@ -39,11 +40,7 @@ describe("NodeResolverService.resolve", () => {
 
     await svc.resolve("ROLE", "  Backend Developer  ", TX);
 
-    expect(repo.findIdByAlias).toHaveBeenCalledWith(
-      "ROLE",
-      "backenddeveloper",
-      TX,
-    );
+    expect(repo.findIdByAlias).toHaveBeenCalledWith("ROLE", "backenddeveloper", TX);
   });
 
   it("resolves separator variants to the same alias key", async () => {
@@ -53,11 +50,7 @@ describe("NodeResolverService.resolve", () => {
 
     for (const variant of ["REST Assured", "rest-assured", "Rest.Assured"]) {
       await svc.resolve("SKILL", variant, TX);
-      expect(repo.findIdByAlias).toHaveBeenLastCalledWith(
-        "SKILL",
-        "restassured",
-        TX,
-      );
+      expect(repo.findIdByAlias).toHaveBeenLastCalledWith("SKILL", "restassured", TX);
     }
   });
 

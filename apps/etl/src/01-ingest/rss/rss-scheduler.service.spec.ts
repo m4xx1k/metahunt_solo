@@ -1,7 +1,8 @@
 import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
-import { TemporalService } from "nestjs-temporal-core";
+
 import { ScheduleAlreadyRunning, ScheduleOverlapPolicy } from "@temporalio/client";
+import { TemporalService } from "nestjs-temporal-core";
 
 import { RssSchedulerService } from "./rss-scheduler.service";
 
@@ -37,10 +38,7 @@ describe("RssSchedulerService", () => {
   });
 
   describe("ensureSchedule", () => {
-    function buildRawClient(opts: {
-      createImpl?: jest.Mock;
-      updateImpl?: jest.Mock;
-    }) {
+    function buildRawClient(opts: { createImpl?: jest.Mock; updateImpl?: jest.Mock }) {
       const create = opts.createImpl ?? jest.fn().mockResolvedValue(undefined);
       const update = opts.updateImpl ?? jest.fn().mockResolvedValue(undefined);
       const handle = { update };
@@ -67,9 +65,7 @@ describe("RssSchedulerService", () => {
       const opts = raw.create.mock.calls[0][0];
       expect(opts.scheduleId).toBe("rss-ingest-hourly");
       expect(opts.spec).toEqual({
-        calendars: [
-          { minute: 0, hour: { start: 6, end: 22, step: 2 } },
-        ],
+        calendars: [{ minute: 0, hour: { start: 6, end: 22, step: 2 } }],
         timezone: "Europe/Kyiv",
       });
       expect(opts.action).toEqual({
@@ -87,9 +83,7 @@ describe("RssSchedulerService", () => {
       const raw = buildRawClient({
         createImpl: jest
           .fn()
-          .mockRejectedValue(
-            new ScheduleAlreadyRunning("exists", "rss-ingest-hourly"),
-          ),
+          .mockRejectedValue(new ScheduleAlreadyRunning("exists", "rss-ingest-hourly")),
       });
       getRawClient.mockReturnValue(raw);
 
@@ -97,9 +91,7 @@ describe("RssSchedulerService", () => {
 
       expect(raw.create).toHaveBeenCalledTimes(1);
       expect(raw.update).toHaveBeenCalledTimes(1);
-      const updateFn = raw.update.mock.calls[0][0] as (
-        prev: { state: unknown },
-      ) => unknown;
+      const updateFn = raw.update.mock.calls[0][0] as (prev: { state: unknown }) => unknown;
       const result = updateFn({ state: { paused: false, note: "n" } }) as {
         spec: unknown;
         state: unknown;
@@ -107,9 +99,7 @@ describe("RssSchedulerService", () => {
       // updater preserves prev.state and supplies the fresh spec/action
       expect(result.state).toEqual({ paused: false, note: "n" });
       expect(result.spec).toEqual({
-        calendars: [
-          { minute: 0, hour: { start: 6, end: 22, step: 1 } },
-        ],
+        calendars: [{ minute: 0, hour: { start: 6, end: 22, step: 1 } }],
         timezone: "Europe/Kyiv",
       });
     });

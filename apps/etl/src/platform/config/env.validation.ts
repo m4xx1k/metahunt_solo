@@ -23,9 +23,7 @@ function parseIntInRange(
   if (!value) return fallback;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
-    throw new Error(
-      `${name} must be an integer in range ${min}..${max}, got "${value}"`,
-    );
+    throw new Error(`${name} must be an integer in range ${min}..${max}, got "${value}"`);
   }
   return parsed;
 }
@@ -54,9 +52,7 @@ function assertUrl(name: string, value: string): void {
 export function validateEnv(config: RawEnv): RawEnv {
   const nodeEnv = asString(config.NODE_ENV) ?? "development";
   if (!["development", "test", "production", "local"].includes(nodeEnv)) {
-    throw new Error(
-      `NODE_ENV must be one of development|test|production|local, got "${nodeEnv}"`,
-    );
+    throw new Error(`NODE_ENV must be one of development|test|production|local, got "${nodeEnv}"`);
   }
 
   const port = parsePort(asString(config.PORT), 3000);
@@ -73,14 +69,14 @@ export function validateEnv(config: RawEnv): RawEnv {
   const isLocal = nodeEnv === "local";
   const temporalAddress = isLocal
     ? "localhost:7233"
-    : asString(config.TEMPORAL_ADDRESS) ?? "localhost:7233";
+    : (asString(config.TEMPORAL_ADDRESS) ?? "localhost:7233");
   const temporalNamespace = isLocal
     ? "default"
-    : asString(config.TEMPORAL_NAMESPACE) ?? "default";
+    : (asString(config.TEMPORAL_NAMESPACE) ?? "default");
   const temporalTaskQueue = asString(config.TEMPORAL_TASK_QUEUE) ?? "rss-ingest";
   // Temporal Cloud uses API-key auth (newer mode) — when set we enable TLS automatically.
   // Empty string means "local plaintext mode" (matches the default `localhost:7233`).
-  const temporalApiKey = isLocal ? "" : asString(config.TEMPORAL_API_KEY) ?? "";
+  const temporalApiKey = isLocal ? "" : (asString(config.TEMPORAL_API_KEY) ?? "");
 
   // Hourly RSS ingest schedule cadence (within the 06:00–22:00 Europe/Kyiv window).
   // 1..16 keeps at least two firings/day inside the window (start=6, end=22).
@@ -92,8 +88,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     16,
   );
 
-  const storageEndpoint =
-    asString(config.STORAGE_ENDPOINT) ?? "http://localhost:9000";
+  const storageEndpoint = asString(config.STORAGE_ENDPOINT) ?? "http://localhost:9000";
   const storageBucket = asString(config.STORAGE_BUCKET) ?? "rss-payloads";
   const storageAccessKey = asString(config.STORAGE_ACCESS_KEY) ?? "metahunt";
   const storageSecretKey = asString(config.STORAGE_SECRET_KEY) ?? "metahunt123";
@@ -104,8 +99,7 @@ export function validateEnv(config: RawEnv): RawEnv {
   const openaiModel = asString(config.OPENAI_MODEL) ?? "gpt-4o-mini";
 
   const validProviders = ["baml", "placeholder"] as const;
-  const rawProvider =
-    asString(config.EXTRACTOR_PROVIDER) ?? "placeholder";
+  const rawProvider = asString(config.EXTRACTOR_PROVIDER) ?? "placeholder";
   if (!(validProviders as readonly string[]).includes(rawProvider)) {
     throw new Error(
       `EXTRACTOR_PROVIDER must be one of ${validProviders.join("|")}, got "${rawProvider}"`,
@@ -128,15 +122,13 @@ export function validateEnv(config: RawEnv): RawEnv {
   // Public origin this service is reachable at — used to build absolute
   // `/go/:id` apply-redirect links in Telegram digests (Telegram needs absolute
   // URLs). Defaults to the local port for dev; set to the deployed domain in prod.
-  const publicBaseUrl =
-    asString(config.PUBLIC_BASE_URL) ?? `http://localhost:${port}`;
+  const publicBaseUrl = asString(config.PUBLIC_BASE_URL) ?? `http://localhost:${port}`;
   assertUrl("PUBLIC_BASE_URL", publicBaseUrl);
 
   // Public origin of the marketing site (the Next.js web app, a different domain
   // than this service). Used for the direct "open metahunt" link in the Telegram
   // /start reply. Defaults to the local web dev port; set to the deployed domain.
-  const webBaseUrl =
-    asString(config.WEB_BASE_URL) ?? "http://localhost:4000";
+  const webBaseUrl = asString(config.WEB_BASE_URL) ?? "http://localhost:4000";
   assertUrl("WEB_BASE_URL", webBaseUrl);
 
   // Optional: empty key keeps the AnalyticsService dormant (logs a warning and
@@ -153,8 +145,7 @@ export function validateEnv(config: RawEnv): RawEnv {
   if (nodeEnv === "production" && rawJwtSecret.length === 0) {
     throw new Error("JWT_SECRET is required in production");
   }
-  const jwtSecret =
-    rawJwtSecret.length > 0 ? rawJwtSecret : "dev-insecure-jwt-secret-change-me";
+  const jwtSecret = rawJwtSecret.length > 0 ? rawJwtSecret : "dev-insecure-jwt-secret-change-me";
 
   // CSV of Telegram user ids granted the 'admin' role at login. Empty = no admins.
   const adminTelegramIds = asString(config.ADMIN_TELEGRAM_IDS) ?? "";

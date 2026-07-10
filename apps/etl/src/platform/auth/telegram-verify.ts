@@ -19,10 +19,7 @@ const MAX_AUTH_AGE_SECONDS = 86_400;
 // Verify per Telegram's spec: secret = SHA256(botToken); the expected hash is
 // HMAC_SHA256(data_check_string, secret) where data_check_string is every field
 // except `hash` as "k=v", sorted by key, joined by "\n".
-export function verifyTelegramAuth(
-  payload: TelegramAuthPayload,
-  botToken: string,
-): boolean {
+export function verifyTelegramAuth(payload: TelegramAuthPayload, botToken: string): boolean {
   const { hash } = payload;
   if (typeof hash !== "string" || !/^[0-9a-f]+$/i.test(hash)) return false;
 
@@ -33,9 +30,7 @@ export function verifyTelegramAuth(
     .join("\n");
 
   const secret = createHash("sha256").update(botToken).digest();
-  const expected = createHmac("sha256", secret)
-    .update(dataCheckString)
-    .digest("hex");
+  const expected = createHmac("sha256", secret).update(dataCheckString).digest("hex");
 
   const expectedBuf = Buffer.from(expected, "hex");
   const gotBuf = Buffer.from(hash, "hex");

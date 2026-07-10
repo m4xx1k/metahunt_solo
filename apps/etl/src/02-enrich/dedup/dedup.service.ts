@@ -1,16 +1,10 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { eq, sql, type SQL } from "drizzle-orm";
+
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import {
-  buildEmbeddingText,
-  type EmbeddingTextInput,
-} from "./embedding-text.builder";
-import {
-  EMBEDDING_DIMENSIONS,
-  OpenAIEmbeddingsClient,
-} from "./openai-embeddings.client";
 import type {
   DedupMetrics,
   DedupReason,
@@ -21,6 +15,8 @@ import type {
   UniqueVacancyListItem,
   UniqueVacancyMember,
 } from "./dedup.contract";
+import { buildEmbeddingText, type EmbeddingTextInput } from "./embedding-text.builder";
+import { EMBEDDING_DIMENSIONS, OpenAIEmbeddingsClient } from "./openai-embeddings.client";
 
 // ──────────────────────── Tunables ────────────────────────
 // Surfaced as constants instead of env vars for now — values come from
@@ -166,18 +162,13 @@ export class DedupService {
         embedded++;
       }
 
-      this.logger.log(
-        `embedded ${embedded}/${processed} (skipped ${skipped})`,
-      );
+      this.logger.log(`embedded ${embedded}/${processed} (skipped ${skipped})`);
     }
 
     return { processed, embedded, skipped };
   }
 
-  private async fetchEmbedBatch(
-    limit: number,
-    force: boolean,
-  ): Promise<VacancyEmbeddingRow[]> {
+  private async fetchEmbedBatch(limit: number, force: boolean): Promise<VacancyEmbeddingRow[]> {
     // When not forcing, we only fetch rows that still need work:
     // either missing embedding or written by a stale model. Force
     // mode pulls everything so the in-JS hash check decides.
@@ -275,12 +266,8 @@ export class DedupService {
     if (!v) return null;
     if (v.uniqueVacancyId) return null;
 
-    const windowStart = new Date(
-      v.publishedAt.getTime() - PREFILTER_DATE_WINDOW_DAYS * 86_400_000,
-    );
-    const windowEnd = new Date(
-      v.publishedAt.getTime() + PREFILTER_DATE_WINDOW_DAYS * 86_400_000,
-    );
+    const windowStart = new Date(v.publishedAt.getTime() - PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
+    const windowEnd = new Date(v.publishedAt.getTime() + PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
     const embeddingLiteral = sql`${vectorLiteral(v.embedding)}::vector(${sql.raw(String(EMBEDDING_DIMENSIONS))})`;
 
     const candRes = await this.db.execute<{
@@ -356,12 +343,9 @@ export class DedupService {
       companyId: r.company_id,
       publishedAt: toDate(r.published_at),
       title: r.title,
-      requiredSkillIds: Array.isArray(r.required_skill_ids)
-        ? r.required_skill_ids
-        : [],
+      requiredSkillIds: Array.isArray(r.required_skill_ids) ? r.required_skill_ids : [],
       similarity: Number(r.similarity),
-      centroidSimilarity:
-        r.centroid_similarity !== null ? Number(r.centroid_similarity) : null,
+      centroidSimilarity: r.centroid_similarity !== null ? Number(r.centroid_similarity) : null,
     }));
 
     // We can only "join" candidates that are already in a group —
@@ -408,17 +392,13 @@ export class DedupService {
     // semantic score backed by at least one independent structural
     // signal, so similarity alone is never the sole justification.
     const companyMatch =
-      v.companyId !== null &&
-      best.companyId !== null &&
-      v.companyId === best.companyId;
+      v.companyId !== null && best.companyId !== null && v.companyId === best.companyId;
     const skillJaccard = jaccard(v.requiredSkillIds, best.requiredSkillIds);
     const titleJaccard = jaccard(titleTokens(v.title), titleTokens(best.title));
     const isGold =
       best.similarity >= GOLD_THRESHOLD &&
       (best.centroidSimilarity ?? 0) >= GOLD_THRESHOLD &&
-      (companyMatch ||
-        skillJaccard >= SKILL_JACCARD_GOLD ||
-        titleJaccard >= TITLE_JACCARD_GOLD);
+      (companyMatch || skillJaccard >= SKILL_JACCARD_GOLD || titleJaccard >= TITLE_JACCARD_GOLD);
 
     const reason: DedupReason = {
       similarity: best.similarity,
@@ -429,9 +409,7 @@ export class DedupService {
         workFormat: triBool(v.workFormat, best.workFormat),
         company: triBool(v.companyId, best.companyId),
         dateWindowDays: Math.round(
-          Math.abs(
-            (v.publishedAt.getTime() - best.publishedAt.getTime()) / 86_400_000,
-          ),
+          Math.abs((v.publishedAt.getTime() - best.publishedAt.getTime()) / 86_400_000),
         ),
       },
       confidence: isGold ? "gold" : "confirmed",
@@ -448,9 +426,7 @@ export class DedupService {
     return { action: "joined", uniqueVacancyId: groupId };
   }
 
-  private async loadVacancyForResolve(
-    vacancyId: string,
-  ): Promise<VacancyForResolve | null> {
+  private async loadVacancyForResolve(vacancyId: string): Promise<VacancyForResolve | null> {
     const res = await this.db.execute<{
       id: string;
       published_at: Date;
@@ -490,9 +466,7 @@ export class DedupService {
       workFormat: r.work_format,
       companyId: r.company_id,
       title: r.title,
-      requiredSkillIds: Array.isArray(r.required_skill_ids)
-        ? r.required_skill_ids
-        : [],
+      requiredSkillIds: Array.isArray(r.required_skill_ids) ? r.required_skill_ids : [],
       uniqueVacancyId: r.unique_vacancy_id,
       embeddingModel: r.embedding_model ?? this.openai.model,
     };
@@ -578,9 +552,7 @@ export class DedupService {
   // queries the populated tables directly. Same response shape as
   // `dedup.mock.ts`, so the frontend doesn't change.
   // ═════════════════════════════════════════════════════════════
-  async listGroups(
-    query: UniqueVacanciesQuery,
-  ): Promise<UniqueVacanciesResponse> {
+  async listGroups(query: UniqueVacanciesQuery): Promise<UniqueVacanciesResponse> {
     const page = query.page ?? 1;
     const pageSize = Math.min(query.pageSize ?? 25, 100);
     const offset = (page - 1) * pageSize;
@@ -590,25 +562,17 @@ export class DedupService {
       conditions.push(sql`u.source_count >= 2`);
     }
     if (query.minSimilarity !== undefined) {
-      conditions.push(
-        sql`(min_sim.value IS NULL OR min_sim.value >= ${query.minSimilarity})`,
-      );
+      conditions.push(sql`(min_sim.value IS NULL OR min_sim.value >= ${query.minSimilarity})`);
     }
     if (query.confidence === "gold") {
       // Every non-canonical edge is gold-tier — the clean demo list.
-      conditions.push(
-        sql`tier.edge_count > 0 AND tier.edge_count = tier.gold_count`,
-      );
+      conditions.push(sql`tier.edge_count > 0 AND tier.edge_count = tier.gold_count`);
     } else if (query.confidence === "confirmed") {
       // At least one edge is only confirmed-tier — needs a closer look.
-      conditions.push(
-        sql`tier.edge_count > 0 AND tier.edge_count > tier.gold_count`,
-      );
+      conditions.push(sql`tier.edge_count > 0 AND tier.edge_count > tier.gold_count`);
     }
     const whereClause =
-      conditions.length > 0
-        ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
-        : sql``;
+      conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
 
     // min_sim per group = lowest similarityToCentroid among non-canonical
     // members. Solo groups get null (no edges yet).
@@ -695,8 +659,7 @@ export class DedupService {
         vacancyCount: g.vacancy_count,
         firstSeenAt: toDate(g.first_seen_at).toISOString(),
         lastSeenAt: toDate(g.last_seen_at).toISOString(),
-        minSimilarity:
-          g.min_similarity !== null ? Number(g.min_similarity) : null,
+        minSimilarity: g.min_similarity !== null ? Number(g.min_similarity) : null,
         members: [],
       });
     }
@@ -745,9 +708,7 @@ export class DedupService {
     for (const [groupId, bucket] of sourcesByGroup) {
       const item = itemsById.get(groupId);
       if (!item) continue;
-      item.sources = Array.from(bucket.values()).sort((a, b) =>
-        a.code.localeCompare(b.code),
-      );
+      item.sources = Array.from(bucket.values()).sort((a, b) => a.code.localeCompare(b.code));
       item.members.sort((a, b) => {
         if (a.isCanonical) return -1;
         if (b.isCanonical) return 1;
@@ -766,9 +727,7 @@ export class DedupService {
   // on the main feed. Same member shape + "why merged" reasons as the operator
   // dashboard, minus the metrics/pagination envelope. Returns null for an
   // unknown id. Reuses fetchMembersForGroups so the projection never drifts.
-  async getGroupForFeed(
-    uniqueVacancyId: string,
-  ): Promise<FeedDuplicateGroup | null> {
+  async getGroupForFeed(uniqueVacancyId: string): Promise<FeedDuplicateGroup | null> {
     const [grp] = await this.db
       .select({
         id: schema.uniqueVacancies.id,
@@ -781,9 +740,7 @@ export class DedupService {
       .limit(1);
     if (!grp) return null;
 
-    const members: UniqueVacancyMember[] = (
-      await this.fetchMembersForGroups([uniqueVacancyId])
-    )
+    const members: UniqueVacancyMember[] = (await this.fetchMembersForGroups([uniqueVacancyId]))
       .map((m) => ({
         vacancyId: m.id,
         source: m.source,
@@ -893,9 +850,7 @@ export class DedupService {
       externalUrl: r.external_url,
       publishedAt: r.published_at,
       similarityToCentroid:
-        r.similarity_to_centroid !== null
-          ? Number(r.similarity_to_centroid)
-          : null,
+        r.similarity_to_centroid !== null ? Number(r.similarity_to_centroid) : null,
       dedupReason: r.dedup_reason,
       source: {
         id: r.source_id,
@@ -1039,8 +994,24 @@ function jaccard(a: string[], b: string[]): number {
 // Connector words that carry no role signal — dropped so two titles like
 // "Backend Engineer at Acme" / "Backend Engineer" still overlap fully.
 const TITLE_STOPWORDS = new Set([
-  "at", "the", "a", "an", "for", "to", "of", "and", "with", "in", "on",
-  "в", "у", "для", "та", "і", "до", "на",
+  "at",
+  "the",
+  "a",
+  "an",
+  "for",
+  "to",
+  "of",
+  "and",
+  "with",
+  "in",
+  "on",
+  "в",
+  "у",
+  "для",
+  "та",
+  "і",
+  "до",
+  "на",
 ]);
 
 function titleTokens(title: string): string[] {

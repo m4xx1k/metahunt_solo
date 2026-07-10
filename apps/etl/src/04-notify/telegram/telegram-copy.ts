@@ -22,23 +22,19 @@ export const copy = {
       `🔗 <a href="${webUrl}">${stripScheme(webUrl)}</a>\n\n` +
       `Підписки створюються на сайті: обираєш фільтр і тиснеш ` +
       `«Підписатись» — далі я надсилатиму нові вакансії сюди.`,
-    linked:
-      "✅ Підписку активовано. Надсилатиму нові вакансії за твоїм фільтром.",
+    linked: "✅ Підписку активовано. Надсилатиму нові вакансії за твоїм фільтром.",
     alreadyActive: "ℹ️ Ця підписка вже активна — нічого робити не треба.",
-    duplicate:
-      "ℹ️ Ти вже підписаний на цей фільтр — нову підписку не створював.",
+    duplicate: "ℹ️ Ти вже підписаний на цей фільтр — нову підписку не створював.",
     invalidToken: (webUrl: string): string =>
       `⚠️ Це посилання недійсне або застаріле. ${siteCta(webUrl)}`,
   },
   list: {
-    empty: (webUrl: string): string =>
-      `У тебе немає активних підписок. ${siteCta(webUrl)}`,
+    empty: (webUrl: string): string => `У тебе немає активних підписок. ${siteCta(webUrl)}`,
     item: (label: string): string => `🔔 ${label}`,
     unsubButton: "❌ Відписатись",
   },
   preview: {
-    empty: (webUrl: string): string =>
-      `У тебе немає активних підписок. ${siteCta(webUrl)}`,
+    empty: (webUrl: string): string => `У тебе немає активних підписок. ${siteCta(webUrl)}`,
   },
   unsub: {
     done: "Відписано",
@@ -50,13 +46,11 @@ export const copy = {
     empty: "У тебе немає активних підписок.",
   },
   help: (): string =>
-    "Команди:\n" +
-    BOT_COMMANDS.map((c) => `/${c.command} — ${c.description}`).join("\n"),
+    "Команди:\n" + BOT_COMMANDS.map((c) => `/${c.command} — ${c.description}`).join("\n"),
   // Reply to any free-text / unknown command — the bot is link-driven, so nudge
   // back to /help and the site rather than staying silent (reads as broken).
   fallback: (webUrl: string): string =>
-    `Я розумію лише команди — почни з /help. ` +
-    `Підписки створюються на сайті: ${webUrl}`,
+    `Я розумію лише команди — почни з /help. ` + `Підписки створюються на сайті: ${webUrl}`,
   // Shown to the user when a handler throws, so a failure isn't silent.
   error: "⚠️ Щось пішло не так. Спробуй ще раз трохи згодом.",
   digest: {

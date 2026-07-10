@@ -35,10 +35,7 @@ describe("UsersService", () => {
   beforeEach(async () => {
     mock = createDbMock();
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        UsersService,
-        { provide: DRIZZLE, useValue: mock.db },
-      ],
+      providers: [UsersService, { provide: DRIZZLE, useValue: mock.db }],
     }).compile();
     service = moduleRef.get(UsersService);
   });
@@ -47,10 +44,7 @@ describe("UsersService", () => {
     it("returns 'subscribed' for a first-time email and normalizes it", async () => {
       mock.setReturning([{ id: "u-1" }]);
 
-      const result = await service.subscribe(
-        "  Test@Example.COM  ",
-        "landing-cta",
-      );
+      const result = await service.subscribe("  Test@Example.COM  ", "landing-cta");
 
       expect(result).toEqual({ status: "subscribed" });
       expect(mock.spies.values).toHaveBeenCalledWith({
