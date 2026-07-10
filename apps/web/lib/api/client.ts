@@ -14,7 +14,13 @@ function authHeaders(): Record<string, string> {
 }
 
 export function apiBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL;
+  // Server renders (in-container SSR) prefer an internal URL that resolves over
+  // the docker network; the browser always uses the public one. Native dev sets
+  // no internal var, so both paths fall back to NEXT_PUBLIC_API_URL.
+  const base =
+    typeof window === "undefined"
+      ? (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL)
+      : process.env.NEXT_PUBLIC_API_URL;
   if (!base) {
     throw new Error(
       "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",

@@ -89,7 +89,7 @@ From repo root (preferred — sets up everything via the workspace):
 ```bash
 pnpm dev:web     # web only
 pnpm dev:etl     # etl only (also rebuilds @metahunt/database first)
-pnpm dev         # both in parallel; needs `pnpm db:up` first for etl
+pnpm dev         # both in parallel; needs `pnpm docker:infra` first for etl
 pnpm build:web   # production build of web
 pnpm lint:web    # lint web
 ```

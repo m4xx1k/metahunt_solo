@@ -1,25 +1,42 @@
+# Shared infrastructure — run once, shared by the app stack (compose.yaml).
+#   docker compose -f compose.infra.yaml up -d   (or `pnpm db:up`)
+#
+# Postgres is pg18 on the existing prod-restore volume (metahunt_railway_pgdata)
+# — no migration. That cluster requires the real DB password for non-local
+# connections, so set POSTGRES_PASSWORD in .env (matches the password in
+# DATABASE_URL). Full guide: md/runbook/docker-dev.md.
+
+networks:
+  metahunt-infra:
+    name: metahunt-infra
+    driver: bridge
+
 services:
   db:
-    image: pgvector/pgvector:pg17
     container_name: metahunt-db
+    image: pgvector/pgvector:pg18
     restart: unless-stopped
     environment:
-      POSTGRES_DB: metahunt
+      POSTGRES_DB: metahunt_railway
       POSTGRES_USER: metahunt
-      POSTGRES_PASSWORD: metahunt
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metahunt}
+      # PG18's image moved the default data dir under a version subdir; the
+      # volume already holds the prod restore at .../18/docker.
+      PGDATA: /var/lib/postgresql/18/docker
     ports:
-      - "54322:5432"
+      - "54323:5432"
+    networks: [metahunt-infra]
     volumes:
-      - metahunt-db-data:/var/lib/postgresql/data
+      - metahunt_railway_pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U metahunt -d metahunt"]
+      test: ["CMD-SHELL", "pg_isready -U metahunt -d metahunt_railway"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   minio:
-    image: minio/minio:latest
     container_name: metahunt-minio
+    image: minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -28,15 +45,17 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+    networks: [metahunt-infra]
     volumes:
       - metahunt-minio-data:/data
 
   # one-shot: create the rss-payloads bucket on startup, then exits.
   minio-init:
-    image: minio/mc:latest
     container_name: metahunt-minio-init
+    image: minio/mc:latest
     depends_on:
       - minio
+    networks: [metahunt-infra]
     entrypoint: >
       /bin/sh -c "
       until mc alias set local http://minio:9000 metahunt metahunt123 >/dev/null 2>&1; do sleep 1; done;
@@ -45,34 +64,39 @@ services:
 
   # Temporal server (auto-setup persists schemas in the shared `db` Postgres
   # under separate `temporal` / `temporal_visibility` databases — no app-data
-  # collision).
+  # collision). Created on first `db:up` if missing.
   temporal:
-    image: temporalio/auto-setup:1.26
     container_name: metahunt-temporal
+    image: temporalio/auto-setup:1.26
     restart: unless-stopped
     environment:
       - DB=postgres12
       - DB_PORT=5432
       - POSTGRES_USER=metahunt
-      - POSTGRES_PWD=metahunt
+      - POSTGRES_PWD=${POSTGRES_PASSWORD:-metahunt}
       - POSTGRES_SEEDS=db
     ports:
       - "7233:7233"
+    networks: [metahunt-infra]
     depends_on:
       db:
         condition: service_healthy
 
   temporal-ui:
-    image: temporalio/ui:2.34.0
     container_name: metahunt-temporal-ui
+    image: temporalio/ui:2.34.0
     restart: unless-stopped
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
     ports:
       - "8080:8080"
+    networks: [metahunt-infra]
     depends_on:
       - temporal
 
 volumes:
-  metahunt-db-data:
+  # External: created outside compose (manual prod restore); reused as-is so
+  # there's no data migration — see md/runbook/docker-dev.md.
+  metahunt_railway_pgdata:
+    external: true
   metahunt-minio-data:
