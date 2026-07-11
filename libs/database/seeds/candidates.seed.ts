@@ -138,7 +138,7 @@ function sampleText(s: SampleSeed): string {
 // Resolve skill names → SKILL node ids via canonical + alias (canonical wins),
 // mirroring RankingService.resolveSkills. Unresolved names are kept (like a real
 // CV's unmatched skills) but simply don't link a node.
-async function resolveSkillIds(
+export async function resolveSkillIds(
   db: DrizzleDB,
   names: string[],
 ): Promise<{ ids: string[]; unmatched: string[] }> {
