@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Button } from "@/ui";
 import { meApi, type MeCv } from "@/lib/api/me";
+import { CvSkillManager } from "./CvSkillManager";
 
 const CV_KEY = ["me", "cv"];
 
@@ -29,13 +31,9 @@ export function MyCvPanel() {
 
   return (
     <section>
-      <h2 className="mb-3 font-mono text-2xs uppercase tracking-wider text-text-muted">
-        my cv
-      </h2>
+      <h2 className="mb-3 font-mono text-2xs uppercase tracking-wider text-text-muted">my cv</h2>
       {isLoading ? (
-        <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-          loading…
-        </p>
+        <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">loading…</p>
       ) : !cvs || cvs.length === 0 ? (
         <div className="border border-dashed border-border bg-bg-card p-6">
           <p className="mb-3 font-mono text-2xs uppercase tracking-wider text-text-secondary">
@@ -63,45 +61,49 @@ export function MyCvPanel() {
   );
 }
 
-function CvRow({
-  cv,
-  onDelete,
-  deleting,
-}: {
-  cv: MeCv;
-  onDelete: () => void;
-  deleting: boolean;
-}) {
+function CvRow({ cv, onDelete, deleting }: { cv: MeCv; onDelete: () => void; deleting: boolean }) {
+  const [managingSkills, setManagingSkills] = useState(false);
   const facts = [cv.seniority, cv.role, cv.experienceYears ? `${cv.experienceYears} yr` : null]
     .filter(Boolean)
     .join(" · ");
   return (
-    <li className="flex items-center justify-between gap-4 border border-border bg-bg-card p-4 shadow-brut-sm">
-      <div className="min-w-0">
-        <p className="truncate font-display text-sm text-text-primary">
-          {cv.label}
-          {cv.isActive && (
-            <span className="ml-2 font-mono text-2xs uppercase tracking-wider text-accent">
-              active
-            </span>
-          )}
-        </p>
-        {facts && (
-          <p className="mt-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
-            {facts}
+    <li className="flex flex-col gap-3 border border-border bg-bg-card p-4 shadow-brut-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="truncate font-display text-sm text-text-primary">
+            {cv.label}
+            {cv.isActive && (
+              <span className="ml-2 font-mono text-2xs uppercase tracking-wider text-accent">
+                active
+              </span>
+            )}
           </p>
-        )}
-      </div>
-      <div className="flex shrink-0 gap-2">
-        <Link href={`/?cv=${cv.candidateId}`}>
-          <Button variant="secondary" size="sm">
-            view feed
+          {facts && (
+            <p className="mt-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
+              {facts}
+            </p>
+          )}
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Link href={`/?cv=${cv.candidateId}`}>
+            <Button variant="secondary" size="sm">
+              view feed
+            </Button>
+          </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-expanded={managingSkills}
+            onClick={() => setManagingSkills((v) => !v)}
+          >
+            {managingSkills ? "hide skills" : "manage skills"}
           </Button>
-        </Link>
-        <Button variant="secondary" size="sm" onClick={onDelete} disabled={deleting}>
-          delete
-        </Button>
+          <Button variant="secondary" size="sm" onClick={onDelete} disabled={deleting}>
+            delete
+          </Button>
+        </div>
       </div>
+      {managingSkills ? <CvSkillManager candidateId={cv.candidateId} /> : null}
     </li>
   );
 }

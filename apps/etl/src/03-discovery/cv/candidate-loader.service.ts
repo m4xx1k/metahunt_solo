@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -181,6 +181,73 @@ export class CandidateLoaderService {
       unmatched: (extracted.unmatchedSkills as string[]) ?? [],
       extracted,
     };
+  }
+
+  // A candidate a visitor may edit: it exists and is a real upload, not a shared
+  // seeded sample (mutating a sample would corrupt the demo for everyone).
+  private async assertMutableCandidate(
+    candidateId: string,
+  ): Promise<{ extracted: Record<string, unknown> }> {
+    const cand = await this.db
+      .select({ type: schema.candidates.type, extracted: schema.candidates.extracted })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, candidateId));
+    if (!cand[0]) throw new NotFoundException(`candidate ${candidateId} not found`);
+    if (cand[0].type === "sample") {
+      throw new BadRequestException("cannot modify a sample candidate");
+    }
+    return { extracted: cand[0].extracted };
+  }
+
+  // Add a skill link (a confirmed suggestion or a manual search-add) so it counts
+  // toward matching. Idempotent; returns the candidate's full skill set.
+  async confirmSkill(candidateId: string, nodeId: string): Promise<CandidateNodeRef[]> {
+    await this.assertMutableCandidate(candidateId);
+    const node = await this.db
+      .select({ id: schema.nodes.id })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.id, nodeId),
+          eq(schema.nodes.status, "VERIFIED"),
+          eq(schema.nodes.type, "SKILL"),
+        ),
+      );
+    if (!node[0]) throw new BadRequestException(`node ${nodeId} is not a verified skill`);
+    await this.db
+      .insert(schema.candidateNodes)
+      .values({ candidateId, nodeId })
+      .onConflictDoNothing();
+    return this.matchedNodes(candidateId);
+  }
+
+  // Remove a skill link; returns the remaining skill set.
+  async removeSkill(candidateId: string, nodeId: string): Promise<CandidateNodeRef[]> {
+    await this.assertMutableCandidate(candidateId);
+    await this.db
+      .delete(schema.candidateNodes)
+      .where(
+        and(
+          eq(schema.candidateNodes.candidateId, candidateId),
+          eq(schema.candidateNodes.nodeId, nodeId),
+        ),
+      );
+    return this.matchedNodes(candidateId);
+  }
+
+  // Dismiss a suggestion so it never resurfaces. Kept on the candidate row (a
+  // rejected skill isn't held, so it must NOT go in candidate_nodes) and read
+  // back by AdditionalSkillsService to exclude it.
+  async rejectSuggestion(candidateId: string, nodeId: string): Promise<void> {
+    const { extracted } = await this.assertMutableCandidate(candidateId);
+    const current = Array.isArray(extracted.rejectedSkillIds)
+      ? (extracted.rejectedSkillIds as string[])
+      : [];
+    if (current.includes(nodeId)) return;
+    await this.db
+      .update(schema.candidates)
+      .set({ extracted: { ...extracted, rejectedSkillIds: [...current, nodeId] } })
+      .where(eq(schema.candidates.id, candidateId));
   }
 
   private async buildResult(id: string, reused: boolean): Promise<CvIngestResult> {

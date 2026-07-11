@@ -39,8 +39,11 @@ export function WarmBody({
   onCandidateGone: (candidateId: string) => void;
   onPickCv: (candidateId: string) => void;
 }) {
-  const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } =
-    useFeedWarm(candidateId, api.filters, !isSample);
+  const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } = useFeedWarm(
+    candidateId,
+    api.filters,
+    !isSample,
+  );
 
   // Fire at most once per candidate — dropping it flips to cold and unmounts
   // this component, so a re-fire would loop against its own state updates.
@@ -80,11 +83,7 @@ export function WarmBody({
         ) : null}
 
         {data?.items.map((item) => (
-          <WarmCard
-            key={item.vacancy.id}
-            item={item}
-            candidateSkillIds={candidateSkillIds}
-          />
+          <WarmCard key={item.vacancy.id} item={item} candidateSkillIds={candidateSkillIds} />
         ))}
 
         {data && data.total > pageSize ? (
@@ -104,12 +103,14 @@ export function WarmBody({
           {!isSample ? <SaveCvNudge /> : null}
           <CvSelect activeId={candidateId} onPick={onPickCv} />
           <CandidateProfile
+            candidateId={candidateId}
             title={profileTitle}
             role={profileRole}
             seniority={profileSeniority}
             matched={data.resolved.matched}
             unmatched={data.resolved.unmatched}
             totalVacancies={data.total}
+            isSample={isSample}
           />
           {!isSample && rec ? <SkillRecommendations rec={rec} /> : null}
         </div>

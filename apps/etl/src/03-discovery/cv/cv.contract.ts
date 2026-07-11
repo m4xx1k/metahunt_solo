@@ -30,3 +30,12 @@ export interface SampleCandidate {
   label: string;
   hint: string;
 }
+
+// A skill the candidate probably already has but didn't list (GET
+// /cv/:id/skill-suggestions). `impliedBy` is the held skill that implies it
+// (e.g. "TypeScript") — the UI composes the user-facing reason from it.
+export interface SkillSuggestion {
+  nodeId: string;
+  name: string;
+  impliedBy: string;
+}

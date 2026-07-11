@@ -1,10 +1,5 @@
-import { apiBase, apiGet, buildQs } from "./client";
-import type {
-  FitTier,
-  MatchResponse,
-  RecommendResponse,
-  SkillRef,
-} from "./ranking";
+import { apiBase, apiDelete, apiGet, apiPost, buildQs } from "./client";
+import type { FitTier, MatchResponse, RecommendResponse, SkillRef } from "./ranking";
 
 // CV ingestion + stored-candidate matching — mirrors apps/etl .../cv/.
 
@@ -45,11 +40,18 @@ export interface CvMatchQuery {
   page?: number;
 }
 
+// A skill implied by one the candidate already listed (e.g. TypeScript ->
+// JavaScript) but didn't state outright.
+export interface SkillSuggestion {
+  nodeId: string;
+  name: string;
+  impliedBy: string;
+}
+
 export const cvApi = {
   // Seeded demo profiles for the picker. ISR-cached — the sample set is static
   // (changes only on a re-seed / deploy).
-  samples: () =>
-    apiGet<SampleCandidate[]>("/cv/samples", { next: { revalidate: 300 } }),
+  samples: () => apiGet<SampleCandidate[]>("/cv/samples", { next: { revalidate: 300 } }),
 
   // Multipart upload (PDF/.txt) — not via apiPost, which is JSON-only.
   uploadFile: async (file: File): Promise<CvIngestResult> => {
@@ -63,9 +65,27 @@ export const cvApi = {
     return (await res.json()) as CvIngestResult;
   },
 
+  // Read-back for a stored candidate (role/seniority + current skill set) —
+  // powers the account-side skill manager.
+  get: (id: string) => apiGet<CvIngestResult>(`/cv/${id}`),
+
   matches: (id: string, query: CvMatchQuery = {}) =>
     apiGet<MatchResponse>(`/cv/${id}/matches${buildQs(query)}`),
 
-  recommendations: (id: string) =>
-    apiGet<RecommendResponse>(`/cv/${id}/recommendations`),
+  recommendations: (id: string) => apiGet<RecommendResponse>(`/cv/${id}/recommendations`),
+
+  skillSuggestions: (id: string) => apiGet<SkillSuggestion[]>(`/cv/${id}/skill-suggestions`),
+
+  // Confirms a suggested (or manually-searched) skill onto the candidate's
+  // profile; returns the updated full skill set.
+  confirmSkill: (id: string, nodeId: string) =>
+    apiPost<Pick<SkillRef, "id" | "name">[]>(`/cv/${id}/skills`, { nodeId }),
+
+  // Removes a skill link; returns the remaining skill set.
+  removeSkill: (id: string, nodeId: string) =>
+    apiDelete<Pick<SkillRef, "id" | "name">[]>(`/cv/${id}/skills/${nodeId}`),
+
+  // Dismisses a suggestion so it never resurfaces for this candidate.
+  rejectSkill: (id: string, nodeId: string) =>
+    apiPost<{ ok: true }>(`/cv/${id}/skills/reject`, { nodeId }),
 };
