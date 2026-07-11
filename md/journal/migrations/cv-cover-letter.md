@@ -202,6 +202,16 @@ zero spend; the LLM draft is a later phase.
 ## 10. Build log
 - 2026-07-10 — exploration (ETL pipeline, DB, web, `~/solo/cv`) complete; concept locked; worktree
   + reversible-migration plan set. Implementation started.
+- 2026-07-11 — **v1 shipped on `feat/cv-cover-letter`** (rebased onto `main` after #77 merged).
+  Migration 0028 applied + verified (`candidates.structured` nullable jsonb + `cv_variants`).
+  Subset guard: 19 unit specs green; full ETL suite 290/290. Backend verified end-to-end against
+  the seeded demo candidate (SELECT/REORDER by IDF overlap, skill-group reorder, guard-demo,
+  live-verify all correct). Web builds; `/cv-tailor` renders (HTTP 200). LLM rephrase built +
+  gated OFF (`CV_TAILOR_LLM`). Not merged — PR opened for review.
+  - **To run locally:** `pnpm db:migrate` (already applied to 54323) → `pnpm db:seed:cv-tailor`
+    → start etl + web → open `/cv-tailor`. LLM path: set `CV_TAILOR_LLM=1` in etl env.
+  - **Deferred to v2/v3 (see §8):** `ExtractResume` on the upload path (idempotency versioning),
+    Tier-2 `VerifyTailoredBullet`, Typst PDF export, grounded cover letters, paid gating.
 
 ## Links
 - Founder groundwork: `~/solo/cv/{e/data/resume.yaml, e/cv-onepage.typ, l3/{backend-v1,fullstack-v1}/resume.yaml, l3/research/, l3/history/}`.
