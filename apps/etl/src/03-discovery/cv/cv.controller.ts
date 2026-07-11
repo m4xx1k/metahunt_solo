@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -42,8 +43,15 @@ import {
 import { RankingService } from "../ranking/ranking.service";
 import { RecommendationService } from "../ranking/recommendation.service";
 
+import { AdditionalSkillsService } from "./additional-skills.service";
 import { CandidateLoaderService } from "./candidate-loader.service";
-import type { CandidateView, CvIngestResult, SampleCandidate } from "./cv.contract";
+import type {
+  CandidateNodeRef,
+  CandidateView,
+  CvIngestResult,
+  SampleCandidate,
+  SkillSuggestion,
+} from "./cv.contract";
 import { extractText } from "./text-extract";
 
 // CV upload is LLM-backed (a BAML extraction per new file) + accepts user
@@ -60,6 +68,7 @@ export class CvController {
     private readonly loader: CandidateLoaderService,
     private readonly ranking: RankingService,
     private readonly recommendation: RecommendationService,
+    private readonly additionalSkills: AdditionalSkillsService,
     private readonly slugs: NodeSlugResolver,
   ) {}
 
@@ -147,5 +156,51 @@ export class CvController {
     const { matched, role, seniority } = await this.loader.getRecommendInput(id);
     const roleNodeId = await this.ranking.resolveRole(role);
     return this.recommendation.recommend(matched, roleNodeId, seniority);
+  }
+
+  // "You probably also know X": skills implied by the ones the CV listed.
+  @Get(":id/skill-suggestions")
+  skillSuggestions(@Param("id") id: string): Promise<SkillSuggestion[]> {
+    return this.additionalSkills.suggest(id);
+  }
+
+  // Add a skill (confirmed suggestion or manual search-add); returns the set.
+  @Post(":id/skills")
+  @Throttle(CV_THROTTLE)
+  async addSkill(
+    @Param("id") id: string,
+    @Body() body: { nodeId?: unknown } | undefined,
+  ): Promise<CandidateNodeRef[]> {
+    return this.loader.confirmSkill(id, await this.resolveSkillNode(body?.nodeId));
+  }
+
+  // Dismiss a suggestion so it never resurfaces for this candidate.
+  @Post(":id/skills/reject")
+  @Throttle(CV_THROTTLE)
+  async rejectSkill(
+    @Param("id") id: string,
+    @Body() body: { nodeId?: unknown } | undefined,
+  ): Promise<{ ok: true }> {
+    await this.loader.rejectSuggestion(id, await this.resolveSkillNode(body?.nodeId));
+    return { ok: true };
+  }
+
+  // Remove a skill from the candidate; returns the remaining skill set.
+  @Delete(":id/skills/:nodeId")
+  async removeSkill(
+    @Param("id") id: string,
+    @Param("nodeId") nodeId: string,
+  ): Promise<CandidateNodeRef[]> {
+    return this.loader.removeSkill(id, await this.resolveSkillNode(nodeId));
+  }
+
+  // A skill ref arrives as a UUID (from suggestions/matched) or a slug (from the
+  // public /feed/skills catalog powering the /me search) — resolve both to a
+  // node id. NodeSlugResolver maps slugs and passes UUIDs through.
+  private async resolveSkillNode(raw: unknown): Promise<string> {
+    const ref = parseId("nodeId", raw, { required: true });
+    const nodeId = await this.slugs.toId("SKILL", ref);
+    if (!nodeId) throw new BadRequestException(`unknown skill: ${ref ?? ""}`);
+    return nodeId;
   }
 }
