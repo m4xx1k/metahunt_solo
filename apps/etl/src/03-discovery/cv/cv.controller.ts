@@ -196,6 +196,17 @@ export class CvController {
     return this.tailor.tailor(id, body ?? {});
   }
 
+  // Parse a full structured resume so this CV can be tailored (one LLM call;
+  // idempotent — a no-op if already structured). Explicit, user-triggered.
+  @Post(":id/structure")
+  @Throttle(CV_THROTTLE)
+  structure(
+    @Param("id") id: string,
+    @Body() body: { force?: boolean } | undefined,
+  ): Promise<{ hasStructured: boolean }> {
+    return this.tailor.structure(id, body?.force === true);
+  }
+
   // Add a skill (confirmed suggestion or manual search-add); returns the set.
   @Post(":id/skills")
   @Throttle(CV_THROTTLE)

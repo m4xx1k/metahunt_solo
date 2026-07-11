@@ -30,11 +30,17 @@ import type {
   ExtractedCandidate,
   ExtractedLocation,
   ExtractedVacancy,
+  ResumeContactInfo,
+  ResumeEducationItem,
+  ResumeExperienceItem,
+  ResumeProjectItem,
+  ResumeSkillGroup,
   Salary,
   Seniority,
   SkillCategory,
   SkillToClassify,
   Skills,
+  StructuredResumeExtract,
   TailoredBullet,
   WorkFormat,
 } from "./types";
@@ -92,6 +98,37 @@ export namespace partial_types {
     hasTestAssignment?: boolean | null;
     hasReservation?: boolean | null;
   }
+  export interface ResumeContactInfo {
+    location?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    linkedin?: string | null;
+    github?: string | null;
+    telegram?: string | null;
+  }
+  export interface ResumeEducationItem {
+    degree?: string | null;
+    school?: string | null;
+    dates?: string | null;
+  }
+  export interface ResumeExperienceItem {
+    role?: string | null;
+    org?: string | null;
+    dates?: string | null;
+    context?: string | null;
+    bullets: string[];
+  }
+  export interface ResumeProjectItem {
+    name?: string | null;
+    meta?: string | null;
+    link?: string | null;
+    context?: string | null;
+    bullets: string[];
+  }
+  export interface ResumeSkillGroup {
+    group?: string | null;
+    items: string[];
+  }
   export interface Salary {
     min?: number | null;
     max?: number | null;
@@ -104,6 +141,16 @@ export namespace partial_types {
   export interface Skills {
     required: string[];
     optional: string[];
+  }
+  export interface StructuredResumeExtract {
+    name?: string | null;
+    title?: string | null;
+    contacts?: ResumeContactInfo | null;
+    summary?: string | null;
+    skills: ResumeSkillGroup[];
+    experience: ResumeExperienceItem[];
+    projects: ResumeProjectItem[];
+    education: ResumeEducationItem[];
   }
   export interface TailoredBullet {
     text?: string | null;

@@ -148,6 +148,42 @@ export interface ExtractedVacancy {
   hasReservation?: boolean | null;
 }
 
+export interface ResumeContactInfo {
+  location?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  linkedin?: string | null;
+  github?: string | null;
+  telegram?: string | null;
+}
+
+export interface ResumeEducationItem {
+  degree: string;
+  school: string;
+  dates: string;
+}
+
+export interface ResumeExperienceItem {
+  role: string;
+  org: string;
+  dates: string;
+  context: string;
+  bullets: string[];
+}
+
+export interface ResumeProjectItem {
+  name: string;
+  meta: string;
+  link: string;
+  context: string;
+  bullets: string[];
+}
+
+export interface ResumeSkillGroup {
+  group: string;
+  items: string[];
+}
+
 export interface Salary {
   min?: number | null;
   max?: number | null;
@@ -162,6 +198,17 @@ export interface SkillToClassify {
 export interface Skills {
   required: string[];
   optional: string[];
+}
+
+export interface StructuredResumeExtract {
+  name: string;
+  title: string;
+  contacts: ResumeContactInfo;
+  summary: string;
+  skills: ResumeSkillGroup[];
+  experience: ResumeExperienceItem[];
+  projects: ResumeProjectItem[];
+  education: ResumeEducationItem[];
 }
 
 export interface TailoredBullet {

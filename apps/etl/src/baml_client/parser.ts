@@ -42,11 +42,17 @@ import type {
   ExtractedCandidate,
   ExtractedLocation,
   ExtractedVacancy,
+  ResumeContactInfo,
+  ResumeEducationItem,
+  ResumeExperienceItem,
+  ResumeProjectItem,
+  ResumeSkillGroup,
   Salary,
   Seniority,
   SkillCategory,
   SkillToClassify,
   Skills,
+  StructuredResumeExtract,
   TailoredBullet,
   WorkFormat,
 } from "./types";
@@ -117,6 +123,38 @@ export class LlmResponseParser {
         __baml_options__?.clientRegistry,
         __env__,
       ) as types.ExtractedCandidate;
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  ExtractResume(
+    llmResponse: string,
+    __baml_options__?: {
+      tb?: TypeBuilder;
+      clientRegistry?: ClientRegistry;
+      env?: Record<string, string | undefined>;
+    },
+  ): types.StructuredResumeExtract {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+      return this.runtime.parseLlmResponse(
+        "ExtractResume",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as types.StructuredResumeExtract;
     } catch (error) {
       throw toBamlError(error);
     }
@@ -252,6 +290,38 @@ export class LlmStreamParser {
         __baml_options__?.clientRegistry,
         __env__,
       ) as partial_types.ExtractedCandidate;
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  ExtractResume(
+    llmResponse: string,
+    __baml_options__?: {
+      tb?: TypeBuilder;
+      clientRegistry?: ClientRegistry;
+      env?: Record<string, string | undefined>;
+    },
+  ): partial_types.StructuredResumeExtract {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+      return this.runtime.parseLlmResponse(
+        "ExtractResume",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as partial_types.StructuredResumeExtract;
     } catch (error) {
       throw toBamlError(error);
     }

@@ -6,11 +6,13 @@ import {
   Optional,
 } from "@nestjs/common";
 
+import { Collector } from "@boundaryml/baml";
 import { and, eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { b } from "../../baml_client";
 import { RankingService } from "../ranking/ranking.service";
 
 import type {
@@ -31,7 +33,7 @@ import type {
   VerifyBulletRequest,
 } from "./cv-tailor.contract";
 import { TAILOR_REPHRASER, type TailorRephraserPort } from "./cv-tailor.rephraser.port";
-import { checkBullet, extractTech } from "./subset-guard";
+import { checkBullet, extractMetrics, extractTech } from "./subset-guard";
 
 const DEFAULT_EXP_BULLETS = 4;
 const DEFAULT_PROJ_BULLETS = 3;
@@ -126,6 +128,30 @@ export class CvTailorService {
         education: resume.education,
       },
     };
+  }
+
+  // Extract a full structured resume from the candidate's CV text (one LLM call)
+  // and persist it to candidates.structured so the CV can be tailored. Idempotent:
+  // returns the existing structure without an LLM call unless force=true.
+  async structure(candidateId: string, force = false): Promise<{ hasStructured: boolean }> {
+    const rows = await this.db
+      .select({
+        sourceText: schema.candidates.sourceText,
+        structured: schema.candidates.structured,
+      })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, candidateId));
+    if (!rows[0]) throw new NotFoundException(`candidate ${candidateId} not found`);
+    if (rows[0].structured && !force) return { hasStructured: true };
+
+    const collector = new Collector("cv-structure");
+    const extracted = await b.ExtractResume(rows[0].sourceText, { collector });
+    const structured = toStructuredResume(extracted);
+    await this.db
+      .update(schema.candidates)
+      .set({ structured: structured as unknown as Record<string, unknown> })
+      .where(eq(schema.candidates.id, candidateId));
+    return { hasStructured: true };
   }
 
   // Live re-check of a manual edit (no LLM) — the guard, exposed.
@@ -372,5 +398,68 @@ function buildLedger(resume: ExtractedResume): FactLedger {
     metrics: uniq(acc.metrics),
     dates: uniq(acc.dates),
     titles: uniq(acc.titles),
+  };
+}
+
+// A bullet's entities are derived server-side with the SAME tokenizer the guard
+// uses, so the source ledger and the guard's view never disagree.
+function atomFromText(
+  id: string,
+  text: string,
+  org: string,
+  dates: string,
+  title: string,
+): FactAtom {
+  return {
+    id,
+    text,
+    sourceSpan: text, // the extracted bullet is copied verbatim from the CV
+    entities: {
+      tech: extractTech(text),
+      orgs: org ? [org] : [],
+      metrics: extractMetrics(text),
+      dates: dates ? [dates] : [],
+      titles: title ? [title] : [],
+    },
+  };
+}
+
+function toStructuredResume(ex: Awaited<ReturnType<typeof b.ExtractResume>>): ExtractedResume {
+  return {
+    name: ex.name,
+    title: ex.title ?? "",
+    contacts: {
+      location: ex.contacts?.location ?? undefined,
+      email: ex.contacts?.email ?? undefined,
+      phone: ex.contacts?.phone ?? undefined,
+      linkedin: ex.contacts?.linkedin ?? undefined,
+      github: ex.contacts?.github ?? undefined,
+      telegram: ex.contacts?.telegram ?? undefined,
+    },
+    summary: atomFromText("sum", ex.summary ?? "", "", "", ""),
+    skills: (ex.skills ?? []).map((g) => ({ group: g.group, items: g.items ?? [] })),
+    experience: (ex.experience ?? []).map((e, i) => ({
+      id: `exp${i + 1}`,
+      role: e.role,
+      org: e.org,
+      dates: e.dates,
+      context: e.context,
+      bullets: (e.bullets ?? []).map((t, j) =>
+        atomFromText(`exp${i + 1}.b${j + 1}`, t, e.org, e.dates, e.role),
+      ),
+    })),
+    projects: (ex.projects ?? []).map((p, i) => ({
+      id: `pr${i + 1}`,
+      name: p.name,
+      meta: p.meta,
+      link: p.link,
+      context: p.context,
+      bullets: (p.bullets ?? []).map((t, j) => atomFromText(`pr${i + 1}.b${j + 1}`, t, "", "", "")),
+    })),
+    education: (ex.education ?? []).map((ed) => ({
+      degree: ed.degree,
+      school: ed.school,
+      dates: ed.dates,
+    })),
   };
 }

@@ -66,11 +66,35 @@ export default class TypeBuilder {
     | "hasReservation"
   >;
 
+  ResumeContactInfo: ClassViewer<
+    "ResumeContactInfo",
+    "location" | "email" | "phone" | "linkedin" | "github" | "telegram"
+  >;
+
+  ResumeEducationItem: ClassViewer<"ResumeEducationItem", "degree" | "school" | "dates">;
+
+  ResumeExperienceItem: ClassViewer<
+    "ResumeExperienceItem",
+    "role" | "org" | "dates" | "context" | "bullets"
+  >;
+
+  ResumeProjectItem: ClassViewer<
+    "ResumeProjectItem",
+    "name" | "meta" | "link" | "context" | "bullets"
+  >;
+
+  ResumeSkillGroup: ClassViewer<"ResumeSkillGroup", "group" | "items">;
+
   Salary: ClassViewer<"Salary", "min" | "max" | "currency">;
 
   SkillToClassify: ClassViewer<"SkillToClassify", "nodeId" | "name">;
 
   Skills: ClassViewer<"Skills", "required" | "optional">;
+
+  StructuredResumeExtract: ClassViewer<
+    "StructuredResumeExtract",
+    "name" | "title" | "contacts" | "summary" | "skills" | "experience" | "projects" | "education"
+  >;
 
   TailoredBullet: ClassViewer<"TailoredBullet", "text">;
 
@@ -111,9 +135,15 @@ export default class TypeBuilder {
         "ExtractedCandidate",
         "ExtractedLocation",
         "ExtractedVacancy",
+        "ResumeContactInfo",
+        "ResumeEducationItem",
+        "ResumeExperienceItem",
+        "ResumeProjectItem",
+        "ResumeSkillGroup",
         "Salary",
         "SkillToClassify",
         "Skills",
+        "StructuredResumeExtract",
         "TailoredBullet",
       ]),
       enums: new Set([
@@ -166,11 +196,55 @@ export default class TypeBuilder {
       "hasReservation",
     ]);
 
+    this.ResumeContactInfo = this.tb.classViewer("ResumeContactInfo", [
+      "location",
+      "email",
+      "phone",
+      "linkedin",
+      "github",
+      "telegram",
+    ]);
+
+    this.ResumeEducationItem = this.tb.classViewer("ResumeEducationItem", [
+      "degree",
+      "school",
+      "dates",
+    ]);
+
+    this.ResumeExperienceItem = this.tb.classViewer("ResumeExperienceItem", [
+      "role",
+      "org",
+      "dates",
+      "context",
+      "bullets",
+    ]);
+
+    this.ResumeProjectItem = this.tb.classViewer("ResumeProjectItem", [
+      "name",
+      "meta",
+      "link",
+      "context",
+      "bullets",
+    ]);
+
+    this.ResumeSkillGroup = this.tb.classViewer("ResumeSkillGroup", ["group", "items"]);
+
     this.Salary = this.tb.classViewer("Salary", ["min", "max", "currency"]);
 
     this.SkillToClassify = this.tb.classViewer("SkillToClassify", ["nodeId", "name"]);
 
     this.Skills = this.tb.classViewer("Skills", ["required", "optional"]);
+
+    this.StructuredResumeExtract = this.tb.classViewer("StructuredResumeExtract", [
+      "name",
+      "title",
+      "contacts",
+      "summary",
+      "skills",
+      "experience",
+      "projects",
+      "education",
+    ]);
 
     this.TailoredBullet = this.tb.classViewer("TailoredBullet", ["text"]);
 
