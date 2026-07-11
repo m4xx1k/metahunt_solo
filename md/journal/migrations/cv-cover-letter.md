@@ -220,6 +220,19 @@ zero spend; the LLM draft is a later phase.
   2-step flow (CV source → target job) with a one-click "prepare it" for unstructured CVs.
   Vacancy-target path verified against a real vacancy (0 invented facts, IDF reorder); structure
   path is wired + builds, exercised by the user (LLM). This closes the v2 "structure-on-demand" item.
+- 2026-07-11 (increment 3 — "make it impressive") — **bold rewrite ON by default** (`TailorResume`,
+  one batched aggressive rewrite of all shown bullets; guard verifies each, verbatim fallback on
+  drift; `{rephrase:false}` = free/instant). **Market gap** folded into the tailor result (fit%,
+  missing target skills, "learn X → +N live roles" from the recommender). **Apply-kit**
+  (`POST /cv/:id/apply-kit`): grounded `DraftCoverLetter` (ledger-checked, hard-metric flags only)
+  + `InterviewPrep` (5 role-specific Qs w/ evidence). **UI rewritten minimalist**: one living-CV
+  document (inline reworded highlights, hover→original, inline edit + live guard), one-line
+  guarantee + market strip, CV/Cover-letter/Interview tabs; guard-demo behind a toggle;
+  BulletDiffCard+ResumePreview removed. Verified LIVE end-to-end (isolated ETL, real DeepSeek): 10
+  bullets reworded / 0 drift / 0 invented; grounded letter; sharp gap-aware interview. This lands
+  most of §8 v2 + v3 (cover letters).
+  - **Still deferred:** Tier-2 semantic-inflation LLM check; Typst PDF export; free/paid gating +
+    auto-tailored subscription digest.
 
 ## Links
 - Founder groundwork: `~/solo/cv/{e/data/resume.yaml, e/cv-onepage.typ, l3/{backend-v1,fullstack-v1}/resume.yaml, l3/research/, l3/history/}`.
