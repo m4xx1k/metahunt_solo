@@ -146,6 +146,11 @@ export const cvTailorApi = {
   tailor: (candidateId: string, body: TailorRequest) =>
     apiPost<TailorResult>(`/cv/${candidateId}/tailor`, body),
 
+  // Parse a full structured resume (one LLM call; no-op if already done) so an
+  // uploaded/selected CV becomes tailorable.
+  structure: (candidateId: string, force = false) =>
+    apiPost<{ hasStructured: boolean }>(`/cv/${candidateId}/structure`, { force }),
+
   // Live subset-guard re-check of a manual edit (deterministic, no LLM).
   verify: (body: VerifyBulletRequest) => apiPost<GuardResult>(`/cv/tailor/verify`, body),
 
