@@ -210,8 +210,16 @@ zero spend; the LLM draft is a later phase.
   gated OFF (`CV_TAILOR_LLM`). Not merged — PR opened for review.
   - **To run locally:** `pnpm db:migrate` (already applied to 54323) → `pnpm db:seed:cv-tailor`
     → start etl + web → open `/cv-tailor`. LLM path: set `CV_TAILOR_LLM=1` in etl env.
-  - **Deferred to v2/v3 (see §8):** `ExtractResume` on the upload path (idempotency versioning),
-    Tier-2 `VerifyTailoredBullet`, Typst PDF export, grounded cover letters, paid gating.
+  - **Deferred to v2/v3 (see §8):** Tier-2 `VerifyTailoredBullet`, Typst PDF export, grounded
+    cover letters, paid gating.
+- 2026-07-11 (increment 2) — **pick a real parsed vacancy** (target skills auto-pulled from the
+  vacancy's `vacancy_nodes` via the existing reverse-ATS matches; no pasting) + **upload/select a
+  CV**. New `ExtractResume` (BAML) + `POST /cv/:id/structure` parse an arbitrary CV into
+  `candidates.structured` on demand (one LLM call, idempotent) so any uploaded/selected CV becomes
+  tailorable; entities derived server-side with the guard's tokenizer. Web workbench reworked to a
+  2-step flow (CV source → target job) with a one-click "prepare it" for unstructured CVs.
+  Vacancy-target path verified against a real vacancy (0 invented facts, IDF reorder); structure
+  path is wired + builds, exercised by the user (LLM). This closes the v2 "structure-on-demand" item.
 
 ## Links
 - Founder groundwork: `~/solo/cv/{e/data/resume.yaml, e/cv-onepage.typ, l3/{backend-v1,fullstack-v1}/resume.yaml, l3/research/, l3/history/}`.
