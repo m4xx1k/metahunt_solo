@@ -50,6 +50,12 @@ export function HowItWorks({
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         {matchCta ? <UploadCta label={matchCta.label} event={matchCta.event} /> : null}
         <Link
+          href="/cv-tailor"
+          className="font-mono text-xs text-text-secondary underline-offset-4 transition-colors hover:text-accent hover:underline"
+        >
+          ✎ tailor a CV to a job →
+        </Link>
+        <Link
           href="/how-it-works"
           className="font-mono text-xs text-text-secondary underline-offset-4 transition-colors hover:text-accent hover:underline"
         >
