@@ -170,12 +170,46 @@ export interface TailorTarget {
   allSkills: string[]; // every skill the vacancy asks for
 }
 
+// The market-position flex — what a standalone CV tool can't compute. Derived
+// from the live vacancy corpus + taxonomy + counterfactual recommender.
+export interface TailorGap {
+  fitPercent: number; // IDF-weighted coverage of the target's skills
+  missing: { name: string; weight: number }[]; // target skills the CV lacks
+  learnNext: { skill: string; addedRoles: number }[]; // learn X → +N live roles
+}
+
 export interface TailorResult {
   candidateId: string;
   target: TailorTarget;
-  rephrase: boolean; // was the (gated) LLM rephrase applied?
+  rephrase: boolean; // was the bold LLM rewrite applied?
   grounding: GroundingSummary;
+  gap: TailorGap | null; // present when tailored against a target with skills
   resume: TailoredResume;
+}
+
+// ── Apply-kit (cover letter + interview prep) ─────────────────────────────────
+
+export interface CoverLetterDraft {
+  text: string;
+  flags: DriftFlag[]; // off-ledger tech/numbers found in the letter (want: none)
+}
+
+export interface InterviewItem {
+  question: string;
+  angle: string;
+  evidence: string; // talking point drawn from the candidate's real achievements
+}
+
+export interface ApplyKitResult {
+  target: TailorTarget;
+  coverLetter: CoverLetterDraft;
+  interview: InterviewItem[];
+}
+
+// POST /cv/:id/apply-kit
+export interface ApplyKitRequest {
+  vacancyId?: string;
+  jobText?: string;
 }
 
 // ── Endpoint request bodies ───────────────────────────────────────────────────

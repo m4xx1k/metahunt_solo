@@ -1,4 +1,4 @@
-import { Logger, type Provider } from "@nestjs/common";
+import { type Provider } from "@nestjs/common";
 
 import { Collector } from "@boundaryml/baml";
 
@@ -6,36 +6,31 @@ import { b } from "../../baml_client";
 
 import {
   TAILOR_REPHRASER,
-  type RephraseInput,
+  type RephraseBatchInput,
   type TailorRephraserPort,
 } from "./cv-tailor.rephraser.port";
 
-// BAML-backed rephrase (DeepSeekClient). Never trusted alone — CvTailorService
-// re-checks every output with the deterministic subset guard.
+// BAML-backed bold rewrite (DeepSeekClient). Never trusted alone — the tailor
+// service re-checks every output with the deterministic subset guard and falls
+// back to the verbatim bullet on any drift.
 class BamlTailorRephraser implements TailorRephraserPort {
-  async rephrase(input: RephraseInput): Promise<string> {
-    const collector = new Collector("cv-tailor-rephrase");
-    const result = await b.TailorBullet(
-      input.sourceText,
-      input.allowed.tech.join(", "),
+  async rephraseBatch(input: RephraseBatchInput): Promise<{ id: string; text: string }[]> {
+    if (input.bullets.length === 0) return [];
+    const collector = new Collector("cv-tailor-rewrite");
+    const out = await b.TailorResume(
+      input.bullets.map((x) => ({ id: x.id, text: x.text })),
+      input.role,
       input.emphasis.join(", "),
       { collector },
     );
-    const text = result.text?.trim();
-    return text && text.length > 0 ? text : input.sourceText;
+    return out.map((o) => ({ id: o.id, text: o.text }));
   }
 }
 
-// LLM rephrase is OFF unless CV_TAILOR_LLM=1 — no surprise spend on the user's
-// DeepSeek key. When off, the token resolves to null and the tailor service
-// keeps every bullet verbatim (SELECT/REORDER only, zero hallucination risk).
+// Always bound: the bold rewrite is the default experience now. The tailor
+// service still degrades to verbatim if the call fails or a bullet drifts, and
+// a request may opt out with { rephrase: false } for a free, instant result.
 export const tailorRephraserProvider: Provider = {
   provide: TAILOR_REPHRASER,
-  useFactory: (): TailorRephraserPort | null => {
-    if (process.env.CV_TAILOR_LLM !== "1") return null;
-    new Logger("CvTailor").log(
-      "LLM rephrase ENABLED (CV_TAILOR_LLM=1) — TailorBullet will call DeepSeek",
-    );
-    return new BamlTailorRephraser();
-  },
+  useFactory: (): TailorRephraserPort => new BamlTailorRephraser(),
 };

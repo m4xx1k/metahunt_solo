@@ -117,6 +117,10 @@ export interface ClassifiedSkill {
   generic: boolean;
 }
 
+export interface CoverLetter {
+  text: string;
+}
+
 export interface ExtractedCandidate {
   role?: string | null;
   seniority?: Seniority | null;
@@ -146,6 +150,12 @@ export interface ExtractedVacancy {
   companyName?: string | null;
   hasTestAssignment?: boolean | null;
   hasReservation?: boolean | null;
+}
+
+export interface InterviewQuestion {
+  question: string;
+  angle: string;
+  evidence: string;
 }
 
 export interface ResumeContactInfo {
@@ -209,6 +219,16 @@ export interface StructuredResumeExtract {
   experience: ResumeExperienceItem[];
   projects: ResumeProjectItem[];
   education: ResumeEducationItem[];
+}
+
+export interface TailorInputBullet {
+  id: string;
+  text: string;
+}
+
+export interface TailorOutputBullet {
+  id: string;
+  text: string;
 }
 
 export interface TailoredBullet {

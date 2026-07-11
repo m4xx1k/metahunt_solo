@@ -7,16 +7,22 @@ import {
 } from "@nestjs/common";
 
 import { Collector } from "@boundaryml/baml";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { b } from "../../baml_client";
 import { RankingService } from "../ranking/ranking.service";
+import { RecommendationService } from "../ranking/recommendation.service";
 
+import { CandidateLoaderService } from "./candidate-loader.service";
 import type {
+  ApplyKitRequest,
+  ApplyKitResult,
   BulletDiff,
+  CoverLetterDraft,
+  DriftFlag,
   EntitySet,
   ExtractedResume,
   FactAtom,
@@ -24,7 +30,9 @@ import type {
   GroundingSummary,
   GuardDemoCase,
   GuardResult,
+  InterviewItem,
   SkillGroup,
+  TailorGap,
   TailorRequest,
   TailorResult,
   TailorTarget,
@@ -42,62 +50,106 @@ interface TargetSkill {
   name: string;
   weight: number;
 }
+interface Ranked {
+  atom: FactAtom;
+  relevance: number;
+}
 
 @Injectable()
 export class CvTailorService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly ranking: RankingService,
+    private readonly recommendation: RecommendationService,
+    private readonly loader: CandidateLoaderService,
     @Optional() @Inject(TAILOR_REPHRASER) private readonly rephraser: TailorRephraserPort | null,
   ) {}
 
-  // ── Public API ────────────────────────────────────────────────────────────
+  // ── Tailor ──────────────────────────────────────────────────────────────────
 
   async tailor(candidateId: string, req: TailorRequest): Promise<TailorResult> {
     const resume = await this.loadStructured(candidateId);
     const { skills: targetSkills, label, vacancyId } = await this.resolveTarget(req);
     const byName = new Map(targetSkills.map((s) => [s.name.toLowerCase(), s.weight]));
     const ledger = buildLedger(resume);
-    const rephraseOn = req.rephrase === true && this.rephraser != null;
+    const rephraseOn = req.rephrase !== false && this.rephraser != null;
+    const emphasis = targetSkills.map((s) => s.name).slice(0, 15);
 
-    const counts = { total: 0, shown: 0, verbatim: 0, rephrased: 0, drift: 0 };
+    // 1. select + reorder each entry (deterministic, always)
+    const expSel = resume.experience.map((e) => ({
+      e,
+      ...selectBullets(e.bullets, e.max ?? DEFAULT_EXP_BULLETS, byName),
+    }));
+    const projSel = resume.projects.map((p) => ({
+      p,
+      ...selectBullets(p.bullets, DEFAULT_PROJ_BULLETS, byName),
+    }));
 
-    const experience: TailoredExperience[] = [];
-    for (const exp of resume.experience) {
-      const { bullets, dropped } = await this.tailorBullets(
-        exp.bullets,
-        exp.max ?? DEFAULT_EXP_BULLETS,
-        byName,
-        ledger,
-        rephraseOn,
-        counts,
-      );
-      experience.push({ ...exp, bullets, dropped });
+    // 2. one bold rewrite over every shown bullet (+ summary); degrade to verbatim
+    const rewritten = new Map<string, string>();
+    if (rephraseOn && this.rephraser) {
+      const toRewrite = [
+        { id: resume.summary.id, text: resume.summary.text },
+        ...expSel.flatMap((s) => s.selected.map((x) => ({ id: x.atom.id, text: x.atom.text }))),
+        ...projSel.flatMap((s) => s.selected.map((x) => ({ id: x.atom.id, text: x.atom.text }))),
+      ];
+      try {
+        const out = await this.rephraser.rephraseBatch({
+          bullets: toRewrite,
+          role: label,
+          emphasis,
+        });
+        for (const o of out) rewritten.set(o.id, o.text);
+      } catch {
+        // rewrite unavailable (no key / API error) → every bullet stays verbatim
+      }
     }
 
-    const projects: TailoredProject[] = [];
-    for (const proj of resume.projects) {
-      const { bullets, dropped } = await this.tailorBullets(
-        proj.bullets,
-        DEFAULT_PROJ_BULLETS,
-        byName,
-        ledger,
-        rephraseOn,
-        counts,
-      );
-      projects.push({ ...proj, bullets, dropped });
-    }
+    const counts = { rephrased: 0, drift: 0 };
+    const mk = (atom: FactAtom, relevance: number, dropped = false): BulletDiff => {
+      if (dropped)
+        return bulletDiff(atom, atom.text, "dropped", relevance, faithful(atom.entities));
+      const rw = rewritten.get(atom.id)?.trim();
+      if (rw && rw !== atom.text.trim()) {
+        const verdict = checkBullet({
+          sourceText: atom.text,
+          tailoredText: rw,
+          sourceEntities: atom.entities,
+          ledger: { tech: ledger.tech, orgs: ledger.orgs, titles: ledger.titles },
+        });
+        if (verdict.faithful) {
+          counts.rephrased += 1;
+          return bulletDiff(atom, rw, "rephrased", relevance, verdict);
+        }
+        counts.drift += 1; // guard rejected the rewrite → keep the verbatim source
+      }
+      return bulletDiff(atom, atom.text, "verbatim", relevance, faithful(atom.entities));
+    };
 
-    // Summary stays verbatim in v1 (rephrasing it is a v2 upgrade).
-    counts.total += 1;
-    counts.shown += 1;
-    counts.verbatim += 1;
-    const summary = this.verbatimDiff(resume.summary, byName);
+    const summary = mk(resume.summary, relevance(resume.summary, byName));
+    const experience: TailoredExperience[] = expSel.map(({ e, selected, dropped }) => ({
+      ...e,
+      bullets: selected.map((x) => mk(x.atom, x.relevance)),
+      dropped: dropped.map((x) => mk(x.atom, x.relevance, true)),
+    }));
+    const projects: TailoredProject[] = projSel.map(({ p, selected, dropped }) => ({
+      ...p,
+      bullets: selected.map((x) => mk(x.atom, x.relevance)),
+      dropped: dropped.map((x) => mk(x.atom, x.relevance, true)),
+    }));
 
+    const shown =
+      1 +
+      experience.reduce((s, e) => s + e.bullets.length, 0) +
+      projects.reduce((s, p) => s + p.bullets.length, 0);
+    const total =
+      1 +
+      resume.experience.reduce((s, e) => s + e.bullets.length, 0) +
+      resume.projects.reduce((s, p) => s + p.bullets.length, 0);
     const grounding: GroundingSummary = {
-      totalBullets: counts.total,
-      shown: counts.shown,
-      verbatim: counts.verbatim,
+      totalBullets: total,
+      shown,
+      verbatim: shown - counts.rephrased - counts.drift,
       rephrased: counts.rephrased,
       drift: counts.drift,
       inventedFacts: 0,
@@ -111,12 +163,15 @@ export class CvTailorService {
         .map((s) => s.name),
       allSkills: targetSkills.map((s) => s.name),
     };
+    const gap =
+      targetSkills.length > 0 ? await this.computeGap(candidateId, targetSkills, ledger) : null;
 
     return {
       candidateId,
       target,
       rephrase: rephraseOn,
       grounding,
+      gap,
       resume: {
         name: resume.name,
         title: resume.title,
@@ -130,9 +185,66 @@ export class CvTailorService {
     };
   }
 
-  // Extract a full structured resume from the candidate's CV text (one LLM call)
-  // and persist it to candidates.structured so the CV can be tailored. Idempotent:
-  // returns the existing structure without an LLM call unless force=true.
+  // ── Apply-kit (cover letter + interview) ──────────────────────────────────────
+
+  async applyKit(candidateId: string, req: ApplyKitRequest): Promise<ApplyKitResult> {
+    const resume = await this.loadStructured(candidateId);
+    const { skills: targetSkills, label, vacancyId } = await this.resolveTarget(req);
+    const byName = new Map(targetSkills.map((s) => [s.name.toLowerCase(), s.weight]));
+    const ledger = buildLedger(resume);
+    const haveNames = new Set(ledger.tech.map((t) => t.toLowerCase()));
+    const strengths = targetSkills
+      .filter((s) => haveNames.has(s.name.toLowerCase()))
+      .map((s) => s.name);
+    const gaps = targetSkills
+      .filter((s) => !haveNames.has(s.name.toLowerCase()))
+      .map((s) => s.name);
+
+    const picks: string[] = [];
+    for (const e of resume.experience) {
+      selectBullets(e.bullets, Math.min(3, e.max ?? DEFAULT_EXP_BULLETS), byName).selected.forEach(
+        (x) => picks.push(x.atom.text),
+      );
+    }
+    for (const p of resume.projects) {
+      selectBullets(p.bullets, 2, byName).selected.forEach((x) => picks.push(x.atom.text));
+    }
+    const achievements = picks.map((t) => `- ${t}`).join("\n");
+    const company = vacancyId
+      ? ((await this.vacancyCompany(vacancyId)) ?? "the company")
+      : "the company";
+
+    const [letter, questions] = await Promise.all([
+      b.DraftCoverLetter(resume.name, label, company, achievements, {
+        collector: new Collector("cover-letter"),
+      }),
+      b.InterviewPrep(label, strengths.join(", ") || "—", gaps.join(", ") || "—", achievements, {
+        collector: new Collector("interview"),
+      }),
+    ]);
+
+    const coverLetter: CoverLetterDraft = {
+      text: letter.text,
+      flags: letterFlags(letter.text, ledger),
+    };
+    const interview: InterviewItem[] = questions.map((q) => ({
+      question: q.question,
+      angle: q.angle,
+      evidence: q.evidence,
+    }));
+    const target: TailorTarget = {
+      vacancyId,
+      label,
+      matchedSkills: strengths,
+      allSkills: targetSkills.map((s) => s.name),
+    };
+    return { target, coverLetter, interview };
+  }
+
+  // ── Structure extraction ──────────────────────────────────────────────────────
+
+  // Parse a full structured resume from the candidate's CV text (one LLM call)
+  // and persist it to candidates.structured. Idempotent unless force=true.
   async structure(candidateId: string, force = false): Promise<{ hasStructured: boolean }> {
     const rows = await this.db
       .select({
@@ -154,6 +266,8 @@ export class CvTailorService {
     return { hasStructured: true };
   }
 
+  // ── Guard surfaces ────────────────────────────────────────────────────────────
+
   // Live re-check of a manual edit (no LLM) — the guard, exposed.
   verify(req: VerifyBulletRequest): GuardResult {
     return checkBullet({
@@ -170,19 +284,19 @@ export class CvTailorService {
     const ledgerTech = ["Gemini", "Elasticsearch", "PostgreSQL", "RabbitMQ", "AWS", "NestJS"];
     const cases: Omit<GuardDemoCase, "result">[] = [
       {
-        title: "Faithful rephrase — tighter voice, same facts",
-        note: "The founder's own backend→full-stack edit. Same tech (Gemini), same number (2,800+).",
+        title: "Bold rewrite — same facts, sharper voice",
+        note: "Impact-first, but same tech (Gemini) and same number (2,800+).",
         sourceText:
           "Owned the AI product-mockup pipeline: it applies a client's logo with Gemini, then an LLM scores six quality checks — 2,800+ mockups generated with no manual review.",
         tailoredText:
-          "Replaced manual mockup creation with an AI pipeline — Gemini applies the logo, an LLM runs six quality checks — 2,800+ mockups shipped with no human review.",
+          "Shipped 2,800+ client-logo product mockups with zero manual review — a Gemini pipeline that auto-scores six quality checks and rejects weak results.",
         sourceEntities: entities({ tech: ["Gemini"], metrics: ["2,800+"] }),
         ledgerTech,
         expectedFaithful: true,
       },
       {
-        title: "Reorder + select — no wording drift",
-        note: "Foregrounds the search work for a search role. Verbatim, so trivially grounded.",
+        title: "Scope kept honest",
+        note: "Foregrounds the search work for a search role — verbatim, trivially grounded.",
         sourceText:
           "Built core stages of the Elasticsearch search — retrieval, dedupe, scoring, LLM re-rank.",
         tailoredText:
@@ -193,16 +307,16 @@ export class CvTailorService {
       },
       {
         title: "Added technology — REJECTED",
-        note: "A rewrite slips in Kubernetes, which the source never mentioned. The guard blocks it.",
+        note: "The rewrite slips in Kubernetes, which the source never mentioned.",
         sourceText: "Built async workflows on RabbitMQ with PostgreSQL.",
-        tailoredText: "Built async workflows on RabbitMQ and Kubernetes with PostgreSQL.",
+        tailoredText: "Architected async workflows on RabbitMQ, Kubernetes, and PostgreSQL.",
         sourceEntities: entities({ tech: ["RabbitMQ", "PostgreSQL"] }),
         ledgerTech,
         expectedFaithful: false,
       },
       {
         title: "Inflated number — REJECTED",
-        note: "2,800+ quietly becomes 5,000+. The guard requires numbers copied exactly.",
+        note: "2,800+ quietly becomes 5,000+. Numbers must be copied exactly.",
         sourceText: "2,800+ mockups generated with no manual review.",
         tailoredText: "5,000+ mockups generated with no manual review.",
         sourceEntities: entities({ metrics: ["2,800+"] }),
@@ -239,7 +353,7 @@ export class CvTailorService {
   }
 
   private async resolveTarget(
-    req: TailorRequest,
+    req: TailorRequest | ApplyKitRequest,
   ): Promise<{ skills: TargetSkill[]; label: string; vacancyId: string | null }> {
     if (req.jobText && req.jobText.trim().length > 0) {
       const resolved = await this.ranking.resolveSkills(extractTech(req.jobText));
@@ -263,7 +377,7 @@ export class CvTailorService {
       .from(schema.vacancyNodes)
       .innerJoin(schema.nodes, eq(schema.nodes.id, schema.vacancyNodes.nodeId))
       .leftJoin(schema.nodeStats, eq(schema.nodeStats.nodeId, schema.vacancyNodes.nodeId))
-      .where(and(eq(schema.vacancyNodes.vacancyId, vacancyId), eq(schema.nodes.type, "SKILL")));
+      .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
     return rows.map((r) => ({ name: r.name, weight: r.weight ?? 0 }));
   }
 
@@ -275,64 +389,41 @@ export class CvTailorService {
     return rows[0]?.title ?? null;
   }
 
-  private async tailorBullets(
-    bullets: FactAtom[],
-    max: number,
-    byName: Map<string, number>,
-    ledger: FactLedger,
-    rephraseOn: boolean,
-    counts: { total: number; shown: number; verbatim: number; rephrased: number; drift: number },
-  ): Promise<{ bullets: BulletDiff[]; dropped: BulletDiff[] }> {
-    counts.total += bullets.length;
-
-    const ranked = bullets
-      .map((b, index) => ({ b, index, relevance: relevance(b, byName) }))
-      .sort((x, y) => y.relevance - x.relevance || x.index - y.index);
-
-    const selected = ranked.slice(0, max);
-    const rest = ranked.slice(max);
-
-    const out: BulletDiff[] = [];
-    for (const { b, relevance: rel } of selected) {
-      counts.shown += 1;
-      if (rephraseOn && this.rephraser) {
-        const tailoredText = await this.rephraser.rephrase({
-          sourceText: b.text,
-          allowed: b.entities,
-          emphasis: [...byName.keys()],
-        });
-        const verdict = checkBullet({
-          sourceText: b.text,
-          tailoredText,
-          sourceEntities: b.entities,
-          ledger: { tech: ledger.tech, orgs: ledger.orgs, titles: ledger.titles },
-        });
-        if (verdict.faithful && tailoredText.trim() !== b.text.trim()) {
-          counts.rephrased += 1;
-          out.push(bulletDiff(b, tailoredText, "rephrased", rel, verdict));
-          continue;
-        }
-        // Drift (or a no-op rephrase) → never ship it; fall back to verbatim.
-        if (!verdict.faithful) counts.drift += 1;
-      }
-      counts.verbatim += 1;
-      out.push(bulletDiff(b, b.text, "verbatim", rel, faithful(b.entities)));
-    }
-
-    const dropped = rest.map(({ b, relevance: rel }) =>
-      bulletDiff(b, b.text, "dropped", rel, faithful(b.entities)),
-    );
-    return { bullets: out, dropped };
+  private async vacancyCompany(vacancyId: string): Promise<string | null> {
+    const rows = await this.db
+      .select({ name: schema.companies.name })
+      .from(schema.vacancies)
+      .innerJoin(schema.companies, eq(schema.companies.id, schema.vacancies.companyId))
+      .where(eq(schema.vacancies.id, vacancyId));
+    return rows[0]?.name ?? null;
   }
 
-  private verbatimDiff(atom: FactAtom, byName: Map<string, number>): BulletDiff {
-    return bulletDiff(
-      atom,
-      atom.text,
-      "verbatim",
-      relevance(atom, byName),
-      faithful(atom.entities),
-    );
+  private async computeGap(
+    candidateId: string,
+    targetSkills: TargetSkill[],
+    ledger: FactLedger,
+  ): Promise<TailorGap> {
+    const have = new Set(ledger.tech.map((t) => t.toLowerCase()));
+    const totalW = targetSkills.reduce((s, x) => s + x.weight, 0) || 1;
+    const haveW = targetSkills
+      .filter((s) => have.has(s.name.toLowerCase()))
+      .reduce((s, x) => s + x.weight, 0);
+    const missing = targetSkills
+      .filter((s) => !have.has(s.name.toLowerCase()))
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, 6)
+      .map((s) => ({ name: s.name, weight: Math.round(s.weight * 1000) / 1000 }));
+
+    let learnNext: { skill: string; addedRoles: number }[] = [];
+    try {
+      const { matched, role, seniority } = await this.loader.getRecommendInput(candidateId);
+      const roleNodeId = await this.ranking.resolveRole(role);
+      const rec = await this.recommendation.recommend(matched, roleNodeId, seniority);
+      learnNext = rec.items.slice(0, 3).map((it) => ({ skill: it.name, addedRoles: it.unlocks }));
+    } catch {
+      // recommender is best-effort — a small/edge cohort just yields no unlocks
+    }
+    return { fitPercent: Math.round((100 * haveW) / totalW), missing, learnNext };
   }
 }
 
@@ -340,6 +431,20 @@ export class CvTailorService {
 
 function entities(p: Partial<EntitySet>): EntitySet {
   return { tech: [], orgs: [], metrics: [], dates: [], titles: [], ...p };
+}
+
+function selectBullets(
+  bullets: FactAtom[],
+  max: number,
+  byName: Map<string, number>,
+): { selected: Ranked[]; dropped: Ranked[] } {
+  const ranked = bullets
+    .map((atom, index) => ({ atom, index, relevance: relevance(atom, byName) }))
+    .sort((a, b) => b.relevance - a.relevance || a.index - b.index);
+  return {
+    selected: ranked.slice(0, max).map(({ atom, relevance: r }) => ({ atom, relevance: r })),
+    dropped: ranked.slice(max).map(({ atom, relevance: r }) => ({ atom, relevance: r })),
+  };
 }
 
 function bulletDiff(
@@ -389,8 +494,8 @@ function buildLedger(resume: ExtractedResume): FactLedger {
     acc.titles.push(...e.titles);
   };
   add(resume.summary.entities);
-  for (const exp of resume.experience) exp.bullets.forEach((b) => add(b.entities));
-  for (const proj of resume.projects) proj.bullets.forEach((b) => add(b.entities));
+  for (const exp of resume.experience) exp.bullets.forEach((bl) => add(bl.entities));
+  for (const proj of resume.projects) proj.bullets.forEach((bl) => add(bl.entities));
   const uniq = (xs: string[]): string[] => [...new Set(xs)];
   return {
     tech: uniq(acc.tech),
@@ -401,8 +506,8 @@ function buildLedger(resume: ExtractedResume): FactLedger {
   };
 }
 
-// A bullet's entities are derived server-side with the SAME tokenizer the guard
-// uses, so the source ledger and the guard's view never disagree.
+// A bullet's entities are derived with the SAME tokenizer the guard uses, so the
+// source ledger and the guard's view never disagree.
 function atomFromText(
   id: string,
   text: string,
@@ -413,7 +518,7 @@ function atomFromText(
   return {
     id,
     text,
-    sourceSpan: text, // the extracted bullet is copied verbatim from the CV
+    sourceSpan: text,
     entities: {
       tech: extractTech(text),
       orgs: org ? [org] : [],
@@ -462,4 +567,28 @@ function toStructuredResume(ex: Awaited<ReturnType<typeof b.ExtractResume>>): Ex
       dates: ed.dates,
     })),
   };
+}
+
+function letterFlags(text: string, ledger: FactLedger): DriftFlag[] {
+  const flags: DriftFlag[] = [];
+  const allowedTech = new Set(ledger.tech.map((t) => t.toLowerCase()));
+  for (const t of extractTech(text)) {
+    if (!allowedTech.has(t.toLowerCase())) {
+      flags.push({ kind: "added-tech", token: t, message: `"${t}" isn't anywhere in your CV.` });
+    }
+  }
+  // In prose, only "hard" quantified claims (%, +, magnitude) are worth flagging —
+  // bare integers ("3 teams", "one platform") are too false-positive-prone.
+  const allowedMetrics = new Set(ledger.metrics.flatMap((m) => extractMetrics(m)));
+  const isHardMetric = (m: string): boolean => /[%+kmb]/.test(m);
+  for (const m of extractMetrics(text)) {
+    if (isHardMetric(m) && !allowedMetrics.has(m)) {
+      flags.push({
+        kind: "invented-metric",
+        token: m,
+        message: `the number "${m}" isn't in your CV.`,
+      });
+    }
+  }
+  return flags;
 }

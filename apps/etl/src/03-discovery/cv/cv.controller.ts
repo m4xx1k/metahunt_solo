@@ -46,6 +46,8 @@ import { RecommendationService } from "../ranking/recommendation.service";
 import { AdditionalSkillsService } from "./additional-skills.service";
 import { CandidateLoaderService } from "./candidate-loader.service";
 import type {
+  ApplyKitRequest,
+  ApplyKitResult,
   GuardDemoCase,
   GuardResult,
   TailorRequest,
@@ -205,6 +207,13 @@ export class CvController {
     @Body() body: { force?: boolean } | undefined,
   ): Promise<{ hasStructured: boolean }> {
     return this.tailor.structure(id, body?.force === true);
+  }
+
+  // Apply-kit: grounded cover letter + interview prep for the target job (LLM).
+  @Post(":id/apply-kit")
+  @Throttle(CV_THROTTLE)
+  applyKit(@Param("id") id: string, @Body() body: ApplyKitRequest): Promise<ApplyKitResult> {
+    return this.tailor.applyKit(id, body ?? {});
   }
 
   // Add a skill (confirmed suggestion or manual search-add); returns the set.

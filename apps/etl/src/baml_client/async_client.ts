@@ -42,6 +42,7 @@ import type * as types from "./types";
 import type {
   CandidateSkills,
   ClassifiedSkill,
+  CoverLetter,
   Currency,
   EmploymentType,
   EngagementType,
@@ -49,6 +50,7 @@ import type {
   ExtractedCandidate,
   ExtractedLocation,
   ExtractedVacancy,
+  InterviewQuestion,
   ResumeContactInfo,
   ResumeEducationItem,
   ResumeExperienceItem,
@@ -60,6 +62,8 @@ import type {
   SkillToClassify,
   Skills,
   StructuredResumeExtract,
+  TailorInputBullet,
+  TailorOutputBullet,
   TailoredBullet,
   WorkFormat,
 } from "./types";
@@ -192,6 +196,79 @@ export class BamlAsyncClient {
         __options__.watchers,
       );
       return __raw__.parsed(false) as types.ClassifiedSkill[];
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  async DraftCoverLetter(
+    candidateName: string,
+    role: string,
+    company: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): Promise<types.CoverLetter> {
+    try {
+      const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) };
+      const __signal__ = __options__.signal;
+
+      if (__signal__?.aborted) {
+        throw new BamlAbortError("Operation was aborted", __signal__.reason);
+      }
+
+      // Check if onTick is provided - route through streaming if so
+      if (__options__.onTick) {
+        const __stream__ = this.stream.DraftCoverLetter(
+          candidateName,
+          role,
+          company,
+          achievements,
+          __baml_options__,
+        );
+
+        return await __stream__.getFinalResponse();
+      }
+
+      const __collector__ = __options__.collector
+        ? Array.isArray(__options__.collector)
+          ? __options__.collector
+          : [__options__.collector]
+        : [];
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __options__.clientRegistry;
+      if (__options__.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__options__.client);
+      }
+
+      const __raw__ = await this.runtime.callFunction(
+        "DraftCoverLetter",
+        {
+          candidateName: candidateName,
+          role: role,
+          company: company,
+          achievements: achievements,
+        },
+        this.ctxManager.cloneContext(),
+        __options__.tb?.__tb(),
+        __clientRegistry__,
+        __collector__,
+        __options__.tags || {},
+        __env__,
+        __signal__,
+        __options__.watchers,
+      );
+      return __raw__.parsed(false) as types.CoverLetter;
     } catch (error) {
       throw toBamlError(error);
     }
@@ -394,6 +471,79 @@ export class BamlAsyncClient {
     }
   }
 
+  async InterviewPrep(
+    role: string,
+    strengths: string,
+    gaps: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): Promise<types.InterviewQuestion[]> {
+    try {
+      const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) };
+      const __signal__ = __options__.signal;
+
+      if (__signal__?.aborted) {
+        throw new BamlAbortError("Operation was aborted", __signal__.reason);
+      }
+
+      // Check if onTick is provided - route through streaming if so
+      if (__options__.onTick) {
+        const __stream__ = this.stream.InterviewPrep(
+          role,
+          strengths,
+          gaps,
+          achievements,
+          __baml_options__,
+        );
+
+        return await __stream__.getFinalResponse();
+      }
+
+      const __collector__ = __options__.collector
+        ? Array.isArray(__options__.collector)
+          ? __options__.collector
+          : [__options__.collector]
+        : [];
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __options__.clientRegistry;
+      if (__options__.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__options__.client);
+      }
+
+      const __raw__ = await this.runtime.callFunction(
+        "InterviewPrep",
+        {
+          role: role,
+          strengths: strengths,
+          gaps: gaps,
+          achievements: achievements,
+        },
+        this.ctxManager.cloneContext(),
+        __options__.tb?.__tb(),
+        __clientRegistry__,
+        __collector__,
+        __options__.tags || {},
+        __env__,
+        __signal__,
+        __options__.watchers,
+      );
+      return __raw__.parsed(false) as types.InterviewQuestion[];
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
   async TailorBullet(
     source: string,
     allowedTech: string,
@@ -459,6 +609,71 @@ export class BamlAsyncClient {
         __options__.watchers,
       );
       return __raw__.parsed(false) as types.TailoredBullet;
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  async TailorResume(
+    bullets: types.TailorInputBullet[],
+    role: string,
+    emphasis: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): Promise<types.TailorOutputBullet[]> {
+    try {
+      const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) };
+      const __signal__ = __options__.signal;
+
+      if (__signal__?.aborted) {
+        throw new BamlAbortError("Operation was aborted", __signal__.reason);
+      }
+
+      // Check if onTick is provided - route through streaming if so
+      if (__options__.onTick) {
+        const __stream__ = this.stream.TailorResume(bullets, role, emphasis, __baml_options__);
+
+        return await __stream__.getFinalResponse();
+      }
+
+      const __collector__ = __options__.collector
+        ? Array.isArray(__options__.collector)
+          ? __options__.collector
+          : [__options__.collector]
+        : [];
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __options__.clientRegistry;
+      if (__options__.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__options__.client);
+      }
+
+      const __raw__ = await this.runtime.callFunction(
+        "TailorResume",
+        {
+          bullets: bullets,
+          role: role,
+          emphasis: emphasis,
+        },
+        this.ctxManager.cloneContext(),
+        __options__.tb?.__tb(),
+        __clientRegistry__,
+        __collector__,
+        __options__.tags || {},
+        __env__,
+        __signal__,
+        __options__.watchers,
+      );
+      return __raw__.parsed(false) as types.TailorOutputBullet[];
     } catch (error) {
       throw toBamlError(error);
     }
@@ -549,6 +764,93 @@ class BamlStreamClient {
         __raw__,
         (a): partial_types.ClassifiedSkill[] => a,
         (a): types.ClassifiedSkill[] => a,
+        this.ctxManager.cloneContext(),
+        __options__.signal,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  DraftCoverLetter(
+    candidateName: string,
+    role: string,
+    company: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): BamlStream<partial_types.CoverLetter, types.CoverLetter> {
+    try {
+      const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) };
+      const __signal__ = __options__.signal;
+
+      if (__signal__?.aborted) {
+        throw new BamlAbortError("Operation was aborted", __signal__.reason);
+      }
+
+      let __collector__ = __options__.collector
+        ? Array.isArray(__options__.collector)
+          ? __options__.collector
+          : [__options__.collector]
+        : [];
+
+      let __onTickWrapper__: (() => void) | undefined;
+
+      // Create collector and wrap onTick if provided
+      if (__options__.onTick) {
+        const __tickCollector__ = new Collector("on-tick-collector");
+        __collector__ = [...__collector__, __tickCollector__];
+
+        __onTickWrapper__ = () => {
+          const __log__ = __tickCollector__.last;
+          if (__log__) {
+            try {
+              __options__.onTick!("Unknown", __log__);
+            } catch (error) {
+              console.error("Error in onTick callback for DraftCoverLetter", error);
+            }
+          }
+        };
+      }
+
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __options__.clientRegistry;
+      if (__options__.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__options__.client);
+      }
+
+      const __raw__ = this.runtime.streamFunction(
+        "DraftCoverLetter",
+        {
+          candidateName: candidateName,
+          role: role,
+          company: company,
+          achievements: achievements,
+        },
+        undefined,
+        this.ctxManager.cloneContext(),
+        __options__.tb?.__tb(),
+        __clientRegistry__,
+        __collector__,
+        __options__.tags || {},
+        __env__,
+        __signal__,
+        __onTickWrapper__,
+      );
+      return new BamlStream<partial_types.CoverLetter, types.CoverLetter>(
+        __raw__,
+        (a): partial_types.CoverLetter => a,
+        (a): types.CoverLetter => a,
         this.ctxManager.cloneContext(),
         __options__.signal,
       );
@@ -808,6 +1110,93 @@ class BamlStreamClient {
     }
   }
 
+  InterviewPrep(
+    role: string,
+    strengths: string,
+    gaps: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): BamlStream<partial_types.InterviewQuestion[], types.InterviewQuestion[]> {
+    try {
+      const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) };
+      const __signal__ = __options__.signal;
+
+      if (__signal__?.aborted) {
+        throw new BamlAbortError("Operation was aborted", __signal__.reason);
+      }
+
+      let __collector__ = __options__.collector
+        ? Array.isArray(__options__.collector)
+          ? __options__.collector
+          : [__options__.collector]
+        : [];
+
+      let __onTickWrapper__: (() => void) | undefined;
+
+      // Create collector and wrap onTick if provided
+      if (__options__.onTick) {
+        const __tickCollector__ = new Collector("on-tick-collector");
+        __collector__ = [...__collector__, __tickCollector__];
+
+        __onTickWrapper__ = () => {
+          const __log__ = __tickCollector__.last;
+          if (__log__) {
+            try {
+              __options__.onTick!("Unknown", __log__);
+            } catch (error) {
+              console.error("Error in onTick callback for InterviewPrep", error);
+            }
+          }
+        };
+      }
+
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __options__.clientRegistry;
+      if (__options__.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__options__.client);
+      }
+
+      const __raw__ = this.runtime.streamFunction(
+        "InterviewPrep",
+        {
+          role: role,
+          strengths: strengths,
+          gaps: gaps,
+          achievements: achievements,
+        },
+        undefined,
+        this.ctxManager.cloneContext(),
+        __options__.tb?.__tb(),
+        __clientRegistry__,
+        __collector__,
+        __options__.tags || {},
+        __env__,
+        __signal__,
+        __onTickWrapper__,
+      );
+      return new BamlStream<partial_types.InterviewQuestion[], types.InterviewQuestion[]>(
+        __raw__,
+        (a): partial_types.InterviewQuestion[] => a,
+        (a): types.InterviewQuestion[] => a,
+        this.ctxManager.cloneContext(),
+        __options__.signal,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
   TailorBullet(
     source: string,
     allowedTech: string,
@@ -885,6 +1274,91 @@ class BamlStreamClient {
         __raw__,
         (a): partial_types.TailoredBullet => a,
         (a): types.TailoredBullet => a,
+        this.ctxManager.cloneContext(),
+        __options__.signal,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  TailorResume(
+    bullets: types.TailorInputBullet[],
+    role: string,
+    emphasis: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): BamlStream<partial_types.TailorOutputBullet[], types.TailorOutputBullet[]> {
+    try {
+      const __options__ = { ...this.bamlOptions, ...(__baml_options__ || {}) };
+      const __signal__ = __options__.signal;
+
+      if (__signal__?.aborted) {
+        throw new BamlAbortError("Operation was aborted", __signal__.reason);
+      }
+
+      let __collector__ = __options__.collector
+        ? Array.isArray(__options__.collector)
+          ? __options__.collector
+          : [__options__.collector]
+        : [];
+
+      let __onTickWrapper__: (() => void) | undefined;
+
+      // Create collector and wrap onTick if provided
+      if (__options__.onTick) {
+        const __tickCollector__ = new Collector("on-tick-collector");
+        __collector__ = [...__collector__, __tickCollector__];
+
+        __onTickWrapper__ = () => {
+          const __log__ = __tickCollector__.last;
+          if (__log__) {
+            try {
+              __options__.onTick!("Unknown", __log__);
+            } catch (error) {
+              console.error("Error in onTick callback for TailorResume", error);
+            }
+          }
+        };
+      }
+
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __options__.clientRegistry;
+      if (__options__.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__options__.client);
+      }
+
+      const __raw__ = this.runtime.streamFunction(
+        "TailorResume",
+        {
+          bullets: bullets,
+          role: role,
+          emphasis: emphasis,
+        },
+        undefined,
+        this.ctxManager.cloneContext(),
+        __options__.tb?.__tb(),
+        __clientRegistry__,
+        __collector__,
+        __options__.tags || {},
+        __env__,
+        __signal__,
+        __onTickWrapper__,
+      );
+      return new BamlStream<partial_types.TailorOutputBullet[], types.TailorOutputBullet[]>(
+        __raw__,
+        (a): partial_types.TailorOutputBullet[] => a,
+        (a): types.TailorOutputBullet[] => a,
         this.ctxManager.cloneContext(),
         __options__.signal,
       );

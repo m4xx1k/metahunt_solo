@@ -25,6 +25,7 @@ import type * as types from "./types";
 import type {
   CandidateSkills,
   ClassifiedSkill,
+  CoverLetter,
   Currency,
   EmploymentType,
   EngagementType,
@@ -32,6 +33,7 @@ import type {
   ExtractedCandidate,
   ExtractedLocation,
   ExtractedVacancy,
+  InterviewQuestion,
   ResumeContactInfo,
   ResumeEducationItem,
   ResumeExperienceItem,
@@ -43,6 +45,8 @@ import type {
   SkillToClassify,
   Skills,
   StructuredResumeExtract,
+  TailorInputBullet,
+  TailorOutputBullet,
   TailoredBullet,
   WorkFormat,
 } from "./types";
@@ -101,6 +105,50 @@ export class HttpRequest {
     }
   }
 
+  DraftCoverLetter(
+    candidateName: string,
+    role: string,
+    company: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "DraftCoverLetter",
+        {
+          candidateName: candidateName,
+          role: role,
+          company: company,
+          achievements: achievements,
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
   ExtractCandidate(
     text: string,
     knownRoles: string,
@@ -220,6 +268,50 @@ export class HttpRequest {
     }
   }
 
+  InterviewPrep(
+    role: string,
+    strengths: string,
+    gaps: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "InterviewPrep",
+        {
+          role: role,
+          strengths: strengths,
+          gaps: gaps,
+          achievements: achievements,
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
   TailorBullet(
     source: string,
     allowedTech: string,
@@ -249,6 +341,48 @@ export class HttpRequest {
         {
           source: source,
           allowedTech: allowedTech,
+          emphasis: emphasis,
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        false,
+        __env__,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  TailorResume(
+    bullets: types.TailorInputBullet[],
+    role: string,
+    emphasis: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "TailorResume",
+        {
+          bullets: bullets,
+          role: role,
           emphasis: emphasis,
         },
         this.ctxManager.cloneContext(),
@@ -307,6 +441,50 @@ export class HttpStreamRequest {
     }
   }
 
+  DraftCoverLetter(
+    candidateName: string,
+    role: string,
+    company: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "DraftCoverLetter",
+        {
+          candidateName: candidateName,
+          role: role,
+          company: company,
+          achievements: achievements,
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
   ExtractCandidate(
     text: string,
     knownRoles: string,
@@ -426,6 +604,50 @@ export class HttpStreamRequest {
     }
   }
 
+  InterviewPrep(
+    role: string,
+    strengths: string,
+    gaps: string,
+    achievements: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "InterviewPrep",
+        {
+          role: role,
+          strengths: strengths,
+          gaps: gaps,
+          achievements: achievements,
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
   TailorBullet(
     source: string,
     allowedTech: string,
@@ -455,6 +677,48 @@ export class HttpStreamRequest {
         {
           source: source,
           allowedTech: allowedTech,
+          emphasis: emphasis,
+        },
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __clientRegistry__,
+        true,
+        __env__,
+      );
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+
+  TailorResume(
+    bullets: types.TailorInputBullet[],
+    role: string,
+    emphasis: string,
+    __baml_options__?: BamlCallOptions<never>,
+  ): HTTPRequest {
+    try {
+      const __rawEnv__ = __baml_options__?.env
+        ? { ...process.env, ...__baml_options__.env }
+        : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [
+          string,
+          string,
+        ][],
+      );
+
+      // Resolve client option to clientRegistry (client takes precedence)
+      let __clientRegistry__ = __baml_options__?.clientRegistry;
+      if (__baml_options__?.client) {
+        __clientRegistry__ = __clientRegistry__ || new ClientRegistry();
+        __clientRegistry__.setPrimary(__baml_options__.client);
+      }
+
+      return this.runtime.buildRequestSync(
+        "TailorResume",
+        {
+          bullets: bullets,
+          role: role,
           emphasis: emphasis,
         },
         this.ctxManager.cloneContext(),

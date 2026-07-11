@@ -23,6 +23,7 @@ import type { Checked, Check } from "./types";
 import type {
   CandidateSkills,
   ClassifiedSkill,
+  CoverLetter,
   Currency,
   EmploymentType,
   EngagementType,
@@ -30,6 +31,7 @@ import type {
   ExtractedCandidate,
   ExtractedLocation,
   ExtractedVacancy,
+  InterviewQuestion,
   ResumeContactInfo,
   ResumeEducationItem,
   ResumeExperienceItem,
@@ -41,6 +43,8 @@ import type {
   SkillToClassify,
   Skills,
   StructuredResumeExtract,
+  TailorInputBullet,
+  TailorOutputBullet,
   TailoredBullet,
   WorkFormat,
 } from "./types";
@@ -70,6 +74,9 @@ export namespace partial_types {
     isCore?: boolean | null;
     generic?: boolean | null;
   }
+  export interface CoverLetter {
+    text?: string | null;
+  }
   export interface ExtractedCandidate {
     role?: string | null;
     seniority?: types.Seniority | null;
@@ -97,6 +104,11 @@ export namespace partial_types {
     companyName?: string | null;
     hasTestAssignment?: boolean | null;
     hasReservation?: boolean | null;
+  }
+  export interface InterviewQuestion {
+    question?: string | null;
+    angle?: string | null;
+    evidence?: string | null;
   }
   export interface ResumeContactInfo {
     location?: string | null;
@@ -151,6 +163,14 @@ export namespace partial_types {
     experience: ResumeExperienceItem[];
     projects: ResumeProjectItem[];
     education: ResumeEducationItem[];
+  }
+  export interface TailorInputBullet {
+    id?: string | null;
+    text?: string | null;
+  }
+  export interface TailorOutputBullet {
+    id?: string | null;
+    text?: string | null;
   }
   export interface TailoredBullet {
     text?: string | null;

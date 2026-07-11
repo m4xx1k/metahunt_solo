@@ -40,6 +40,8 @@ export default class TypeBuilder {
     "nodeId" | "category" | "stack" | "isCore" | "generic"
   >;
 
+  CoverLetter: ClassViewer<"CoverLetter", "text">;
+
   ExtractedCandidate: ClassViewer<
     "ExtractedCandidate",
     "role" | "seniority" | "skills" | "experienceYears" | "englishLevel"
@@ -65,6 +67,8 @@ export default class TypeBuilder {
     | "hasTestAssignment"
     | "hasReservation"
   >;
+
+  InterviewQuestion: ClassViewer<"InterviewQuestion", "question" | "angle" | "evidence">;
 
   ResumeContactInfo: ClassViewer<
     "ResumeContactInfo",
@@ -95,6 +99,10 @@ export default class TypeBuilder {
     "StructuredResumeExtract",
     "name" | "title" | "contacts" | "summary" | "skills" | "experience" | "projects" | "education"
   >;
+
+  TailorInputBullet: ClassViewer<"TailorInputBullet", "id" | "text">;
+
+  TailorOutputBullet: ClassViewer<"TailorOutputBullet", "id" | "text">;
 
   TailoredBullet: ClassViewer<"TailoredBullet", "text">;
 
@@ -132,9 +140,11 @@ export default class TypeBuilder {
       classes: new Set([
         "CandidateSkills",
         "ClassifiedSkill",
+        "CoverLetter",
         "ExtractedCandidate",
         "ExtractedLocation",
         "ExtractedVacancy",
+        "InterviewQuestion",
         "ResumeContactInfo",
         "ResumeEducationItem",
         "ResumeExperienceItem",
@@ -144,6 +154,8 @@ export default class TypeBuilder {
         "SkillToClassify",
         "Skills",
         "StructuredResumeExtract",
+        "TailorInputBullet",
+        "TailorOutputBullet",
         "TailoredBullet",
       ]),
       enums: new Set([
@@ -167,6 +179,8 @@ export default class TypeBuilder {
       "isCore",
       "generic",
     ]);
+
+    this.CoverLetter = this.tb.classViewer("CoverLetter", ["text"]);
 
     this.ExtractedCandidate = this.tb.classViewer("ExtractedCandidate", [
       "role",
@@ -194,6 +208,12 @@ export default class TypeBuilder {
       "companyName",
       "hasTestAssignment",
       "hasReservation",
+    ]);
+
+    this.InterviewQuestion = this.tb.classViewer("InterviewQuestion", [
+      "question",
+      "angle",
+      "evidence",
     ]);
 
     this.ResumeContactInfo = this.tb.classViewer("ResumeContactInfo", [
@@ -245,6 +265,10 @@ export default class TypeBuilder {
       "projects",
       "education",
     ]);
+
+    this.TailorInputBullet = this.tb.classViewer("TailorInputBullet", ["id", "text"]);
+
+    this.TailorOutputBullet = this.tb.classViewer("TailorOutputBullet", ["id", "text"]);
 
     this.TailoredBullet = this.tb.classViewer("TailoredBullet", ["text"]);
 
