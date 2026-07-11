@@ -4,27 +4,34 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { cvApi } from "@/lib/api/cv";
-import { cvTailorApi, type BulletDiff, type TailorResult } from "@/lib/api/cv-tailor";
+import {
+  cvTailorApi,
+  type ApplyKitRequest,
+  type ApplyKitResult,
+  type BulletDiff,
+  type TailorResult,
+} from "@/lib/api/cv-tailor";
 import { Button } from "@/ui/buttons/Button";
 
-import { BulletDiffCard } from "./BulletDiffCard";
+import { CoverLetter, Interview } from "./ApplyKit";
 import { GuardDemoPanel } from "./GuardDemoPanel";
-import { ResumePreview } from "./ResumePreview";
+import { LivingCv } from "./LivingCv";
 import { VacancyPicker } from "./VacancyPicker";
 
 type Cv = { id: string; label: string };
+type Tab = "cv" | "letter" | "interview";
 
 const EXAMPLES: { label: string; text: string }[] = [
   {
-    label: "Backend / infra role",
-    text: "Senior Backend Engineer — Node.js/NestJS microservices on AWS (ECS, SQS, Lambda), Elasticsearch search, PostgreSQL, Terraform, Docker. Own event-driven data pipelines at scale.",
+    label: "Backend / infra",
+    text: "Senior Backend Engineer — Node.js/NestJS microservices on AWS (ECS, SQS, Lambda), Elasticsearch, PostgreSQL, Terraform, Docker. Own event-driven data pipelines at scale.",
   },
   {
-    label: "Frontend role",
+    label: "Frontend",
     text: "Frontend Engineer — React, Next.js, TypeScript, Tailwind CSS, React Query. Build polished product UIs and a shared component library.",
   },
   {
-    label: "AI engineer role",
+    label: "AI engineer",
     text: "AI Engineer — build LLM pipelines on OpenAI/Gemini, RAG and vector search over Elasticsearch, structured outputs and tool calling. TypeScript.",
   },
 ];
@@ -50,6 +57,7 @@ export function TailorWorkbench() {
   const [targetMode, setTargetMode] = useState<"vacancy" | "paste">("vacancy");
   const [selectedVacancy, setSelectedVacancy] = useState<Cv | null>(null);
   const [jobText, setJobText] = useState("");
+  const [aiRewrite, setAiRewrite] = useState(true);
 
   const [result, setResult] = useState<TailorResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -57,7 +65,12 @@ export function TailorWorkbench() {
   const [needsPrepare, setNeedsPrepare] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Resolve the seeded demo CV (skipped when ?cv= pins an explicit candidate).
+  const [tab, setTab] = useState<Tab>("cv");
+  const [kit, setKit] = useState<ApplyKitResult | null>(null);
+  const [kitLoading, setKitLoading] = useState(false);
+  const [kitError, setKitError] = useState<string | null>(null);
+  const [showHow, setShowHow] = useState(false);
+
   useEffect(() => {
     if (cvParam) return;
     let cancelled = false;
@@ -83,12 +96,18 @@ export function TailorWorkbench() {
       : demoCv;
   const candidateId = cv?.id ?? null;
 
-  const resetTailorState = (): void => {
-    setSelectedVacancy(null);
+  const clearOutputs = (): void => {
     setResult(null);
     setNeedsPrepare(false);
     setError(null);
+    setKit(null);
+    setTab("cv");
   };
+
+  const targetBody = useCallback((): ApplyKitRequest | null => {
+    if (targetMode === "vacancy") return selectedVacancy ? { vacancyId: selectedVacancy.id } : null;
+    return jobText.trim() ? { jobText } : null;
+  }, [targetMode, selectedVacancy, jobText]);
 
   const onUpload = async (file: File): Promise<void> => {
     setUploading(true);
@@ -97,7 +116,8 @@ export function TailorWorkbench() {
       const res = await cvApi.uploadFile(file);
       setUploadedCv({ id: res.candidateId, label: file.name });
       setCvMode("upload");
-      resetTailorState();
+      setSelectedVacancy(null);
+      clearOutputs();
     } catch (e) {
       setError(e instanceof Error ? e.message : "upload failed");
     } finally {
@@ -107,20 +127,15 @@ export function TailorWorkbench() {
 
   const runTailor = useCallback(async () => {
     if (!candidateId) return;
-    const body =
-      targetMode === "vacancy"
-        ? selectedVacancy
-          ? { vacancyId: selectedVacancy.id }
-          : null
-        : jobText.trim()
-          ? { jobText }
-          : null;
+    const body = targetBody();
     if (!body) return;
     setBusy(true);
     setError(null);
     setNeedsPrepare(false);
+    setKit(null);
+    setTab("cv");
     try {
-      setResult(await cvTailorApi.tailor(candidateId, body));
+      setResult(await cvTailorApi.tailor(candidateId, { ...body, rephrase: aiRewrite }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "tailoring failed";
       if (/no structured resume/i.test(msg)) setNeedsPrepare(true);
@@ -128,7 +143,7 @@ export function TailorWorkbench() {
     } finally {
       setBusy(false);
     }
-  }, [candidateId, targetMode, selectedVacancy, jobText]);
+  }, [candidateId, targetBody, aiRewrite]);
 
   const prepareAndTailor = useCallback(async () => {
     if (!candidateId) return;
@@ -145,40 +160,72 @@ export function TailorWorkbench() {
     }
   }, [candidateId, runTailor]);
 
+  const fetchKit = useCallback(async () => {
+    if (!candidateId || kit || kitLoading) return;
+    const body = targetBody();
+    if (!body) return;
+    setKitLoading(true);
+    setKitError(null);
+    try {
+      setKit(await cvTailorApi.applyKit(candidateId, body));
+    } catch (e) {
+      setKitError(e instanceof Error ? e.message : "could not build the kit");
+    } finally {
+      setKitLoading(false);
+    }
+  }, [candidateId, kit, kitLoading, targetBody]);
+
+  const openTab = (t: Tab): void => {
+    setTab(t);
+    if (t !== "cv") void fetchKit();
+  };
+
   const canTailor =
     !!candidateId && (targetMode === "vacancy" ? !!selectedVacancy : !!jobText.trim());
   const ledgerTech = result ? ledgerTechOf(result) : [];
 
   return (
-    <div className="flex flex-col gap-10">
-      <Hero />
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col gap-2">
+        <h1 className="font-display text-2xl font-bold text-text-primary md:text-3xl">
+          Tailor your CV — <span className="text-accent">without inventing a word</span>
+        </h1>
+        <p className="max-w-2xl font-body text-sm text-text-secondary">
+          Pick a real job. Your CV gets rewritten to win it — bolder, sharper — but only from what
+          you already proved. A guard checks every line, so nothing drifts.
+        </p>
+      </header>
 
-      {/* 1 · CV source */}
-      <section className="flex flex-col gap-4 border border-border bg-bg-card p-6 shadow-brut-lg">
-        <h2 className="font-display text-lg font-bold text-text-primary">1 · Choose a CV</h2>
-        {cvParam ? (
-          <p className="font-mono text-xs text-text-secondary">Tailoring your linked CV.</p>
-        ) : (
-          <>
-            <Segmented
-              options={[
-                { key: "demo", label: "Demo CV" },
-                { key: "upload", label: "Upload your CV" },
-              ]}
-              value={cvMode}
-              onChange={(k) => {
-                setCvMode(k as "demo" | "upload");
-                resetTailorState();
-              }}
-            />
-            {cvMode === "demo" ? (
-              <p className="font-mono text-2xs text-text-muted">
-                Using the seeded demo: {demoCv?.label ?? "loading…"}
-              </p>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="cursor-pointer border border-border bg-bg-elev px-3 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-secondary transition-colors hover:border-border-strong hover:text-accent">
-                  {uploading ? "uploading…" : "choose a PDF / .txt"}
+      {/* Controls */}
+      <section className="flex flex-col gap-4 border border-border bg-bg-card p-5 shadow-brut">
+        <Row label="CV">
+          {cvParam ? (
+            <span className="font-mono text-xs text-text-secondary">your linked CV</span>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <Segmented
+                options={[
+                  { key: "demo", label: "Demo" },
+                  { key: "upload", label: "Upload" },
+                ]}
+                value={cvMode}
+                onChange={(k) => {
+                  setCvMode(k as "demo" | "upload");
+                  setSelectedVacancy(null);
+                  clearOutputs();
+                }}
+              />
+              {cvMode === "demo" ? (
+                <span className="font-mono text-2xs text-text-muted">
+                  {demoCv?.label ?? "loading…"}
+                </span>
+              ) : (
+                <label className="cursor-pointer font-mono text-2xs uppercase tracking-wider text-text-secondary underline-offset-4 hover:text-accent hover:underline">
+                  {uploading
+                    ? "uploading…"
+                    : uploadedCv
+                      ? `✓ ${uploadedCv.label}`
+                      : "choose PDF / .txt"}
                   <input
                     type="file"
                     accept=".pdf,.txt,text/plain,application/pdf"
@@ -190,88 +237,83 @@ export function TailorWorkbench() {
                     }}
                   />
                 </label>
-                {uploadedCv ? (
-                  <span className="font-mono text-2xs text-success">✓ {uploadedCv.label}</span>
-                ) : null}
+              )}
+            </div>
+          )}
+        </Row>
+
+        <Row label="Job">
+          <div className="flex w-full flex-col gap-3">
+            <Segmented
+              options={[
+                { key: "vacancy", label: "Pick a vacancy" },
+                { key: "paste", label: "Paste JD" },
+              ]}
+              value={targetMode}
+              onChange={(k) => {
+                setTargetMode(k as "vacancy" | "paste");
+                clearOutputs();
+              }}
+            />
+            {targetMode === "vacancy" ? (
+              !candidateId ? (
+                <span className="font-mono text-2xs text-text-muted">choose a CV first</span>
+              ) : (
+                <VacancyPicker
+                  key={candidateId}
+                  candidateId={candidateId}
+                  selectedId={selectedVacancy?.id ?? null}
+                  onSelect={(v) => {
+                    setSelectedVacancy(v);
+                    setResult(null);
+                    setKit(null);
+                    setNeedsPrepare(false);
+                  }}
+                />
+              )
+            ) : (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  value={jobText}
+                  onChange={(e) => setJobText(e.target.value)}
+                  placeholder="Paste a job description…"
+                  rows={3}
+                  className="w-full resize-y border border-border bg-bg px-3 py-2 font-body text-sm text-text-primary placeholder:text-text-muted focus:border-border-strong focus:outline-none"
+                />
+                <div className="flex flex-wrap gap-2">
+                  {EXAMPLES.map((ex) => (
+                    <button
+                      key={ex.label}
+                      type="button"
+                      onClick={() => setJobText(ex.text)}
+                      className="font-mono text-2xs uppercase tracking-wider text-text-muted underline-offset-4 hover:text-accent hover:underline"
+                    >
+                      {ex.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-          </>
-        )}
-      </section>
+          </div>
+        </Row>
 
-      {/* 2 · Target job */}
-      <section className="flex flex-col gap-4 border border-border bg-bg-card p-6 shadow-brut-lg">
-        <h2 className="font-display text-lg font-bold text-text-primary">
-          2 · Choose the target job
-        </h2>
-        <Segmented
-          options={[
-            { key: "vacancy", label: "Pick a real vacancy" },
-            { key: "paste", label: "Paste a description" },
-          ]}
-          value={targetMode}
-          onChange={(k) => {
-            setTargetMode(k as "vacancy" | "paste");
-            setResult(null);
-            setNeedsPrepare(false);
-          }}
-        />
-
-        {targetMode === "vacancy" ? (
-          !candidateId ? (
-            <p className="font-mono text-2xs text-text-muted">Choose a CV first.</p>
-          ) : (
-            <>
-              <VacancyPicker
-                key={candidateId}
-                candidateId={candidateId}
-                selectedId={selectedVacancy?.id ?? null}
-                onSelect={(v) => {
-                  setSelectedVacancy(v);
-                  setResult(null);
-                  setNeedsPrepare(false);
-                }}
-              />
-              {selectedVacancy ? (
-                <p className="font-mono text-2xs text-text-secondary">
-                  target: <span className="text-accent">{selectedVacancy.label}</span>
-                </p>
-              ) : null}
-            </>
-          )
-        ) : (
-          <>
-            <textarea
-              value={jobText}
-              onChange={(e) => setJobText(e.target.value)}
-              placeholder="Paste a job description, or pick an example below…"
-              rows={4}
-              className="w-full resize-y border border-border bg-bg px-4 py-3 font-body text-sm text-text-primary placeholder:text-text-muted focus:border-border-strong focus:outline-none"
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex.label}
-                  type="button"
-                  onClick={() => setJobText(ex.text)}
-                  className="border border-border bg-bg-elev px-3 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-secondary transition-colors hover:border-border-strong hover:text-accent"
-                >
-                  {ex.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4 border-t border-border pt-4">
           <Button onClick={() => void runTailor()} disabled={busy || preparing || !canTailor}>
-            {busy ? "Tailoring…" : "Tailor my CV →"}
+            {busy ? "Tailoring…" : "Tailor →"}
           </Button>
+          <button
+            type="button"
+            onClick={() => setAiRewrite((v) => !v)}
+            className="font-mono text-2xs uppercase tracking-wider text-text-muted hover:text-accent"
+          >
+            AI rewrite:{" "}
+            <span className={aiRewrite ? "text-success" : "text-text-secondary"}>
+              {aiRewrite ? "on" : "off (fast)"}
+            </span>
+          </button>
           {needsPrepare ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-2xs text-text-muted">
-                this CV isn&apos;t prepared for tailoring yet —
-              </span>
+              <span className="font-mono text-2xs text-text-muted">CV not prepared yet —</span>
               <Button
                 variant="secondary"
                 size="sm"
@@ -282,25 +324,105 @@ export function TailorWorkbench() {
               </Button>
             </div>
           ) : null}
+          {error ? <span className="font-mono text-2xs text-danger">{error}</span> : null}
         </div>
-        {error ? <p className="font-mono text-xs text-danger">{error}</p> : null}
       </section>
 
       {result ? (
-        <>
-          <GuaranteeBar result={result} />
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.25fr_.9fr]">
-            <div className="flex flex-col gap-8">
-              <DiffColumn result={result} ledgerTech={ledgerTech} />
-            </div>
-            <div className="lg:sticky lg:top-6 lg:self-start">
-              <ResumePreview result={result} />
-            </div>
+        <div className="flex flex-col gap-5">
+          <ResultHeader result={result} />
+          <div className="flex gap-6 border-b border-border">
+            {(["cv", "letter", "interview"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => openTab(t)}
+                className={`-mb-px border-b-2 pb-2 font-mono text-xs uppercase tracking-wider transition-colors ${
+                  tab === t
+                    ? "border-accent text-accent"
+                    : "border-transparent text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {t === "cv" ? "CV" : t === "letter" ? "Cover letter" : "Interview"}
+              </button>
+            ))}
           </div>
-        </>
+
+          {tab === "cv" ? <LivingCv result={result} ledgerTech={ledgerTech} /> : null}
+          {tab === "letter" ? (
+            <CoverLetter data={kit} loading={kitLoading} error={kitError} />
+          ) : null}
+          {tab === "interview" ? (
+            <Interview data={kit} loading={kitLoading} error={kitError} />
+          ) : null}
+        </div>
       ) : null}
 
-      <GuardDemoPanel />
+      <div className="border-t border-border pt-4">
+        <button
+          type="button"
+          onClick={() => setShowHow((v) => !v)}
+          className="font-mono text-2xs uppercase tracking-wider text-text-muted underline-offset-4 hover:text-accent hover:underline"
+        >
+          {showHow ? "hide" : "how does it never lie? →"}
+        </button>
+        {showHow ? (
+          <div className="mt-4">
+            <GuardDemoPanel />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ResultHeader({ result }: { result: TailorResult }) {
+  const g = result.grounding;
+  const gap = result.gap;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="font-display text-lg font-bold text-text-primary">
+          {result.resume.name} <span className="font-normal text-text-muted">— tailored for</span>{" "}
+          <span className="text-accent">{result.target.label}</span>
+        </p>
+        <p className="font-mono text-2xs uppercase tracking-wider">
+          <span className="text-success">✓ 0 invented facts</span>
+          {g.rephrased > 0 ? (
+            <span className="text-text-muted"> · {g.rephrased} reworded</span>
+          ) : null}
+          {g.drift > 0 ? <span className="text-danger"> · {g.drift} blocked</span> : null}
+        </p>
+      </div>
+      {gap ? (
+        <p className="font-mono text-2xs text-text-secondary">
+          <span className="text-accent-secondary">{gap.fitPercent}% fit</span>
+          {gap.missing.length > 0 ? (
+            <span className="text-text-muted">
+              {" "}
+              · missing {gap.missing.map((m) => m.name).join(", ")}
+            </span>
+          ) : null}
+          {gap.learnNext.length > 0 ? (
+            <span className="text-text-muted">
+              {" "}
+              · learn <span className="text-accent">{gap.learnNext[0].skill}</span> → +
+              {gap.learnNext[0].addedRoles} roles
+            </span>
+          ) : null}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+      <span className="w-10 shrink-0 pt-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
+        {label}
+      </span>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
@@ -321,7 +443,7 @@ function Segmented({
           key={o.key}
           type="button"
           onClick={() => onChange(o.key)}
-          className={`px-4 py-2 font-mono text-2xs uppercase tracking-wider transition-colors ${
+          className={`px-3 py-1.5 font-mono text-2xs uppercase tracking-wider transition-colors ${
             value === o.key
               ? "bg-accent text-bg"
               : "bg-bg-elev text-text-secondary hover:text-accent"
@@ -330,151 +452,6 @@ function Segmented({
           {o.label}
         </button>
       ))}
-    </div>
-  );
-}
-
-function Hero() {
-  return (
-    <header className="flex flex-col gap-4 border-b border-border pb-8">
-      <span className="w-fit bg-accent px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-bg">
-        experiment · fact-locked
-      </span>
-      <h1 className="max-w-3xl font-display text-3xl font-bold leading-tight text-text-primary md:text-4xl">
-        Tailor your CV to any job — <span className="text-accent">without inventing a word.</span>
-      </h1>
-      <p className="max-w-2xl font-body text-sm leading-relaxed text-text-secondary">
-        Every other tool free-writes your resume and quietly invents employers, numbers, and tech
-        you never touched. This one only <strong className="text-text-primary">selects</strong>,{" "}
-        <strong className="text-text-primary">reorders</strong>, and{" "}
-        <strong className="text-text-primary">rewords</strong> what your CV already proves — then
-        checks every line so nothing drifts. You see the exact diff before anything is final.
-      </p>
-    </header>
-  );
-}
-
-function GuaranteeBar({ result }: { result: TailorResult }) {
-  const g = result.grounding;
-  const stats = [
-    { n: g.inventedFacts, label: "invented facts", tone: "text-success" },
-    { n: g.shown, label: "bullets shown", tone: "text-text-primary" },
-    { n: g.verbatim, label: "kept verbatim", tone: "text-text-primary" },
-    { n: g.rephrased, label: "reworded + verified", tone: "text-accent-secondary" },
-    { n: g.drift, label: "rewrites the guard blocked", tone: "text-danger" },
-  ];
-  return (
-    <section className="flex flex-col gap-4 border border-success bg-bg-card p-6 shadow-brut-lg">
-      <div className="flex items-center gap-3">
-        <span className="font-display text-2xl text-success">✓</span>
-        <p className="font-display text-base font-bold text-text-primary">
-          0 invented facts. Every line below traces to your CV — tailored for{" "}
-          <span className="text-accent">{result.target.label}</span>.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-x-8 gap-y-3">
-        {stats.map((s) => (
-          <div key={s.label} className="flex items-baseline gap-2">
-            <span className={`font-mono text-xl font-bold ${s.tone}`}>{s.n}</span>
-            <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-      {result.target.matchedSkills.length > 0 ? (
-        <p className="font-mono text-2xs text-text-secondary">
-          matched skills foregrounded: {result.target.matchedSkills.join(" · ")}
-        </p>
-      ) : null}
-    </section>
-  );
-}
-
-function DiffColumn({ result, ledgerTech }: { result: TailorResult; ledgerTech: string[] }) {
-  return (
-    <>
-      <div className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-bold text-text-primary">
-          <span className="text-accent">3 · </span>Every change, shown as a diff
-        </h2>
-        <p className="font-body text-xs text-text-muted">
-          Bullets are re-ranked for this role; less relevant ones are dropped (restore them below
-          each role). Edit any line — the guard re-checks it live.
-        </p>
-      </div>
-
-      <BulletGroup heading="Summary">
-        <BulletDiffCard bullet={result.resume.summary} ledgerTech={ledgerTech} />
-      </BulletGroup>
-
-      {result.resume.experience.map((exp) => (
-        <BulletGroup key={exp.id} heading={`${exp.role} — ${exp.org}`} sub={exp.dates}>
-          {exp.bullets.map((b) => (
-            <BulletDiffCard key={b.sourceBulletId} bullet={b} ledgerTech={ledgerTech} />
-          ))}
-          <DroppedList dropped={exp.dropped} />
-        </BulletGroup>
-      ))}
-
-      {result.resume.projects.map((proj) => (
-        <BulletGroup key={proj.id} heading={proj.name} sub={proj.meta}>
-          {proj.bullets.map((b) => (
-            <BulletDiffCard key={b.sourceBulletId} bullet={b} ledgerTech={ledgerTech} />
-          ))}
-          <DroppedList dropped={proj.dropped} />
-        </BulletGroup>
-      ))}
-    </>
-  );
-}
-
-function BulletGroup({
-  heading,
-  sub,
-  children,
-}: {
-  heading: string;
-  sub?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-2 border-b border-border pb-1">
-        <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-          {heading}
-        </h3>
-        {sub ? <span className="font-mono text-2xs text-text-muted">{sub}</span> : null}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function DroppedList({ dropped }: { dropped: BulletDiff[] }) {
-  const [open, setOpen] = useState(false);
-  if (dropped.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-fit font-mono text-2xs uppercase tracking-wider text-text-muted underline-offset-4 hover:text-accent hover:underline"
-      >
-        {open
-          ? "hide"
-          : `${dropped.length} less-relevant bullet${dropped.length > 1 ? "s" : ""} dropped — show`}
-      </button>
-      {open
-        ? dropped.map((b) => (
-            <p
-              key={b.sourceBulletId}
-              className="border-l-2 border-border pl-3 font-body text-xs leading-relaxed text-text-muted line-through decoration-text-muted/40"
-            >
-              {b.sourceText}
-            </p>
-          ))
-        : null}
     </div>
   );
 }

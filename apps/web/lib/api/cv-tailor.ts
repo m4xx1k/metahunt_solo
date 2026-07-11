@@ -110,11 +110,18 @@ export interface TailorTarget {
   allSkills: string[];
 }
 
+export interface TailorGap {
+  fitPercent: number;
+  missing: { name: string; weight: number }[];
+  learnNext: { skill: string; addedRoles: number }[];
+}
+
 export interface TailorResult {
   candidateId: string;
   target: TailorTarget;
   rephrase: boolean;
   grounding: GroundingSummary;
+  gap: TailorGap | null;
   resume: TailoredResume;
 }
 
@@ -122,6 +129,28 @@ export interface TailorRequest {
   vacancyId?: string;
   jobText?: string;
   rephrase?: boolean;
+}
+
+export interface CoverLetterDraft {
+  text: string;
+  flags: DriftFlag[];
+}
+
+export interface InterviewItem {
+  question: string;
+  angle: string;
+  evidence: string;
+}
+
+export interface ApplyKitResult {
+  target: TailorTarget;
+  coverLetter: CoverLetterDraft;
+  interview: InterviewItem[];
+}
+
+export interface ApplyKitRequest {
+  vacancyId?: string;
+  jobText?: string;
 }
 
 export interface VerifyBulletRequest {
@@ -150,6 +179,10 @@ export const cvTailorApi = {
   // uploaded/selected CV becomes tailorable.
   structure: (candidateId: string, force = false) =>
     apiPost<{ hasStructured: boolean }>(`/cv/${candidateId}/structure`, { force }),
+
+  // Grounded cover letter + interview prep for the target job (LLM).
+  applyKit: (candidateId: string, body: ApplyKitRequest) =>
+    apiPost<ApplyKitResult>(`/cv/${candidateId}/apply-kit`, body),
 
   // Live subset-guard re-check of a manual edit (deterministic, no LLM).
   verify: (body: VerifyBulletRequest) => apiPost<GuardResult>(`/cv/tailor/verify`, body),
