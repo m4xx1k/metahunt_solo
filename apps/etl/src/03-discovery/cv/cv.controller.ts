@@ -46,6 +46,14 @@ import { RecommendationService } from "../ranking/recommendation.service";
 import { AdditionalSkillsService } from "./additional-skills.service";
 import { CandidateLoaderService } from "./candidate-loader.service";
 import type {
+  GuardDemoCase,
+  GuardResult,
+  TailorRequest,
+  TailorResult,
+  VerifyBulletRequest,
+} from "./cv-tailor.contract";
+import { CvTailorService } from "./cv-tailor.service";
+import type {
   CandidateNodeRef,
   CandidateView,
   CvIngestResult,
@@ -69,6 +77,7 @@ export class CvController {
     private readonly ranking: RankingService,
     private readonly recommendation: RecommendationService,
     private readonly additionalSkills: AdditionalSkillsService,
+    private readonly tailor: CvTailorService,
     private readonly slugs: NodeSlugResolver,
   ) {}
 
@@ -96,6 +105,20 @@ export class CvController {
   @Get("samples")
   samples(): Promise<SampleCandidate[]> {
     return this.loader.listSamples();
+  }
+
+  // Live subset-guard re-check of a manual bullet edit (deterministic, no LLM).
+  // Literal path declared before `:id` so it wins over the param route.
+  @Post("tailor/verify")
+  verifyBullet(@Body() body: VerifyBulletRequest): GuardResult {
+    return this.tailor.verify(body);
+  }
+
+  // Canned before→after cases run through the real Tier-1 guard — powers the
+  // "how the guard works" panel with genuine verdicts, no LLM.
+  @Get("tailor/guard-demo")
+  guardDemo(): GuardDemoCase[] {
+    return this.tailor.guardDemo();
   }
 
   @Get(":id")
@@ -162,6 +185,15 @@ export class CvController {
   @Get(":id/skill-suggestions")
   skillSuggestions(@Param("id") id: string): Promise<SkillSuggestion[]> {
     return this.additionalSkills.suggest(id);
+  }
+
+  // Tailor the candidate's structured resume to a target vacancy / pasted JD:
+  // SELECT/REORDER (always) + optional gated LLM rephrase, each bullet checked
+  // by the subset guard. Throttled — the gated path can hit the LLM.
+  @Post(":id/tailor")
+  @Throttle(CV_THROTTLE)
+  tailorCv(@Param("id") id: string, @Body() body: TailorRequest): Promise<TailorResult> {
+    return this.tailor.tailor(id, body ?? {});
   }
 
   // Add a skill (confirmed suggestion or manual search-add); returns the set.
