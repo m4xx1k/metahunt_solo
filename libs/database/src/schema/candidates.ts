@@ -38,6 +38,11 @@ export const candidates = pgTable(
     seniority: seniority("seniority"),
     englishLevel: englishLevel("english_level"),
     experienceYears: integer("experience_years"),
+    // Optional full structured resume (ExtractedResume: fact atoms + provenance)
+    // for CV tailoring — see md/journal/migrations/cv-cover-letter.md (ADR-0011).
+    // Nullable by design: only tailoring-enabled candidates carry it, and the
+    // whole feature reverts by dropping this column (no rewrite of existing rows).
+    structured: jsonb("structured").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique("candidates_content_hash_key").on(t.contentHash)],

@@ -12,6 +12,7 @@ export * from "./node-stats";
 export * from "./node-tech-meta";
 export * from "./node-skill-cooc";
 export * from "./candidates";
+export * from "./cv-variants";
 export * from "./unique-vacancies";
 export * from "./users";
 export * from "./auth-identities";
