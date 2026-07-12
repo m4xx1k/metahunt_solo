@@ -233,6 +233,41 @@ zero spend; the LLM draft is a later phase.
   most of §8 v2 + v3 (cover letters).
   - **Still deferred:** Tier-2 semantic-inflation LLM check; Typst PDF export; free/paid gating +
     auto-tailored subscription digest.
+- 2026-07-12 (increment 4 — "3 match levels + honesty disclosure + real PDF + local login") — on
+  `feat/cv-cover-letter`, PR #78. Builds green (etl + web), full ETL suite + 2 new specs pass, lint
+  clean; **not merged**. Still a prototype — everything below runs locally.
+  - **Match levels** (replaces the binary AI-rewrite toggle). `TailorRequest.level =
+    light|medium|hard`; `TailorResult.level` echoes it. In `cv-tailor.service.ts`: `light` forces the
+    LLM off (pure SELECT/REORDER, every word the candidate's); `medium` is the guard-locked bold
+    rewrite; `hard` = medium **plus** the vacancy's must-have skills the CV lacks, injected as a
+    distinct `SkillGroup{added:true}` (from `gap.missing`) — never merged into the real skills, so the
+    "0 invented facts" guard invariant on *bullets* still holds. UI: `Segmented` Light/Medium/Hard +
+    a one-line hint per level in `TailorWorkbench.tsx`.
+  - **Honesty disclosure** — `TailorResult.disclosure[]` (`buildDisclosure`, pure + unit-tested in
+    `cv-tailor.disclosure.spec.ts`): one plain sentence per deviation vs the original; `added-skill`
+    lines are `verify:true`. Rendered as a strip above the tabs (`DisclosureStrip` in
+    `TailorWorkbench.tsx`) — "keep the ! lines only if they're true; you own the result" — plus a
+    `not in your CV` treatment on the added group in `LivingCv.tsx` and the PDF. This is the
+    responsibility-transfer the founder asked for (say what we added, let the user reject/keep/fix).
+  - **PDF export** — new client route `app/cv-tailor/print/page.tsx`. The workbench stashes the
+    current `TailorResult` in `localStorage` (`metahunt.cv-print`) and opens the route, which renders
+    a clean print-safe resume (`ResumeDoc`, inline styles, `useSyncExternalStore` for the read) and
+    auto-opens Save-as-PDF. **Zero PDF deps** (browser print) — 3 CSS variants
+    (Classic/Modern/Compact). Download **tailored** or the **untouched original** (verbatim
+    `sourceText`, added groups hidden). Supersedes the deferred Typst plan.
+  - **Local login without a domain** (commit `feat(auth)`): env-gated `POST /auth/dev-login` mints the
+    same JWT with no Telegram widget (`DEV_LOGIN_ENABLED`, forced off in prod by env validation), +
+    a dev-build-only header button (`dev-login-button.tsx`). Fixes the "tunnel domain changes every
+    run" pain; `md/runbook/telegram-auth.md` documents ngrok reserved domain / cloudflared named
+    tunnel for testing the *real* widget, and why mkcert alone can't satisfy BotFather.
+  - **To use:** `pnpm docker:infra` (DB already on 54323) → run etl + web (`pnpm dev`, or
+    `pnpm docker:dev`) → `/cv-tailor` → pick a CV + vacancy → choose **Light/Medium/Hard** → Tailor →
+    read the disclosure strip → **Download PDF** (tailored or original). Local login: set
+    `DEV_LOGIN_ENABLED=1` (+ `DEV_LOGIN_TELEGRAM_ID` or `ADMIN_TELEGRAM_IDS`) in root `.env`, click
+    **dev login**. Medium/Hard call DeepSeek (need `DEEPSEEK_API_KEY`); Light is free/instant.
+  - **Still deferred:** LLM-generated stretch *bullets* for hard (only skills are added today);
+    Tier-2 semantic-inflation check; persisting variants to `cv_variants` for a saved per-resume diff
+    list; free/paid gating + auto-tailored digest.
 
 ## Links
 - Founder groundwork: `~/solo/cv/{e/data/resume.yaml, e/cv-onepage.typ, l3/{backend-v1,fullstack-v1}/resume.yaml, l3/research/, l3/history/}`.
