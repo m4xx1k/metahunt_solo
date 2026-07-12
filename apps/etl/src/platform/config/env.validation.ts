@@ -150,6 +150,16 @@ export function validateEnv(config: RawEnv): RawEnv {
   // CSV of Telegram user ids granted the 'admin' role at login. Empty = no admins.
   const adminTelegramIds = asString(config.ADMIN_TELEGRAM_IDS) ?? "";
 
+  // Dev-only login bypass. When "1" (and never in production), POST /auth/dev-login
+  // mints a session JWT without a Telegram widget hash, so the app is usable on
+  // plain http://localhost with no tunnel / BotFather domain. The production gate
+  // is folded into the value here so the service only has to check for "1".
+  // DEV_LOGIN_TELEGRAM_ID picks which id to log in as (falls back to the first
+  // ADMIN_TELEGRAM_IDS entry, so a solo dev is auto-admin).
+  const devLoginEnabled =
+    (asString(config.DEV_LOGIN_ENABLED) ?? "") === "1" && nodeEnv !== "production";
+  const devLoginTelegramId = asString(config.DEV_LOGIN_TELEGRAM_ID) ?? "";
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -175,5 +185,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     POSTHOG_HOST: posthogHost,
     JWT_SECRET: jwtSecret,
     ADMIN_TELEGRAM_IDS: adminTelegramIds,
+    DEV_LOGIN_ENABLED: devLoginEnabled ? "1" : "",
+    DEV_LOGIN_TELEGRAM_ID: devLoginTelegramId,
   };
 }

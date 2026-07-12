@@ -74,6 +74,30 @@ export class AuthService {
     return { token, user: { id: userId, telegramId, username, firstName, roles } };
   }
 
+  // Dev-only login: mint a session for a configured telegram id WITHOUT verifying
+  // a Telegram widget hash, so the app works on plain http://localhost (no tunnel,
+  // no BotFather domain). Gated by DEV_LOGIN_ENABLED, which env validation forces
+  // off in production. Reuses the exact same upsert/claim/sign path as the real
+  // login, so the resulting token is indistinguishable downstream.
+  async loginDev(candidateIds: string[] = []): Promise<TelegramLoginResponse> {
+    if ((this.config.get<string>("DEV_LOGIN_ENABLED") ?? "") !== "1") {
+      throw new UnauthorizedException("dev login is disabled");
+    }
+    const configured = this.config.get<string>("DEV_LOGIN_TELEGRAM_ID") ?? "";
+    const telegramId = configured.length > 0 ? configured : ([...this.adminIds][0] ?? "0");
+    const roles = this.adminIds.has(telegramId) ? ["user", "admin"] : ["user"];
+
+    const userId = await this.upsertUser(telegramId, "devuser", "Dev", roles);
+    await this.claim(userId, telegramId, candidateIds);
+
+    const token = this.jwt.sign({ sub: userId, tid: telegramId, roles } satisfies JwtPayload);
+    this.logger.warn(`DEV login tg:${telegramId} -> user ${userId} roles=[${roles.join(",")}]`);
+    return {
+      token,
+      user: { id: userId, telegramId, username: "devuser", firstName: "Dev", roles },
+    };
+  }
+
   async getMe(userId: string): Promise<AuthUser | null> {
     const [row] = await this.db
       .select({

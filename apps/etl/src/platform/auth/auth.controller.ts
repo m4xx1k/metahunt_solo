@@ -35,6 +35,17 @@ export class AuthController {
     return this.auth.loginTelegram(tg, candidateIds);
   }
 
+  // Dev-only convenience login (no Telegram widget). The service enforces the
+  // DEV_LOGIN_ENABLED gate (off in production) and returns 401 when disabled.
+  // See md/runbook/telegram-login-local.md.
+  @Post("dev-login")
+  async devLogin(@Body() body: { candidateIds?: string[] }): Promise<TelegramLoginResponse> {
+    const candidateIds = Array.isArray(body?.candidateIds)
+      ? body.candidateIds.filter((v): v is string => typeof v === "string")
+      : [];
+    return this.auth.loginDev(candidateIds);
+  }
+
   @Get("me")
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() user: JwtUser): Promise<AuthUser> {

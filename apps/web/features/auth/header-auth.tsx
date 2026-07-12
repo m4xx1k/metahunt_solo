@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { DevLoginButton } from "./dev-login-button";
 import { TelegramLoginButton } from "./telegram-login-button";
 import { useSession } from "./use-session";
 
@@ -25,5 +26,10 @@ export function HeaderAuth() {
     );
   }
 
-  return <TelegramLoginButton />;
+  return (
+    <div className="flex items-center gap-2">
+      <TelegramLoginButton />
+      <DevLoginButton />
+    </div>
+  );
 }

@@ -31,6 +31,10 @@ export const authApi = {
   // candidateIds: anonymous CVs from localStorage to claim onto the new session.
   loginTelegram: (telegram: TelegramAuthPayload, candidateIds: string[]) =>
     apiPost<TelegramLoginResponse>("/auth/telegram", { telegram, candidateIds }),
+  // Dev-only: log in on localhost without the Telegram widget (backend gated by
+  // DEV_LOGIN_ENABLED). Same response shape as loginTelegram.
+  loginDev: (candidateIds: string[]) =>
+    apiPost<TelegramLoginResponse>("/auth/dev-login", { candidateIds }),
   me: () => apiGet<AuthUser>("/auth/me"),
   logout: () => apiPost<{ ok: true }>("/auth/logout", {}),
 };

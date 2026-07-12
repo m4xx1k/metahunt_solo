@@ -21,6 +21,9 @@ the menu only converts value at the moment a user wants to save/subscribe.
      random string. Non-prod falls back to an insecure default so local/CI boot.
    - `ADMIN_TELEGRAM_IDS` — comma-separated Telegram **user ids** granted `admin`
      at login (e.g. your own id). Empty = no admins.
+   - `DEV_LOGIN_ENABLED` / `DEV_LOGIN_TELEGRAM_ID` — **local only** shortcut login
+     (no widget/tunnel); see "Local dev" below. Env validation forces it off in
+     production.
 3. **Web env** (`@metahunt/web`, Vercel + `apps/web/.env.local`):
    - `NEXT_PUBLIC_TELEGRAM_BOT_ID` — the bot's **numeric** id (the part before `:`
      in `TELEGRAM_BOT_TOKEN`). `Telegram.Login.auth` keys on the id, not @username.
@@ -28,17 +31,56 @@ the menu only converts value at the moment a user wants to save/subscribe.
    `users.roles`, `subscriptions.user_id` and makes `users.email` nullable. Applied
    by the Railway pre-deploy migrate step (`libs/database/migrate.ts`).
 
-## Local dev gotcha (important)
+## Local dev — three ways to log in
 
 `Telegram.Login.auth` checks the request origin against the `/setdomain` value, so
-**it will not work on `http://localhost`.** Options:
+the real widget **will not work on `http://localhost`.** In order of convenience:
 
-- **Tunnel:** run a tunnel (cloudflared/ngrok) to your local web dev port and set
-  that tunnel URL as the login domain — easiest with a **separate dev bot** so you
-  don't repoint the production bot's domain.
-- **Curl the API directly:** the login endpoint is independently testable — sign a
-  payload with the dev bot token and `POST /auth/telegram` (see Verify below). No
-  browser/domain needed for the backend half.
+### 1. Dev-login bypass (no tunnel, no domain) — default for local work
+
+A localhost-only shortcut mints the **same** session JWT without the widget. In the
+root `.env`:
+
+```
+DEV_LOGIN_ENABLED=1
+DEV_LOGIN_TELEGRAM_ID=<your telegram user id>   # optional; falls back to the
+                                                # first ADMIN_TELEGRAM_IDS entry
+```
+
+A **`dev login`** button then appears in the header (only on `localhost` /
+`127.0.0.1`) next to the Telegram button. It calls `POST /auth/dev-login`, which is
+refused (`401`) unless `DEV_LOGIN_ENABLED=1` **and** `NODE_ENV != production` — env
+validation folds the production gate into the value, so it can never be on in prod.
+Put your own id in `ADMIN_TELEGRAM_IDS` too and the dev login is auto-admin. This
+needs no cloudflared/ngrok at all — the fastest path for day-to-day work.
+
+### 2. Stable public domain (only to test the *real* widget)
+
+The pain with a cloudflared **quick** tunnel is the hostname is **random each run**,
+so you'd re-do BotFather `/setdomain` every time. Two stable fixes:
+
+- **ngrok reserved domain (recommended).** ngrok gives every free account **one
+  permanent static domain** (`your-name.ngrok-free.app`) that survives restarts —
+  set BotFather `/setdomain` to it **once, forever**. One-time: free ngrok account →
+  `ngrok config add-authtoken <token>` → claim the domain in the dashboard. Then
+  `NGROK_DOMAIN=your-name.ngrok-free.app pnpm dev:tunnel:ngrok`.
+- **cloudflared named tunnel (no new tool — cloudflared is already installed).**
+  Stable hostname bound to a subdomain you own on Cloudflare: `cloudflared tunnel
+  login` → `cloudflared tunnel create metahunt-dev` → `cloudflared tunnel route dns
+  metahunt-dev dev.<your-domain>` → run it. Requires the domain's nameservers on
+  Cloudflare.
+
+> **Not mkcert / a local cert.** A self-signed cert gives HTTPS but not a *domain
+> string* BotFather accepts, and on WSL2 the Windows browser won't trust a CA added
+> to the WSL Linux store. A cert alone can't satisfy the widget's origin check. Use
+> a separate **dev bot** for whichever domain you pick so you never repoint the
+> production bot. `pnpm dev:tunnel` starts a throwaway random cloudflared tunnel if
+> you just need any HTTPS origin once.
+
+### 3. Curl the API directly
+
+The login endpoint is independently testable — sign a payload with the dev bot
+token and `POST /auth/telegram` (see Verify below). No browser/domain needed.
 
 ## Roles / admin
 
