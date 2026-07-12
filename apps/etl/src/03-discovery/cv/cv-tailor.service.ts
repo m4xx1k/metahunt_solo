@@ -511,7 +511,8 @@ function reorderSkills(groups: SkillGroup[], byName: Map<string, number>): Skill
 
 // The honesty strip: one plain sentence per deviation from the literal original.
 // added-skill lines are verify:true — they assert something not in the CV.
-function buildDisclosure(input: {
+// Exported for unit testing (the verify-flag mapping must never silently flip).
+export function buildDisclosure(input: {
   rephrased: number;
   dropped: number;
   reordered: boolean;
