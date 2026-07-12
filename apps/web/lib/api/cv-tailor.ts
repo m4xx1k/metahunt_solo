@@ -66,6 +66,7 @@ export interface TailoredProject {
 export interface SkillGroup {
   group: string;
   items: string[];
+  added?: boolean; // hard-level: injected because the vacancy requires it (absent from the CV)
 }
 
 export interface ResumeContacts {
@@ -116,12 +117,25 @@ export interface TailorGap {
   learnNext: { skill: string; addedRoles: number }[];
 }
 
+export type MatchLevel = "light" | "medium" | "hard";
+
+export type DisclosureKind = "reworded" | "dropped" | "reordered" | "added-skill";
+
+// One plain-language line for the "what we changed vs your original" strip.
+export interface Disclosure {
+  kind: DisclosureKind;
+  text: string;
+  verify: boolean; // true → the change asserts something not in the CV
+}
+
 export interface TailorResult {
   candidateId: string;
   target: TailorTarget;
+  level: MatchLevel;
   rephrase: boolean;
   grounding: GroundingSummary;
   gap: TailorGap | null;
+  disclosure: Disclosure[];
   resume: TailoredResume;
 }
 
@@ -129,6 +143,7 @@ export interface TailorRequest {
   vacancyId?: string;
   jobText?: string;
   rephrase?: boolean;
+  level?: MatchLevel;
 }
 
 export interface CoverLetterDraft {

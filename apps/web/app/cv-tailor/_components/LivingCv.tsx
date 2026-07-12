@@ -40,12 +40,25 @@ export function LivingCv({ result, ledgerTech }: { result: TailorResult; ledgerT
 
       <Section label="Skills">
         <div className="flex flex-col gap-1">
-          {r.skills.map((g) => (
-            <p key={g.group} className="font-body text-xs leading-relaxed text-text-secondary">
-              <span className="font-semibold text-text-primary">{g.group}</span> —{" "}
-              {g.items.join(" · ")}
-            </p>
-          ))}
+          {r.skills.map((g) =>
+            g.added ? (
+              <p
+                key={g.group}
+                className="border-l-2 border-danger bg-accent-subtle-bg py-1 pl-2 font-body text-xs leading-relaxed text-text-secondary"
+              >
+                <span className="font-semibold text-danger">{g.group}</span>
+                <span className="ml-1 font-mono text-[0.6rem] uppercase tracking-wider text-danger">
+                  not in your CV
+                </span>{" "}
+                — {g.items.join(" · ")}
+              </p>
+            ) : (
+              <p key={g.group} className="font-body text-xs leading-relaxed text-text-secondary">
+                <span className="font-semibold text-text-primary">{g.group}</span> —{" "}
+                {g.items.join(" · ")}
+              </p>
+            ),
+          )}
         </div>
       </Section>
 

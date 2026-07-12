@@ -25,6 +25,7 @@ export interface FactAtom {
 export interface SkillGroup {
   group: string;
   items: string[]; // each item ⊆ the fact ledger's allowedTech
+  added?: boolean; // hard-level: injected because the vacancy requires it (absent from the CV)
 }
 
 export interface ExperienceEntry {
@@ -178,12 +179,33 @@ export interface TailorGap {
   learnNext: { skill: string; addedRoles: number }[]; // learn X → +N live roles
 }
 
+// How aggressively the CV is bent toward the vacancy. Each step deviates more
+// from the literal original — and every deviation is disclosed (see Disclosure):
+//   light  — reorder + trim only; every word stays yours (no LLM).
+//   medium — + a bold impact rewrite, guard-locked so no fact is invented.
+//   hard   — + adds the vacancy's must-have skills you're missing, flagged for
+//            you to verify. Maximum match, maximum responsibility on you.
+export type MatchLevel = "light" | "medium" | "hard";
+
+export type DisclosureKind = "reworded" | "dropped" | "reordered" | "added-skill";
+
+// One plain-language line for the "what we changed vs your original" strip. When
+// verify=true the change asserts something not in the CV, so the user must
+// confirm it's true before sending.
+export interface Disclosure {
+  kind: DisclosureKind;
+  text: string;
+  verify: boolean; // true → "keep only if you actually have this"
+}
+
 export interface TailorResult {
   candidateId: string;
   target: TailorTarget;
+  level: MatchLevel;
   rephrase: boolean; // was the bold LLM rewrite applied?
   grounding: GroundingSummary;
   gap: TailorGap | null; // present when tailored against a target with skills
+  disclosure: Disclosure[]; // what changed vs the original — drives the honesty strip
   resume: TailoredResume;
 }
 
@@ -219,6 +241,7 @@ export interface TailorRequest {
   vacancyId?: string; // rank against a stored vacancy…
   jobText?: string; // …or a pasted job description
   rephrase?: boolean; // opt-in LLM rephrase (gated; default false)
+  level?: MatchLevel; // how hard to bend toward the vacancy (default "medium")
 }
 
 // POST /cv/tailor/verify — live re-check of a user edit (no LLM).

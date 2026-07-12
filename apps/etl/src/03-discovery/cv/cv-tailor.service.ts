@@ -22,6 +22,7 @@ import type {
   ApplyKitResult,
   BulletDiff,
   CoverLetterDraft,
+  Disclosure,
   DriftFlag,
   EntitySet,
   ExtractedResume,
@@ -31,6 +32,7 @@ import type {
   GuardDemoCase,
   GuardResult,
   InterviewItem,
+  MatchLevel,
   SkillGroup,
   TailorGap,
   TailorRequest,
@@ -72,7 +74,10 @@ export class CvTailorService {
     const { skills: targetSkills, label, vacancyId } = await this.resolveTarget(req);
     const byName = new Map(targetSkills.map((s) => [s.name.toLowerCase(), s.weight]));
     const ledger = buildLedger(resume);
-    const rephraseOn = req.rephrase !== false && this.rephraser != null;
+    // Light never calls the LLM (every word stays the candidate's); medium/hard
+    // rephrase unless the caller opts out or no provider is bound.
+    const level: MatchLevel = req.level ?? "medium";
+    const rephraseOn = level !== "light" && req.rephrase !== false && this.rephraser != null;
     const emphasis = targetSkills.map((s) => s.name).slice(0, 15);
 
     // 1. select + reorder each entry (deterministic, always)
@@ -166,18 +171,38 @@ export class CvTailorService {
     const gap =
       targetSkills.length > 0 ? await this.computeGap(candidateId, targetSkills, ledger) : null;
 
+    // Hard match deliberately surfaces the vacancy's must-have skills that the CV
+    // lacks — as a clearly-flagged group, never laundered into the real ones. The
+    // disclosure below hands the "do you actually know this?" call to the user.
+    const addedSkills = level === "hard" && gap ? gap.missing.map((m) => m.name) : [];
+    const skills = reorderSkills(resume.skills, byName);
+    if (addedSkills.length > 0) {
+      skills.push({ group: "Added for this role — verify", items: addedSkills, added: true });
+    }
+    const droppedCount =
+      experience.reduce((s, e) => s + e.dropped.length, 0) +
+      projects.reduce((s, p) => s + p.dropped.length, 0);
+    const disclosure = buildDisclosure({
+      rephrased: counts.rephrased,
+      dropped: droppedCount,
+      reordered: target.matchedSkills.length > 0,
+      addedSkills,
+    });
+
     return {
       candidateId,
       target,
+      level,
       rephrase: rephraseOn,
       grounding,
       gap,
+      disclosure,
       resume: {
         name: resume.name,
         title: resume.title,
         contacts: resume.contacts,
         summary,
-        skills: reorderSkills(resume.skills, byName),
+        skills,
         experience,
         projects,
         education: resume.education,
@@ -482,6 +507,47 @@ function reorderSkills(groups: SkillGroup[], byName: Map<string, number>): Skill
   return [...groups]
     .map((g) => ({ ...g, items: [...g.items].sort((a, b) => itemScore(b) - itemScore(a)) }))
     .sort((a, b) => groupScore(b) - groupScore(a));
+}
+
+// The honesty strip: one plain sentence per deviation from the literal original.
+// added-skill lines are verify:true — they assert something not in the CV.
+function buildDisclosure(input: {
+  rephrased: number;
+  dropped: number;
+  reordered: boolean;
+  addedSkills: string[];
+}): Disclosure[] {
+  const out: Disclosure[] = [];
+  const plural = (n: number): string => (n === 1 ? "" : "s");
+  for (const name of input.addedSkills) {
+    out.push({
+      kind: "added-skill",
+      text: `Added "${name}" — the vacancy asks for it and it isn't in your CV. Keep it only if you can back it up.`,
+      verify: true,
+    });
+  }
+  if (input.rephrased > 0) {
+    out.push({
+      kind: "reworded",
+      text: `Reworded ${input.rephrased} bullet${plural(input.rephrased)} for impact — no facts, numbers, or tools were invented (guard-checked).`,
+      verify: false,
+    });
+  }
+  if (input.dropped > 0) {
+    out.push({
+      kind: "dropped",
+      text: `Hid ${input.dropped} less-relevant bullet${plural(input.dropped)} — nothing was deleted, restore any from the CV view.`,
+      verify: false,
+    });
+  }
+  if (input.reordered) {
+    out.push({
+      kind: "reordered",
+      text: "Reordered your skills and bullets to lead with what this vacancy prioritizes.",
+      verify: false,
+    });
+  }
+  return out;
 }
 
 function buildLedger(resume: ExtractedResume): FactLedger {

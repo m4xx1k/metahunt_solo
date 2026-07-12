@@ -9,9 +9,29 @@ import {
   type ApplyKitRequest,
   type ApplyKitResult,
   type BulletDiff,
+  type MatchLevel,
   type TailorResult,
 } from "@/lib/api/cv-tailor";
 import { Button } from "@/ui/buttons/Button";
+
+const LEVEL_HINT: Record<MatchLevel, string> = {
+  light: "reorder + trim only — every word stays yours",
+  medium: "+ bold rewrite, guard-locked (invents nothing)",
+  hard: "+ adds must-have skills you're missing — you verify",
+};
+
+const PRINT_KEY = "metahunt.cv-print";
+
+// Bridge the current resume to the standalone print route via localStorage
+// (shared across tabs, same origin), then open it to "Save as PDF".
+function openPrint(result: TailorResult, mode: "tailored" | "original"): void {
+  try {
+    window.localStorage.setItem(PRINT_KEY, JSON.stringify({ result, mode }));
+  } catch {
+    // storage full / unavailable — the print tab shows a friendly fallback
+  }
+  window.open(`/cv-tailor/print?mode=${mode}`, "_blank", "noopener");
+}
 
 import { CoverLetter, Interview } from "./ApplyKit";
 import { GuardDemoPanel } from "./GuardDemoPanel";
@@ -57,7 +77,7 @@ export function TailorWorkbench() {
   const [targetMode, setTargetMode] = useState<"vacancy" | "paste">("vacancy");
   const [selectedVacancy, setSelectedVacancy] = useState<Cv | null>(null);
   const [jobText, setJobText] = useState("");
-  const [aiRewrite, setAiRewrite] = useState(true);
+  const [level, setLevel] = useState<MatchLevel>("medium");
 
   const [result, setResult] = useState<TailorResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -135,7 +155,7 @@ export function TailorWorkbench() {
     setKit(null);
     setTab("cv");
     try {
-      setResult(await cvTailorApi.tailor(candidateId, { ...body, rephrase: aiRewrite }));
+      setResult(await cvTailorApi.tailor(candidateId, { ...body, level }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "tailoring failed";
       if (/no structured resume/i.test(msg)) setNeedsPrepare(true);
@@ -143,7 +163,7 @@ export function TailorWorkbench() {
     } finally {
       setBusy(false);
     }
-  }, [candidateId, targetBody, aiRewrite]);
+  }, [candidateId, targetBody, level]);
 
   const prepareAndTailor = useCallback(async () => {
     if (!candidateId) return;
@@ -301,16 +321,26 @@ export function TailorWorkbench() {
           <Button onClick={() => void runTailor()} disabled={busy || preparing || !canTailor}>
             {busy ? "Tailoring…" : "Tailor →"}
           </Button>
-          <button
-            type="button"
-            onClick={() => setAiRewrite((v) => !v)}
-            className="font-mono text-2xs uppercase tracking-wider text-text-muted hover:text-accent"
-          >
-            AI rewrite:{" "}
-            <span className={aiRewrite ? "text-success" : "text-text-secondary"}>
-              {aiRewrite ? "on" : "off (fast)"}
-            </span>
-          </button>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                Match
+              </span>
+              <Segmented
+                options={[
+                  { key: "light", label: "Light" },
+                  { key: "medium", label: "Medium" },
+                  { key: "hard", label: "Hard" },
+                ]}
+                value={level}
+                onChange={(k) => {
+                  setLevel(k as MatchLevel);
+                  clearOutputs();
+                }}
+              />
+            </div>
+            <span className="font-mono text-2xs text-text-muted">{LEVEL_HINT[level]}</span>
+          </div>
           {needsPrepare ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-2xs text-text-muted">CV not prepared yet —</span>
@@ -331,6 +361,7 @@ export function TailorWorkbench() {
       {result ? (
         <div className="flex flex-col gap-5">
           <ResultHeader result={result} />
+          <DisclosureStrip result={result} />
           <div className="flex gap-6 border-b border-border">
             {(["cv", "letter", "interview"] as Tab[]).map((t) => (
               <button
@@ -412,6 +443,64 @@ function ResultHeader({ result }: { result: TailorResult }) {
           ) : null}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+// The honesty strip + download bar: what the tailoring changed vs the original,
+// with the "!" lines being the user's to keep only if true — then download.
+function DisclosureStrip({ result }: { result: TailorResult }) {
+  const verify = result.disclosure.filter((d) => d.verify);
+  const info = result.disclosure.filter((d) => !d.verify);
+  return (
+    <div className="flex flex-col gap-3 border border-border bg-bg-card p-4 shadow-brut-sm">
+      <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+        before you download — what we changed vs your original
+      </p>
+      {result.disclosure.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {verify.map((d, i) => (
+            <li
+              key={`v${i}`}
+              className="flex gap-2 font-body text-xs leading-relaxed text-text-primary"
+            >
+              <span className="mt-px shrink-0 font-bold text-danger">!</span>
+              <span>{d.text}</span>
+            </li>
+          ))}
+          {info.map((d, i) => (
+            <li
+              key={`i${i}`}
+              className="flex gap-2 font-body text-xs leading-relaxed text-text-secondary"
+            >
+              <span className="mt-px shrink-0 text-text-muted">·</span>
+              <span>{d.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="font-body text-xs text-text-secondary">
+          Nothing added or invented — this is your CV, only reordered and trimmed.
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
+        <Button size="sm" onClick={() => openPrint(result, "tailored")}>
+          Download PDF →
+        </Button>
+        <button
+          type="button"
+          onClick={() => openPrint(result, "original")}
+          className="font-mono text-2xs uppercase tracking-wider text-text-muted underline-offset-4 hover:text-accent hover:underline"
+        >
+          or download your untouched original
+        </button>
+        {verify.length > 0 ? (
+          <span className="font-body text-2xs text-text-muted">
+            you own the result — keep the <span className="font-bold text-danger">!</span> lines
+            only if they&apos;re true
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
