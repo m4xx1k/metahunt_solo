@@ -32,6 +32,7 @@ When writing, ask: *"is this the current state, or an event in time?"* Snapshot 
 | Multi-step initiative tracker | `md/journal/migrations/<branch-slug>.md` |
 | Chronological "what shipped" | `md/journal/releases.md` |
 | Operational how-to | `md/runbook/<topic>.md` |
+| REST/OpenAPI contract | `md/runbook/api-contract.md` |
 | Stage status shift | `md/roadmap.md` |
 | Workflow / convention change | `md/engineering/DOCUMENTATION.md` |
 | New tracker | copy from `md/engineering/_TRACKER-TEMPLATE.md` |

@@ -34,8 +34,10 @@ Sanity checks:
 ```bash
 curl http://localhost:3000          # { "status":"ok","db":"up" }     — Postgres canary
 curl http://localhost:3000/healthz  # { "status":"ok", "checks":{...} } — Postgres + S3 + Temporal
-curl http://localhost:3000/rss      # 202 { "triggered":"all" }       — kicks off Temporal workflows
 ```
+
+`POST /rss` is an operator endpoint. Trigger it through the authenticated API
+contract described in [`md/runbook/api-contract.md`](md/runbook/api-contract.md).
 
 Open Temporal UI at http://localhost:8080 to see workflow runs; MinIO console at http://localhost:9001 (creds: `metahunt` / `metahunt123`).
 

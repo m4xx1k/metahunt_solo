@@ -7,6 +7,16 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import {
+  ApiAcceptedResponse,
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from "@nestjs/swagger";
+
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
+import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
 import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
 import type { ExternalIdCleanupResult } from "./external-id/external-id-cleanup.service";
@@ -16,6 +26,8 @@ const BACKFILL_DEFAULT = 100;
 const BACKFILL_MAX = 500;
 
 @Controller("loader")
+@OperatorApi("operator: loader")
+@ApiBadRequestResponse({ description: "Invalid query parameter.", type: ApiErrorResponseDto })
 export class LoaderController {
   constructor(
     private readonly backfillService: LoaderBackfillService,
@@ -31,6 +43,8 @@ export class LoaderController {
    * `/loader/backfill/all` for unbounded bulk runs.
    */
   @Post("backfill")
+  @ApiOperation({ summary: "Load a bounded batch of extracted records" })
+  @ApiOkResponse({ description: "Bounded loader-backfill counts." })
   async backfill(
     @Query("limit") rawLimit?: string,
   ): Promise<{ attempted: number; succeeded: number; failed: number }> {
@@ -51,6 +65,12 @@ export class LoaderController {
    */
   @Post("backfill/all")
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: "Start an unbounded loader backfill" })
+  @ApiAcceptedResponse({ description: "Background backfill accepted." })
+  @ApiConflictResponse({
+    description: "A bulk backfill is already running.",
+    type: ApiErrorResponseDto,
+  })
   async backfillAll(
     @Query("batchSize") rawBatchSize?: string,
   ): Promise<{ accepted: true; pending: number; batchSize: number }> {
@@ -72,6 +92,8 @@ export class LoaderController {
    * writing. Idempotent once everything is numeric.
    */
   @Post("external-id/cleanup")
+  @ApiOperation({ summary: "Normalize legacy URL-form external identifiers" })
+  @ApiOkResponse({ description: "Cleanup counts; dryRun=true does not write." })
   async cleanupExternalIds(@Query("dryRun") rawDryRun?: string): Promise<ExternalIdCleanupResult> {
     return this.externalIdCleanup.run(rawDryRun === "true");
   }

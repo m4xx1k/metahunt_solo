@@ -8,11 +8,13 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
 
 import type { NodeType } from "@metahunt/database";
 
-import { AdminOnly } from "../../platform/auth/decorators/admin-only.decorator";
 import { parseLimit, parsePage, parsePageSize } from "../../platform/shared/query-parsing";
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
+import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
 import {
   TAXONOMY_LIST_DEFAULT,
@@ -29,15 +31,24 @@ const VALID_STATUSES = new Set<NodeStatusValue>(["NEW", "VERIFIED", "HIDDEN"]);
 const DEFAULT_STATUSES: NodeStatusValue[] = ["NEW", "VERIFIED"];
 
 @Controller("admin/taxonomy")
+@OperatorApi("operator: taxonomy")
+@ApiBadRequestResponse({
+  description: "Invalid query, body, or path parameter.",
+  type: ApiErrorResponseDto,
+})
 export class TaxonomyController {
   constructor(private readonly service: TaxonomyService) {}
 
   @Get("coverage")
+  @ApiOperation({ summary: "Get taxonomy coverage metrics" })
+  @ApiOkResponse({ description: "Coverage counts by taxonomy axis." })
   getCoverage() {
     return this.service.getCoverage();
   }
 
   @Get("nodes")
+  @ApiOperation({ summary: "List taxonomy nodes for review" })
+  @ApiOkResponse({ description: "Paginated taxonomy nodes." })
   listNodes(
     @Query("type") rawType?: string,
     @Query("status") rawStatus?: string,
@@ -61,6 +72,8 @@ export class TaxonomyController {
   }
 
   @Get("nodes/search")
+  @ApiOperation({ summary: "Search verified taxonomy nodes" })
+  @ApiOkResponse({ description: "Matching verified taxonomy nodes." })
   searchNodes(
     @Query("type") rawType: string | undefined,
     @Query("q") rawQ: string | undefined,
@@ -79,33 +92,40 @@ export class TaxonomyController {
   }
 
   @Get("nodes/:id")
+  @ApiOperation({ summary: "Read one taxonomy node" })
+  @ApiOkResponse({ description: "Taxonomy node detail." })
   getNode(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.getNodeDetail(id);
   }
 
   @Get("nodes/:id/fuzzy-matches")
+  @ApiOperation({ summary: "Find taxonomy merge candidates" })
+  @ApiOkResponse({ description: "Potential duplicate nodes." })
   getFuzzyMatches(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.getFuzzyMatches(id);
   }
 
   @Patch("nodes/:id/verify")
-  @AdminOnly()
+  @ApiOperation({ summary: "Mark a taxonomy node as verified" })
+  @ApiOkResponse({ description: "Updated taxonomy node." })
   verifyNode(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.setStatus(id, "VERIFIED");
   }
 
   @Patch("nodes/:id/hide")
-  @AdminOnly()
+  @ApiOperation({ summary: "Hide a taxonomy node" })
+  @ApiOkResponse({ description: "Updated taxonomy node." })
   hideNode(@Param("id") id: string) {
     assertUuid(id, "id");
     return this.service.setStatus(id, "HIDDEN");
   }
 
   @Patch("nodes/:id/rename")
-  @AdminOnly()
+  @ApiOperation({ summary: "Rename a taxonomy node" })
+  @ApiOkResponse({ description: "Updated taxonomy node." })
   renameNode(@Param("id") id: string, @Body() body: { name?: unknown } | undefined) {
     assertUuid(id, "id");
     const name = body?.name;
@@ -116,7 +136,8 @@ export class TaxonomyController {
   }
 
   @Post("nodes/:id/merge-into/:targetId")
-  @AdminOnly()
+  @ApiOperation({ summary: "Merge one taxonomy node into another" })
+  @ApiOkResponse({ description: "Taxonomy merge result." })
   mergeNode(@Param("id") id: string, @Param("targetId") targetId: string) {
     assertUuid(id, "id");
     assertUuid(targetId, "targetId");

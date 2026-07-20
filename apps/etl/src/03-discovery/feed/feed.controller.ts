@@ -7,11 +7,19 @@ import {
   UsePipes,
   ValidationPipe,
 } from "@nestjs/common";
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from "@nestjs/swagger";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE } from "../../platform/shared/query-parsing";
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import { FacetsService } from "./facets.service";
 import { FeedService, type FeedSearchParams } from "./feed.service";
@@ -19,6 +27,11 @@ import { FeedService, type FeedSearchParams } from "./feed.service";
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Controller("feed")
+@ApiTags("feed")
+@ApiBadRequestResponse({
+  description: "Invalid filter or pagination parameter.",
+  type: ApiErrorResponseDto,
+})
 export class FeedController {
   constructor(
     private readonly feed: FeedService,
@@ -33,6 +46,8 @@ export class FeedController {
   // The role/skill/domain axes arrive as slugs (?roles=backend-engineer); we
   // resolve them to node ids here so everything downstream stays id-based.
   @Get()
+  @ApiOperation({ summary: "Browse vacancies with filters and pagination" })
+  @ApiOkResponse({ description: "A page of structured vacancies and facets." })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async search(@Query() dto: FeedQueryDto) {
     [dto.roleIds, dto.skillIds, dto.domainIds, dto.roleId] = await Promise.all([
@@ -45,16 +60,22 @@ export class FeedController {
   }
 
   @Get("skills")
+  @ApiOperation({ summary: "List skill facets" })
+  @ApiOkResponse({ description: "Verified skill facets and counts." })
   skills() {
     return this.facets.getSkillFacets();
   }
 
   @Get("roles")
+  @ApiOperation({ summary: "List role facets" })
+  @ApiOkResponse({ description: "Verified role facets and counts." })
   roles() {
     return this.facets.getRoleFacets();
   }
 
   @Get("domains")
+  @ApiOperation({ summary: "List domain facets" })
+  @ApiOkResponse({ description: "Verified domain facets and counts." })
   domains() {
     return this.facets.getDomainFacets();
   }
@@ -62,6 +83,9 @@ export class FeedController {
   // Members + "why merged" reasons for one dedup group — backs the feed's
   // "show duplicates" drawer. `:id` is a unique_vacancies.id.
   @Get("group/:id")
+  @ApiOperation({ summary: "Read members of one deduplication group" })
+  @ApiOkResponse({ description: "Duplicate group members and merge reasons." })
+  @ApiNotFoundResponse({ description: "Group was not found.", type: ApiErrorResponseDto })
   async group(@Param("id") id: string) {
     if (!UUID_REGEX.test(id)) throw new NotFoundException();
     const group = await this.dedup.getGroupForFeed(id);

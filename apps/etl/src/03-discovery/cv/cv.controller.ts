@@ -11,6 +11,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiExcludeController } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
@@ -63,6 +64,9 @@ const CV_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 const CV_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 
 @Controller("cv")
+// This legacy capability-based CV API remains outside the published contract
+// until its privacy/ownership hardening is delivered in a separate branch.
+@ApiExcludeController()
 export class CvController {
   constructor(
     private readonly loader: CandidateLoaderService,

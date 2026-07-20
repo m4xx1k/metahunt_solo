@@ -1,9 +1,14 @@
 import { ConflictException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { RolesGuard } from "../../platform/auth/roles.guard";
+
 import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
 import { LoaderController } from "./loader.controller";
 import { LoaderBackfillService } from "./services/loader-backfill.service";
+
+const allow = { canActivate: () => true };
 
 describe("LoaderController", () => {
   const loadMissing = jest.fn();
@@ -35,7 +40,12 @@ describe("LoaderController", () => {
           useValue: { run: jest.fn() },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue(allow)
+      .overrideGuard(RolesGuard)
+      .useValue(allow)
+      .compile();
     controller = moduleRef.get(LoaderController);
   });
 

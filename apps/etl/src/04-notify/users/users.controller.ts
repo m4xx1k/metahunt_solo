@@ -1,4 +1,7 @@
 import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import {
   ALLOWED_SIGNUP_SOURCES,
@@ -10,10 +13,14 @@ import {
 import { UsersService } from "./users.service";
 
 @Controller("users")
+@ApiTags("waitlist")
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Post("subscribe")
+  @ApiOperation({ summary: "Create or acknowledge a waitlist subscription" })
+  @ApiCreatedResponse({ description: "Subscription was created or already existed." })
+  @ApiBadRequestResponse({ description: "Invalid email or source.", type: ApiErrorResponseDto })
   async subscribe(@Body() body: Partial<SubscribeRequest>): Promise<SubscribeResponse> {
     const email = typeof body?.email === "string" ? body.email.trim() : "";
     if (!email) {

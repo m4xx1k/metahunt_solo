@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 
+import { AuthModule } from "../../platform/auth/auth.module";
+
 import { LOADER_ACTIVITIES } from "./activities";
 import { ExternalIdCleanupService } from "./external-id/external-id-cleanup.service";
 import { LoaderController } from "./loader.controller";
@@ -18,6 +20,7 @@ import { VacancyLoaderService } from "./services/vacancy-loader.service";
 // Repositories bind their abstract class (the DI token) to the Drizzle impl
 // so resolver services depend on the interface, not on DRIZZLE directly.
 @Module({
+  imports: [AuthModule],
   providers: [
     { provide: CompanyRepository, useClass: DrizzleCompanyRepository },
     { provide: NodeRepository, useClass: DrizzleNodeRepository },
