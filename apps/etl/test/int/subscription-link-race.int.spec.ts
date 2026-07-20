@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -48,5 +48,27 @@ describe("SubscriptionsService.linkChat", () => {
         .from(subscriptions)
         .where(eq(subscriptions.id, pending.id)),
     ).resolves.toEqual([{ chatId: "fixture-chat", isActive: true }]);
+  });
+
+  it("keeps one active subscription when equivalent pending tokens race", async () => {
+    const pending = await db
+      .insert(subscriptions)
+      .values([{ params: { seniorities: ["MIDDLE"] } }, { params: { seniorities: ["MIDDLE"] } }])
+      .returning({ id: subscriptions.id });
+    const analytics = { telegramLinked: jest.fn() };
+    const service = new SubscriptionsService(db, analytics as never, new NodeSlugResolver(db));
+
+    const results = await Promise.all(
+      pending.map((sub) => service.linkChat(sub.id, "fixture-chat")),
+    );
+
+    expect(results.sort()).toEqual(["duplicate", "linked"]);
+    expect(analytics.telegramLinked).toHaveBeenCalledTimes(1);
+    await expect(
+      db
+        .select({ id: subscriptions.id })
+        .from(subscriptions)
+        .where(and(eq(subscriptions.chatId, "fixture-chat"), eq(subscriptions.isActive, true))),
+    ).resolves.toHaveLength(1);
   });
 });
