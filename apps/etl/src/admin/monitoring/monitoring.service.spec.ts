@@ -74,11 +74,11 @@ describe("MonitoringService", () => {
       );
       expect(result.items[0]).toMatchObject({
         description: "Long job description text",
-        extracted: false,
+        extractionStatus: "pending",
       });
     });
 
-    it("derives `extracted: true` when extractedAt is set", async () => {
+    it("derives succeeded when extractedAt is set without an extraction error", async () => {
       const row = {
         id: "11111111-1111-1111-1111-111111111111",
         sourceId: "22222222-2222-2222-2222-222222222222",
@@ -100,8 +100,33 @@ describe("MonitoringService", () => {
 
       const result = await service.listRecords({ limit: 50, offset: 0 });
 
-      expect(result.items[0].extracted).toBe(true);
+      expect(result.items[0].extractionStatus).toBe("succeeded");
       expect(result.hasMore).toBe(false);
+    });
+
+    it("derives failed when the extraction sidecar contains an error", async () => {
+      const row = {
+        id: "11111111-1111-1111-1111-111111111111",
+        sourceId: "22222222-2222-2222-2222-222222222222",
+        sourceCode: "djinni",
+        sourceDisplayName: "Djinni",
+        rssIngestId: "33333333-3333-3333-3333-333333333333",
+        externalId: null,
+        hash: "h",
+        title: "x",
+        description: null,
+        link: null,
+        category: null,
+        publishedAt: new Date(),
+        createdAt: new Date(),
+        extractedAt: new Date(),
+        extractedData: { _error: "rate limited" },
+      };
+      const { service } = await bootstrap({ rows: [row], total: 1 });
+
+      const result = await service.listRecords({ limit: 50, offset: 0 });
+
+      expect(result.items[0].extractionStatus).toBe("failed");
     });
 
     it("reports hasMore when offset+items < total", async () => {

@@ -89,16 +89,16 @@ aws --endpoint-url "$STORAGE_ENDPOINT" s3 cp \
 
 **Important:** as of 2026-05-03, extraction is **per-record best-effort**. A single record's failure does NOT fail the surrounding `rssIngestWorkflow`. The workflow uses `Promise.allSettled` and finalizes as `completed` with a note in `rss_ingests.error_message` of the form `extracted=X/Y (failures=N)`. The whole workflow only fails if 100% of records reject in a way that bypasses the per-record boundary (rare — e.g. `VACANCY_EXTRACTOR` provider misconfigured, throwing on every call).
 
-**Symptoms (per-record):** `rss_records.extracted_at IS NULL` for some rows; the `rss_ingests` row says `status='completed'` with `error_message` like `extracted=43/47 (failures=4)`. Workflow itself: `Completed`, but with `WARN` in worker logs.
+**Symptoms (per-record):** a record is pending when `rss_records.extracted_at IS NULL`; a persisted failed attempt has `extracted_data ? '_error'`. The `rss_ingests` row says `status='completed'` with `error_message` like `extracted=43/47 (failures=4)`. Workflow itself: `Completed`, but with `WARN` in worker logs.
 
 **Symptoms (catastrophic):** all-record failure → workflow `Failed`. Usually means `EXTRACTOR_PROVIDER=baml` but `OPENAI_API_KEY` is missing, or BAML schema incompatible with model output.
 
 **Diagnose:**
 ```sql
--- Records that didn't extract in the last 24h
+-- Records pending extraction or with a persisted failed attempt in the last 24h
 SELECT id, source_id, title, created_at
   FROM rss_records
-  WHERE extracted_at IS NULL
+  WHERE (extracted_at IS NULL OR extracted_data ? '_error')
     AND created_at > now() - interval '24 hours'
   ORDER BY created_at DESC;
 ```
@@ -117,7 +117,7 @@ railway logs --deployment <ID> --lines 500 | grep -A 20 "BamlValidationError"
   # railway
   curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "https://<host>/rss/extract-missing?limit=100"
   ```
-  Returns `{ attempted, succeeded, failed }`. Iterates `rss_records WHERE extracted_at IS NULL` ordered oldest-first, calls `extractAndInsert` per record in-process (bypasses Temporal). Capped at `?limit=` (default 100, max 500) to avoid HTTP timeouts; re-run until `attempted=0`. Useful when the prior workflow inserted records via `parseAndDedup` but extraction never ran or failed before writing — dedup skips them on re-trigger so the schedule alone won't fix them.
+  Returns `{ attempted, succeeded, failed }`. Iterates pending rows and persisted extraction failures ordered oldest-first, calls `extractAndInsert` per record in-process (bypasses Temporal). Capped at `?limit=` (default 100, max 500) to avoid HTTP timeouts; re-run until `attempted=0`. Useful when the prior workflow inserted records via `parseAndDedup` but extraction never ran or failed — dedup skips them on re-trigger so the schedule alone won't fix them.
 - **Catastrophic provider failure** — check env: `EXTRACTOR_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`. Set `EXTRACTOR_PROVIDER=placeholder` to keep the pipeline flowing while you fix BAML, then revert. Each schedule firing will mark new records `extracted_at` with the placeholder shape — they're still re-extractable later because the placeholder writes deterministic data.
 - **BAML schema mismatch** (LLM nests required fields, etc.) — change the field to optional in `apps/etl/baml_src/extract-vacancy.baml` (`bool?`, `string?`), re-run `pnpm --filter @metahunt/etl baml:generate`, deploy. Done once on 2026-05-03 for `hasTestAssignment` / `hasReservation`.
 

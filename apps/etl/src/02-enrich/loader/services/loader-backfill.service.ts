@@ -1,9 +1,11 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import { and, asc, eq, isNotNull, notExists, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, not, notExists, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
+
+import { hasExtractionError } from "../../../platform/shared/extraction-status";
 
 import { VacancyLoaderService } from "./vacancy-loader.service";
 
@@ -151,6 +153,7 @@ export class LoaderBackfillService {
   private pendingPredicate() {
     return and(
       isNotNull(schema.rssRecords.extractedAt),
+      not(hasExtractionError(schema.rssRecords.extractedData)),
       notExists(
         this.db
           .select({ one: sql`1` })

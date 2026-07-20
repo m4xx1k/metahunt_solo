@@ -8,6 +8,7 @@
 import { apiGet, buildQs } from "./client";
 
 export type IngestStatus = "running" | "completed" | "failed";
+export type ExtractionStatus = "pending" | "failed" | "succeeded";
 
 export interface Source {
   id: string;
@@ -31,7 +32,9 @@ export interface IngestListItem {
   payloadStorageKey: string | null;
   errorMessage: string | null;
   recordCount: number;
-  extractedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  pendingCount: number;
 }
 
 export interface RecordListItem {
@@ -50,7 +53,7 @@ export interface RecordListItem {
   createdAt: string;
   extractedAt: string | null;
   extractedData: unknown;
-  extracted: boolean;
+  extractionStatus: ExtractionStatus;
 }
 
 // list and detail endpoints now return identical shapes; kept as alias for
@@ -117,7 +120,7 @@ export interface ListIngestsQuery {
 export interface ListRecordsQuery {
   ingestId?: string;
   sourceId?: string;
-  extracted?: boolean;
+  extractionStatus?: ExtractionStatus;
   q?: string;
   limit?: number;
   offset?: number;

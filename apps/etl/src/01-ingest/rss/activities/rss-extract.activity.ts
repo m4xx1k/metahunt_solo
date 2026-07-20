@@ -40,6 +40,7 @@ export class RssExtractActivity {
     };
 
     if (!result.data) {
+      const error = result.meta.error ?? "extraction failed";
       // Persist usage of the failed attempt so its tokens are not lost from
       // cost analysis, then re-throw so Temporal can retry. If a retry
       // succeeds, this row is overwritten with the success payload — for now
@@ -47,11 +48,11 @@ export class RssExtractActivity {
       await this.db
         .update(schema.rssRecords)
         .set({
-          extractedData: { ...sidecar, _error: result.meta.error },
+          extractedData: { ...sidecar, _error: error },
           extractedAt: new Date(),
         })
         .where(eq(schema.rssRecords.id, recordId));
-      throw new Error(result.meta.error ?? "extraction failed");
+      throw new Error(error);
     }
 
     await this.db
