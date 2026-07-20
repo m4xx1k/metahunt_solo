@@ -48,7 +48,7 @@ EXTRACTOR_PROVIDER=placeholder pnpm dev:etl    # starts Nest + Temporal worker
 In a second terminal:
 
 ```bash
-curl -s -X POST http://localhost:3000/rss
+curl -s -X POST -H "Authorization: Bearer $ADMIN_TOKEN" http://localhost:3000/rss
 # {"triggered":"all"}
 ```
 

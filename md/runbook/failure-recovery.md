@@ -47,7 +47,8 @@ railway logs --deployment <ID> --lines 200 | grep RssFetch
    - Or from CLI: `temporal schedule trigger --schedule-id rss-ingest-hourly`.
 3. To rerun a *specific* failed workflow (re-fetch the same source, bypassing the schedule):
    ```bash
-   curl -X GET https://<host>/rss   # fires ingestAll() — every source, including failed one
+   curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" https://<host>/rss
+   # fires ingestAll() for every source, including the failed one
    ```
    Or call `RssSchedulerService.ingestRemote()` programmatically in a one-shot script.
 4. Persistent host outage → in `.env` add the source's RSS XML to `apps/etl/data/rss/<code>-rss.xml` so the activity falls back to file. Already used for local dev.
@@ -76,7 +77,7 @@ aws --endpoint-url "$STORAGE_ENDPOINT" s3 cp \
 
 **Restore:**
 
-- **DB transient failure** — once `psql -c 'SELECT 1'` returns clean, just trigger the schedule (`Trigger` button in Temporal UI) or `curl /rss`. The XML is already stored, but re-running goes through `fetchAndStore` again (idempotent — it inserts an `rss_ingests` row keyed by `workflow_run_id` with `onConflictDoNothing`). The new run will re-fetch + re-dedup; dedup is hash-based so already-inserted records are skipped automatically.
+- **DB transient failure** — once `psql -c 'SELECT 1'` returns clean, trigger the schedule (`Trigger` button in Temporal UI) or make an authenticated `POST /rss` request. The XML is already stored, but re-running goes through `fetchAndStore` again (idempotent — it inserts an `rss_ingests` row keyed by `workflow_run_id` with `onConflictDoNothing`). The new run will re-fetch + re-dedup; dedup is hash-based so already-inserted records are skipped automatically.
 - **DB schema drift** — apply the missing migration (`pnpm db:migrate` locally; on Railway, the pre-deploy migration step runs on each deploy — re-deploy is the lever). Then trigger.
 - **XML schema drift** — fix `RssParserService` for the new shape, ship a deploy, then trigger.
 
@@ -112,9 +113,9 @@ railway logs --deployment <ID> --lines 500 | grep -A 20 "BamlValidationError"
 - **Single-record failures (typical)** — hit the backfill endpoint:
   ```bash
   # local
-  curl -X POST "http://localhost:3000/rss/extract-missing?limit=100"
+  curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "http://localhost:3000/rss/extract-missing?limit=100"
   # railway
-  curl -X POST "https://<host>/rss/extract-missing?limit=100"
+  curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "https://<host>/rss/extract-missing?limit=100"
   ```
   Returns `{ attempted, succeeded, failed }`. Iterates `rss_records WHERE extracted_at IS NULL` ordered oldest-first, calls `extractAndInsert` per record in-process (bypasses Temporal). Capped at `?limit=` (default 100, max 500) to avoid HTTP timeouts; re-run until `attempted=0`. Useful when the prior workflow inserted records via `parseAndDedup` but extraction never ran or failed before writing — dedup skips them on re-trigger so the schedule alone won't fix them.
 - **Catastrophic provider failure** — check env: `EXTRACTOR_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`. Set `EXTRACTOR_PROVIDER=placeholder` to keep the pipeline flowing while you fix BAML, then revert. Each schedule firing will mark new records `extracted_at` with the placeholder shape — they're still re-extractable later because the placeholder writes deterministic data.
@@ -127,7 +128,7 @@ railway logs --deployment <ID> --lines 500 | grep -A 20 "BamlValidationError"
 Temporal does not "resume" failed workflows by design (deterministic replay needs a clean slate). To rerun the same input:
 
 - **Reset to a point** (rare, advanced) — Temporal UI → Workflow → "Reset" to a specific event id; the workflow re-executes from there with the new code. Useful when you've shipped a bug fix and want the *same* workflow id to re-run without changing schedule state.
-- **Just start a new one** (typical) — `curl /rss` or `temporal schedule trigger --schedule-id rss-ingest-hourly`. Dedup is hash-based so duplicate work is cheap.
+- **Just start a new one** (typical) — an authenticated `POST /rss` request or `temporal schedule trigger --schedule-id rss-ingest-hourly`. Dedup is hash-based so duplicate work is cheap.
 
 ## Pausing the schedule (incident response)
 

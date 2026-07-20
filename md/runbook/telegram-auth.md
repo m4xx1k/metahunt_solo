@@ -45,17 +45,13 @@ the menu only converts value at the moment a user wants to save/subscribe.
 - Membership is env-driven and re-evaluated on **every** login: a user is `admin`
   iff their telegram id is in `ADMIN_TELEGRAM_IDS`. Promote/demote = edit the var
   + re-login. Roles are persisted on `users.roles` and ride in the JWT.
-- **What's admin-gated (API layer):** the destructive, client-triggered operator
-  mutations — taxonomy `verify`/`hide`/`rename`/`merge-into` (`PATCH|POST
-  /admin/taxonomy/nodes/*`) and `POST /rss/extract-missing`. Guarded by
-  `@AdminOnly()` (= `JwtAuthGuard` + `RolesGuard` + `@Roles('admin')`).
-- **Why only mutations, not the operator reads:** operator pages are SSR (server
-  components fetch on Vercel), where a browser-localStorage Bearer token can't
-  reach — gating the GET reads would break the pages. Mutations run client-side
-  (button clicks) and *do* carry the token. So the operator must be **logged in
-  via Telegram as admin** for those buttons to work; the pages still render (reads
-  ungated) and Clerk still gates page access. Gating the SSR reads is deferred to
-  reconciling Clerk↔Telegram-admin into one identity.
+- **What's admin-gated (API layer):** every operator controller: RSS triggering
+  and recovery, loader backfill/cleanup, manual digest delivery, dedup review,
+  extraction-cost reporting, raw monitoring, and taxonomy reads/writes. Guarded
+  by `@AdminOnly()` (= `JwtAuthGuard` + `RolesGuard` + `@Roles('admin')`).
+- The operator web UI needs to forward the same Bearer token for its server-side
+  reads. A cookie-backed session remains the intended delivery mechanism; API
+  authorization is not relaxed while that web work is pending.
 
 ## Claim (what a login adopts)
 

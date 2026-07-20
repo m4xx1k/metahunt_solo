@@ -1,4 +1,5 @@
 import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
 
 import {
   parseBool,
@@ -6,6 +7,8 @@ import {
   parsePage,
   parsePageSize,
 } from "../../platform/shared/query-parsing";
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
+import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
 import type { UniqueVacanciesResponse } from "./dedup.contract";
 import { DedupService } from "./dedup.service";
@@ -14,10 +17,14 @@ const DEFAULT_PAGE_SIZE = 25;
 const CONFIDENCE_VALUES = ["gold", "confirmed", "all"] as const;
 
 @Controller("operator/unique-vacancies")
+@OperatorApi("operator: deduplication")
+@ApiBadRequestResponse({ description: "Invalid query parameter.", type: ApiErrorResponseDto })
 export class DedupController {
   constructor(private readonly dedup: DedupService) {}
 
   @Get()
+  @ApiOperation({ summary: "Review deduplication groups" })
+  @ApiOkResponse({ description: "Paginated deduplication groups." })
   list(
     @Query("crossSource") rawCrossSource?: string,
     @Query("minSimilarity") rawMinSimilarity?: string,

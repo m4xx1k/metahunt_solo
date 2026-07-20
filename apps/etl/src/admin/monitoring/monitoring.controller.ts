@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
 
 import {
   parseBool,
@@ -9,6 +10,8 @@ import {
   parseRequiredUuid,
   parseUuid,
 } from "../../platform/shared/query-parsing";
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
+import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
 import { MonitoringService } from "./monitoring.service";
 
@@ -16,21 +19,32 @@ const INGEST_STATUSES = ["running", "completed", "failed"] as const;
 const STATS_PERIODS = ["24h", "week", "all"] as const;
 
 @Controller("monitoring")
+@OperatorApi("operator: monitoring")
+@ApiBadRequestResponse({
+  description: "Invalid query or path parameter.",
+  type: ApiErrorResponseDto,
+})
 export class MonitoringController {
   constructor(private readonly monitoring: MonitoringService) {}
 
   @Get("stats")
+  @ApiOperation({ summary: "Get pipeline processing statistics" })
+  @ApiOkResponse({ description: "Aggregate monitoring statistics." })
   stats(@Query("period") rawPeriod?: string) {
     const period = parseEnum("period", rawPeriod, STATS_PERIODS) ?? "24h";
     return this.monitoring.stats(period);
   }
 
   @Get("sources")
+  @ApiOperation({ summary: "List configured RSS source health" })
+  @ApiOkResponse({ description: "RSS source monitoring state." })
   sources() {
     return this.monitoring.listSources();
   }
 
   @Get("ingests")
+  @ApiOperation({ summary: "List ingestion runs" })
+  @ApiOkResponse({ description: "Paginated ingestion runs." })
   listIngests(
     @Query("sourceId") sourceId?: string,
     @Query("status") status?: string,
@@ -50,11 +64,15 @@ export class MonitoringController {
   }
 
   @Get("ingests/:id")
+  @ApiOperation({ summary: "Read one ingestion run" })
+  @ApiOkResponse({ description: "Ingestion run detail." })
   getIngest(@Param("id") id: string) {
     return this.monitoring.getIngest(parseRequiredUuid("id", id));
   }
 
   @Get("records")
+  @ApiOperation({ summary: "List raw RSS records" })
+  @ApiOkResponse({ description: "Paginated raw RSS records." })
   listRecords(
     @Query("ingestId") ingestId?: string,
     @Query("sourceId") sourceId?: string,
@@ -75,6 +93,8 @@ export class MonitoringController {
   }
 
   @Get("records/:id")
+  @ApiOperation({ summary: "Read one raw RSS record" })
+  @ApiOkResponse({ description: "Raw RSS record and extraction detail." })
   getRecord(@Param("id") id: string) {
     return this.monitoring.getRecord(parseRequiredUuid("id", id));
   }

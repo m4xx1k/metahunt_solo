@@ -61,7 +61,7 @@ railway logs --deployment <ID> --lines 200
 2. Pre-deploy migration: schema applied, no errors in log.
 3. Boot logs include: `Worker connection established to <addr>`, `Worker state changed RUNNING`, `Mapped {/healthz, GET}`.
 4. `curl https://<domain>/healthz` → 200 with `checks.{postgres,storage,temporal}.ok = true`.
-5. Smoke: `curl https://<domain>/rss` → 202; Temporal UI shows `rssIngestWorkflow` runs reaching `Completed`.
+5. Smoke: an authenticated `POST https://<domain>/rss` → 202; Temporal UI shows `rssIngestWorkflow` runs reaching `Completed`.
 
 ## First-time project setup (skip if project exists)
 

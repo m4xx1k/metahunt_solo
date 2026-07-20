@@ -43,7 +43,7 @@ describe("RssController", () => {
     controller = moduleRef.get(RssController);
   });
 
-  it("GET /rss delegates to ingest.ingestAll (not ingestRemote)", () => {
+  it("POST /rss delegates to ingest.ingestAll (not ingestRemote)", () => {
     const result = controller.triggerAll();
 
     expect(ingestAll).toHaveBeenCalledTimes(1);

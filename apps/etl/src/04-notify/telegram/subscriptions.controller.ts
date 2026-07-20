@@ -1,4 +1,7 @@
 import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiCreatedResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import type {
   CreateSubscriptionRequest,
@@ -8,6 +11,7 @@ import { SubscriptionsService } from "./subscriptions.service";
 import { TelegramService } from "./telegram.service";
 
 @Controller("subscriptions")
+@ApiTags("subscriptions")
 export class SubscriptionsController {
   constructor(
     private readonly subscriptions: SubscriptionsService,
@@ -15,6 +19,12 @@ export class SubscriptionsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: "Create a pending Telegram subscription deep link" })
+  @ApiCreatedResponse({ description: "Pending subscription UUID and Telegram deep link." })
+  @ApiBadRequestResponse({
+    description: "Invalid subscription parameters or Telegram is unavailable.",
+    type: ApiErrorResponseDto,
+  })
   async create(
     @Body() body: Partial<CreateSubscriptionRequest>,
   ): Promise<CreateSubscriptionResponse> {

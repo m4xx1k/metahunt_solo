@@ -1,4 +1,5 @@
 import { Controller, Get, HttpCode, HttpException, HttpStatus, Inject } from "@nestjs/common";
+import { ApiOkResponse, ApiServiceUnavailableResponse, ApiTags } from "@nestjs/swagger";
 
 import { sql } from "drizzle-orm";
 import { TemporalService } from "nestjs-temporal-core";
@@ -20,6 +21,7 @@ export type HealthResponse = {
 };
 
 @Controller("healthz")
+@ApiTags("system")
 export class HealthController {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
@@ -29,6 +31,8 @@ export class HealthController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: "Postgres, object storage, and Temporal are healthy." })
+  @ApiServiceUnavailableResponse({ description: "At least one required dependency is unhealthy." })
   async check(): Promise<HealthResponse> {
     const [postgres, storage, temporal] = await Promise.all([
       time(() => this.db.execute(sql`SELECT 1`)),

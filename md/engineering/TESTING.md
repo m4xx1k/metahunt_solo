@@ -6,7 +6,7 @@ Tests buy confidence to change code without breaking it. They are not a coverage
 
 - **Unit** — many, fast. Business logic, pure functions, single services with mocked deps.
 - **Integration** — some, moderate. A service + its real DB; a controller + a test module. Catches wiring bugs unit tests can't.
-- **E2E / smoke** — few, slow. One golden path per critical workflow. For metahunt: `curl /rss` → workflow runs to `completed` in Temporal UI.
+- **E2E / smoke** — few, slow. One golden path per critical workflow. For metahunt: an authenticated `POST /rss` → workflow runs to `completed` in Temporal UI.
 
 ## What NOT to test
 

@@ -1,6 +1,13 @@
-import { BadRequestException, Controller, Get, HttpCode, Post, Query } from "@nestjs/common";
+import { BadRequestException, Controller, HttpCode, Post, Query } from "@nestjs/common";
+import {
+  ApiAcceptedResponse,
+  ApiBadRequestResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from "@nestjs/swagger";
 
-import { AdminOnly } from "../../platform/auth/decorators/admin-only.decorator";
+import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
+import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
 import { RssBackfillService } from "./rss-backfill.service";
 import { RssIngestService } from "./rss-ingest.service";
@@ -9,14 +16,18 @@ const EXTRACT_MISSING_DEFAULT = 100;
 const EXTRACT_MISSING_MAX = 500;
 
 @Controller("rss")
+@OperatorApi("operator: RSS")
+@ApiBadRequestResponse({ description: "Invalid query parameter.", type: ApiErrorResponseDto })
 export class RssController {
   constructor(
     private readonly ingest: RssIngestService,
     private readonly backfill: RssBackfillService,
   ) {}
 
-  @Get()
+  @Post()
   @HttpCode(202)
+  @ApiOperation({ summary: "Start RSS ingestion for every configured source" })
+  @ApiAcceptedResponse({ description: "Workflow start accepted." })
   triggerAll(): { triggered: "all" } {
     void this.ingest.ingestAll();
     return { triggered: "all" };
@@ -29,7 +40,8 @@ export class RssController {
    * counts; bound the work via `?limit=` to avoid HTTP timeouts.
    */
   @Post("extract-missing")
-  @AdminOnly()
+  @ApiOperation({ summary: "Backfill records that have no extraction result" })
+  @ApiOkResponse({ description: "Bounded extraction-backfill counts." })
   async extractMissing(
     @Query("limit") rawLimit?: string,
   ): Promise<{ attempted: number; succeeded: number; failed: number }> {
