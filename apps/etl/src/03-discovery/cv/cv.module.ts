@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { AuthModule } from "../../platform/auth/auth.module";
 import { NodeSlugModule } from "../../platform/nodes/node-slug.module";
 import { RankingModule } from "../ranking/ranking.module";
 
@@ -10,7 +11,7 @@ import { BamlCandidateExtractor } from "./candidate.extractor";
 import { CvController } from "./cv.controller";
 
 @Module({
-  imports: [RankingModule, NodeSlugModule],
+  imports: [AuthModule, RankingModule, NodeSlugModule],
   providers: [
     CandidateLoaderService,
     AdditionalSkillsService,

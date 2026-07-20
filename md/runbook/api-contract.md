@@ -15,10 +15,10 @@ The published contract covers these product groups:
 - `subscriptions`, `waitlist`, `account` — activation and authenticated account state.
 - `operator:*` — authenticated administrator-only operations.
 
-The legacy `/cv` capability API is deliberately excluded from Swagger until its
-ownership, retention, and deletion guarantees are hardened. Exclusion from
-documentation is not a security control; do not interpret it as completion of
-the CV privacy work.
+The private `/cv` API is deliberately excluded from the public Swagger contract.
+It requires an authenticated owner and has its own retention/deletion boundary
+documented in [`cv-privacy.md`](cv-privacy.md). Exclusion from documentation is
+not a security control.
 
 ## Authorization boundary
 

@@ -8,12 +8,17 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiExcludeController } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 
+import type { JwtUser } from "../../platform/auth/auth.types";
+import { CurrentUser } from "../../platform/auth/decorators/current-user.decorator";
+import { Public } from "../../platform/auth/decorators/public.decorator";
+import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import {
   EMPLOYMENT_TYPE_VALUES,
@@ -67,6 +72,7 @@ const CV_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 // This legacy capability-based CV API remains outside the published contract
 // until its privacy/ownership hardening is delivered in a separate branch.
 @ApiExcludeController()
+@UseGuards(JwtAuthGuard)
 export class CvController {
   constructor(
     private readonly loader: CandidateLoaderService,
@@ -81,6 +87,7 @@ export class CvController {
   @Throttle(CV_THROTTLE)
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: CV_UPLOAD_MAX_BYTES } }))
   async upload(
+    @CurrentUser() user: JwtUser,
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: { text?: unknown } | undefined,
   ): Promise<CvIngestResult> {
@@ -92,24 +99,27 @@ export class CvController {
     } else {
       throw new BadRequestException("provide a file (field 'file') or a non-empty 'text'");
     }
-    return this.loader.loadFromText(text);
+    return this.loader.loadForUser(user.userId, text);
   }
 
   // Demo profiles for the reverse-ATS picker. Declared before `:id` so the
   // literal path wins over the param route.
   @Get("samples")
+  @Public()
   samples(): Promise<SampleCandidate[]> {
     return this.loader.listSamples();
   }
 
   @Get(":id")
-  get(@Param("id") id: string): Promise<CandidateView> {
+  async get(@CurrentUser() user: JwtUser, @Param("id") id: string): Promise<CandidateView> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     return this.loader.getById(id);
   }
 
   // Rank all vacancies for a stored candidate.
   @Get(":id/matches")
   async matches(
+    @CurrentUser() user: JwtUser,
     @Param("id") id: string,
     @Query("seniorities") rawSeniorities?: string,
     @Query("workFormats") rawWorkFormats?: string,
@@ -125,6 +135,7 @@ export class CvController {
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
   ): Promise<MatchResponse> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     const refs = await this.loader.getMatchInput(id);
     return this.ranking.rankByRefs(
       refs,
@@ -156,7 +167,11 @@ export class CvController {
 
   // "What to learn next": skills that would unlock the most cohort vacancies.
   @Get(":id/recommendations")
-  async recommendations(@Param("id") id: string): Promise<RecommendResponse> {
+  async recommendations(
+    @CurrentUser() user: JwtUser,
+    @Param("id") id: string,
+  ): Promise<RecommendResponse> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     const { matched, role, seniority } = await this.loader.getRecommendInput(id);
     const roleNodeId = await this.ranking.resolveRole(role);
     return this.recommendation.recommend(matched, roleNodeId, seniority);
@@ -164,7 +179,11 @@ export class CvController {
 
   // "You probably also know X": skills implied by the ones the CV listed.
   @Get(":id/skill-suggestions")
-  skillSuggestions(@Param("id") id: string): Promise<SkillSuggestion[]> {
+  async skillSuggestions(
+    @CurrentUser() user: JwtUser,
+    @Param("id") id: string,
+  ): Promise<SkillSuggestion[]> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     return this.additionalSkills.suggest(id);
   }
 
@@ -172,9 +191,11 @@ export class CvController {
   @Post(":id/skills")
   @Throttle(CV_THROTTLE)
   async addSkill(
+    @CurrentUser() user: JwtUser,
     @Param("id") id: string,
     @Body() body: { nodeId?: unknown } | undefined,
   ): Promise<CandidateNodeRef[]> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     return this.loader.confirmSkill(id, await this.resolveSkillNode(body?.nodeId));
   }
 
@@ -182,9 +203,11 @@ export class CvController {
   @Post(":id/skills/reject")
   @Throttle(CV_THROTTLE)
   async rejectSkill(
+    @CurrentUser() user: JwtUser,
     @Param("id") id: string,
     @Body() body: { nodeId?: unknown } | undefined,
   ): Promise<{ ok: true }> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     await this.loader.rejectSuggestion(id, await this.resolveSkillNode(body?.nodeId));
     return { ok: true };
   }
@@ -192,9 +215,11 @@ export class CvController {
   // Remove a skill from the candidate; returns the remaining skill set.
   @Delete(":id/skills/:nodeId")
   async removeSkill(
+    @CurrentUser() user: JwtUser,
     @Param("id") id: string,
     @Param("nodeId") nodeId: string,
   ): Promise<CandidateNodeRef[]> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
     return this.loader.removeSkill(id, await this.resolveSkillNode(nodeId));
   }
 

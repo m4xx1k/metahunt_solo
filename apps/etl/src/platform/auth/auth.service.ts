@@ -8,7 +8,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -17,13 +17,11 @@ import type { AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
 import { verifyTelegramAuth, type TelegramAuthPayload } from "./telegram-verify";
 
-const { users, authIdentities, userCvs, subscriptions, candidates } = schema;
+const { users, authIdentities, subscriptions } = schema;
 
 const PROVIDER = "telegram";
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 // Telegram login: verify the widget payload, upsert the user + identity, claim
-// any anonymous CVs/subscriptions onto them, and mint the app's own session JWT.
+// only server-trusted Telegram subscriptions, and mint the app's own session JWT.
 // Telegram is only the login event — every later request is authed by our JWT.
 @Injectable()
 export class AuthService {
@@ -43,10 +41,7 @@ export class AuthService {
     );
   }
 
-  async loginTelegram(
-    payload: TelegramAuthPayload,
-    candidateIds: string[] = [],
-  ): Promise<TelegramLoginResponse> {
+  async loginTelegram(payload: TelegramAuthPayload): Promise<TelegramLoginResponse> {
     const botToken = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
     if (botToken.length === 0) {
       throw new ServiceUnavailableException("Telegram login is not configured");
@@ -63,7 +58,7 @@ export class AuthService {
     const roles = this.adminIds.has(telegramId) ? ["user", "admin"] : ["user"];
 
     const userId = await this.upsertUser(telegramId, username, firstName, roles);
-    await this.claim(userId, telegramId, candidateIds);
+    await this.claimTelegramSubscriptions(userId, telegramId);
 
     const token = this.jwt.sign({
       sub: userId,
@@ -139,43 +134,18 @@ export class AuthService {
     return created.id;
   }
 
-  // Adopt the user's anonymous artifacts: (a) subscriptions whose chatId is this
-  // telegram id (private-chat id == user id — server-trusted), (b) CVs the
-  // browser holds in localStorage. Newest claimed CV becomes active iff the user
-  // has none yet (never clobbers an existing active choice).
-  private async claim(userId: string, telegramId: string, candidateIds: string[]): Promise<void> {
+  // A Telegram private-chat id is server-trusted. Browser-provided candidate
+  // UUIDs are not: accepting them would let anyone claim another user's CV.
+  private async claimTelegramSubscriptions(userId: string, telegramId: string): Promise<void> {
     await this.db
       .update(subscriptions)
       .set({ userId })
-      .where(and(eq(subscriptions.chatId, telegramId), isNull(subscriptions.userId)));
-
-    const ids = candidateIds.filter((id) => UUID_REGEX.test(id));
-    if (ids.length === 0) return;
-
-    const rows = await this.db
-      .select({ id: candidates.id, role: candidates.role })
-      .from(candidates)
-      .where(inArray(candidates.id, ids));
-    if (rows.length === 0) return;
-    const byId = new Map(rows.map((r) => [r.id, r]));
-    const ordered = ids.filter((id) => byId.has(id));
-
-    const [existingActive] = await this.db
-      .select({ id: userCvs.id })
-      .from(userCvs)
-      .where(and(eq(userCvs.userId, userId), eq(userCvs.isActive, true)));
-    const hasActive = Boolean(existingActive);
-
-    await this.db
-      .insert(userCvs)
-      .values(
-        ordered.map((id, i) => ({
-          userId,
-          candidateId: id,
-          label: byId.get(id)?.role ?? "CV",
-          isActive: !hasActive && i === 0,
-        })),
-      )
-      .onConflictDoNothing();
+      .where(
+        and(
+          eq(subscriptions.chatId, telegramId),
+          isNull(subscriptions.userId),
+          isNull(subscriptions.candidateId),
+        ),
+      );
   }
 }

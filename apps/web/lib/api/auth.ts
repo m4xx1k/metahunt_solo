@@ -28,9 +28,8 @@ export interface TelegramLoginResponse {
 }
 
 export const authApi = {
-  // candidateIds: anonymous CVs from localStorage to claim onto the new session.
-  loginTelegram: (telegram: TelegramAuthPayload, candidateIds: string[]) =>
-    apiPost<TelegramLoginResponse>("/auth/telegram", { telegram, candidateIds }),
+  loginTelegram: (telegram: TelegramAuthPayload) =>
+    apiPost<TelegramLoginResponse>("/auth/telegram", { telegram }),
   me: () => apiGet<AuthUser>("/auth/me"),
   logout: () => apiPost<{ ok: true }>("/auth/logout", {}),
 };

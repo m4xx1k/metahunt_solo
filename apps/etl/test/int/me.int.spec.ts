@@ -7,35 +7,36 @@ import { MeService } from "../../src/account/me.service";
 
 import { makeTestDb } from "./db";
 
-const { users, candidates, userCvs } = schema;
+const { users, candidates, userCvs, subscriptions } = schema;
 
 let db: DrizzleDB;
 let pool: Pool;
 
-// linkCv/listCvs are the only methods exercised; neither touches
-// SubscriptionsService, so a stub is enough to construct the service.
 function makeService(): MeService {
   return new MeService(db, {} as never);
 }
 
 async function seedUser(): Promise<string> {
-  const [u] = await db.insert(users).values({ source: "test" }).returning({ id: users.id });
-  return u.id;
+  const [user] = await db.insert(users).values({ source: "test" }).returning({ id: users.id });
+  return user.id;
 }
 
 let hashSeq = 0;
-async function seedCandidate(role: string | null): Promise<string> {
+async function seedCandidate(role = "Backend Developer"): Promise<string> {
   hashSeq += 1;
-  const [c] = await db
+  const [candidate] = await db
     .insert(candidates)
-    .values({
-      contentHash: `hash-${hashSeq}`,
-      sourceText: `cv ${hashSeq}`,
-      extracted: {},
-      role,
-    })
+    .values({ contentHash: `hash-${hashSeq}`, sourceText: "", extracted: {}, role })
     .returning({ id: candidates.id });
-  return c.id;
+  return candidate.id;
+}
+
+async function link(userId: string, candidateId: string): Promise<string> {
+  const [row] = await db
+    .insert(userCvs)
+    .values({ userId, candidateId, label: "CV", isActive: true })
+    .returning({ id: userCvs.id });
+  return row.id;
 }
 
 beforeAll(() => {
@@ -47,60 +48,56 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  await db.execute(sql`TRUNCATE TABLE user_cvs, candidates, users RESTART IDENTITY CASCADE`);
+  await db.execute(
+    sql`TRUNCATE TABLE subscriptions, user_cvs, candidates, users RESTART IDENTITY CASCADE`,
+  );
 });
 
-describe("MeService.linkCv (integration)", () => {
-  it("links a candidate to the user and marks the first one active", async () => {
+describe("MeService.deleteCv (integration)", () => {
+  it("deletes the final owner's candidate and every associated CV subscription", async () => {
     const me = makeService();
     const userId = await seedUser();
-    const candidateId = await seedCandidate("Backend Developer");
-
-    await me.linkCv(userId, candidateId);
-
-    const cvs = await me.listCvs(userId);
-    expect(cvs).toHaveLength(1);
-    expect(cvs[0]).toMatchObject({
+    const candidateId = await seedCandidate();
+    const linkId = await link(userId, candidateId);
+    await db.insert(subscriptions).values({
+      userId,
       candidateId,
-      label: "Backend Developer",
+      params: {},
       isActive: true,
     });
+
+    await expect(me.deleteCv(userId, linkId)).resolves.toBe(true);
+    expect(await db.select().from(userCvs)).toHaveLength(0);
+    expect(await db.select().from(candidates)).toHaveLength(0);
+    expect(await db.select().from(subscriptions)).toHaveLength(0);
   });
 
-  it("never clobbers an existing active CV when a second is linked", async () => {
+  it("does not delete a CV link owned by another account", async () => {
     const me = makeService();
-    const userId = await seedUser();
-    const first = await seedCandidate("Go Dev");
-    const second = await seedCandidate("Rust Dev");
+    const owner = await seedUser();
+    const otherUser = await seedUser();
+    const candidateId = await seedCandidate();
+    const linkId = await link(owner, candidateId);
 
-    await me.linkCv(userId, first);
-    await me.linkCv(userId, second);
-
-    const active = (await me.listCvs(userId)).filter((c) => c.isActive);
-    expect(active).toHaveLength(1);
-    expect(active[0].candidateId).toBe(first);
+    await expect(me.deleteCv(otherUser, linkId)).resolves.toBe(false);
+    expect(await db.select().from(candidates)).toHaveLength(1);
+    expect(await db.select().from(userCvs)).toHaveLength(1);
   });
 
-  it("is idempotent: re-linking the same CV keeps one ownership row", async () => {
+  it("keeps a legacy shared candidate until its final owner deletes it", async () => {
     const me = makeService();
-    const userId = await seedUser();
-    const candidateId = await seedCandidate("Backend Developer");
+    const firstOwner = await seedUser();
+    const secondOwner = await seedUser();
+    const candidateId = await seedCandidate();
+    const firstLink = await link(firstOwner, candidateId);
+    await link(secondOwner, candidateId);
 
-    await me.linkCv(userId, candidateId);
-    await me.linkCv(userId, candidateId);
-
-    const rows = await db.select().from(userCvs).where(eq(userCvs.userId, userId));
-    expect(rows).toHaveLength(1);
-  });
-
-  it("no-ops for an unknown candidate (GC / stale id): no ownership row", async () => {
-    const me = makeService();
-    const userId = await seedUser();
-    const ghost = "00000000-0000-4000-8000-000000000000";
-
-    await me.linkCv(userId, ghost);
-
-    const rows = await db.select().from(userCvs).where(eq(userCvs.userId, userId));
-    expect(rows).toHaveLength(0);
+    await expect(me.deleteCv(firstOwner, firstLink)).resolves.toBe(true);
+    const owners = await db.select().from(userCvs).where(eq(userCvs.candidateId, candidateId));
+    expect(owners).toHaveLength(1);
+    expect(owners[0].userId).toBe(secondOwner);
+    expect(await db.select().from(candidates).where(eq(candidates.id, candidateId))).toHaveLength(
+      1,
+    );
   });
 });

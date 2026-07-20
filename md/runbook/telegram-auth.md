@@ -55,12 +55,14 @@ the menu only converts value at the moment a user wants to save/subscribe.
 
 ## Claim (what a login adopts)
 
-On login the backend claims the user's anonymous artifacts: (a) subscriptions
-whose `chat_id` equals the telegram user id (private-chat id == user id — set when
-they tapped `/start`); (b) CVs the browser holds in `localStorage`
-(`metahunt.saved`), sent as `candidateIds`, linked via `user_cvs`. `request_access:
-'write'` on the widget also grants the bot permission to message the user, so
-digests work without a separate `/start`.
+On login the backend claims only regular subscriptions whose `chat_id` equals
+the Telegram user id (private-chat id == user id — set when they tapped
+`/start`). CVs are never claimed from browser-provided UUIDs: upload requires
+an authenticated account and creates its owner link atomically. See
+[`cv-privacy.md`](cv-privacy.md) for deletion and Telegram-delivery rules.
+
+`request_access: 'write'` on the widget also grants the bot permission to
+message the user, so digests work without a separate `/start`.
 
 ## Verify (end-to-end)
 
@@ -72,5 +74,6 @@ digests work without a separate `/start`.
 - **Roles:** a non-admin JWT on `PATCH /admin/taxonomy/nodes/:id/hide` → 403; an
   admin JWT → 200; the public feed with no token → 200.
 - **UI (on the tunnel domain):** header `log in ▾` → Telegram popup → header flips
-  to `@username ▾` → refresh persists (localStorage token) → `/me` lists the
-  claimed CV + subscriptions → pause/delete work → log out clears.
+  to `@username ▾` → refresh persists (localStorage token) → upload a CV →
+  `/me` lists the account-owned CV + subscriptions → pause/delete work → log
+  out clears.

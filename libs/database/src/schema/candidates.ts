@@ -22,10 +22,10 @@ export const candidateType = pgEnum("candidate_type", ["user", "sample"]);
 
 // A candidate parsed from an uploaded CV — the reverse-ATS counterpart of a
 // vacancy. See md/journal/migrations/reverse-ats.md (§3-4). `extracted` holds
-// the raw ExtractedCandidate JSON (incl. unmatchedSkills strings); resolved
-// SKILL nodes live in `candidate_nodes`. role/seniority/english are context
-// flags only (not scored). `contentHash` makes re-upload idempotent — the same
-// CV text never hits the LLM twice.
+// the structured ExtractedCandidate JSON (incl. unmatchedSkills strings);
+// resolved SKILL nodes live in `candidate_nodes`. role/seniority/english are
+// context flags only (not scored). `contentHash` is owner-scoped so re-upload
+// is idempotent without coupling different accounts.
 export const candidates = pgTable(
   "candidates",
   {

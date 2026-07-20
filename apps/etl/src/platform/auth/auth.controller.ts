@@ -50,10 +50,7 @@ export class AuthController {
     ) {
       throw new BadRequestException("telegram payload is required");
     }
-    const candidateIds = Array.isArray(body.candidateIds)
-      ? body.candidateIds.filter((v): v is string => typeof v === "string")
-      : [];
-    return this.auth.loginTelegram(tg, candidateIds);
+    return this.auth.loginTelegram(tg);
   }
 
   @Get("me")
