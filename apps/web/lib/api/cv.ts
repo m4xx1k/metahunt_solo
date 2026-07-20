@@ -1,4 +1,5 @@
 import { apiBase, apiDelete, apiGet, apiPost, buildQs } from "./client";
+import { getToken } from "./auth-token";
 import type { FitTier, MatchResponse, RecommendResponse, SkillRef } from "./ranking";
 
 // CV ingestion + stored-candidate matching — mirrors apps/etl .../cv/.
@@ -57,7 +58,12 @@ export const cvApi = {
   uploadFile: async (file: File): Promise<CvIngestResult> => {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${apiBase()}/cv`, { method: "POST", body: form });
+    const token = getToken();
+    const res = await fetch(`${apiBase()}/cv`, {
+      method: "POST",
+      body: form,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       throw new Error(`api ${res.status} /cv: ${body}`);

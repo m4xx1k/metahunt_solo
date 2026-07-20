@@ -30,19 +30,24 @@ export class CandidateLoaderService {
     private readonly ranking: RankingService,
   ) {}
 
-  async loadFromText(rawText: string): Promise<CvIngestResult> {
+  async loadForUser(userId: string, rawText: string): Promise<CvIngestResult> {
     const sourceText = rawText.trim();
     if (sourceText.length === 0) {
       throw new BadRequestException("empty CV text");
     }
     const contentHash = createHash("sha256")
-      .update(sourceText.replace(/\s+/g, " ").toLowerCase())
+      // The hash is scoped to its owner. A global hash would deduplicate the
+      // same CV across accounts, coupling deletion and ownership boundaries.
+      .update(`${userId}\u0000${sourceText.replace(/\s+/g, " ").toLowerCase()}`)
       .digest("hex");
 
     const existing = await this.db
       .select({ id: schema.candidates.id })
       .from(schema.candidates)
-      .where(eq(schema.candidates.contentHash, contentHash));
+      .innerJoin(schema.userCvs, eq(schema.userCvs.candidateId, schema.candidates.id))
+      .where(
+        and(eq(schema.candidates.contentHash, contentHash), eq(schema.userCvs.userId, userId)),
+      );
     if (existing[0]) return this.buildResult(existing[0].id, true);
 
     const extracted = await this.extractor.extract(sourceText);
@@ -54,7 +59,10 @@ export class CandidateLoaderService {
         .insert(schema.candidates)
         .values({
           contentHash,
-          sourceText,
+          // The raw CV is sent to the extractor in memory only. This legacy
+          // non-null column is written empty until its removal migration is
+          // reviewed separately.
+          sourceText: "",
           extracted: { ...extracted, unmatchedSkills: resolved.unmatched },
           role: extracted.role ?? null,
           seniority: extracted.seniority ?? null,
@@ -82,10 +90,37 @@ export class CandidateLoaderService {
           .values(resolved.matched.map((m) => ({ candidateId, nodeId: m.id })))
           .onConflictDoNothing();
       }
+      if (inserted[0]) {
+        await tx.insert(schema.userCvs).values({
+          userId,
+          candidateId,
+          label: extracted.role ?? "CV",
+          isActive: true,
+        });
+      }
       return candidateId;
     });
 
     return this.buildResult(id, false);
+  }
+
+  // User rows are private. Samples contain only seeded non-user data and are
+  // available to authenticated users, but remain immutable below.
+  async assertAccessibleCandidate(userId: string, candidateId: string): Promise<void> {
+    const [candidate] = await this.db
+      .select({ type: schema.candidates.type })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, candidateId));
+    if (!candidate) throw new NotFoundException(`candidate ${candidateId} not found`);
+    if (candidate.type === "sample") return;
+
+    const owners = await this.db
+      .select({ userId: schema.userCvs.userId })
+      .from(schema.userCvs)
+      .where(eq(schema.userCvs.candidateId, candidateId));
+    if (owners.length !== 1 || owners[0].userId !== userId) {
+      throw new NotFoundException(`candidate ${candidateId} not found`);
+    }
   }
 
   // Skill inputs for ranking a stored candidate (GET /cv/:id/matches): resolved

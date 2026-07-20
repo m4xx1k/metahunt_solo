@@ -26,13 +26,6 @@ export class TelegramWidgetPayloadDto {
 export class TelegramLoginRequestDto {
   @ApiProperty({ type: TelegramWidgetPayloadDto })
   telegram!: TelegramWidgetPayloadDto;
-
-  @ApiPropertyOptional({
-    type: [String],
-    format: "uuid",
-    description: "Anonymous CV capabilities to claim after login.",
-  })
-  candidateIds?: string[];
 }
 
 export class AuthUserDto {

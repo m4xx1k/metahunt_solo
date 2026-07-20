@@ -8,7 +8,6 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -49,22 +48,8 @@ export class MeController {
     return this.me.listCvs(user.userId);
   }
 
-  // Claim an anonymously-uploaded CV for the logged-in user so it persists to
-  // the account (cross-device), not just this browser's localStorage.
-  @Post("cv")
-  @ApiOperation({ summary: "Claim an anonymous CV for the current account" })
-  @ApiOkResponse({ type: OkResponseDto })
-  @ApiBadRequestResponse({ description: "candidateId must be a UUID.", type: ApiErrorResponseDto })
-  async claimCv(
-    @CurrentUser() user: JwtUser,
-    @Body("candidateId", ParseUUIDPipe) candidateId: string,
-  ): Promise<{ ok: true }> {
-    await this.me.linkCv(user.userId, candidateId);
-    return { ok: true };
-  }
-
   @Delete("cv/:id")
-  @ApiOperation({ summary: "Delete one account CV link" })
+  @ApiOperation({ summary: "Delete one account CV and its derived data" })
   @ApiOkResponse({ type: OkResponseDto })
   @ApiNotFoundResponse({ description: "CV link was not found.", type: ApiErrorResponseDto })
   async deleteCv(

@@ -40,38 +40,35 @@ export class MeService {
     return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
   }
 
-  // Link an already-ingested candidate to this user (upload-while-logged-in).
-  // Mirrors auth.claim(): unknown candidate is a no-op, dup (userId,candidateId)
-  // is swallowed, and it only becomes active if the user has no active CV yet.
-  async linkCv(userId: string, candidateId: string): Promise<void> {
-    const [cand] = await this.db
-      .select({ role: candidates.role })
-      .from(candidates)
-      .where(eq(candidates.id, candidateId));
-    if (!cand) return;
-
-    const [active] = await this.db
-      .select({ id: userCvs.id })
-      .from(userCvs)
-      .where(and(eq(userCvs.userId, userId), eq(userCvs.isActive, true)));
-
-    await this.db
-      .insert(userCvs)
-      .values({
-        userId,
-        candidateId,
-        label: cand.role ?? "CV",
-        isActive: !active,
-      })
-      .onConflictDoNothing();
-  }
-
   async deleteCv(userId: string, id: string): Promise<boolean> {
-    const deleted = await this.db
-      .delete(userCvs)
-      .where(and(eq(userCvs.id, id), eq(userCvs.userId, userId)))
-      .returning({ id: userCvs.id });
-    return deleted.length > 0;
+    return this.db.transaction(async (tx) => {
+      const [link] = await tx
+        .select({ id: userCvs.id, candidateId: userCvs.candidateId })
+        .from(userCvs)
+        .where(and(eq(userCvs.id, id), eq(userCvs.userId, userId)));
+      if (!link) return false;
+
+      await tx
+        .delete(subscriptions)
+        .where(
+          and(eq(subscriptions.userId, userId), eq(subscriptions.candidateId, link.candidateId)),
+        );
+      await tx.delete(userCvs).where(eq(userCvs.id, link.id));
+
+      // A legacy candidate can have more than one owner link. Never delete a
+      // shared row until its last owner removed it; new uploads are user-scoped.
+      const [remainingOwner] = await tx
+        .select({ id: userCvs.id })
+        .from(userCvs)
+        .where(eq(userCvs.candidateId, link.candidateId));
+      if (!remainingOwner) {
+        // Remove any legacy pending/active CV subscriptions too, so none can
+        // keep referring to a deleted profile.
+        await tx.delete(subscriptions).where(eq(subscriptions.candidateId, link.candidateId));
+        await tx.delete(candidates).where(eq(candidates.id, link.candidateId));
+      }
+      return true;
+    });
   }
 
   async listSubscriptions(userId: string): Promise<MeSubscription[]> {

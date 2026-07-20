@@ -12,7 +12,8 @@ import { asString, asStringArray } from "../../platform/shared/coerce";
 import { SUBSCRIPTION_PARAM_KEYS, type SubscriptionParams } from "./subscriptions.contract";
 import { copy } from "./telegram-copy";
 
-const { subscriptions, nodes } = schema;
+const { subscriptions, nodes, authIdentities, userCvs } = schema;
+const TELEGRAM_PROVIDER = "telegram";
 
 const MAX_SUMMARY_ROLES = 2;
 
@@ -71,7 +72,11 @@ export class SubscriptionsService {
 
   // Pending (inactive, unlinked) until `/start <id>`. Persists only whitelisted
   // keys. Returns the id, which doubles as the deep-link token.
-  async create(rawParams: SubscriptionParams, candidateId?: string): Promise<string> {
+  async create(
+    rawParams: SubscriptionParams,
+    candidateId?: string,
+    userId?: string,
+  ): Promise<string> {
     const params: SubscriptionParams = {};
     for (const key of SUBSCRIPTION_PARAM_KEYS) {
       const value = rawParams[key];
@@ -96,7 +101,7 @@ export class SubscriptionsService {
 
     const [created] = await this.db
       .insert(subscriptions)
-      .values({ params, candidateId: candidateId ?? null })
+      .values({ params, candidateId: candidateId ?? null, userId: userId ?? null })
       .returning({ id: subscriptions.id });
 
     this.logger.log(
@@ -126,11 +131,21 @@ export class SubscriptionsService {
         chatId: subscriptions.chatId,
         isActive: subscriptions.isActive,
         candidateId: subscriptions.candidateId,
+        userId: subscriptions.userId,
         params: subscriptions.params,
       })
       .from(subscriptions)
       .where(eq(subscriptions.id, token));
     if (!pending) return "not_found";
+
+    // CV subscriptions are bound to their authenticated Telegram identity.
+    // Legacy pending CV rows without an owner are deliberately not activated.
+    if (
+      pending.candidateId !== null &&
+      !(await this.isCvSubscriptionOwner(pending.userId, chatId, pending.candidateId))
+    ) {
+      return "not_found";
+    }
 
     // Already activated: re-tapping the same link from the same chat is a
     // no-op; a token already claimed by another chat is treated as unusable.
@@ -207,12 +222,19 @@ export class SubscriptionsService {
         id: subscriptions.id,
         chatId: subscriptions.chatId,
         candidateId: subscriptions.candidateId,
+        userId: subscriptions.userId,
         params: subscriptions.params,
         createdAt: subscriptions.createdAt,
       })
       .from(subscriptions)
       .where(and(eq(subscriptions.id, id), eq(subscriptions.isActive, true)));
     if (!row || row.chatId === null) return null;
+    if (
+      row.candidateId !== null &&
+      !(await this.isCvSubscriptionOwner(row.userId, row.chatId, row.candidateId))
+    ) {
+      return null;
+    }
     return { ...row, chatId: row.chatId };
   }
 
@@ -297,6 +319,28 @@ export class SubscriptionsService {
       .returning({ id: subscriptions.id });
 
     return deleted.length;
+  }
+
+  private async isCvSubscriptionOwner(
+    userId: string | null,
+    chatId: string,
+    candidateId: string,
+  ): Promise<boolean> {
+    if (!userId) return false;
+    const [identity, ...additionalIdentities] = await this.db
+      .select({ telegramId: authIdentities.providerUserId })
+      .from(authIdentities)
+      .where(
+        and(eq(authIdentities.userId, userId), eq(authIdentities.provider, TELEGRAM_PROVIDER)),
+      );
+    if (!identity || additionalIdentities.length > 0 || identity.telegramId !== chatId)
+      return false;
+
+    const owners = await this.db
+      .select({ userId: userCvs.userId })
+      .from(userCvs)
+      .where(eq(userCvs.candidateId, candidateId));
+    return owners.length === 1 && owners[0].userId === userId;
   }
 
   // Human label distinguishing one sub from another: CV marker, roles/skills,

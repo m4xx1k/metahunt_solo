@@ -1,10 +1,9 @@
 import type { TelegramAuthPayload } from "./telegram-verify";
 
-// POST /auth/telegram — the widget payload plus any anonymous candidateIds the
-// browser wants claimed onto the new session.
+// POST /auth/telegram — Telegram widget payload only. CVs are created for an
+// authenticated account and cannot be claimed with a browser-provided UUID.
 export interface TelegramLoginRequest {
   telegram: TelegramAuthPayload;
-  candidateIds?: string[];
 }
 
 // Public shape of the logged-in user (no secrets). `username`/`firstName` come

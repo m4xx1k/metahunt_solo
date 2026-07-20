@@ -1,13 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { FeedShell } from "@/app/(feed)/_components/FeedShell";
 import { cn } from "@/lib/utils";
 import { cvApi, type CvIngestResult, type SampleCandidate } from "@/lib/api/cv";
-import { meApi } from "@/lib/api/me";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { useSession } from "@/features/auth/use-session";
@@ -56,7 +54,6 @@ export function FeedLensShell({
   const analytics = useAnalytics();
   const saved = useSaved();
   const { isLoggedIn } = useSession();
-  const qc = useQueryClient();
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -104,6 +101,10 @@ export function FeedLensShell({
 
   const onFile = useCallback(
     async (file: File) => {
+      if (!isLoggedIn) {
+        toast.error("Log in with Telegram before uploading a CV");
+        return;
+      }
       setUploadError(null);
       setUploading(true);
       try {
@@ -115,17 +116,7 @@ export function FeedLensShell({
           label: info.role ?? "Your CV",
           addedAt: Date.now(),
         });
-        // Logged in → persist to the account so the CV shows on every device,
-        // not just this browser. Best effort: on failure it stays in localStorage
-        // and gets claimed at next login.
-        if (isLoggedIn) {
-          try {
-            await meApi.claimCv(info.candidateId);
-            void qc.invalidateQueries({ queryKey: ["me", "cv"] });
-          } catch {
-            /* keep the upload flow green — local copy already saved */
-          }
-        }
+        // The API creates the ownership link atomically with the upload.
         setCv(info.candidateId);
         scrollToControls();
       } catch (e) {
@@ -134,7 +125,7 @@ export function FeedLensShell({
         setUploading(false);
       }
     },
-    [analytics, saved, setCv, scrollToControls, isLoggedIn, qc],
+    [analytics, saved, setCv, scrollToControls, isLoggedIn],
   );
 
   const onPickCv = useCallback(
@@ -158,11 +149,7 @@ export function FeedLensShell({
   const isSample = cv != null && samples.some((s) => s.candidateId === cv);
   const uploaded = uploadInfo?.candidateId === cv ? uploadInfo : null;
   const sampleLabel = samples.find((s) => s.candidateId === cv)?.label;
-  const profileTitle = uploaded
-    ? "Your CV"
-    : sampleLabel
-      ? `Profile · ${sampleLabel}`
-      : "Your CV";
+  const profileTitle = uploaded ? "Your CV" : sampleLabel ? `Profile · ${sampleLabel}` : "Your CV";
 
   return (
     <div className="flex flex-col gap-4">
@@ -193,11 +180,7 @@ export function FeedLensShell({
           dragging ? "border-accent bg-accent/5" : "border-border bg-bg-card",
         )}
       >
-        <LensTabs
-          lens={lens}
-          cvLocked={cv == null && saved.activeCv == null}
-          onSelect={onLens}
-        />
+        <LensTabs lens={lens} cvLocked={cv == null && saved.activeCv == null} onSelect={onLens} />
         <div className="ml-auto">
           <CvDropzone onClick={triggerUpload} busy={uploading} />
         </div>

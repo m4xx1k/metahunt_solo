@@ -39,7 +39,7 @@ export interface CreateSubscriptionResponse {
 
 export const subscriptionsApi = {
   create: (params: SubscriptionParams | CvMatchParams, candidateId?: string) =>
-    apiPost<CreateSubscriptionResponse>("/subscriptions", {
+    apiPost<CreateSubscriptionResponse>(candidateId ? "/subscriptions/cv" : "/subscriptions", {
       params,
       candidateId,
     }),
