@@ -176,10 +176,25 @@ export class SubscriptionsService {
       return "duplicate";
     }
 
-    await this.db
+    const [activated] = await this.db
       .update(subscriptions)
       .set({ chatId, isActive: true })
-      .where(eq(subscriptions.id, token));
+      .where(
+        and(
+          eq(subscriptions.id, token),
+          eq(subscriptions.isActive, false),
+          isNull(subscriptions.chatId),
+        ),
+      )
+      .returning({ id: subscriptions.id });
+    if (!activated) {
+      const [current] = await this.db
+        .select({ chatId: subscriptions.chatId, isActive: subscriptions.isActive })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, token));
+      return current?.isActive && current.chatId === chatId ? "already_active" : "not_found";
+    }
+
     this.logger.log(
       `link ${token}: activated for chat ${chatId} (candidateId=${pending.candidateId ?? "none"})`,
     );
