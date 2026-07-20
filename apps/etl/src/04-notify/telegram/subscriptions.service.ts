@@ -153,41 +153,56 @@ export class SubscriptionsService {
       return pending.chatId === chatId ? "already_active" : "not_found";
     }
 
-    // Dedup on the full identity: same chat, same params AND same candidate.
-    // Without candidateId two different CVs (or a CV vs a feed sub) with the
-    // same filters would collapse into one.
-    const [duplicate] = await this.db
-      .select({ id: subscriptions.id })
-      .from(subscriptions)
-      .where(
-        and(
-          eq(subscriptions.chatId, chatId),
-          eq(subscriptions.isActive, true),
-          ne(subscriptions.id, token),
-          pending.candidateId === null
-            ? isNull(subscriptions.candidateId)
-            : eq(subscriptions.candidateId, pending.candidateId),
-          sql`${subscriptions.params} = ${JSON.stringify(pending.params)}::jsonb`,
-        ),
-      );
-    if (duplicate) {
-      await this.db.delete(subscriptions).where(eq(subscriptions.id, token));
-      this.logger.log(`link ${token}: duplicate of ${duplicate.id} — dropped`);
+    const result = await this.db.transaction(async (tx) => {
+      const lockKey = JSON.stringify([chatId, pending.candidateId, pending.params]);
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+
+      const [duplicate] = await tx
+        .select({ id: subscriptions.id })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.chatId, chatId),
+            eq(subscriptions.isActive, true),
+            ne(subscriptions.id, token),
+            pending.candidateId === null
+              ? isNull(subscriptions.candidateId)
+              : eq(subscriptions.candidateId, pending.candidateId),
+            sql`${subscriptions.params} = ${JSON.stringify(pending.params)}::jsonb`,
+          ),
+        );
+      if (duplicate) {
+        const [deleted] = await tx
+          .delete(subscriptions)
+          .where(
+            and(
+              eq(subscriptions.id, token),
+              eq(subscriptions.isActive, false),
+              isNull(subscriptions.chatId),
+            ),
+          )
+          .returning({ id: subscriptions.id });
+        return deleted ? { type: "duplicate" as const, duplicateId: duplicate.id } : null;
+      }
+
+      const [activated] = await tx
+        .update(subscriptions)
+        .set({ chatId, isActive: true })
+        .where(
+          and(
+            eq(subscriptions.id, token),
+            eq(subscriptions.isActive, false),
+            isNull(subscriptions.chatId),
+          ),
+        )
+        .returning({ id: subscriptions.id });
+      return activated ? { type: "linked" as const } : null;
+    });
+    if (result?.type === "duplicate") {
+      this.logger.log(`link ${token}: duplicate of ${result.duplicateId} — dropped`);
       return "duplicate";
     }
-
-    const [activated] = await this.db
-      .update(subscriptions)
-      .set({ chatId, isActive: true })
-      .where(
-        and(
-          eq(subscriptions.id, token),
-          eq(subscriptions.isActive, false),
-          isNull(subscriptions.chatId),
-        ),
-      )
-      .returning({ id: subscriptions.id });
-    if (!activated) {
+    if (!result) {
       const [current] = await this.db
         .select({ chatId: subscriptions.chatId, isActive: subscriptions.isActive })
         .from(subscriptions)
