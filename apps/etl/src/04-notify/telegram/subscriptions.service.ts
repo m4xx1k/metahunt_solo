@@ -180,13 +180,9 @@ export class SubscriptionsService {
       .update(subscriptions)
       .set({ chatId, isActive: true })
       .where(eq(subscriptions.id, token));
-    this.logger.log(
-      `link ${token}: activated for chat ${chatId} (candidateId=${pending.candidateId ?? "none"})`,
-    );
+    this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
 
-    // Bridge №2: collapse the web/subscription person onto the canonical
-    // `tg:<chatId>` human so the browser session and Telegram are one person.
-    this.analytics.telegramLinked(token, chatId, "linked");
+    this.analytics.telegramLinked(token, "linked");
     return "linked";
   }
 
@@ -262,7 +258,7 @@ export class SubscriptionsService {
       .returning({ id: subscriptions.id });
 
     if (stopped.length > 0) {
-      this.analytics.unsubscribed(chatId, {
+      this.analytics.unsubscribed({
         method: "stop_command",
         count: stopped.length,
       });
@@ -290,7 +286,7 @@ export class SubscriptionsService {
       .returning({ id: subscriptions.id });
 
     if (stopped.length > 0) {
-      this.analytics.unsubscribed(chatId, {
+      this.analytics.unsubscribed({
         method: "button",
         subscriptionId: id,
       });

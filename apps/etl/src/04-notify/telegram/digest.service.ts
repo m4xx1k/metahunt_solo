@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
@@ -62,10 +64,14 @@ export class DigestService {
       await this.sentNotifications.record(sub.id, page.vacancyIds);
     }
 
-    this.analytics.digestSent(sub.chatId, {
+    this.analytics.digestSent({
       subscriptionId: sub.id,
       vacancies: total,
       pages: pages.length,
+      deliveryId: digestDeliveryId(
+        sub.id,
+        pages.flatMap((page) => page.vacancyIds),
+      ),
     });
     this.logger.log(`digest → sub ${sub.id}: ${total} new in ${pages.length} page(s)`);
     return total;
@@ -92,4 +98,10 @@ export class DigestService {
     }
     return { subscriptions: ids.length, sent };
   }
+}
+
+function digestDeliveryId(subscriptionId: string, vacancyIds: string[]): string {
+  return createHash("sha256")
+    .update(`${subscriptionId}:${vacancyIds.join(",")}`)
+    .digest("hex");
 }
