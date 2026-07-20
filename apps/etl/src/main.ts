@@ -8,14 +8,17 @@ import { resolve } from "node:path";
 loadEnv({ path: resolve(__dirname, "../../../.env") });
 
 import { Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 import { AppModule } from "./app.module";
+import { corsOrigin } from "./platform/config/cors-origin";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: "*" });
+  const config = app.get(ConfigService);
+  app.enableCors({ origin: corsOrigin(config.getOrThrow<string>("WEB_BASE_URL")) });
   // Behind Railway's proxy, honor X-Forwarded-For so req.ip is the real client
   // IP — otherwise the rate limiter buckets every user under the proxy's IP
   // (and the strict /cv 5/min would apply globally). One hop = the platform edge.

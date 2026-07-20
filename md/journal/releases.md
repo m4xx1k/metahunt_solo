@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-20
+
+- **CORS allowlist** (`fix/cors-allowlist`). The API accepts browser cross-origin requests only from `WEB_BASE_URL`; the configured URL is normalized to an origin before middleware setup.
+
+---
+
 ## 2026-04-26
 
 - Monorepo scaffold on pnpm workspaces: `apps/etl` (`@metahunt/etl`) + `libs/database` (`@metahunt/database`, `@Global()` Nest module). Old `_metahunt/` archived as read-only reference. → ADR-0001
