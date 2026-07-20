@@ -55,7 +55,7 @@ export default async function TaxonomyPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="довідник понять" activePath="/taxonomy" />
+      <InvestigationHeader title="довідник понять" />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 md:px-12">
         <div className="flex flex-col gap-2">

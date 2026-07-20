@@ -87,7 +87,7 @@ export default async function DashboardPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="операційний дашборд" activePath="/dashboard" />
+      <InvestigationHeader title="операційний дашборд" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <div className="flex flex-wrap items-center justify-between gap-4">
