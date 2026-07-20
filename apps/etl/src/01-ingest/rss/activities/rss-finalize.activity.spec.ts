@@ -1,5 +1,7 @@
 import { Test } from "@nestjs/testing";
 
+import { eq } from "drizzle-orm";
+
 import { DRIZZLE, schema } from "@metahunt/database";
 
 import { RssFinalizeActivity } from "./rss-finalize.activity";
@@ -43,5 +45,19 @@ describe("RssFinalizeActivity", () => {
     expect(setArg.status).toBe("failed");
     expect(setArg.errorMessage).toBe("boom");
     expect(setArg.finishedAt).toBeInstanceOf(Date);
+  });
+
+  it("marks ingest failed by workflow run id", async () => {
+    const { activity, mocks } = await bootstrap();
+
+    await activity.finalizeIngestByWorkflowRunId("workflow-run-1", "failed", "fetch failed");
+
+    const setArg = mocks.updateSet.mock.calls[0][0];
+    expect(setArg.status).toBe("failed");
+    expect(setArg.errorMessage).toBe("fetch failed");
+    expect(setArg.finishedAt).toBeInstanceOf(Date);
+    expect(mocks.updateWhere).toHaveBeenCalledWith(
+      eq(schema.rssIngests.workflowRunId, "workflow-run-1"),
+    );
   });
 });
