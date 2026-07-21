@@ -36,6 +36,7 @@ interface ColdOpts {
 interface WarmOpts {
   lens: "warm";
   candidateId: string;
+  isSample: boolean;
   filters: FilterState;
   page: number;
   enabled?: boolean;
@@ -53,7 +54,7 @@ export function useResults(opts: ColdOpts | WarmOpts): UseQueryResult<AnyResults
         }
       : {
           queryKey: warmKey(opts.candidateId, opts.filters, opts.page),
-          queryFn: () => fetchMatch(opts.candidateId, opts.filters, opts.page),
+          queryFn: () => fetchMatch(opts.candidateId, opts.filters, opts.page, opts.isSample),
           enabled: opts.enabled ?? true,
         };
 

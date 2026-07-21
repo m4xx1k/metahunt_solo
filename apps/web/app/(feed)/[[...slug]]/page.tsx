@@ -27,14 +27,30 @@ export const dynamic = "force-dynamic";
 // the ETL each request. Cache them in the Data Cache (the list + ?cv seed below
 // stay live, per-request).
 const CATALOG_TTL = 3600;
-const getAggregates = unstable_cache(() => aggregatesApi.get(), ["feed:aggregates"], { revalidate: CATALOG_TTL });
-const getTracks = unstable_cache(() => tracksApi.get(), ["feed:tracks"], { revalidate: CATALOG_TTL });
-const getRoleCatalog = unstable_cache(() => facetsApi.roles(), ["feed:facets-roles"], { revalidate: CATALOG_TTL });
-const getSkillCatalog = unstable_cache(() => facetsApi.skills(), ["feed:facets-skills"], { revalidate: CATALOG_TTL });
-const getDomainCatalog = unstable_cache(() => facetsApi.domains(), ["feed:facets-domains"], { revalidate: CATALOG_TTL });
-const getSamples = unstable_cache(() => cvApi.samples(), ["feed:cv-samples"], { revalidate: CATALOG_TTL });
-const getTrackPreset = unstable_cache((s: string) => tracksApi.preset(s), ["feed:track-preset"], { revalidate: CATALOG_TTL });
-const getTrackSkills = unstable_cache((s: string) => tracksApi.skills(s), ["feed:track-skills"], { revalidate: CATALOG_TTL });
+const getAggregates = unstable_cache(() => aggregatesApi.get(), ["feed:aggregates"], {
+  revalidate: CATALOG_TTL,
+});
+const getTracks = unstable_cache(() => tracksApi.get(), ["feed:tracks"], {
+  revalidate: CATALOG_TTL,
+});
+const getRoleCatalog = unstable_cache(() => facetsApi.roles(), ["feed:facets-roles"], {
+  revalidate: CATALOG_TTL,
+});
+const getSkillCatalog = unstable_cache(() => facetsApi.skills(), ["feed:facets-skills"], {
+  revalidate: CATALOG_TTL,
+});
+const getDomainCatalog = unstable_cache(() => facetsApi.domains(), ["feed:facets-domains"], {
+  revalidate: CATALOG_TTL,
+});
+const getSamples = unstable_cache(() => cvApi.samples(), ["feed:cv-samples"], {
+  revalidate: CATALOG_TTL,
+});
+const getTrackPreset = unstable_cache((s: string) => tracksApi.preset(s), ["feed:track-preset"], {
+  revalidate: CATALOG_TTL,
+});
+const getTrackSkills = unstable_cache((s: string) => tracksApi.skills(s), ["feed:track-skills"], {
+  revalidate: CATALOG_TTL,
+});
 
 export default async function FeedPage({
   params,
@@ -48,10 +64,7 @@ export default async function FeedPage({
 
   const trackSlug = slug?.[0];
 
-  const [aggregates, { tracks }] = await Promise.all([
-    getAggregates(),
-    getTracks(),
-  ]);
+  const [aggregates, { tracks }] = await Promise.all([getAggregates(), getTracks()]);
 
   if (trackSlug && !tracks.some((t) => t.slug === trackSlug)) {
     notFound();
@@ -65,9 +78,7 @@ export default async function FeedPage({
     { domains: domainCatalog },
     samples,
   ] = await Promise.all([
-    trackSlug
-      ? getTrackPreset(trackSlug)
-      : Promise.resolve({ roles: [], skills: [] }),
+    trackSlug ? getTrackPreset(trackSlug) : Promise.resolve({ roles: [], skills: [] }),
     trackSlug ? getTrackSkills(trackSlug) : Promise.resolve({ skills: [] }),
     getRoleCatalog(),
     getSkillCatalog(),
@@ -97,11 +108,9 @@ export default async function FeedPage({
   const cv = typeof sp.cv === "string" ? sp.cv : null;
   if (cv) {
     const filters = readFilterState(readerFrom(sp));
+    const isSample = samples.some((sample) => sample.candidateId === cv);
     try {
-      queryClient.setQueryData(
-        warmKey(cv, filters, 1),
-        await fetchMatch(cv, filters, 1),
-      );
+      queryClient.setQueryData(warmKey(cv, filters, 1), await fetchMatch(cv, filters, 1, isSample));
     } catch {
       /* no seed */
     }

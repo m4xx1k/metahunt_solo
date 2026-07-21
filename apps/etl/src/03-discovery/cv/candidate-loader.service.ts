@@ -123,6 +123,16 @@ export class CandidateLoaderService {
     }
   }
 
+  async assertSampleCandidate(candidateId: string): Promise<void> {
+    const [candidate] = await this.db
+      .select({ type: schema.candidates.type })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, candidateId));
+    if (candidate?.type !== "sample") {
+      throw new NotFoundException(`sample candidate ${candidateId} not found`);
+    }
+  }
+
   // Skill inputs for ranking a stored candidate (GET /cv/:id/matches): resolved
   // nodes with their IDF weight + the unmatched strings kept on the candidate.
   async getMatchInput(id: string): Promise<{ matched: SkillRef[]; unmatched: string[] }> {

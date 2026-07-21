@@ -42,6 +42,7 @@ export function WarmBody({
   const { data, rec, page, pageSize, busy, errorMsg, notFound, goToOffset } = useFeedWarm(
     candidateId,
     api.filters,
+    isSample,
     !isSample,
   );
 

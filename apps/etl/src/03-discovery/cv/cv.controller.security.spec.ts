@@ -14,6 +14,7 @@ describe("CvController privacy boundary", () => {
 
   it("exposes only seeded samples without a JWT", () => {
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, CvController.prototype.samples)).toBe(true);
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, CvController.prototype.sampleMatches)).toBe(true);
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, CvController.prototype.upload)).toBeUndefined();
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, CvController.prototype.get)).toBeUndefined();
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, CvController.prototype.matches)).toBeUndefined();

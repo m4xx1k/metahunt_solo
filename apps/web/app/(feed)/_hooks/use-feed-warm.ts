@@ -16,6 +16,7 @@ import type { FilterState } from "@/features/vacancy-filters/types";
 export function useFeedWarm(
   candidateId: string | null,
   filters: FilterState,
+  isSample: boolean,
   showRecs: boolean,
 ) {
   const [page, setPage] = useState(1);
@@ -28,6 +29,7 @@ export function useFeedWarm(
   const { data, isFetching, isError, error } = useResults({
     lens: "warm",
     candidateId: candidateId ?? "",
+    isSample,
     filters,
     page,
     enabled: candidateId != null,
