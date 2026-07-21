@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -107,6 +108,7 @@ export function FeedLensShell({
       }
       setUploadError(null);
       setUploading(true);
+      analytics.cvUploadStarted();
       try {
         const info = await cvApi.uploadFile(file);
         setUploadInfo(info);
@@ -120,6 +122,7 @@ export function FeedLensShell({
         setCv(info.candidateId);
         scrollToControls();
       } catch (e) {
+        analytics.cvUploadFailed();
         setUploadError(e instanceof Error ? e.message : "Couldn't process the file");
       } finally {
         setUploading(false);
@@ -181,8 +184,14 @@ export function FeedLensShell({
         )}
       >
         <LensTabs lens={lens} cvLocked={cv == null && saved.activeCv == null} onSelect={onLens} />
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-col items-end gap-1">
           <CvDropzone onClick={triggerUpload} busy={uploading} />
+          <Link
+            href="/privacy#cv"
+            className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+          >
+            AI processed · raw text not stored
+          </Link>
         </div>
       </div>
 

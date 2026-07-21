@@ -5,10 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/ui";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
-import {
-  subscriptionsApi,
-  type SubscriptionParams,
-} from "@/lib/api/subscriptions";
+import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptions";
 
 // Single tap: create a fresh pending subscription from the current facet filter
 // and hand off straight to Telegram, where `/start <id>` links the chat and
@@ -23,10 +20,12 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    analytics.subscriptionCreateStarted("feed", params);
     const tab = window.open("about:blank", "_blank");
     try {
       const res = await subscriptionsApi.create(params);
       analytics.subscriptionCreated(res.id, params);
+      analytics.subscriptionHandoffOpened("feed");
       if (tab) {
         tab.opener = null;
         tab.location.href = res.deepLink;
@@ -34,6 +33,7 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
         window.location.href = res.deepLink;
       }
     } catch {
+      analytics.subscriptionCreateFailed("feed");
       tab?.close();
       toast.error("Failed to create alert");
     } finally {

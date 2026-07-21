@@ -6,15 +6,33 @@ import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions"
 // Single source of truth for client-side event names (mirrors the backend
 // events.ts) — no event-name string literals in components.
 const ANALYTICS_EVENTS = {
+  landingView: "landing_view",
+  landingCtaClicked: "landing_cta_clicked",
+  subscriptionCreateStarted: "subscription_create_started",
+  subscriptionHandoffOpened: "subscription_handoff_opened",
+  subscriptionCreateFailed: "subscription_create_failed",
   subscribeClicked: "subscribe_clicked",
   lensSwitch: "lens_switch",
+  cvUploadStarted: "cv_upload_started",
+  cvUploadCompleted: "cv_upload_completed",
+  cvUploadFailed: "cv_upload_failed",
   cvUpload: "cv_upload",
+  telegramLoginStarted: "telegram_login_started",
+  telegramLoginCancelled: "telegram_login_cancelled",
+  telegramLoginFailed: "telegram_login_failed",
   loggedIn: "logged_in",
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
 } as const;
 
 export type Lens = "cold" | "warm";
+export type SubscriptionProfile = "feed" | "cv";
+export type AcquisitionAttribution = Partial<
+  Record<
+    "utm_source" | "utm_medium" | "utm_campaign" | "utm_content" | "utm_term" | "creative_id",
+    string
+  >
+>;
 
 // The single client-side analytics seam — domain methods only, so components
 // never touch raw event names or the PostHog client (mirrors the backend
@@ -26,11 +44,48 @@ export function useAnalytics() {
 
   return useMemo(
     () => ({
+      landingViewed(variant: string, attribution: AcquisitionAttribution) {
+        posthog?.capture(ANALYTICS_EVENTS.landingView, {
+          landing_variant: variant,
+          ...attribution,
+        });
+      },
+
+      landingCtaClicked(variant: string, attribution: AcquisitionAttribution) {
+        posthog?.capture(ANALYTICS_EVENTS.landingCtaClicked, {
+          landing_variant: variant,
+          destination: "telegram_subscription",
+          ...attribution,
+        });
+      },
+
+      subscriptionCreateStarted(
+        profile: SubscriptionProfile,
+        params: SubscriptionParams | CvMatchParams,
+      ) {
+        posthog?.capture(ANALYTICS_EVENTS.subscriptionCreateStarted, {
+          profile_type: profile,
+          filter_count: Object.keys(params).length,
+        });
+      },
+
       subscriptionCreated(subscriptionUuid: string, params: SubscriptionParams | CvMatchParams) {
         posthog?.capture(ANALYTICS_EVENTS.subscribeClicked, {
           filterCount: Object.keys(params).length,
         });
         posthog?.alias(subscriptionUuid);
+      },
+
+      subscriptionHandoffOpened(profile: SubscriptionProfile) {
+        posthog?.capture(ANALYTICS_EVENTS.subscriptionHandoffOpened, {
+          profile_type: profile,
+        });
+      },
+
+      subscriptionCreateFailed(profile: SubscriptionProfile) {
+        posthog?.capture(ANALYTICS_EVENTS.subscriptionCreateFailed, {
+          profile_type: profile,
+        });
       },
 
       // The visitor toggled the feed/CV lens. `to` is the lens now shown.
@@ -41,8 +96,29 @@ export function useAnalytics() {
       // A CV was uploaded and resolved to a candidate (the warm-lens entry).
       // The candidateId is a shareable bearer capability, so it is deliberately
       // NOT sent as a property.
+      cvUploadStarted() {
+        posthog?.capture(ANALYTICS_EVENTS.cvUploadStarted);
+      },
+
       cvUpload(reused: boolean) {
+        posthog?.capture(ANALYTICS_EVENTS.cvUploadCompleted, { reused });
         posthog?.capture(ANALYTICS_EVENTS.cvUpload, { reused });
+      },
+
+      cvUploadFailed() {
+        posthog?.capture(ANALYTICS_EVENTS.cvUploadFailed);
+      },
+
+      telegramLoginStarted() {
+        posthog?.capture(ANALYTICS_EVENTS.telegramLoginStarted);
+      },
+
+      telegramLoginCancelled() {
+        posthog?.capture(ANALYTICS_EVENTS.telegramLoginCancelled);
+      },
+
+      telegramLoginFailed(stage: "configuration" | "widget" | "session") {
+        posthog?.capture(ANALYTICS_EVENTS.telegramLoginFailed, { stage });
       },
 
       loggedIn(userId: string) {

@@ -13,12 +13,7 @@ import {
   asEnums,
   type FilterState,
 } from "@/features/vacancy-filters/types";
-import type {
-  EmploymentType,
-  EnglishLevel,
-  Seniority,
-  WorkFormat,
-} from "@/lib/api/vacancies";
+import type { EmploymentType, EnglishLevel, Seniority, WorkFormat } from "@/lib/api/vacancies";
 import type { FitTier } from "@/lib/api/ranking";
 
 // Warm subscribe: replays the on-screen CV filters — including domain +
@@ -43,11 +38,13 @@ export function WarmSubscribe({
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const params = toCvMatchParams(filters);
+    analytics.subscriptionCreateStarted("cv", params);
     const tab = window.open("about:blank", "_blank");
     try {
-      const params = toCvMatchParams(filters);
       const res = await subscriptionsApi.create(params, candidateId);
       analytics.subscriptionCreated(res.id, params);
+      analytics.subscriptionHandoffOpened("cv");
       addSub({
         id: res.id,
         lens: "warm",
@@ -63,6 +60,7 @@ export function WarmSubscribe({
         window.location.href = res.deepLink;
       }
     } catch {
+      analytics.subscriptionCreateFailed("cv");
       tab?.close();
       toast.error("Failed to create alert");
     } finally {
@@ -103,7 +101,6 @@ function toCvMatchParams(f: FilterState): CvMatchParams {
     hasTestAssignment: f.test ?? undefined,
     hasReservation: f.reservation ?? undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
-    postedWithinDays:
-      FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
+    postedWithinDays: FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
   };
 }

@@ -41,6 +41,12 @@ export function Footer() {
           >
             how it works
           </Link>
+          <Link
+            href="/privacy"
+            className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
+          >
+            privacy
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3.5">
