@@ -17,6 +17,19 @@ Tests buy confidence to change code without breaking it. They are not a coverage
 
 ## Patterns
 
+### Local Delivery Fixture
+
+Run the isolated digest side-effect flow with ephemeral Postgres and a fake
+Telegram transport:
+
+```bash
+pnpm --filter @metahunt/etl exec jest --config jest.int.config.ts --runInBand \
+  test/int/digest-fixture.int.spec.ts
+```
+
+It verifies delivery, failure retry, sent-notification deduplication, and a
+paused subscription without a bot token, production database, or network call.
+
 ### Arrange / Act / Assert
 
 Three blocks per test, in order. Blank line between is fine.
