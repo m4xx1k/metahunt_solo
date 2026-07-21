@@ -21,6 +21,16 @@ export function apiBase(): string {
     typeof window === "undefined"
       ? (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL)
       : process.env.NEXT_PUBLIC_API_URL;
+  return normalizeApiBase(base);
+}
+
+// URLs rendered into HTML must use the public origin on both server and client.
+// `API_INTERNAL_URL` is only safe for server-to-server fetches.
+export function publicApiBase(): string {
+  return normalizeApiBase(process.env.NEXT_PUBLIC_API_URL);
+}
+
+function normalizeApiBase(base: string | undefined): string {
   if (!base) {
     throw new Error(
       "NEXT_PUBLIC_API_URL is not set. Add it to apps/web/.env.local (e.g. http://localhost:3000).",

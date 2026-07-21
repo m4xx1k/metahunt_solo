@@ -1,4 +1,4 @@
-import { apiBase, buildQs } from "@/lib/api/client";
+import { apiBase, buildQs, publicApiBase } from "@/lib/api/client";
 
 describe("buildQs", () => {
   it("returns an empty string for nullish/empty params", () => {
@@ -61,5 +61,11 @@ describe("apiBase", () => {
     process.env[KEY] = "http://localhost:3333";
     process.env[INTERNAL] = "http://etl:3333/";
     expect(apiBase()).toBe("http://etl:3333");
+  });
+
+  it("keeps rendered URLs on the public origin server-side", () => {
+    process.env[KEY] = "http://localhost:3333/";
+    process.env[INTERNAL] = "http://etl:3333";
+    expect(publicApiBase()).toBe("http://localhost:3333");
   });
 });
