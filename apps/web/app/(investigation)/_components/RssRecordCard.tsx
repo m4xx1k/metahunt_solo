@@ -27,7 +27,7 @@ export function RssRecordCard({
   className?: string;
 }) {
   const ex = safeExtracted(record.extractedData);
-  const extracted = record.extracted && ex !== null;
+  const extracted = record.extractionStatus === "succeeded" && ex !== null;
 
   return (
     <article

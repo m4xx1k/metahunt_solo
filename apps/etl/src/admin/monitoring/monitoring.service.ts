@@ -1,21 +1,15 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 
-import {
-  and,
-  count,
-  desc,
-  eq,
-  gte,
-  ilike,
-  isNotNull,
-  isNull,
-  lte,
-  sql,
-  type SQL,
-} from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, isNull, lte, sql, type SQL } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
+
+import {
+  extractionStatus,
+  hasExtractionError,
+  type ExtractionStatus,
+} from "../../platform/shared/extraction-status";
 
 const { rssIngests, rssRecords, sources, vacancies, uniqueVacancies } = schema;
 
@@ -47,7 +41,7 @@ export interface ListIngestsParams {
 export interface ListRecordsParams {
   ingestId?: string;
   sourceId?: string;
-  extracted?: boolean;
+  extractionStatus?: ExtractionStatus;
   q?: string;
   limit: number;
   offset: number;
@@ -77,7 +71,9 @@ export class MonitoringService {
       .select({
         ...ingestSelect,
         recordCount: sql<number>`count(${rssRecords.id})::int`,
-        extractedCount: sql<number>`count(${rssRecords.extractedAt})::int`,
+        succeededCount: sql<number>`count(${rssRecords.id}) filter (where ${rssRecords.extractedAt} is not null and not coalesce(${rssRecords.extractedData} ? '_error', false))::int`,
+        failedCount: sql<number>`count(${rssRecords.id}) filter (where ${rssRecords.extractedAt} is not null and coalesce(${rssRecords.extractedData} ? '_error', false))::int`,
+        pendingCount: sql<number>`count(${rssRecords.id}) filter (where ${rssRecords.extractedAt} is null)::int`,
       })
       .from(rssIngests)
       .leftJoin(sources, eq(sources.id, rssIngests.sourceId))
@@ -106,7 +102,9 @@ export class MonitoringService {
       .select({
         ...ingestSelect,
         recordCount: sql<number>`count(${rssRecords.id})::int`,
-        extractedCount: sql<number>`count(${rssRecords.extractedAt})::int`,
+        succeededCount: sql<number>`count(${rssRecords.id}) filter (where ${rssRecords.extractedAt} is not null and not coalesce(${rssRecords.extractedData} ? '_error', false))::int`,
+        failedCount: sql<number>`count(${rssRecords.id}) filter (where ${rssRecords.extractedAt} is not null and coalesce(${rssRecords.extractedData} ? '_error', false))::int`,
+        pendingCount: sql<number>`count(${rssRecords.id}) filter (where ${rssRecords.extractedAt} is null)::int`,
       })
       .from(rssIngests)
       .leftJoin(sources, eq(sources.id, rssIngests.sourceId))
@@ -150,7 +148,10 @@ export class MonitoringService {
     const totalRow = await this.db.select({ value: count() }).from(rssRecords).where(where);
     const total = totalRow[0]?.value ?? 0;
 
-    const items = rows.map((r) => ({ ...r, extracted: r.extractedAt !== null }));
+    const items = rows.map((r) => ({
+      ...r,
+      extractionStatus: extractionStatus(r.extractedAt, r.extractedData),
+    }));
     return {
       items,
       total,
@@ -186,7 +187,10 @@ export class MonitoringService {
       throw new NotFoundException(`record ${id} not found`);
     }
     const r = rows[0];
-    return { ...r, extracted: r.extractedAt !== null };
+    return {
+      ...r,
+      extractionStatus: extractionStatus(r.extractedAt, r.extractedData),
+    };
   }
 
   // Period-scoped operator stats. The dashboard funnel reads Bronze →
@@ -330,11 +334,18 @@ function buildRecordWhere(params: ListRecordsParams): SQL | undefined {
     filters.push(eq(rssRecords.rssIngestId, params.ingestId));
   }
   if (params.sourceId) filters.push(eq(rssRecords.sourceId, params.sourceId));
-  if (params.extracted === true) {
-    filters.push(isNotNull(rssRecords.extractedAt));
-  }
-  if (params.extracted === false) {
+  if (params.extractionStatus === "pending") {
     filters.push(isNull(rssRecords.extractedAt));
+  }
+  if (params.extractionStatus === "failed") {
+    filters.push(
+      sql`${rssRecords.extractedAt} is not null and ${hasExtractionError(rssRecords.extractedData)}`,
+    );
+  }
+  if (params.extractionStatus === "succeeded") {
+    filters.push(
+      sql`${rssRecords.extractedAt} is not null and not ${hasExtractionError(rssRecords.extractedData)}`,
+    );
   }
   if (params.q) filters.push(ilike(rssRecords.title, `%${params.q}%`));
   if (filters.length === 0) return undefined;

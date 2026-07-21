@@ -49,8 +49,12 @@ export default async function RecordDetailPage({
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
-            {record.extracted ? (
+            {record.extractionStatus === "succeeded" ? (
               <Badge variant="accent">структуровано</Badge>
+            ) : record.extractionStatus === "failed" ? (
+              <Badge variant="dark" className="bg-danger text-bg">
+                помилка екстракції
+              </Badge>
             ) : (
               <Badge variant="dark">очікує екстракції</Badge>
             )}

@@ -164,6 +164,20 @@ describe("RssExtractActivity", () => {
     expect(setArg.extractedAt).toBeInstanceOf(Date);
   });
 
+  it("writes a fallback error marker when the extractor omits an error message", async () => {
+    extractor.extract.mockResolvedValue({
+      ...failureResult,
+      meta: { ...failureResult.meta, error: undefined },
+    });
+    const { activity, mocks } = await bootstrap(baseRecord);
+
+    await expect(activity.extractAndInsert(RECORD_ID)).rejects.toThrow("extraction failed");
+
+    expect(mocks.updateSet.mock.calls[0][0].extractedData).toMatchObject({
+      _error: "extraction failed",
+    });
+  });
+
   it("throws when the record does not exist", async () => {
     const { activity } = await bootstrap(undefined);
 

@@ -84,7 +84,7 @@ export default async function IngestDetailPage({
           <Stat
             label="записів"
             value={formatCount(ingest.recordCount)}
-            sub={`${formatCount(ingest.extractedCount)} структуровано`}
+            sub={`${formatCount(ingest.succeededCount)} структуровано · ${formatCount(ingest.failedCount)} помилок · ${formatCount(ingest.pendingCount)} очікують`}
           />
         </section>
 

@@ -1,9 +1,11 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import { asc, isNull } from "drizzle-orm";
+import { asc, isNull, or } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
+
+import { hasExtractionError } from "../../platform/shared/extraction-status";
 
 import { RssExtractActivity } from "./activities/rss-extract.activity";
 
@@ -18,8 +20,7 @@ export class RssBackfillService {
 
   /**
    * One-shot backfill: re-runs `extractAndInsert` for records that parse
-   * inserted but extraction never ran for (or failed before the activity
-   * could write `extracted_at`). Bypasses Temporal — runs in-process — so
+   * inserted but extraction is pending or previously failed. Bypasses Temporal — runs in-process — so
    * it skips the activity-level retry policy. Per-record errors are caught
    * and counted so one bad record doesn't stop the rest.
    */
@@ -29,7 +30,12 @@ export class RssBackfillService {
     const rows = await this.db
       .select({ id: schema.rssRecords.id })
       .from(schema.rssRecords)
-      .where(isNull(schema.rssRecords.extractedAt))
+      .where(
+        or(
+          isNull(schema.rssRecords.extractedAt),
+          hasExtractionError(schema.rssRecords.extractedData),
+        ),
+      )
       .orderBy(asc(schema.rssRecords.createdAt))
       .limit(limit)
       .execute();

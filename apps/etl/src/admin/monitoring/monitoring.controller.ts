@@ -1,8 +1,8 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiQuery } from "@nestjs/swagger";
 
+import { EXTRACTION_STATUSES } from "../../platform/shared/extraction-status";
 import {
-  parseBool,
   parseEnum,
   parseIso,
   parseLimit,
@@ -73,10 +73,16 @@ export class MonitoringController {
   @Get("records")
   @ApiOperation({ summary: "List raw RSS records" })
   @ApiOkResponse({ description: "Paginated raw RSS records." })
+  @ApiQuery({
+    name: "extractionStatus",
+    required: false,
+    enum: EXTRACTION_STATUSES,
+    description: "Filter by pending, failed, or successfully extracted records.",
+  })
   listRecords(
     @Query("ingestId") ingestId?: string,
     @Query("sourceId") sourceId?: string,
-    @Query("extracted") extracted?: string,
+    @Query("extractionStatus") extractionStatus?: string,
     @Query("q") q?: string,
     @Query("limit") rawLimit?: string,
     @Query("offset") rawOffset?: string,
@@ -85,7 +91,7 @@ export class MonitoringController {
     return this.monitoring.listRecords({
       ingestId: parseUuid("ingestId", ingestId),
       sourceId: parseUuid("sourceId", sourceId),
-      extracted: parseBool("extracted", extracted),
+      extractionStatus: parseEnum("extractionStatus", extractionStatus, EXTRACTION_STATUSES),
       q: trimmed && trimmed.length > 0 ? trimmed : undefined,
       limit: parseLimit(rawLimit),
       offset: parseOffset(rawOffset),
