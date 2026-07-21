@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from "@nestjs/common";
 
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
 import { DRIZZLE, schema } from "@metahunt/database";
@@ -64,7 +64,12 @@ export class RssParseActivity {
     const existing = await this.db
       .select({ hash: schema.rssRecords.hash })
       .from(schema.rssRecords)
-      .where(inArray(schema.rssRecords.hash, hashes));
+      .where(
+        and(
+          eq(schema.rssRecords.sourceId, ingest.sourceId),
+          inArray(schema.rssRecords.hash, hashes),
+        ),
+      );
 
     const existingSet = new Set(existing.map((r) => r.hash));
     const newItems = itemsWithExternalId.filter(

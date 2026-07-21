@@ -7,10 +7,14 @@ import {
   WorkflowIdReusePolicy,
 } from "@temporalio/workflow";
 
+import { settleInBatches } from "../../../workflows/settle-in-batches";
 import type { RssExtractActivity } from "../activities/rss-extract.activity";
 import type { RssFetchActivity } from "../activities/rss-fetch.activity";
 import type { RssFinalizeActivity } from "../activities/rss-finalize.activity";
 import type { RssParseActivity } from "../activities/rss-parse.activity";
+
+const EXTRACTION_BATCH_SIZE = 10;
+const CHILD_START_BATCH_SIZE = 25;
 
 const { fetchAndStore } = proxyActivities<typeof RssFetchActivity.prototype>({
   startToCloseTimeout: "2m",
@@ -40,11 +44,11 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
     const ingestId = await fetchAndStore(sourceId);
     const newItemIds = await parseAndDedup(ingestId);
 
-    // Per-record extraction is best-effort: one bad vacancy (e.g. an LLM that
-    // muffs the schema) must not fail the surrounding good records. Activity
-    // already retries 3× internally; we collect the outcomes and only count
-    // the failures into the finalize note.
-    const results = await Promise.allSettled(newItemIds.map((id) => extractAndInsert(id)));
+    // Records fail independently after activity retries; one malformed record
+    // must not block valid records from progressing.
+    const results = await settleInBatches(newItemIds, EXTRACTION_BATCH_SIZE, (id) =>
+      extractAndInsert(id),
+    );
     const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
     if (failures.length > 0) {
       log.warn(
@@ -53,23 +57,19 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
       );
     }
 
-    // Fan out the silver-layer pipeline per successfully extracted record.
-    // Children run with ABANDON parent-close so this ingest workflow can
-    // finish without waiting on (potentially slow) per-vacancy load chains.
-    // Deterministic workflowId per rss_record_id makes a re-fired ingest
-    // safe — Temporal rejects duplicates by default. ALLOW_DUPLICATE_FAILED_ONLY
-    // lets a failed pipeline be retried by the next ingest pass without
-    // blocking the happy path.
+    // ABANDON lets ingest finalize without waiting; deterministic IDs make
+    // replay idempotent while allowing a failed child to be retried.
     const successfulIds = newItemIds.filter((_, i) => results[i].status === "fulfilled");
-    const childResults = await Promise.allSettled(
-      successfulIds.map((rssRecordId) =>
+    const childResults = await settleInBatches(
+      successfulIds,
+      CHILD_START_BATCH_SIZE,
+      (rssRecordId) =>
         startChild("vacancyPipelineWorkflow", {
           args: [rssRecordId],
           workflowId: `vacancy-pipeline-${rssRecordId}`,
           parentClosePolicy: ParentClosePolicy.ABANDON,
           workflowIdReusePolicy: WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
         }),
-      ),
     );
     const childFailures = childResults.filter(
       (r): r is PromiseRejectedResult => r.status === "rejected",

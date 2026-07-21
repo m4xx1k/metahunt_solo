@@ -1,10 +1,12 @@
 import { Test } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 
 import { StorageService } from "../../../platform/storage/storage.service";
 
 jest.mock("@temporalio/activity", () => ({
+  ...jest.requireActual("@temporalio/activity"),
   activityInfo: jest.fn(),
 }));
 
@@ -85,6 +87,7 @@ describe("RssFetchActivity", () => {
   const upload = jest.fn();
   let activity: RssFetchActivity;
   let mocks: ChainedDbMocks;
+  let nodeEnv = "test";
 
   async function bootstrap(source: unknown, ingest: unknown) {
     mocks = buildDbMocks(source, ingest);
@@ -93,12 +96,14 @@ describe("RssFetchActivity", () => {
         RssFetchActivity,
         { provide: DRIZZLE, useValue: mocks.db },
         { provide: StorageService, useValue: { upload } },
+        { provide: ConfigService, useValue: { get: () => nodeEnv } },
       ],
     }).compile();
     activity = moduleRef.get(RssFetchActivity);
   }
 
   beforeEach(() => {
+    nodeEnv = "test";
     upload.mockReset().mockResolvedValue(undefined);
     (activityInfo as jest.Mock).mockReturnValue({
       workflowExecution: { runId: WORKFLOW_RUN_ID, workflowId: "wf" },
@@ -176,5 +181,55 @@ describe("RssFetchActivity", () => {
       `rss/${SOURCE_ID}/${INGEST_ID}.xml`,
       Buffer.from(fallbackXml),
     );
+  });
+
+  it("surfaces a remote failure to Temporal in production", async () => {
+    nodeEnv = "production";
+    await bootstrap(baseSource, baseIngest);
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: jest.fn(),
+    });
+
+    await expect(activity.fetchAndStore(SOURCE_ID)).rejects.toThrow(
+      `RSS fetch failed with HTTP 503 for ${baseSource.rssUrl}`,
+    );
+
+    expect(readFile).not.toHaveBeenCalled();
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("marks a permanent production HTTP failure as non-retryable", async () => {
+    nodeEnv = "production";
+    await bootstrap(baseSource, baseIngest);
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: jest.fn(),
+    });
+
+    await expect(activity.fetchAndStore(SOURCE_ID)).rejects.toMatchObject({
+      type: "RssSourceHttpError",
+      nonRetryable: true,
+    });
+
+    expect(readFile).not.toHaveBeenCalled();
+    expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing production rssUrl as non-retryable", async () => {
+    nodeEnv = "production";
+    const offlineSource = { ...baseSource, rssUrl: null };
+    await bootstrap(offlineSource, baseIngest);
+
+    await expect(activity.fetchAndStore(SOURCE_ID)).rejects.toMatchObject({
+      type: "RssSourceConfigurationError",
+      nonRetryable: true,
+    });
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(readFile).not.toHaveBeenCalled();
+    expect(upload).not.toHaveBeenCalled();
   });
 });

@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-21
+
+- **Ingest launch hardening** (`feat/ingest-pipeline-refactor`). RSS exact-match suppression is source-scoped, production fetch failures follow Temporal retry semantics without fixture fallback, workflow and worker fan-out is bounded, and listing updates are latest-record-wins with race-safe embedding and duplicate-cluster invalidation. No schema migration was required. → [migration tracker](migrations/ingest-pipeline-refactor.md)
+
+---
+
 ## 2026-07-20
 
 - **CORS allowlist** (`fix/cors-allowlist`). The API accepts browser cross-origin requests only from `WEB_BASE_URL`; the configured URL is normalized to an origin before middleware setup.

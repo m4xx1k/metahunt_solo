@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
-import { eq, sql, type SQL } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -36,6 +36,7 @@ const EMBED_BATCH_SIZE = 100;
 
 interface VacancyEmbeddingRow {
   id: string;
+  lastRssRecordId: string;
   title: string;
   description: string | null;
   seniority: string | null;
@@ -64,6 +65,7 @@ interface CandidateRow {
 
 interface VacancyForResolve {
   id: string;
+  lastRssRecordId: string;
   publishedAt: Date;
   embedding: number[];
   roleNodeId: string | null;
@@ -74,7 +76,11 @@ interface VacancyForResolve {
   requiredSkillIds: string[];
   uniqueVacancyId: string | null;
   embeddingModel: string;
+  storedEmbeddingModel: string | null;
+  embeddingSourceHash: string | null;
 }
+
+type Transaction = Parameters<Parameters<DrizzleDB["transaction"]>[0]>[0];
 
 @Injectable()
 export class DedupService {
@@ -151,15 +157,22 @@ export class DedupService {
             `OpenAI returned a vector of length ${vec?.length ?? 0} for vacancy ${row.id}`,
           );
         }
-        await this.db
+        const [written] = await this.db
           .update(schema.vacancies)
           .set({
             embedding: vec,
             embeddingModel: this.openai.model,
             embeddingSourceHash: hash,
           })
-          .where(eq(schema.vacancies.id, row.id));
-        embedded++;
+          .where(
+            and(
+              eq(schema.vacancies.id, row.id),
+              eq(schema.vacancies.lastRssRecordId, row.lastRssRecordId),
+            ),
+          )
+          .returning({ id: schema.vacancies.id });
+        if (written) embedded++;
+        else skipped++;
       }
 
       this.logger.log(`embedded ${embedded}/${processed} (skipped ${skipped})`);
@@ -178,6 +191,7 @@ export class DedupService {
 
     const rows = await this.db.execute<{
       id: string;
+      last_rss_record_id: string;
       title: string;
       description: string | null;
       seniority: string | null;
@@ -190,6 +204,7 @@ export class DedupService {
     }>(sql`
       SELECT
         v.id,
+        v.last_rss_record_id,
         v.title,
         v.description,
         v.seniority::text AS seniority,
@@ -215,6 +230,7 @@ export class DedupService {
 
     return rows.rows.map((r) => ({
       id: r.id,
+      lastRssRecordId: r.last_rss_record_id,
       title: r.title,
       description: r.description,
       seniority: r.seniority,
@@ -382,6 +398,7 @@ export class DedupService {
 
     if (!best) {
       const groupId = await this.createGroup(v);
+      if (!groupId) return null;
       return { action: "new_group", uniqueVacancyId: groupId };
     }
 
@@ -422,13 +439,15 @@ export class DedupService {
       decidedAt: new Date().toISOString(),
     };
 
-    await this.joinGroup(v, groupId, reason);
+    const joined = await this.joinGroup(v, groupId, reason);
+    if (!joined) return null;
     return { action: "joined", uniqueVacancyId: groupId };
   }
 
   private async loadVacancyForResolve(vacancyId: string): Promise<VacancyForResolve | null> {
     const res = await this.db.execute<{
       id: string;
+      last_rss_record_id: string;
       published_at: Date;
       embedding: string;
       role_node_id: string | null;
@@ -439,9 +458,11 @@ export class DedupService {
       required_skill_ids: string[] | null;
       unique_vacancy_id: string | null;
       embedding_model: string | null;
+      embedding_source_hash: string | null;
     }>(sql`
       SELECT
         v.id,
+        v.last_rss_record_id,
         v.published_at,
         v.embedding::text AS embedding,
         v.role_node_id,
@@ -451,7 +472,8 @@ export class DedupService {
         v.title,
         ${requiredSkillIdsSubquery(sql`v.id`)} AS required_skill_ids,
         v.unique_vacancy_id,
-        v.embedding_model
+        v.embedding_model,
+        v.embedding_source_hash
       FROM vacancies v
       WHERE v.id = ${vacancyId}
     `);
@@ -459,6 +481,7 @@ export class DedupService {
     if (!r) return null;
     return {
       id: r.id,
+      lastRssRecordId: r.last_rss_record_id,
       publishedAt: toDate(r.published_at),
       embedding: parseVectorText(r.embedding),
       roleNodeId: r.role_node_id,
@@ -469,11 +492,15 @@ export class DedupService {
       requiredSkillIds: Array.isArray(r.required_skill_ids) ? r.required_skill_ids : [],
       uniqueVacancyId: r.unique_vacancy_id,
       embeddingModel: r.embedding_model ?? this.openai.model,
+      storedEmbeddingModel: r.embedding_model,
+      embeddingSourceHash: r.embedding_source_hash,
     };
   }
 
-  private async createGroup(v: VacancyForResolve): Promise<string> {
+  private async createGroup(v: VacancyForResolve): Promise<string | null> {
     return this.db.transaction(async (tx) => {
+      if (!(await this.lockCurrentResolveVersion(v, tx))) return null;
+
       const [group] = await tx
         .insert(schema.uniqueVacancies)
         .values({
@@ -497,8 +524,15 @@ export class DedupService {
     v: VacancyForResolve,
     groupId: string,
     reason: DedupReason,
-  ): Promise<void> {
-    await this.db.transaction(async (tx) => {
+  ): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      if (!(await this.lockCurrentResolveVersion(v, tx))) return false;
+
+      const group = await tx.execute<{ id: string }>(sql`
+        SELECT id FROM unique_vacancies WHERE id = ${groupId} FOR UPDATE
+      `);
+      if (!group.rows[0]) return false;
+
       await tx
         .update(schema.vacancies)
         .set({
@@ -529,7 +563,26 @@ export class DedupService {
         ) sub
         WHERE u.id = ${groupId}
       `);
+      return true;
     });
+  }
+
+  private async lockCurrentResolveVersion(
+    vacancy: VacancyForResolve,
+    tx: Transaction,
+  ): Promise<boolean> {
+    const result = await tx.execute<{ id: string }>(sql`
+      SELECT id
+      FROM vacancies
+      WHERE id = ${vacancy.id}
+        AND last_rss_record_id = ${vacancy.lastRssRecordId}
+        AND embedding IS NOT NULL
+        AND embedding_model IS NOT DISTINCT FROM ${vacancy.storedEmbeddingModel}
+        AND embedding_source_hash IS NOT DISTINCT FROM ${vacancy.embeddingSourceHash}
+        AND unique_vacancy_id IS NULL
+      FOR UPDATE
+    `);
+    return result.rows.length > 0;
   }
 
   // ═════════════════════════════════════════════════════════════

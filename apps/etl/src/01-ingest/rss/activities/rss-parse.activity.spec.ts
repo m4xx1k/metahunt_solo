@@ -1,4 +1,5 @@
 import { Test } from "@nestjs/testing";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 
@@ -198,6 +199,20 @@ describe("RssParseActivity", () => {
     expect(valuesArg).toHaveLength(2);
     expect(valuesArg.map((v) => v.title)).toEqual(["Frontend Developer", "Python Developer"]);
     expect(valuesArg.find((v) => v.hash === existingHash)).toBeUndefined();
+  });
+
+  it("checks existing hashes only within the ingest source", async () => {
+    const xml = buildXml(itemFixtures);
+    download.mockResolvedValue(Buffer.from(xml, "utf8"));
+    const mocks = buildDbMocks(baseIngest, "djinni", [], [{ id: "rec-1" }]);
+    await bootstrap(mocks);
+
+    await activity.parseAndDedup(INGEST_ID);
+
+    const existingRecordsPredicate = mocks.selectWhere.mock.calls[2][0];
+    const query = new PgDialect().sqlToQuery(existingRecordsPredicate);
+    expect(query.sql).toContain('"rss_records"."source_id" = $1');
+    expect(query.params[0]).toBe(SOURCE_ID);
   });
 
   it("skips items whose external_id cannot be derived", async () => {

@@ -47,4 +47,30 @@ describe("rssIngestWorkflow", () => {
     );
     expect(mockFinalizeIngest).not.toHaveBeenCalled();
   });
+
+  it("isolates a failed record and dispatches only successful extractions", async () => {
+    mockFetchAndStore.mockResolvedValue("ingest-1");
+    mockParseAndDedup.mockResolvedValue(["record-1", "record-2"]);
+    mockExtractAndInsert
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("bad LLM"));
+    mockStartChild.mockResolvedValue({});
+    mockFinalizeIngest.mockResolvedValue(undefined);
+
+    await expect(rssIngestWorkflow("source-1")).resolves.toBeUndefined();
+
+    expect(mockStartChild).toHaveBeenCalledTimes(1);
+    expect(mockStartChild).toHaveBeenCalledWith("vacancyPipelineWorkflow", {
+      args: ["record-1"],
+      workflowId: "vacancy-pipeline-record-1",
+      parentClosePolicy: "ABANDON",
+      workflowIdReusePolicy: "ALLOW_DUPLICATE_FAILED_ONLY",
+    });
+    expect(mockFinalizeIngest).toHaveBeenCalledWith(
+      "ingest-1",
+      "completed",
+      "extracted=1/2 (failures=1)",
+    );
+    expect(mockFinalizeIngestByWorkflowRunId).not.toHaveBeenCalled();
+  });
 });
