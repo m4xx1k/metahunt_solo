@@ -3,6 +3,7 @@ import {
   ParentClosePolicy,
   proxyActivities,
   startChild,
+  workflowInfo,
   WorkflowIdReusePolicy,
 } from "@temporalio/workflow";
 
@@ -26,14 +27,17 @@ const { extractAndInsert } = proxyActivities<typeof RssExtractActivity.prototype
   retry: { maximumAttempts: 3, initialInterval: "5s", backoffCoefficient: 2 },
 });
 
-const { finalizeIngest } = proxyActivities<typeof RssFinalizeActivity.prototype>({
+const { finalizeIngest, finalizeIngestByWorkflowRunId } = proxyActivities<
+  typeof RssFinalizeActivity.prototype
+>({
   startToCloseTimeout: "30s",
   retry: { maximumAttempts: 5, initialInterval: "2s", backoffCoefficient: 2 },
 });
 
 export async function rssIngestWorkflow(sourceId: string): Promise<void> {
-  const ingestId = await fetchAndStore(sourceId);
+  const workflowRunId = workflowInfo().runId;
   try {
+    const ingestId = await fetchAndStore(sourceId);
     const newItemIds = await parseAndDedup(ingestId);
 
     // Per-record extraction is best-effort: one bad vacancy (e.g. an LLM that
@@ -83,7 +87,11 @@ export async function rssIngestWorkflow(sourceId: string): Promise<void> {
         : undefined;
     await finalizeIngest(ingestId, "completed", note);
   } catch (err) {
-    await finalizeIngest(ingestId, "failed", err instanceof Error ? err.message : String(err));
+    await finalizeIngestByWorkflowRunId(
+      workflowRunId,
+      "failed",
+      err instanceof Error ? err.message : String(err),
+    );
     throw err;
   }
 }

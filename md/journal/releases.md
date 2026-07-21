@@ -147,3 +147,4 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 ## 2026-07-20
 
 - **Extraction outcomes made truthful** (`fix/extraction-outcome-boundary`). RSS records now expose `pending`, `failed`, or `succeeded`; failed attempts remain eligible for RSS retry and cannot enter the Silver loader. Monitoring exposes the explicit status filter and per-ingest counts, while the operator dashboard distinguishes failed extraction from pending work. No migration or data backfill.
+- **RSS fetch finalization repaired** (`fix/rss-fetch-finalization`). The ingest workflow now marks an existing ingest as failed by `workflow_run_id` after exhausted fetch/storage retries, rather than leaving it in `running`. No migration or production backfill.

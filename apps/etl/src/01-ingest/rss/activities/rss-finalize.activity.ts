@@ -26,4 +26,20 @@ export class RssFinalizeActivity {
       })
       .where(eq(schema.rssIngests.id, ingestId));
   }
+
+  @ActivityMethod()
+  async finalizeIngestByWorkflowRunId(
+    workflowRunId: string,
+    status: "completed" | "failed",
+    errorMessage?: string,
+  ): Promise<void> {
+    await this.db
+      .update(schema.rssIngests)
+      .set({
+        status,
+        finishedAt: new Date(),
+        ...(errorMessage ? { errorMessage } : {}),
+      })
+      .where(eq(schema.rssIngests.workflowRunId, workflowRunId));
+  }
 }

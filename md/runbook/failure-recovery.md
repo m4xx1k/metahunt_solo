@@ -53,7 +53,7 @@ railway logs --deployment <ID> --lines 200 | grep RssFetch
    Or call `RssSchedulerService.ingestRemote()` programmatically in a one-shot script.
 4. Persistent host outage → in `.env` add the source's RSS XML to `apps/etl/data/rss/<code>-rss.xml` so the activity falls back to file. Already used for local dev.
 
-**No DB cleanup needed.** A failed `rss_ingests` row is informational. The next successful ingest writes a *new* row; old failed rows are kept as audit trail. To prune them later: `DELETE FROM rss_ingests WHERE status='failed' AND started_at < now() - interval '30 days';`
+**No DB cleanup needed.** A failed `rss_ingests` row is informational. The workflow finalizes an ingest created before a fetch/storage failure by its `workflow_run_id`; the next run writes a *new* row. Old failed rows are kept as audit trail. To prune them later: `DELETE FROM rss_ingests WHERE status='failed' AND started_at < now() - interval '30 days';`
 
 ---
 
