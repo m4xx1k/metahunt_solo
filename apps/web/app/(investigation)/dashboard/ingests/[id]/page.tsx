@@ -53,7 +53,7 @@ export default async function IngestDetailPage({
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="запуск збору" activePath="/dashboard" />
+      <InvestigationHeader title="запуск збору" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-6 py-10 md:px-20">
         <header className="flex flex-col gap-4">

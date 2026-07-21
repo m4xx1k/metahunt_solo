@@ -19,7 +19,7 @@ export default async function ExtractionCostPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
-      <InvestigationHeader title="облік витрат на екстракцію" activePath="/dashboard/extraction" />
+      <InvestigationHeader title="облік витрат на екстракцію" />
 
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10 md:px-20">
         <Section
