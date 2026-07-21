@@ -46,6 +46,11 @@ import { appendTsLoaderRule } from "./webpack-workflow.hook";
               ...DEDUP_ACTIVITIES,
               ...TELEGRAM_ACTIVITIES,
             ],
+            // Global backpressure across overlapping source workflows. The
+            // workflow-level batches bound one run; this bounds the worker.
+            maxConcurrentActivityTaskExecutions: config.get<number>(
+              "TEMPORAL_MAX_CONCURRENT_ACTIVITIES",
+            ),
             // Worker spawns a Temporal connection; in `NODE_ENV=test` the
             // AppModule smoke spec compiles the graph without a running server.
             autoStart: config.get<string>("NODE_ENV") !== "test",

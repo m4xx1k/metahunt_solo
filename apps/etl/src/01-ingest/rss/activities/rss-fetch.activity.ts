@@ -2,8 +2,9 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { Injectable, Inject } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
-import { activityInfo } from "@temporalio/activity";
+import { activityInfo, ApplicationFailure } from "@temporalio/activity";
 import { eq } from "drizzle-orm";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
@@ -18,7 +19,12 @@ export class RssFetchActivity {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly storage: StorageService,
+    private readonly config: ConfigService,
   ) {}
+
+  private isProduction(): boolean {
+    return this.config.get<string>("NODE_ENV") === "production";
+  }
 
   private async readFallbackRss(sourceCode: string): Promise<string> {
     const fileName = `${sourceCode}-rss.xml`;
@@ -40,6 +46,42 @@ export class RssFetchActivity {
     throw new Error(
       `Fallback RSS file not found for source "${sourceCode}" (${fileName}): ${String(lastError)}`,
     );
+  }
+
+  private async fetchRemoteRss(url: string): Promise<string> {
+    const response = await fetch(url);
+    if (response.ok) return response.text();
+
+    const message = `RSS fetch failed with HTTP ${response.status} for ${url}`;
+    if (
+      response.status >= 400 &&
+      response.status < 500 &&
+      response.status !== 408 &&
+      response.status !== 429
+    ) {
+      throw ApplicationFailure.nonRetryable(message, "RssSourceHttpError", response.status);
+    }
+    throw new Error(message);
+  }
+
+  private async loadSourceXml(source: { code: string; rssUrl: string | null }): Promise<string> {
+    if (this.isProduction()) {
+      if (!source.rssUrl) {
+        throw ApplicationFailure.nonRetryable(
+          `RSS source "${source.code}" has no rssUrl configured`,
+          "RssSourceConfigurationError",
+        );
+      }
+      return this.fetchRemoteRss(source.rssUrl);
+    }
+
+    if (!source.rssUrl) return this.readFallbackRss(source.code);
+
+    try {
+      return await this.fetchRemoteRss(source.rssUrl);
+    } catch {
+      return this.readFallbackRss(source.code);
+    }
   }
 
   @ActivityMethod()
@@ -70,19 +112,7 @@ export class RssFetchActivity {
       .from(schema.rssIngests)
       .where(eq(schema.rssIngests.workflowRunId, workflowRunId));
 
-    let xml: string;
-
-    if (source.rssUrl) {
-      try {
-        const response = await fetch(source.rssUrl);
-        if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
-        xml = await response.text();
-      } catch {
-        xml = await this.readFallbackRss(source.code);
-      }
-    } else {
-      xml = await this.readFallbackRss(source.code);
-    }
+    const xml = await this.loadSourceXml(source);
 
     const storageKey = `rss/${sourceId}/${ingest.id}.xml`;
     await this.storage.upload(storageKey, Buffer.from(xml));

@@ -74,6 +74,13 @@ export function validateEnv(config: RawEnv): RawEnv {
     ? "default"
     : (asString(config.TEMPORAL_NAMESPACE) ?? "default");
   const temporalTaskQueue = asString(config.TEMPORAL_TASK_QUEUE) ?? "rss-ingest";
+  const temporalMaxConcurrentActivities = parseIntInRange(
+    "TEMPORAL_MAX_CONCURRENT_ACTIVITIES",
+    asString(config.TEMPORAL_MAX_CONCURRENT_ACTIVITIES),
+    10,
+    1,
+    100,
+  );
   // Temporal Cloud uses API-key auth (newer mode) — when set we enable TLS automatically.
   // Empty string means "local plaintext mode" (matches the default `localhost:7233`).
   const temporalApiKey = isLocal ? "" : (asString(config.TEMPORAL_API_KEY) ?? "");
@@ -158,6 +165,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     TEMPORAL_ADDRESS: temporalAddress,
     TEMPORAL_NAMESPACE: temporalNamespace,
     TEMPORAL_TASK_QUEUE: temporalTaskQueue,
+    TEMPORAL_MAX_CONCURRENT_ACTIVITIES: temporalMaxConcurrentActivities,
     TEMPORAL_API_KEY: temporalApiKey,
     RSS_INGEST_INTERVAL_HOURS: rssIngestIntervalHours,
     STORAGE_ENDPOINT: storageEndpoint,
