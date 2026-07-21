@@ -65,6 +65,7 @@ describe("DigestService", () => {
   const getActiveById = jest.fn();
   const record = jest.fn();
   const sendMessage = jest.fn();
+  const digestSent = jest.fn();
   let service: DigestService;
 
   beforeEach(async () => {
@@ -72,6 +73,7 @@ describe("DigestService", () => {
     getActiveById.mockReset();
     record.mockReset().mockResolvedValue(undefined);
     sendMessage.mockReset().mockResolvedValue(undefined);
+    digestSent.mockReset();
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -81,7 +83,7 @@ describe("DigestService", () => {
         { provide: SubscriptionsService, useValue: { getActiveById } },
         { provide: SentNotificationsService, useValue: { record } },
         { provide: TelegramService, useValue: { sendMessage } },
-        { provide: AnalyticsService, useValue: { digestSent: jest.fn() } },
+        { provide: AnalyticsService, useValue: { digestSent } },
       ],
     }).compile();
     service = moduleRef.get(DigestService);
@@ -113,6 +115,14 @@ describe("DigestService", () => {
       expect(sendMessage).toHaveBeenCalledTimes(1);
       expect(sendMessage).toHaveBeenCalledWith("chat-1", expect.any(String));
       expect(record).toHaveBeenCalledWith("sub-1", ["v1"]);
+      expect(digestSent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscriptionId: "sub-1",
+          vacancies: 1,
+          pages: 1,
+          deliveryId: "a096952d79fe2672783125e6a7b7ae2e7bfb8d029c939fd268f840a1a2aa4f94",
+        }),
+      );
       // Send must precede the record so a failed send is never marked sent.
       expect(sendMessage.mock.invocationCallOrder[0]).toBeLessThan(
         record.mock.invocationCallOrder[0],

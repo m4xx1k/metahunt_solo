@@ -65,7 +65,7 @@ export class AuthService {
       tid: telegramId,
       roles,
     } satisfies JwtPayload);
-    this.logger.log(`login tg:${telegramId} -> user ${userId} roles=[${roles.join(",")}]`);
+    this.logger.log(`login user ${userId} roles=[${roles.join(",")}]`);
     return { token, user: { id: userId, telegramId, username, firstName, roles } };
   }
 

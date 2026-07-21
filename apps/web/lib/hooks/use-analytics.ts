@@ -1,10 +1,7 @@
 import { useMemo } from "react";
 import { usePostHog } from "posthog-js/react";
 
-import type {
-  CvMatchParams,
-  SubscriptionParams,
-} from "@/lib/api/subscriptions";
+import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
 
 // Single source of truth for client-side event names (mirrors the backend
 // events.ts) — no event-name string literals in components.
@@ -29,17 +26,10 @@ export function useAnalytics() {
 
   return useMemo(
     () => ({
-      /**
-       * A pending subscription was created from the current facet filter.
-       * Records the intent and aliases this anonymous browser onto the
-       * subscription uuid — the seam that stitches the web session to the
-       * cross-context person (uuid → Telegram chat → future auth).
-       */
-      subscriptionCreated(
-        subscriptionUuid: string,
-        params: SubscriptionParams | CvMatchParams,
-      ) {
-        posthog?.capture(ANALYTICS_EVENTS.subscribeClicked, { params });
+      subscriptionCreated(subscriptionUuid: string, params: SubscriptionParams | CvMatchParams) {
+        posthog?.capture(ANALYTICS_EVENTS.subscribeClicked, {
+          filterCount: Object.keys(params).length,
+        });
         posthog?.alias(subscriptionUuid);
       },
 
@@ -55,17 +45,8 @@ export function useAnalytics() {
         posthog?.capture(ANALYTICS_EVENTS.cvUpload, { reused });
       },
 
-      // Telegram login succeeded. `tg:<id>` is already the canonical person
-      // (backend telegramLinked), so identifying onto it merges this browser in
-      // without breaking the existing funnel; user_id + login_method ride as
-      // person properties so we can see how each user authenticated.
-      loggedIn(telegramId: string | null, userId: string) {
-        if (telegramId) {
-          posthog?.identify(`tg:${telegramId}`, {
-            user_id: userId,
-            login_method: "telegram",
-          });
-        }
+      loggedIn(userId: string) {
+        posthog?.identify(userId, { login_method: "telegram" });
         posthog?.capture(ANALYTICS_EVENTS.loggedIn, { method: "telegram" });
       },
 
