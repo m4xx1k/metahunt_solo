@@ -1,11 +1,12 @@
 # MetaHunt audit and next steps
 
-**Audit date:** 2026-07-21
+**Audit date:** 2026-07-21 · **production verification:** 2026-07-22
 
-**Working branch:** `feat/real-user-funnel`
+**Delivery:** `feat/real-user-funnel` merged as PR
+[`#93`](https://github.com/m4xx1k/metahunt_solo/pull/93), main commit `f71cff8`
 
 **Traffic verdict:** paid traffic **No-Go**; founder-led cohort **Conditional Go**
-after review, deploy, and controlled E2E.
+after controlled Telegram E2E.
 
 ## 1. Executive summary
 
@@ -36,19 +37,17 @@ Three risks still block paid acquisition:
 1. Production has no verified end-to-end funnel or 7/30/90-day conversion
    baseline. The product can emit several events, but nobody has yet proved that
    one controlled visitor appears coherently from landing through digest click.
-2. The pre-audit demo activation was broken: production lists five samples but
-   anonymous sample matching returns `401`. Commit `13784db` fixes this through a
-   sample-only endpoint, but production remains unchanged until owner-approved
-   deployment.
+2. Alert relevance has no real-user baseline. Production now exposes the focused
+   landing, public sample proof, immediate Telegram preview, and scheduled
+   outcome events, but no qualified cohort has rated its first alerts.
 3. Trust and operations need explicit ownership. Raw CV text is not persisted by
    MetaHunt, but it is sent to DeepSeek. Public disclosure and transactional
-   self-service account deletion now exist on the branch; provider retention,
+   self-service account deletion are now in production; provider retention,
    analytics consent, legal wording, and support ownership still require an
    owner decision.
 
 Recommended next 7–14 days:
 
-- review and deploy this branch;
 - run five controlled Telegram subscriptions end to end;
 - build one PostHog funnel from the stable events below;
 - recruit 20 Middle/Senior Backend or Full-stack users manually;
@@ -110,26 +109,30 @@ ranking and leaves every user-uploaded candidate behind JWT ownership checks.
 
 ## 3. Technical delivery and production state
 
-Read-only production checks on 2026-07-21 found:
+Production checks after PR `#93` deployed on 2026-07-22 found:
 
 | Check | Evidence | Result |
 |---|---|---|
-| API deployment | Railway deployment `9b71a512-e26c-4fda-976b-eefe7ed3aafd`, commit `af1b19b` | `SUCCESS`, one running replica |
+| API deployment | Railway deployment `0e3e25ef-f8ef-411b-8edc-f098e2b61814`, branch commit `d5c5b2a` (code merged as `f71cff8`) | `SUCCESS`, one running replica |
 | Dependencies | `GET https://api.metahunt.app/healthz` | `200`; Postgres, storage, Temporal all `ok` |
-| HTTP window | Railway metrics, previous 6h | 49 requests, 0% 5xx, p50/p95 47 ms |
-| Web | `https://metahunt.app` → `https://www.metahunt.app/` | `200` |
+| HTTP smoke window | Railway metrics, previous 15m | 13 requests, 0% 5xx, p50 15 ms, p95 160 ms |
+| Web production | Vercel deployment of `f71cff8` | `/radar/backend`, `/privacy`, robots, and sitemap return `200` with expected content |
+| Schema | production constraints after migration `0028` | user → subscription and subscription → notification FKs both use `ON DELETE CASCADE` |
 | Indexed supply | `/market/aggregates` | 12,665 total: 7,542 Djinni + 5,123 DOU |
 | Backend cohort | role + preset skills + 30-day feed query | 179 jobs in the landing's alert window |
 | Demo inventory | `/cv/samples` | five seeded profiles |
-| Demo activation before deploy | anonymous `/cv/:sample/matches` | `401` — fixed on branch, not yet deployed |
+| Demo privacy boundary | sample-only match endpoint | seeded sample `200`; real uploaded/non-sample candidate `404`; legacy route `401` |
+| Anonymous handoff | production `POST /subscriptions` using the Backend preset | created a UUID and matching HTTPS `t.me` start link; pending smoke row expires through normal cleanup |
 
 Railway logs contain Temporal/Webpack informational startup output labelled at
 `error` level even though the workflow bundle compiled and the worker entered
 `RUNNING`. This is observability noise rather than an observed outage, but it
 will make error-based alerting unreliable until normalized.
 
-No production mutation, deployment, secret change, database query, Telegram
-message, or advertising action was performed by this audit.
+PR `#93`, Vercel web, Railway API, and migration `0028` are now deployed. One
+anonymous pending subscription was created through the public API to verify the
+handoff contract. No Telegram user message, secret change, cohort invitation,
+or advertising action was performed.
 
 ## 4. UX and product audit
 
@@ -137,7 +140,7 @@ Evidence came from code paths, production HTTP checks, route builds, and local
 HTML checks. No browser automation runtime was available, so mobile layout,
 keyboard traversal, Core Web Vitals, and screenshot evidence remain unverified.
 
-### Findings addressed on this branch
+### Findings addressed
 
 - Production advertised five demo profiles but sample matching required auth.
   The new sample-only endpoint restores proof-before-auth without widening the
@@ -245,8 +248,8 @@ Required breakdowns: `utm_source`, `utm_medium`, `utm_campaign`, `creative_id`,
 creation. Do not add direct user identifiers.
 
 The privacy-safe server contract now exposes scheduled zero-match outcomes,
-bounded delivery failures, and first-digest status. What remains is production
-verification and creation of the saved PostHog views in the
+bounded delivery failures, and first-digest status. What remains is controlled
+Telegram production verification and creation of the saved PostHog views in the
 [`first-user-funnel` runbook](md/runbook/first-user-funnel.md), including a
 named owner and dashboard URL.
 
@@ -254,11 +257,11 @@ named owner and dashboard URL.
 
 | ID | Priority | Problem and hypothesis | Scope / acceptance | Measurement | Rollback |
 |---|---|---|---|---|---|
-| G0 Review and deploy branch | P0 · S | Production demo is broken and launch surfaces are absent. | Review all branch commits; deploy web + API and migration `0028`; sample-only endpoint returns 200 for seeded sample and 404 for uploaded/non-sample candidate. | Five sample sessions render matches without auth. | Revert feature code if needed; the forward-compatible cascade constraint may remain. |
+| G0 Review and deploy branch ✅ | Done | PR `#93`, web, API, and migration `0028` are in production. | Sample-only endpoint returns `200` for a seeded sample and `404` for an uploaded/non-sample candidate; public launch surfaces return `200`. | Production HTTP and provider deployment evidence above. | Revert feature code if needed; the forward-compatible cascade constraint may remain. |
 | G1 Controlled activation E2E | P0 · S | Repository tests do not prove cross-domain Telegram delivery. | Run five owner-approved test subscriptions; record event timestamps and results through first click; repeat `/start`; test `/stop`. | 5/5 linked, 5/5 value shown, no duplicates or PII. | Disable test subscriptions with `/stop`. |
 | G2 Funnel dashboard | P0 · S | The event contract exists, but traffic cannot be diagnosed without production access and one shared view. | Create the saved views specified in the first-user-funnel runbook; record their URL, owner, timezone, and controlled-test exclusion. | Daily activation, handoff loss, time to first digest, click rate, zero-match and delivery-failure rates. | Remove dashboard only; event contract stays stable. |
 | G3 Verify immediate post-link value | P0 · S | Branch implementation must be proven across the real bot/API boundary. | A fresh `/start` shows up to three current matches or an explicit zero-match state; a preview failure never reverses the successful activation. | `telegram_linked → activation_value_shown ≥ 80%`. | Revert the additive Telegram commit; scheduled delivery remains unchanged. |
-| G4 Approve privacy/auth launch policy | P0 · S | Technical deletion, stale-token invalidation, login throttling, public disclosure, and a retention runbook exist on the branch; provider backups, consent, and legal ownership are policy decisions. | Owner approves or edits wording, analytics consent posture, provider retention expectations, and support owner. | Real delete E2E passes; no PII leak; support owner can follow the runbook. | Disable CV campaign; role radar remains available. |
+| G4 Approve privacy/auth launch policy | P0 · S | Technical deletion, stale-token invalidation, login throttling, public disclosure, and a retention runbook are deployed; provider backups, consent, and legal ownership are policy decisions. | Owner approves or edits wording, analytics consent posture, provider retention expectations, and support owner. | Real delete E2E passes; no PII leak; support owner can follow the runbook. | Disable CV campaign; role radar remains available. |
 | G5 Concierge cohort | P0 · 7 days | Offline ranking confidence is not user value. | Use the [first-user-cohort runbook](md/runbook/first-user-cohort.md) to recruit 20 consenting ICP users, interview at least five, and rate their first three alerts. | Thresholds below. | Stop recruitment; no paid spend. |
 | G6 Paid experiment | P1 · 7 days | Scale only after activation and quality are understood. | One audience, one landing, one channel, 200 qualified sessions maximum. | Thresholds below. | Pause campaign immediately. |
 
@@ -358,8 +361,9 @@ The owner must decide:
    hours.
 7. Confirm access to the production PostHog project and create the funnel/query.
 8. Provide five safe Telegram testers or an approved test-bot path.
-9. Review and explicitly authorize deployment. Advertising remains a separate
-   explicit action after Gate 1.
+
+Deployment is complete. Advertising remains a separate explicit action after
+Gate 1.
 
 Unknown from available evidence: real users to date, historical PostHog counts,
 first-alert quality, source licensing/permission posture, legal controller
@@ -380,11 +384,12 @@ identity, analytics consent requirements, and production retention expectations.
 - Sample security tests: [`apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts`](apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts)
 - Campaign landing: [`apps/web/app/radar/backend/page.tsx`](apps/web/app/radar/backend/page.tsx)
 - Public disclosure: [`apps/web/app/privacy/page.tsx`](apps/web/app/privacy/page.tsx)
-- Implementation commits: `13784db`, `1752b1a`, the additive Telegram
-  activation-value and account-deletion commits, plus the privacy-safe digest
-  observability commit on this branch.
+- Delivery: PR [`#93`](https://github.com/m4xx1k/metahunt_solo/pull/93), main
+  commit `f71cff8`, Railway deployment `0e3e25ef-f8ef-411b-8edc-f098e2b61814`.
 
 Verification completed on the branch: ETL focused security/controller tests,
 the full ETL and web Jest suites, ETL lint, web lint, ETL production build, web
-production build, and local HTTP checks for `/radar/backend`, `/privacy`,
-`/robots.txt`, and `/sitemap.xml`.
+production build, local route checks, GitHub CI, Vercel production deployment,
+Railway health/dependency/runtime checks, migration constraint inspection, and
+production HTTP contract checks. Real Telegram activation and PostHog person
+joining still require the controlled tester cohort.

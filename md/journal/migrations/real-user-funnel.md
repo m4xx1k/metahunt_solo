@@ -1,15 +1,16 @@
 # real-user-funnel — Measurable path to first users
 
 **Branch:** `feat/real-user-funnel`
-**Status:** in-progress
+**Status:** production-deployed; controlled cohort pending
 **Started:** 2026-07-21
 
 ## Outcome
 
-The branch fixes the broken anonymous sample activation path and adds a focused,
+The shipped change fixes the broken anonymous sample activation path and adds a focused,
 measurable Backend-radar landing, truthful public privacy disclosure, and the
 basic search discovery surface. Ranking, ingest, and notification behaviour are
-unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
+unchanged. PR `#93`, web, API, and migration `0028` are deployed; controlled
+Telegram E2E and traffic remain owner gates.
 
 ## Subtasks
 
@@ -32,6 +33,9 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
   first digest, successful send, and bounded delivery failure are distinguishable without PII.
 - [x] T8 — Operationalize the first cohort — *done when:* owner fields, consent-safe outreach,
   a per-user activation/relevance ledger, interview prompts, and stop gates are ready before contact.
+- [x] T9 — Deploy and verify production contracts — *done when:* Vercel and Railway are green,
+  dependency health is 3/3, public samples stay public-only, and the anonymous handoff returns a
+  valid Telegram start link.
 
 ## Decisions
 
@@ -42,8 +46,8 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
   change only where a new public route must be discoverable.
 - Reuse the existing 14-day preview matcher after a fresh `/start`. Its cards carry the
   subscription ID for click attribution, while a preview failure leaves activation intact.
-- Do not deploy or buy traffic from this branch. Production mutation and ad spend remain
-  explicit owner decisions after review and a controlled end-to-end activation test.
+- PR `#93` deployed after green CI and provider health gates. Do not buy traffic until the
+  controlled end-to-end activation test passes; ad spend remains a separate owner decision.
 
 ## Links
 
@@ -52,4 +56,4 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
 - Privacy boundary: [`../../runbook/cv-privacy.md`](../../runbook/cv-privacy.md)
 - Audit and launch plan: [`../../../METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../../../METAHUNT_AUDIT_AND_NEXT_STEPS.md)
 - Cohort operations: [`../../runbook/first-user-cohort.md`](../../runbook/first-user-cohort.md)
-- PR: pending
+- PR: [`#93`](https://github.com/m4xx1k/metahunt_solo/pull/93) — merged as `f71cff8`
