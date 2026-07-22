@@ -55,6 +55,16 @@ export interface ProductAnalyticsOverview {
   identity: ProductIdentityHealth;
   recentJourneys: RecentProductJourney[];
   subscriberActivity: SubscriberActivity[];
+  feedEngagement: ProductFeedEngagement;
+}
+
+// Distinct journeys (and raw event count) that clicked a feed vacancy
+// (`apply_clicked`), scoped to the same period/population as the funnel.
+// Kept separate from PRODUCT_FUNNEL_STEPS: a feed click doesn't require ever
+// subscribing, so it isn't a step in that linear chain.
+export interface ProductFeedEngagement {
+  journeys: number;
+  events: number;
 }
 
 export interface ProductIdentityHealth {
@@ -103,8 +113,12 @@ export interface SubscriberSubscription {
 
 // One row per Telegram chat_id, summarizing that subscriber's whole funnel
 // journey across all of their subscriptions (a subscriber may run more than
-// one). `vacancyClicks` is digest-link taps only — feed-card taps are logged
-// anonymously (no subscription_id) and aren't attributable per subscriber yet.
+// one). `vacancyClicks` is digest-link taps only (Telegram digest_link_clicked,
+// attributed to a subscription). `feedClicks` is web feed taps (apply_clicked,
+// attributed to a journey) — a SEPARATE measure, never merged with digest
+// clicks. Feed clicks only roll up to this subscriber when their journey has
+// exactly one subscription; a journey shared by several subscriptions can't be
+// split between them, so it contributes 0 rather than risk double-counting.
 // `joinedAt` is the earliest subscription `created_at` — the truthful "first
 // touch," unlike `firstSeenAt` which only reflects the analytics ledger (live
 // since this feature's own deploy, so it understates age for older subscribers).
@@ -117,5 +131,6 @@ export interface SubscriberActivity {
   ctaClickedAt: Date | null;
   telegramLinkedAt: Date | null;
   vacancyClicks: number;
+  feedClicks: number;
   subscriptions: SubscriberSubscription[];
 }
