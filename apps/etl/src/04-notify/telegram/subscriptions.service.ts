@@ -18,6 +18,7 @@ import type {
   CreateSubscriptionOptions,
   LinkResult,
   SubscriptionMatchTarget,
+  TelegramLinkIdentity,
 } from "./subscriptions.types";
 import { copy } from "./telegram-copy";
 
@@ -25,6 +26,7 @@ export type {
   ActiveSubscription,
   LinkResult,
   SubscriptionMatchTarget,
+  TelegramLinkIdentity,
 } from "./subscriptions.types";
 
 const { analyticsJourneys, subscriptions, nodes, authIdentities, userCvs } = schema;
@@ -134,7 +136,11 @@ export class SubscriptionsService {
    * of creating a duplicate. Dedup lives here because the chat is unknown at
    * web-create time.
    */
-  async linkChat(token: string, chatId: string): Promise<LinkResult> {
+  async linkChat(
+    token: string,
+    chatId: string,
+    telegramUser?: TelegramLinkIdentity,
+  ): Promise<LinkResult> {
     if (!isUuid(token)) return "not_found";
 
     const [pending] = await this.db
@@ -212,6 +218,8 @@ export class SubscriptionsService {
           userId: linkedUserId,
           linkedAt: sql`now()`,
           deactivatedAt: null,
+          tgUsername: telegramUser?.username ?? null,
+          tgFirstName: telegramUser?.firstName ?? null,
         })
         .where(
           and(

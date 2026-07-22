@@ -82,6 +82,8 @@ export class MeService {
         candidateId: subscriptions.candidateId,
         isActive: subscriptions.isActive,
         createdAt: subscriptions.createdAt,
+        tgUsername: subscriptions.tgUsername,
+        tgFirstName: subscriptions.tgFirstName,
       })
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
@@ -93,6 +95,8 @@ export class MeService {
         isActive: r.isActive,
         isCv: r.candidateId !== null,
         createdAt: r.createdAt.toISOString(),
+        tgUsername: r.tgUsername,
+        tgFirstName: r.tgFirstName,
       })),
     );
   }

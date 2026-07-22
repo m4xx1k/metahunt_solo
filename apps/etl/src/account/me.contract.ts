@@ -19,6 +19,8 @@ export interface MeSubscription {
   isActive: boolean;
   isCv: boolean;
   createdAt: string;
+  tgUsername: string | null;
+  tgFirstName: string | null;
 }
 
 export class UpdateSubscriptionStateDto {
