@@ -95,16 +95,22 @@ function DisciplineCard({ discipline }: { discipline: TrackDto }) {
   return (
     <Link
       href={`/radar/${discipline.slug}`}
-      className="group flex items-center justify-between gap-4 border border-border bg-bg-card px-5 py-4 shadow-brut-sm transition-[transform,box-shadow] hover:-translate-y-[2px] hover:shadow-brut"
+      className="group flex items-center justify-between gap-4 border border-border bg-bg-card px-5 py-4 shadow-brut-sm transition-[transform,box-shadow,border-color,background-color] hover:-translate-y-[2px] hover:border-accent hover:bg-accent-subtle-bg hover:shadow-brut"
     >
       <span className="font-display text-lg font-bold text-text-primary group-hover:text-accent">
         {discipline.label}
       </span>
-      {discipline.count > 0 ? (
-        <span className="shrink-0 font-mono text-xs text-text-muted">
-          {discipline.count} вакансій
+      <span className="flex shrink-0 items-center gap-2.5">
+        {discipline.count > 0 ? (
+          <span className="font-mono text-xs text-accent">{discipline.count} вакансій</span>
+        ) : null}
+        <span
+          aria-hidden="true"
+          className="font-mono text-sm text-text-muted transition-[color,transform] group-hover:translate-x-1 group-hover:text-accent"
+        >
+          →
         </span>
-      ) : null}
+      </span>
     </Link>
   );
 }

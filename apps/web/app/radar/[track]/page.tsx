@@ -19,6 +19,7 @@ import { tracksApi, type TrackDto } from "@/lib/api/tracks";
 import { vacanciesApi, type VacancyDto } from "@/lib/api/vacancies";
 import { formatSalary, SENIORITY_LABELS } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { Badge, Card, Tag } from "@/ui";
 import { chipClass } from "@/ui/inputs/pill";
 import { RadarSubscribe } from "../_components/RadarSubscribe";
@@ -143,6 +144,16 @@ export default async function TrackRadarPage({
               <p className="max-w-[700px] text-lg leading-relaxed text-text-secondary">
                 Свіжі вакансії з DOU і Djinni — щодня в Telegram. Без реєстрації, дублі склеєні.
               </p>
+              {children.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                    звузь до стеку:
+                  </span>
+                  {children.map((child) => (
+                    <SubTrackPill key={child.slug} track={child} />
+                  ))}
+                </div>
+              ) : null}
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <RadarSubscribe
                   trackSlug={slug}
@@ -193,21 +204,6 @@ export default async function TrackRadarPage({
             </Card>
           </div>
         </section>
-
-        {children.length > 0 ? (
-          <section className="border-b border-border bg-bg-elev px-6 py-10 md:px-12">
-            <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4">
-              <p className="font-mono text-2xs uppercase tracking-[0.18em] text-text-muted">
-                Обери стек
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {children.map((child) => (
-                  <SubTrackPill key={child.slug} track={child} />
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
 
         <section id="how" className="px-6 py-20 md:px-12">
           <div className="mx-auto w-full max-w-[1180px]">
@@ -288,7 +284,7 @@ function SubTrackPill({ track }: { track: TrackDto }) {
   return (
     <Link
       href={`/radar/${track.slug}`}
-      className="inline-flex shrink-0 items-center border border-border bg-bg px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent hover:text-accent"
+      className="inline-flex shrink-0 items-center border border-border bg-bg px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent hover:bg-accent-subtle-bg hover:text-accent"
     >
       {track.label}
     </Link>
@@ -307,8 +303,13 @@ function VacancyTeaser({ vacancy: v }: { vacancy: VacancyDto }) {
   });
   const skills = [...v.skills.required, ...v.skills.optional].slice(0, TEASER_SKILL_COUNT);
 
-  return (
-    <Card className="gap-2 p-4 shadow-brut-sm">
+  const teaserClassName = cn(
+    "flex flex-col gap-2 border border-border bg-bg-elev p-4 shadow-brut-sm transition-[transform,box-shadow,border-color] hover:-translate-y-[2px] hover:border-accent hover:shadow-brut",
+    v.link && "cursor-pointer",
+  );
+
+  const content = (
+    <>
       <div className="flex items-center justify-between gap-3 font-mono text-2xs uppercase tracking-wider text-text-muted">
         <span>{v.source.displayName.trim()}</span>
         <span>{formatRelative(v.publishedAt)}</span>
@@ -334,19 +335,24 @@ function VacancyTeaser({ vacancy: v }: { vacancy: VacancyDto }) {
           ))}
         </div>
       ) : null}
-      {v.link ? (
-        // Same `/go/:id` redirect the feed card uses, so hero taps get logged too.
-        <a
-          href={`${publicApiBase()}/go/${v.id}`}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="w-fit font-mono text-2xs text-accent hover:underline"
-        >
-          ↗ дивитись
-        </a>
-      ) : null}
-    </Card>
+    </>
   );
+
+  if (v.link) {
+    // Same `/go/:id` redirect the feed card uses, so hero taps get logged too.
+    return (
+      <a
+        href={`${publicApiBase()}/go/${v.id}`}
+        target="_blank"
+        rel="noreferrer noopener"
+        className={teaserClassName}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={teaserClassName}>{content}</div>;
 }
 
 function Step({
