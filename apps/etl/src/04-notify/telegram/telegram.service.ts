@@ -12,6 +12,11 @@ const SEND_INTERVAL_MS = 50; // ≈20 msg/s
 // A burst to one chat can still trip a per-chat 429 — honor its retry_after
 // rather than burning the activity's Temporal attempts on a transient limit.
 const SEND_MAX_RETRIES = 2;
+// A dropped connection or DNS hiccup never reached Telegram at all — worth a
+// couple of quick local retries before falling through to Temporal's slower
+// activity-level backoff.
+const SEND_NETWORK_MAX_RETRIES = 2;
+const SEND_NETWORK_RETRY_DELAY_MS = 750;
 
 // grammy long-polling is single-consumer: this service must run in exactly ONE
 // `@metahunt/etl` replica. Keep the etl service pinned to 1 replica on Railway,
@@ -120,7 +125,11 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
           // Digest cards carry apply links; a preview card would bloat the message.
           link_preview_options: { is_disabled: true },
         }),
-      { maxRetries: SEND_MAX_RETRIES },
+      {
+        maxRetries: SEND_MAX_RETRIES,
+        networkRetries: SEND_NETWORK_MAX_RETRIES,
+        networkRetryDelayMs: SEND_NETWORK_RETRY_DELAY_MS,
+      },
     );
   }
 }
