@@ -184,14 +184,8 @@ export function FeedLensShell({
         )}
       >
         <LensTabs lens={lens} cvLocked={cv == null && saved.activeCv == null} onSelect={onLens} />
-        <div className="ml-auto flex flex-col items-end gap-1">
+        <div className="ml-auto">
           <CvDropzone onClick={triggerUpload} busy={uploading} />
-          <Link
-            href="/privacy#cv"
-            className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
-          >
-            AI processed · raw text not stored
-          </Link>
         </div>
       </div>
 
@@ -202,6 +196,15 @@ export function FeedLensShell({
         aria-labelledby={lensTabId(lens)}
         className="flex scroll-mt-24 flex-col gap-4"
       >
+        {/* Quiet CV-privacy print attached to the upload control above — kept out
+            of the control bar's flex row so it can't stretch/overflow it. */}
+        <Link
+          href="/privacy#cv"
+          className="-mt-2 self-end font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+        >
+          AI processed · raw text not stored
+        </Link>
+
         {uploadError ? (
           <p className="border border-danger/40 bg-danger/5 px-4 py-2 font-mono text-xs text-danger">
             {uploadError}
@@ -221,46 +224,45 @@ export function FeedLensShell({
             onPickCv={onPickCv}
           />
         ) : (
-          <>
-            {samples.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
-                <span>…or try a sample profile:</span>
-                {samples.map((s) => (
-                  <button
-                    key={s.candidateId}
-                    type="button"
-                    onClick={() => {
-                      setCv(s.candidateId);
-                      scrollToControls();
-                    }}
-                    className="border border-border px-2.5 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            <FeedShell
-              aggregates={aggregates}
-              tracks={tracks}
-              activeTrackSlug={activeTrackSlug}
-              presetRoles={presetRoles}
-              presetSkills={presetSkills}
-              contextualSkills={contextualSkills}
-              roleCatalog={roleCatalog}
-              skillCatalog={skillCatalog}
-              domainCatalog={domainCatalog}
-              hideTrackTree
-              rightRail={
+          <FeedShell
+            aggregates={aggregates}
+            tracks={tracks}
+            activeTrackSlug={activeTrackSlug}
+            presetRoles={presetRoles}
+            presetSkills={presetSkills}
+            contextualSkills={contextualSkills}
+            roleCatalog={roleCatalog}
+            skillCatalog={skillCatalog}
+            domainCatalog={domainCatalog}
+            hideTrackTree
+            rightRail={
+              <div className="flex flex-col gap-4">
                 <ColdRecsTeaser
                   savedCvId={saved.activeCv}
                   onUnlock={onPickCv}
                   onUpload={triggerUpload}
                 />
-              }
-            />
-          </>
+                {samples.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
+                    <span>…or try a sample profile:</span>
+                    {samples.map((s) => (
+                      <button
+                        key={s.candidateId}
+                        type="button"
+                        onClick={() => {
+                          setCv(s.candidateId);
+                          scrollToControls();
+                        }}
+                        className="border border-border px-2.5 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            }
+          />
         )}
       </div>
 

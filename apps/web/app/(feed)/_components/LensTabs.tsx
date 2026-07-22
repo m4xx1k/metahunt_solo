@@ -4,6 +4,7 @@ import { forwardRef, useRef, type KeyboardEvent, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import { useAnalytics, type Lens } from "@/lib/hooks/use-analytics";
+import { Badge } from "@/ui";
 
 // Ids shared with the lens tabpanel in the feed shell so the tablist ↔ panel
 // ARIA relationship resolves.
@@ -49,12 +50,7 @@ export function LensTabs({
       onKeyDown={onKeyDown}
       className="flex items-stretch self-start border border-border font-mono text-2xs uppercase tracking-wider"
     >
-      <Tab
-        ref={coldRef}
-        lens="cold"
-        active={lens === "cold"}
-        onClick={() => select("cold")}
-      >
+      <Tab ref={coldRef} lens="cold" active={lens === "cold"} onClick={() => select("cold")}>
         All jobs
       </Tab>
       <Tab
@@ -64,7 +60,10 @@ export function LensTabs({
         disabled={cvLocked}
         onClick={() => select("warm")}
       >
-        Your matches{cvLocked ? " \u{1F512}" : ""}
+        Your matches{cvLocked ? " \u{1F512}" : ""}{" "}
+        <Badge variant="dark" className="px-1.5 py-0.5 align-middle">
+          beta
+        </Badge>
       </Tab>
     </div>
   );

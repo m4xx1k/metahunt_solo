@@ -28,8 +28,7 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Prop
             Ukrainian tech jobs — <span className="text-accent">in one list</span>.
           </h1>
           <p className="max-w-[560px] font-body text-base leading-[1.55] text-text-secondary md:text-lg">
-            We pull from every source, structure it with AI, and match it to
-            your CV.
+            We pull from every source, structure it with AI, and match it to your CV.
           </p>
           <Link
             href="/how-it-works"
@@ -38,11 +37,7 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Prop
             &gt; how it works
           </Link>
         </div>
-        <TotalCounter
-          total={a.total}
-          lastSyncAt={a.lastSyncAt}
-          sources={a.sources}
-        />
+        <TotalCounter total={a.total} lastSyncAt={a.lastSyncAt} sources={a.sources} />
       </div>
 
       {showPipeline && (
