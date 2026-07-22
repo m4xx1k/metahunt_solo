@@ -15,8 +15,9 @@ import {
   formatSalary,
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
-import { publicApiBase } from "@/lib/api/client";
 import type { VacancyDto } from "@/lib/api/vacancies";
+
+import { ApplyLink } from "./ApplyLink";
 
 // `match` (warm lens only) colours the card's own skill chips by what the
 // candidate has; cold passes nothing → the card renders exactly as before.
@@ -50,12 +51,9 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
 
   // Group 1 — eyebrow: logistics only (format · employment · location).
   const eyebrow: React.ReactNode[] = [];
-  if (v.workFormat)
-    eyebrow.push(<span key="format">{WORK_FORMAT_LABELS[v.workFormat]}</span>);
+  if (v.workFormat) eyebrow.push(<span key="format">{WORK_FORMAT_LABELS[v.workFormat]}</span>);
   if (v.employmentType)
-    eyebrow.push(
-      <span key="employment">{EMPLOYMENT_LABELS[v.employmentType]}</span>,
-    );
+    eyebrow.push(<span key="employment">{EMPLOYMENT_LABELS[v.employmentType]}</span>);
   if (loc)
     eyebrow.push(
       <span key="loc" className="inline-flex items-center gap-1">
@@ -103,29 +101,19 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
           {experience || english ? (
             <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
               {experience ? (
-                <span className="font-bold uppercase tracking-wider text-accent">
-                  {experience}
-                </span>
+                <span className="font-bold uppercase tracking-wider text-accent">{experience}</span>
               ) : null}
-              {english ? (
-                <span className="text-text-secondary">{english}</span>
-              ) : null}
+              {english ? <span className="text-text-secondary">{english}</span> : null}
             </div>
           ) : null}
 
           {/* 4 — salary: the one green fact */}
           {salary ? (
-            <span className="font-mono text-base font-bold text-success">
-              {salary}
-            </span>
+            <span className="font-mono text-base font-bold text-success">{salary}</span>
           ) : null}
 
           {/* 5 — skills: colour is the label (required = accent, optional = muted) */}
-          <VacancySkills
-            required={v.skills.required}
-            optional={v.skills.optional}
-            match={match}
-          />
+          <VacancySkills required={v.skills.required} optional={v.skills.optional} match={match} />
         </div>
 
         {/* 6 — provenance rail: company · domain (source moved to apply) */}
@@ -136,9 +124,7 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   company
                 </span>
-                <span className="break-words font-mono text-xs text-text-primary">
-                  {company}
-                </span>
+                <span className="break-words font-mono text-xs text-text-primary">{company}</span>
               </div>
             ) : null}
             {domain ? (
@@ -188,14 +174,7 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
           {v.link ? (
             // Route through our `/go/:id` redirect (not straight to source) so
             // every apply tap passes through metahunt and gets logged.
-            <a
-              href={`${publicApiBase()}/go/${v.id}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="font-mono text-sm text-accent hover:underline"
-            >
-              ↗ original on {sourceName}
-            </a>
+            <ApplyLink vacancyId={v.id} sourceName={sourceName} />
           ) : null}
         </div>
       </div>
