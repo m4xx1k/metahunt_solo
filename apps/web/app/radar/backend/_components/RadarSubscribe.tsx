@@ -48,7 +48,7 @@ export function RadarSubscribe({
     } catch {
       analytics.subscriptionCreateFailed("feed");
       tab?.close();
-      toast.error("Couldn't create your radar. Please try again.");
+      toast.error("Не вдалося створити радар. Спробуй ще раз.");
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +63,7 @@ export function RadarSubscribe({
       className="w-full sm:w-auto"
     >
       <PaperPlaneTiltIcon weight="fill" className="h-5 w-5" aria-hidden />
-      {isSubmitting ? "Opening Telegram…" : "Create my Backend radar"}
+      {isSubmitting ? "Відкриваємо Telegram…" : "Отримувати в Telegram →"}
     </Button>
   );
 }
