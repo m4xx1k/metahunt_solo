@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,10 +8,13 @@ import {
   ParseUUIDPipe,
   Patch,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -25,7 +27,7 @@ import { CurrentUser } from "../platform/auth/decorators/current-user.decorator"
 import { JwtAuthGuard } from "../platform/auth/jwt-auth.guard";
 import { ApiErrorResponseDto, OkResponseDto } from "../platform/swagger/api-error.dto";
 
-import type { MeCv, MeSubscription } from "./me.contract";
+import { type MeCv, type MeSubscription, UpdateSubscriptionStateDto } from "./me.contract";
 import { MeService } from "./me.service";
 
 // The logged-in user's own CVs + subscriptions. Guarded as a whole — no public
@@ -78,17 +80,16 @@ export class MeController {
 
   @Patch("subscriptions/:id")
   @ApiOperation({ summary: "Enable or disable one current-account subscription" })
+  @ApiBody({ type: UpdateSubscriptionStateDto })
   @ApiOkResponse({ type: OkResponseDto })
   @ApiBadRequestResponse({ description: "isActive must be boolean.", type: ApiErrorResponseDto })
   @ApiNotFoundResponse({ description: "Subscription was not found.", type: ApiErrorResponseDto })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async patchSubscription(
     @CurrentUser() user: JwtUser,
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: { isActive?: unknown },
+    @Body() body: UpdateSubscriptionStateDto,
   ): Promise<{ ok: true }> {
-    if (typeof body?.isActive !== "boolean") {
-      throw new BadRequestException("isActive must be a boolean");
-    }
     if (!(await this.me.setSubscriptionActive(user.userId, id, body.isActive))) {
       throw new NotFoundException();
     }

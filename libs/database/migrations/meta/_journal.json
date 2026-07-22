@@ -204,6 +204,13 @@
       "when": 1784679471748,
       "tag": "0028_far_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1784725731975,
+      "tag": "0029_unusual_strong_guy",
+      "breakpoints": true
     }
   ]
 }

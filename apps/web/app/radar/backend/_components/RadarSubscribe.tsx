@@ -37,7 +37,7 @@ export function RadarSubscribe({
     const tab = window.open("about:blank", "_blank");
     try {
       const result = await subscriptionsApi.create(params);
-      analytics.subscriptionCreated(result.id, params);
+      analytics.subscriptionCreated(params);
       analytics.subscriptionHandoffOpened("feed");
       if (tab) {
         tab.opener = null;

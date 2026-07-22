@@ -1,11 +1,23 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { and, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
+import type { DigestDelivery, DigestProfileType, DrizzleDB } from "@metahunt/database";
 
-const { sentNotifications, vacancies } = schema;
+import { AnalyticsService } from "../../platform/analytics/analytics.service";
+
+const { digestDeliveries, sentNotifications, subscriptions, vacancies } = schema;
+
+export interface CreateDigestDelivery {
+  id: string;
+  subscriptionId: string;
+  vacancies: number;
+  matchedVacancies: number;
+  pages: number;
+  isFirstDigest: boolean;
+  profileType: DigestProfileType;
+}
 
 /**
  * Persistence for the "already sent" ledger. The composite PK
@@ -15,7 +27,10 @@ const { sentNotifications, vacancies } = schema;
  */
 @Injectable()
 export class SentNotificationsService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly analytics: AnalyticsService,
+  ) {}
 
   /**
    * Vacancy ids already sent for this subscription among vacancies loaded after
@@ -36,21 +51,112 @@ export class SentNotificationsService {
     return rows.map((r) => r.vacancyId);
   }
 
-  async hasSent(subscriptionId: string): Promise<boolean> {
-    const rows = await this.db
+  async hasCompletedDelivery(subscriptionId: string): Promise<boolean> {
+    const [delivery] = await this.db
+      .select({ id: digestDeliveries.id })
+      .from(digestDeliveries)
+      .where(
+        and(
+          eq(digestDeliveries.subscriptionId, subscriptionId),
+          eq(digestDeliveries.status, "completed"),
+        ),
+      )
+      .limit(1);
+    if (delivery) return true;
+
+    // Before delivery envelopes existed, sent_notifications was the only
+    // durable delivery evidence. Use it only when this subscription has no
+    // envelope at all; a new partial page always has a pending envelope and
+    // must not flip isFirstDigest.
+    const [anyEnvelope] = await this.db
+      .select({ id: digestDeliveries.id })
+      .from(digestDeliveries)
+      .where(eq(digestDeliveries.subscriptionId, subscriptionId))
+      .limit(1);
+    if (anyEnvelope) return false;
+    const [legacySent] = await this.db
       .select({ vacancyId: sentNotifications.vacancyId })
       .from(sentNotifications)
       .where(eq(sentNotifications.subscriptionId, subscriptionId))
       .limit(1);
-    return rows.length > 0;
+    return legacySent !== undefined;
+  }
+
+  async pendingDelivery(subscriptionId: string): Promise<DigestDelivery | null> {
+    const [delivery] = await this.db
+      .select()
+      .from(digestDeliveries)
+      .where(
+        and(
+          eq(digestDeliveries.subscriptionId, subscriptionId),
+          eq(digestDeliveries.status, "pending"),
+        ),
+      )
+      .orderBy(asc(digestDeliveries.createdAt))
+      .limit(1);
+    return delivery ?? null;
+  }
+
+  async createDelivery(input: CreateDigestDelivery): Promise<DigestDelivery> {
+    const [created] = await this.db
+      .insert(digestDeliveries)
+      .values(input)
+      .onConflictDoNothing()
+      .returning();
+    if (created) return created;
+    const [existing] = await this.db
+      .select()
+      .from(digestDeliveries)
+      .where(
+        and(
+          eq(digestDeliveries.subscriptionId, input.subscriptionId),
+          eq(digestDeliveries.status, "pending"),
+        ),
+      );
+    if (!existing) throw new Error(`digest delivery ${input.id} disappeared after insert`);
+    return existing;
   }
 
   /** Record a sent page. Idempotent — the PK collision is ignored on retry. */
-  async record(subscriptionId: string, vacancyIds: string[]): Promise<void> {
+  async record(
+    subscriptionId: string,
+    vacancyIds: string[],
+    delivery?: DigestDelivery,
+    completesDelivery = false,
+  ): Promise<void> {
     if (vacancyIds.length === 0) return;
-    await this.db
-      .insert(sentNotifications)
-      .values(vacancyIds.map((vacancyId) => ({ subscriptionId, vacancyId })))
-      .onConflictDoNothing();
+    await this.db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(sentNotifications)
+        .values(vacancyIds.map((vacancyId) => ({ subscriptionId, vacancyId })))
+        .onConflictDoNothing()
+        .returning({ vacancyId: sentNotifications.vacancyId });
+      if (!delivery || inserted.length === 0) return;
+      const [subscription] = await tx
+        .select({ journeyId: subscriptions.journeyId })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, subscriptionId));
+      if (subscription?.journeyId) {
+        if (completesDelivery) {
+          await this.analytics.enqueueDigestSent(tx, {
+            subscriptionId,
+            vacancies: delivery.vacancies,
+            pages: delivery.pages,
+            deliveryId: delivery.id,
+            isFirstDigest: delivery.isFirstDigest,
+            profileType: delivery.profileType,
+            journeyId: subscription.journeyId,
+          });
+        }
+      }
+      await tx
+        .update(digestDeliveries)
+        .set({
+          sentVacancies: sql`${digestDeliveries.sentVacancies} + ${inserted.length}`,
+          sentPages: sql`${digestDeliveries.sentPages} + 1`,
+          ...(completesDelivery ? { status: "completed" as const, completedAt: sql`now()` } : {}),
+        })
+        .where(eq(digestDeliveries.id, delivery.id));
+    });
   }
 }

@@ -30,7 +30,7 @@ export class RedirectController {
   ): Promise<{ url: string }> {
     const link = await this.feed.getApplyLink(id);
     if (!link) throw new NotFoundException("Vacancy link not found");
-    this.analytics.applyClicked(id, subscriptionId);
+    void this.analytics.applyClicked(id, subscriptionId);
     return { url: link };
   }
 }

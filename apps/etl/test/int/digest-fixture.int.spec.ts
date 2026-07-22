@@ -15,7 +15,15 @@ import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 
 import { makeTestDb, truncateAll } from "./db";
 
-const { sentNotifications, sources, rssIngests, rssRecords, subscriptions, vacancies } = schema;
+const {
+  digestDeliveries,
+  sentNotifications,
+  sources,
+  rssIngests,
+  rssRecords,
+  subscriptions,
+  vacancies,
+} = schema;
 const WINDOW_START = new Date("2026-01-01T00:00:00.000Z");
 const VACANCY_LOADED_AT = new Date("2026-01-02T00:00:00.000Z");
 
@@ -174,7 +182,7 @@ describe("digest fixture flow", () => {
   it("delivers once and records the ledger so a repeat sends no duplicate", async () => {
     const subscription = await seedActiveSubscription();
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db);
+    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
     const service = makeDigest(
       new SubscriptionsService(
         db,
@@ -194,12 +202,18 @@ describe("digest fixture flow", () => {
         .from(sentNotifications)
         .where(eq(sentNotifications.subscriptionId, subscription.id)),
     ).toHaveLength(1);
+    await expect(
+      db
+        .select({ status: digestDeliveries.status, isFirstDigest: digestDeliveries.isFirstDigest })
+        .from(digestDeliveries)
+        .where(eq(digestDeliveries.subscriptionId, subscription.id)),
+    ).resolves.toEqual([{ status: "completed", isFirstDigest: true }]);
   });
 
   it("does not record a vacancy when delivery fails, then sends it on retry", async () => {
     const subscription = await seedActiveSubscription();
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db);
+    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
     const telegram = new FixtureTelegram();
     telegram.failNext = true;
     const service = makeDigest(
@@ -215,14 +229,26 @@ describe("digest fixture flow", () => {
 
     await expect(service.deliver(subscription.id)).rejects.toThrow("fixture telegram outage");
     expect(await db.select().from(sentNotifications)).toHaveLength(0);
+    await expect(
+      db
+        .select({ status: digestDeliveries.status, isFirstDigest: digestDeliveries.isFirstDigest })
+        .from(digestDeliveries)
+        .where(eq(digestDeliveries.subscriptionId, subscription.id)),
+    ).resolves.toEqual([{ status: "pending", isFirstDigest: true }]);
     await expect(service.deliver(subscription.id)).resolves.toBe(1);
     expect(telegram.messages).toHaveLength(1);
+    await expect(
+      db
+        .select({ status: digestDeliveries.status, isFirstDigest: digestDeliveries.isFirstDigest })
+        .from(digestDeliveries)
+        .where(eq(digestDeliveries.subscriptionId, subscription.id)),
+    ).resolves.toEqual([{ status: "completed", isFirstDigest: true }]);
   });
 
   it("does nothing after a subscription is paused", async () => {
     const subscription = await seedActiveSubscription();
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db);
+    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
     const telegram = new FixtureTelegram();
     const service = makeDigest(
       new SubscriptionsService(

@@ -18,6 +18,7 @@ import { TelegramModule } from "./04-notify/telegram/telegram.module";
 import { UsersModule } from "./04-notify/users/users.module";
 import { AccountModule } from "./account/account.module";
 import { MonitoringModule } from "./admin/monitoring/monitoring.module";
+import { ProductAnalyticsModule } from "./admin/product-analytics/product-analytics.module";
 import { TaxonomyModule } from "./admin/taxonomy/taxonomy.module";
 import { AppController } from "./app.controller";
 import { AnalyticsModule } from "./platform/analytics/analytics.module";
@@ -48,6 +49,7 @@ import { TemporalInfraModule } from "./platform/temporal/temporal.module";
     LoaderModule,
     TaxonomyModule,
     MonitoringModule,
+    ProductAnalyticsModule,
     FeedModule,
     TracksModule,
     MarketModule,

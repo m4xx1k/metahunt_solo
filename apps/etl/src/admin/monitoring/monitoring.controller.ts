@@ -10,13 +10,18 @@ import {
   parseRequiredUuid,
   parseUuid,
 } from "../../platform/shared/query-parsing";
+import { REPORTING_PERIODS } from "../../platform/shared/reporting-period";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
-import { MonitoringService } from "./monitoring.service";
+import { MonitoringService, type StatsPeriod } from "./monitoring.service";
 
 const INGEST_STATUSES = ["running", "completed", "failed"] as const;
-const STATS_PERIODS = ["24h", "week", "all"] as const;
+// Every REPORTING_PERIODS member except "30d" (see StatsPeriod in
+// monitoring.service.ts) — derived so the two lists can't drift apart.
+const STATS_PERIODS: readonly StatsPeriod[] = REPORTING_PERIODS.filter(
+  (period): period is StatsPeriod => period !== "30d",
+);
 
 @Controller("monitoring")
 @OperatorApi("operator: monitoring")

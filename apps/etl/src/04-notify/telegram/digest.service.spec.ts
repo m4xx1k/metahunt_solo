@@ -63,22 +63,31 @@ function activeSub(overrides: Partial<ActiveSubscription> = {}): ActiveSubscript
 describe("DigestService", () => {
   const matchNew = jest.fn();
   const getActiveById = jest.fn();
-  const hasSent = jest.fn();
+  const pendingDelivery = jest.fn();
+  const hasCompletedDelivery = jest.fn();
+  const createDelivery = jest.fn();
   const record = jest.fn();
   const sendMessage = jest.fn();
   const digestEvaluated = jest.fn();
-  const digestSent = jest.fn();
   const digestDeliveryFailed = jest.fn();
   let service: DigestService;
 
   beforeEach(async () => {
     matchNew.mockReset().mockResolvedValue(digestMatch([]));
     getActiveById.mockReset();
-    hasSent.mockReset().mockResolvedValue(false);
+    pendingDelivery.mockReset().mockResolvedValue(null);
+    hasCompletedDelivery.mockReset().mockResolvedValue(false);
+    createDelivery.mockReset().mockImplementation(async (input) => ({
+      ...input,
+      sentVacancies: 0,
+      sentPages: 0,
+      status: "pending",
+      createdAt: new Date(),
+      completedAt: null,
+    }));
     record.mockReset().mockResolvedValue(undefined);
     sendMessage.mockReset().mockResolvedValue(undefined);
     digestEvaluated.mockReset();
-    digestSent.mockReset();
     digestDeliveryFailed.mockReset();
 
     const moduleRef = await Test.createTestingModule({
@@ -87,11 +96,14 @@ describe("DigestService", () => {
         { provide: ConfigService, useValue: { get: () => BASE } },
         { provide: SubscriptionMatcherService, useValue: { matchNew } },
         { provide: SubscriptionsService, useValue: { getActiveById } },
-        { provide: SentNotificationsService, useValue: { hasSent, record } },
+        {
+          provide: SentNotificationsService,
+          useValue: { pendingDelivery, hasCompletedDelivery, createDelivery, record },
+        },
         { provide: TelegramService, useValue: { sendMessage } },
         {
           provide: AnalyticsService,
-          useValue: { digestEvaluated, digestSent, digestDeliveryFailed },
+          useValue: { digestEvaluated, digestDeliveryFailed },
         },
       ],
     }).compile();
@@ -132,16 +144,18 @@ describe("DigestService", () => {
 
       expect(sendMessage).toHaveBeenCalledTimes(1);
       expect(sendMessage).toHaveBeenCalledWith("chat-1", expect.any(String));
-      expect(record).toHaveBeenCalledWith("sub-1", ["v1"]);
-      expect(digestSent).toHaveBeenCalledWith(
+      expect(record).toHaveBeenCalledWith(
+        "sub-1",
+        ["v1"],
         expect.objectContaining({
           subscriptionId: "sub-1",
           vacancies: 1,
           pages: 1,
-          deliveryId: "a096952d79fe2672783125e6a7b7ae2e7bfb8d029c939fd268f840a1a2aa4f94",
+          id: "a096952d79fe2672783125e6a7b7ae2e7bfb8d029c939fd268f840a1a2aa4f94",
           isFirstDigest: true,
           profileType: "feed",
         }),
+        true,
       );
       // Send must precede the record so a failed send is never marked sent.
       expect(sendMessage.mock.invocationCallOrder[0]).toBeLessThan(
@@ -159,9 +173,29 @@ describe("DigestService", () => {
       expect(record).toHaveBeenCalledTimes(2);
     });
 
+    it("completes against the capped delivery items when total matches are higher", async () => {
+      getActiveById.mockResolvedValue(activeSub());
+      const items = Array.from({ length: 50 }, (_, index) =>
+        createVacancy({ id: `capped-${index}` }),
+      );
+      matchNew.mockResolvedValue(digestMatch(items, 100));
+
+      await expect(service.deliver("sub-1")).resolves.toBe(50);
+
+      expect(createDelivery).toHaveBeenCalledWith(
+        expect.objectContaining({ vacancies: 50, matchedVacancies: 100 }),
+      );
+      expect(record).toHaveBeenLastCalledWith(
+        "sub-1",
+        expect.any(Array),
+        expect.objectContaining({ vacancies: 50, matchedVacancies: 100 }),
+        true,
+      );
+    });
+
     it("marks a later CV digest as non-first", async () => {
       getActiveById.mockResolvedValue(activeSub({ candidateId: "candidate-1" }));
-      hasSent.mockResolvedValue(true);
+      hasCompletedDelivery.mockResolvedValue(true);
       matchNew.mockResolvedValue(digestMatch([createVacancy()], 1));
 
       await expect(service.deliver("sub-1")).resolves.toBe(1);
@@ -169,8 +203,11 @@ describe("DigestService", () => {
       expect(digestEvaluated).toHaveBeenCalledWith(
         expect.objectContaining({ isFirstDigest: false, profileType: "cv" }),
       );
-      expect(digestSent).toHaveBeenCalledWith(
+      expect(record).toHaveBeenCalledWith(
+        "sub-1",
+        expect.any(Array),
         expect.objectContaining({ isFirstDigest: false, profileType: "cv" }),
+        true,
       );
     });
 
@@ -183,7 +220,6 @@ describe("DigestService", () => {
       await expect(service.deliver("sub-1")).rejects.toBe(error);
 
       expect(record).not.toHaveBeenCalled();
-      expect(digestSent).not.toHaveBeenCalled();
       expect(digestDeliveryFailed).toHaveBeenCalledWith({
         subscriptionId: "sub-1",
         vacancies: 1,
@@ -194,6 +230,55 @@ describe("DigestService", () => {
         isFirstDigest: true,
         profileType: "feed",
       });
+    });
+
+    it("preserves the first-digest envelope after a partial multi-page failure", async () => {
+      getActiveById.mockResolvedValue(activeSub());
+      const items = Array.from({ length: 11 }, (_, index) => createVacancy({ id: `v${index}` }));
+      matchNew.mockResolvedValue(digestMatch(items, items.length));
+      const error = { error_code: 500 };
+      sendMessage.mockResolvedValueOnce(undefined).mockRejectedValueOnce(error);
+
+      await expect(service.deliver("sub-1")).rejects.toBe(error);
+
+      const original = await createDelivery.mock.results[0].value;
+      const sentOnFirstPage = record.mock.calls[0][1].length;
+      const resumed = {
+        ...original,
+        sentVacancies: sentOnFirstPage,
+        sentPages: 1,
+      };
+      pendingDelivery.mockResolvedValue(resumed);
+      matchNew.mockResolvedValue(
+        digestMatch(items.slice(sentOnFirstPage), items.length - sentOnFirstPage),
+      );
+      sendMessage.mockReset().mockResolvedValue(undefined);
+      record.mockClear();
+
+      await expect(service.deliver("sub-1")).resolves.toBe(items.length - sentOnFirstPage);
+
+      expect(hasCompletedDelivery).toHaveBeenCalledTimes(1);
+      expect(createDelivery).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenLastCalledWith(
+        "sub-1",
+        expect.any(Array),
+        expect.objectContaining({
+          id: original.id,
+          vacancies: 11,
+          pages: 2,
+          isFirstDigest: true,
+        }),
+        true,
+      );
+      expect(digestDeliveryFailed).toHaveBeenCalledWith(
+        expect.objectContaining({
+          deliveryId: original.id,
+          vacancies: 11,
+          pages: 2,
+          failedPage: 2,
+          isFirstDigest: true,
+        }),
+      );
     });
   });
 });

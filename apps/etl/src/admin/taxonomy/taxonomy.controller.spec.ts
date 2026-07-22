@@ -1,9 +1,11 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, ParseUUIDPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { validate } from "class-validator";
 
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { RolesGuard } from "../../platform/auth/roles.guard";
 
+import { RenameTaxonomyNodeDto } from "./taxonomy.contract";
 import { TaxonomyController } from "./taxonomy.controller";
 import { TaxonomyService } from "./taxonomy.service";
 
@@ -97,18 +99,13 @@ describe("TaxonomyController", () => {
       expect(out).toMatchObject({ canonicalName: "Backend Engineer" });
     });
 
-    it("rejects a missing body.name", () => {
-      expect(() => controller.renameNode(NODE_ID, undefined)).toThrow(BadRequestException);
-      expect(() => controller.renameNode(NODE_ID, { name: 42 as unknown as string })).toThrow(
-        BadRequestException,
-      );
-    });
+    it("declares boundary contracts for body and path id", async () => {
+      const dto = Object.assign(new RenameTaxonomyNodeDto(), { name: 42 });
 
-    it("rejects a non-UUID id before reaching the service", () => {
-      expect(() => controller.renameNode("not-a-uuid", { name: "ok name" })).toThrow(
+      await expect(validate(dto)).resolves.toHaveLength(1);
+      await expect(new ParseUUIDPipe().transform("not-a-uuid", { type: "param" })).rejects.toThrow(
         BadRequestException,
       );
-      expect(renameNode).not.toHaveBeenCalled();
     });
   });
 });

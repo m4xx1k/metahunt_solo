@@ -7,9 +7,7 @@ import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { FiltersApi } from "@/features/vacancy-filters/types";
 import type { Lens } from "@/lib/hooks/use-analytics";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from "@/lib/uuid";
 
 export interface FeedSearch extends FiltersApi {
   /** Derived from `?cv`: a resolved candidate means the warm lens. */
@@ -36,13 +34,12 @@ export function useFeedSearch(): FeedSearch {
   const rawCv = searchParams.get("cv");
   // The ?cv capability is a UUID; ignore a malformed value so a garbage link
   // degrades to cold instead of 500-ing the ranking endpoint.
-  const cv = rawCv && UUID_RE.test(rawCv) ? rawCv : null;
+  const cv = rawCv && isUuid(rawCv) ? rawCv : null;
   const lens: Lens = cv ? "warm" : "cold";
   const track = pathname === "/" ? null : pathname.slice(1).split("/")[0] || null;
 
   const setCv = useCallback(
-    (id: string | null) =>
-      push((n) => (id ? n.set("cv", id) : n.delete("cv"))),
+    (id: string | null) => push((n) => (id ? n.set("cv", id) : n.delete("cv"))),
     [push],
   );
 

@@ -3,6 +3,8 @@
 // FilterState from a given URL or the SSR seed won't match the client's first
 // query key (and react-query refetches on mount, losing the SSR benefit).
 
+import { firstSearchParam } from "@/lib/search-params";
+
 import { DEFAULT_FRESHNESS, FRESHNESS_DAYS, type FilterState } from "./types";
 
 export const LIST_SEP = ",";
@@ -49,13 +51,8 @@ export function readFilterState(p: ParamReader): FilterState {
 // Adapt Next's server `searchParams` (a record of string | string[]) to a
 // ParamReader. Absent → has() false (an axis param falls back to its preset);
 // present-but-empty ("") → has() true (an explicit empty axis).
-export function readerFrom(
-  sp: Record<string, string | string[] | undefined>,
-): ParamReader {
-  const first = (v: string | string[] | undefined): string | null => {
-    const s = Array.isArray(v) ? v[0] : v;
-    return s ?? null;
-  };
+export function readerFrom(sp: Record<string, string | string[] | undefined>): ParamReader {
+  const first = (v: string | string[] | undefined): string | null => firstSearchParam(v) ?? null;
   return {
     get: (key) => first(sp[key]),
     has: (key) => sp[key] !== undefined,

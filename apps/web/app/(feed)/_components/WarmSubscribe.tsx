@@ -43,7 +43,7 @@ export function WarmSubscribe({
     const tab = window.open("about:blank", "_blank");
     try {
       const res = await subscriptionsApi.create(params, candidateId);
-      analytics.subscriptionCreated(res.id, params);
+      analytics.subscriptionCreated(params);
       analytics.subscriptionHandoffOpened("cv");
       addSub({
         id: res.id,

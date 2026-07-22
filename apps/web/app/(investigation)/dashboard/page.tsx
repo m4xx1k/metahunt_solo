@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   monitoringApi,
+  isStatsPeriod,
   type IngestStatus,
   type StatsPeriod,
 } from "@/lib/api/monitoring";
@@ -33,31 +34,25 @@ const PERIOD_MS: Record<StatsPeriod, number | null> = {
   all: null,
 };
 
-function parsePeriod(raw: unknown): StatsPeriod {
-  if (raw === "week" || raw === "all") return raw;
-  return "24h";
-}
-
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const period = parsePeriod(sp.period);
+  const period = isStatsPeriod(sp.period) ? sp.period : "24h";
 
-  const [stats, sources, recent, failedAll, coverage, dedupMetrics] =
-    await Promise.all([
-      monitoringApi.stats(period),
-      monitoringApi.sources(),
-      monitoringApi.listIngests({ limit: 10 }),
-      monitoringApi.listIngests({ status: "failed", limit: 50 }),
-      taxonomyApi.coverage().catch(() => null),
-      dedupApi
-        .list({ pageSize: 1 })
-        .then((r) => r.metrics)
-        .catch(() => null),
-    ]);
+  const [stats, sources, recent, failedAll, coverage, dedupMetrics] = await Promise.all([
+    monitoringApi.stats(period),
+    monitoringApi.sources(),
+    monitoringApi.listIngests({ limit: 10 }),
+    monitoringApi.listIngests({ status: "failed", limit: 50 }),
+    taxonomyApi.coverage().catch(() => null),
+    dedupApi
+      .list({ pageSize: 1 })
+      .then((r) => r.metrics)
+      .catch(() => null),
+  ]);
 
   const perSourceLast7 = await Promise.all(
     sources.map(async (s) => {
@@ -68,9 +63,7 @@ export default async function DashboardPage({
       return [s.id, list.items.map((i) => i.status).reverse()] as const;
     }),
   );
-  const recentBySource: Record<string, IngestStatus[]> = Object.fromEntries(
-    perSourceLast7,
-  );
+  const recentBySource: Record<string, IngestStatus[]> = Object.fromEntries(perSourceLast7);
 
   // Period-scoped failed list for the side drawer. The backend stats
   // already returns the count, but the drawer needs the actual ingest
@@ -94,8 +87,7 @@ export default async function DashboardPage({
           <div className="flex flex-col gap-1">
             <Tag>{`> огляд`}</Tag>
             <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
-              пайплайн загалом ·{" "}
-              <span className="text-accent">{periodLabel}</span>
+              пайплайн загалом · <span className="text-accent">{periodLabel}</span>
             </h2>
           </div>
           <PeriodSelector current={period} />
@@ -136,8 +128,8 @@ export default async function DashboardPage({
                 {formatUsd(stats.llmCost.costUsd)}
               </span>
               <span className="mt-auto font-mono text-2xs uppercase tracking-wider text-text-muted">
-                {formatCount(stats.llmCost.count)} викликів ·{" "}
-                {formatTokens(stats.llmCost.tokensIn)} токенів in
+                {formatCount(stats.llmCost.count)} викликів · {formatTokens(stats.llmCost.tokensIn)}{" "}
+                токенів in
               </span>
             </KpiCard>
           </Link>
@@ -146,24 +138,17 @@ export default async function DashboardPage({
             count={stats.ingests.failed}
             failedIngests={failedItems}
             trigger={
-              <KpiCard
-                label="помилки збору"
-                tone={stats.ingests.failed > 0 ? "danger" : "default"}
-              >
+              <KpiCard label="помилки збору" tone={stats.ingests.failed > 0 ? "danger" : "default"}>
                 <span
                   className={cn(
                     "font-display text-4xl font-bold leading-none",
-                    stats.ingests.failed > 0
-                      ? "text-danger"
-                      : "text-text-primary",
+                    stats.ingests.failed > 0 ? "text-danger" : "text-text-primary",
                   )}
                 >
                   {formatCount(stats.ingests.failed)}
                 </span>
                 <span className="mt-auto font-mono text-xs text-text-secondary">
-                  {stats.ingests.failed > 0
-                    ? "натисніть для перегляду"
-                    : "без помилок"}
+                  {stats.ingests.failed > 0 ? "натисніть для перегляду" : "без помилок"}
                 </span>
               </KpiCard>
             }
@@ -179,10 +164,7 @@ export default async function DashboardPage({
           title="останній запуск за джерелом"
           subtitle="натисніть картку, щоб відкрити деталі запуску"
         >
-          <LatestPerSource
-            items={stats.latestPerSource}
-            recentBySource={recentBySource}
-          />
+          <LatestPerSource items={stats.latestPerSource} recentBySource={recentBySource} />
         </Section>
 
         {/* Пояс 3b — Довідник + дедуплікація */}
@@ -215,12 +197,8 @@ function Section({
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Tag>{tag}</Tag>
-        <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
-          {title}
-        </h2>
-        {subtitle ? (
-          <p className="font-mono text-xs text-text-muted">{subtitle}</p>
-        ) : null}
+        <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">{title}</h2>
+        {subtitle ? <p className="font-mono text-xs text-text-muted">{subtitle}</p> : null}
       </div>
       {children}
     </section>

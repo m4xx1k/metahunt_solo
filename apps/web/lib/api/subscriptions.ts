@@ -2,6 +2,8 @@
 // (POST /subscriptions). Source of truth:
 // apps/etl/src/telegram/subscriptions.contract.ts. Hand-mirrored per ADR-0005.
 
+import { getOrCreateJourneyId } from "@/lib/analytics-journey";
+
 import { apiPost } from "./client";
 import type { FitTier } from "./ranking";
 import type {
@@ -42,5 +44,6 @@ export const subscriptionsApi = {
     apiPost<CreateSubscriptionResponse>(candidateId ? "/subscriptions/cv" : "/subscriptions", {
       params,
       candidateId,
+      journeyId: getOrCreateJourneyId(),
     }),
 };
