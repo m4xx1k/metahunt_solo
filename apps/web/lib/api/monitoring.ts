@@ -72,6 +72,10 @@ export interface LatestPerSourceItem {
 
 export type StatsPeriod = "24h" | "week" | "all";
 
+export function isStatsPeriod(value: unknown): value is StatsPeriod {
+  return value === "24h" || value === "week" || value === "all";
+}
+
 export interface StatsFunnel {
   bronze: number;
   silver: number;
@@ -127,8 +131,7 @@ export interface ListRecordsQuery {
 }
 
 export const monitoringApi = {
-  stats: (period: StatsPeriod = "24h") =>
-    apiGet<Stats>(`/monitoring/stats${buildQs({ period })}`),
+  stats: (period: StatsPeriod = "24h") => apiGet<Stats>(`/monitoring/stats${buildQs({ period })}`),
   sources: () => apiGet<Source[]>("/monitoring/sources"),
   listIngests: (q: ListIngestsQuery = {}) =>
     apiGet<Paginated<IngestListItem>>(`/monitoring/ingests${buildQs(q)}`),
@@ -136,6 +139,5 @@ export const monitoringApi = {
     apiGet<IngestListItem>(`/monitoring/ingests/${encodeURIComponent(id)}`),
   listRecords: (q: ListRecordsQuery = {}) =>
     apiGet<Paginated<RecordListItem>>(`/monitoring/records${buildQs(q)}`),
-  getRecord: (id: string) =>
-    apiGet<RecordDetail>(`/monitoring/records/${encodeURIComponent(id)}`),
+  getRecord: (id: string) => apiGet<RecordDetail>(`/monitoring/records/${encodeURIComponent(id)}`),
 };

@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { usePostHog } from "posthog-js/react";
+import type { PostHog } from "posthog-js";
 
+import { getOrCreateJourneyId } from "@/lib/analytics-journey";
+import { analyticsApi, type BrowserAnalyticsEventName } from "@/lib/api/analytics";
 import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
 
 // Single source of truth for client-side event names (mirrors the backend
@@ -34,6 +37,30 @@ export type AcquisitionAttribution = Partial<
   >
 >;
 
+type AnalyticsProperty = string | number | boolean | undefined;
+
+function identifyJourney(posthog: PostHog | undefined): void {
+  posthog?.identify(getOrCreateJourneyId());
+}
+
+function captureBrowserEvent(
+  posthog: PostHog | undefined,
+  name: BrowserAnalyticsEventName,
+  properties: Record<string, string | number | boolean>,
+): void {
+  identifyJourney(posthog);
+  void analyticsApi.captureBrowserEvent({ name, properties }).catch(() => undefined);
+}
+
+function capturePostHogEvent(
+  posthog: PostHog | undefined,
+  name: string,
+  properties?: Record<string, AnalyticsProperty>,
+): void {
+  identifyJourney(posthog);
+  posthog?.capture(name, properties);
+}
+
 // The single client-side analytics seam — domain methods only, so components
 // never touch raw event names or the PostHog client (mirrors the backend
 // AnalyticsService). No-ops when PostHog is dormant (no NEXT_PUBLIC_POSTHOG_KEY).
@@ -45,14 +72,14 @@ export function useAnalytics() {
   return useMemo(
     () => ({
       landingViewed(variant: string, attribution: AcquisitionAttribution) {
-        posthog?.capture(ANALYTICS_EVENTS.landingView, {
+        captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingView, {
           landing_variant: variant,
           ...attribution,
         });
       },
 
       landingCtaClicked(variant: string, attribution: AcquisitionAttribution) {
-        posthog?.capture(ANALYTICS_EVENTS.landingCtaClicked, {
+        captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingCtaClicked, {
           landing_variant: variant,
           destination: "telegram_subscription",
           ...attribution,
@@ -63,66 +90,65 @@ export function useAnalytics() {
         profile: SubscriptionProfile,
         params: SubscriptionParams | CvMatchParams,
       ) {
-        posthog?.capture(ANALYTICS_EVENTS.subscriptionCreateStarted, {
+        captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionCreateStarted, {
           profile_type: profile,
           filter_count: Object.keys(params).length,
         });
       },
 
-      subscriptionCreated(subscriptionUuid: string, params: SubscriptionParams | CvMatchParams) {
-        posthog?.capture(ANALYTICS_EVENTS.subscribeClicked, {
+      subscriptionCreated(params: SubscriptionParams | CvMatchParams) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.subscribeClicked, {
           filterCount: Object.keys(params).length,
         });
-        posthog?.alias(subscriptionUuid);
       },
 
       subscriptionHandoffOpened(profile: SubscriptionProfile) {
-        posthog?.capture(ANALYTICS_EVENTS.subscriptionHandoffOpened, {
+        captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionHandoffOpened, {
           profile_type: profile,
         });
       },
 
       subscriptionCreateFailed(profile: SubscriptionProfile) {
-        posthog?.capture(ANALYTICS_EVENTS.subscriptionCreateFailed, {
+        captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionCreateFailed, {
           profile_type: profile,
         });
       },
 
       // The visitor toggled the feed/CV lens. `to` is the lens now shown.
       lensSwitched(from: Lens, to: Lens) {
-        posthog?.capture(ANALYTICS_EVENTS.lensSwitch, { from, to });
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.lensSwitch, { from, to });
       },
 
       // A CV was uploaded and resolved to a candidate (the warm-lens entry).
       // The candidateId is a shareable bearer capability, so it is deliberately
       // NOT sent as a property.
       cvUploadStarted() {
-        posthog?.capture(ANALYTICS_EVENTS.cvUploadStarted);
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadStarted);
       },
 
       cvUpload(reused: boolean) {
-        posthog?.capture(ANALYTICS_EVENTS.cvUploadCompleted, { reused });
-        posthog?.capture(ANALYTICS_EVENTS.cvUpload, { reused });
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadCompleted, { reused });
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUpload, { reused });
       },
 
       cvUploadFailed() {
-        posthog?.capture(ANALYTICS_EVENTS.cvUploadFailed);
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadFailed);
       },
 
       telegramLoginStarted() {
-        posthog?.capture(ANALYTICS_EVENTS.telegramLoginStarted);
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginStarted);
       },
 
       telegramLoginCancelled() {
-        posthog?.capture(ANALYTICS_EVENTS.telegramLoginCancelled);
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled);
       },
 
       telegramLoginFailed(stage: "configuration" | "widget" | "session") {
-        posthog?.capture(ANALYTICS_EVENTS.telegramLoginFailed, { stage });
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginFailed, { stage });
       },
 
       loggedIn() {
-        posthog?.capture(ANALYTICS_EVENTS.loggedIn, {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.loggedIn, {
           login_method: "telegram",
           method: "telegram",
         });
@@ -131,7 +157,7 @@ export function useAnalytics() {
       // Up/down vote on a vacancy card (demand signal, gated by the
       // feedback-buttons flag). Fired once per real sentiment change.
       vacancyFeedback(vacancyId: string, sentiment: "up" | "down") {
-        posthog?.capture(ANALYTICS_EVENTS.vacancyFeedback, {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.vacancyFeedback, {
           vacancy_id: vacancyId,
           sentiment,
         });
@@ -140,7 +166,7 @@ export function useAnalytics() {
       // Tapped a not-yet-built AI helper (cover letter / CV tuning) — measures
       // demand before we build it. vacancyId is absent for the CV-level bait.
       baitClick(feature: "cover_letter" | "tune_cv", vacancyId?: string) {
-        posthog?.capture(ANALYTICS_EVENTS.baitClick, {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.baitClick, {
           feature,
           vacancy_id: vacancyId,
         });

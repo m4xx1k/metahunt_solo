@@ -1,31 +1,16 @@
 import { notFound } from "next/navigation";
 import { monitoringApi } from "@/lib/api/monitoring";
+import { nonNegativeIntegerSearchParam } from "@/lib/search-params";
 import { InvestigationHeader } from "../../../_components/InvestigationHeader";
 import { StatusBadge } from "../../../_components/StatusBadge";
 import { RssRecordCard } from "../../../_components/RssRecordCard";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { Tag } from "@/ui";
-import {
-  formatCount,
-  formatDateTime,
-  formatDuration,
-  formatRelative,
-} from "@/lib/format";
+import { formatCount, formatDateTime, formatDuration, formatRelative } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 const RECORDS_LIMIT = 20;
-
-function asString(v: string | string[] | undefined): string | undefined {
-  return Array.isArray(v) ? v[0] : v;
-}
-
-function asInt(v: string | string[] | undefined, fallback: number): number {
-  const s = asString(v);
-  if (!s) return fallback;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
-}
 
 export default async function IngestDetailPage({
   params,
@@ -36,7 +21,7 @@ export default async function IngestDetailPage({
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const offset = asInt(sp.offset, 0);
+  const offset = nonNegativeIntegerSearchParam(sp.offset);
 
   const ingest = await monitoringApi.getIngest(id).catch((err) => {
     if (err instanceof Error && err.message.includes(" 404 ")) return null;
@@ -64,9 +49,7 @@ export default async function IngestDetailPage({
             </h1>
             <StatusBadge status={ingest.status} />
           </div>
-          <p className="font-mono text-xs text-text-muted">
-            ініційовано · {ingest.triggeredBy}
-          </p>
+          <p className="font-mono text-xs text-text-muted">ініційовано · {ingest.triggeredBy}</p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -74,11 +57,7 @@ export default async function IngestDetailPage({
           <Stat
             label="завершення"
             value={formatRelative(ingest.finishedAt)}
-            sub={
-              ingest.finishedAt
-                ? formatDateTime(ingest.finishedAt)
-                : "ще виконується"
-            }
+            sub={ingest.finishedAt ? formatDateTime(ingest.finishedAt) : "ще виконується"}
           />
           <Stat label="тривалість" value={formatDuration(ingest.durationMs)} />
           <Stat
@@ -103,9 +82,7 @@ export default async function IngestDetailPage({
             цей запуск сформував {records.total} {records.total === 1 ? "запис" : "записів"}
           </p>
           {records.items.length === 0 ? (
-            <p className="font-mono text-sm text-text-muted">
-              запуск не сформував жодного запису
-            </p>
+            <p className="font-mono text-sm text-text-muted">запуск не сформував жодного запису</p>
           ) : (
             <div className="flex flex-col gap-5">
               {records.items.map((r) => (
@@ -130,10 +107,7 @@ export default async function IngestDetailPage({
                 <Row label="ідентифікатор процесу" value={ingest.workflowRunId} />
               ) : null}
               {ingest.payloadStorageKey ? (
-                <Row
-                  label="ключ у сховищі"
-                  value={ingest.payloadStorageKey}
-                />
+                <Row label="ключ у сховищі" value={ingest.payloadStorageKey} />
               ) : null}
             </dl>
           </section>
@@ -143,26 +117,12 @@ export default async function IngestDetailPage({
   );
 }
 
-function Stat({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="flex flex-col gap-2 border border-border bg-bg-card p-5 shadow-brut">
-      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-        {label}
-      </span>
-      <span className="font-display text-2xl font-bold text-text-primary">
-        {value}
-      </span>
-      {sub ? (
-        <span className="font-mono text-xs text-text-secondary">{sub}</span>
-      ) : null}
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">{label}</span>
+      <span className="font-display text-2xl font-bold text-text-primary">{value}</span>
+      {sub ? <span className="font-mono text-xs text-text-secondary">{sub}</span> : null}
     </div>
   );
 }
