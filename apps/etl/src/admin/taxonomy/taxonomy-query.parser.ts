@@ -2,7 +2,12 @@ import { BadRequestException } from "@nestjs/common";
 
 import type { NodeType } from "@metahunt/database";
 
-import { parseLimit, parsePage, parsePageSize } from "../../platform/shared/query-parsing";
+import {
+  parseCsv,
+  parseLimit,
+  parsePage,
+  parsePageSize,
+} from "../../platform/shared/query-parsing";
 
 import {
   TAXONOMY_LIST_DEFAULT,
@@ -63,20 +68,21 @@ function parseNodeType(raw: string | undefined): NodeType | undefined {
   return type;
 }
 
+// Reuses the shared CSV split/trim/filter/dedupe mechanics (parseCsv); only
+// the case-insensitive match against the taxonomy vocabulary and the
+// empty-input default fallback are taxonomy-specific.
 function parseNodeStatuses(raw: string | undefined): NodeStatusValue[] {
-  if (!raw) return DEFAULT_STATUSES;
-  const values = raw
-    .split(",")
-    .map((value) => value.trim().toUpperCase())
-    .filter((value) => value.length > 0);
+  const tokens = parseCsv("status", raw);
+  if (!tokens) return DEFAULT_STATUSES;
+  const values = tokens.map((value) => value.toUpperCase());
   const invalid = values.find((value) => !NODE_STATUSES.some((status) => status === value));
   if (invalid) {
     throw new BadRequestException(
       `status must be NEW, VERIFIED, or HIDDEN (case-insensitive), got "${invalid}"`,
     );
   }
-  const statuses = values.flatMap((value) => NODE_STATUSES.filter((status) => status === value));
-  return statuses.length > 0 ? [...new Set(statuses)] : DEFAULT_STATUSES;
+  const statuses = [...new Set(values)] as NodeStatusValue[];
+  return statuses.length > 0 ? statuses : DEFAULT_STATUSES;
 }
 
 function parseSearchString(raw: string | undefined): string | undefined {
