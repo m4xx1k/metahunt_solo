@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Logo } from "@/ui";
@@ -55,6 +55,8 @@ function formatTime(d: Date): string {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
+const MOBILE_NAV_ID = "investigation-mobile-nav";
+
 export function Sidebar({ asOf, taxonomyQueueCount }: { asOf: Date; taxonomyQueueCount?: number }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
@@ -62,35 +64,57 @@ export function Sidebar({ asOf, taxonomyQueueCount }: { asOf: Date; taxonomyQueu
   const [open, setOpen] = useState(false);
   const closeMobile = () => setOpen(false);
 
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeMobile();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-label={open ? "закрити меню" : "відкрити меню"}
-        aria-expanded={open}
-        className="fixed left-3 top-3 z-50 flex h-10 w-10 items-center justify-center border border-border bg-bg-card font-mono text-lg text-text-primary shadow-brut-sm md:hidden"
-      >
-        {open ? "✕" : "☰"}
-      </button>
-
-      {open ? (
+      {/* Full-width fixed mobile top bar — persistent, so the toggle stays
+          reachable even while the panel below it is open. Unlike the old
+          lone floating burger square, the layout reserves its height via
+          `pt-14` on the content column, so it never sits on top of a page's
+          own heading. */}
+      <div className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-bg px-4 md:hidden">
+        <Link
+          href="/dashboard"
+          aria-label="MetaHunt — головна оператора"
+          className="block"
+          onClick={closeMobile}
+        >
+          <Logo className="gap-2" label="metahunt" />
+        </Link>
         <button
           type="button"
-          aria-label="закрити меню"
-          onClick={closeMobile}
-          className="fixed inset-0 z-30 bg-black/60 md:hidden"
-        />
-      ) : null}
+          onClick={() => setOpen((prev) => !prev)}
+          aria-label={open ? "закрити меню" : "відкрити меню"}
+          aria-expanded={open}
+          aria-controls={MOBILE_NAV_ID}
+          className="flex h-10 w-10 items-center justify-center border border-border bg-bg-card font-mono text-lg text-text-primary shadow-brut-sm"
+        >
+          {open ? "✕" : "☰"}
+        </button>
+      </div>
 
+      {/* Mobile: a full-width dropdown panel below the bar (not a partial
+          slide-in + backdrop) — nothing left to dim, so no separate scrim.
+          Desktop: the regular static column, unchanged. */}
       <aside
+        id={MOBILE_NAV_ID}
         className={cn(
-          "z-40 w-[240px] flex-shrink-0 flex-col border-r border-border bg-bg",
-          "md:static md:flex",
-          open ? "fixed inset-y-0 left-0 flex shadow-brut-r" : "hidden md:flex",
+          "flex-shrink-0 flex-col bg-bg",
+          "md:static md:z-auto md:flex md:w-[240px] md:border-r md:border-border",
+          open
+            ? "fixed inset-x-0 top-14 bottom-0 z-40 flex overflow-y-auto border-t border-border"
+            : "hidden md:flex",
         )}
       >
-        <div className="flex flex-col gap-1 border-b border-border px-5 py-6">
+        <div className="hidden border-b border-border px-5 py-6 md:flex md:flex-col md:gap-1">
           <Link
             href="/dashboard"
             aria-label="MetaHunt — головна оператора"

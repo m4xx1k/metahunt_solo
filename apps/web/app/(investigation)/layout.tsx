@@ -23,7 +23,7 @@ export default async function InvestigationLayout({ children }: { children: Reac
     <AdminGuard>
       <div className="flex min-h-screen bg-bg">
         <Sidebar asOf={asOf} />
-        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-w-0 flex-1 flex-col pt-14 md:pt-0">{children}</div>
       </div>
     </AdminGuard>
   );

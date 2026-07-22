@@ -372,6 +372,8 @@ export class ProductAnalyticsService {
       .select({
         id: subscriptions.id,
         chatId: subscriptions.chatId,
+        tgUsername: subscriptions.tgUsername,
+        tgFirstName: subscriptions.tgFirstName,
         candidateId: subscriptions.candidateId,
         isActive: subscriptions.isActive,
         createdAt: subscriptions.createdAt,
@@ -499,9 +501,20 @@ export class ProductAnalyticsService {
         (sum, row) => sum + (vacancyClicksBySub.get(row.id) ?? 0),
         0,
       );
+      // created_at is NOT NULL, so unlike the other timestamps this always
+      // resolves — the truthful "joined" date, independent of the ledger.
+      const joinedAt = subRows.reduce(
+        (min, row) => (row.createdAt < min ? row.createdAt : min),
+        subRows[0].createdAt,
+      );
+      const tgUsername = subRows.map((row) => row.tgUsername).find(isNonNull) ?? null;
+      const tgFirstName = subRows.map((row) => row.tgFirstName).find(isNonNull) ?? null;
 
       return {
         chatId,
+        tgUsername,
+        tgFirstName,
+        joinedAt,
         firstSeenAt,
         ctaClickedAt,
         telegramLinkedAt,

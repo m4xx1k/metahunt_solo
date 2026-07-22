@@ -105,8 +105,14 @@ export interface SubscriberSubscription {
 // journey across all of their subscriptions (a subscriber may run more than
 // one). `vacancyClicks` is digest-link taps only — feed-card taps are logged
 // anonymously (no subscription_id) and aren't attributable per subscriber yet.
+// `joinedAt` is the earliest subscription `created_at` — the truthful "first
+// touch," unlike `firstSeenAt` which only reflects the analytics ledger (live
+// since this feature's own deploy, so it understates age for older subscribers).
 export interface SubscriberActivity {
   chatId: string;
+  tgUsername: string | null;
+  tgFirstName: string | null;
+  joinedAt: Date;
   firstSeenAt: Date | null;
   ctaClickedAt: Date | null;
   telegramLinkedAt: Date | null;

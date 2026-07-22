@@ -84,6 +84,9 @@ export interface SubscriberSubscription {
 
 export interface SubscriberActivity {
   chatId: string;
+  tgUsername: string | null;
+  tgFirstName: string | null;
+  joinedAt: string;
   firstSeenAt: string | null;
   ctaClickedAt: string | null;
   telegramLinkedAt: string | null;
