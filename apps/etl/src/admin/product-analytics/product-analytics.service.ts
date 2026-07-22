@@ -15,6 +15,7 @@ import {
   type ProductAnalyticsOverview,
   type ProductAnalyticsPeriod,
   type ProductAnalyticsPopulation,
+  type ProductFeedEngagement,
   type ProductIdentityHealth,
   type RecentProductJourney,
   type SubscriberActivity,
@@ -43,28 +44,35 @@ export class ProductAnalyticsService {
     const createdPeriod = since ? gte(subscriptions.createdAt, since) : undefined;
     const populationFilter = this.populationFilter(population);
 
-    const [eventRows, subscriptionRows, identityRows, recentJourneys, subscriberActivity] =
-      await Promise.all([
-        this.orderedFunnel(since, population),
-        this.db
-          .select({
-            total: count(),
-            createdInPeriod: sql<number>`count(*) filter (where ${createdPeriod ?? sql`true`})::int`,
-            active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
-            pending: sql<number>`count(*) filter (where ${subscriptions.chatId} is null)::int`,
-            linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
-            feed: sql<number>`count(*) filter (where ${subscriptions.candidateId} is null)::int`,
-            cv: sql<number>`count(*) filter (where ${subscriptions.candidateId} is not null)::int`,
-            deactivated: sql<number>`count(*) filter (where not ${subscriptions.isActive} and ${subscriptions.chatId} is not null)::int`,
-            delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
-          })
-          .from(subscriptions)
-          .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
-          .where(populationFilter),
-        this.identityHealth(population),
-        this.recentJourneys(population),
-        this.subscriberActivity(population),
-      ]);
+    const [
+      eventRows,
+      subscriptionRows,
+      identityRows,
+      recentJourneys,
+      subscriberActivity,
+      feedEngagement,
+    ] = await Promise.all([
+      this.orderedFunnel(since, population),
+      this.db
+        .select({
+          total: count(),
+          createdInPeriod: sql<number>`count(*) filter (where ${createdPeriod ?? sql`true`})::int`,
+          active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
+          pending: sql<number>`count(*) filter (where ${subscriptions.chatId} is null)::int`,
+          linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
+          feed: sql<number>`count(*) filter (where ${subscriptions.candidateId} is null)::int`,
+          cv: sql<number>`count(*) filter (where ${subscriptions.candidateId} is not null)::int`,
+          deactivated: sql<number>`count(*) filter (where not ${subscriptions.isActive} and ${subscriptions.chatId} is not null)::int`,
+          delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
+        })
+        .from(subscriptions)
+        .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
+        .where(populationFilter),
+      this.identityHealth(population),
+      this.recentJourneys(population),
+      this.subscriberActivity(population),
+      this.feedEngagement(since, population),
+    ]);
 
     const subscriptionsRow = subscriptionRows[0];
     const delivered = subscriptionsRow?.delivered ?? 0;
@@ -93,6 +101,7 @@ export class ProductAnalyticsService {
       identity: identityRows,
       recentJourneys,
       subscriberActivity,
+      feedEngagement,
     };
   }
 
@@ -156,6 +165,31 @@ export class ProductAnalyticsService {
       events: Number(row.events),
       journeys: Number(row.journeys),
     }));
+  }
+
+  // Feed clicks (#103) aren't part of the linear subscribe→digest chain — a
+  // visitor can tap a feed vacancy without ever subscribing — so this is a
+  // standalone KPI rather than another PRODUCT_FUNNEL_STEPS bar.
+  private async feedEngagement(
+    since: Date | null,
+    population: ProductAnalyticsPopulation,
+  ): Promise<ProductFeedEngagement> {
+    const result = await this.db.execute<{ journeys: number; events: number }>(sql`
+      SELECT
+        COUNT(DISTINCT event.journey_id)::int AS journeys,
+        COUNT(event.id)::int AS events
+      FROM product_events event
+      JOIN analytics_journeys journey ON journey.id = event.journey_id
+      WHERE event.name = ${ANALYTICS_EVENTS.applyClicked}
+        AND (${since}::timestamptz IS NULL OR journey.created_at >= ${since})
+        AND (
+          ${population} = 'all'
+          OR (${population} = 'production' AND NOT journey.is_test)
+          OR (${population} = 'test' AND journey.is_test)
+        )
+    `);
+    const row = result.rows[0];
+    return { journeys: Number(row?.journeys ?? 0), events: Number(row?.events ?? 0) };
   }
 
   private async identityHealth(
@@ -366,62 +400,92 @@ export class ProductAnalyticsService {
     const subscriptionIds = subs.map((row) => row.id);
     const roleIds = [...new Set(subs.flatMap((row) => asStringArray(row.params.roleIds)))];
 
-    const [firstEvents, ctaEvents, telegramEvents, vacancyClickEvents, roleNodes] =
-      await Promise.all([
-        this.db
-          .select({
-            journeyId: productEvents.journeyId,
-            at: sql<Date>`min(${productEvents.occurredAt})`,
-          })
-          .from(productEvents)
-          .where(inArray(productEvents.journeyId, journeyIds))
-          .groupBy(productEvents.journeyId),
-        this.db
-          .select({
-            journeyId: productEvents.journeyId,
-            at: sql<Date>`min(${productEvents.occurredAt})`,
-          })
-          .from(productEvents)
-          .where(
-            and(
-              inArray(productEvents.journeyId, journeyIds),
-              eq(productEvents.name, ANALYTICS_EVENTS.landingCtaClicked),
-            ),
-          )
-          .groupBy(productEvents.journeyId),
-        this.db
-          .select({
-            subscriptionId: productEvents.subscriptionId,
-            at: sql<Date>`min(${productEvents.occurredAt})`,
-          })
-          .from(productEvents)
-          .where(
-            and(
-              inArray(productEvents.subscriptionId, subscriptionIds),
-              eq(productEvents.name, ANALYTICS_EVENTS.telegramLinked),
-            ),
-          )
-          .groupBy(productEvents.subscriptionId),
-        this.db
-          .select({
-            subscriptionId: productEvents.subscriptionId,
-            clicks: count(),
-          })
-          .from(productEvents)
-          .where(
-            and(
-              inArray(productEvents.subscriptionId, subscriptionIds),
-              eq(productEvents.name, ANALYTICS_EVENTS.digestLinkClicked),
-            ),
-          )
-          .groupBy(productEvents.subscriptionId),
-        roleIds.length > 0
-          ? this.db
-              .select({ id: nodes.id, name: nodes.canonicalName })
-              .from(nodes)
-              .where(inArray(nodes.id, roleIds))
-          : Promise.resolve([]),
-      ]);
+    const [
+      firstEvents,
+      ctaEvents,
+      telegramEvents,
+      vacancyClickEvents,
+      roleNodes,
+      journeySubscriptionCounts,
+      feedClickEvents,
+    ] = await Promise.all([
+      this.db
+        .select({
+          journeyId: productEvents.journeyId,
+          at: sql<Date>`min(${productEvents.occurredAt})`,
+        })
+        .from(productEvents)
+        .where(inArray(productEvents.journeyId, journeyIds))
+        .groupBy(productEvents.journeyId),
+      this.db
+        .select({
+          journeyId: productEvents.journeyId,
+          at: sql<Date>`min(${productEvents.occurredAt})`,
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.journeyId, journeyIds),
+            eq(productEvents.name, ANALYTICS_EVENTS.landingCtaClicked),
+          ),
+        )
+        .groupBy(productEvents.journeyId),
+      this.db
+        .select({
+          subscriptionId: productEvents.subscriptionId,
+          at: sql<Date>`min(${productEvents.occurredAt})`,
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.subscriptionId, subscriptionIds),
+            eq(productEvents.name, ANALYTICS_EVENTS.telegramLinked),
+          ),
+        )
+        .groupBy(productEvents.subscriptionId),
+      this.db
+        .select({
+          subscriptionId: productEvents.subscriptionId,
+          clicks: count(),
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.subscriptionId, subscriptionIds),
+            eq(productEvents.name, ANALYTICS_EVENTS.digestLinkClicked),
+          ),
+        )
+        .groupBy(productEvents.subscriptionId),
+      roleIds.length > 0
+        ? this.db
+            .select({ id: nodes.id, name: nodes.canonicalName })
+            .from(nodes)
+            .where(inArray(nodes.id, roleIds))
+        : Promise.resolve([]),
+      // Unfiltered by population/chatId — this counts every subscription a
+      // journey has ever had, the denominator for the feed-click 1:1 guard.
+      this.db
+        .select({
+          journeyId: subscriptions.journeyId,
+          subscriptionCount: count(),
+        })
+        .from(subscriptions)
+        .where(inArray(subscriptions.journeyId, journeyIds))
+        .groupBy(subscriptions.journeyId),
+      this.db
+        .select({
+          journeyId: productEvents.journeyId,
+          clicks: count(),
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.journeyId, journeyIds),
+            eq(productEvents.name, ANALYTICS_EVENTS.applyClicked),
+          ),
+        )
+        .groupBy(productEvents.journeyId),
+    ]);
 
     // node-postgres's driver returns raw `min(timestamptz)` aggregates as
     // strings (drizzle only auto-maps real columns, not sql-tagged ones) —
@@ -443,6 +507,10 @@ export class ProductAnalyticsService {
         .map((row) => [row.subscriptionId, row.clicks]),
     );
     const roleNameById = new Map(roleNodes.map((node) => [node.id, node.name]));
+    const subscriptionCountByJourney = new Map(
+      journeySubscriptionCounts.map((row) => [row.journeyId, row.subscriptionCount]),
+    );
+    const feedClicksByJourney = new Map(feedClickEvents.map((row) => [row.journeyId, row.clicks]));
 
     const byChat = new Map<string, (typeof subs)[number][]>();
     for (const row of subs) {
@@ -473,6 +541,14 @@ export class ProductAnalyticsService {
         (sum, row) => sum + (vacancyClicksBySub.get(row.id) ?? 0),
         0,
       );
+      // Feed clicks live on the journey, not the subscription — only roll one
+      // up to this subscriber when their journey has exactly one subscription,
+      // so a journey shared by several subscriptions never gets double-counted.
+      const feedClicks = subRows.reduce((sum, row) => {
+        const journeyId = row.journeyId;
+        if (!journeyId || subscriptionCountByJourney.get(journeyId) !== 1) return sum;
+        return sum + (feedClicksByJourney.get(journeyId) ?? 0);
+      }, 0);
       // created_at is NOT NULL, so unlike the other timestamps this always
       // resolves — the truthful "joined" date, independent of the ledger.
       const joinedAt = subRows.reduce(
@@ -491,6 +567,7 @@ export class ProductAnalyticsService {
         ctaClickedAt,
         telegramLinkedAt,
         vacancyClicks,
+        feedClicks,
         subscriptions: subscriptionSummaries,
       };
     });

@@ -66,6 +66,12 @@ export interface ProductAnalyticsOverview {
     lastEventAt: string | null;
   }>;
   subscriberActivity: SubscriberActivity[];
+  feedEngagement: ProductFeedEngagement;
+}
+
+export interface ProductFeedEngagement {
+  journeys: number;
+  events: number;
 }
 
 export interface AnalyticsJourneyClassification {
@@ -91,6 +97,7 @@ export interface SubscriberActivity {
   ctaClickedAt: string | null;
   telegramLinkedAt: string | null;
   vacancyClicks: number;
+  feedClicks: number;
   subscriptions: SubscriberSubscription[];
 }
 

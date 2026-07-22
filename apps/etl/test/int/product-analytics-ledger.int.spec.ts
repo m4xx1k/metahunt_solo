@@ -267,4 +267,81 @@ describe("first-party product analytics ledger", () => {
       expect.objectContaining({ id: journeyId, isTest: true, cohortId: "controlled-b" }),
     );
   });
+
+  it("attributes feed clicks to a subscriber only when their journey has exactly one subscription", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const soloJourneyId = randomUUID();
+    const sharedJourneyId = randomUUID();
+
+    await db.insert(analyticsJourneys).values([
+      { id: soloJourneyId, origin: "browser" },
+      { id: sharedJourneyId, origin: "browser" },
+    ]);
+    const [soloSub] = await db
+      .insert(subscriptions)
+      .values({ chatId: "chat-solo", journeyId: soloJourneyId, params: {}, isActive: true })
+      .returning({ id: subscriptions.id });
+    await db.insert(subscriptions).values([
+      { chatId: "chat-shared-a", journeyId: sharedJourneyId, params: {}, isActive: true },
+      { chatId: "chat-shared-b", journeyId: sharedJourneyId, params: {}, isActive: true },
+    ]);
+
+    await db.insert(productEvents).values([
+      // Solo journey: 2 feed clicks (journey-scoped) + 1 digest click (subscription-scoped).
+      {
+        journeyId: soloJourneyId,
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+      },
+      {
+        journeyId: soloJourneyId,
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+      },
+      {
+        journeyId: soloJourneyId,
+        subscriptionId: soloSub.id,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+      },
+      // Shared journey (1:many): 3 feed clicks that must NOT land on either subscriber.
+      {
+        journeyId: sharedJourneyId,
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+      },
+      {
+        journeyId: sharedJourneyId,
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+      },
+      {
+        journeyId: sharedJourneyId,
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+      },
+    ]);
+
+    const overview = await dashboard.overview("all");
+    const bySubscriber = new Map(overview.subscriberActivity.map((row) => [row.chatId, row]));
+
+    expect(bySubscriber.get("chat-solo")).toEqual(
+      expect.objectContaining({ feedClicks: 2, vacancyClicks: 1 }),
+    );
+    expect(bySubscriber.get("chat-shared-a")).toEqual(
+      expect.objectContaining({ feedClicks: 0, vacancyClicks: 0 }),
+    );
+    expect(bySubscriber.get("chat-shared-b")).toEqual(
+      expect.objectContaining({ feedClicks: 0, vacancyClicks: 0 }),
+    );
+    // feedEngagement counts every journey with a feed click regardless of
+    // subscription count — it's a distinct-journeys KPI, not per-subscriber.
+    expect(overview.feedEngagement).toEqual({ journeys: 2, events: 5 });
+  });
 });

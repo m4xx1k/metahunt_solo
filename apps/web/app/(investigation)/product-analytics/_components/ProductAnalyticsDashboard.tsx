@@ -209,6 +209,33 @@ export function ProductAnalyticsDashboard() {
                   );
                 })}
               </div>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-5">
+                <span className="inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
+                  фід-кліки (незалежно від дайджест-воронки)
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="що означають «фід-кліки» у воронці"
+                        className="text-text-muted hover:text-accent"
+                      >
+                        ⓘ
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Кліки по вакансіях у веб-фіді (apply_clicked). Не частина лінійного ланцюга
+                      вище — фід-клік можливий і без підписки, тож показаний окремим KPI, а не
+                      кроком воронки.
+                    </TooltipContent>
+                  </Tooltip>
+                </span>
+                <span className="font-display text-lg font-bold text-text-primary">
+                  {formatCount(data.feedEngagement.journeys)}{" "}
+                  <span className="font-mono text-xs font-normal text-text-muted">
+                    journeys · {formatCount(data.feedEngagement.events)} кліків
+                  </span>
+                </span>
+              </div>
             </section>
           </DashboardTabPanel>
 
@@ -216,7 +243,7 @@ export function ProductAnalyticsDashboard() {
             <section className="border border-border bg-bg-card p-5 shadow-brut-md">
               <SectionTitle
                 title="по підписниках"
-                detail={`${data.subscriberActivity.length} підписників · дайджест-кліки = дайджест-only`}
+                detail={`${data.subscriberActivity.length} підписників · дайджест-кліки ≠ фід-кліки`}
               />
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full min-w-[1080px] border-collapse text-left font-mono text-xs">
@@ -248,7 +275,28 @@ export function ProductAnalyticsDashboard() {
                       <th className="pb-3 pr-4">cta</th>
                       <th className="pb-3 pr-4">telegram</th>
                       <th className="pb-3 pr-4">підписки</th>
-                      <th className="pb-3">дайджест-кліки</th>
+                      <th className="pb-3 pr-4">дайджест-кліки</th>
+                      <th className="pb-3">
+                        <span className="inline-flex items-center gap-1">
+                          фід-кліки
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label="що означають «фід-кліки»"
+                                className="text-text-muted hover:text-accent"
+                              >
+                                ⓘ
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Кліки по вакансіях у веб-фіді (apply_clicked), окремо від кліків у
+                              Telegram-дайджесті. Рахуються лише коли journey підписника має рівно
+                              одну підписку — інакше клік не можна однозначно приписати.
+                            </TooltipContent>
+                          </Tooltip>
+                        </span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -291,7 +339,8 @@ export function ProductAnalyticsDashboard() {
                         <td className="py-3 pr-4">
                           <SubscriptionsPopover subscriptions={subscriber.subscriptions} />
                         </td>
-                        <td className="py-3">{formatCount(subscriber.vacancyClicks)}</td>
+                        <td className="py-3 pr-4">{formatCount(subscriber.vacancyClicks)}</td>
+                        <td className="py-3">{formatCount(subscriber.feedClicks)}</td>
                       </tr>
                     ))}
                   </tbody>
