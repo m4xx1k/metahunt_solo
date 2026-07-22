@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import sanitizeHtml from "sanitize-html";
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
@@ -28,6 +29,40 @@ const SITE_URL = "https://www.metahunt.app";
 export const dynamic = "force-dynamic";
 
 type PageParams = { id: string };
+
+// DOU/Djinni descriptions arrive as raw HTML — sanitize server-side before
+// dangerouslySetInnerHTML so only a safe, styled subset ever reaches the client.
+const DESCRIPTION_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    "p",
+    "br",
+    "ul",
+    "ol",
+    "li",
+    "strong",
+    "b",
+    "em",
+    "i",
+    "u",
+    "h2",
+    "h3",
+    "h4",
+    "blockquote",
+    "code",
+    "pre",
+    "a",
+    "span",
+  ],
+  allowedAttributes: {
+    a: ["href", "name", "target", "rel"],
+  },
+  transformTags: {
+    a: sanitizeHtml.simpleTransform("a", {
+      target: "_blank",
+      rel: "noopener noreferrer nofollow",
+    }),
+  },
+};
 
 // Any vacancy row 404s the same way (bad uuid or missing row) — the
 // controller always throws NotFoundException, so this is the one place that
@@ -106,6 +141,9 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
   });
   const loc = formatLocations(vacancy.locations);
   const isDeduped = Boolean(vacancy.duplicateCount && vacancy.duplicateCount > 1);
+  const descriptionHtml = vacancy.description
+    ? sanitizeHtml(vacancy.description, DESCRIPTION_SANITIZE_OPTIONS).trim()
+    : "";
 
   return (
     <>
@@ -222,13 +260,14 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
               </div>
             ) : null}
 
-            {vacancy.description ? (
+            {descriptionHtml ? (
               <div className="flex flex-col gap-3">
                 <Tag>&gt; full description</Tag>
                 <div className="border border-border bg-bg-card p-6 shadow-brut-md">
-                  <p className="whitespace-pre-wrap font-body text-base leading-relaxed text-text-primary">
-                    {vacancy.description}
-                  </p>
+                  <div
+                    className="vacancy-body"
+                    dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                  />
                 </div>
               </div>
             ) : null}
