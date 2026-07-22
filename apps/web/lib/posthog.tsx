@@ -6,9 +6,12 @@ import { type PropsWithChildren, useEffect } from "react";
 
 // Client-side PostHog. Dormant without NEXT_PUBLIC_POSTHOG_KEY (mirrors the
 // backend AnalyticsService) so local dev ships nothing. `identified_only` keeps
-// anonymous browsing from minting person profiles — a person is created only
-// once SubscribeButton calls posthog.alias(subscription_uuid), which is the
-// seam that stitches this browser session to the cross-context identity.
+// anonymous browsing from minting person profiles — a person is created once
+// useAnalytics calls posthog.identify(journeyId) (see use-analytics.ts), the
+// same journey UUID the server keys on, which is what stitches this browser
+// session to the server-side identity.
+// WARNING: swapping this to alias(subscription_id) would BREAK the merge —
+// the server correlates on the journey UUID, not the subscription id.
 export function PostHogProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;

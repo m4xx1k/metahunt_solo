@@ -80,6 +80,7 @@ describe("SubscriptionMatcherService", () => {
   const rankByRefs = jest.fn();
   const getMatchInput = jest.fn();
   const sentVacancyIds = jest.fn();
+  const sentVacancyIdsForChat = jest.fn();
   const describe_ = jest.fn();
   let service: SubscriptionMatcherService;
 
@@ -88,6 +89,7 @@ describe("SubscriptionMatcherService", () => {
     rankByRefs.mockReset().mockResolvedValue(matchResponse([]));
     getMatchInput.mockReset().mockResolvedValue({ matched: [], unmatched: [] });
     sentVacancyIds.mockReset().mockResolvedValue([]);
+    sentVacancyIdsForChat.mockReset().mockResolvedValue([]);
     describe_.mockReset().mockResolvedValue("Backend");
 
     const moduleRef = await Test.createTestingModule({
@@ -97,7 +99,7 @@ describe("SubscriptionMatcherService", () => {
         { provide: RankingService, useValue: { rankByRefs } },
         { provide: CandidateLoaderService, useValue: { getMatchInput } },
         { provide: SubscriptionsService, useValue: { describe: describe_ } },
-        { provide: SentNotificationsService, useValue: { sentVacancyIds } },
+        { provide: SentNotificationsService, useValue: { sentVacancyIds, sentVacancyIdsForChat } },
       ],
     }).compile();
     service = moduleRef.get(SubscriptionMatcherService);
@@ -123,6 +125,16 @@ describe("SubscriptionMatcherService", () => {
       sentVacancyIds.mockResolvedValue(["a", "b"]);
       await service.matchNew(target());
 
+      expect(search.mock.calls[0][0].excludeIds).toEqual(["a", "b"]);
+    });
+
+    it("uses the chat-scoped anti-join when a chatId is given", async () => {
+      sentVacancyIdsForChat.mockResolvedValue(["a", "b"]);
+      const sub = target();
+      await service.matchNew(sub, "chat-1");
+
+      expect(sentVacancyIdsForChat).toHaveBeenCalledWith("chat-1", sub.createdAt);
+      expect(sentVacancyIds).not.toHaveBeenCalled();
       expect(search.mock.calls[0][0].excludeIds).toEqual(["a", "b"]);
     });
   });

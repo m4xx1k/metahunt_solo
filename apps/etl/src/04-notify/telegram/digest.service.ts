@@ -43,7 +43,9 @@ export class DigestService {
    * Deliver one subscription's digest. Skips silently when the subscription is
    * gone (deactivated mid-run) or has no new matches. Idempotent under Temporal
    * retry: the anti-join drops anything already recorded, so a failed page
-   * resends only the remainder. Returns total new matched.
+   * resends only the remainder. The anti-join is chat-scoped (not just
+   * subscription-scoped), so a chat with overlapping subscriptions gets any
+   * given vacancy at most once per run. Returns total new matched.
    */
   async deliver(subscriptionId: string, evaluationId: string = randomUUID()): Promise<number> {
     const sub = await this.subscriptions.getActiveById(subscriptionId);
@@ -53,7 +55,7 @@ export class DigestService {
     const isFirstDigest =
       pendingDelivery?.isFirstDigest ??
       !(await this.sentNotifications.hasCompletedDelivery(sub.id));
-    const { items, total, label } = await this.matcher.matchNew(sub);
+    const { items, total, label } = await this.matcher.matchNew(sub, sub.chatId);
     const profileType = sub.candidateId ? "cv" : "feed";
     void this.analytics.digestEvaluated({
       subscriptionId: sub.id,

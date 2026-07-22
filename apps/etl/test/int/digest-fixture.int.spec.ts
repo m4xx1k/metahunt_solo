@@ -76,11 +76,11 @@ function fixtureVacancy(id: string): VacancyDto {
   };
 }
 
-async function seedActiveSubscription(): Promise<ActiveSubscription> {
+async function seedActiveSubscription(chatId = "fixture-chat"): Promise<ActiveSubscription> {
   const [row] = await db
     .insert(subscriptions)
     .values({
-      chatId: "fixture-chat",
+      chatId,
       params: {},
       isActive: true,
       createdAt: WINDOW_START,
@@ -132,13 +132,17 @@ async function seedVacancy(): Promise<string> {
   return vacancy.id;
 }
 
+// Mirrors DigestService.deliver's real call: chat-scoped anti-join when a
+// chatId is passed (production path), subscription-scoped otherwise.
 function fixtureMatcher(
   sent: SentNotificationsService,
   vacancyId: string,
-): { matchNew(sub: ActiveSubscription): Promise<DigestMatch> } {
+): { matchNew(sub: ActiveSubscription, chatId?: string): Promise<DigestMatch> } {
   return {
-    async matchNew(sub) {
-      const alreadySent = await sent.sentVacancyIds(sub.id, sub.createdAt);
+    async matchNew(sub, chatId) {
+      const alreadySent = chatId
+        ? await sent.sentVacancyIdsForChat(chatId, sub.createdAt)
+        : await sent.sentVacancyIds(sub.id, sub.createdAt);
       const items = alreadySent.includes(vacancyId) ? [] : [fixtureVacancy(vacancyId)];
       return { items, total: items.length, label: "fixture" };
     },
@@ -148,7 +152,7 @@ function fixtureMatcher(
 function makeDigest(
   subscriptionsService: SubscriptionsService,
   sent: SentNotificationsService,
-  matcher: { matchNew(sub: ActiveSubscription): Promise<DigestMatch> },
+  matcher: { matchNew(sub: ActiveSubscription, chatId?: string): Promise<DigestMatch> },
   telegram: FixtureTelegram,
 ): DigestService {
   return new DigestService(
@@ -208,6 +212,30 @@ describe("digest fixture flow", () => {
         .from(digestDeliveries)
         .where(eq(digestDeliveries.subscriptionId, subscription.id)),
     ).resolves.toEqual([{ status: "completed", isFirstDigest: true }]);
+  });
+
+  it("delivers a vacancy matching two overlapping subscriptions of the same chat only once", async () => {
+    const subA = await seedActiveSubscription("shared-chat");
+    const subB = await seedActiveSubscription("shared-chat");
+    const vacancyId = await seedVacancy();
+    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
+    const telegram = new FixtureTelegram();
+    const service = makeDigest(
+      new SubscriptionsService(
+        db,
+        { subscriptionCreated: jest.fn() } as never,
+        new NodeSlugResolver(db),
+      ),
+      sent,
+      fixtureMatcher(sent, vacancyId),
+      telegram,
+    );
+
+    // Sequential, as a single digest run processes subscriptions: subA sends
+    // and records first, so subB's chat-scoped anti-join must see it already sent.
+    await expect(service.deliver(subA.id)).resolves.toBe(1);
+    await expect(service.deliver(subB.id)).resolves.toBe(0);
+    expect(telegram.messages).toHaveLength(1);
   });
 
   it("does not record a vacancy when delivery fails, then sends it on retry", async () => {

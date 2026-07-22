@@ -50,10 +50,14 @@ export class SubscriptionMatcherService {
     private readonly sentNotifications: SentNotificationsService,
   ) {}
 
-  // New vacancies to deliver: loaded after the sub's floor, not yet sent.
-  async matchNew(sub: SubscriptionMatchTarget): Promise<DigestMatch> {
+  // New vacancies to deliver: loaded after the sub's floor, not yet sent to
+  // this sub — or, when chatId is known, not yet sent to ANY of the chat's
+  // subscriptions, so overlapping subs never double-send the same vacancy.
+  async matchNew(sub: SubscriptionMatchTarget, chatId?: string): Promise<DigestMatch> {
     const floor = candidateFloor(sub.createdAt);
-    const excludeIds = await this.sentNotifications.sentVacancyIds(sub.id, floor);
+    const excludeIds = chatId
+      ? await this.sentNotifications.sentVacancyIdsForChat(chatId, floor)
+      : await this.sentNotifications.sentVacancyIds(sub.id, floor);
     return this.match(sub, floor, excludeIds);
   }
 
