@@ -1,4 +1,10 @@
-import { isChatUnreachable, RateLimiter, retryAfterMs, withRetryAfter } from "./rate-limiter";
+import {
+  isChatUnreachable,
+  isTransientNetworkError,
+  RateLimiter,
+  retryAfterMs,
+  withRetryAfter,
+} from "./rate-limiter";
 
 describe("RateLimiter", () => {
   // Drive the limiter with a virtual clock + a wait() that advances it, so the
@@ -108,6 +114,31 @@ describe("isChatUnreachable", () => {
   });
 });
 
+describe("isTransientNetworkError", () => {
+  it("is true for a grammy HttpError wrapping a socket error code", () => {
+    expect(isTransientNetworkError({ error: { code: "ETIMEDOUT" } })).toBe(true);
+    expect(isTransientNetworkError({ error: { code: "ECONNRESET" } })).toBe(true);
+    expect(isTransientNetworkError({ error: { code: "ENOTFOUND" } })).toBe(true);
+    expect(isTransientNetworkError({ error: { code: "EAI_AGAIN" } })).toBe(true);
+    expect(isTransientNetworkError({ error: { code: "ECONNREFUSED" } })).toBe(true);
+  });
+
+  it("is true when the code is one level deeper, under undici's fetch-failed .cause", () => {
+    expect(isTransientNetworkError({ error: { cause: { code: "ETIMEDOUT" } } })).toBe(true);
+  });
+
+  it("is false for a Telegram API error (reached Telegram, not a network failure)", () => {
+    expect(isTransientNetworkError({ error_code: 403 })).toBe(false);
+    expect(isTransientNetworkError({ error_code: 429 })).toBe(false);
+  });
+
+  it("is false for non-error shapes and unrecognized codes", () => {
+    expect(isTransientNetworkError(null)).toBe(false);
+    expect(isTransientNetworkError("nope")).toBe(false);
+    expect(isTransientNetworkError({ error: { code: "EPIPE" } })).toBe(false);
+  });
+});
+
 describe("withRetryAfter", () => {
   it("returns the result without retrying on success", async () => {
     const fn = jest.fn().mockResolvedValue("ok");
@@ -153,5 +184,46 @@ describe("withRetryAfter", () => {
     // initial attempt + 2 retries
     expect(fn).toHaveBeenCalledTimes(3);
     expect(wait).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries a transient network error on its own budget, then succeeds", async () => {
+    const err = { error: { code: "ETIMEDOUT" } };
+    const fn = jest.fn().mockRejectedValueOnce(err).mockResolvedValueOnce("ok");
+    const wait = jest.fn().mockResolvedValue(undefined);
+
+    const result = await withRetryAfter(fn, {
+      maxRetries: 2,
+      wait,
+      networkRetries: 2,
+      networkRetryDelayMs: 500,
+    });
+
+    expect(result).toBe("ok");
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledWith(500);
+  });
+
+  it("gives up after networkRetries and rethrows the last transient network error", async () => {
+    const err = { error: { code: "ECONNRESET" } };
+    const fn = jest.fn().mockRejectedValue(err);
+    const wait = jest.fn().mockResolvedValue(undefined);
+
+    await expect(
+      withRetryAfter(fn, { maxRetries: 2, wait, networkRetries: 1, networkRetryDelayMs: 500 }),
+    ).rejects.toBe(err);
+    // initial attempt + 1 network retry
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT retry a 403 (chat unreachable) — must not spam a user who blocked the bot", async () => {
+    const err = { error_code: 403, description: "Forbidden: bot was blocked by the user" };
+    const fn = jest.fn().mockRejectedValue(err);
+    const wait = jest.fn().mockResolvedValue(undefined);
+
+    expect(isChatUnreachable(err)).toBe(true);
+    await expect(withRetryAfter(fn, { maxRetries: 2, wait })).rejects.toBe(err);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(wait).not.toHaveBeenCalled();
   });
 });

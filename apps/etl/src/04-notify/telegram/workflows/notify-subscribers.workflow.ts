@@ -6,7 +6,12 @@ const { listActiveSubscriptionIds, deliverToSubscription } = proxyActivities<
   typeof NotifyActivity.prototype
 >({
   startToCloseTimeout: "2m",
-  retry: { maximumAttempts: 3 },
+  retry: {
+    maximumAttempts: 5,
+    initialInterval: "2s",
+    maximumInterval: "30s",
+    backoffCoefficient: 2,
+  },
 });
 
 /**
