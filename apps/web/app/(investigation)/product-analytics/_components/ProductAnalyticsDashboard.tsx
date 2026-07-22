@@ -182,10 +182,7 @@ export function ProductAnalyticsDashboard() {
         <DashboardTabs items={DASHBOARD_TABS} defaultValue="funnel">
           <DashboardTabPanel value="funnel">
             <section className="border border-border bg-bg-card p-5 shadow-brut-md">
-              <SectionTitle
-                title="radar cohort"
-                detail={`${population} · ordered · 7-day window`}
-              />
+              <SectionTitle title="radar cohort" detail={`${population} · independent per-step`} />
               <div className="mt-5">
                 <FunnelOverview funnel={data.funnel} labels={EVENT_LABELS} />
               </div>

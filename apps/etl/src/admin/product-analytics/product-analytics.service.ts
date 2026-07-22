@@ -126,7 +126,7 @@ export class ProductAnalyticsService {
       events: number;
       journeys: number;
     }>(sql`
-      WITH RECURSIVE
+      WITH
       step_definitions(step_index, name) AS (VALUES ${stepValues}),
       cohort AS (
         SELECT id
@@ -137,45 +137,17 @@ export class ProductAnalyticsService {
             OR (${population} = 'production' AND NOT is_test)
             OR (${population} = 'test' AND is_test)
           )
-      ),
-      ordered_steps(journey_id, step_index, step_at, landing_at) AS (
-        SELECT id, 0, NULL::timestamptz, NULL::timestamptz
-        FROM cohort
-        UNION ALL
-        SELECT
-          previous.journey_id,
-          definition.step_index,
-          next_event.step_at,
-          CASE
-            WHEN definition.step_index = 1 THEN next_event.step_at
-            ELSE previous.landing_at
-          END
-        FROM ordered_steps previous
-        JOIN step_definitions definition
-          ON definition.step_index = previous.step_index + 1
-        CROSS JOIN LATERAL (
-          SELECT MIN(event.occurred_at) AS step_at
-          FROM product_events event
-          WHERE event.journey_id = previous.journey_id
-            AND event.name = definition.name
-            AND (
-              previous.step_index = 0
-              OR event.occurred_at >= previous.step_at
-            )
-            AND (
-              previous.step_index = 0
-              OR event.occurred_at <= previous.landing_at + INTERVAL '7 days'
-            )
-        ) next_event
-        WHERE next_event.step_at IS NOT NULL
       )
+      -- Independent per-step counts, no landing anchor: browser/server journeys
+      -- differ pre-identify. Revisit an ordered chain once they share one UUID.
       SELECT
         definition.name,
-        COUNT(ordered.journey_id)::int AS events,
-        COUNT(ordered.journey_id)::int AS journeys
+        COUNT(event.id)::int AS events,
+        COUNT(DISTINCT event.journey_id)::int AS journeys
       FROM step_definitions definition
-      LEFT JOIN ordered_steps ordered
-        ON ordered.step_index = definition.step_index
+      LEFT JOIN product_events event
+        ON event.name = definition.name
+        AND EXISTS (SELECT 1 FROM cohort WHERE cohort.id = event.journey_id)
       GROUP BY definition.step_index, definition.name
       ORDER BY definition.step_index
     `);
