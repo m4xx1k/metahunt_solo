@@ -89,6 +89,18 @@ export function FeedLensShell({
     return () => window.removeEventListener("feed:upload-cv", triggerUpload);
   }, [triggerUpload]);
 
+  // Sample profiles now render in the hero's right column (a sibling island
+  // above this one), so picking one reaches CV state the same way upload does.
+  useEffect(() => {
+    const onSelectSample = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (id) setCv(id);
+      scrollToControls();
+    };
+    window.addEventListener("feed:select-sample", onSelectSample);
+    return () => window.removeEventListener("feed:select-sample", onSelectSample);
+  }, [setCv, scrollToControls]);
+
   // Browse drops ?cv (keeps activeCv); the CV tab, unlocked by a remembered
   // activeCv, re-ranks it in one click.
   const onLens = useCallback(
@@ -184,14 +196,8 @@ export function FeedLensShell({
         )}
       >
         <LensTabs lens={lens} cvLocked={cv == null && saved.activeCv == null} onSelect={onLens} />
-        <div className="ml-auto flex flex-col items-end gap-1">
+        <div className="ml-auto">
           <CvDropzone onClick={triggerUpload} busy={uploading} />
-          <Link
-            href="/privacy#cv"
-            className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
-          >
-            AI processed · raw text not stored
-          </Link>
         </div>
       </div>
 
@@ -202,6 +208,15 @@ export function FeedLensShell({
         aria-labelledby={lensTabId(lens)}
         className="flex scroll-mt-24 flex-col gap-4"
       >
+        {/* Quiet CV-privacy print attached to the upload control above — kept out
+            of the control bar's flex row so it can't stretch/overflow it. */}
+        <Link
+          href="/privacy#cv"
+          className="-mt-2 self-end font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+        >
+          AI processed · raw text not stored
+        </Link>
+
         {uploadError ? (
           <p className="border border-danger/40 bg-danger/5 px-4 py-2 font-mono text-xs text-danger">
             {uploadError}
@@ -221,46 +236,25 @@ export function FeedLensShell({
             onPickCv={onPickCv}
           />
         ) : (
-          <>
-            {samples.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
-                <span>…or try a sample profile:</span>
-                {samples.map((s) => (
-                  <button
-                    key={s.candidateId}
-                    type="button"
-                    onClick={() => {
-                      setCv(s.candidateId);
-                      scrollToControls();
-                    }}
-                    className="border border-border px-2.5 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            <FeedShell
-              aggregates={aggregates}
-              tracks={tracks}
-              activeTrackSlug={activeTrackSlug}
-              presetRoles={presetRoles}
-              presetSkills={presetSkills}
-              contextualSkills={contextualSkills}
-              roleCatalog={roleCatalog}
-              skillCatalog={skillCatalog}
-              domainCatalog={domainCatalog}
-              hideTrackTree
-              rightRail={
-                <ColdRecsTeaser
-                  savedCvId={saved.activeCv}
-                  onUnlock={onPickCv}
-                  onUpload={triggerUpload}
-                />
-              }
-            />
-          </>
+          <FeedShell
+            aggregates={aggregates}
+            tracks={tracks}
+            activeTrackSlug={activeTrackSlug}
+            presetRoles={presetRoles}
+            presetSkills={presetSkills}
+            contextualSkills={contextualSkills}
+            roleCatalog={roleCatalog}
+            skillCatalog={skillCatalog}
+            domainCatalog={domainCatalog}
+            hideTrackTree
+            rightRail={
+              <ColdRecsTeaser
+                savedCvId={saved.activeCv}
+                onUnlock={onPickCv}
+                onUpload={triggerUpload}
+              />
+            }
+          />
         )}
       </div>
 

@@ -131,6 +131,7 @@ export default async function FeedPage({
           aggregates={aggregates}
           showPipeline={!trackSlug}
           matchCta={{ label: "Upload your CV", event: "feed:upload-cv" }}
+          samples={samples}
         />
         <div className="mx-auto w-full max-w-[1536px] px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
