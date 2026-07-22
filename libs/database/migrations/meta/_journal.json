@@ -197,6 +197,13 @@
       "when": 1783358633963,
       "tag": "0027_amused_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1784679471748,
+      "tag": "0028_far_chronomancer",
+      "breakpoints": true
     }
   ]
 }

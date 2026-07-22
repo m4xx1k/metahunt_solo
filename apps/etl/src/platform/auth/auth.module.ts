@@ -21,6 +21,9 @@ import { RolesGuard } from "./roles.guard";
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard, RolesGuard],
-  exports: [JwtAuthGuard, RolesGuard, JwtModule],
+  // Guards declared on controllers are resolved in the consuming module's DI
+  // context. Export AuthService with them so JwtAuthGuard's account-existence
+  // recheck remains resolvable outside AuthModule (for example TaxonomyModule).
+  exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule],
 })
 export class AuthModule {}

@@ -3,6 +3,8 @@ import { ConfigService } from "@nestjs/config";
 
 import { Bot, InlineKeyboard } from "grammy";
 
+import { AnalyticsService } from "../../platform/analytics/analytics.service";
+
 import { renderDigest } from "./digest.renderer";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
 import { SubscriptionsService } from "./subscriptions.service";
@@ -25,6 +27,7 @@ export class TelegramCommandsHandler {
     private readonly config: ConfigService,
     private readonly subscriptions: SubscriptionsService,
     private readonly matcher: SubscriptionMatcherService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /** Wire every command/callback handler onto the bot. Call before `bot.start()`. */
@@ -45,6 +48,7 @@ export class TelegramCommandsHandler {
       const result = await this.subscriptions.linkChat(token, chatId);
       if (result === "linked") {
         await ctx.reply(copy.start.linked);
+        await this.sendActivationPreview(token, ctx.reply.bind(ctx));
       } else if (result === "already_active") {
         await ctx.reply(copy.start.alreadyActive);
       } else if (result === "duplicate") {
@@ -125,5 +129,36 @@ export class TelegramCommandsHandler {
       // reply itself may fail (e.g. the original error was a send), so swallow it.
       await err.ctx.reply(copy.error).catch(() => undefined);
     });
+  }
+
+  private async sendActivationPreview(
+    subscriptionId: string,
+    reply: (text: string, options: Record<string, unknown>) => Promise<unknown>,
+  ): Promise<void> {
+    try {
+      const sub = await this.subscriptions.getActiveById(subscriptionId);
+      if (!sub) return;
+
+      const { items, total, label } = await this.matcher.sample(sub, DIGEST_WINDOW_DAYS);
+      const shown = items.slice(0, DIGEST_PREVIEW_SIZE);
+      const applyBaseUrl = this.config.get<string>("PUBLIC_BASE_URL")!;
+      await reply(
+        renderDigest(shown, {
+          totalNew: total,
+          windowDays: DIGEST_WINDOW_DAYS,
+          applyBaseUrl,
+          label,
+          subscriptionId,
+        }),
+        { parse_mode: "HTML", ...NO_LINK_PREVIEW },
+      );
+      this.analytics.activationValueShown(subscriptionId, total, shown.length);
+    } catch (error) {
+      this.logger.warn(
+        `Activation preview failed for subscription ${subscriptionId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 }

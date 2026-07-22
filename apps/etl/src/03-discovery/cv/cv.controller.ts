@@ -60,6 +60,22 @@ import type {
 } from "./cv.contract";
 import { extractText } from "./text-extract";
 
+interface MatchQueryStrings {
+  seniorities?: string;
+  workFormats?: string;
+  englishLevels?: string;
+  employmentTypes?: string;
+  domainIds?: string;
+  experienceYears?: string;
+  hasTestAssignment?: string;
+  hasReservation?: string;
+  minFitTier?: string;
+  sourceId?: string;
+  postedWithinDays?: string;
+  page?: string;
+  pageSize?: string;
+}
+
 // CV upload is LLM-backed (a BAML extraction per new file) + accepts user
 // uploads, so it gets two guards on top of the global rate limit:
 //   - a strict per-IP throttle (5/min) so the public endpoint can't burn
@@ -110,6 +126,16 @@ export class CvController {
     return this.loader.listSamples();
   }
 
+  @Get("samples/:id/matches")
+  @Public()
+  async sampleMatches(
+    @Param("id") id: string,
+    @Query() query: MatchQueryStrings,
+  ): Promise<MatchResponse> {
+    await this.loader.assertSampleCandidate(id);
+    return this.matchCandidate(id, query);
+  }
+
   @Get(":id")
   async get(@CurrentUser() user: JwtUser, @Param("id") id: string): Promise<CandidateView> {
     await this.loader.assertAccessibleCandidate(user.userId, id);
@@ -121,47 +147,39 @@ export class CvController {
   async matches(
     @CurrentUser() user: JwtUser,
     @Param("id") id: string,
-    @Query("seniorities") rawSeniorities?: string,
-    @Query("workFormats") rawWorkFormats?: string,
-    @Query("englishLevels") rawEnglishLevels?: string,
-    @Query("employmentTypes") rawEmploymentTypes?: string,
-    @Query("domainIds") rawDomainIds?: string,
-    @Query("experienceYears") rawExperienceYears?: string,
-    @Query("hasTestAssignment") rawHasTestAssignment?: string,
-    @Query("hasReservation") rawHasReservation?: string,
-    @Query("minFitTier") rawMinFitTier?: string,
-    @Query("sourceId") rawSourceId?: string,
-    @Query("postedWithinDays") rawPostedWithinDays?: string,
-    @Query("page") rawPage?: string,
-    @Query("pageSize") rawPageSize?: string,
+    @Query() query: MatchQueryStrings,
   ): Promise<MatchResponse> {
     await this.loader.assertAccessibleCandidate(user.userId, id);
+    return this.matchCandidate(id, query);
+  }
+
+  private async matchCandidate(id: string, query: MatchQueryStrings): Promise<MatchResponse> {
     const refs = await this.loader.getMatchInput(id);
     return this.ranking.rankByRefs(
       refs,
       {
-        seniorities: parseEnumCsv<Seniority>("seniorities", rawSeniorities, SENIORITY_VALUES),
-        workFormats: parseEnumCsv<WorkFormat>("workFormats", rawWorkFormats, WORK_FORMAT_VALUES),
+        seniorities: parseEnumCsv<Seniority>("seniorities", query.seniorities, SENIORITY_VALUES),
+        workFormats: parseEnumCsv<WorkFormat>("workFormats", query.workFormats, WORK_FORMAT_VALUES),
         englishLevels: parseEnumCsv<EnglishLevel>(
           "englishLevels",
-          rawEnglishLevels,
+          query.englishLevels,
           ENGLISH_LEVEL_VALUES,
         ),
         employmentTypes: parseEnumCsv<EmploymentType>(
           "employmentTypes",
-          rawEmploymentTypes,
+          query.employmentTypes,
           EMPLOYMENT_TYPE_VALUES,
         ),
-        domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", rawDomainIds)),
-        experienceYears: parseCsv("experienceYears", rawExperienceYears),
-        hasTestAssignment: parseBool("hasTestAssignment", rawHasTestAssignment),
-        hasReservation: parseBool("hasReservation", rawHasReservation),
-        minFitTier: parseEnum<FitTier>("minFitTier", rawMinFitTier, FIT_TIER_VALUES),
-        sourceId: parseId("sourceId", rawSourceId),
-        postedWithinDays: parseDays("postedWithinDays", rawPostedWithinDays),
+        domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", query.domainIds)),
+        experienceYears: parseCsv("experienceYears", query.experienceYears),
+        hasTestAssignment: parseBool("hasTestAssignment", query.hasTestAssignment),
+        hasReservation: parseBool("hasReservation", query.hasReservation),
+        minFitTier: parseEnum<FitTier>("minFitTier", query.minFitTier, FIT_TIER_VALUES),
+        sourceId: parseId("sourceId", query.sourceId),
+        postedWithinDays: parseDays("postedWithinDays", query.postedWithinDays),
       },
-      parsePage(rawPage),
-      parsePageSize(rawPageSize),
+      parsePage(query.page),
+      parsePageSize(query.pageSize),
     );
   }
 

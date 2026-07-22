@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 
+import { AuthService } from "./auth.service";
 import type { JwtPayload, RequestWithUser } from "./auth.types";
 import { IS_PUBLIC_KEY } from "./decorators/public.decorator";
 
@@ -12,9 +13,10 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly auth: AuthService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -27,16 +29,20 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("missing bearer token");
     }
 
+    let payload: JwtPayload;
     try {
-      const payload = this.jwt.verify<JwtPayload>(header.slice(7).trim());
-      req.user = {
-        userId: payload.sub,
-        telegramId: payload.tid ?? null,
-        roles: Array.isArray(payload.roles) ? payload.roles : [],
-      };
-      return true;
+      payload = this.jwt.verify<JwtPayload>(header.slice(7).trim());
     } catch {
       throw new UnauthorizedException("invalid token");
     }
+
+    const current = await this.auth.getMe(payload.sub);
+    if (!current) throw new UnauthorizedException("deleted or stale account");
+    req.user = {
+      userId: payload.sub,
+      telegramId: current.telegramId,
+      roles: current.roles,
+    };
+    return true;
   }
 }

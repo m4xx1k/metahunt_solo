@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -6,6 +6,7 @@ import { ConfigService } from "@nestjs/config";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 
 import { paginateDigest } from "./digest.renderer";
+import { isChatUnreachable } from "./rate-limiter";
 import { SentNotificationsService } from "./sent-notifications.service";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
 import { SubscriptionsService } from "./subscriptions.service";
@@ -44,11 +45,20 @@ export class DigestService {
    * retry: the anti-join drops anything already recorded, so a failed page
    * resends only the remainder. Returns total new matched.
    */
-  async deliver(subscriptionId: string): Promise<number> {
+  async deliver(subscriptionId: string, evaluationId: string = randomUUID()): Promise<number> {
     const sub = await this.subscriptions.getActiveById(subscriptionId);
     if (!sub) return 0;
 
+    const isFirstDigest = !(await this.sentNotifications.hasSent(sub.id));
     const { items, total, label } = await this.matcher.matchNew(sub);
+    const profileType = sub.candidateId ? "cv" : "feed";
+    this.analytics.digestEvaluated({
+      subscriptionId: sub.id,
+      matches: total,
+      isFirstDigest,
+      profileType,
+      evaluationId: `digest_evaluated:${evaluationId}`,
+    });
     if (total === 0) return 0;
 
     const pages = paginateDigest(items, {
@@ -58,20 +68,37 @@ export class DigestService {
       // `?s=<id>` lets the `/go/:id` redirect attribute clicks to this sub.
       subscriptionId: sub.id,
     });
-    for (const page of pages) {
-      await this.telegram.sendMessage(sub.chatId, page.html);
-      // Record after the send so a retried page never resends earlier ones.
-      await this.sentNotifications.record(sub.id, page.vacancyIds);
+    const deliveryId = digestDeliveryId(
+      sub.id,
+      pages.flatMap((page) => page.vacancyIds),
+    );
+    for (const [pageIndex, page] of pages.entries()) {
+      try {
+        await this.telegram.sendMessage(sub.chatId, page.html);
+        // Record after the send so a retried page never resends earlier ones.
+        await this.sentNotifications.record(sub.id, page.vacancyIds);
+      } catch (error) {
+        this.analytics.digestDeliveryFailed({
+          subscriptionId: sub.id,
+          vacancies: total,
+          pages: pages.length,
+          failedPage: pageIndex + 1,
+          deliveryId,
+          failureKind: isChatUnreachable(error) ? "chat_unreachable" : "transient",
+          isFirstDigest,
+          profileType,
+        });
+        throw error;
+      }
     }
 
     this.analytics.digestSent({
       subscriptionId: sub.id,
       vacancies: total,
       pages: pages.length,
-      deliveryId: digestDeliveryId(
-        sub.id,
-        pages.flatMap((page) => page.vacancyIds),
-      ),
+      deliveryId,
+      isFirstDigest,
+      profileType,
     });
     this.logger.log(`digest → sub ${sub.id}: ${total} new in ${pages.length} page(s)`);
     return total;

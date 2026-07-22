@@ -41,6 +41,15 @@ import { MeService } from "./me.service";
 export class MeController {
   constructor(private readonly me: MeService) {}
 
+  @Delete()
+  @ApiOperation({ summary: "Delete the current account and its owned application data" })
+  @ApiOkResponse({ type: OkResponseDto })
+  @ApiNotFoundResponse({ description: "Account was not found.", type: ApiErrorResponseDto })
+  async deleteAccount(@CurrentUser() user: JwtUser): Promise<{ ok: true }> {
+    if (!(await this.me.deleteAccount(user.userId))) throw new NotFoundException();
+    return { ok: true };
+  }
+
   @Get("cv")
   @ApiOperation({ summary: "List CVs claimed by the current account" })
   @ApiOkResponse({ description: "Current account CV links." })

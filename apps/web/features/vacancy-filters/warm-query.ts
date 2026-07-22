@@ -33,8 +33,9 @@ export function fetchMatch(
   candidateId: string,
   f: FilterState,
   page: number,
+  isSample = false,
 ): Promise<MatchResponse> {
-  return cvApi.matches(candidateId, {
+  const query = {
     page,
     pageSize: MATCH_PAGE_SIZE,
     seniorities: toCsv(f.seniorities),
@@ -46,7 +47,7 @@ export function fetchMatch(
     hasTestAssignment: f.test ?? undefined,
     hasReservation: f.reservation ?? undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
-    postedWithinDays:
-      FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
-  });
+    postedWithinDays: FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
+  };
+  return isSample ? cvApi.sampleMatches(candidateId, query) : cvApi.matches(candidateId, query);
 }

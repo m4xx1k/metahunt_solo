@@ -2,12 +2,48 @@ import type { ConfigService } from "@nestjs/config";
 
 import type { Bot } from "grammy";
 
+import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
+import type { AnalyticsService } from "../../platform/analytics/analytics.service";
+
 import type { SubscriptionMatcherService } from "./subscription-matcher.service";
 import type { SubscriptionsService } from "./subscriptions.service";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
 import { copy } from "./telegram-copy";
 
 const WEB_URL = "https://metahunt.test";
+
+function vacancy(): VacancyDto {
+  const now = new Date().toISOString();
+  return {
+    id: "11111111-1111-1111-1111-111111111111",
+    externalId: "ext-1",
+    rssRecordId: "rss-1",
+    source: { id: "source-1", code: "dou", displayName: "DOU" },
+    link: "https://jobs.dou.ua/companies/example/vacancies/1",
+    publishedAt: now,
+    loadedAt: now,
+    updatedAt: now,
+    title: "Backend Engineer",
+    description: null,
+    company: null,
+    role: { id: "role-1", name: "Backend Developer" },
+    domain: null,
+    skills: { required: [], optional: [] },
+    seniority: "MIDDLE",
+    workFormat: "REMOTE",
+    employmentType: null,
+    englishLevel: null,
+    experienceYears: null,
+    engagementType: null,
+    hasTestAssignment: null,
+    hasReservation: null,
+    salary: { min: null, max: null, currency: null },
+    locations: [],
+    uniqueVacancyId: null,
+    duplicateCount: null,
+    duplicateSourceCount: null,
+  };
+}
 
 // A minimal stand-in for grammy's Bot that records the handlers `register()`
 // wires up, so each can be invoked with a fake context. This is exactly the
@@ -34,21 +70,25 @@ function commandCtx(match: string, chatId = 42) {
 describe("TelegramCommandsHandler", () => {
   const linkChat = jest.fn();
   const listActiveByChat = jest.fn();
+  const getActiveById = jest.fn();
   const describe_ = jest.fn();
   const deactivateByChat = jest.fn();
   const deactivateById = jest.fn();
   const sample = jest.fn();
   const get = jest.fn();
+  const activationValueShown = jest.fn();
 
   const subscriptions = {
     linkChat,
     listActiveByChat,
+    getActiveById,
     describe: describe_,
     deactivateByChat,
     deactivateById,
   } as unknown as SubscriptionsService;
   const matcher = { sample } as unknown as SubscriptionMatcherService;
   const config = { get } as unknown as ConfigService;
+  const analytics = { activationValueShown } as unknown as AnalyticsService;
 
   let commands: Map<string, Handler>;
   let callbacks: { pattern: RegExp; handler: Handler }[];
@@ -58,7 +98,7 @@ describe("TelegramCommandsHandler", () => {
     jest.clearAllMocks();
     describe_.mockResolvedValue("Backend");
     get.mockReturnValue("https://metahunt.test");
-    const handler = new TelegramCommandsHandler(config, subscriptions, matcher);
+    const handler = new TelegramCommandsHandler(config, subscriptions, matcher, analytics);
     const wired = fakeBot();
     handler.register(wired.bot);
     commands = wired.commands;
@@ -90,6 +130,49 @@ describe("TelegramCommandsHandler", () => {
 
       expect(linkChat).toHaveBeenCalledWith("the-token", "42");
       expect(ctx.reply.mock.calls[0][0]).toBe(expected);
+    });
+
+    it("shows an attributed sample immediately after a fresh activation", async () => {
+      const sub = {
+        id: "the-token",
+        chatId: "42",
+        params: { roleIds: ["backend"] },
+        candidateId: null,
+        createdAt: new Date(),
+      };
+      linkChat.mockResolvedValue("linked");
+      getActiveById.mockResolvedValue(sub);
+      sample.mockResolvedValue({ items: [vacancy()], total: 1, label: "Backend" });
+      const ctx = commandCtx("the-token");
+
+      await commands.get("start")!(ctx);
+
+      expect(getActiveById).toHaveBeenCalledWith("the-token");
+      expect(sample).toHaveBeenCalledWith(sub, 14);
+      expect(ctx.reply).toHaveBeenCalledTimes(2);
+      expect(ctx.reply.mock.calls[1][0]).toContain("<b>1</b>");
+      expect(ctx.reply.mock.calls[1][0]).toContain("?s=the-token");
+      expect(ctx.reply.mock.calls[1][1]).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
+      expect(activationValueShown).toHaveBeenCalledWith("the-token", 1, 1);
+    });
+
+    it("keeps a successful activation confirmed when preview matching fails", async () => {
+      linkChat.mockResolvedValue("linked");
+      getActiveById.mockResolvedValue({
+        id: "the-token",
+        chatId: "42",
+        params: {},
+        candidateId: null,
+        createdAt: new Date(),
+      });
+      sample.mockRejectedValue(new Error("catalog unavailable"));
+      const ctx = commandCtx("the-token");
+
+      await expect(commands.get("start")!(ctx)).resolves.toBeUndefined();
+
+      expect(ctx.reply).toHaveBeenCalledTimes(1);
+      expect(ctx.reply).toHaveBeenCalledWith(copy.start.linked);
+      expect(activationValueShown).not.toHaveBeenCalled();
     });
   });
 

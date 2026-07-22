@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { ApplicationFailure } from "@temporalio/activity";
+import { activityInfo, ApplicationFailure } from "@temporalio/activity";
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
 import { DigestService } from "../digest.service";
@@ -26,7 +26,9 @@ export class NotifyActivity {
   @ActivityMethod()
   async deliverToSubscription(subscriptionId: string): Promise<number> {
     try {
-      return await this.digest.deliver(subscriptionId);
+      const info = activityInfo();
+      const evaluationId = `${info.workflowExecution.runId}:${info.activityId}`;
+      return await this.digest.deliver(subscriptionId, evaluationId);
     } catch (err) {
       // A 403 means the chat is unreachable (user blocked the bot). Retrying
       // can't fix that, so surface it as non-retryable: the activity fails on

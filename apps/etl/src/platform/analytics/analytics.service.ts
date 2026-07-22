@@ -54,16 +54,66 @@ export class AnalyticsService implements OnModuleDestroy {
     });
   }
 
+  activationValueShown(uuid: string, matches: number, shown: number): void {
+    this.capture(uuid, ANALYTICS_EVENTS.activationValueShown, {
+      matches,
+      shown,
+      result: matches > 0 ? "matches" : "empty",
+      $insert_id: `activation_value_shown:${uuid}`,
+    });
+  }
+
+  digestEvaluated(props: {
+    subscriptionId: string;
+    matches: number;
+    isFirstDigest: boolean;
+    profileType: "feed" | "cv";
+    evaluationId: string;
+  }): void {
+    this.capture(props.subscriptionId, ANALYTICS_EVENTS.digestEvaluated, {
+      matches: props.matches,
+      result: props.matches > 0 ? "matches" : "empty",
+      is_first_digest: props.isFirstDigest,
+      profile_type: props.profileType,
+      $insert_id: props.evaluationId,
+    });
+  }
+
   digestSent(props: {
     subscriptionId: string;
     vacancies: number;
     pages: number;
     deliveryId: string;
+    isFirstDigest: boolean;
+    profileType: "feed" | "cv";
   }): void {
     this.capture(props.subscriptionId, ANALYTICS_EVENTS.digestSent, {
       vacancies: props.vacancies,
       pages: props.pages,
+      is_first_digest: props.isFirstDigest,
+      profile_type: props.profileType,
       $insert_id: props.deliveryId,
+    });
+  }
+
+  digestDeliveryFailed(props: {
+    subscriptionId: string;
+    vacancies: number;
+    pages: number;
+    failedPage: number;
+    deliveryId: string;
+    failureKind: "chat_unreachable" | "transient";
+    isFirstDigest: boolean;
+    profileType: "feed" | "cv";
+  }): void {
+    this.capture(props.subscriptionId, ANALYTICS_EVENTS.digestDeliveryFailed, {
+      vacancies: props.vacancies,
+      pages: props.pages,
+      failed_page: props.failedPage,
+      failure_kind: props.failureKind,
+      is_first_digest: props.isFirstDigest,
+      profile_type: props.profileType,
+      $insert_id: `digest_delivery_failed:${props.deliveryId}:${props.failedPage}`,
     });
   }
 

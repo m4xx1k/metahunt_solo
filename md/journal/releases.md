@@ -6,9 +6,19 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-22
+
+- **Self-service account deletion** (`feat/real-user-funnel`). Authenticated users can permanently remove their Telegram identity, owned and same-chat alerts, notification ledger, CV links, and final-owner derived candidate data from `/me`. Migration `0028` makes subscription and notification cascades explicit; protected requests reload account existence/current roles, Telegram login is limited to ten attempts per IP per minute, and new login analytics no longer identifies the account UUID. Historical pseudonymous provider events remain a separate owner-handled deletion request. → [runbook](../runbook/account-deletion.md)
+- **Scheduled-delivery observability** (`feat/real-user-funnel`). `digest_evaluated` distinguishes first/returning and matches/empty runs; `digest_sent` carries the same first-digest/profile dimensions; `digest_delivery_failed` records a bounded permanent/transient class without provider error text. Evaluation and failure IDs deduplicate Temporal retries. → [funnel runbook](../runbook/first-user-funnel.md)
+
+---
+
 ## 2026-07-21
 
 - **Ingest launch hardening** (`feat/ingest-pipeline-refactor`). RSS exact-match suppression is source-scoped, production fetch failures follow Temporal retry semantics without fixture fallback, workflow and worker fan-out is bounded, and listing updates are latest-record-wins with race-safe embedding and duplicate-cluster invalidation. No schema migration was required. → [migration tracker](migrations/ingest-pipeline-refactor.md)
+- **Anonymous CV demos repaired** (`feat/real-user-funnel`). Seeded sample profiles now use a public sample-only match endpoint; uploaded candidates remain JWT- and owner-protected. The home feed routes sample requests through that endpoint on both server seed and client refetch. → [migration tracker](migrations/real-user-funnel.md)
+- **First measurable acquisition path** (`feat/real-user-funnel`). `/radar/backend` turns the existing cold Telegram subscription into a campaign landing with truthful DOU + Djinni proof, explicit intent/create/handoff events, and bounded UTM properties. Public CV/analytics disclosure, honest root metadata, `robots.txt`, and `sitemap.xml` close the immediate trust/discovery gaps. No deployment or ad spend was triggered. → [launch audit](../../METAHUNT_AUDIT_AND_NEXT_STEPS.md)
+- **Immediate Telegram activation value** (`feat/real-user-funnel`). A fresh deep-link activation now reuses the read-only 14-day matcher to render up to three attributed vacancies, or an explicit zero state, after confirmation. Preview failures are isolated from the successful link, and `activation_value_shown` measures the step without Telegram identity or filter values. → [migration tracker](migrations/real-user-funnel.md)
 
 ---
 

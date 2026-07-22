@@ -78,6 +78,9 @@ export const cvApi = {
   matches: (id: string, query: CvMatchQuery = {}) =>
     apiGet<MatchResponse>(`/cv/${id}/matches${buildQs(query)}`),
 
+  sampleMatches: (id: string, query: CvMatchQuery = {}) =>
+    apiGet<MatchResponse>(`/cv/samples/${id}/matches${buildQs(query)}`),
+
   recommendations: (id: string) => apiGet<RecommendResponse>(`/cv/${id}/recommendations`),
 
   skillSuggestions: (id: string) => apiGet<SkillSuggestion[]>(`/cv/${id}/skill-suggestions`),
