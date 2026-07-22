@@ -64,7 +64,12 @@ function fakeBot() {
 }
 
 function commandCtx(match: string, chatId = 42) {
-  return { match, chat: { id: chatId }, reply: jest.fn() };
+  return {
+    match,
+    chat: { id: chatId },
+    from: { username: "tguser", first_name: "Tessa" },
+    reply: jest.fn(),
+  };
 }
 
 describe("TelegramCommandsHandler", () => {
@@ -128,7 +133,10 @@ describe("TelegramCommandsHandler", () => {
 
       await commands.get("start")!(ctx);
 
-      expect(linkChat).toHaveBeenCalledWith("the-token", "42");
+      expect(linkChat).toHaveBeenCalledWith("the-token", "42", {
+        username: "tguser",
+        firstName: "Tessa",
+      });
       expect(ctx.reply.mock.calls[0][0]).toBe(expected);
     });
 

@@ -45,7 +45,10 @@ export class TelegramCommandsHandler {
         return;
       }
 
-      const result = await this.subscriptions.linkChat(token, chatId);
+      const result = await this.subscriptions.linkChat(token, chatId, {
+        username: ctx.from?.username,
+        firstName: ctx.from?.first_name,
+      });
       if (result === "linked") {
         await ctx.reply(copy.start.linked);
         await this.sendActivationPreview(token, ctx.reply.bind(ctx));
