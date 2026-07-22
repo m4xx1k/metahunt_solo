@@ -1,18 +1,19 @@
 # analytics-ledger-dashboard — First-party funnel evidence
 
-**Branch:** `feat/analytics-ledger-dashboard`
-**Status:** implementation complete, pre-PR review
+**Branch:** `feat/analytics-ledger-dashboard` (merged via [PR #95](https://github.com/m4xx1k/metahunt_solo/pull/95))
+**Status:** done
 **Started:** 2026-07-22
 
 ## Outcome
 
-MetaHunt now has a first-party, privacy-bounded activation ledger. A stable
-browser journey UUID crosses subscription creation, Telegram activation, preview,
-scheduled digest, click, and unsubscribe events. PostHog receives the same journey
-identity as a secondary analysis sink, while PostgreSQL remains the correctness
-source. The admin-only `/product-analytics` workspace exposes the funnel, current
-subscription state, legacy coverage, subscription-derived account joins, integrity gaps, and
-recent pseudonymous journeys.
+MetaHunt now has a first-party, privacy-bounded activation ledger, merged and
+deployed to production. A stable browser journey UUID crosses subscription
+creation, Telegram activation, preview, scheduled digest, click, and unsubscribe
+events; PostHog receives the same identity as a secondary sink. The admin-only
+`/product-analytics` workspace (since iterated into a tabbed dashboard with
+per-subscriber activity, feed-click attribution, and charts — see
+[`releases.md`](../../releases.md#2026-07-22)) exposes the funnel, subscription
+state, legacy coverage, account joins, integrity gaps, and recent journeys.
 
 ## Subtasks
 
@@ -25,7 +26,7 @@ recent pseudonymous journeys.
       legacy coverage, broken chains, and recent journeys are queryable without PII.
 - [x] T3 — Add an admin-only product funnel dashboard — _done when:_ the existing
       operator workspace renders funnel, identity health, delivery, and journey rows.
-- [ ] T4 — Verify compatibility and release readiness — _done when:_ unit,
+- [x] T4 — Verify compatibility and release readiness — _done when:_ unit,
       integration, lint, builds, migration checks, and production reconciliation pass.
 
 ## Decisions
@@ -65,11 +66,14 @@ recent pseudonymous journeys.
   journey and browser retry deduplication works;
 - production Railway state is healthy; the observed 2026-07-22 Backend radar was
   created and linked at 10:38 UTC, then received four new vacancies at 11:30 UTC;
-- production deployment of this branch and one post-deploy tracked journey remain
-  release steps, not pre-PR evidence.
+- merged via PR #95 and deployed to production; twelve further PRs (#96–#108)
+  shipped against the live ledger and `/product-analytics` dashboard the same
+  session, confirming production compatibility. The remaining validation step —
+  one real, reproducible landing → subscription → digest → click chain — is
+  tracked as its own gate; see [`roadmap.md`](../../../roadmap.md#stage-08--first-user-validation).
 
 ## Links
 
-- Parent funnel tracker: [`real-user-funnel.md`](real-user-funnel.md)
-- Measurement runbook: [`../../runbook/first-user-funnel.md`](../../runbook/first-user-funnel.md)
-- Baseline: [`../../analysis/2026-07-22-production-status-and-next-steps.md`](../../analysis/2026-07-22-production-status-and-next-steps.md)
+- Parent funnel tracker: [`real-user-funnel.md`](../real-user-funnel.md)
+- Measurement runbook: [`../../../runbook/first-user-funnel.md`](../../../runbook/first-user-funnel.md)
+- Baseline: [`../../../analysis/2026-07-22-production-status-and-next-steps.md`](../../../analysis/2026-07-22-production-status-and-next-steps.md)

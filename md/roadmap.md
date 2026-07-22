@@ -8,13 +8,19 @@ What's now / what's next. Stages are business-meaningful milestones, not small f
 **Status:** in-progress · **Started:** 2026-07-21
 
 The candidate-facing loop now exists end to end: browse or CV match → Telegram
-subscription → new-vacancy digest → attributed original-job click. The current
-stage validates that loop with real people before more ranking or source work.
+subscription → new-vacancy digest → attributed original-job click. The
+acquisition (`/radar`, `/radar/[track]`, `/vacancy/[id]`), measurement
+(first-party activation ledger + `/product-analytics` dashboard), and launch
+hardening (digest per-chat dedup, retry-hardening, subscriber identity) layer
+for that loop is built and deployed to production. The current stage validates
+that loop with real people before more ranking or source work.
 
-**Now:** ship the first-party activation ledger and operator funnel dashboard,
-run one post-deploy correlation proof, then complete five controlled Telegram
-activation chains and recruit 20 Middle/Senior Backend or Full-stack users.
-Paid traffic remains gated on that cohort's activation and alert-quality results.
+**Now:** run the end-to-end funnel test (`md/runbook/funnel-e2e-test.md`) to
+confirm one real landing → subscription → digest → click chain reconciles
+across PostHog and the ledger, then launch the Reddit post on `/radar` and
+recruit 20 Middle/Senior Backend or Full-stack users. The bottleneck is
+validation, not code — paid traffic remains gated on that cohort's activation
+and alert-quality results.
 
 Tracker: [`real-user-funnel`](./journal/migrations/real-user-funnel.md). Launch
 plan: [`METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../METAHUNT_AUDIT_AND_NEXT_STEPS.md).
