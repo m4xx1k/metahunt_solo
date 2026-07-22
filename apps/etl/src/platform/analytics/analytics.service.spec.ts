@@ -1,90 +1,83 @@
-const mockCapture = jest.fn();
-const mockAlias = jest.fn();
-const mockIdentify = jest.fn();
-const mockShutdown = jest.fn();
-
-jest.mock("posthog-node", () => ({
-  PostHog: jest.fn().mockImplementation(() => ({
-    capture: mockCapture,
-    alias: mockAlias,
-    identify: mockIdentify,
-    shutdown: mockShutdown,
-  })),
-}));
-
+import type {
+  AnalyticsOutboxWriter,
+  AnalyticsSink,
+  ProductEventWrite,
+  ProductEventWriter,
+} from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
 import { ANALYTICS_EVENTS } from "./events";
 
 describe("AnalyticsService", () => {
-  function makeService() {
-    return new AnalyticsService({
-      get: (key: string) => (key === "POSTHOG_API_KEY" ? "test-key" : undefined),
-    } as never);
+  const record = jest.fn<Promise<void>, [ProductEventWrite]>();
+  const enqueue = jest.fn<Promise<void>, [ProductEventWrite]>();
+  const drain = jest.fn<Promise<ProductEventWrite[]>, [number]>();
+  const journeyForSubscription = jest.fn<Promise<string | null>, [string]>();
+  const capture = jest.fn<void, [string, string, Record<string, unknown>]>();
+
+  function makeService(): AnalyticsService {
+    const events: ProductEventWriter = { record, journeyForSubscription };
+    const outbox: AnalyticsOutboxWriter = { enqueue, drain };
+    const sink: AnalyticsSink = { capture };
+    return new AnalyticsService(events, outbox, sink);
   }
 
   beforeEach(() => {
-    mockCapture.mockReset();
-    mockAlias.mockReset();
-    mockIdentify.mockReset();
-    mockShutdown.mockReset();
+    jest.clearAllMocks();
+    record.mockResolvedValue();
+    enqueue.mockResolvedValue();
+    journeyForSubscription.mockResolvedValue("journey-1");
   });
 
-  it("summarizes subscription filters without sending their values", () => {
+  it("summarizes subscription filters without sending their values", async () => {
     const service = makeService();
 
-    service.subscriptionCreated("subscription-1", {
+    await service.subscriptionCreated("subscription-1", "journey-1", {
       roleIds: ["role-1"],
       q: "sensitive search",
     });
 
-    expect(mockCapture).toHaveBeenCalledWith({
-      distinctId: "subscription-1",
-      event: ANALYTICS_EVENTS.subscriptionCreated,
+    expect(enqueue).toHaveBeenCalledWith({
+      journeyId: "journey-1",
+      subscriptionId: "subscription-1",
+      name: ANALYTICS_EVENTS.subscriptionCreated,
+      source: "api",
+      dedupeKey: "subscription_created:subscription-1",
       properties: {
         filterCount: 2,
         $insert_id: "subscription_created:subscription-1",
       },
     });
+    expect(capture).not.toHaveBeenCalled();
   });
 
-  it("records Telegram linkage without creating a chat identity", () => {
+  it("resolves Telegram events back to the subscription journey", async () => {
     const service = makeService();
 
-    service.telegramLinked("subscription-1", "linked");
+    await service.telegramLinked("subscription-1", "linked");
 
-    expect(mockAlias).not.toHaveBeenCalled();
-    expect(mockIdentify).not.toHaveBeenCalled();
-    expect(mockCapture).toHaveBeenCalledWith({
-      distinctId: "subscription-1",
-      event: ANALYTICS_EVENTS.telegramLinked,
-      properties: {
-        result: "linked",
-        $insert_id: "telegram_linked:subscription-1:linked",
-      },
-    });
+    expect(journeyForSubscription).toHaveBeenCalledWith("subscription-1");
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        journeyId: "journey-1",
+        name: ANALYTICS_EVENTS.telegramLinked,
+      }),
+    );
   });
 
-  it("records immediate activation value without user identifiers", () => {
+  it("records immediate activation value without user identifiers", async () => {
     const service = makeService();
 
-    service.activationValueShown("subscription-1", 7, 3);
+    await service.activationValueShown("subscription-1", 7, 3);
 
-    expect(mockCapture).toHaveBeenCalledWith({
-      distinctId: "subscription-1",
-      event: ANALYTICS_EVENTS.activationValueShown,
-      properties: {
-        matches: 7,
-        shown: 3,
-        result: "matches",
-        $insert_id: "activation_value_shown:subscription-1",
-      },
-    });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ name: ANALYTICS_EVENTS.activationValueShown }),
+    );
   });
 
-  it("uses the subscription as the digest identity and a deterministic delivery id", () => {
+  it("uses deterministic delivery identity", async () => {
     const service = makeService();
 
-    service.digestSent({
+    await service.digestSent({
       subscriptionId: "subscription-1",
       vacancies: 3,
       pages: 1,
@@ -93,23 +86,18 @@ describe("AnalyticsService", () => {
       profileType: "feed",
     });
 
-    expect(mockCapture).toHaveBeenCalledWith({
-      distinctId: "subscription-1",
-      event: ANALYTICS_EVENTS.digestSent,
-      properties: {
-        vacancies: 3,
-        pages: 1,
-        is_first_digest: true,
-        profile_type: "feed",
-        $insert_id: "delivery-hash",
-      },
-    });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: ANALYTICS_EVENTS.digestSent,
+        dedupeKey: "delivery-hash",
+      }),
+    );
   });
 
-  it("records a zero-match evaluation as an observable first-value outcome", () => {
+  it("records zero-match evaluation as an observable outcome", async () => {
     const service = makeService();
 
-    service.digestEvaluated({
+    await service.digestEvaluated({
       subscriptionId: "subscription-1",
       matches: 0,
       isFirstDigest: true,
@@ -117,45 +105,43 @@ describe("AnalyticsService", () => {
       evaluationId: "evaluation-1",
     });
 
-    expect(mockCapture).toHaveBeenCalledWith({
-      distinctId: "subscription-1",
-      event: ANALYTICS_EVENTS.digestEvaluated,
-      properties: {
-        matches: 0,
-        result: "empty",
-        is_first_digest: true,
-        profile_type: "feed",
-        $insert_id: "evaluation-1",
-      },
-    });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: ANALYTICS_EVENTS.digestEvaluated,
+        dedupeKey: "evaluation-1",
+      }),
+    );
   });
 
-  it("classifies delivery failure without sending an error message or chat identity", () => {
+  it("contains an outbox persistence failure", async () => {
     const service = makeService();
+    enqueue.mockRejectedValueOnce(new Error("database unavailable"));
 
-    service.digestDeliveryFailed({
-      subscriptionId: "subscription-1",
-      vacancies: 3,
-      pages: 2,
-      failedPage: 2,
-      deliveryId: "delivery-hash",
-      failureKind: "transient",
-      isFirstDigest: false,
-      profileType: "cv",
-    });
+    await expect(service.telegramLinked("subscription-1", "linked")).resolves.toBeUndefined();
+    expect(capture).not.toHaveBeenCalled();
+  });
 
-    expect(mockCapture).toHaveBeenCalledWith({
-      distinctId: "subscription-1",
-      event: ANALYTICS_EVENTS.digestDeliveryFailed,
-      properties: {
-        vacancies: 3,
-        pages: 2,
-        failed_page: 2,
-        failure_kind: "transient",
-        is_first_digest: false,
-        profile_type: "cv",
-        $insert_id: "digest_delivery_failed:delivery-hash:2",
-      },
-    });
+  it("rejects a browser event when the durable ledger write fails", async () => {
+    const service = makeService();
+    record.mockRejectedValueOnce(new Error("database unavailable"));
+
+    await expect(
+      service.browserEvent({
+        journeyId: "11111111-1111-1111-1111-111111111111",
+        eventId: "22222222-2222-2222-2222-222222222222",
+        name: ANALYTICS_EVENTS.landingView,
+        occurredAt: new Date(),
+        properties: {},
+      }),
+    ).rejects.toThrow("database unavailable");
+    expect(capture).not.toHaveBeenCalled();
+  });
+
+  it("does not fail a domain flow when journey resolution fails", async () => {
+    const service = makeService();
+    journeyForSubscription.mockRejectedValueOnce(new Error("database unavailable"));
+
+    await expect(service.telegramLinked("subscription-1", "linked")).resolves.toBeUndefined();
+    expect(capture).not.toHaveBeenCalled();
   });
 });

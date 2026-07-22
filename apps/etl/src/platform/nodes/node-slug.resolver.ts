@@ -5,7 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from "../shared/query-parsing";
 
 // Maps URL-facing node slugs (?roles=backend-engineer) back to node UUIDs at the
 // API boundary — so every downstream query, the stored subscription rows, and
@@ -25,7 +25,7 @@ export class NodeSlugResolver {
     const bySlug = new Map<string, string>();
     for (const r of rows) if (r.slug) bySlug.set(r.slug, r.id);
     return slugs
-      .map((s) => bySlug.get(s) ?? (UUID_REGEX.test(s) ? s : null))
+      .map((s) => bySlug.get(s) ?? (isUuid(s) ? s : null))
       .filter((v): v is string => v !== null);
   }
 
