@@ -13,11 +13,16 @@ import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
 import { readAcquisitionAttribution } from "@/lib/acquisition-attribution";
 import { aggregatesApi } from "@/lib/api/aggregates";
+import { publicApiBase } from "@/lib/api/client";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import { tracksApi } from "@/lib/api/tracks";
-import { vacanciesApi } from "@/lib/api/vacancies";
-import { Card, Tag } from "@/ui";
+import { vacanciesApi, type VacancyDto } from "@/lib/api/vacancies";
+import { formatSalary, SENIORITY_LABELS } from "@/lib/extracted-vacancy";
+import { formatRelative } from "@/lib/format";
+import { Badge, Card, Tag } from "@/ui";
 import { RadarSubscribe } from "./_components/RadarSubscribe";
+
+const PROOF_VACANCY_COUNT = 3;
 
 const SITE_URL = "https://www.metahunt.app";
 const TRACK_SLUG = "backend";
@@ -62,7 +67,7 @@ export default async function BackendRadarPage({
   const backendJobs = await vacanciesApi.list({
     ...params,
     page: 1,
-    pageSize: 1,
+    pageSize: PROOF_VACANCY_COUNT,
   });
   const attribution = readAcquisitionAttribution(rawSearchParams);
   const lastSync = formatKyivTime(aggregates.lastSyncAt);
@@ -102,25 +107,32 @@ export default async function BackendRadarPage({
               </p>
             </div>
 
-            <Card className="gap-6 shadow-brut-xl">
-              <div className="flex items-end justify-between gap-4 border-b border-border pb-5">
-                <div>
-                  <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-                    Backend jobs · last 30 days
-                  </p>
-                  <p className="mt-2 font-display text-5xl font-black text-accent">
-                    {backendJobs.total}
-                  </p>
-                </div>
-                <span className="mb-2 inline-flex items-center gap-2 font-mono text-xs text-success">
+            <Card className="gap-5 shadow-brut-xl">
+              <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
+                <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                  Live Backend jobs
+                </p>
+                <span className="inline-flex items-center gap-2 font-mono text-xs text-success">
                   <span className="h-2 w-2 bg-success" aria-hidden /> live
                 </span>
               </div>
-              <dl className="grid gap-4 font-mono text-xs">
-                <ProofRow label="sources" value="DOU + Djinni" />
-                <ProofRow label="schedule" value="hourly · daytime" />
-                <ProofRow label="last sync" value={lastSync} />
-              </dl>
+
+              <div className="flex flex-col gap-3">
+                {backendJobs.items.length > 0 ? (
+                  backendJobs.items.map((vacancy) => (
+                    <VacancyTeaser key={vacancy.id} vacancy={vacancy} />
+                  ))
+                ) : (
+                  <p className="border border-border bg-bg p-4 font-mono text-xs text-text-secondary">
+                    No fresh matches this moment — the radar keeps checking hourly.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-4 font-mono text-2xs uppercase tracking-wider text-text-muted">
+                <span>{backendJobs.total} backend jobs · 30d</span>
+                <span>synced {lastSync}</span>
+              </div>
             </Card>
           </div>
         </section>
@@ -194,12 +206,47 @@ export default async function BackendRadarPage({
   );
 }
 
-function ProofRow({ label, value }: { label: string; value: string }) {
+// Static supply proof — mirrors the feed card's fields (role, seniority,
+// company, salary, source, posted-at, apply link) at hero scale, without the
+// feed card's interactive dedup drawer / skill chips.
+function VacancyTeaser({ vacancy: v }: { vacancy: VacancyDto }) {
+  const role = v.role?.name ?? "untitled role";
+  const salary = formatSalary({
+    min: v.salary.min,
+    max: v.salary.max,
+    currency: v.salary.currency,
+  });
+
   return (
-    <div className="flex items-center justify-between gap-4">
-      <dt className="uppercase tracking-wider text-text-muted">{label}</dt>
-      <dd className="text-right text-text-primary">{value}</dd>
-    </div>
+    <Card className="gap-2 p-4 shadow-brut-sm">
+      <div className="flex items-center justify-between gap-3 font-mono text-2xs uppercase tracking-wider text-text-muted">
+        <span>{v.source.displayName.trim()}</span>
+        <span>{formatRelative(v.publishedAt)}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {v.seniority ? <Badge variant="dark">{SENIORITY_LABELS[v.seniority]}</Badge> : null}
+        <h3 className="break-words font-mono text-sm font-bold leading-snug text-text-primary">
+          {role}
+        </h3>
+      </div>
+      {v.company?.name || salary ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+          {v.company?.name ? <span className="text-text-secondary">{v.company.name}</span> : null}
+          {salary ? <span className="font-bold text-success">{salary}</span> : null}
+        </div>
+      ) : null}
+      {v.link ? (
+        // Same `/go/:id` redirect the feed card uses, so hero taps get logged too.
+        <a
+          href={`${publicApiBase()}/go/${v.id}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="w-fit font-mono text-2xs text-accent hover:underline"
+        >
+          ↗ view role
+        </a>
+      ) : null}
+    </Card>
   );
 }
 
