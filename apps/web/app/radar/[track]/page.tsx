@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -14,63 +15,96 @@ import { readAcquisitionAttribution } from "@/lib/acquisition-attribution";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { publicApiBase } from "@/lib/api/client";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
-import { tracksApi } from "@/lib/api/tracks";
+import { tracksApi, type TrackDto } from "@/lib/api/tracks";
 import { vacanciesApi, type VacancyDto } from "@/lib/api/vacancies";
 import { formatSalary, SENIORITY_LABELS } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
 import { Badge, Card, Tag } from "@/ui";
 import { chipClass } from "@/ui/inputs/pill";
-import { RadarSubscribe } from "./_components/RadarSubscribe";
+import { RadarSubscribe } from "../_components/RadarSubscribe";
 
 const PROOF_VACANCY_COUNT = 3;
 const TEASER_SKILL_COUNT = 3;
 
 const SITE_URL = "https://www.metahunt.app";
-const TRACK_SLUG = "backend";
 const DEFAULT_FRESHNESS_DAYS = 30;
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Радар backend-вакансій в Telegram · metahunt",
-  description: "Нові backend-вакансії з DOU і Djinni, без дублів, прямо в Telegram. Без резюме.",
-  alternates: { canonical: `${SITE_URL}/radar/backend` },
-  openGraph: {
-    title: "Не перевіряй DOU і Djinni вручну",
-    description: "Безкоштовний радар backend-вакансій. Тільки нові — прямо в Telegram.",
-    url: `${SITE_URL}/radar/backend`,
-    siteName: "metahunt",
-    type: "website",
-  },
-  twitter: {
-    card: "summary",
-    title: "Радар backend-вакансій · metahunt",
-    description: "Нові backend-вакансії з DOU і Djinni — прямо в Telegram.",
-  },
-};
+type PageParams = { track: string };
 
-export default async function BackendRadarPage({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<PageParams>;
+}): Promise<Metadata> {
+  const { track: slug } = await params;
+  const { tracks } = await tracksApi.get();
+  const track = tracks.find((t) => t.slug === slug);
+  if (!track) return {};
+
+  const labelLower = track.label.toLowerCase();
+  const url = `${SITE_URL}/radar/${slug}`;
+
+  return {
+    title: `Радар ${labelLower}-вакансій в Telegram · metahunt`,
+    description: `Нові ${labelLower}-вакансії з DOU і Djinni, без дублів, прямо в Telegram. Без резюме.`,
+    alternates: { canonical: url },
+    openGraph: {
+      title: "Не перевіряй DOU і Djinni вручну",
+      description: `Безкоштовний радар ${labelLower}-вакансій. Тільки нові — прямо в Telegram.`,
+      url,
+      siteName: "metahunt",
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: `Радар ${labelLower}-вакансій · metahunt`,
+      description: `Нові ${labelLower}-вакансії з DOU і Djinni — прямо в Telegram.`,
+    },
+  };
+}
+
+export default async function TrackRadarPage({
+  params,
   searchParams,
 }: {
+  params: Promise<PageParams>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [aggregates, preset, rawSearchParams] = await Promise.all([
+  const { track: slug } = await params;
+  const [aggregates, { tracks }, rawSearchParams] = await Promise.all([
     aggregatesApi.get(),
-    tracksApi.preset(TRACK_SLUG),
+    tracksApi.get(),
     searchParams,
   ]);
-  const params: SubscriptionParams = {
+
+  const track = tracks.find((t) => t.slug === slug);
+  if (!track) notFound();
+
+  const preset = await tracksApi.preset(slug);
+  const subscriptionParams: SubscriptionParams = {
     roleIds: preset.roles.map((role) => role.id),
     skillIds: preset.skills.map((skill) => skill.id),
     postedWithinDays: DEFAULT_FRESHNESS_DAYS,
   };
-  const backendJobs = await vacanciesApi.list({
-    ...params,
+  const trackJobs = await vacanciesApi.list({
+    ...subscriptionParams,
     page: 1,
     pageSize: PROOF_VACANCY_COUNT,
   });
   const attribution = readAcquisitionAttribution(rawSearchParams);
   const lastSync = formatKyivTime(aggregates.lastSyncAt);
+
+  const label = track.label;
+  const labelLower = label.toLowerCase();
+
+  const children = tracks
+    .filter((t) => t.parentSlug === slug)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const parent = track.parentSlug
+    ? (tracks.find((t) => t.slug === track.parentSlug) ?? null)
+    : null;
 
   return (
     <>
@@ -92,17 +126,32 @@ export default async function BackendRadarPage({
         <section className="border-b border-border px-6 py-20 md:px-12 md:py-28">
           <div className="mx-auto grid w-full max-w-[1180px] gap-12 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
             <div className="flex flex-col items-start gap-7">
-              <Tag>&gt; DOU + DJINNI</Tag>
+              <div className="flex flex-wrap items-center gap-4">
+                <Tag>&gt; DOU + DJINNI</Tag>
+                {parent ? (
+                  <Link
+                    href={`/radar/${parent.slug}`}
+                    className="inline-flex items-center gap-1.5 font-mono text-2xs uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+                  >
+                    ↑ усі {parent.label.toLowerCase()}-вакансії
+                  </Link>
+                ) : null}
+              </div>
               <h1 className="max-w-[850px] font-display text-4xl font-black leading-[1.05] tracking-tight text-text-primary sm:text-6xl">
-                Backend-вакансії. Щодня в Telegram.
+                {label}-вакансії. Щодня в Telegram.
               </h1>
               <p className="max-w-[700px] text-lg leading-relaxed text-text-secondary">
                 Свіжі вакансії з DOU і Djinni — щодня в Telegram. Без реєстрації, дублі склеєні.
               </p>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                <RadarSubscribe params={params} attribution={attribution} trackImpression />
+                <RadarSubscribe
+                  trackSlug={slug}
+                  params={subscriptionParams}
+                  attribution={attribution}
+                  trackImpression
+                />
                 <Link
-                  href="/backend"
+                  href={`/${slug}`}
                   className="inline-flex items-center justify-center gap-2 px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:text-accent"
                 >
                   Спочатку подивитись →
@@ -116,7 +165,7 @@ export default async function BackendRadarPage({
             <Card className="gap-5 shadow-brut-xl">
               <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
                 <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-                  Свіжі backend-вакансії
+                  Свіжі {labelLower}-вакансії
                 </p>
                 <span className="inline-flex items-center gap-2 font-mono text-xs text-success">
                   <span className="h-2 w-2 bg-success" aria-hidden /> онлайн
@@ -124,8 +173,8 @@ export default async function BackendRadarPage({
               </div>
 
               <div className="flex flex-col gap-3">
-                {backendJobs.items.length > 0 ? (
-                  backendJobs.items.map((vacancy) => (
+                {trackJobs.items.length > 0 ? (
+                  trackJobs.items.map((vacancy) => (
                     <VacancyTeaser key={vacancy.id} vacancy={vacancy} />
                   ))
                 ) : (
@@ -136,12 +185,29 @@ export default async function BackendRadarPage({
               </div>
 
               <div className="flex items-center justify-between gap-3 border-t border-border pt-4 font-mono text-2xs uppercase tracking-wider text-text-muted">
-                <span>{backendJobs.total} backend-вакансій · 30 днів</span>
+                <span>
+                  {trackJobs.total} {labelLower}-вакансій · 30 днів
+                </span>
                 <span>оновлено {lastSync}</span>
               </div>
             </Card>
           </div>
         </section>
+
+        {children.length > 0 ? (
+          <section className="border-b border-border bg-bg-elev px-6 py-10 md:px-12">
+            <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4">
+              <p className="font-mono text-2xs uppercase tracking-[0.18em] text-text-muted">
+                Обери стек
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {children.map((child) => (
+                  <SubTrackPill key={child.slug} track={child} />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <section id="how" className="px-6 py-20 md:px-12">
           <div className="mx-auto w-full max-w-[1180px]">
@@ -155,7 +221,7 @@ export default async function BackendRadarPage({
               <Step
                 icon={<FunnelIcon className="h-6 w-6" aria-hidden />}
                 number="01"
-                title="Стартуй з Backend"
+                title={`Стартуй з ${label}`}
                 body="Роль вже готова, стек і рівень тонко налаштуй у фіді."
               />
               <Step
@@ -200,7 +266,11 @@ export default async function BackendRadarPage({
             <h2 className="font-display text-3xl font-bold text-text-primary sm:text-4xl">
               Нехай наступна вакансія знайде тебе сама.
             </h2>
-            <RadarSubscribe params={params} attribution={attribution} />
+            <RadarSubscribe
+              trackSlug={slug}
+              params={subscriptionParams}
+              attribution={attribution}
+            />
             <Link href="/privacy" className="text-xs text-text-muted underline hover:text-accent">
               Як MetaHunt працює з даними
             </Link>
@@ -209,6 +279,19 @@ export default async function BackendRadarPage({
       </main>
       <Footer />
     </>
+  );
+}
+
+// Sub-track nav pill — same geometry as TracksBand's ChildPill, but a plain
+// Link (this page navigates full-page rather than toggling client state).
+function SubTrackPill({ track }: { track: TrackDto }) {
+  return (
+    <Link
+      href={`/radar/${track.slug}`}
+      className="inline-flex shrink-0 items-center border border-border bg-bg px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-secondary transition-colors hover:border-accent hover:text-accent"
+    >
+      {track.label}
+    </Link>
   );
 }
 
