@@ -51,6 +51,21 @@ export class SentNotificationsService {
     return rows.map((r) => r.vacancyId);
   }
 
+  /**
+   * Vacancy ids already sent to ANY subscription belonging to this chat, among
+   * vacancies loaded after `loadedAfter`. Feeds the chat-scoped anti-join so a
+   * chat with overlapping subscriptions never receives the same vacancy twice.
+   */
+  async sentVacancyIdsForChat(chatId: string, loadedAfter: Date): Promise<string[]> {
+    const rows = await this.db
+      .select({ vacancyId: sentNotifications.vacancyId })
+      .from(sentNotifications)
+      .innerJoin(vacancies, eq(vacancies.id, sentNotifications.vacancyId))
+      .innerJoin(subscriptions, eq(subscriptions.id, sentNotifications.subscriptionId))
+      .where(and(eq(subscriptions.chatId, chatId), gt(vacancies.loadedAt, loadedAfter)));
+    return rows.map((r) => r.vacancyId);
+  }
+
   async hasCompletedDelivery(subscriptionId: string): Promise<boolean> {
     const [delivery] = await this.db
       .select({ id: digestDeliveries.id })

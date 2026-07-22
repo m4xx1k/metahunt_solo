@@ -142,6 +142,7 @@ describe("DigestService", () => {
 
       await expect(service.deliver("sub-1")).resolves.toBe(1);
 
+      expect(matchNew).toHaveBeenCalledWith(expect.objectContaining({ id: "sub-1" }), "chat-1");
       expect(sendMessage).toHaveBeenCalledTimes(1);
       expect(sendMessage).toHaveBeenCalledWith("chat-1", expect.any(String));
       expect(record).toHaveBeenCalledWith(
