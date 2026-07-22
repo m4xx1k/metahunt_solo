@@ -1,5 +1,11 @@
 import { Tag } from "@/ui";
 import { dedupApi, type DedupConfidence } from "@/lib/api/dedup";
+import {
+  booleanSearchParam,
+  firstSearchParam,
+  flattenSearchParams,
+  type SearchParamValue,
+} from "@/lib/search-params";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
 import { FilterToggles } from "../_components/FilterToggles";
 import { ConfidenceFilter } from "./_components/ConfidenceFilter";
@@ -8,19 +14,8 @@ import { MetricsPanel } from "./_components/MetricsPanel";
 
 export const dynamic = "force-dynamic";
 
-function asString(v: string | string[] | undefined): string | undefined {
-  if (Array.isArray(v)) return v[0];
-  return v;
-}
-
-function asBool(v: string | string[] | undefined): boolean {
-  return asString(v) === "true";
-}
-
-function asConfidence(
-  v: string | string[] | undefined,
-): DedupConfidence | "all" {
-  const s = asString(v);
+function asConfidence(v: SearchParamValue): DedupConfidence | "all" {
+  const s = firstSearchParam(v);
   if (s === "gold" || s === "confirmed") return s;
   return "all";
 }
@@ -31,7 +26,7 @@ export default async function UniqueVacanciesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const crossSource = asBool(sp.crossSource);
+  const crossSource = booleanSearchParam(sp.crossSource);
   const confidence = asConfidence(sp.confidence);
 
   const data = await dedupApi.list({
@@ -40,10 +35,7 @@ export default async function UniqueVacanciesPage({
     pageSize: 100,
   });
 
-  const flatSearchParams: Record<string, string | undefined> = {};
-  for (const [k, v] of Object.entries(sp)) {
-    flatSearchParams[k] = asString(v);
-  }
+  const flatSearchParams = flattenSearchParams(sp);
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
@@ -56,8 +48,7 @@ export default async function UniqueVacanciesPage({
             крос-джерельні дублікати
           </h2>
           <p className="font-mono text-xs text-text-muted">
-            одна позиція, опублікована більш ніж на одному джерелі ·{" "}
-            {data.pagination.total} груп
+            одна позиція, опублікована більш ніж на одному джерелі · {data.pagination.total} груп
           </p>
         </section>
 

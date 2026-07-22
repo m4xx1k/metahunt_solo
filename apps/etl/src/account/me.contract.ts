@@ -1,3 +1,5 @@
+import { IsBoolean } from "class-validator";
+
 // Read shapes for the logged-in user's dashboard (/me). All scoped server-side
 // to the JWT user — the client never passes a user id.
 export interface MeCv {
@@ -17,4 +19,9 @@ export interface MeSubscription {
   isActive: boolean;
   isCv: boolean;
   createdAt: string;
+}
+
+export class UpdateSubscriptionStateDto {
+  @IsBoolean()
+  isActive!: boolean;
 }

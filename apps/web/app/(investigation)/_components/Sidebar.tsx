@@ -26,6 +26,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "огляд",
     items: [
       { href: "/dashboard", label: "дашборд" },
+      { href: "/product-analytics", label: "продуктова аналітика" },
       { href: "/dashboard/extraction", label: "витрати на екстракцію" },
     ],
   },
@@ -54,13 +55,7 @@ function formatTime(d: Date): string {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
-export function Sidebar({
-  asOf,
-  taxonomyQueueCount,
-}: {
-  asOf: Date;
-  taxonomyQueueCount?: number;
-}) {
+export function Sidebar({ asOf, taxonomyQueueCount }: { asOf: Date; taxonomyQueueCount?: number }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const { user, logout } = useSession();
@@ -92,9 +87,7 @@ export function Sidebar({
         className={cn(
           "z-40 w-[240px] flex-shrink-0 flex-col border-r border-border bg-bg",
           "md:static md:flex",
-          open
-            ? "fixed inset-y-0 left-0 flex shadow-brut-r"
-            : "hidden md:flex",
+          open ? "fixed inset-y-0 left-0 flex shadow-brut-r" : "hidden md:flex",
         )}
       >
         <div className="flex flex-col gap-1 border-b border-border px-5 py-6">
@@ -120,10 +113,7 @@ export function Sidebar({
               <ul className="flex flex-col gap-[2px]">
                 {group.items.map((item) => {
                   const active = isActive(pathname, item.href);
-                  const badge =
-                    item.href === "/taxonomy"
-                      ? taxonomyQueueCount
-                      : item.badge;
+                  const badge = item.href === "/taxonomy" ? taxonomyQueueCount : item.badge;
                   return (
                     <li key={item.href}>
                       <Link
@@ -144,9 +134,7 @@ export function Sidebar({
                           </span>
                         ) : null}
                         {typeof badge === "number" && badge > 0 ? (
-                          <span className="font-mono text-2xs text-text-muted">
-                            ⌄{badge}
-                          </span>
+                          <span className="font-mono text-2xs text-text-muted">⌄{badge}</span>
                         ) : null}
                       </Link>
                     </li>

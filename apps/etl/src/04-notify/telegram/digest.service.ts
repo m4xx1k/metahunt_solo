@@ -49,10 +49,13 @@ export class DigestService {
     const sub = await this.subscriptions.getActiveById(subscriptionId);
     if (!sub) return 0;
 
-    const isFirstDigest = !(await this.sentNotifications.hasSent(sub.id));
+    const pendingDelivery = await this.sentNotifications.pendingDelivery(sub.id);
+    const isFirstDigest =
+      pendingDelivery?.isFirstDigest ??
+      !(await this.sentNotifications.hasCompletedDelivery(sub.id));
     const { items, total, label } = await this.matcher.matchNew(sub);
     const profileType = sub.candidateId ? "cv" : "feed";
-    this.analytics.digestEvaluated({
+    void this.analytics.digestEvaluated({
       subscriptionId: sub.id,
       matches: total,
       isFirstDigest,
@@ -61,47 +64,61 @@ export class DigestService {
     });
     if (total === 0) return 0;
 
-    const pages = paginateDigest(items, {
-      totalNew: total,
+    const remainingVacancies = pendingDelivery
+      ? Math.max(pendingDelivery.vacancies - pendingDelivery.sentVacancies, 0)
+      : items.length;
+    const deliveryItems = items.slice(0, remainingVacancies);
+    if (deliveryItems.length === 0) return 0;
+
+    const pages = paginateDigest(deliveryItems, {
+      totalNew: pendingDelivery?.vacancies ?? total,
       applyBaseUrl: this.applyBaseUrl,
       label,
       // `?s=<id>` lets the `/go/:id` redirect attribute clicks to this sub.
       subscriptionId: sub.id,
     });
-    const deliveryId = digestDeliveryId(
-      sub.id,
-      pages.flatMap((page) => page.vacancyIds),
-    );
+    const delivery =
+      pendingDelivery ??
+      (await this.sentNotifications.createDelivery({
+        id: digestDeliveryId(
+          sub.id,
+          pages.flatMap((page) => page.vacancyIds),
+        ),
+        subscriptionId: sub.id,
+        vacancies: deliveryItems.length,
+        matchedVacancies: total,
+        pages: pages.length,
+        isFirstDigest,
+        profileType,
+      }));
+    let sentThisAttempt = 0;
     for (const [pageIndex, page] of pages.entries()) {
       try {
         await this.telegram.sendMessage(sub.chatId, page.html);
         // Record after the send so a retried page never resends earlier ones.
-        await this.sentNotifications.record(sub.id, page.vacancyIds);
+        const completesDelivery =
+          delivery.sentVacancies + sentThisAttempt + page.vacancyIds.length >= delivery.vacancies;
+        await this.sentNotifications.record(sub.id, page.vacancyIds, delivery, completesDelivery);
+        sentThisAttempt += page.vacancyIds.length;
       } catch (error) {
-        this.analytics.digestDeliveryFailed({
+        void this.analytics.digestDeliveryFailed({
           subscriptionId: sub.id,
-          vacancies: total,
-          pages: pages.length,
-          failedPage: pageIndex + 1,
-          deliveryId,
+          vacancies: delivery.vacancies,
+          pages: delivery.pages,
+          failedPage: delivery.sentPages + pageIndex + 1,
+          deliveryId: delivery.id,
           failureKind: isChatUnreachable(error) ? "chat_unreachable" : "transient",
-          isFirstDigest,
-          profileType,
+          isFirstDigest: delivery.isFirstDigest,
+          profileType: delivery.profileType,
         });
         throw error;
       }
     }
 
-    this.analytics.digestSent({
-      subscriptionId: sub.id,
-      vacancies: total,
-      pages: pages.length,
-      deliveryId,
-      isFirstDigest,
-      profileType,
-    });
-    this.logger.log(`digest → sub ${sub.id}: ${total} new in ${pages.length} page(s)`);
-    return total;
+    this.logger.log(
+      `digest → sub ${sub.id}: ${deliveryItems.length} new in ${pages.length} page(s)`,
+    );
+    return deliveryItems.length;
   }
 
   /**

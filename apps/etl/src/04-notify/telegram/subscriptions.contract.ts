@@ -54,10 +54,22 @@ export interface CreateSubscriptionRequest {
   params: SubscriptionParams;
   /** Set for a CV (reverse-ATS) sub. */
   candidateId?: string;
+  /** Pseudonymous browser journey; correlation only, never authorization. */
+  journeyId?: string;
 }
 
 export interface CreateSubscriptionResponse {
   id: string;
   /** `t.me/<bot>?start=<id>` — the user taps this to link Telegram and activate. */
   deepLink: string;
+}
+
+export function createSubscriptionResponse(
+  botUsername: string,
+  subscriptionId: string,
+): CreateSubscriptionResponse {
+  return {
+    id: subscriptionId,
+    deepLink: `https://t.me/${botUsername}?start=${subscriptionId}`,
+  };
 }

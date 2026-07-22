@@ -50,11 +50,7 @@ export function buildQs(params?: object): string {
       for (const item of v) sp.append(k, String(item));
       continue;
     }
-    if (
-      typeof v !== "string" &&
-      typeof v !== "number" &&
-      typeof v !== "boolean"
-    ) {
+    if (typeof v !== "string" && typeof v !== "number" && typeof v !== "boolean") {
       continue;
     }
     sp.set(k, String(v));
@@ -80,10 +76,16 @@ async function apiWrite<T>(
   method: "POST" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
+  init: RequestInit = {},
 ): Promise<T> {
   const res = await fetch(`${apiBase()}${path}`, {
+    ...init,
     method,
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...(init.headers ?? {}),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
@@ -93,11 +95,10 @@ async function apiWrite<T>(
   return (await res.json()) as T;
 }
 
-export const apiPost = <T>(path: string, body: unknown): Promise<T> =>
-  apiWrite<T>("POST", path, body);
+export const apiPost = <T>(path: string, body: unknown, init?: RequestInit): Promise<T> =>
+  apiWrite<T>("POST", path, body, init);
 
 export const apiPatch = <T>(path: string, body: unknown): Promise<T> =>
   apiWrite<T>("PATCH", path, body);
 
-export const apiDelete = <T>(path: string): Promise<T> =>
-  apiWrite<T>("DELETE", path);
+export const apiDelete = <T>(path: string): Promise<T> => apiWrite<T>("DELETE", path);

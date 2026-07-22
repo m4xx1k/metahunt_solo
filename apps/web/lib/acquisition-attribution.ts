@@ -1,4 +1,5 @@
 import type { AcquisitionAttribution } from "@/lib/hooks/use-analytics";
+import { firstSearchParam } from "@/lib/search-params";
 
 const ATTRIBUTION_KEYS = [
   "utm_source",
@@ -17,8 +18,7 @@ export function readAcquisitionAttribution(
 ): AcquisitionAttribution {
   const attribution: AcquisitionAttribution = {};
   for (const key of ATTRIBUTION_KEYS) {
-    const raw = searchParams[key];
-    const value = Array.isArray(raw) ? raw[0] : raw;
+    const value = firstSearchParam(searchParams[key]);
     if (value && SAFE_VALUE.test(value)) attribution[key] = value;
   }
   return attribution;

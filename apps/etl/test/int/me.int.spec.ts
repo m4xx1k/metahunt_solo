@@ -22,9 +22,11 @@ const {
 
 let db: DrizzleDB;
 let pool: Pool;
+const subscriptionReactivated = jest.fn();
+const unsubscribed = jest.fn();
 
 function makeService(): MeService {
-  return new MeService(db, {} as never);
+  return new MeService(db, {} as never, { subscriptionReactivated, unsubscribed } as never);
 }
 
 async function seedUser(): Promise<string> {
@@ -114,10 +116,51 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
+  subscriptionReactivated.mockReset();
+  unsubscribed.mockReset();
   await db.execute(
     sql`TRUNCATE TABLE sent_notifications, subscriptions, user_cvs, auth_identities, users RESTART IDENTITY CASCADE`,
   );
   await truncateAll(db);
+});
+
+describe("MeService.setSubscriptionActive (integration)", () => {
+  it("keeps lifecycle timestamps and events aligned across pause and resume", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const subscriptionId = await seedSubscription({ userId });
+
+    await expect(me.setSubscriptionActive(userId, subscriptionId, false)).resolves.toBe(true);
+    const [paused] = await db
+      .select({ isActive: subscriptions.isActive, deactivatedAt: subscriptions.deactivatedAt })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    expect(paused.isActive).toBe(false);
+    expect(paused.deactivatedAt).toBeInstanceOf(Date);
+    expect(unsubscribed).toHaveBeenCalledWith({
+      method: "account",
+      subscriptionId,
+    });
+
+    await expect(me.setSubscriptionActive(userId, subscriptionId, true)).resolves.toBe(true);
+    const [resumed] = await db
+      .select({ isActive: subscriptions.isActive, deactivatedAt: subscriptions.deactivatedAt })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    expect(resumed.isActive).toBe(true);
+    expect(resumed.deactivatedAt).toBeNull();
+    expect(subscriptionReactivated).toHaveBeenCalledWith(subscriptionId);
+  });
+
+  it("treats an already-applied state as success without duplicating events", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const subscriptionId = await seedSubscription({ userId });
+
+    await expect(me.setSubscriptionActive(userId, subscriptionId, true)).resolves.toBe(true);
+    expect(subscriptionReactivated).not.toHaveBeenCalled();
+    expect(unsubscribed).not.toHaveBeenCalled();
+  });
 });
 
 describe("MeService.deleteAccount (integration)", () => {

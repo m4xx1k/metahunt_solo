@@ -18,13 +18,11 @@ import {
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
-import { DEFAULT_PAGE_SIZE } from "../../platform/shared/query-parsing";
+import { DEFAULT_PAGE_SIZE, isUuid } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import { FacetsService } from "./facets.service";
 import { FeedService, type FeedSearchParams } from "./feed.service";
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Controller("feed")
 @ApiTags("feed")
@@ -87,7 +85,7 @@ export class FeedController {
   @ApiOkResponse({ description: "Duplicate group members and merge reasons." })
   @ApiNotFoundResponse({ description: "Group was not found.", type: ApiErrorResponseDto })
   async group(@Param("id") id: string) {
-    if (!UUID_REGEX.test(id)) throw new NotFoundException();
+    if (!isUuid(id)) throw new NotFoundException();
     const group = await this.dedup.getGroupForFeed(id);
     if (!group) throw new NotFoundException();
     return group;

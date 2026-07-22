@@ -11,10 +11,10 @@ The candidate-facing loop now exists end to end: browse or CV match → Telegram
 subscription → new-vacancy digest → attributed original-job click. The current
 stage validates that loop with real people before more ranking or source work.
 
-**Now:** review and deploy the focused Backend-radar branch, run five controlled
-Telegram activation chains, verify one PostHog funnel, then recruit 20
-Middle/Senior Backend or Full-stack users. Paid traffic remains gated on that
-cohort's activation and alert-quality results.
+**Now:** ship the first-party activation ledger and operator funnel dashboard,
+run one post-deploy correlation proof, then complete five controlled Telegram
+activation chains and recruit 20 Middle/Senior Backend or Full-stack users.
+Paid traffic remains gated on that cohort's activation and alert-quality results.
 
 Tracker: [`real-user-funnel`](./journal/migrations/real-user-funnel.md). Launch
 plan: [`METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../METAHUNT_AUDIT_AND_NEXT_STEPS.md).

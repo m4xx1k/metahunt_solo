@@ -12,11 +12,13 @@ import { CandidateLoaderService } from "../../03-discovery/cv/candidate-loader.s
 import type { JwtUser } from "../../platform/auth/auth.types";
 import { CurrentUser } from "../../platform/auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { parseUuid } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
-import type {
-  CreateSubscriptionRequest,
-  CreateSubscriptionResponse,
+import {
+  createSubscriptionResponse,
+  type CreateSubscriptionRequest,
+  type CreateSubscriptionResponse,
 } from "./subscriptions.contract";
 import { SubscriptionsService } from "./subscriptions.service";
 import { TelegramService } from "./telegram.service";
@@ -59,8 +61,9 @@ export class SubscriptionsController {
       );
     }
 
-    const id = await this.subscriptions.create(params);
-    return this.deepLink(username, id);
+    const journeyId = parseUuid("journeyId", body?.journeyId);
+    const id = await this.subscriptions.create(params, { journeyId });
+    return createSubscriptionResponse(username, id);
   }
 
   @Post("cv")
@@ -95,11 +98,12 @@ export class SubscriptionsController {
       throw new BadRequestException("Telegram bot is not available — check TELEGRAM_BOT_TOKEN");
     }
     await this.candidates.assertAccessibleCandidate(user.userId, candidateId);
-    const id = await this.subscriptions.create(params, candidateId, user.userId);
-    return this.deepLink(username, id);
-  }
-
-  private deepLink(username: string, id: string): CreateSubscriptionResponse {
-    return { id, deepLink: `https://t.me/${username}?start=${id}` };
+    const journeyId = parseUuid("journeyId", body?.journeyId);
+    const id = await this.subscriptions.create(params, {
+      candidateId,
+      userId: user.userId,
+      journeyId,
+    });
+    return createSubscriptionResponse(username, id);
   }
 }

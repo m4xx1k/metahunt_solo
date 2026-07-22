@@ -9,6 +9,10 @@ import { BadRequestException } from "@nestjs/common";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isUuid(raw: string): boolean {
+  return UUID_RE.test(raw);
+}
+
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
@@ -119,7 +123,7 @@ export function parseId(
 export function parseUuid(name: string, raw: unknown): string | undefined {
   const s = asString(name, raw);
   if (s === undefined) return undefined;
-  if (!UUID_RE.test(s)) {
+  if (!isUuid(s)) {
     throw new BadRequestException(`${name} must be a UUID, got "${s}"`);
   }
   return s;

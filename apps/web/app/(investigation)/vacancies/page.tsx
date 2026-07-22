@@ -1,5 +1,11 @@
 import { Tag } from "@/ui";
 import { vacanciesApi } from "@/lib/api/vacancies";
+import {
+  booleanSearchParam,
+  firstSearchParam,
+  flattenSearchParams,
+  nonNegativeIntegerSearchParam,
+} from "@/lib/search-params";
 import { InvestigationHeader } from "../_components/InvestigationHeader";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { FilterToggles } from "../_components/FilterToggles";
@@ -9,36 +15,17 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 10;
 
-function asString(v: string | string[] | undefined): string | undefined {
-  if (Array.isArray(v)) return v[0];
-  return v;
-}
-
-function asNonNegativeInt(
-  v: string | string[] | undefined,
-  fallback: number,
-): number {
-  const s = asString(v);
-  if (!s) return fallback;
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
-}
-
-function asBool(v: string | string[] | undefined): boolean {
-  return asString(v) === "true";
-}
-
 export default async function VacanciesPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const offset = asNonNegativeInt(sp.offset, 0);
+  const offset = nonNegativeIntegerSearchParam(sp.offset);
   const page = Math.floor(offset / PAGE_SIZE) + 1;
-  const q = asString(sp.q);
-  const includeRoleless = asBool(sp.includeRoleless);
-  const includeAllSkills = asBool(sp.includeAllSkills);
+  const q = firstSearchParam(sp.q);
+  const includeRoleless = booleanSearchParam(sp.includeRoleless);
+  const includeAllSkills = booleanSearchParam(sp.includeAllSkills);
 
   const result = await vacanciesApi.list({
     page,
@@ -48,10 +35,7 @@ export default async function VacanciesPage({
     includeAllSkills,
   });
 
-  const flatSearchParams: Record<string, string | undefined> = {};
-  for (const [k, v] of Object.entries(sp)) {
-    flatSearchParams[k] = asString(v);
-  }
+  const flatSearchParams = flattenSearchParams(sp);
 
   return (
     <main className="flex min-h-screen flex-col bg-bg">
