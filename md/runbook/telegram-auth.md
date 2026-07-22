@@ -51,9 +51,15 @@ value when a user wants to save or subscribe.
   and recovery, loader backfill/cleanup, manual digest delivery, dedup review,
   extraction-cost reporting, raw monitoring, and taxonomy reads/writes. Guarded
   by `@AdminOnly()` (= `JwtAuthGuard` + `RolesGuard` + `@Roles('admin')`).
-- The operator web UI needs to forward the same Bearer token for its server-side
-  reads. A cookie-backed session remains the intended delivery mechanism; API
-  authorization is not relaxed while that web work is pending.
+- The operator web UI forwards the same Bearer token for its server-side reads
+  via a cookie-backed session: on login, `apps/web/features/auth/use-session.ts`
+  additionally POSTs the token to `POST /api/session` (a Next Route Handler),
+  which sets it as an httpOnly cookie; `apps/web/lib/api/client.ts` reads that
+  cookie via `next/headers` on the server and attaches it as the Bearer header.
+  Client-side calls still use the localStorage token; the two are independent
+  copies kept in sync on login/logout. `(investigation)/layout.tsx` redirects
+  home when the cookie is absent, and `(investigation)/error.tsx` catches a
+  present-but-invalid/non-admin session instead of an unhandled SSR error.
 - The JWT guard reloads account existence and current roles from Postgres on
   every protected request. Deleting an account or removing a persisted admin
   role makes an already-issued token unusable immediately; signature validity
