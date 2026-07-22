@@ -204,7 +204,9 @@ Server: `subscription_created`, `telegram_linked`, `digest_sent`,
 `cv_upload_started`, `cv_upload_completed`, `cv_upload_failed`,
 `telegram_login_started`, `telegram_login_cancelled`, and
 `telegram_login_failed`. The server also adds `activation_value_shown` after a
-fresh Telegram link successfully renders its immediate sample or zero state.
+fresh Telegram link successfully renders its immediate sample or zero state,
+plus `digest_evaluated` and `digest_delivery_failed` around scheduled delivery.
+`digest_sent` now carries `is_first_digest` and `profile_type` as well.
 
 Historical names were not renamed. New events fill missing intent and failure
 steps while preserving existing dashboards. Campaign properties are bounded to
@@ -233,6 +235,7 @@ mistaken for a delivered digest:
 
 ```text
 telegram_linked
+→ digest_evaluated
 → digest_sent
 → digest_link_clicked
 ```
@@ -241,10 +244,11 @@ Required breakdowns: `utm_source`, `utm_medium`, `utm_campaign`, `creative_id`,
 `landing_variant`, and `profile_type`. Use opaque subscription identity after
 creation. Do not add direct user identifiers.
 
-Still needed on the server: a digest-evaluated event for scheduled zero-match
-visibility, delivery failure, and `is_first_digest`. Those should be added only
-with a daily operational query/dashboard so they drive decisions rather than
-event inventory.
+The privacy-safe server contract now exposes scheduled zero-match outcomes,
+bounded delivery failures, and first-digest status. What remains is production
+verification and creation of the saved PostHog views in the
+[`first-user-funnel` runbook](md/runbook/first-user-funnel.md), including a
+named owner and dashboard URL.
 
 ## 7. Prioritized work
 
@@ -252,7 +256,7 @@ event inventory.
 |---|---|---|---|---|---|
 | G0 Review and deploy branch | P0 · S | Production demo is broken and launch surfaces are absent. | Review all branch commits; deploy web + API and migration `0028`; sample-only endpoint returns 200 for seeded sample and 404 for uploaded/non-sample candidate. | Five sample sessions render matches without auth. | Revert feature code if needed; the forward-compatible cascade constraint may remain. |
 | G1 Controlled activation E2E | P0 · S | Repository tests do not prove cross-domain Telegram delivery. | Run five owner-approved test subscriptions; record event timestamps and results through first click; repeat `/start`; test `/stop`. | 5/5 linked, 5/5 value shown, no duplicates or PII. | Disable test subscriptions with `/stop`. |
-| G2 Funnel dashboard | P0 · S | Traffic cannot be diagnosed without one shared view. | Save the event funnel above plus zero-match/send-failure daily queries; document timezone and filters. | Daily activation, handoff loss, time to first digest, click rate. | Remove dashboard only; event contract stays stable. |
+| G2 Funnel dashboard | P0 · S | The event contract exists, but traffic cannot be diagnosed without production access and one shared view. | Create the saved views specified in the first-user-funnel runbook; record their URL, owner, timezone, and controlled-test exclusion. | Daily activation, handoff loss, time to first digest, click rate, zero-match and delivery-failure rates. | Remove dashboard only; event contract stays stable. |
 | G3 Verify immediate post-link value | P0 · S | Branch implementation must be proven across the real bot/API boundary. | A fresh `/start` shows up to three current matches or an explicit zero-match state; a preview failure never reverses the successful activation. | `telegram_linked → activation_value_shown ≥ 80%`. | Revert the additive Telegram commit; scheduled delivery remains unchanged. |
 | G4 Approve privacy/auth launch policy | P0 · S | Technical deletion, stale-token invalidation, login throttling, public disclosure, and a retention runbook exist on the branch; provider backups, consent, and legal ownership are policy decisions. | Owner approves or edits wording, analytics consent posture, provider retention expectations, and support owner. | Real delete E2E passes; no PII leak; support owner can follow the runbook. | Disable CV campaign; role radar remains available. |
 | G5 Concierge cohort | P0 · 7 days | Offline ranking confidence is not user value. | Recruit 20 ICP users, interview at least five, rate their first three alerts. | Thresholds below. | Stop recruitment; no paid spend. |
@@ -369,13 +373,15 @@ identity, analytics consent requirements, and production retention expectations.
 - Funnel tracker: [`md/journal/migrations/real-user-funnel.md`](md/journal/migrations/real-user-funnel.md)
 - CV privacy contract: [`md/runbook/cv-privacy.md`](md/runbook/cv-privacy.md)
 - Account deletion runbook: [`md/runbook/account-deletion.md`](md/runbook/account-deletion.md)
+- First-user measurement runbook: [`md/runbook/first-user-funnel.md`](md/runbook/first-user-funnel.md)
 - Client analytics seam: [`apps/web/lib/hooks/use-analytics.ts`](apps/web/lib/hooks/use-analytics.ts)
 - Server analytics seam: [`apps/etl/src/platform/analytics/analytics.service.ts`](apps/etl/src/platform/analytics/analytics.service.ts)
 - Sample security tests: [`apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts`](apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts)
 - Campaign landing: [`apps/web/app/radar/backend/page.tsx`](apps/web/app/radar/backend/page.tsx)
 - Public disclosure: [`apps/web/app/privacy/page.tsx`](apps/web/app/privacy/page.tsx)
 - Implementation commits: `13784db`, `1752b1a`, the additive Telegram
-  activation-value commit, and the account-deletion commit on this branch.
+  activation-value and account-deletion commits, plus the privacy-safe digest
+  observability commit on this branch.
 
 Verification completed on the branch: ETL focused security/controller tests,
 the full ETL and web Jest suites, ETL lint, web lint, ETL production build, web

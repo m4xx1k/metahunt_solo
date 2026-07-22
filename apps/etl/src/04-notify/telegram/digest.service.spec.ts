@@ -63,17 +63,23 @@ function activeSub(overrides: Partial<ActiveSubscription> = {}): ActiveSubscript
 describe("DigestService", () => {
   const matchNew = jest.fn();
   const getActiveById = jest.fn();
+  const hasSent = jest.fn();
   const record = jest.fn();
   const sendMessage = jest.fn();
+  const digestEvaluated = jest.fn();
   const digestSent = jest.fn();
+  const digestDeliveryFailed = jest.fn();
   let service: DigestService;
 
   beforeEach(async () => {
     matchNew.mockReset().mockResolvedValue(digestMatch([]));
     getActiveById.mockReset();
+    hasSent.mockReset().mockResolvedValue(false);
     record.mockReset().mockResolvedValue(undefined);
     sendMessage.mockReset().mockResolvedValue(undefined);
+    digestEvaluated.mockReset();
     digestSent.mockReset();
+    digestDeliveryFailed.mockReset();
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -81,9 +87,12 @@ describe("DigestService", () => {
         { provide: ConfigService, useValue: { get: () => BASE } },
         { provide: SubscriptionMatcherService, useValue: { matchNew } },
         { provide: SubscriptionsService, useValue: { getActiveById } },
-        { provide: SentNotificationsService, useValue: { record } },
+        { provide: SentNotificationsService, useValue: { hasSent, record } },
         { provide: TelegramService, useValue: { sendMessage } },
-        { provide: AnalyticsService, useValue: { digestSent } },
+        {
+          provide: AnalyticsService,
+          useValue: { digestEvaluated, digestSent, digestDeliveryFailed },
+        },
       ],
     }).compile();
     service = moduleRef.get(DigestService);
@@ -101,9 +110,18 @@ describe("DigestService", () => {
       getActiveById.mockResolvedValue(activeSub());
       matchNew.mockResolvedValue(digestMatch([], 0));
 
-      await expect(service.deliver("sub-1")).resolves.toBe(0);
+      await expect(service.deliver("sub-1", "evaluation-1")).resolves.toBe(0);
       expect(sendMessage).not.toHaveBeenCalled();
       expect(record).not.toHaveBeenCalled();
+      expect(digestEvaluated).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscriptionId: "sub-1",
+          matches: 0,
+          isFirstDigest: true,
+          profileType: "feed",
+          evaluationId: "digest_evaluated:evaluation-1",
+        }),
+      );
     });
 
     it("sends the page, then records its vacancies", async () => {
@@ -121,6 +139,8 @@ describe("DigestService", () => {
           vacancies: 1,
           pages: 1,
           deliveryId: "a096952d79fe2672783125e6a7b7ae2e7bfb8d029c939fd268f840a1a2aa4f94",
+          isFirstDigest: true,
+          profileType: "feed",
         }),
       );
       // Send must precede the record so a failed send is never marked sent.
@@ -137,6 +157,43 @@ describe("DigestService", () => {
       await expect(service.deliver("sub-1")).resolves.toBe(11);
       expect(sendMessage).toHaveBeenCalledTimes(2);
       expect(record).toHaveBeenCalledTimes(2);
+    });
+
+    it("marks a later CV digest as non-first", async () => {
+      getActiveById.mockResolvedValue(activeSub({ candidateId: "candidate-1" }));
+      hasSent.mockResolvedValue(true);
+      matchNew.mockResolvedValue(digestMatch([createVacancy()], 1));
+
+      await expect(service.deliver("sub-1")).resolves.toBe(1);
+
+      expect(digestEvaluated).toHaveBeenCalledWith(
+        expect.objectContaining({ isFirstDigest: false, profileType: "cv" }),
+      );
+      expect(digestSent).toHaveBeenCalledWith(
+        expect.objectContaining({ isFirstDigest: false, profileType: "cv" }),
+      );
+    });
+
+    it("records a privacy-safe permanent delivery failure and rethrows it", async () => {
+      getActiveById.mockResolvedValue(activeSub());
+      matchNew.mockResolvedValue(digestMatch([createVacancy()], 1));
+      const error = { error_code: 403 };
+      sendMessage.mockRejectedValue(error);
+
+      await expect(service.deliver("sub-1")).rejects.toBe(error);
+
+      expect(record).not.toHaveBeenCalled();
+      expect(digestSent).not.toHaveBeenCalled();
+      expect(digestDeliveryFailed).toHaveBeenCalledWith({
+        subscriptionId: "sub-1",
+        vacancies: 1,
+        pages: 1,
+        failedPage: 1,
+        deliveryId: "a096952d79fe2672783125e6a7b7ae2e7bfb8d029c939fd268f840a1a2aa4f94",
+        failureKind: "chat_unreachable",
+        isFirstDigest: true,
+        profileType: "feed",
+      });
     });
   });
 });

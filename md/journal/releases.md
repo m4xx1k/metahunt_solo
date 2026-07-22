@@ -8,7 +8,8 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ## 2026-07-22
 
-- **Self-service account deletion** (`feat/real-user-funnel`). Authenticated users can permanently remove their Telegram identity, owned and same-chat alerts, notification ledger, CV links, and final-owner derived candidate data from `/me`. Migration `0028` makes subscription and notification cascades explicit; protected requests reload account existence/current roles, and Telegram login is limited to ten attempts per IP per minute. → [runbook](../runbook/account-deletion.md)
+- **Self-service account deletion** (`feat/real-user-funnel`). Authenticated users can permanently remove their Telegram identity, owned and same-chat alerts, notification ledger, CV links, and final-owner derived candidate data from `/me`. Migration `0028` makes subscription and notification cascades explicit; protected requests reload account existence/current roles, Telegram login is limited to ten attempts per IP per minute, and new login analytics no longer identifies the account UUID. Historical pseudonymous provider events remain a separate owner-handled deletion request. → [runbook](../runbook/account-deletion.md)
+- **Scheduled-delivery observability** (`feat/real-user-funnel`). `digest_evaluated` distinguishes first/returning and matches/empty runs; `digest_sent` carries the same first-digest/profile dimensions; `digest_delivery_failed` records a bounded permanent/transient class without provider error text. Evaluation and failure IDs deduplicate Temporal retries. → [funnel runbook](../runbook/first-user-funnel.md)
 
 ---
 

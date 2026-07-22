@@ -28,6 +28,8 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
 - [x] T6 — Close the technical deletion boundary — *done when:* users can permanently
   delete their account, associated alerts and history disappear transactionally, and the old
   JWT no longer authorizes requests.
+- [x] T7 — Make scheduled delivery diagnosable — *done when:* a zero-match evaluation,
+  first digest, successful send, and bounded delivery failure are distinguishable without PII.
 
 ## Decisions
 

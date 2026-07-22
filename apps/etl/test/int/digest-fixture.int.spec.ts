@@ -149,7 +149,11 @@ function makeDigest(
     subscriptionsService,
     sent,
     telegram as never,
-    { digestSent: jest.fn() } as never,
+    {
+      digestEvaluated: jest.fn(),
+      digestSent: jest.fn(),
+      digestDeliveryFailed: jest.fn(),
+    } as never,
   );
 }
 

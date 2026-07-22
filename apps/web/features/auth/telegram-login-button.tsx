@@ -83,7 +83,7 @@ export function TelegramLoginButton({
         try {
           const res = await authApi.loginTelegram(tgUser);
           login(res);
-          analytics.loggedIn(res.user.id);
+          analytics.loggedIn();
           const name = res.user.username ? `@${res.user.username}` : (res.user.firstName ?? "you");
           toast.success(`logged in as ${name}`);
           onDone?.();

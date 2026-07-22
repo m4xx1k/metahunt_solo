@@ -36,6 +36,15 @@ export class SentNotificationsService {
     return rows.map((r) => r.vacancyId);
   }
 
+  async hasSent(subscriptionId: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ vacancyId: sentNotifications.vacancyId })
+      .from(sentNotifications)
+      .where(eq(sentNotifications.subscriptionId, subscriptionId))
+      .limit(1);
+    return rows.length > 0;
+  }
+
   /** Record a sent page. Idempotent — the PK collision is ignored on retry. */
   async record(subscriptionId: string, vacancyIds: string[]): Promise<void> {
     if (vacancyIds.length === 0) return;

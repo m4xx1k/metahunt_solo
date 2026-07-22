@@ -42,7 +42,7 @@ export class MeController {
   constructor(private readonly me: MeService) {}
 
   @Delete()
-  @ApiOperation({ summary: "Delete the current account and all owned personal data" })
+  @ApiOperation({ summary: "Delete the current account and its owned application data" })
   @ApiOkResponse({ type: OkResponseDto })
   @ApiNotFoundResponse({ description: "Account was not found.", type: ApiErrorResponseDto })
   async deleteAccount(@CurrentUser() user: JwtUser): Promise<{ ok: true }> {

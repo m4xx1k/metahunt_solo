@@ -103,6 +103,11 @@ export default function PrivacyPage() {
               Candidate IDs in <code>?cv=</code> links are redacted from PostHog&apos;s captured URL
               and referrer properties.
             </p>
+            <p>
+              Account deletion removes MetaHunt&apos;s application records but does not itself erase
+              historical pseudonymous events already held by analytics providers. Contact the
+              project owner below for a provider-level analytics deletion request.
+            </p>
           </PrivacySection>
 
           <PrivacySection title="Service providers and outbound links">

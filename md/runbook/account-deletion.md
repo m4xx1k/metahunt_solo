@@ -37,9 +37,10 @@ attempts per IP per minute on top of the global API limit.
 - Unlinked pending Telegram subscriptions are purged after 48 hours.
 - Active account state, derived CV data, subscriptions, and notification
   history remain until the user deletes the item or account.
-- PostHog receives opaque subscription IDs, not account, Telegram, email, CV,
-  or filter values. Account deletion therefore has no PostHog person identity
-  to erase from this application boundary.
+- New logins emit an anonymous `logged_in` event and do not identify the account
+  UUID. PostHog still receives opaque subscription IDs and may retain historical
+  pseudonymous events after the application rows are deleted. Provider-level
+  erasure needs a verified PostHog request and is not performed by `DELETE /me`.
 
 Provider logs, backups, legal-controller wording, and analytics consent remain
 owner/legal decisions; do not promise deletion from provider infrastructure

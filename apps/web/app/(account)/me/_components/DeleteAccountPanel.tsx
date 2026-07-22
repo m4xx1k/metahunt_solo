@@ -16,7 +16,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
     mutationFn: meApi.deleteAccount,
     onSuccess: async () => {
       await onDeleted();
-      toast.success("Account and personal data deleted");
+      toast.success("Account data deleted");
     },
     onError: () => toast.error("Couldn't delete account"),
   });
@@ -43,8 +43,9 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
       </h2>
       <div className="border border-danger/60 bg-bg-card p-5 shadow-brut-sm">
         <p className="max-w-2xl text-sm leading-relaxed text-text-secondary">
-          Permanently remove your Telegram identity, CV-derived profile and skills, subscriptions,
-          and notification history. This cannot be undone.
+          Permanently remove your MetaHunt account, Telegram identity, CV-derived profile and
+          skills, subscriptions, and notification history. Pseudonymous product analytics are
+          handled separately as described in the privacy notice. This cannot be undone.
         </p>
 
         {confirming ? (

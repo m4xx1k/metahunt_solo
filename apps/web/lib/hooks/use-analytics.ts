@@ -121,9 +121,11 @@ export function useAnalytics() {
         posthog?.capture(ANALYTICS_EVENTS.telegramLoginFailed, { stage });
       },
 
-      loggedIn(userId: string) {
-        posthog?.identify(userId, { login_method: "telegram" });
-        posthog?.capture(ANALYTICS_EVENTS.loggedIn, { method: "telegram" });
+      loggedIn() {
+        posthog?.capture(ANALYTICS_EVENTS.loggedIn, {
+          login_method: "telegram",
+          method: "telegram",
+        });
       },
 
       // Up/down vote on a vacancy card (demand signal, gated by the

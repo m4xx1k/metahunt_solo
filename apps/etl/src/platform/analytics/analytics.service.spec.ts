@@ -89,6 +89,8 @@ describe("AnalyticsService", () => {
       vacancies: 3,
       pages: 1,
       deliveryId: "delivery-hash",
+      isFirstDigest: true,
+      profileType: "feed",
     });
 
     expect(mockCapture).toHaveBeenCalledWith({
@@ -97,7 +99,62 @@ describe("AnalyticsService", () => {
       properties: {
         vacancies: 3,
         pages: 1,
+        is_first_digest: true,
+        profile_type: "feed",
         $insert_id: "delivery-hash",
+      },
+    });
+  });
+
+  it("records a zero-match evaluation as an observable first-value outcome", () => {
+    const service = makeService();
+
+    service.digestEvaluated({
+      subscriptionId: "subscription-1",
+      matches: 0,
+      isFirstDigest: true,
+      profileType: "feed",
+      evaluationId: "evaluation-1",
+    });
+
+    expect(mockCapture).toHaveBeenCalledWith({
+      distinctId: "subscription-1",
+      event: ANALYTICS_EVENTS.digestEvaluated,
+      properties: {
+        matches: 0,
+        result: "empty",
+        is_first_digest: true,
+        profile_type: "feed",
+        $insert_id: "evaluation-1",
+      },
+    });
+  });
+
+  it("classifies delivery failure without sending an error message or chat identity", () => {
+    const service = makeService();
+
+    service.digestDeliveryFailed({
+      subscriptionId: "subscription-1",
+      vacancies: 3,
+      pages: 2,
+      failedPage: 2,
+      deliveryId: "delivery-hash",
+      failureKind: "transient",
+      isFirstDigest: false,
+      profileType: "cv",
+    });
+
+    expect(mockCapture).toHaveBeenCalledWith({
+      distinctId: "subscription-1",
+      event: ANALYTICS_EVENTS.digestDeliveryFailed,
+      properties: {
+        vacancies: 3,
+        pages: 2,
+        failed_page: 2,
+        failure_kind: "transient",
+        is_first_digest: false,
+        profile_type: "cv",
+        $insert_id: "digest_delivery_failed:delivery-hash:2",
       },
     });
   });

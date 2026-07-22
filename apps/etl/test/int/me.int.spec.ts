@@ -139,16 +139,41 @@ describe("MeService.deleteAccount (integration)", () => {
 
     await expect(me.deleteAccount(userId)).resolves.toBe(true);
 
-    expect(await db.select().from(users)).toHaveLength(0);
-    expect(await db.select().from(authIdentities)).toHaveLength(0);
-    expect(await db.select().from(userCvs)).toHaveLength(0);
-    expect(await db.select().from(candidates)).toHaveLength(0);
-    expect((await db.select().from(subscriptions)).map((row) => row.id)).toEqual([
-      retainedSubscription,
-    ]);
-    expect((await db.select().from(sentNotifications)).map((row) => row.subscriptionId)).toEqual([
-      retainedSubscription,
-    ]);
+    expect(await db.select().from(users).where(eq(users.id, userId))).toHaveLength(0);
+    expect(
+      await db.select().from(authIdentities).where(eq(authIdentities.userId, userId)),
+    ).toHaveLength(0);
+    expect(await db.select().from(userCvs).where(eq(userCvs.userId, userId))).toHaveLength(0);
+    expect(await db.select().from(candidates).where(eq(candidates.id, candidateId))).toHaveLength(
+      0,
+    );
+    expect(
+      await db.select().from(subscriptions).where(eq(subscriptions.id, ownedSubscription)),
+    ).toHaveLength(0);
+    expect(
+      await db.select().from(subscriptions).where(eq(subscriptions.id, chatSubscription)),
+    ).toHaveLength(0);
+    expect(
+      await db.select().from(subscriptions).where(eq(subscriptions.id, retainedSubscription)),
+    ).toHaveLength(1);
+    expect(
+      await db
+        .select()
+        .from(sentNotifications)
+        .where(eq(sentNotifications.subscriptionId, ownedSubscription)),
+    ).toHaveLength(0);
+    expect(
+      await db
+        .select()
+        .from(sentNotifications)
+        .where(eq(sentNotifications.subscriptionId, chatSubscription)),
+    ).toHaveLength(0);
+    expect(
+      await db
+        .select()
+        .from(sentNotifications)
+        .where(eq(sentNotifications.subscriptionId, retainedSubscription)),
+    ).toHaveLength(1);
   });
 
   it("keeps a legacy shared candidate and the remaining owner's subscription", async () => {
