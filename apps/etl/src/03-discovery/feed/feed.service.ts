@@ -88,6 +88,7 @@ interface VacancyRow {
   id: string;
   externalId: string;
   title: string;
+  description: string | null;
   loadedAt: Date;
   updatedAt: Date;
 
@@ -215,6 +216,24 @@ export class FeedService {
     return out;
   }
 
+  /**
+   * Full detail for one vacancy, including the raw `description` body — backs
+   * the public vacancy detail page (`/vacancy/:id`). Unlike `search`/
+   * `hydrateByIds` (which hardcode `description: null` to keep list payloads
+   * lean), this is a single-row fetch so shipping the full text is cheap.
+   * Works for any member of a dedup group, not just the representative row —
+   * `duplicateCount`/`duplicateSourceCount` come from the joined group
+   * regardless of which member's id was requested.
+   */
+  async getById(id: string): Promise<VacancyDto | null> {
+    if (!isUuid(id)) return null;
+    const rows = (await this.selectVacancies(eq(vacancies.id, id))) as VacancyRow[];
+    const row = rows[0];
+    if (!row) return null;
+    const skills = await this.fetchSkills([id], false);
+    return { ...toDto(row, skills.get(id)), description: row.description };
+  }
+
   // Base list projection + joins; order/limit/offset are the caller's to add.
   private selectVacancies(where: SQL | undefined) {
     return this.db
@@ -222,6 +241,7 @@ export class FeedService {
         id: vacancies.id,
         externalId: vacancies.externalId,
         title: vacancies.title,
+        description: vacancies.description,
         loadedAt: vacancies.loadedAt,
         updatedAt: vacancies.updatedAt,
 
