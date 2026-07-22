@@ -152,7 +152,7 @@ export class TelegramCommandsHandler {
         }),
         { parse_mode: "HTML", ...NO_LINK_PREVIEW },
       );
-      this.analytics.activationValueShown(subscriptionId, total, shown.length);
+      void this.analytics.activationValueShown(subscriptionId, total, shown.length);
     } catch (error) {
       this.logger.warn(
         `Activation preview failed for subscription ${subscriptionId}: ${

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { Inject, Injectable, Logger } from "@nestjs/common";
 
 import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
@@ -8,11 +10,24 @@ import type { DrizzleDB } from "@metahunt/database";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { asString, asStringArray } from "../../platform/shared/coerce";
+import { isUuid } from "../../platform/shared/query-parsing";
 
 import { SUBSCRIPTION_PARAM_KEYS, type SubscriptionParams } from "./subscriptions.contract";
+import type {
+  ActiveSubscription,
+  CreateSubscriptionOptions,
+  LinkResult,
+  SubscriptionMatchTarget,
+} from "./subscriptions.types";
 import { copy } from "./telegram-copy";
 
-const { subscriptions, nodes, authIdentities, userCvs } = schema;
+export type {
+  ActiveSubscription,
+  LinkResult,
+  SubscriptionMatchTarget,
+} from "./subscriptions.types";
+
+const { analyticsJourneys, subscriptions, nodes, authIdentities, userCvs } = schema;
 const TELEGRAM_PROVIDER = "telegram";
 
 const MAX_SUMMARY_ROLES = 2;
@@ -36,25 +51,6 @@ function asEnumList(arrayVal: unknown, scalarVal: unknown): string[] {
   return scalar ? [scalar] : [];
 }
 
-// Postgres `uuid` columns reject malformed input at the driver level, so we
-// screen the deep-link token before it reaches a query.
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export type LinkResult = "linked" | "already_active" | "duplicate" | "not_found";
-
-// What the digest needs to match a subscription, independent of delivery — so
-// matching can run for preview on an unlinked row. createdAt is the new-since floor.
-export interface SubscriptionMatchTarget {
-  id: string;
-  params: SubscriptionParams;
-  candidateId: string | null;
-  createdAt: Date;
-}
-
-export interface ActiveSubscription extends SubscriptionMatchTarget {
-  chatId: string;
-}
-
 /**
  * Thin persistence layer for the Telegram bot — link/unlink only. All vacancy
  * matching stays in the catalog services; the bot is transport, not business
@@ -74,8 +70,7 @@ export class SubscriptionsService {
   // keys. Returns the id, which doubles as the deep-link token.
   async create(
     rawParams: SubscriptionParams,
-    candidateId?: string,
-    userId?: string,
+    options: CreateSubscriptionOptions = {},
   ): Promise<string> {
     const params: SubscriptionParams = {};
     for (const key of SUBSCRIPTION_PARAM_KEYS) {
@@ -95,22 +90,38 @@ export class SubscriptionsService {
     setAxis(params, "skillIds", skillIds);
     setAxis(params, "domainIds", domainIds);
 
-    if (candidateId !== undefined && !UUID_REGEX.test(candidateId)) {
-      throw new Error(`invalid candidateId: ${candidateId}`);
+    if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
+      throw new Error(`invalid candidateId: ${options.candidateId}`);
     }
+    const journeyId = options.journeyId ?? randomUUID();
 
-    const [created] = await this.db
-      .insert(subscriptions)
-      .values({ params, candidateId: candidateId ?? null, userId: userId ?? null })
-      .returning({ id: subscriptions.id });
+    const created = await this.db.transaction(async (tx) => {
+      await tx
+        .insert(analyticsJourneys)
+        .values({
+          id: journeyId,
+          origin: options.journeyId ? "browser" : "server",
+        })
+        .onConflictDoUpdate({
+          target: analyticsJourneys.id,
+          set: { lastSeenAt: sql`now()` },
+        });
+      const [subscription] = await tx
+        .insert(subscriptions)
+        .values({
+          params,
+          candidateId: options.candidateId ?? null,
+          userId: options.userId ?? null,
+          journeyId,
+        })
+        .returning({ id: subscriptions.id });
+      await this.analytics.enqueueSubscriptionCreated(tx, subscription.id, journeyId, params);
+      return subscription;
+    });
 
     this.logger.log(
-      `create sub ${created.id}: candidateId=${candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
+      `create sub ${created.id}: candidateId=${options.candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
     );
-
-    // Funnel entry, keyed on the uuid the web client will alias its anonymous
-    // visitor onto — this is what stitches the browser session to the person.
-    this.analytics.subscriptionCreated(created.id, params);
 
     return created.id;
   }
@@ -124,7 +135,7 @@ export class SubscriptionsService {
    * web-create time.
    */
   async linkChat(token: string, chatId: string): Promise<LinkResult> {
-    if (!UUID_REGEX.test(token)) return "not_found";
+    if (!isUuid(token)) return "not_found";
 
     const [pending] = await this.db
       .select({
@@ -132,6 +143,7 @@ export class SubscriptionsService {
         isActive: subscriptions.isActive,
         candidateId: subscriptions.candidateId,
         userId: subscriptions.userId,
+        journeyId: subscriptions.journeyId,
         params: subscriptions.params,
       })
       .from(subscriptions)
@@ -146,6 +158,7 @@ export class SubscriptionsService {
     ) {
       return "not_found";
     }
+    const linkedUserId = pending.userId ?? (await this.findUserIdForChat(chatId));
 
     // Already activated: re-tapping the same link from the same chat is a
     // no-op; a token already claimed by another chat is treated as unusable.
@@ -172,6 +185,12 @@ export class SubscriptionsService {
           ),
         );
       if (duplicate) {
+        if (linkedUserId) {
+          await tx
+            .update(subscriptions)
+            .set({ userId: sql`coalesce(${subscriptions.userId}, ${linkedUserId})` })
+            .where(eq(subscriptions.id, duplicate.id));
+        }
         const [deleted] = await tx
           .delete(subscriptions)
           .where(
@@ -187,7 +206,13 @@ export class SubscriptionsService {
 
       const [activated] = await tx
         .update(subscriptions)
-        .set({ chatId, isActive: true })
+        .set({
+          chatId,
+          isActive: true,
+          userId: linkedUserId,
+          linkedAt: sql`now()`,
+          deactivatedAt: null,
+        })
         .where(
           and(
             eq(subscriptions.id, token),
@@ -196,6 +221,9 @@ export class SubscriptionsService {
           ),
         )
         .returning({ id: subscriptions.id });
+      if (activated && pending.journeyId) {
+        await this.analytics.enqueueTelegramLinked(tx, activated.id, pending.journeyId, "linked");
+      }
       return activated ? { type: "linked" as const } : null;
     });
     if (result?.type === "duplicate") {
@@ -212,7 +240,7 @@ export class SubscriptionsService {
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
 
-    this.analytics.telegramLinked(token, "linked");
+    if (!pending.journeyId) void this.analytics.telegramLinked(token, "linked");
     return "linked";
   }
 
@@ -266,7 +294,7 @@ export class SubscriptionsService {
 
   // Match target by id, any state — backs the read-only digest preview.
   async getMatchTarget(id: string): Promise<SubscriptionMatchTarget | null> {
-    if (!UUID_REGEX.test(id)) return null;
+    if (!isUuid(id)) return null;
     const [row] = await this.db
       .select({
         id: subscriptions.id,
@@ -281,19 +309,31 @@ export class SubscriptionsService {
 
   /** `/stop` — deactivate every subscription for a chat. Returns how many were active. */
   async deactivateByChat(chatId: string): Promise<number> {
-    const stopped = await this.db
-      .update(subscriptions)
-      .set({ isActive: false })
-      .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
-      .returning({ id: subscriptions.id });
+    return this.db.transaction(async (tx) => {
+      const stopped = await tx
+        .update(subscriptions)
+        .set({ isActive: false, deactivatedAt: sql`now()` })
+        .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
+        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
 
-    if (stopped.length > 0) {
-      this.analytics.unsubscribed({
-        method: "stop_command",
-        count: stopped.length,
-      });
-    }
-    return stopped.length;
+      for (const stoppedSubscription of stopped) {
+        if (stoppedSubscription.journeyId) {
+          await this.analytics.enqueueUnsubscribed(tx, {
+            method: "stop_command",
+            subscriptionId: stoppedSubscription.id,
+            journeyId: stoppedSubscription.journeyId,
+            count: stopped.length,
+          });
+        } else {
+          void this.analytics.unsubscribed({
+            method: "stop_command",
+            subscriptionId: stoppedSubscription.id,
+            count: stopped.length,
+          });
+        }
+      }
+      return stopped.length;
+    });
   }
 
   /**
@@ -301,27 +341,33 @@ export class SubscriptionsService {
    * the chat so a forged callback can't touch someone else's subscription.
    */
   async deactivateById(id: string, chatId: string): Promise<boolean> {
-    if (!UUID_REGEX.test(id)) return false;
+    if (!isUuid(id)) return false;
 
-    const stopped = await this.db
-      .update(subscriptions)
-      .set({ isActive: false })
-      .where(
-        and(
-          eq(subscriptions.id, id),
-          eq(subscriptions.chatId, chatId),
-          eq(subscriptions.isActive, true),
-        ),
-      )
-      .returning({ id: subscriptions.id });
+    return this.db.transaction(async (tx) => {
+      const [stopped] = await tx
+        .update(subscriptions)
+        .set({ isActive: false, deactivatedAt: sql`now()` })
+        .where(
+          and(
+            eq(subscriptions.id, id),
+            eq(subscriptions.chatId, chatId),
+            eq(subscriptions.isActive, true),
+          ),
+        )
+        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
 
-    if (stopped.length > 0) {
-      this.analytics.unsubscribed({
-        method: "button",
-        subscriptionId: id,
-      });
-    }
-    return stopped.length > 0;
+      if (!stopped) return false;
+      if (stopped.journeyId) {
+        await this.analytics.enqueueUnsubscribed(tx, {
+          method: "button",
+          subscriptionId: stopped.id,
+          journeyId: stopped.journeyId,
+        });
+      } else {
+        void this.analytics.unsubscribed({ method: "button", subscriptionId: stopped.id });
+      }
+      return true;
+    });
   }
 
   /**
@@ -421,5 +467,18 @@ export class SubscriptionsService {
     }
 
     return parts.length > 0 ? parts.join(" · ") : copy.describe.all;
+  }
+
+  private async findUserIdForChat(chatId: string): Promise<string | null> {
+    const [identity] = await this.db
+      .select({ userId: authIdentities.userId })
+      .from(authIdentities)
+      .where(
+        and(
+          eq(authIdentities.provider, TELEGRAM_PROVIDER),
+          eq(authIdentities.providerUserId, chatId),
+        ),
+      );
+    return identity?.userId ?? null;
   }
 }

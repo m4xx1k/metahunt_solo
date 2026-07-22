@@ -1,12 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import type { SubscriptionParams } from "../04-notify/telegram/subscriptions.contract";
 import { SubscriptionsService } from "../04-notify/telegram/subscriptions.service";
+import { AnalyticsService } from "../platform/analytics/analytics.service";
 
 import type { MeCv, MeSubscription } from "./me.contract";
 
@@ -20,6 +21,7 @@ export class MeService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly subscriptionsSvc: SubscriptionsService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   async listCvs(userId: string): Promise<MeCv[]> {
@@ -96,12 +98,45 @@ export class MeService {
   }
 
   async setSubscriptionActive(userId: string, id: string, isActive: boolean): Promise<boolean> {
-    const updated = await this.db
-      .update(subscriptions)
-      .set({ isActive })
-      .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
-      .returning({ id: subscriptions.id });
-    return updated.length > 0;
+    return this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(subscriptions)
+        .set({
+          isActive,
+          deactivatedAt: isActive ? null : sql`now()`,
+        })
+        .where(
+          and(
+            eq(subscriptions.id, id),
+            eq(subscriptions.userId, userId),
+            ne(subscriptions.isActive, isActive),
+          ),
+        )
+        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+      if (!updated) {
+        const [existing] = await tx
+          .select({ id: subscriptions.id })
+          .from(subscriptions)
+          .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)));
+        return existing !== undefined;
+      }
+      if (updated.journeyId) {
+        if (isActive) {
+          await this.analytics.enqueueSubscriptionReactivated(tx, updated.id, updated.journeyId);
+        } else {
+          await this.analytics.enqueueUnsubscribed(tx, {
+            method: "account",
+            subscriptionId: updated.id,
+            journeyId: updated.journeyId,
+          });
+        }
+      } else if (isActive) {
+        void this.analytics.subscriptionReactivated(id);
+      } else {
+        void this.analytics.unsubscribed({ method: "account", subscriptionId: id });
+      }
+      return true;
+    });
   }
 
   async deleteSubscription(userId: string, id: string): Promise<boolean> {

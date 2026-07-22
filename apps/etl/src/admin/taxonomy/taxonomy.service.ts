@@ -13,36 +13,9 @@ import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 
-export type NodeStatusValue = "NEW" | "VERIFIED" | "HIDDEN";
+import type { NodeListFilters, NodeListResult, NodeStatusValue } from "./taxonomy.contract";
 
 const RENAME_MIN_LEN = 2;
-export const TAXONOMY_LIST_DEFAULT = 50;
-export const TAXONOMY_LIST_MAX = 200;
-
-export interface NodeListFilters {
-  type?: NodeType;
-  statuses: NodeStatusValue[];
-  q?: string;
-  minBlocked: number;
-  page: number;
-  pageSize: number;
-}
-
-export interface NodeListItem {
-  id: string;
-  type: NodeType;
-  canonicalName: string;
-  status: NodeStatusValue;
-  vacanciesBlocked: number;
-  aliasCount: number;
-}
-
-export interface NodeListResult {
-  items: NodeListItem[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
 
 type FuzzyThreshold = {
   minLen: number;

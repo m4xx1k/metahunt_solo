@@ -10,24 +10,14 @@ import {
   hasExtractionError,
   type ExtractionStatus,
 } from "../../platform/shared/extraction-status";
+import { reportingPeriodSince, type ReportingPeriod } from "../../platform/shared/reporting-period";
 
 const { rssIngests, rssRecords, sources, vacancies, uniqueVacancies } = schema;
 
 export type IngestStatus = "running" | "completed" | "failed";
 
 // Periods the operator dashboard can pivot on. `all` = no since-filter.
-export type StatsPeriod = "24h" | "week" | "all";
-
-export function periodSince(period: StatsPeriod): Date | null {
-  switch (period) {
-    case "24h":
-      return new Date(Date.now() - 24 * 60 * 60 * 1000);
-    case "week":
-      return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    case "all":
-      return null;
-  }
-}
+export type StatsPeriod = Exclude<ReportingPeriod, "30d">;
 
 export interface ListIngestsParams {
   sourceId?: string;
@@ -197,7 +187,7 @@ export class MonitoringService {
   // Silver → Gold counts within `period`; duplicatesMerged = silver
   // records that joined a pre-existing group (silver − newGoldGroups).
   async stats(period: StatsPeriod = "24h") {
-    const since = periodSince(period);
+    const since = reportingPeriodSince(period);
     const bronzeFilter = since ? gte(rssRecords.createdAt, since) : undefined;
     const silverFilter = since ? gte(vacancies.loadedAt, since) : undefined;
     const goldFilter = since ? gte(uniqueVacancies.createdAt, since) : undefined;

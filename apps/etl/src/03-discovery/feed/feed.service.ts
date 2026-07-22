@@ -19,6 +19,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
 
 import type {
@@ -32,10 +33,6 @@ import type {
 } from "./feed.contract";
 
 const { vacancies, vacancyNodes, nodes, sources, companies, rssRecords, uniqueVacancies } = schema;
-
-// Postgres `uuid` columns reject malformed input at the driver level, so screen
-// path params before they reach a query.
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // The open-ended experience button: "6+" means ≥6 years. Mirrored client-side
 // in features/vacancy-filters/ExperienceSection.tsx.
@@ -289,7 +286,7 @@ export class FeedService {
    * a legacy row with no link.
    */
   async getApplyLink(id: string): Promise<string | null> {
-    if (!UUID_REGEX.test(id)) return null;
+    if (!isUuid(id)) return null;
     const [row] = await this.db
       .select({ link: rssRecords.link })
       .from(vacancies)
