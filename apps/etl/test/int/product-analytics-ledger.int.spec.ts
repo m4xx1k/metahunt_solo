@@ -169,7 +169,7 @@ describe("first-party product analytics ledger", () => {
     expect(overview.recentJourneys[0]?.id).toBe(journeyId);
   });
 
-  it("counts only ordered steps within seven days for the selected journey cohort", async () => {
+  it("counts each step independently for the selected journey cohort", async () => {
     const dashboard = new ProductAnalyticsService(db);
     const start = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -220,14 +220,31 @@ describe("first-party product analytics ledger", () => {
     const everyone = await dashboard.overview("week", "all");
 
     expect(productionWeek.population).toBe("production");
-    expect(productionWeek.funnel.map((step) => step.journeys)).toEqual([4, 3, 1, 1, 1, 1, 1, 1, 1]);
-    expect(productionAll.funnel.map((step) => step.journeys)).toEqual([5, 4, 2, 2, 2, 2, 2, 2, 2]);
+    expect(productionWeek.funnel.map((step) => step.journeys)).toEqual([4, 4, 3, 4, 4, 4, 4, 4, 4]);
+    expect(productionAll.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5, 5, 5, 5, 5, 5]);
     expect(tests.funnel.map((step) => step.journeys)).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1]);
-    expect(everyone.funnel.map((step) => step.journeys)).toEqual([5, 4, 2, 2, 2, 2, 2, 2, 2]);
+    expect(everyone.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5, 5, 5, 5, 5, 5]);
     expect(productionWeek.recentJourneys.every((journey) => !journey.isTest)).toBe(true);
     expect(tests.recentJourneys).toEqual([
       expect.objectContaining({ isTest: true, cohortId: "controlled-a" }),
     ]);
+  });
+
+  it("still counts steps a journey completed even without a landing_view event", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const start = new Date();
+    await seedFunnelJourney({
+      events: [
+        { name: PRODUCT_FUNNEL_STEPS[1], occurredAt: start },
+        { name: PRODUCT_FUNNEL_STEPS[8], occurredAt: new Date(start.getTime() + 60_000) },
+      ],
+    });
+
+    const overview = await dashboard.overview("all");
+
+    expect(overview.funnel[0].journeys).toBe(0);
+    expect(overview.funnel[1].journeys).toBe(1);
+    expect(overview.funnel[8].journeys).toBe(1);
   });
 
   it("reclassifies a journey into the controlled-test population", async () => {
