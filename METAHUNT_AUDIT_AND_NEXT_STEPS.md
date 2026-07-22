@@ -41,9 +41,10 @@ Three risks still block paid acquisition:
    sample-only endpoint, but production remains unchanged until owner-approved
    deployment.
 3. Trust and operations need explicit ownership. Raw CV text is not persisted by
-   MetaHunt, but it is sent to DeepSeek. Public disclosure now exists on the
-   branch; retention, analytics consent, account deletion, and support ownership
-   still require an owner decision.
+   MetaHunt, but it is sent to DeepSeek. Public disclosure and transactional
+   self-service account deletion now exist on the branch; provider retention,
+   analytics consent, legal wording, and support ownership still require an
+   owner decision.
 
 Recommended next 7–14 days:
 
@@ -160,7 +161,9 @@ keyboard traversal, Core Web Vitals, and screenshot evidence remain unverified.
 - A newly linked Telegram subscription now reuses the existing preview matcher
   to show up to three current matches, or a truthful zero-match state, directly
   after the activation confirmation. This remains unverified in production.
-- Account deletion is not self-service. CV and subscription deletion are.
+- Account, CV, and subscription deletion are self-service on the branch. The
+  account path also removes same-Telegram-chat cold alerts and invalidates the
+  old JWT at the next protected request.
 
 ## 5. Telegram, matching, and failure states
 
@@ -247,11 +250,11 @@ event inventory.
 
 | ID | Priority | Problem and hypothesis | Scope / acceptance | Measurement | Rollback |
 |---|---|---|---|---|---|
-| G0 Review and deploy branch | P0 · S | Production demo is broken and launch surfaces are absent. | Review all branch commits; deploy web + API; sample-only endpoint returns 200 for seeded sample and 404 for uploaded/non-sample candidate. | Five sample sessions render matches without auth. | Revert the feature commits; no migration exists. |
+| G0 Review and deploy branch | P0 · S | Production demo is broken and launch surfaces are absent. | Review all branch commits; deploy web + API and migration `0028`; sample-only endpoint returns 200 for seeded sample and 404 for uploaded/non-sample candidate. | Five sample sessions render matches without auth. | Revert feature code if needed; the forward-compatible cascade constraint may remain. |
 | G1 Controlled activation E2E | P0 · S | Repository tests do not prove cross-domain Telegram delivery. | Run five owner-approved test subscriptions; record event timestamps and results through first click; repeat `/start`; test `/stop`. | 5/5 linked, 5/5 value shown, no duplicates or PII. | Disable test subscriptions with `/stop`. |
 | G2 Funnel dashboard | P0 · S | Traffic cannot be diagnosed without one shared view. | Save the event funnel above plus zero-match/send-failure daily queries; document timezone and filters. | Daily activation, handoff loss, time to first digest, click rate. | Remove dashboard only; event contract stays stable. |
 | G3 Verify immediate post-link value | P0 · S | Branch implementation must be proven across the real bot/API boundary. | A fresh `/start` shows up to three current matches or an explicit zero-match state; a preview failure never reverses the successful activation. | `telegram_linked → activation_value_shown ≥ 80%`. | Revert the additive Telegram commit; scheduled delivery remains unchanged. |
-| G4 Privacy/auth launch review | P0 · M | Disclosure exists, but consent, retention, account deletion, 30-day localStorage JWT, and auth throttling need ownership. | Owner approves wording; choose analytics consent posture; add account deletion; tighten auth throttle; document retention. | No PII leak; deletion test passes; support script exists. | Disable CV campaign; role radar remains available. |
+| G4 Approve privacy/auth launch policy | P0 · S | Technical deletion, stale-token invalidation, login throttling, public disclosure, and a retention runbook exist on the branch; provider backups, consent, and legal ownership are policy decisions. | Owner approves or edits wording, analytics consent posture, provider retention expectations, and support owner. | Real delete E2E passes; no PII leak; support owner can follow the runbook. | Disable CV campaign; role radar remains available. |
 | G5 Concierge cohort | P0 · 7 days | Offline ranking confidence is not user value. | Recruit 20 ICP users, interview at least five, rate their first three alerts. | Thresholds below. | Stop recruitment; no paid spend. |
 | G6 Paid experiment | P1 · 7 days | Scale only after activation and quality are understood. | One audience, one landing, one channel, 200 qualified sessions maximum. | Thresholds below. | Pause campaign immediately. |
 
@@ -345,8 +348,8 @@ The owner must decide:
    post-activation upsell.
 3. Name the first channel, no-regret budget, and maximum 200-session test window.
 4. Approve public DOU + Djinni and daytime-schedule wording.
-5. Approve or edit the DeepSeek/privacy wording and choose analytics consent
-   posture, retention period, and account-deletion policy.
+5. Approve or edit the DeepSeek/privacy wording and choose analytics consent,
+   provider-log/backups retention, and legal-controller posture.
 6. Name the person watching delivery failures and user support for the first 48
    hours.
 7. Confirm access to the production PostHog project and create the funnel/query.
@@ -365,13 +368,14 @@ identity, analytics consent requirements, and production retention expectations.
 - System snapshot: [`md/architecture/overview.md`](md/architecture/overview.md)
 - Funnel tracker: [`md/journal/migrations/real-user-funnel.md`](md/journal/migrations/real-user-funnel.md)
 - CV privacy contract: [`md/runbook/cv-privacy.md`](md/runbook/cv-privacy.md)
+- Account deletion runbook: [`md/runbook/account-deletion.md`](md/runbook/account-deletion.md)
 - Client analytics seam: [`apps/web/lib/hooks/use-analytics.ts`](apps/web/lib/hooks/use-analytics.ts)
 - Server analytics seam: [`apps/etl/src/platform/analytics/analytics.service.ts`](apps/etl/src/platform/analytics/analytics.service.ts)
 - Sample security tests: [`apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts`](apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts)
 - Campaign landing: [`apps/web/app/radar/backend/page.tsx`](apps/web/app/radar/backend/page.tsx)
 - Public disclosure: [`apps/web/app/privacy/page.tsx`](apps/web/app/privacy/page.tsx)
-- Implementation commits: `13784db`, `1752b1a`, and the additive Telegram
-  activation-value commit on this branch.
+- Implementation commits: `13784db`, `1752b1a`, the additive Telegram
+  activation-value commit, and the account-deletion commit on this branch.
 
 Verification completed on the branch: ETL focused security/controller tests,
 the full ETL and web Jest suites, ETL lint, web lint, ETL production build, web

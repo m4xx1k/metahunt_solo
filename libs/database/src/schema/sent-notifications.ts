@@ -11,7 +11,7 @@ export const sentNotifications = pgTable(
   {
     subscriptionId: uuid("subscription_id")
       .notNull()
-      .references(() => subscriptions.id),
+      .references(() => subscriptions.id, { onDelete: "cascade" }),
     vacancyId: uuid("vacancy_id")
       .notNull()
       .references(() => vacancies.id),

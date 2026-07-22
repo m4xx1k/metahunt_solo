@@ -4,9 +4,9 @@ Consumer login for the public site: **Log in with Telegram** on the header
 account menu. The backend verifies Telegram's payload itself (HMAC over the same
 `TELEGRAM_BOT_TOKEN` the digest bot uses), then mints its **own** session JWT.
 Every later request is authed by that JWT (Bearer, `Authorization` header), not
-by Telegram. Clerk still gates the operator *pages* — this is a separate,
-parallel system for public users. Login is progressive: the feed stays anonymous;
-the menu only converts value at the moment a user wants to save/subscribe.
+by Telegram. The same session carries an env-driven `admin` role for operator
+APIs. Login is progressive: the feed stays anonymous; the menu only converts
+value when a user wants to save or subscribe.
 
 ## One-time bring-up
 
@@ -26,7 +26,9 @@ the menu only converts value at the moment a user wants to save/subscribe.
      in `TELEGRAM_BOT_TOKEN`). `Telegram.Login.auth` keys on the id, not @username.
 4. **Migration:** `0027_amused_vermin.sql` adds `auth_identities`, `user_cvs`,
    `users.roles`, `subscriptions.user_id` and makes `users.email` nullable. Applied
-   by the Railway pre-deploy migrate step (`libs/database/migrate.ts`).
+   by the Railway pre-deploy migrate step (`libs/database/migrate.ts`). Migration
+   `0028_far_chronomancer.sql` makes account-owned subscriptions and their sent
+   history cascade on deletion.
 
 ## Local dev gotcha (important)
 
@@ -52,6 +54,10 @@ the menu only converts value at the moment a user wants to save/subscribe.
 - The operator web UI needs to forward the same Bearer token for its server-side
   reads. A cookie-backed session remains the intended delivery mechanism; API
   authorization is not relaxed while that web work is pending.
+- The JWT guard reloads account existence and current roles from Postgres on
+  every protected request. Deleting an account or removing a persisted admin
+  role makes an already-issued token unusable immediately; signature validity
+  alone is not sufficient.
 
 ## Claim (what a login adopts)
 
@@ -71,6 +77,9 @@ message the user, so digests work without a separate `/start`.
   → expect `{ token, user }`; `GET /auth/me` with `Authorization: Bearer <token>`
   → the user; tampered `hash` or `auth_date` older than 24h → 401. `GET
   /me/subscriptions` with no token → 401.
+- **Deletion:** `DELETE /me` with the Bearer token → 200; the same token on
+  `GET /auth/me` → 401. Full data-boundary checks live in
+  [`account-deletion.md`](account-deletion.md).
 - **Roles:** a non-admin JWT on `PATCH /admin/taxonomy/nodes/:id/hide` → 403; an
   admin JWT → 200; the public feed with no token → 200.
 - **UI (on the tunnel domain):** header `log in ▾` → Telegram popup → header flips

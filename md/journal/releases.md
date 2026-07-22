@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-22
+
+- **Self-service account deletion** (`feat/real-user-funnel`). Authenticated users can permanently remove their Telegram identity, owned and same-chat alerts, notification ledger, CV links, and final-owner derived candidate data from `/me`. Migration `0028` makes subscription and notification cascades explicit; protected requests reload account existence/current roles, and Telegram login is limited to ten attempts per IP per minute. → [runbook](../runbook/account-deletion.md)
+
+---
+
 ## 2026-07-21
 
 - **Ingest launch hardening** (`feat/ingest-pipeline-refactor`). RSS exact-match suppression is source-scoped, production fetch failures follow Temporal retry semantics without fixture fallback, workflow and worker fan-out is bounded, and listing updates are latest-record-wins with race-safe embedding and duplicate-cluster invalidation. No schema migration was required. → [migration tracker](migrations/ingest-pipeline-refactor.md)

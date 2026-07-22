@@ -16,6 +16,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 
 import { ApiErrorResponseDto, OkResponseDto } from "../swagger/api-error.dto";
 
@@ -25,6 +26,8 @@ import { AuthUserDto, TelegramLoginRequestDto, TelegramLoginResponseDto } from "
 import type { JwtUser } from "./auth.types";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+
+const TELEGRAM_LOGIN_THROTTLE = { default: { limit: 10, ttl: 60_000 } };
 
 @Controller("auth")
 @ApiTags("auth")
@@ -40,6 +43,7 @@ export class AuthController {
     description: "Telegram verification failed.",
     type: ApiErrorResponseDto,
   })
+  @Throttle(TELEGRAM_LOGIN_THROTTLE)
   async telegram(@Body() body: Partial<TelegramLoginRequest>): Promise<TelegramLoginResponse> {
     const tg = body?.telegram;
     if (

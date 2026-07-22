@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -10,7 +10,8 @@ import { SubscriptionsService } from "../04-notify/telegram/subscriptions.servic
 
 import type { MeCv, MeSubscription } from "./me.contract";
 
-const { userCvs, candidates, subscriptions } = schema;
+const { authIdentities, userCvs, users, candidates, subscriptions } = schema;
+const TELEGRAM_PROVIDER = "telegram";
 
 // Read + manage the logged-in user's owned CVs and subscriptions. Every query is
 // scoped to userId so one user can never touch another's rows.
@@ -109,5 +110,51 @@ export class MeService {
       .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
       .returning({ id: subscriptions.id });
     return deleted.length > 0;
+  }
+
+  async deleteAccount(userId: string): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const [account] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+      if (!account) return false;
+
+      const identities = await tx
+        .select({ telegramId: authIdentities.providerUserId })
+        .from(authIdentities)
+        .where(
+          and(eq(authIdentities.userId, userId), eq(authIdentities.provider, TELEGRAM_PROVIDER)),
+        );
+      const ownedCvs = await tx
+        .select({ candidateId: userCvs.candidateId })
+        .from(userCvs)
+        .where(eq(userCvs.userId, userId));
+
+      const telegramIds = identities.map((identity) => identity.telegramId);
+      if (telegramIds.length > 0) {
+        await tx.delete(subscriptions).where(inArray(subscriptions.chatId, telegramIds));
+      }
+
+      await tx.delete(users).where(eq(users.id, userId));
+
+      const candidateIds = [...new Set(ownedCvs.map((cv) => cv.candidateId))];
+      if (candidateIds.length === 0) return true;
+
+      const remainingOwners = await tx
+        .select({ candidateId: userCvs.candidateId })
+        .from(userCvs)
+        .where(inArray(userCvs.candidateId, candidateIds));
+      const retained = new Set(remainingOwners.map((owner) => owner.candidateId));
+      const orphanCandidateIds = candidateIds.filter((id) => !retained.has(id));
+      if (orphanCandidateIds.length === 0) return true;
+
+      await tx.delete(subscriptions).where(inArray(subscriptions.candidateId, orphanCandidateIds));
+      await tx
+        .delete(candidates)
+        .where(and(inArray(candidates.id, orphanCandidateIds), eq(candidates.type, "user")));
+      return true;
+    });
   }
 }

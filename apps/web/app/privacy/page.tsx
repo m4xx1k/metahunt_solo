@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <main className="bg-bg px-6 py-16 md:px-12 md:py-24">
         <article className="mx-auto flex w-full max-w-[900px] flex-col gap-12">
           <header className="flex flex-col gap-5 border-b border-border pb-10">
-            <Tag>&gt; privacy · effective 21 July 2026</Tag>
+            <Tag>&gt; privacy · effective 22 July 2026</Tag>
             <h1 className="font-display text-4xl font-black tracking-tight text-text-primary sm:text-5xl">
               Your search data should stay understandable and controllable.
             </h1>
@@ -77,6 +77,21 @@ export default function PrivacyPage() {
             </p>
           </PrivacySection>
 
+          <PrivacySection title="Retention and deletion">
+            <p>
+              Active account data, CV-derived profiles, subscriptions, and sent-vacancy history are
+              kept while you use those features. Pending alerts that are never linked to Telegram
+              are removed after 48 hours.
+            </p>
+            <p>
+              You can delete an individual CV or subscription, or permanently delete your account
+              from <Link href="/me">My account</Link>. Account deletion removes the Telegram
+              identity, owned and same-chat subscriptions, notification history, CV ownership, and
+              any derived candidate profile that has no remaining owner. The old session stops
+              authorizing API requests immediately.
+            </p>
+          </PrivacySection>
+
           <PrivacySection title="Product analytics">
             <p>
               MetaHunt uses PostHog&apos;s EU endpoint and Vercel Analytics to understand visits,
@@ -116,8 +131,8 @@ export default function PrivacyPage() {
 
           <PrivacySection title="Contact and deletion requests">
             <p>
-              Self-service controls currently cover CVs and subscriptions. For an account, waitlist
-              email, or other data request, contact the project owner on{" "}
+              Self-service controls cover accounts, CVs, and subscriptions. For a waitlist email or
+              another data request, contact the project owner on{" "}
               <a href="https://t.me/m4xx1k">Telegram</a> or{" "}
               <a href="https://www.linkedin.com/in/maksym-fabin">LinkedIn</a>.
             </p>

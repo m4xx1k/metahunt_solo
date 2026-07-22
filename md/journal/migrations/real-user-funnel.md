@@ -25,6 +25,9 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
   route checks pass and changes are split into reviewable commits.
 - [x] T5 — Shorten time-to-value — *done when:* a fresh Telegram activation immediately
   renders existing matches or a truthful zero state without risking the link itself.
+- [x] T6 — Close the technical deletion boundary — *done when:* users can permanently
+  delete their account, associated alerts and history disappear transactionally, and the old
+  JWT no longer authorizes requests.
 
 ## Decisions
 

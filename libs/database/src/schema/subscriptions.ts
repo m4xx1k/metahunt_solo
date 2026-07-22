@@ -14,7 +14,7 @@ export const subscriptions = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     chatId: text("chat_id"),
     candidateId: text("candidate_id"),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     params: jsonb("params").notNull().$type<Record<string, unknown>>(),
     isActive: boolean("is_active").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

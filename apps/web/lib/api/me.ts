@@ -24,14 +24,13 @@ export interface MeSubscription {
 }
 
 export const meApi = {
+  deleteAccount: () => apiDelete<{ ok: true }>("/me"),
   listCvs: () => apiGet<MeCv[]>("/me/cv"),
   // Persist an uploaded CV to the account (server derives the label).
-  claimCv: (candidateId: string) =>
-    apiPost<{ ok: true }>("/me/cv", { candidateId }),
+  claimCv: (candidateId: string) => apiPost<{ ok: true }>("/me/cv", { candidateId }),
   deleteCv: (id: string) => apiDelete<{ ok: true }>(`/me/cv/${id}`),
   listSubscriptions: () => apiGet<MeSubscription[]>("/me/subscriptions"),
   setSubscriptionActive: (id: string, isActive: boolean) =>
     apiPatch<{ ok: true }>(`/me/subscriptions/${id}`, { isActive }),
-  deleteSubscription: (id: string) =>
-    apiDelete<{ ok: true }>(`/me/subscriptions/${id}`),
+  deleteSubscription: (id: string) => apiDelete<{ ok: true }>(`/me/subscriptions/${id}`),
 };

@@ -10,6 +10,9 @@
   valid JWT and an ownership check. Seeded samples are the only public CV data.
 - Deleting an account CV deletes its candidate, derived skills and CV-based
   subscriptions when that account is the final owner.
+- Deleting the account also removes its Telegram identities, owned and
+  same-chat subscriptions, notification history, and every final-owner
+  candidate. See [`account-deletion.md`](account-deletion.md).
 - A CV-based Telegram subscription is created with an authenticated owner and
   can be activated only by that owner's Telegram private chat.
 
