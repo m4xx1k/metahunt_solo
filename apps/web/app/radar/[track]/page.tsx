@@ -165,7 +165,7 @@ export default async function TrackRadarPage({
                   href={`/${slug}`}
                   className="inline-flex items-center justify-center gap-2 px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:text-accent"
                 >
-                  Спочатку подивитись →
+                  Дивитись усі у фіді →
                 </Link>
               </div>
               <p className="font-mono text-xs leading-relaxed text-text-muted">
@@ -173,7 +173,7 @@ export default async function TrackRadarPage({
               </p>
             </div>
 
-            <Card className="gap-5 shadow-brut-xl">
+            <Card className="gap-5 bg-bg-card/75 shadow-brut-xl backdrop-blur-md">
               <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
                 <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
                   Свіжі {labelLower}-вакансії
