@@ -5,6 +5,7 @@
 export const ANALYTICS_EVENTS = {
   subscriptionCreated: "subscription_created",
   telegramLinked: "telegram_linked",
+  activationValueShown: "activation_value_shown",
   digestSent: "digest_sent",
   // Digest tap (attributed to a subscription) keeps its historical name so the
   // live funnel stays intact; anonymous web apply taps get their own event.

@@ -64,6 +64,23 @@ describe("AnalyticsService", () => {
     });
   });
 
+  it("records immediate activation value without user identifiers", () => {
+    const service = makeService();
+
+    service.activationValueShown("subscription-1", 7, 3);
+
+    expect(mockCapture).toHaveBeenCalledWith({
+      distinctId: "subscription-1",
+      event: ANALYTICS_EVENTS.activationValueShown,
+      properties: {
+        matches: 7,
+        shown: 3,
+        result: "matches",
+        $insert_id: "activation_value_shown:subscription-1",
+      },
+    });
+  });
+
   it("uses the subscription as the digest identity and a deterministic delivery id", () => {
     const service = makeService();
 

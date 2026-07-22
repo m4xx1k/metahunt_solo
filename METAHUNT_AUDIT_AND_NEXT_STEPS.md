@@ -157,9 +157,9 @@ keyboard traversal, Core Web Vitals, and screenshot evidence remain unverified.
 - `/welcome` collects email into the database but has no email delivery,
   founder workflow, export surface, or attribution event. It is a lead dead-end
   and should not receive launch traffic.
-- A newly linked Telegram subscription confirms activation but does not show
-  immediate value. `/preview` exists; reusing it after `/start` could shorten
-  time-to-value without changing matching.
+- A newly linked Telegram subscription now reuses the existing preview matcher
+  to show up to three current matches, or a truthful zero-match state, directly
+  after the activation confirmation. This remains unverified in production.
 - Account deletion is not self-service. CV and subscription deletion are.
 
 ## 5. Telegram, matching, and failure states
@@ -200,7 +200,8 @@ Server: `subscription_created`, `telegram_linked`, `digest_sent`,
 `subscription_handoff_opened`, `subscription_create_failed`,
 `cv_upload_started`, `cv_upload_completed`, `cv_upload_failed`,
 `telegram_login_started`, `telegram_login_cancelled`, and
-`telegram_login_failed`.
+`telegram_login_failed`. The server also adds `activation_value_shown` after a
+fresh Telegram link successfully renders its immediate sample or zero state.
 
 Historical names were not renamed. New events fill missing intent and failure
 steps while preserving existing dashboards. Campaign properties are bounded to
@@ -208,7 +209,9 @@ safe 64-character identifiers; email-like, free-form, and oversized values are
 dropped. CV text, filename, candidate UUID, raw Telegram identity, and full
 filter payloads are excluded.
 
-### PostHog funnel to verify before launch
+### PostHog funnels to verify before launch
+
+Immediate activation:
 
 ```text
 landing_view
@@ -217,6 +220,16 @@ landing_view
 → subscription_created
 → subscription_handoff_opened
 → telegram_linked
+→ activation_value_shown
+→ digest_link_clicked
+```
+
+The immediate sample's vacancy links retain the historical attributed-click
+event name. Measure scheduled retention separately so a preview click is not
+mistaken for a delivered digest:
+
+```text
+telegram_linked
 → digest_sent
 → digest_link_clicked
 ```
@@ -225,19 +238,19 @@ Required breakdowns: `utm_source`, `utm_medium`, `utm_campaign`, `creative_id`,
 `landing_variant`, and `profile_type`. Use opaque subscription identity after
 creation. Do not add direct user identifiers.
 
-Still needed on the server: a digest-evaluated event for zero-match visibility,
-delivery failure, `is_first_digest`, and a deterministic activation-value event.
-Those should be added only with a daily operational query/dashboard so they
-drive decisions rather than event inventory.
+Still needed on the server: a digest-evaluated event for scheduled zero-match
+visibility, delivery failure, and `is_first_digest`. Those should be added only
+with a daily operational query/dashboard so they drive decisions rather than
+event inventory.
 
 ## 7. Prioritized work
 
 | ID | Priority | Problem and hypothesis | Scope / acceptance | Measurement | Rollback |
 |---|---|---|---|---|---|
-| G0 Review and deploy branch | P0 · S | Production demo is broken and launch surfaces are absent. | Review commits `13784db` and `1752b1a`; deploy web + API; sample-only endpoint returns 200 for seeded sample and 404 for uploaded/non-sample candidate. | Five sample sessions render matches without auth. | Revert the two commits; no migration exists. |
+| G0 Review and deploy branch | P0 · S | Production demo is broken and launch surfaces are absent. | Review all branch commits; deploy web + API; sample-only endpoint returns 200 for seeded sample and 404 for uploaded/non-sample candidate. | Five sample sessions render matches without auth. | Revert the feature commits; no migration exists. |
 | G1 Controlled activation E2E | P0 · S | Repository tests do not prove cross-domain Telegram delivery. | Run five owner-approved test subscriptions; record event timestamps and results through first click; repeat `/start`; test `/stop`. | 5/5 linked, 5/5 value shown, no duplicates or PII. | Disable test subscriptions with `/stop`. |
 | G2 Funnel dashboard | P0 · S | Traffic cannot be diagnosed without one shared view. | Save the event funnel above plus zero-match/send-failure daily queries; document timezone and filters. | Daily activation, handoff loss, time to first digest, click rate. | Remove dashboard only; event contract stays stable. |
-| G3 Immediate post-link value | P0 · M | First value may be delayed until the next matching vacancy. | After a fresh `/start`, reuse the existing preview matcher to show 1–3 current matches or an explicit zero-match state. | `telegram_linked → activation_value_shown ≥ 80%`. | Feature flag or remove the extra reply. |
+| G3 Verify immediate post-link value | P0 · S | Branch implementation must be proven across the real bot/API boundary. | A fresh `/start` shows up to three current matches or an explicit zero-match state; a preview failure never reverses the successful activation. | `telegram_linked → activation_value_shown ≥ 80%`. | Revert the additive Telegram commit; scheduled delivery remains unchanged. |
 | G4 Privacy/auth launch review | P0 · M | Disclosure exists, but consent, retention, account deletion, 30-day localStorage JWT, and auth throttling need ownership. | Owner approves wording; choose analytics consent posture; add account deletion; tighten auth throttle; document retention. | No PII leak; deletion test passes; support script exists. | Disable CV campaign; role radar remains available. |
 | G5 Concierge cohort | P0 · 7 days | Offline ranking confidence is not user value. | Recruit 20 ICP users, interview at least five, rate their first three alerts. | Thresholds below. | Stop recruitment; no paid spend. |
 | G6 Paid experiment | P1 · 7 days | Scale only after activation and quality are understood. | One audience, one landing, one channel, 200 qualified sessions maximum. | Thresholds below. | Pause campaign immediately. |
@@ -357,9 +370,10 @@ identity, analytics consent requirements, and production retention expectations.
 - Sample security tests: [`apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts`](apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts)
 - Campaign landing: [`apps/web/app/radar/backend/page.tsx`](apps/web/app/radar/backend/page.tsx)
 - Public disclosure: [`apps/web/app/privacy/page.tsx`](apps/web/app/privacy/page.tsx)
-- Implementation commits: `13784db`, `1752b1a`
+- Implementation commits: `13784db`, `1752b1a`, and the additive Telegram
+  activation-value commit on this branch.
 
 Verification completed on the branch: ETL focused security/controller tests,
-full web Jest suite, ETL lint, web lint, ETL production build, web production
-build, and local HTTP checks for `/radar/backend`, `/privacy`, `/robots.txt`,
-and `/sitemap.xml`.
+the full ETL and web Jest suites, ETL lint, web lint, ETL production build, web
+production build, and local HTTP checks for `/radar/backend`, `/privacy`,
+`/robots.txt`, and `/sitemap.xml`.

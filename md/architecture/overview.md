@@ -149,6 +149,7 @@ Two independent surfaces, both built from a subset of this monorepo. Neither reb
 - Setup procedure: [`md/runbook/vercel-deploy.md`](../runbook/vercel-deploy.md).
 - Auth: Telegram login only (Clerk removed). Consumer login mints the app's own JWT (Bearer, localStorage) — see [`md/runbook/telegram-auth.md`](../runbook/telegram-auth.md). The operator `app/(investigation)` route group is client-gated by `AdminGuard` (requires a Telegram session with the `admin` role; membership via `ADMIN_TELEGRAM_IDS` on the API), and every operator API controller also enforces the same JWT + role server-side. Landing/feed stay public.
 - Acquisition: `/radar/backend` is the first campaign-specific path. It creates the existing cold role subscription directly, carries bounded campaign identifiers into PostHog events, and hands off to Telegram without requiring a CV or site account. `/privacy`, `/robots.txt`, and `/sitemap.xml` are public; account and operator route groups are `noindex`.
+- Activation value: a fresh Telegram `/start <subscription>` renders the existing 14-day preview immediately after confirming the link. It shows at most three matches (or an explicit zero state), preserves subscription attribution on apply links, emits `activation_value_shown`, and fails independently of the already-completed activation.
 
 ## Current gaps
 

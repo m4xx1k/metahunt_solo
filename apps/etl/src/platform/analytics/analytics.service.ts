@@ -54,6 +54,15 @@ export class AnalyticsService implements OnModuleDestroy {
     });
   }
 
+  activationValueShown(uuid: string, matches: number, shown: number): void {
+    this.capture(uuid, ANALYTICS_EVENTS.activationValueShown, {
+      matches,
+      shown,
+      result: matches > 0 ? "matches" : "empty",
+      $insert_id: `activation_value_shown:${uuid}`,
+    });
+  }
+
   digestSent(props: {
     subscriptionId: string;
     vacancies: number;
