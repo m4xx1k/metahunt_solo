@@ -5,10 +5,20 @@
 // error path — see TaxonomyApiError.)
 
 import { getToken } from "./auth-token";
+import { SESSION_COOKIE } from "./session-cookie";
 
-// Attach the session JWT when present (client-side only — server renders have
-// no token, which is correct: authed calls run in the browser).
-function authHeaders(): Record<string, string> {
+// Attach the session JWT when present. Client-side calls read the localStorage
+// Bearer token; server-side calls (Server Components rendering (investigation)
+// admin pages) forward the httpOnly cookie set by POST /api/session instead,
+// since localStorage never reaches the server. Dynamic import keeps
+// next/headers out of the client bundle — this file is also imported from
+// Client Components (e.g. use-session.ts).
+async function authHeaders(): Promise<Record<string, string>> {
+  if (typeof window === "undefined") {
+    const { cookies } = await import("next/headers");
+    const token = (await cookies()).get(SESSION_COOKIE)?.value;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -63,7 +73,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const base = init ?? { cache: "no-store" };
   const res = await fetch(`${apiBase()}${path}`, {
     ...base,
-    headers: { ...authHeaders(), ...(base.headers ?? {}) },
+    headers: { ...(await authHeaders()), ...(base.headers ?? {}) },
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -83,7 +93,7 @@ async function apiWrite<T>(
     method,
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
+      ...(await authHeaders()),
       ...(init.headers ?? {}),
     },
     body: body === undefined ? undefined : JSON.stringify(body),

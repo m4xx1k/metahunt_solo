@@ -31,6 +31,13 @@ export function useSession() {
   const login = useCallback(
     (res: TelegramLoginResponse) => {
       setToken(res.token);
+      // Mirror the token into an httpOnly cookie so (investigation) Server
+      // Components can forward it — localStorage never reaches the server.
+      void fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: res.token }),
+      });
       qc.setQueryData(SESSION_KEY, res.user);
     },
     [qc],
@@ -43,6 +50,7 @@ export function useSession() {
       /* best effort — token is dropped regardless */
     }
     clearToken();
+    void fetch("/api/session", { method: "DELETE" });
     qc.setQueryData(SESSION_KEY, null);
     // Drop any user-scoped cached data (/me lists) so nothing leaks post-logout.
     void qc.invalidateQueries({ queryKey: ["me"] });
