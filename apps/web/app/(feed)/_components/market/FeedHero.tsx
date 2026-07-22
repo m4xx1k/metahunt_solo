@@ -1,10 +1,8 @@
 import Link from "next/link";
 
 import type { VacancyAggregates } from "@/lib/api/aggregates";
-import type { SampleCandidate } from "@/lib/api/cv";
 import { Tag, Divider } from "@/ui";
 import { TotalCounter } from "./TotalCounter";
-import { SampleProfiles } from "./SampleProfiles";
 import { HowItWorks } from "../how/HowItWorks";
 
 // Intro / hero for the feed. One cohesive block (no separate background band):
@@ -19,10 +17,9 @@ type Props = {
   showPipeline?: boolean;
   /** Overrides the pipeline's Match CTA (merged: open the CV picker). */
   matchCta?: { label: string; event: string };
-  samples?: SampleCandidate[];
 };
 
-export function FeedHero({ aggregates: a, showPipeline = false, matchCta, samples = [] }: Props) {
+export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Props) {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
@@ -40,10 +37,7 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta, sample
             &gt; how it works
           </Link>
         </div>
-        <div className="flex flex-col gap-6 md:items-end md:justify-center">
-          <TotalCounter total={a.total} lastSyncAt={a.lastSyncAt} sources={a.sources} />
-          <SampleProfiles samples={samples} />
-        </div>
+        <TotalCounter total={a.total} lastSyncAt={a.lastSyncAt} sources={a.sources} />
       </div>
 
       {showPipeline && (

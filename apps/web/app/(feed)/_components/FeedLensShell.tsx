@@ -89,18 +89,6 @@ export function FeedLensShell({
     return () => window.removeEventListener("feed:upload-cv", triggerUpload);
   }, [triggerUpload]);
 
-  // Sample profiles now render in the hero's right column (a sibling island
-  // above this one), so picking one reaches CV state the same way upload does.
-  useEffect(() => {
-    const onSelectSample = (e: Event) => {
-      const id = (e as CustomEvent<string>).detail;
-      if (id) setCv(id);
-      scrollToControls();
-    };
-    window.addEventListener("feed:select-sample", onSelectSample);
-    return () => window.removeEventListener("feed:select-sample", onSelectSample);
-  }, [setCv, scrollToControls]);
-
   // Browse drops ?cv (keeps activeCv); the CV tab, unlocked by a remembered
   // activeCv, re-ranks it in one click.
   const onLens = useCallback(
@@ -248,11 +236,31 @@ export function FeedLensShell({
             domainCatalog={domainCatalog}
             hideTrackTree
             rightRail={
-              <ColdRecsTeaser
-                savedCvId={saved.activeCv}
-                onUnlock={onPickCv}
-                onUpload={triggerUpload}
-              />
+              <div className="flex flex-col gap-4">
+                <ColdRecsTeaser
+                  savedCvId={saved.activeCv}
+                  onUnlock={onPickCv}
+                  onUpload={triggerUpload}
+                />
+                {samples.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
+                    <span>…or try a sample profile:</span>
+                    {samples.map((s) => (
+                      <button
+                        key={s.candidateId}
+                        type="button"
+                        onClick={() => {
+                          setCv(s.candidateId);
+                          scrollToControls();
+                        }}
+                        className="border border-border px-2.5 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             }
           />
         )}
