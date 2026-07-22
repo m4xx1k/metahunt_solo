@@ -8,13 +8,14 @@ import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptio
 import { useAnalytics, type AcquisitionAttribution } from "@/lib/hooks/use-analytics";
 import { Button } from "@/ui";
 
-const LANDING_VARIANT = "backend_radar_v1";
-
 export function RadarSubscribe({
+  trackSlug,
   params,
   attribution,
   trackImpression = false,
 }: {
+  /** Landing track slug — tags the analytics variant so PostHog can split the funnel per landing. */
+  trackSlug: string;
   params: SubscriptionParams;
   attribution: AcquisitionAttribution;
   trackImpression?: boolean;
@@ -22,17 +23,18 @@ export function RadarSubscribe({
   const analytics = useAnalytics();
   const impressionSent = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const landingVariant = `radar_${trackSlug}`;
 
   useEffect(() => {
     if (!trackImpression || impressionSent.current) return;
     impressionSent.current = true;
-    analytics.landingViewed(LANDING_VARIANT, attribution);
-  }, [analytics, attribution, trackImpression]);
+    analytics.landingViewed(landingVariant, attribution);
+  }, [analytics, attribution, landingVariant, trackImpression]);
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    analytics.landingCtaClicked(LANDING_VARIANT, attribution);
+    analytics.landingCtaClicked(landingVariant, attribution);
     analytics.subscriptionCreateStarted("feed", params);
     const tab = window.open("about:blank", "_blank");
     try {
@@ -48,11 +50,11 @@ export function RadarSubscribe({
     } catch {
       analytics.subscriptionCreateFailed("feed");
       tab?.close();
-      toast.error("Couldn't create your radar. Please try again.");
+      toast.error("Не вдалося створити радар. Спробуй ще раз.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [analytics, attribution, isSubmitting, params]);
+  }, [analytics, attribution, isSubmitting, landingVariant, params]);
 
   return (
     <Button
@@ -63,7 +65,7 @@ export function RadarSubscribe({
       className="w-full sm:w-auto"
     >
       <PaperPlaneTiltIcon weight="fill" className="h-5 w-5" aria-hidden />
-      {isSubmitting ? "Opening Telegram…" : "Create my Backend radar"}
+      {isSubmitting ? "Відкриваємо Telegram…" : "Отримувати в Telegram →"}
     </Button>
   );
 }
