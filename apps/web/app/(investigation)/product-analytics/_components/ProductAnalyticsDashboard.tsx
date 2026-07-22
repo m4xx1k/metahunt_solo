@@ -16,7 +16,13 @@ import {
 } from "@/lib/api/product-analytics";
 import { formatCount, formatPercent, formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Badge, Tag } from "@/ui";
+import { Tag } from "@/ui";
+import { Donut } from "@/ui/charts/Donut";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
+import { DashboardTabPanel, DashboardTabs, type DashboardTabItem } from "./DashboardTabs";
+import { FunnelOverview } from "./FunnelOverview";
+import { SubscriberIdentity } from "./SubscriberIdentity";
+import { SubscriptionsPopover } from "./SubscriptionsPopover";
 
 const EVENT_LABELS: Record<string, string> = {
   landing_view: "відкрили посадкову",
@@ -41,6 +47,13 @@ const POPULATION_OPTIONS: Array<{ value: ProductAnalyticsPopulation; label: stri
   { value: "production", label: "production" },
   { value: "test", label: "controlled tests" },
   { value: "all", label: "all traffic" },
+];
+
+const DASHBOARD_TABS: DashboardTabItem[] = [
+  { value: "funnel", label: "воронка" },
+  { value: "subscribers", label: "підписники" },
+  { value: "identity", label: "identity" },
+  { value: "journeys", label: "journeys" },
 ];
 
 type RecentJourney = ProductAnalyticsOverview["recentJourneys"][number];
@@ -166,215 +179,284 @@ export function ProductAnalyticsDashboard() {
           </MetricCard>
         </section>
 
-        <section className="border border-border bg-bg-card p-5 shadow-brut-md">
-          <SectionTitle title="radar cohort" detail={`${population} · ordered · 7-day window`} />
-          <div className="mt-5 flex flex-col gap-4">
-            {data.funnel.map((step, index) => {
-              const previous = index === 0 ? step.journeys : data.funnel[index - 1].journeys;
-              const width = firstStep > 0 ? Math.max((step.journeys / firstStep) * 100, 2) : 0;
-              return (
-                <div
-                  key={step.name}
-                  className="grid gap-2 md:grid-cols-[220px_1fr_150px] md:items-center"
-                >
-                  <span className="font-mono text-xs text-text-primary">
-                    {EVENT_LABELS[step.name] ?? step.name}
-                  </span>
-                  <div className="h-7 border border-border bg-bg-elev">
-                    <div className="h-full bg-accent/75" style={{ width: `${width}%` }} />
-                  </div>
-                  <span className="font-mono text-xs text-text-secondary md:text-right">
-                    {formatCount(step.journeys)} journey · {formatPercent(step.journeys, previous)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-2">
-          <div className="border border-border bg-bg-card p-5 shadow-brut-md">
-            <SectionTitle title="стан підписок" detail={`${data.subscriptions.total} всього`} />
-            <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
-              <Stat label="linked" value={data.subscriptions.linked} />
-              <Stat label="pending" value={data.subscriptions.pending} />
-              <Stat label="feed" value={data.subscriptions.feed} />
-              <Stat label="CV" value={data.subscriptions.cv} />
-              <Stat label="deactivated" value={data.subscriptions.deactivated} />
-              <Stat label="linked без delivery" value={data.subscriptions.linkedWithoutDelivery} />
-            </dl>
-          </div>
-          <div
-            className={cn(
-              "border bg-bg-card p-5 shadow-brut-md",
-              identityIssues === 0 ? "border-border" : "border-danger",
-            )}
-          >
-            <SectionTitle
-              title="цілісність identity"
-              detail={
-                identityIssues === 0 ? "нових розривів не знайдено" : `${identityIssues} розривів`
-              }
-            />
-            <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
-              <Stat label="journey всього" value={data.identity.journeysTotal} />
-              <Stat label="browser journey" value={data.identity.browserJourneys} />
-              <Stat label="server journey" value={data.identity.serverJourneys} />
-              <Stat label="legacy journey" value={data.identity.legacyJourneys} />
-              <Stat label="прив’язані до account" value={data.identity.accountLinkedJourneys} />
-              <Stat label="account з кількома journey" value={data.identity.multiJourneyUsers} />
-              <Stat
-                label="journey з кількома subs"
-                value={data.identity.multiSubscriptionJourneys}
+        <DashboardTabs items={DASHBOARD_TABS} defaultValue="funnel">
+          <DashboardTabPanel value="funnel">
+            <section className="border border-border bg-bg-card p-5 shadow-brut-md">
+              <SectionTitle
+                title="radar cohort"
+                detail={`${population} · ordered · 7-day window`}
               />
-              <Stat label="без journey_id" value={data.identity.subscriptionsWithoutJourney} />
-              <Stat label="linked без event" value={data.identity.trackedLinkedWithoutEvent} />
-              <Stat label="delivery без event" value={data.identity.trackedDeliveryWithoutEvent} />
-              <Stat label="outbox очікує dispatch" value={data.identity.pendingOutboxEvents} />
-            </dl>
-          </div>
-        </section>
-
-        <section className="border border-border bg-bg-card p-5 shadow-brut-md">
-          <SectionTitle
-            title="останні journey"
-            detail={`оновлено ${formatRelative(data.generatedAt)}`}
-          />
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[1080px] border-collapse text-left font-mono text-xs">
-              <thead className="text-2xs uppercase tracking-wider text-text-muted">
-                <tr className="border-b border-border">
-                  <th className="pb-3 pr-4">journey</th>
-                  <th className="pb-3 pr-4">origin</th>
-                  <th className="pb-3 pr-4">population</th>
-                  <th className="pb-3 pr-4">cohort</th>
-                  <th className="pb-3 pr-4">subs</th>
-                  <th className="pb-3 pr-4">linked</th>
-                  <th className="pb-3 pr-4">delivered</th>
-                  <th className="pb-3 pr-4">events</th>
-                  <th className="pb-3 pr-4">останній сигнал</th>
-                  <th className="pb-3">дія</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recentJourneys.map((journey) => (
-                  <tr key={journey.id} className="border-b border-border/60 text-text-secondary">
-                    <td className="py-3 pr-4 text-text-primary" title={journey.id}>
-                      {journey.id.slice(0, 8)}…
-                    </td>
-                    <td className="py-3 pr-4">{journey.origin}</td>
-                    <td className="py-3 pr-4">
-                      <span className={journey.isTest ? "text-accent" : "text-success"}>
-                        {journey.isTest ? "test" : "production"}
+              <div className="mt-5">
+                <FunnelOverview funnel={data.funnel} labels={EVENT_LABELS} />
+              </div>
+              <div className="mt-6 flex flex-col gap-4">
+                {data.funnel.map((step, index) => {
+                  const previous = index === 0 ? step.journeys : data.funnel[index - 1].journeys;
+                  const width = firstStep > 0 ? Math.max((step.journeys / firstStep) * 100, 2) : 0;
+                  return (
+                    <div
+                      key={step.name}
+                      className="grid gap-2 md:grid-cols-[220px_1fr_150px] md:items-center"
+                    >
+                      <span className="font-mono text-xs text-text-primary">
+                        {EVENT_LABELS[step.name] ?? step.name}
                       </span>
-                    </td>
-                    <td className="py-3 pr-4">{journey.cohortId ?? "—"}</td>
-                    <td className="py-3 pr-4">{journey.subscriptions}</td>
-                    <td className="py-3 pr-4">{journey.linkedSubscriptions}</td>
-                    <td className="py-3 pr-4">{journey.deliveredSubscriptions}</td>
-                    <td className="py-3 pr-4" title={journey.eventNames.join(", ")}>
-                      {journey.events}
-                    </td>
-                    <td className="py-3 pr-4">
-                      {formatRelative(journey.lastEventAt ?? journey.lastSeenAt)}
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-2">
-                        {journey.isTest ? (
-                          <button
-                            type="button"
-                            disabled={classifyJourney.isPending}
-                            onClick={() => markJourneyAsTest(journey)}
-                            className="border border-border px-2 py-1 text-2xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
+                      <div className="h-7 border border-border bg-bg-elev">
+                        <div className="h-full bg-accent/75" style={{ width: `${width}%` }} />
+                      </div>
+                      <span className="font-mono text-xs text-text-secondary md:text-right">
+                        {formatCount(step.journeys)} journey ·{" "}
+                        {formatPercent(step.journeys, previous)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </DashboardTabPanel>
+
+          <DashboardTabPanel value="subscribers">
+            <section className="border border-border bg-bg-card p-5 shadow-brut-md">
+              <SectionTitle
+                title="по підписниках"
+                detail={`${data.subscriberActivity.length} підписників · дайджест-кліки = дайджест-only`}
+              />
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full min-w-[1080px] border-collapse text-left font-mono text-xs">
+                  <thead className="text-2xs uppercase tracking-wider text-text-muted">
+                    <tr className="border-b border-border">
+                      <th className="pb-3 pr-4">підписник</th>
+                      <th className="pb-3 pr-4">приєднався</th>
+                      <th className="pb-3 pr-4">
+                        <span className="inline-flex items-center gap-1">
+                          перша подія
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label="що означає «перша подія»"
+                                className="text-text-muted hover:text-accent"
+                              >
+                                ⓘ
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Журнал подій існує лише з моменту релізу цієї аналітики. Для підписок,
+                              створених раніше, це НЕ перший дотик користувача — лише перша
+                              зафіксована подія. Дивіться «приєднався» для чесної дати.
+                            </TooltipContent>
+                          </Tooltip>
+                        </span>
+                      </th>
+                      <th className="pb-3 pr-4">cta</th>
+                      <th className="pb-3 pr-4">telegram</th>
+                      <th className="pb-3 pr-4">підписки</th>
+                      <th className="pb-3">дайджест-кліки</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.subscriberActivity.map((subscriber) => (
+                      <tr
+                        key={subscriber.chatId}
+                        className="border-b border-border/60 align-top text-text-secondary"
+                      >
+                        <td className="py-3 pr-4">
+                          <SubscriberIdentity
+                            tgUsername={subscriber.tgUsername}
+                            tgFirstName={subscriber.tgFirstName}
+                            chatId={subscriber.chatId}
+                          />
+                        </td>
+                        <td className="py-3 pr-4 text-text-primary">
+                          {formatRelative(subscriber.joinedAt)}
+                        </td>
+                        <td className="py-3 pr-4">{formatRelative(subscriber.firstSeenAt)}</td>
+                        <td className="py-3 pr-4">
+                          <span
+                            className={subscriber.ctaClickedAt ? "text-success" : "text-text-muted"}
                           >
-                            edit cohort
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          disabled={classifyJourney.isPending}
-                          onClick={() => toggleTestJourney(journey)}
-                          className="border border-border px-2 py-1 text-2xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
-                        >
-                          {journey.isTest ? "mark production" : "mark test"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                            {subscriber.ctaClickedAt
+                              ? formatRelative(subscriber.ctaClickedAt)
+                              : "—"}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span
+                            className={
+                              subscriber.telegramLinkedAt ? "text-success" : "text-text-muted"
+                            }
+                          >
+                            {subscriber.telegramLinkedAt
+                              ? formatRelative(subscriber.telegramLinkedAt)
+                              : "—"}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <SubscriptionsPopover subscriptions={subscriber.subscriptions} />
+                        </td>
+                        <td className="py-3">{formatCount(subscriber.vacancyClicks)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </DashboardTabPanel>
 
-        <section className="border border-border bg-bg-card p-5 shadow-brut-md">
-          <SectionTitle
-            title="по підписниках"
-            detail={`${data.subscriberActivity.length} chat_id · digest-кліки = дайджест-only`}
-          />
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[1080px] border-collapse text-left font-mono text-xs">
-              <thead className="text-2xs uppercase tracking-wider text-text-muted">
-                <tr className="border-b border-border">
-                  <th className="pb-3 pr-4">chat_id</th>
-                  <th className="pb-3 pr-4">перший сигнал</th>
-                  <th className="pb-3 pr-4">cta</th>
-                  <th className="pb-3 pr-4">telegram</th>
-                  <th className="pb-3 pr-4">підписки</th>
-                  <th className="pb-3">дайджест-кліки</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.subscriberActivity.map((subscriber) => (
-                  <tr
-                    key={subscriber.chatId}
-                    className="border-b border-border/60 align-top text-text-secondary"
-                  >
-                    <td className="py-3 pr-4 text-text-primary">{subscriber.chatId}</td>
-                    <td className="py-3 pr-4">{formatRelative(subscriber.firstSeenAt)}</td>
-                    <td className="py-3 pr-4">
-                      <span
-                        className={subscriber.ctaClickedAt ? "text-success" : "text-text-muted"}
-                      >
-                        {subscriber.ctaClickedAt ? formatRelative(subscriber.ctaClickedAt) : "—"}
+          <DashboardTabPanel value="identity">
+            <section className="grid gap-4 lg:grid-cols-2">
+              <div className="border border-border bg-bg-card p-5 shadow-brut-md">
+                <SectionTitle title="стан підписок" detail={`${data.subscriptions.total} всього`} />
+                <div className="mt-5 flex items-center gap-5 border-b border-border/60 pb-5">
+                  <Donut
+                    value={data.subscriptions.cv}
+                    total={data.subscriptions.total}
+                    label={formatPercent(data.subscriptions.cv, data.subscriptions.total)}
+                    size={88}
+                    thickness={11}
+                    ariaLabel="частка CV-підписок серед усіх"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                      cv проти feed
+                    </span>
+                    <span className="font-display text-xl font-bold text-text-primary">
+                      {formatCount(data.subscriptions.cv)}{" "}
+                      <span className="text-text-muted">
+                        CV / {formatCount(data.subscriptions.feed)} feed
                       </span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <span
-                        className={subscriber.telegramLinkedAt ? "text-success" : "text-text-muted"}
+                    </span>
+                  </div>
+                </div>
+                <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
+                  <Stat label="linked" value={data.subscriptions.linked} />
+                  <Stat label="pending" value={data.subscriptions.pending} />
+                  <Stat label="feed" value={data.subscriptions.feed} />
+                  <Stat label="CV" value={data.subscriptions.cv} />
+                  <Stat label="deactivated" value={data.subscriptions.deactivated} />
+                  <Stat
+                    label="linked без delivery"
+                    value={data.subscriptions.linkedWithoutDelivery}
+                  />
+                </dl>
+              </div>
+              <div
+                className={cn(
+                  "border bg-bg-card p-5 shadow-brut-md",
+                  identityIssues === 0 ? "border-border" : "border-danger",
+                )}
+              >
+                <SectionTitle
+                  title="цілісність identity"
+                  detail={
+                    identityIssues === 0
+                      ? "нових розривів не знайдено"
+                      : `${identityIssues} розривів`
+                  }
+                />
+                <dl className="mt-5 grid grid-cols-2 gap-3 font-mono text-xs">
+                  <Stat label="journey всього" value={data.identity.journeysTotal} />
+                  <Stat label="browser journey" value={data.identity.browserJourneys} />
+                  <Stat label="server journey" value={data.identity.serverJourneys} />
+                  <Stat label="legacy journey" value={data.identity.legacyJourneys} />
+                  <Stat label="прив’язані до account" value={data.identity.accountLinkedJourneys} />
+                  <Stat
+                    label="account з кількома journey"
+                    value={data.identity.multiJourneyUsers}
+                  />
+                  <Stat
+                    label="journey з кількома subs"
+                    value={data.identity.multiSubscriptionJourneys}
+                  />
+                  <Stat label="без journey_id" value={data.identity.subscriptionsWithoutJourney} />
+                  <Stat label="linked без event" value={data.identity.trackedLinkedWithoutEvent} />
+                  <Stat
+                    label="delivery без event"
+                    value={data.identity.trackedDeliveryWithoutEvent}
+                  />
+                  <Stat label="outbox очікує dispatch" value={data.identity.pendingOutboxEvents} />
+                </dl>
+              </div>
+            </section>
+          </DashboardTabPanel>
+
+          <DashboardTabPanel value="journeys">
+            <section className="border border-border bg-bg-card p-5 shadow-brut-md">
+              <SectionTitle
+                title="останні journey"
+                detail={`оновлено ${formatRelative(data.generatedAt)}`}
+              />
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full min-w-[1080px] border-collapse text-left font-mono text-xs">
+                  <thead className="text-2xs uppercase tracking-wider text-text-muted">
+                    <tr className="border-b border-border">
+                      <th className="pb-3 pr-4">journey</th>
+                      <th className="pb-3 pr-4">origin</th>
+                      <th className="pb-3 pr-4">population</th>
+                      <th className="pb-3 pr-4">cohort</th>
+                      <th className="pb-3 pr-4">subs</th>
+                      <th className="pb-3 pr-4">linked</th>
+                      <th className="pb-3 pr-4">delivered</th>
+                      <th className="pb-3 pr-4">events</th>
+                      <th className="pb-3 pr-4">останній сигнал</th>
+                      <th className="pb-3">дія</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recentJourneys.map((journey) => (
+                      <tr
+                        key={journey.id}
+                        className="border-b border-border/60 text-text-secondary"
                       >
-                        {subscriber.telegramLinkedAt
-                          ? formatRelative(subscriber.telegramLinkedAt)
-                          : "—"}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex flex-col gap-1.5">
-                        {subscriber.subscriptions.map((sub) => (
-                          <div key={sub.id} className="flex items-center gap-2">
-                            <Badge variant={sub.isCv ? "accent" : "dark"}>
-                              {sub.isCv ? "cv" : "feed"}
-                            </Badge>
-                            <span
-                              className={
-                                sub.isActive
-                                  ? "text-text-secondary"
-                                  : "text-text-muted line-through"
-                              }
+                        <td className="py-3 pr-4 text-text-primary" title={journey.id}>
+                          {journey.id.slice(0, 8)}…
+                        </td>
+                        <td className="py-3 pr-4">{journey.origin}</td>
+                        <td className="py-3 pr-4">
+                          <span className={journey.isTest ? "text-accent" : "text-success"}>
+                            {journey.isTest ? "test" : "production"}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">{journey.cohortId ?? "—"}</td>
+                        <td className="py-3 pr-4">{journey.subscriptions}</td>
+                        <td className="py-3 pr-4">{journey.linkedSubscriptions}</td>
+                        <td className="py-3 pr-4">{journey.deliveredSubscriptions}</td>
+                        <td className="py-3 pr-4" title={journey.eventNames.join(", ")}>
+                          {journey.events}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {formatRelative(journey.lastEventAt ?? journey.lastSeenAt)}
+                        </td>
+                        <td className="py-3">
+                          <div className="flex gap-2">
+                            {journey.isTest ? (
+                              <button
+                                type="button"
+                                disabled={classifyJourney.isPending}
+                                onClick={() => markJourneyAsTest(journey)}
+                                className="border border-border px-2 py-1 text-2xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
+                              >
+                                edit cohort
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              disabled={classifyJourney.isPending}
+                              onClick={() => toggleTestJourney(journey)}
+                              className="border border-border px-2 py-1 text-2xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
                             >
-                              {sub.trackLabel}
-                            </span>
+                              {journey.isTest ? "mark production" : "mark test"}
+                            </button>
                           </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-3">{formatCount(subscriber.vacancyClicks)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </DashboardTabPanel>
+        </DashboardTabs>
       </div>
     </main>
   );
