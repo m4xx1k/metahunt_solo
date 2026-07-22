@@ -110,6 +110,25 @@ Acceptance:
 - a forced safe delivery failure appears only as a bounded failure kind;
 - `/stop` prevents later delivery.
 
+## Production baseline — 2026-07-22
+
+- Main commit `f71cff8` is live on Vercel and the focused landing, privacy,
+  robots, and sitemap routes return `200` with their expected content.
+- Railway deployment `0e3e25ef-f8ef-411b-8edc-f098e2b61814` is `SUCCESS`.
+  `/healthz` reports Postgres, storage, and Temporal healthy; the worker reached
+  `RUNNING`; the observed 15-minute HTTP smoke window had no 5xx responses.
+- Migration `0028` is applied: both account → subscription and subscription →
+  notification foreign keys report `ON DELETE CASCADE` in production.
+- A seeded sample match returns `200`, a real non-sample candidate through the
+  public sample path returns `404`, and the legacy path without JWT returns
+  `401`.
+- One anonymous Backend-preset create returned a valid UUID and matching HTTPS
+  Telegram start link. It was not linked to a user and will follow the normal
+  pending-subscription cleanup window.
+
+This proves the public HTTP handoff, not Telegram activation. The five user-side
+`/start` → value → click → `/stop` chains and PostHog joining remain required.
+
 ## Traffic gates
 
 - Founder cohort: 20 qualified Backend/Full-stack users; at least 8 link
