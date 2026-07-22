@@ -1,13 +1,16 @@
 # metahunt
 
-Job aggregator for the Ukrainian IT market. Current baseline: pnpm workspaces + Nest ETL app + shared Drizzle/Postgres database package.
+Candidate-first job radar for the Ukrainian IT market. MetaHunt aggregates DOU
+and Djinni, structures and deduplicates vacancies, ranks them against optional
+CV profiles, and delivers new matches through Telegram.
 
 ## Layout
 
 ```
 metahunt/
 ├── apps/
-│   └── etl/                    # @metahunt/etl — NestJS HTTP app (Express)
+│   ├── etl/                    # @metahunt/etl — NestJS API, ETL, Temporal worker
+│   └── web/                    # @metahunt/web — Next.js public + account/operator UI
 └── libs/
     └── database/               # @metahunt/database — Nest @Global() module
 ```
@@ -21,12 +24,12 @@ Package names use the `@metahunt/*` scope. Inside the monorepo they wire up to e
 
 ```bash
 pnpm install        # set up symlinks and install deps
-pnpm db:up          # start local infra: Postgres + MinIO + Temporal + Temporal UI
+pnpm docker:infra   # start local infra: Postgres + MinIO + Temporal + Temporal UI
 pnpm db:migrate     # apply drizzle migrations
 pnpm db:seed        # seed reference data (sources: Djinni, DOU)
-pnpm build          # build libs/database first, then apps/etl
+pnpm build:all      # build database, API/worker, and web
 pnpm start          # run etl in prod mode (loads ../../.env if present)
-pnpm dev            # dev mode: watch on the lib + nest start --watch on the app
+pnpm dev            # watch database, API/worker, and web
 ```
 
 Sanity checks:
@@ -40,6 +43,7 @@ curl http://localhost:3000/healthz  # { "status":"ok", "checks":{...} } — Post
 contract described in [`md/runbook/api-contract.md`](md/runbook/api-contract.md).
 
 Open Temporal UI at http://localhost:8080 to see workflow runs; MinIO console at http://localhost:9001 (creds: `metahunt` / `metahunt123`).
+The public web app runs at http://localhost:4000.
 
 Requires: Node ≥22, pnpm ≥10, Docker.
 
@@ -50,9 +54,10 @@ Requires: Node ≥22, pnpm ≥10, Docker.
 | Command | What it does |
 |---|---|
 | `pnpm build` | Builds `libs/database` (`tsc`), then `apps/etl` (`nest build`) |
+| `pnpm build:all` | Builds the database, ETL/API, and Next.js web app |
 | `pnpm start` / `pnpm start:prod` | Starts `apps/etl` with `node --env-file-if-exists=../../.env dist/main.js` |
 | `pnpm dev` | Pre-builds `libs/database` once, then runs `tsc -w` (lib) + `nest start --watch` (app) in parallel |
-| `pnpm db:up` / `pnpm db:down` | Start/stop local Postgres container |
+| `pnpm docker:infra` / `pnpm docker:infra:down` | Start/stop Postgres, MinIO, and Temporal |
 | `pnpm db:generate` | Generate new drizzle migration from current schema |
 | `pnpm db:migrate` | Apply migrations to Postgres |
 | `pnpm db:seed` | Seed initial reference rows (`sources`) |
@@ -196,4 +201,5 @@ How to write — see `md/README.md`.
 ## What's next
 
 Small changes go into `md/journal/releases.md`. Bigger milestones go into `md/roadmap.md`.
-Current focus: Stage 04 (first ETL job). See `md/roadmap.md` for the latest stage status.
+Current focus: Stage 08 (first-user validation). See `md/roadmap.md` and
+[`METAHUNT_AUDIT_AND_NEXT_STEPS.md`](METAHUNT_AUDIT_AND_NEXT_STEPS.md).

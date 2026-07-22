@@ -4,28 +4,50 @@ What's now / what's next. Stages are business-meaningful milestones, not small f
 
 ## Current stage
 
-### Stage 06 — Extraction quality + operator surface
-**Status:** in-progress · **Started:** 2026-05-08
+### Stage 08 — First-user validation
+**Status:** in-progress · **Started:** 2026-07-21
 
-Stage 05 closed 2026-05-08 with the silver pipeline stable; Stage 06 has two threads.
+The candidate-facing loop now exists end to end: browse or CV match → Telegram
+subscription → new-vacancy digest → attributed original-job click. The current
+stage validates that loop with real people before more ranking or source work.
 
-**(1) Extraction quality.** Close the prompt-quality loop on BAML — inject the live taxonomy as soft constraints, add anti-extraction rules + UA-market context, regression-test against captured fixtures, re-measure delta via `fill-vacancies` coverage. Tracker: [`_done/extraction-prompt-v2.md`](./journal/migrations/_done/extraction-prompt-v2.md) (prompt v2 shipped; the v1→v2 delta measurement is the deferred piece). Unblocks further `nodes.json` iterations on the SKILL axis.
+**Now:** review and deploy the focused Backend-radar branch, run five controlled
+Telegram activation chains, verify one PostHog funnel, then recruit 20
+Middle/Senior Backend or Full-stack users. Paid traffic remains gated on that
+cohort's activation and alert-quality results.
 
-**(2) Operator surface.** Read-only sidebar-driven dashboard inside `apps/web` (KPI strip · sources health · taxonomy coverage + queue) so pipeline + curation are observable without `psql`. **P1–P3 + polish shipped 2026-05-09** ([`operator-dashboard`](./journal/migrations/_done/operator-dashboard.md)). Builds atop the Stage 05 silver feed; the taxonomy SKILL backlog is visible only because Stage 05 wired `taxonomy.service.getCoverage()`.
-
-**(3) Candidate-facing matching (reverse-ATS).** CV → ranked vacancies + "що вчити далі" recommendations ([`reverse-ats`](./journal/migrations/reverse-ats.md), ADR-0006/0009). **2026-06-25:** recommendations gated by LLM skill metadata (`node_tech_meta`/`node_skill_cooc`, ADR-0010) and ranking soft-demotes off-stack vacancies — IDF/`node_stats` untouched ([`_done/skill-metadata-recommendations.md`](./journal/migrations/_done/skill-metadata-recommendations.md)). Deferred: role-fit blend (Phase 3, needs click-data); leadership-role extraction tuning. Plan: `.scratch/reverse-ats-v2`.
-
-**Trackers:**
-- [`journal/migrations/_done/operator-dashboard.md`](./journal/migrations/_done/operator-dashboard.md) — done 2026-05-09
-- [`journal/migrations/vacancy-lineage.md`](./journal/migrations/vacancy-lineage.md) — public drill-down (vacancy → record → ingest); spec only, not started
-- [`journal/migrations/_done/taxonomy-workspace.md`](./journal/migrations/_done/taxonomy-workspace.md) — split-pane curation surface (list + always-on detail, rename, unified list endpoint) — done 2026-05-24
+Tracker: [`real-user-funnel`](./journal/migrations/real-user-funnel.md). Launch
+plan: [`METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../METAHUNT_AUDIT_AND_NEXT_STEPS.md).
 
 ## Next
 
-### Stage 07 — Quality baseline (planned)
-Lint/format, unit + integration tests, and CI checks for build + migrate + seed + healthz smoke. Sequenced after Stage 06 — prompt quality drives the extraction signal that the silver layer depends on, which the CI in turn protects.
+### Stage 09 — Evidence-led quality calibration
+
+Use first-user relevance ratings, zero-match rates, link conversion, and digest
+clicks to choose the next ranking, extraction, taxonomy, or supply improvement.
+Do not select that work from offline intuition alone.
 
 ## Done
+
+### Stage 07 — Launch quality baseline
+**Status:** done · **Completed:** 2026-07-21
+
+Lint, tests, production builds, migration verification, health smoke, API/CV
+privacy hardening, CORS restriction, ingest correctness, and Telegram-link race
+handling are protected in CI and deployed on the production API.
+
+### Stage 06 — Extraction quality + candidate/operator surfaces
+**Status:** done · **Completed:** 2026-07-11
+
+Prompt v2 and extraction-cost visibility, the operator workspace, reverse-ATS,
+CV skill recommendations, stack-fit ranking, the merged home feed, Telegram
+auth, account-bound CVs, and subscription management shipped. Empirical prompt
+delta and role-fit calibration were deliberately deferred until Stage 09, when
+real usage can provide the missing evidence.
+
+Key trackers: [`_done/extraction-prompt-v2.md`](./journal/migrations/_done/extraction-prompt-v2.md),
+[`reverse-ats.md`](./journal/migrations/reverse-ats.md), and
+[`_done/operator-dashboard.md`](./journal/migrations/_done/operator-dashboard.md).
 
 ### Stage 05 — Silver layer (loader + `/vacancies` + curated taxonomy)
 **Status:** done · **Completed:** 2026-05-08

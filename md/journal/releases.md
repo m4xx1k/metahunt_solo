@@ -9,6 +9,8 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 ## 2026-07-21
 
 - **Ingest launch hardening** (`feat/ingest-pipeline-refactor`). RSS exact-match suppression is source-scoped, production fetch failures follow Temporal retry semantics without fixture fallback, workflow and worker fan-out is bounded, and listing updates are latest-record-wins with race-safe embedding and duplicate-cluster invalidation. No schema migration was required. → [migration tracker](migrations/ingest-pipeline-refactor.md)
+- **Anonymous CV demos repaired** (`feat/real-user-funnel`). Seeded sample profiles now use a public sample-only match endpoint; uploaded candidates remain JWT- and owner-protected. The home feed routes sample requests through that endpoint on both server seed and client refetch. → [migration tracker](migrations/real-user-funnel.md)
+- **First measurable acquisition path** (`feat/real-user-funnel`). `/radar/backend` turns the existing cold Telegram subscription into a campaign landing with truthful DOU + Djinni proof, explicit intent/create/handoff events, and bounded UTM properties. Public CV/analytics disclosure, honest root metadata, `robots.txt`, and `sitemap.xml` close the immediate trust/discovery gaps. No deployment or ad spend was triggered. → [launch audit](../../METAHUNT_AUDIT_AND_NEXT_STEPS.md)
 
 ---
 
