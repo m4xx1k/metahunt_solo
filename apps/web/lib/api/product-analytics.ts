@@ -65,12 +65,30 @@ export interface ProductAnalyticsOverview {
     eventNames: string[];
     lastEventAt: string | null;
   }>;
+  subscriberActivity: SubscriberActivity[];
 }
 
 export interface AnalyticsJourneyClassification {
   id: string;
   isTest: boolean;
   cohortId: string | null;
+}
+
+export interface SubscriberSubscription {
+  id: string;
+  isActive: boolean;
+  isCv: boolean;
+  trackLabel: string;
+  createdAt: string;
+}
+
+export interface SubscriberActivity {
+  chatId: string;
+  firstSeenAt: string | null;
+  ctaClickedAt: string | null;
+  telegramLinkedAt: string | null;
+  vacancyClicks: number;
+  subscriptions: SubscriberSubscription[];
 }
 
 export const productAnalyticsApi = {
