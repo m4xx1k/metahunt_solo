@@ -151,21 +151,43 @@ export class AnalyticsService {
     });
   }
 
-  async applyClicked(vacancyId: string, subscriptionId?: string): Promise<void> {
-    if (!subscriptionId) {
-      this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.applyClicked, {
-        vacancyId,
-        $process_person_profile: false,
+  async applyClicked(
+    vacancyId: string,
+    subscriptionId?: string,
+    journeyId?: string,
+  ): Promise<void> {
+    if (subscriptionId) {
+      const clickId = randomUUID();
+      await this.enqueueSubscriptionEvent({
+        subscriptionId,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api",
+        dedupeKey: `digest_link_clicked:${clickId}`,
+        properties: { vacancyId },
       });
       return;
     }
-    const clickId = randomUUID();
-    await this.enqueueSubscriptionEvent({
-      subscriptionId,
-      name: ANALYTICS_EVENTS.digestLinkClicked,
-      source: "api",
-      dedupeKey: `digest_link_clicked:${clickId}`,
-      properties: { vacancyId },
+    if (journeyId) {
+      // Feed clicks land at journey level (a journey can have zero or many
+      // subscriptions); roll up to a subscriber downstream only when the
+      // journey has exactly one.
+      try {
+        await this.record({
+          journeyId,
+          name: ANALYTICS_EVENTS.applyClicked,
+          source: "browser",
+          dedupeKey: `apply_clicked:${randomUUID()}`,
+          properties: { vacancyId },
+        });
+      } catch {
+        // Already logged by record(); swallow so the redirect (already sent
+        // by the caller) is never affected by an analytics-write failure.
+      }
+      return;
+    }
+    this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.applyClicked, {
+      vacancyId,
+      $process_person_profile: false,
     });
   }
 

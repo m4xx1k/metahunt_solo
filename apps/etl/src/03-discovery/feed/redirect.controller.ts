@@ -2,6 +2,7 @@ import { Controller, Get, NotFoundException, Param, Query, Redirect } from "@nes
 import { ApiFoundResponse, ApiNotFoundResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import { isUuid } from "../../platform/shared/query-parsing";
 
 import { FeedService } from "./feed.service";
 
@@ -27,10 +28,15 @@ export class RedirectController {
     // Referring subscription, stamped on digest links as `?s=<uuid>`. Absent for
     // web taps — the click is still logged, just not attributed to a subscription.
     @Query("s") subscriptionId?: string,
+    // Browser journey, stamped on feed apply links as `?j=<uuid>` (localStorage
+    // id, unreadable at this origin otherwise). Missing/invalid never fails the
+    // redirect — it just falls back to anonymous tracking.
+    @Query("j") journeyIdRaw?: string,
   ): Promise<{ url: string }> {
     const link = await this.feed.getApplyLink(id);
     if (!link) throw new NotFoundException("Vacancy link not found");
-    void this.analytics.applyClicked(id, subscriptionId);
+    const journeyId = journeyIdRaw && isUuid(journeyIdRaw) ? journeyIdRaw : undefined;
+    void this.analytics.applyClicked(id, subscriptionId, journeyId);
     return { url: link };
   }
 }

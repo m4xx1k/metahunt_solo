@@ -144,4 +144,63 @@ describe("AnalyticsService", () => {
     await expect(service.telegramLinked("subscription-1", "linked")).resolves.toBeUndefined();
     expect(capture).not.toHaveBeenCalled();
   });
+
+  it("attributes an apply click to the subscription when one is present, even with a journey", async () => {
+    const service = makeService();
+
+    await service.applyClicked("vacancy-1", "subscription-1", "journey-2");
+
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        journeyId: "journey-1",
+        properties: expect.objectContaining({ vacancyId: "vacancy-1" }),
+      }),
+    );
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it("records a durable journey-level apply click when there is no subscription", async () => {
+    const service = makeService();
+
+    await service.applyClicked("vacancy-1", undefined, "journey-2");
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        journeyId: "journey-2",
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser",
+        properties: expect.objectContaining({ vacancyId: "vacancy-1" }),
+      }),
+    );
+    expect(capture).toHaveBeenCalledWith(
+      "journey-2",
+      ANALYTICS_EVENTS.applyClicked,
+      expect.objectContaining({ vacancyId: "vacancy-1" }),
+    );
+  });
+
+  it("falls back to an anonymous apply click when neither subscription nor journey is present", async () => {
+    const service = makeService();
+
+    await service.applyClicked("vacancy-1");
+
+    expect(record).not.toHaveBeenCalled();
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(capture).toHaveBeenCalledWith(
+      expect.any(String),
+      ANALYTICS_EVENTS.applyClicked,
+      expect.objectContaining({ vacancyId: "vacancy-1", $process_person_profile: false }),
+    );
+  });
+
+  it("keeps the redirect's fire-and-forget call safe when the journey ledger write fails", async () => {
+    const service = makeService();
+    record.mockRejectedValueOnce(new Error("database unavailable"));
+
+    await expect(
+      service.applyClicked("vacancy-1", undefined, "journey-2"),
+    ).resolves.toBeUndefined();
+    expect(capture).not.toHaveBeenCalled();
+  });
 });
