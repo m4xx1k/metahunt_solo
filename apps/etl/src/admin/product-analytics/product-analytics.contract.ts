@@ -54,6 +54,7 @@ export interface ProductAnalyticsOverview {
   };
   identity: ProductIdentityHealth;
   recentJourneys: RecentProductJourney[];
+  subscriberActivity: SubscriberActivity[];
 }
 
 export interface ProductIdentityHealth {
@@ -90,4 +91,25 @@ export interface AnalyticsJourneyClassification {
   id: string;
   isTest: boolean;
   cohortId: string | null;
+}
+
+export interface SubscriberSubscription {
+  id: string;
+  isActive: boolean;
+  isCv: boolean;
+  trackLabel: string;
+  createdAt: Date;
+}
+
+// One row per Telegram chat_id, summarizing that subscriber's whole funnel
+// journey across all of their subscriptions (a subscriber may run more than
+// one). `vacancyClicks` is digest-link taps only — feed-card taps are logged
+// anonymously (no subscription_id) and aren't attributable per subscriber yet.
+export interface SubscriberActivity {
+  chatId: string;
+  firstSeenAt: Date | null;
+  ctaClickedAt: Date | null;
+  telegramLinkedAt: Date | null;
+  vacancyClicks: number;
+  subscriptions: SubscriberSubscription[];
 }

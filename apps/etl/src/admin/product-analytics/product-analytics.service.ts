@@ -1,11 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { count, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { ANALYTICS_EVENTS } from "../../platform/analytics/events";
+import { asStringArray } from "../../platform/shared/coerce";
 import { reportingPeriodSince } from "../../platform/shared/reporting-period";
 
 import {
@@ -16,11 +17,19 @@ import {
   type ProductAnalyticsPopulation,
   type ProductIdentityHealth,
   type RecentProductJourney,
+  type SubscriberActivity,
+  type SubscriberSubscription,
   type UpdateAnalyticsJourneyDto,
 } from "./product-analytics.contract";
 
-const { analyticsJourneys, productEvents, sentNotifications, subscriptions } = schema;
+const { analyticsJourneys, nodes, productEvents, sentNotifications, subscriptions } = schema;
 const RECENT_JOURNEY_LIMIT = 30;
+const SUBSCRIBER_ACTIVITY_LIMIT = 50;
+const UNLABELED_TRACK = "усі ролі";
+
+function isNonNull<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
 
 @Injectable()
 export class ProductAnalyticsService {
@@ -34,26 +43,28 @@ export class ProductAnalyticsService {
     const createdPeriod = since ? gte(subscriptions.createdAt, since) : undefined;
     const populationFilter = this.populationFilter(population);
 
-    const [eventRows, subscriptionRows, identityRows, recentJourneys] = await Promise.all([
-      this.orderedFunnel(since, population),
-      this.db
-        .select({
-          total: count(),
-          createdInPeriod: sql<number>`count(*) filter (where ${createdPeriod ?? sql`true`})::int`,
-          active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
-          pending: sql<number>`count(*) filter (where ${subscriptions.chatId} is null)::int`,
-          linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
-          feed: sql<number>`count(*) filter (where ${subscriptions.candidateId} is null)::int`,
-          cv: sql<number>`count(*) filter (where ${subscriptions.candidateId} is not null)::int`,
-          deactivated: sql<number>`count(*) filter (where not ${subscriptions.isActive} and ${subscriptions.chatId} is not null)::int`,
-          delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
-        })
-        .from(subscriptions)
-        .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
-        .where(populationFilter),
-      this.identityHealth(population),
-      this.recentJourneys(population),
-    ]);
+    const [eventRows, subscriptionRows, identityRows, recentJourneys, subscriberActivity] =
+      await Promise.all([
+        this.orderedFunnel(since, population),
+        this.db
+          .select({
+            total: count(),
+            createdInPeriod: sql<number>`count(*) filter (where ${createdPeriod ?? sql`true`})::int`,
+            active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
+            pending: sql<number>`count(*) filter (where ${subscriptions.chatId} is null)::int`,
+            linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
+            feed: sql<number>`count(*) filter (where ${subscriptions.candidateId} is null)::int`,
+            cv: sql<number>`count(*) filter (where ${subscriptions.candidateId} is not null)::int`,
+            deactivated: sql<number>`count(*) filter (where not ${subscriptions.isActive} and ${subscriptions.chatId} is not null)::int`,
+            delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
+          })
+          .from(subscriptions)
+          .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
+          .where(populationFilter),
+        this.identityHealth(population),
+        this.recentJourneys(population),
+        this.subscriberActivity(population),
+      ]);
 
     const subscriptionsRow = subscriptionRows[0];
     const delivered = subscriptionsRow?.delivered ?? 0;
@@ -81,6 +92,7 @@ export class ProductAnalyticsService {
       },
       identity: identityRows,
       recentJourneys,
+      subscriberActivity,
     };
   }
 
@@ -345,6 +357,175 @@ export class ProductAnalyticsService {
         lastEventAt: event?.lastEventAt ?? null,
       };
     });
+  }
+
+  // Per-chat_id funnel view: every linked subscriber's first signal, landing
+  // CTA, telegram_linked event (falling back to the subscription's own
+  // `linked_at` for pre-instrumentation links), and their subscriptions with a
+  // role-derived track label. Mirrors recentJourneys' batch-then-merge shape
+  // rather than one mega-join, since a subscriber can span several journeys.
+  private async subscriberActivity(
+    population: ProductAnalyticsPopulation,
+  ): Promise<SubscriberActivity[]> {
+    const populationFilter = this.populationFilter(population);
+    const subs = await this.db
+      .select({
+        id: subscriptions.id,
+        chatId: subscriptions.chatId,
+        candidateId: subscriptions.candidateId,
+        isActive: subscriptions.isActive,
+        createdAt: subscriptions.createdAt,
+        linkedAt: subscriptions.linkedAt,
+        journeyId: subscriptions.journeyId,
+        params: subscriptions.params,
+      })
+      .from(subscriptions)
+      .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
+      .where(
+        populationFilter
+          ? and(isNotNull(subscriptions.chatId), populationFilter)
+          : isNotNull(subscriptions.chatId),
+      );
+    if (subs.length === 0) return [];
+
+    const journeyIds = [...new Set(subs.map((row) => row.journeyId).filter(isNonNull))];
+    const subscriptionIds = subs.map((row) => row.id);
+    const roleIds = [...new Set(subs.flatMap((row) => asStringArray(row.params.roleIds)))];
+
+    const [firstEvents, ctaEvents, telegramEvents, vacancyClickEvents, roleNodes] =
+      await Promise.all([
+        this.db
+          .select({
+            journeyId: productEvents.journeyId,
+            at: sql<Date>`min(${productEvents.occurredAt})`,
+          })
+          .from(productEvents)
+          .where(inArray(productEvents.journeyId, journeyIds))
+          .groupBy(productEvents.journeyId),
+        this.db
+          .select({
+            journeyId: productEvents.journeyId,
+            at: sql<Date>`min(${productEvents.occurredAt})`,
+          })
+          .from(productEvents)
+          .where(
+            and(
+              inArray(productEvents.journeyId, journeyIds),
+              eq(productEvents.name, ANALYTICS_EVENTS.landingCtaClicked),
+            ),
+          )
+          .groupBy(productEvents.journeyId),
+        this.db
+          .select({
+            subscriptionId: productEvents.subscriptionId,
+            at: sql<Date>`min(${productEvents.occurredAt})`,
+          })
+          .from(productEvents)
+          .where(
+            and(
+              inArray(productEvents.subscriptionId, subscriptionIds),
+              eq(productEvents.name, ANALYTICS_EVENTS.telegramLinked),
+            ),
+          )
+          .groupBy(productEvents.subscriptionId),
+        this.db
+          .select({
+            subscriptionId: productEvents.subscriptionId,
+            clicks: count(),
+          })
+          .from(productEvents)
+          .where(
+            and(
+              inArray(productEvents.subscriptionId, subscriptionIds),
+              eq(productEvents.name, ANALYTICS_EVENTS.digestLinkClicked),
+            ),
+          )
+          .groupBy(productEvents.subscriptionId),
+        roleIds.length > 0
+          ? this.db
+              .select({ id: nodes.id, name: nodes.canonicalName })
+              .from(nodes)
+              .where(inArray(nodes.id, roleIds))
+          : Promise.resolve([]),
+      ]);
+
+    // node-postgres's driver returns raw `min(timestamptz)` aggregates as
+    // strings (drizzle only auto-maps real columns, not sql-tagged ones) —
+    // coerce to Date so downstream comparisons/getTime() calls are safe.
+    const firstEventByJourney = new Map(
+      firstEvents.map((row) => [row.journeyId, new Date(row.at)]),
+    );
+    const ctaByJourney = new Map(ctaEvents.map((row) => [row.journeyId, new Date(row.at)]));
+    const telegramLinkedBySub = new Map(
+      telegramEvents
+        .filter((row): row is { subscriptionId: string; at: Date } => row.subscriptionId !== null)
+        .map((row) => [row.subscriptionId, new Date(row.at)]),
+    );
+    const vacancyClicksBySub = new Map(
+      vacancyClickEvents
+        .filter(
+          (row): row is { subscriptionId: string; clicks: number } => row.subscriptionId !== null,
+        )
+        .map((row) => [row.subscriptionId, row.clicks]),
+    );
+    const roleNameById = new Map(roleNodes.map((node) => [node.id, node.name]));
+
+    const byChat = new Map<string, (typeof subs)[number][]>();
+    for (const row of subs) {
+      if (!row.chatId) continue;
+      const bucket = byChat.get(row.chatId) ?? [];
+      bucket.push(row);
+      byChat.set(row.chatId, bucket);
+    }
+
+    const rows: SubscriberActivity[] = [...byChat.entries()].map(([chatId, subRows]) => {
+      const subscriptionSummaries: SubscriberSubscription[] = subRows.map((row) => ({
+        id: row.id,
+        isActive: row.isActive,
+        isCv: row.candidateId !== null,
+        trackLabel: this.trackLabel(row.params, roleNameById),
+        createdAt: row.createdAt,
+      }));
+      const firstSeenAt = this.earliest(
+        subRows.map((row) => firstEventByJourney.get(row.journeyId ?? "") ?? null),
+      );
+      const ctaClickedAt = this.earliest(
+        subRows.map((row) => ctaByJourney.get(row.journeyId ?? "") ?? null),
+      );
+      const telegramLinkedAt = this.earliest(
+        subRows.map((row) => telegramLinkedBySub.get(row.id) ?? row.linkedAt),
+      );
+      const vacancyClicks = subRows.reduce(
+        (sum, row) => sum + (vacancyClicksBySub.get(row.id) ?? 0),
+        0,
+      );
+
+      return {
+        chatId,
+        firstSeenAt,
+        ctaClickedAt,
+        telegramLinkedAt,
+        vacancyClicks,
+        subscriptions: subscriptionSummaries,
+      };
+    });
+
+    return rows
+      .sort((a, b) => (b.firstSeenAt?.getTime() ?? 0) - (a.firstSeenAt?.getTime() ?? 0))
+      .slice(0, SUBSCRIBER_ACTIVITY_LIMIT);
+  }
+
+  private trackLabel(params: Record<string, unknown>, roleNameById: Map<string, string>): string {
+    const names = asStringArray(params.roleIds)
+      .map((id) => roleNameById.get(id))
+      .filter(isNonNull);
+    return names.length > 0 ? names.join(", ") : UNLABELED_TRACK;
+  }
+
+  private earliest(dates: Array<Date | null>): Date | null {
+    const valid = dates.filter(isNonNull);
+    if (valid.length === 0) return null;
+    return valid.reduce((min, date) => (date < min ? date : min));
   }
 
   private populationFilter(population: ProductAnalyticsPopulation) {

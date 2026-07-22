@@ -16,7 +16,7 @@ import {
 } from "@/lib/api/product-analytics";
 import { formatCount, formatPercent, formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Tag } from "@/ui";
+import { Badge, Tag } from "@/ui";
 
 const EVENT_LABELS: Record<string, string> = {
   landing_view: "відкрили посадкову",
@@ -300,6 +300,75 @@ export function ProductAnalyticsDashboard() {
                         </button>
                       </div>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="border border-border bg-bg-card p-5 shadow-brut-md">
+          <SectionTitle
+            title="по підписниках"
+            detail={`${data.subscriberActivity.length} chat_id · digest-кліки = дайджест-only`}
+          />
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[1080px] border-collapse text-left font-mono text-xs">
+              <thead className="text-2xs uppercase tracking-wider text-text-muted">
+                <tr className="border-b border-border">
+                  <th className="pb-3 pr-4">chat_id</th>
+                  <th className="pb-3 pr-4">перший сигнал</th>
+                  <th className="pb-3 pr-4">cta</th>
+                  <th className="pb-3 pr-4">telegram</th>
+                  <th className="pb-3 pr-4">підписки</th>
+                  <th className="pb-3">дайджест-кліки</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.subscriberActivity.map((subscriber) => (
+                  <tr
+                    key={subscriber.chatId}
+                    className="border-b border-border/60 align-top text-text-secondary"
+                  >
+                    <td className="py-3 pr-4 text-text-primary">{subscriber.chatId}</td>
+                    <td className="py-3 pr-4">{formatRelative(subscriber.firstSeenAt)}</td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={subscriber.ctaClickedAt ? "text-success" : "text-text-muted"}
+                      >
+                        {subscriber.ctaClickedAt ? formatRelative(subscriber.ctaClickedAt) : "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={subscriber.telegramLinkedAt ? "text-success" : "text-text-muted"}
+                      >
+                        {subscriber.telegramLinkedAt
+                          ? formatRelative(subscriber.telegramLinkedAt)
+                          : "—"}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div className="flex flex-col gap-1.5">
+                        {subscriber.subscriptions.map((sub) => (
+                          <div key={sub.id} className="flex items-center gap-2">
+                            <Badge variant={sub.isCv ? "accent" : "dark"}>
+                              {sub.isCv ? "cv" : "feed"}
+                            </Badge>
+                            <span
+                              className={
+                                sub.isActive
+                                  ? "text-text-secondary"
+                                  : "text-text-muted line-through"
+                              }
+                            >
+                              {sub.trackLabel}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-3">{formatCount(subscriber.vacancyClicks)}</td>
                   </tr>
                 ))}
               </tbody>
