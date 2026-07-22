@@ -78,6 +78,19 @@ export class FeedController {
     return this.facets.getDomainFacets();
   }
 
+  // Full detail for one vacancy (including description) — backs the public
+  // vacancy detail page (`/vacancy/:id`). `:id` is a vacancies.id; works for
+  // any member of a dedup group, not just the representative row.
+  @Get("vacancy/:id")
+  @ApiOperation({ summary: "Read full detail for one vacancy" })
+  @ApiOkResponse({ description: "Full vacancy detail, including description." })
+  @ApiNotFoundResponse({ description: "Vacancy was not found.", type: ApiErrorResponseDto })
+  async vacancy(@Param("id") id: string) {
+    const vacancy = await this.feed.getById(id);
+    if (!vacancy) throw new NotFoundException();
+    return vacancy;
+  }
+
   // Members + "why merged" reasons for one dedup group — backs the feed's
   // "show duplicates" drawer. `:id` is a unique_vacancies.id.
   @Get("group/:id")

@@ -28,10 +28,7 @@ export function coerceBool(v: string | undefined): boolean | undefined {
 
 // Comma-joined enum list from the URL → validated values (unknowns dropped, so a
 // bad ?seniorities=foo degrades to "no filter" rather than 400-ing the page).
-export function coerceEnumList<T extends string>(
-  values: readonly T[],
-  v: string | undefined,
-): T[] {
+export function coerceEnumList<T extends string>(values: readonly T[], v: string | undefined): T[] {
   if (!v) return [];
   return v
     .split(",")
@@ -59,12 +56,7 @@ export type EnglishLevel = (typeof ENGLISH_LEVEL_VALUES)[number];
 
 export type Currency = "USD" | "EUR" | "UAH";
 
-export type EngagementType =
-  | "PRODUCT"
-  | "OUTSOURCE"
-  | "OUTSTAFF"
-  | "STARTUP"
-  | "AGENCY";
+export type EngagementType = "PRODUCT" | "OUTSOURCE" | "OUTSTAFF" | "STARTUP" | "AGENCY";
 
 // ───────────────────────── Resolved refs ─────────────────────────
 
@@ -248,9 +240,9 @@ export interface ListVacanciesResponse {
 // ─────────────────────────── Fetcher ────────────────────────────
 
 export const vacanciesApi = {
-  list: (q: ListVacanciesQuery = {}) =>
-    apiGet<ListVacanciesResponse>(`/feed${buildQs(q)}`),
+  list: (q: ListVacanciesQuery = {}) => apiGet<ListVacanciesResponse>(`/feed${buildQs(q)}`),
   /** Members + "why merged" reasons for one dedup group (the badge drawer). */
-  group: (uniqueVacancyId: string) =>
-    apiGet<FeedDuplicateGroup>(`/feed/group/${uniqueVacancyId}`),
+  group: (uniqueVacancyId: string) => apiGet<FeedDuplicateGroup>(`/feed/group/${uniqueVacancyId}`),
+  /** Full detail for one vacancy, including `description` (the public detail page). */
+  byId: (vacancyId: string) => apiGet<VacancyDto>(`/feed/vacancy/${vacancyId}`),
 };

@@ -1,3 +1,4 @@
+import { NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
@@ -5,7 +6,7 @@ import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 
 import { FacetsService } from "./facets.service";
-import type { FeedResponse } from "./feed.contract";
+import type { FeedResponse, VacancyDto } from "./feed.contract";
 import { FeedController } from "./feed.controller";
 import { FeedService } from "./feed.service";
 
@@ -20,6 +21,7 @@ const EMPTY: FeedResponse = {
 // query parsing/validation lives in the DTO (see filter-params.dto.spec.ts).
 describe("FeedController", () => {
   const search = jest.fn();
+  const getById = jest.fn();
   // Identity resolver: slug->id resolution is covered separately; here it must
   // pass values through so the DTO→FeedSearchParams mapping stays assertable.
   const slugs = {
@@ -30,10 +32,11 @@ describe("FeedController", () => {
 
   beforeEach(async () => {
     search.mockReset().mockResolvedValue(EMPTY);
+    getById.mockReset();
     const moduleRef = await Test.createTestingModule({
       controllers: [FeedController],
       providers: [
-        { provide: FeedService, useValue: { search } },
+        { provide: FeedService, useValue: { search, getById } },
         { provide: FacetsService, useValue: {} },
         { provide: DedupService, useValue: {} },
         { provide: NodeSlugResolver, useValue: slugs },
@@ -85,5 +88,21 @@ describe("FeedController", () => {
         page: 2,
       }),
     );
+  });
+
+  describe("vacancy", () => {
+    it("returns the vacancy when found", async () => {
+      const vacancy = { id: "v1" } as VacancyDto;
+      getById.mockResolvedValue(vacancy);
+
+      await expect(controller.vacancy("v1")).resolves.toBe(vacancy);
+      expect(getById).toHaveBeenCalledWith("v1");
+    });
+
+    it("404s when the vacancy is not found", async () => {
+      getById.mockResolvedValue(null);
+
+      await expect(controller.vacancy("missing")).rejects.toBeInstanceOf(NotFoundException);
+    });
   });
 });
