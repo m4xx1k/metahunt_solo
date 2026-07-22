@@ -30,6 +30,8 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
   JWT no longer authorizes requests.
 - [x] T7 — Make scheduled delivery diagnosable — *done when:* a zero-match evaluation,
   first digest, successful send, and bounded delivery failure are distinguishable without PII.
+- [x] T8 — Operationalize the first cohort — *done when:* owner fields, consent-safe outreach,
+  a per-user activation/relevance ledger, interview prompts, and stop gates are ready before contact.
 
 ## Decisions
 
@@ -49,4 +51,5 @@ unchanged. Deployment, controlled Telegram E2E, and traffic remain owner gates.
 - Release history: [`../releases.md`](../releases.md)
 - Privacy boundary: [`../../runbook/cv-privacy.md`](../../runbook/cv-privacy.md)
 - Audit and launch plan: [`../../../METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../../../METAHUNT_AUDIT_AND_NEXT_STEPS.md)
+- Cohort operations: [`../../runbook/first-user-cohort.md`](../../runbook/first-user-cohort.md)
 - PR: pending

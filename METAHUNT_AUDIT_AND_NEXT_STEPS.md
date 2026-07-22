@@ -259,7 +259,7 @@ named owner and dashboard URL.
 | G2 Funnel dashboard | P0 · S | The event contract exists, but traffic cannot be diagnosed without production access and one shared view. | Create the saved views specified in the first-user-funnel runbook; record their URL, owner, timezone, and controlled-test exclusion. | Daily activation, handoff loss, time to first digest, click rate, zero-match and delivery-failure rates. | Remove dashboard only; event contract stays stable. |
 | G3 Verify immediate post-link value | P0 · S | Branch implementation must be proven across the real bot/API boundary. | A fresh `/start` shows up to three current matches or an explicit zero-match state; a preview failure never reverses the successful activation. | `telegram_linked → activation_value_shown ≥ 80%`. | Revert the additive Telegram commit; scheduled delivery remains unchanged. |
 | G4 Approve privacy/auth launch policy | P0 · S | Technical deletion, stale-token invalidation, login throttling, public disclosure, and a retention runbook exist on the branch; provider backups, consent, and legal ownership are policy decisions. | Owner approves or edits wording, analytics consent posture, provider retention expectations, and support owner. | Real delete E2E passes; no PII leak; support owner can follow the runbook. | Disable CV campaign; role radar remains available. |
-| G5 Concierge cohort | P0 · 7 days | Offline ranking confidence is not user value. | Recruit 20 ICP users, interview at least five, rate their first three alerts. | Thresholds below. | Stop recruitment; no paid spend. |
+| G5 Concierge cohort | P0 · 7 days | Offline ranking confidence is not user value. | Use the [first-user-cohort runbook](md/runbook/first-user-cohort.md) to recruit 20 consenting ICP users, interview at least five, and rate their first three alerts. | Thresholds below. | Stop recruitment; no paid spend. |
 | G6 Paid experiment | P1 · 7 days | Scale only after activation and quality are understood. | One audience, one landing, one channel, 200 qualified sessions maximum. | Thresholds below. | Pause campaign immediately. |
 
 Not now: new matching algorithm, B2B/recruiter workflow, pricing, broad content
@@ -374,6 +374,7 @@ identity, analytics consent requirements, and production retention expectations.
 - CV privacy contract: [`md/runbook/cv-privacy.md`](md/runbook/cv-privacy.md)
 - Account deletion runbook: [`md/runbook/account-deletion.md`](md/runbook/account-deletion.md)
 - First-user measurement runbook: [`md/runbook/first-user-funnel.md`](md/runbook/first-user-funnel.md)
+- First-user cohort runbook: [`md/runbook/first-user-cohort.md`](md/runbook/first-user-cohort.md)
 - Client analytics seam: [`apps/web/lib/hooks/use-analytics.ts`](apps/web/lib/hooks/use-analytics.ts)
 - Server analytics seam: [`apps/etl/src/platform/analytics/analytics.service.ts`](apps/etl/src/platform/analytics/analytics.service.ts)
 - Sample security tests: [`apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts`](apps/etl/src/03-discovery/cv/cv.controller.sample.spec.ts)
