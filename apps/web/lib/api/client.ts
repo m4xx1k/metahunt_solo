@@ -14,13 +14,19 @@ import { SESSION_COOKIE } from "./session-cookie";
 // next/headers out of the client bundle — this file is also imported from
 // Client Components (e.g. use-session.ts).
 async function authHeaders(): Promise<Record<string, string>> {
-  if (typeof window === "undefined") {
-    const { cookies } = await import("next/headers");
-    const token = (await cookies()).get(SESSION_COOKIE)?.value;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-  const token = getToken();
+  const token = typeof window === "undefined" ? await serverToken() : getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function serverToken(): Promise<string | undefined> {
+  const { cookies } = await import("next/headers");
+  try {
+    return (await cookies()).get(SESSION_COOKIE)?.value;
+  } catch {
+    // cookies() throws inside unstable_cache() (the public homepage catalogs):
+    // that scope is shared across users, so there's no per-request token to send.
+    return undefined;
+  }
 }
 
 export function apiBase(): string {
