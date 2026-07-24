@@ -9,6 +9,7 @@ import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
 import type { ExtractedCandidate } from "../../src/baml_client";
 
+import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 
 let db: DrizzleDB;
@@ -28,7 +29,7 @@ function buildLoader(extract: (text: string) => Promise<ExtractedCandidate>): {
   const loader = new CandidateLoaderService(
     db,
     extractor,
-    new RankingService(db, new FeedService(db)),
+    new RankingService(db, new FeedService(db), noopAnalytics(db)),
   );
   return { loader, extract: mock };
 }

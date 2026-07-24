@@ -6,6 +6,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
 
+import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 
 let db: DrizzleDB;
@@ -73,7 +74,7 @@ async function refreshNodeStats() {
 
 beforeAll(() => {
   ({ db, pool } = makeTestDb());
-  ranking = new RankingService(db, new FeedService(db));
+  ranking = new RankingService(db, new FeedService(db), noopAnalytics(db));
 });
 
 afterAll(async () => {
