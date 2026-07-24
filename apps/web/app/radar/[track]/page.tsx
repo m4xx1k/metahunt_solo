@@ -18,11 +18,11 @@ import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import { tracksApi, type TrackDto } from "@/lib/api/tracks";
 import { vacanciesApi, type VacancyDto } from "@/lib/api/vacancies";
 import { formatSalary, SENIORITY_LABELS } from "@/lib/extracted-vacancy";
-import { formatRelative } from "@/lib/format";
+import { formatKyivTime, formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge, Card, Tag } from "@/ui";
 import { chipClass } from "@/ui/inputs/pill";
-import { RadarSubscribe } from "../_components/RadarSubscribe";
+import { SubscribeCta } from "@/features/subscribe/SubscribeCta";
 
 const PROOF_VACANCY_COUNT = 3;
 const TEASER_SKILL_COUNT = 3;
@@ -155,8 +155,8 @@ export default async function TrackRadarPage({
                 </div>
               ) : null}
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                <RadarSubscribe
-                  trackSlug={slug}
+                <SubscribeCta
+                  landingVariant={`radar_${slug}`}
                   params={subscriptionParams}
                   attribution={attribution}
                   trackImpression
@@ -262,8 +262,8 @@ export default async function TrackRadarPage({
             <h2 className="font-display text-3xl font-bold text-text-primary sm:text-4xl">
               Нехай наступна вакансія знайде тебе сама.
             </h2>
-            <RadarSubscribe
-              trackSlug={slug}
+            <SubscribeCta
+              landingVariant={`radar_${slug}`}
               params={subscriptionParams}
               attribution={attribution}
             />
@@ -388,14 +388,4 @@ function TrustPoint({ icon, title, body }: { icon: React.ReactNode; title: strin
       </div>
     </div>
   );
-}
-
-function formatKyivTime(value: string | null): string {
-  if (!value) return "очікує синхронізації";
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Kyiv",
-    timeZoneName: "short",
-  }).format(new Date(value));
 }

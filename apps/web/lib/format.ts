@@ -7,7 +7,10 @@ export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+  return d
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d{3}Z$/, " UTC");
 }
 
 export function formatRelative(iso: string | null | undefined): string {
@@ -40,6 +43,17 @@ export function formatDuration(ms: number | null | undefined): string {
 
 export function formatCount(n: number): string {
   return new Intl.NumberFormat("en-US").format(n);
+}
+
+// "HH:MM GMT+3" in Kyiv time — the "last sync" stamp on marketing landings.
+export function formatKyivTime(value: string | null): string {
+  if (!value) return "очікує синхронізації";
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Kyiv",
+    timeZoneName: "short",
+  }).format(new Date(value));
 }
 
 export function formatPercent(num: number, den: number): string {
@@ -94,12 +108,7 @@ export function formatSalaryRange({
 }
 
 // Ukrainian plural selection (one / few / many) for a count.
-export function pluralizeUa(
-  n: number,
-  one: string,
-  few: string,
-  many: string,
-): string {
+export function pluralizeUa(n: number, one: string, few: string, many: string): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
   if (mod10 === 1 && mod100 !== 11) return one;

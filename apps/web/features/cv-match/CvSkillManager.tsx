@@ -7,18 +7,46 @@ import { toast } from "sonner";
 import { cvApi, type CvIngestResult, type SkillSuggestion } from "@/lib/api/cv";
 import { facetsApi } from "@/lib/api/facets";
 import type { SkillRef } from "@/lib/api/ranking";
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
 type HeldSkill = Pick<SkillRef, "id" | "name">;
 
 const SEARCH_MAX = 8;
 
+// UI strings only — /me keeps the feed's English, /match speaks Ukrainian.
+export interface CvSkillManagerCopy {
+  title: string;
+  loading: string;
+  empty: string;
+  searchPlaceholder: string;
+  noMatches: string;
+  suggestionsTitle: string;
+}
+
+const DEFAULT_COPY: CvSkillManagerCopy = {
+  title: "my skills",
+  loading: "loading skills…",
+  empty: "no skills yet",
+  searchPlaceholder: "add a skill…",
+  noMatches: "no matches",
+  suggestionsTitle: "suggestions",
+};
+
 // Self-service skill editor for the active CV: remove a held skill, search the
 // verified catalog to add one, or act on an implied-skill suggestion right
 // there. Owns its own current-skills cache (seeded from GET /cv/:id) so every
 // mutation can optimistically patch it from the fetcher's returned set, no
 // separate refetch needed.
-export function CvSkillManager({ candidateId }: { candidateId: string }) {
+export function CvSkillManager({
+  candidateId,
+  copy = DEFAULT_COPY,
+  className,
+}: {
+  candidateId: string;
+  copy?: CvSkillManagerCopy;
+  className?: string;
+}) {
   const qc = useQueryClient();
   const cvKey = ["cv", candidateId] as const;
 
@@ -120,18 +148,23 @@ export function CvSkillManager({ candidateId }: { candidateId: string }) {
 
   if (isLoading) {
     return (
-      <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">loading skills…</p>
+      <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">{copy.loading}</p>
     );
   }
   if (!cv) return null;
 
   return (
-    <div className="flex flex-col gap-4 border border-border bg-bg-card p-4 shadow-brut-sm">
-      <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">my skills</p>
+    <div
+      className={cn(
+        "flex flex-col gap-4 border border-border bg-bg-card p-4 shadow-brut-sm",
+        className,
+      )}
+    >
+      <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">{copy.title}</p>
 
       <div className="flex flex-wrap gap-1.5">
         {heldSkills.length === 0 ? (
-          <p className="font-mono text-xs text-text-muted">no skills yet</p>
+          <p className="font-mono text-xs text-text-muted">{copy.empty}</p>
         ) : (
           heldSkills.map((s) => (
             <span key={s.id} className="inline-flex items-stretch border border-border">
@@ -157,13 +190,13 @@ export function CvSkillManager({ candidateId }: { candidateId: string }) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="add a skill…"
+          placeholder={copy.searchPlaceholder}
           className="w-full border border-border bg-bg px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
         />
         {q.length > 0 ? (
           <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-border bg-bg-card shadow-brut-sm">
             {searchResults.length === 0 ? (
-              <li className="px-3 py-1.5 font-mono text-xs text-text-muted">no matches</li>
+              <li className="px-3 py-1.5 font-mono text-xs text-text-muted">{copy.noMatches}</li>
             ) : (
               searchResults.map((r) => (
                 <li key={r.id}>
@@ -184,7 +217,9 @@ export function CvSkillManager({ candidateId }: { candidateId: string }) {
 
       {visibleSuggestions.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">suggestions</p>
+          <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+            {copy.suggestionsTitle}
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {visibleSuggestions.map((s) => (
               <Tooltip key={s.nodeId}>

@@ -8,22 +8,25 @@ import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptio
 import { useAnalytics, type AcquisitionAttribution } from "@/lib/hooks/use-analytics";
 import { Button } from "@/ui";
 
-export function RadarSubscribe({
-  trackSlug,
+// One-tap "get it in Telegram" conversion CTA: creates the subscription and
+// hands off to the bot deep-link. Shared by the /radar landings and /match.
+export function SubscribeCta({
+  landingVariant,
   params,
   attribution,
   trackImpression = false,
+  label = "Отримувати в Telegram →",
 }: {
-  /** Landing track slug — tags the analytics variant so PostHog can split the funnel per landing. */
-  trackSlug: string;
+  /** Tags the analytics events so PostHog can split the funnel per landing (e.g. "radar_backend"). */
+  landingVariant: string;
   params: SubscriptionParams;
   attribution: AcquisitionAttribution;
   trackImpression?: boolean;
+  label?: string;
 }) {
   const analytics = useAnalytics();
   const impressionSent = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const landingVariant = `radar_${trackSlug}`;
 
   useEffect(() => {
     if (!trackImpression || impressionSent.current) return;
@@ -65,7 +68,7 @@ export function RadarSubscribe({
       className="w-full sm:w-auto"
     >
       <PaperPlaneTiltIcon weight="fill" className="h-5 w-5" aria-hidden />
-      {isSubmitting ? "Відкриваємо Telegram…" : "Отримувати в Telegram →"}
+      {isSubmitting ? "Відкриваємо Telegram…" : label}
     </Button>
   );
 }

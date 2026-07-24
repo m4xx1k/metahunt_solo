@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-24
+
+- **`/match` onboarding landing** (`feat/match-onboarding-page`). New ad-landable stepper page: radar-style hero with live supply counts, then CV → Скіли → Ролі → Винятки, every step skippable. CV upload + skill review (remove / search-add / NPMI suggestions) run on the real `/cv` API; the manual no-CV path collects skill slugs locally and exits into the cold feed's `?skills=` filter, with a real skills-scoped Telegram subscription as the secondary CTA. Roles and excludes steps are functional-looking local mocks (`app/match/_components/_mocks.ts`) pending the role-suggestions/excludes backend PRs (design: `.scratch/cv-match-flow-design.md`). Promotions per the second-consumer rule: `CvSkillManager` → `features/cv-match/` (copy/className slots), `RadarSubscribe` → `features/subscribe/SubscribeCta`.
+
+---
+
 ## 2026-07-22
 
 - **First-user funnel deployed** ([PR #93](https://github.com/m4xx1k/metahunt_solo/pull/93), `f71cff8`). Vercel now serves `/radar/backend`, `/privacy`, robots, and sitemap; Railway deployment `0e3e25ef-f8ef-411b-8edc-f098e2b61814` serves the API after migration `0028`. Production smoke checks passed dependency health, public-sample/private-upload isolation, CORS, and anonymous Telegram handoff with zero observed 5xx. The first API candidate failed its health gate before traffic because `AuthService` was not exported to guard-consuming modules; `d5c5b2a` added the export and a consumer-boundary regression test before the successful rollout. Real Telegram E2E and traffic remain gated. → [funnel runbook](../runbook/first-user-funnel.md)
