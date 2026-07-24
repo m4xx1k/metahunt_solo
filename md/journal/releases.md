@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-24
+
+- **Bot clicks excluded from apply analytics** (`fix/bot-click-analytics`). The `/go/:id` apply redirect now skips `apply_clicked`/`digest_link_clicked` recording (product_events + PostHog) when the User-Agent is a known crawler or missing (`isbot`); the redirect itself is unaffected. Crawlers were ~95% of recorded clicks (2019 fake clicks/30d), each minting a fresh anonymous PostHog person. Dashboard queries unchanged — the pollution stops at the source.
+
+---
+
 ## 2026-07-22
 
 - **First-user funnel deployed** ([PR #93](https://github.com/m4xx1k/metahunt_solo/pull/93), `f71cff8`). Vercel now serves `/radar/backend`, `/privacy`, robots, and sitemap; Railway deployment `0e3e25ef-f8ef-411b-8edc-f098e2b61814` serves the API after migration `0028`. Production smoke checks passed dependency health, public-sample/private-upload isolation, CORS, and anonymous Telegram handoff with zero observed 5xx. The first API candidate failed its health gate before traffic because `AuthService` was not exported to guard-consuming modules; `d5c5b2a` added the export and a consumer-boundary regression test before the successful rollout. Real Telegram E2E and traffic remain gated. → [funnel runbook](../runbook/first-user-funnel.md)
