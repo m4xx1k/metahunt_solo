@@ -3,7 +3,8 @@ import { formatCount, formatRelative } from "@/lib/format";
 import { DataTable, type Column } from "@/ui/data/DataTable";
 import { Panel } from "@/ui/layout/Panel";
 import { InfoHint } from "@/ui/overlay/InfoHint";
-import { SubscriberIdentity } from "./SubscriberIdentity";
+import { LastAction } from "@/entities/subscriber/LastAction";
+import { SubscriberIdentity } from "@/entities/subscriber/SubscriberIdentity";
 import { SubscriptionsPopover } from "./SubscriptionsPopover";
 
 function stamp(iso: string | null) {
@@ -30,6 +31,19 @@ const COLUMNS: Array<Column<SubscriberActivity>> = [
     key: "joined",
     header: "joined",
     render: (row) => <span className="text-text-primary">{formatRelative(row.joinedAt)}</span>,
+  },
+  {
+    key: "lastAction",
+    header: (
+      <span className="inline-flex items-center gap-1.5">
+        last action
+        <InfoHint label="what last action means">
+          The newest event the subscriber themselves caused — a click, an upload, a subscribe. The
+          digests we send at them don&apos;t count, so a quiet subscriber reads as quiet.
+        </InfoHint>
+      </span>
+    ),
+    render: (row) => <LastAction at={row.lastActionAt} />,
   },
   {
     key: "firstSeen",
@@ -81,7 +95,7 @@ export function SubscribersPanel({ subscribers }: { subscribers: SubscriberActiv
         columns={COLUMNS}
         rows={subscribers}
         rowKey={(row) => row.chatId}
-        minWidth={1040}
+        minWidth={1180}
         empty="no subscribers in this period"
       />
     </Panel>

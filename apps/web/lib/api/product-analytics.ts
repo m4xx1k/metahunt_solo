@@ -67,11 +67,33 @@ export interface ProductAnalyticsOverview {
   }>;
   subscriberActivity: SubscriberActivity[];
   feedEngagement: ProductFeedEngagement;
+  flow: ProductPeriodFlow;
+  channels: ProductChannel[];
 }
 
 export interface ProductFeedEngagement {
   journeys: number;
   events: number;
+}
+
+// Period-scoped movement: every number answers "what happened in the selected
+// window", unlike the all-time state in `subscriptions`.
+export interface ProductPeriodFlow {
+  joined: number;
+  activated: number;
+  digestClicks: number;
+  feedClicks: number;
+  churned: number;
+}
+
+// First-touch acquisition. `source: null` = arrived without a utm_source
+// (direct, organic, or a link that dropped the params).
+export interface ProductChannel {
+  source: string | null;
+  landed: number;
+  subscribed: number;
+  activated: number;
+  digestClicks: number;
 }
 
 export interface AnalyticsJourneyClassification {
@@ -88,6 +110,8 @@ export interface SubscriberSubscription {
   createdAt: string;
 }
 
+// `lastActionAt` is the newest event the subscriber themselves caused — the
+// digests we send at them are deliberately excluded, so silence reads as silence.
 export interface SubscriberActivity {
   chatId: string;
   tgUsername: string | null;
@@ -96,8 +120,10 @@ export interface SubscriberActivity {
   firstSeenAt: string | null;
   ctaClickedAt: string | null;
   telegramLinkedAt: string | null;
+  lastActionAt: string | null;
   vacancyClicks: number;
   feedClicks: number;
+  isActive: boolean;
   subscriptions: SubscriberSubscription[];
 }
 
