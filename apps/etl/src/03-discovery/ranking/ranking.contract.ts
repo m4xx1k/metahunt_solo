@@ -50,6 +50,7 @@ export interface MatchFilters {
   englishLevels?: EnglishLevel[]; // OR — the level the job requires
   employmentTypes?: EmploymentType[]; // OR — full-time ∪ contract …
   domainIds?: string[]; // OR — keep vacancies in ANY listed DOMAIN node (like the feed)
+  roleNodeIds?: string[]; // OR — hard filter: the user's explicit role choice, not a soft demote
   experienceYears?: string[]; // discrete tokens "0".."5" (exact) + "6+" (≥6); NULL passes
   hasTestAssignment?: boolean; // false also keeps unknowns (no confirmed test); true is strict
   hasReservation?: boolean; // UA military deferment ("бронь")
@@ -94,6 +95,28 @@ export function fitTierWeighted(
   if (coverage >= FIT_STRONG_MIN) return "STRONG";
   if (coverage >= FIT_GOOD_MIN) return "GOOD";
   return "STRETCH";
+}
+
+// Role suggester ("which roles fit my skills"): a role's score is the smoothed
+// share of its last-30d vacancies the candidate covers at GOOD+. All three are
+// v1 expert guesses next to FIT_*_MIN above — calibrate here, once.
+export const ROLE_SUGGEST_WINDOW_DAYS = 30;
+export const ROLE_SUGGEST_MIN_VACANCIES = 10; // below this the estimate is unstable (and digests would run empty)
+export const ROLE_SUGGEST_MIN_SCORE = 0.05; // raw GOOD+ share below this = "not yours" (see role-suggestions.derive)
+export const ROLE_SUGGEST_TOP_N = 5;
+
+export interface RoleSuggestion {
+  roleId: string;
+  slug: string | null;
+  name: string;
+  score: number;
+  goodCount: number; // numerator shown in the UI ("N of M vacancies fit")
+  totalCount: number;
+}
+
+export interface RoleSuggestionsResponse {
+  reduced: boolean; // no role reached MIN_SCORE at GOOD+ — items ranked by avg coverage instead
+  items: RoleSuggestion[];
 }
 
 // "What to learn next" recommendations — see ADR-0009. A marginal counterfactual

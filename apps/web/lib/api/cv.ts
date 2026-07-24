@@ -30,6 +30,8 @@ export interface CvMatchQuery {
   employmentTypes?: string;
   /** CSV of DOMAIN node slugs (resolved -> ids server-side). */
   domainIds?: string;
+  /** CSV of ROLE node slugs — hard filter (resolved -> ids server-side). */
+  roleIds?: string;
   /** CSV of experience tokens ("0".."5" exact, "6+" = ≥6). */
   experienceYears?: string;
   hasTestAssignment?: boolean;
@@ -47,6 +49,23 @@ export interface SkillSuggestion {
   nodeId: string;
   name: string;
   impliedBy: string;
+}
+
+// "Which roles fit my skills" — mirrors ranking.contract RoleSuggestion(s).
+// goodCount/totalCount are shown verbatim ("N of M vacancies fit").
+export interface RoleSuggestion {
+  roleId: string;
+  slug: string | null;
+  name: string;
+  score: number;
+  goodCount: number;
+  totalCount: number;
+}
+
+export interface RoleSuggestionsResponse {
+  /** No role cleared the GOOD+ score floor — items ranked by avg coverage instead. */
+  reduced: boolean;
+  items: RoleSuggestion[];
 }
 
 export const cvApi = {
@@ -80,6 +99,11 @@ export const cvApi = {
 
   sampleMatches: (id: string, query: CvMatchQuery = {}) =>
     apiGet<MatchResponse>(`/cv/samples/${id}/matches${buildQs(query)}`),
+
+  roleSuggestions: (id: string) => apiGet<RoleSuggestionsResponse>(`/cv/${id}/role-suggestions`),
+
+  sampleRoleSuggestions: (id: string) =>
+    apiGet<RoleSuggestionsResponse>(`/cv/samples/${id}/role-suggestions`),
 
   recommendations: (id: string) => apiGet<RecommendResponse>(`/cv/${id}/recommendations`),
 

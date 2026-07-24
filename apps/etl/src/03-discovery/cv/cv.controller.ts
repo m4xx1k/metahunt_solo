@@ -45,6 +45,7 @@ import {
   type FitTier,
   type MatchResponse,
   type RecommendResponse,
+  type RoleSuggestionsResponse,
 } from "../ranking/ranking.contract";
 import { RankingService } from "../ranking/ranking.service";
 import { RecommendationService } from "../ranking/recommendation.service";
@@ -66,6 +67,7 @@ interface MatchQueryStrings {
   englishLevels?: string;
   employmentTypes?: string;
   domainIds?: string;
+  roleIds?: string;
   experienceYears?: string;
   hasTestAssignment?: string;
   hasReservation?: string;
@@ -136,6 +138,13 @@ export class CvController {
     return this.matchCandidate(id, query);
   }
 
+  @Get("samples/:id/role-suggestions")
+  @Public()
+  async sampleRoleSuggestions(@Param("id") id: string): Promise<RoleSuggestionsResponse> {
+    await this.loader.assertSampleCandidate(id);
+    return this.roleSuggestionsFor(id);
+  }
+
   @Get(":id")
   async get(@CurrentUser() user: JwtUser, @Param("id") id: string): Promise<CandidateView> {
     await this.loader.assertAccessibleCandidate(user.userId, id);
@@ -171,6 +180,7 @@ export class CvController {
           EMPLOYMENT_TYPE_VALUES,
         ),
         domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", query.domainIds)),
+        roleNodeIds: await this.slugs.toIds("ROLE", parseCsv("roleIds", query.roleIds)),
         experienceYears: parseCsv("experienceYears", query.experienceYears),
         hasTestAssignment: parseBool("hasTestAssignment", query.hasTestAssignment),
         hasReservation: parseBool("hasReservation", query.hasReservation),
@@ -181,6 +191,23 @@ export class CvController {
       parsePage(query.page),
       parsePageSize(query.pageSize),
     );
+  }
+
+  // "Which roles fit my skills": top-5 ROLE nodes by covered share of their
+  // recent vacancies, the CV's declared role pinned first.
+  @Get(":id/role-suggestions")
+  async roleSuggestions(
+    @CurrentUser() user: JwtUser,
+    @Param("id") id: string,
+  ): Promise<RoleSuggestionsResponse> {
+    await this.loader.assertAccessibleCandidate(user.userId, id);
+    return this.roleSuggestionsFor(id);
+  }
+
+  private async roleSuggestionsFor(id: string): Promise<RoleSuggestionsResponse> {
+    const { matched, role } = await this.loader.getRecommendInput(id);
+    const pinnedRoleId = await this.ranking.resolveRole(role);
+    return this.ranking.suggestRoles(matched, pinnedRoleId);
   }
 
   // "What to learn next": skills that would unlock the most cohort vacancies.

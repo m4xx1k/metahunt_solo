@@ -20,6 +20,7 @@ export const ANALYTICS_EVENTS = {
   applyClicked: "apply_clicked",
   subscriptionReactivated: "subscription_reactivated",
   unsubscribed: "unsubscribed",
+  matchScored: "match_scored",
 } as const;
 
 export const BROWSER_ANALYTICS_EVENTS = [
