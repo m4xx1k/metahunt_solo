@@ -11,11 +11,13 @@ import { DEFAULT_FRESHNESS, FRESHNESS_DAYS, type FilterState } from "./types";
 
 export const MATCH_PAGE_SIZE = 20;
 
-// The warm filter surface — enums + domain + experience + perks + fit + freshness
-// (no role/skill axes: the candidate IS the query). This subset is what the
-// react-query key hashes, so unrelated FilterState churn never refetches.
+// The warm filter surface — roles + enums + domain + experience + perks + fit +
+// freshness (no skill axis: the candidate IS the query; roles are the user's
+// explicit hard filter). This subset is what the react-query key hashes, so
+// unrelated FilterState churn never refetches.
 export function warmFilterKey(f: FilterState) {
   return {
+    roleIds: f.roleIds,
     seniorities: f.seniorities,
     workFormats: f.workFormats,
     englishLevels: f.englishLevels,
@@ -38,6 +40,7 @@ export function fetchMatch(
   const query = {
     page,
     pageSize: MATCH_PAGE_SIZE,
+    roleIds: toCsv(f.roleIds),
     seniorities: toCsv(f.seniorities),
     workFormats: toCsv(f.workFormats),
     englishLevels: toCsv(f.englishLevels),

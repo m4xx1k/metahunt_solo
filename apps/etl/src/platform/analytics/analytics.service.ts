@@ -191,6 +191,15 @@ export class AnalyticsService {
     });
   }
 
+  // Threshold-calibration telemetry (coverage histogram + tier counts) —
+  // PostHog-only, personless: it describes the scoring, not a user journey.
+  matchScored(properties: Record<string, number | number[]>): void {
+    this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.matchScored, {
+      ...properties,
+      $process_person_profile: false,
+    });
+  }
+
   async unsubscribed(props: UnsubscribedEvent): Promise<void> {
     await this.enqueueSubscriptionEvent(unsubscribedEvent(props));
   }

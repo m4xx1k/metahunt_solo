@@ -219,6 +219,17 @@ export class MatchDto extends FilterParamsDto {
   @IsString({ each: true })
   skills?: string[];
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: "ROLE slugs — hard filter. Multiple values are OR-combined.",
+    example: ["backend-developer", "full-stack-developer"],
+  })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  roleIds?: string[];
+
   @ApiPropertyOptional({ enum: FIT_TIER_VALUES, description: "Minimum warm-match tier to return." })
   @IsOptional()
   @trimmed()

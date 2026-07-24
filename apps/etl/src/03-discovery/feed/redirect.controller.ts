@@ -1,5 +1,15 @@
-import { Controller, Get, NotFoundException, Param, Query, Redirect } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Headers,
+  NotFoundException,
+  Param,
+  Query,
+  Redirect,
+} from "@nestjs/common";
 import { ApiFoundResponse, ApiNotFoundResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+
+import { isbot } from "isbot";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { isUuid } from "../../platform/shared/query-parsing";
@@ -32,9 +42,13 @@ export class RedirectController {
     // id, unreadable at this origin otherwise). Missing/invalid never fails the
     // redirect — it just falls back to anonymous tracking.
     @Query("j") journeyIdRaw?: string,
+    @Headers("user-agent") userAgent?: string,
   ): Promise<{ url: string }> {
     const link = await this.feed.getApplyLink(id);
     if (!link) throw new NotFoundException("Vacancy link not found");
+    // Crawlers hit /go/:id constantly (~95% of clicks); redirect them but never
+    // record. Missing UA counts as a bot — real browsers always send one.
+    if (!userAgent || isbot(userAgent)) return { url: link };
     const journeyId = journeyIdRaw && isUuid(journeyIdRaw) ? journeyIdRaw : undefined;
     void this.analytics.applyClicked(id, subscriptionId, journeyId);
     return { url: link };

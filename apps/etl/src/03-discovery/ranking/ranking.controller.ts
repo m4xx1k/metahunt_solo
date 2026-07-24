@@ -57,6 +57,7 @@ export class RankingController {
         englishLevels: dto.englishLevels,
         employmentTypes: dto.employmentTypes,
         domainIds: await this.slugs.toIds("DOMAIN", dto.domainIds),
+        roleNodeIds: await this.slugs.toIds("ROLE", dto.roleIds),
         experienceYears: dto.experienceYears,
         hasTestAssignment: dto.hasTestAssignment,
         hasReservation: dto.hasReservation,
