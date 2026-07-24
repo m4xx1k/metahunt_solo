@@ -23,6 +23,32 @@ export const ANALYTICS_EVENTS = {
   matchScored: "match_scored",
 } as const;
 
+// Events a *person* causes, as opposed to ones we emit at them. "Last action"
+// on the operator dashboard is the newest of these: counting our own hourly
+// digest run would make every subscriber look active forever.
+export const USER_ACTION_EVENTS = [
+  ANALYTICS_EVENTS.landingView,
+  ANALYTICS_EVENTS.landingCtaClicked,
+  ANALYTICS_EVENTS.subscriptionCreateStarted,
+  ANALYTICS_EVENTS.subscriptionHandoffOpened,
+  ANALYTICS_EVENTS.subscriptionCreateFailed,
+  ANALYTICS_EVENTS.subscriptionCreated,
+  ANALYTICS_EVENTS.telegramLinked,
+  ANALYTICS_EVENTS.digestLinkClicked,
+  ANALYTICS_EVENTS.applyClicked,
+  ANALYTICS_EVENTS.subscriptionReactivated,
+  ANALYTICS_EVENTS.unsubscribed,
+] as const;
+
+// The complement: emitted by us (delivery pipeline, scoring), never by a tap.
+export const SYSTEM_EMITTED_EVENTS = [
+  ANALYTICS_EVENTS.activationValueShown,
+  ANALYTICS_EVENTS.digestEvaluated,
+  ANALYTICS_EVENTS.digestSent,
+  ANALYTICS_EVENTS.digestDeliveryFailed,
+  ANALYTICS_EVENTS.matchScored,
+] as const;
+
 export const BROWSER_ANALYTICS_EVENTS = [
   ANALYTICS_EVENTS.landingView,
   ANALYTICS_EVENTS.landingCtaClicked,

@@ -344,4 +344,197 @@ describe("first-party product analytics ledger", () => {
     // subscription count — it's a distinct-journeys KPI, not per-subscriber.
     expect(overview.feedEngagement).toEqual({ journeys: 2, events: 5 });
   });
+
+  it("derives last action from user events only, and scopes the roster by it", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const joinedLongAgo = new Date(Date.now() - 10 * 86_400_000);
+    const actedRecently = new Date(Date.now() - 2 * 3_600_000);
+    const weSentRecently = new Date(Date.now() - 1 * 3_600_000);
+    const activeJourneyId = randomUUID();
+    const silentJourneyId = randomUUID();
+
+    await db.insert(analyticsJourneys).values([
+      { id: activeJourneyId, origin: "browser", createdAt: joinedLongAgo },
+      { id: silentJourneyId, origin: "browser", createdAt: joinedLongAgo },
+    ]);
+    const [activeSub] = await db
+      .insert(subscriptions)
+      .values({
+        chatId: "chat-active",
+        journeyId: activeJourneyId,
+        params: {},
+        isActive: true,
+        createdAt: joinedLongAgo,
+      })
+      .returning({ id: subscriptions.id });
+    const [silentSub] = await db
+      .insert(subscriptions)
+      .values({
+        chatId: "chat-silent",
+        journeyId: silentJourneyId,
+        params: {},
+        isActive: true,
+        createdAt: joinedLongAgo,
+      })
+      .returning({ id: subscriptions.id });
+
+    await db.insert(productEvents).values([
+      {
+        journeyId: activeJourneyId,
+        subscriptionId: activeSub.id,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: actedRecently,
+      },
+      // Our own delivery, newer than the user's own action — must not count as
+      // activity for either subscriber.
+      {
+        journeyId: activeJourneyId,
+        subscriptionId: activeSub.id,
+        name: ANALYTICS_EVENTS.digestSent,
+        source: "worker" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: weSentRecently,
+      },
+      {
+        journeyId: silentJourneyId,
+        subscriptionId: silentSub.id,
+        name: ANALYTICS_EVENTS.digestSent,
+        source: "worker" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: weSentRecently,
+      },
+    ]);
+
+    const allTime = await dashboard.overview("all");
+    const roster = new Map(allTime.subscriberActivity.map((row) => [row.chatId, row]));
+    expect(roster.get("chat-active")?.lastActionAt?.getTime()).toBe(actedRecently.getTime());
+    expect(roster.get("chat-silent")?.lastActionAt).toBeNull();
+
+    // 24h window: the long-ago joiner still shows up because they acted; the one
+    // we merely sent a digest to drops out.
+    const day = await dashboard.overview("24h");
+    expect(day.subscriberActivity.map((row) => row.chatId)).toEqual(["chat-active"]);
+  });
+
+  it("counts period flow from events and first-touch channels from landing utm", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const insideWindow = new Date(Date.now() - 3 * 3_600_000);
+    const beforeWindow = new Date(Date.now() - 5 * 86_400_000);
+    const redditJourneyId = randomUUID();
+    const directJourneyId = randomUUID();
+    const staleJourneyId = randomUUID();
+
+    await db.insert(analyticsJourneys).values([
+      { id: redditJourneyId, origin: "browser", createdAt: insideWindow },
+      { id: directJourneyId, origin: "browser", createdAt: insideWindow },
+      { id: staleJourneyId, origin: "browser", createdAt: beforeWindow },
+    ]);
+    const [redditSub] = await db
+      .insert(subscriptions)
+      .values({
+        chatId: "chat-reddit",
+        journeyId: redditJourneyId,
+        params: {},
+        isActive: true,
+        createdAt: insideWindow,
+      })
+      .returning({ id: subscriptions.id });
+
+    await db.insert(productEvents).values([
+      // First touch carries the campaign; a later untagged landing must not
+      // overwrite it.
+      {
+        journeyId: redditJourneyId,
+        name: ANALYTICS_EVENTS.landingView,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+        properties: { utm_source: "reddit" },
+      },
+      {
+        journeyId: redditJourneyId,
+        name: ANALYTICS_EVENTS.landingView,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: new Date(insideWindow.getTime() + 60_000),
+        properties: {},
+      },
+      {
+        journeyId: redditJourneyId,
+        name: ANALYTICS_EVENTS.subscriptionCreated,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+      },
+      {
+        journeyId: redditJourneyId,
+        subscriptionId: redditSub.id,
+        name: ANALYTICS_EVENTS.telegramLinked,
+        source: "telegram" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+      },
+      {
+        journeyId: redditJourneyId,
+        subscriptionId: redditSub.id,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+      },
+      {
+        journeyId: redditJourneyId,
+        subscriptionId: redditSub.id,
+        name: ANALYTICS_EVENTS.unsubscribed,
+        source: "telegram" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+      },
+      // Untagged visit → its own `null` channel row, no subscription.
+      {
+        journeyId: directJourneyId,
+        name: ANALYTICS_EVENTS.landingView,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+        properties: {},
+      },
+      {
+        journeyId: directJourneyId,
+        name: ANALYTICS_EVENTS.applyClicked,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: insideWindow,
+      },
+      // Landed before the window → excluded from the 24h channel table.
+      {
+        journeyId: staleJourneyId,
+        name: ANALYTICS_EVENTS.landingView,
+        source: "browser" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: beforeWindow,
+        properties: { utm_source: "dou" },
+      },
+    ]);
+
+    const day = await dashboard.overview("24h");
+    expect(day.flow).toEqual({
+      joined: 1,
+      activated: 1,
+      digestClicks: 1,
+      feedClicks: 1,
+      churned: 1,
+    });
+    expect(day.channels).toEqual([
+      { source: "reddit", landed: 1, subscribed: 1, activated: 1, digestClicks: 1 },
+      { source: null, landed: 1, subscribed: 0, activated: 0, digestClicks: 0 },
+    ]);
+
+    const allTime = await dashboard.overview("all");
+    expect(allTime.channels.map((row) => row.source)).toEqual(
+      expect.arrayContaining(["reddit", "dou", null]),
+    );
+  });
 });

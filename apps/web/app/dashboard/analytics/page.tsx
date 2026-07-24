@@ -90,17 +90,29 @@ export default async function AnalyticsPage({
       />
 
       <PageBody>
-        <StatGrid cols={4}>
+        {/* Every tile is period-scoped flow; all-time subscription state lives
+            on the Identity tab, where it can't be mistaken for movement. */}
+        <StatGrid cols={5}>
+          <StatCard label="joined" value={formatCount(data.flow.joined)} hint="new subscriptions" />
           <StatCard
-            label="new subs"
-            value={formatCount(data.subscriptions.createdInPeriod)}
-            hint="created in period"
+            label="activated"
+            value={formatCount(data.flow.activated)}
+            hint="linked telegram"
           />
-          <StatCard label="active" value={formatCount(data.subscriptions.active)} hint="live now" />
           <StatCard
-            label="delivered"
-            value={formatCount(data.subscriptions.delivered)}
-            hint="got at least one digest"
+            label="digest clicks"
+            value={formatCount(data.flow.digestClicks)}
+            hint="taps from telegram"
+          />
+          <StatCard
+            label="churned"
+            value={formatCount(data.flow.churned)}
+            hint={
+              data.flow.churned > 0
+                ? `${formatPercent(data.flow.churned, data.flow.joined)} of joins`
+                : "no unsubscribes"
+            }
+            tone={data.flow.churned > 0 ? "danger" : "default"}
           />
           <StatCard
             label="landing → click"

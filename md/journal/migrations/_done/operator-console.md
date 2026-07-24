@@ -75,6 +75,49 @@ the console shell, so the sidebar survives a bad record id).
 **Language.** Console UI is English throughout — short labels, one hint line per screen,
 captions in mono uppercase. The product surface (feed, landings) was not touched.
 
+## Iteration 2 — product first, users first, one period (same day)
+
+Owner feedback after using it: product analytics matters more than the ETL panels right now, the
+home page needed a **users** widget (who is here, when they joined, when they last did
+something), and several widgets ignored the 24h/7d/all switch.
+
+Decided by interview, then built:
+
+- **`/dashboard` is now users → product → pipeline.** `UsersPanel` is the first widget, full
+  width: subscriber, joined, last action, digest clicks, feed clicks. Then five period-scoped
+  product tiles (joined / activated / digest clicks / feed clicks / churned), then activation
+  funnel + channels, then the ETL as a single `PipelineStrip` line (gold · silver · merged ·
+  spend · failures → runs). The ETL panels that were on the home (`EtlFunnelPanel`,
+  `SourcesPanel`, `TaxonomyPanel`, `DedupePanel`, `RecentRunsPanel`) are gone — their screens
+  own that detail.
+- **Every number on the home is period-scoped.** The state-y metrics were rewritten as flow:
+  new `ProductPeriodFlow` (joined / activated / digestClicks / feedClicks / churned) counted from
+  `product_events` inside the window, and `subscriptions.active|delivered` dropped off the KPI
+  rows (they still live on the Analytics → Identity tab, where all-time state is the point).
+  The Analytics screen's tiles moved to the same flow numbers.
+- **"Last action" excludes what we send.** New `USER_ACTION_EVENTS` / `SYSTEM_EMITTED_EVENTS`
+  split in `platform/analytics/events.ts` (with a spec asserting they partition every event
+  name). `SubscriberActivity.lastActionAt` is the newest user-caused event across the
+  subscriber's journeys *and* subscriptions — counting `digest_sent` would have made every chat
+  look active forever.
+- **The roster follows the period by activity, not just join date.** A subscriber is in the
+  window if they joined in it **or** acted in it; otherwise `24h` would show an empty list while
+  older subscribers are the ones still clicking. Sorted by last action.
+- **Channels widget** (`ProductChannel[]`): first-touch `utm_source` from a journey's earliest
+  landing event, so a later untagged visit can't overwrite it; `null` renders as `direct`. This
+  is the dashboard finally answering "which channel converts" from our own ledger instead of
+  PostHog person properties.
+
+Backend delta (all additive, no migration): `USER_ACTION_EVENTS`/`SYSTEM_EMITTED_EVENTS` +
+spec; `SubscriberActivity.lastActionAt`/`isActive`; `ProductPeriodFlow`; `ProductChannel[]`;
+`periodFlow()` + `channels()` in `ProductAnalyticsService`; `subscriberActivity(population,
+since)`. Three new cases in `product-analytics-ledger.int.spec.ts` cover last-action semantics,
+the period roster filter, flow counts, and first-touch channel attribution — that spec is the
+only runtime check on the new SQL (no local Docker), so it must stay green.
+
+Promotions: `SubscriberIdentity` → `entities/subscriber/` (second consumer), plus
+`entities/subscriber/{LastAction.tsx,last-action.ts}`.
+
 ## Notes / gotchas
 
 - `react-hooks/set-state-in-effect` is enforced: URL-derived state must be *derived*, not

@@ -52,6 +52,8 @@ export interface ProductAnalyticsOverview {
     delivered: number;
     linkedWithoutDelivery: number;
   };
+  flow: ProductPeriodFlow;
+  channels: ProductChannel[];
   identity: ProductIdentityHealth;
   recentJourneys: RecentProductJourney[];
   subscriberActivity: SubscriberActivity[];
@@ -122,6 +124,9 @@ export interface SubscriberSubscription {
 // `joinedAt` is the earliest subscription `created_at` — the truthful "first
 // touch," unlike `firstSeenAt` which only reflects the analytics ledger (live
 // since this feature's own deploy, so it understates age for older subscribers).
+// `lastActionAt` is the newest USER_ACTION_EVENTS timestamp across this
+// subscriber's journeys and subscriptions — deliberately not counting the
+// digests we send, so a silent subscriber reads as silent.
 export interface SubscriberActivity {
   chatId: string;
   tgUsername: string | null;
@@ -130,7 +135,30 @@ export interface SubscriberActivity {
   firstSeenAt: Date | null;
   ctaClickedAt: Date | null;
   telegramLinkedAt: Date | null;
+  lastActionAt: Date | null;
   vacancyClicks: number;
   feedClicks: number;
+  isActive: boolean;
   subscriptions: SubscriberSubscription[];
+}
+
+// Period-scoped movement, as opposed to the all-time state in `subscriptions`.
+// Every number here answers "what happened in the selected window".
+export interface ProductPeriodFlow {
+  joined: number;
+  activated: number;
+  digestClicks: number;
+  feedClicks: number;
+  churned: number;
+}
+
+// First-touch acquisition: the utm_source carried by a journey's earliest
+// landing event. `null` source means the visit arrived without one (direct,
+// organic, or a link that dropped the params).
+export interface ProductChannel {
+  source: string | null;
+  landed: number;
+  subscribed: number;
+  activated: number;
+  digestClicks: number;
 }

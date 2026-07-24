@@ -5,7 +5,7 @@ import { and, count, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm"
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { ANALYTICS_EVENTS } from "../../platform/analytics/events";
+import { ANALYTICS_EVENTS, USER_ACTION_EVENTS } from "../../platform/analytics/events";
 import { asStringArray } from "../../platform/shared/coerce";
 import { reportingPeriodSince } from "../../platform/shared/reporting-period";
 
@@ -15,8 +15,10 @@ import {
   type ProductAnalyticsOverview,
   type ProductAnalyticsPeriod,
   type ProductAnalyticsPopulation,
+  type ProductChannel,
   type ProductFeedEngagement,
   type ProductIdentityHealth,
+  type ProductPeriodFlow,
   type RecentProductJourney,
   type SubscriberActivity,
   type SubscriberSubscription,
@@ -70,8 +72,13 @@ export class ProductAnalyticsService {
         .where(populationFilter),
       this.identityHealth(population),
       this.recentJourneys(population),
-      this.subscriberActivity(population),
+      this.subscriberActivity(population, since),
       this.feedEngagement(since, population),
+    ]);
+
+    const [flow, channels] = await Promise.all([
+      this.periodFlow(since, population),
+      this.channels(since, population),
     ]);
 
     const subscriptionsRow = subscriptionRows[0];
@@ -98,6 +105,8 @@ export class ProductAnalyticsService {
         delivered,
         linkedWithoutDelivery: Math.max(linked - delivered, 0),
       },
+      flow: { ...flow, joined: subscriptionsRow?.createdInPeriod ?? 0 },
+      channels,
       identity: identityRows,
       recentJourneys,
       subscriberActivity,
@@ -190,6 +199,107 @@ export class ProductAnalyticsService {
     `);
     const row = result.rows[0];
     return { journeys: Number(row?.journeys ?? 0), events: Number(row?.events ?? 0) };
+  }
+
+  // Movement inside the window, counted from the ledger rather than from
+  // subscription state: `activated`/`churned` are events, so a chat that linked
+  // and left in the same window shows up in both.
+  private async periodFlow(
+    since: Date | null,
+    population: ProductAnalyticsPopulation,
+  ): Promise<Omit<ProductPeriodFlow, "joined">> {
+    const result = await this.db.execute<{
+      activated: number;
+      digest_clicks: number;
+      feed_clicks: number;
+      churned: number;
+    }>(sql`
+      SELECT
+        COUNT(DISTINCT event.subscription_id) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.telegramLinked})::int AS activated,
+        COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.digestLinkClicked})::int AS digest_clicks,
+        COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.applyClicked})::int AS feed_clicks,
+        COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.unsubscribed})::int AS churned
+      FROM product_events event
+      JOIN analytics_journeys journey ON journey.id = event.journey_id
+      WHERE (${since}::timestamptz IS NULL OR event.occurred_at >= ${since})
+        AND (
+          ${population} = 'all'
+          OR (${population} = 'production' AND NOT journey.is_test)
+          OR (${population} = 'test' AND journey.is_test)
+        )
+    `);
+    const row = result.rows[0];
+    return {
+      activated: Number(row?.activated ?? 0),
+      digestClicks: Number(row?.digest_clicks ?? 0),
+      feedClicks: Number(row?.feed_clicks ?? 0),
+      churned: Number(row?.churned ?? 0),
+    };
+  }
+
+  // First-touch attribution: a journey's source is the utm_source on its
+  // earliest landing event, so a later untagged visit can't overwrite it. The
+  // period filters on that landing, not on journey creation — "who arrived in
+  // this window".
+  private async channels(
+    since: Date | null,
+    population: ProductAnalyticsPopulation,
+  ): Promise<ProductChannel[]> {
+    const result = await this.db.execute<{
+      source: string | null;
+      landed: number;
+      subscribed: number;
+      activated: number;
+      digest_clicks: number;
+    }>(sql`
+      WITH first_touch AS (
+        SELECT
+          event.journey_id,
+          (ARRAY_AGG(NULLIF(event.properties->>'utm_source', '') ORDER BY event.occurred_at))[1] AS source,
+          MIN(event.occurred_at) AS landed_at
+        FROM product_events event
+        WHERE event.name IN (${ANALYTICS_EVENTS.landingView}, ${ANALYTICS_EVENTS.landingCtaClicked})
+        GROUP BY event.journey_id
+      ),
+      scoped AS (
+        SELECT first_touch.journey_id, first_touch.source
+        FROM first_touch
+        JOIN analytics_journeys journey ON journey.id = first_touch.journey_id
+        WHERE (${since}::timestamptz IS NULL OR first_touch.landed_at >= ${since})
+          AND (
+            ${population} = 'all'
+            OR (${population} = 'production' AND NOT journey.is_test)
+            OR (${population} = 'test' AND journey.is_test)
+          )
+      ),
+      per_journey AS (
+        SELECT
+          scoped.source,
+          scoped.journey_id,
+          COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.subscriptionCreated}) > 0 AS subscribed,
+          COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.telegramLinked}) > 0 AS activated,
+          COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.digestLinkClicked})::int AS digest_clicks
+        FROM scoped
+        LEFT JOIN product_events event ON event.journey_id = scoped.journey_id
+        GROUP BY scoped.source, scoped.journey_id
+      )
+      SELECT
+        source,
+        COUNT(*)::int AS landed,
+        COUNT(*) FILTER (WHERE subscribed)::int AS subscribed,
+        COUNT(*) FILTER (WHERE activated)::int AS activated,
+        COALESCE(SUM(digest_clicks), 0)::int AS digest_clicks
+      FROM per_journey
+      GROUP BY source
+      ORDER BY landed DESC, source ASC NULLS LAST
+    `);
+    return result.rows.map((row) => ({
+      source: row.source,
+      landed: Number(row.landed),
+      subscribed: Number(row.subscribed),
+      activated: Number(row.activated),
+      digestClicks: Number(row.digest_clicks),
+    }));
   }
 
   private async identityHealth(
@@ -372,6 +482,7 @@ export class ProductAnalyticsService {
   // rather than one mega-join, since a subscriber can span several journeys.
   private async subscriberActivity(
     population: ProductAnalyticsPopulation,
+    since: Date | null,
   ): Promise<SubscriberActivity[]> {
     const populationFilter = this.populationFilter(population);
     const subs = await this.db
@@ -408,6 +519,8 @@ export class ProductAnalyticsService {
       roleNodes,
       journeySubscriptionCounts,
       feedClickEvents,
+      lastActionByJourneyRows,
+      lastActionBySubRows,
     ] = await Promise.all([
       this.db
         .select({
@@ -485,6 +598,36 @@ export class ProductAnalyticsService {
           ),
         )
         .groupBy(productEvents.journeyId),
+      // "Last action" spans both attachment points: browsing events hang off the
+      // journey, digest/link events off the subscription. Take the newest of
+      // either, and only from USER_ACTION_EVENTS so our own digest sends never
+      // resurrect a silent subscriber.
+      this.db
+        .select({
+          journeyId: productEvents.journeyId,
+          at: sql<Date>`max(${productEvents.occurredAt})`,
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.journeyId, journeyIds),
+            inArray(productEvents.name, [...USER_ACTION_EVENTS]),
+          ),
+        )
+        .groupBy(productEvents.journeyId),
+      this.db
+        .select({
+          subscriptionId: productEvents.subscriptionId,
+          at: sql<Date>`max(${productEvents.occurredAt})`,
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.subscriptionId, subscriptionIds),
+            inArray(productEvents.name, [...USER_ACTION_EVENTS]),
+          ),
+        )
+        .groupBy(productEvents.subscriptionId),
     ]);
 
     // node-postgres's driver returns raw `min(timestamptz)` aggregates as
@@ -511,6 +654,14 @@ export class ProductAnalyticsService {
       journeySubscriptionCounts.map((row) => [row.journeyId, row.subscriptionCount]),
     );
     const feedClicksByJourney = new Map(feedClickEvents.map((row) => [row.journeyId, row.clicks]));
+    const lastActionByJourney = new Map(
+      lastActionByJourneyRows.map((row) => [row.journeyId, new Date(row.at)]),
+    );
+    const lastActionBySub = new Map(
+      lastActionBySubRows
+        .filter((row): row is { subscriptionId: string; at: Date } => row.subscriptionId !== null)
+        .map((row) => [row.subscriptionId, new Date(row.at)]),
+    );
 
     const byChat = new Map<string, (typeof subs)[number][]>();
     for (const row of subs) {
@@ -555,6 +706,10 @@ export class ProductAnalyticsService {
         (min, row) => (row.createdAt < min ? row.createdAt : min),
         subRows[0].createdAt,
       );
+      const lastActionAt = this.latest([
+        ...subRows.map((row) => lastActionByJourney.get(row.journeyId ?? "") ?? null),
+        ...subRows.map((row) => lastActionBySub.get(row.id) ?? null),
+      ]);
       const tgUsername = subRows.map((row) => row.tgUsername).find(isNonNull) ?? null;
       const tgFirstName = subRows.map((row) => row.tgFirstName).find(isNonNull) ?? null;
 
@@ -566,14 +721,30 @@ export class ProductAnalyticsService {
         firstSeenAt,
         ctaClickedAt,
         telegramLinkedAt,
+        lastActionAt,
         vacancyClicks,
         feedClicks,
+        isActive: subRows.some((row) => row.isActive),
         subscriptions: subscriptionSummaries,
       };
     });
 
-    return rows
-      .sort((a, b) => (b.firstSeenAt?.getTime() ?? 0) - (a.firstSeenAt?.getTime() ?? 0))
+    // A subscriber belongs in the window if they joined in it OR did something
+    // in it — filtering on join date alone would empty the list on `24h` even
+    // though older subscribers are the ones still clicking.
+    const inPeriod = since
+      ? rows.filter(
+          (row) =>
+            row.joinedAt >= since || (row.lastActionAt !== null && row.lastActionAt >= since),
+        )
+      : rows;
+
+    return inPeriod
+      .sort(
+        (a, b) =>
+          (b.lastActionAt?.getTime() ?? b.joinedAt.getTime()) -
+          (a.lastActionAt?.getTime() ?? a.joinedAt.getTime()),
+      )
       .slice(0, SUBSCRIBER_ACTIVITY_LIMIT);
   }
 
@@ -588,6 +759,12 @@ export class ProductAnalyticsService {
     const valid = dates.filter(isNonNull);
     if (valid.length === 0) return null;
     return valid.reduce((min, date) => (date < min ? date : min));
+  }
+
+  private latest(dates: Array<Date | null>): Date | null {
+    const valid = dates.filter(isNonNull);
+    if (valid.length === 0) return null;
+    return valid.reduce((max, date) => (date > max ? date : max));
   }
 
   private populationFilter(population: ProductAnalyticsPopulation) {
