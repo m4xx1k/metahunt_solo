@@ -141,7 +141,8 @@ Always throw on missing provider — silent `null` chains hide bugs.
 
 - **Loading / error / empty.** For Server Component pages: `loading.tsx` + `error.tsx` next to `page.tsx`. For client-only widgets: a one-liner gate (`if (isLoading) return …; if (error) …; if (!items.length) …`).
 - **Modal via portal.** `createPortal` to `document.body`, lock `document.body.style.overflow = "hidden"` while open, listen for `Escape` in a `useEffect` whose cleanup removes both. Don't bake click-overlay-to-close into the primitive — leave it to the consumer.
-- **Pagination.** For investigation pages, use URL-driven `<Pagination />` from `app/(investigation)/_components/` — infinite scroll breaks back-button restoration. Reach for an `IntersectionObserver` ref-callback only when scroll context is essential to the UX (a feed).
+- **Pagination.** For console screens, use URL-driven `<Pagination />` from `ui/navigation/` — infinite scroll breaks back-button restoration. Reach for an `IntersectionObserver` ref-callback only when scroll context is essential to the UX (a feed).
+- **Console screens.** One screen = one concern under `app/dashboard/*`, composed from the shared kit: `ui/layout/{PageHeader,PageBody,Panel}` for the shell, `ui/data/{StatCard,StatGrid,StatRows,MeterRow,DataTable}` for content, `ui/feedback/EmptyState` for the three empty-ish states. Long screens split into `ui/navigation/UrlTabs` panels (selection in `?tab=`, switched client-side because every panel is already server-rendered) rather than growing a longer scroll; anything that changes what the server must fetch goes through `ui/navigation/UrlSegments` / `ui/inputs/UrlSearch` instead (real navigation).
 
 ---
 

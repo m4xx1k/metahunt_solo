@@ -7,7 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard/", "/me", "/sources", "/taxonomy", "/unique-vacancies", "/vacancies"],
+      // Every operator screen lives under /dashboard; /me is the account page.
+      disallow: ["/dashboard", "/me"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

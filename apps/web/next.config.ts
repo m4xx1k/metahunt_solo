@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
     return [
       { source: "/monitoring", destination: "/dashboard", permanent: true },
       { source: "/monitoring/:path*", destination: "/dashboard", permanent: true },
+      // The operator console moved under /dashboard/* (one guarded subtree).
+      { source: "/product-analytics", destination: "/dashboard/analytics", permanent: true },
+      { source: "/sources", destination: "/dashboard/sources", permanent: true },
+      { source: "/taxonomy", destination: "/dashboard/taxonomy", permanent: true },
+      { source: "/unique-vacancies", destination: "/dashboard/dedupe", permanent: true },
+      { source: "/vacancies", destination: "/dashboard/vacancies", permanent: true },
+      { source: "/dashboard/extraction", destination: "/dashboard/costs", permanent: true },
+      { source: "/dashboard/ingests/:id", destination: "/dashboard/runs/:id", permanent: true },
       // /merged (former beta) and standalone /reverse-ats folded into the home feed.
       { source: "/merged", destination: "/", permanent: false },
       { source: "/merged/:slug*", destination: "/:slug*", permanent: false },
