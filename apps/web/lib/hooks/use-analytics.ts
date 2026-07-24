@@ -26,6 +26,8 @@ const ANALYTICS_EVENTS = {
   loggedIn: "logged_in",
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
+  matchFlowStarted: "match_flow_started",
+  matchFlowCompleted: "match_flow_completed",
 } as const;
 
 export type Lens = "cold" | "warm";
@@ -170,6 +172,20 @@ export function useAnalytics() {
           feature,
           vacancy_id: vacancyId,
         });
+      },
+
+      // /match onboarding funnel: started = the visitor committed to a path.
+      matchFlowStarted(entry: "cv" | "manual") {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.matchFlowStarted, { entry });
+      },
+
+      matchFlowCompleted(props: {
+        has_cv: boolean;
+        skills_count: number;
+        roles_count: number;
+        excludes_count: number;
+      }) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.matchFlowCompleted, props);
       },
     }),
     [posthog],

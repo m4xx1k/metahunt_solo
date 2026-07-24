@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/ui";
 import { meApi, type MeCv } from "@/lib/api/me";
-import { CvSkillManager } from "./CvSkillManager";
+import { CvSkillManager } from "@/features/cv-match/CvSkillManager";
 
 const CV_KEY = ["me", "cv"];
 
