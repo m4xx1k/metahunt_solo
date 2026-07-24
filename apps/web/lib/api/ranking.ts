@@ -1,11 +1,5 @@
 import { apiPost } from "./client";
-import type {
-  EmploymentType,
-  EnglishLevel,
-  Seniority,
-  VacancyDto,
-  WorkFormat,
-} from "./vacancies";
+import type { EmploymentType, EnglishLevel, Seniority, VacancyDto, WorkFormat } from "./vacancies";
 
 // reverse-ATS matcher client — mirrors apps/etl .../ranking/ranking.contract.ts.
 // A ranked card = the full feed VacancyDto + a personalized match overlay.
@@ -42,6 +36,7 @@ export interface MatchBody {
   englishLevels?: EnglishLevel[];
   employmentTypes?: EmploymentType[];
   domainIds?: string[]; // OR — DOMAIN node slugs (resolved -> ids server-side)
+  roleIds?: string[]; // OR — ROLE node slugs, hard filter (resolved -> ids server-side)
   experienceYears?: string[]; // discrete tokens "0".."5" + "6+"
   hasTestAssignment?: boolean; // false keeps unknowns; true strict
   hasReservation?: boolean;

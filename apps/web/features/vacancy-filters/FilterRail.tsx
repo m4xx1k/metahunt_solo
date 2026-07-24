@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { EnumSection } from "@/ui/inputs/EnumSection";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import { ExperienceSection } from "./ExperienceSection";
@@ -27,6 +29,8 @@ export function FilterRail({
   seniorityOptions,
   workFormatOptions,
   domainOptions,
+  roleOptions,
+  roleExtra,
   seniorityToneFor,
 }: {
   api: FiltersApi;
@@ -35,6 +39,10 @@ export function FilterRail({
   workFormatOptions: OptionRow[];
   /** Searchable domain catalog; omitted → the section is not rendered. */
   domainOptions?: OptionRow[];
+  /** Searchable role catalog (warm hard filter); omitted → not rendered. */
+  roleOptions?: OptionRow[];
+  /** Caller-owned note under the role chips (e.g. reduced-estimate hint). */
+  roleExtra?: ReactNode;
   /** Cold seniority pills carry the per-level card tone; warm omits it. */
   seniorityToneFor?: (id: string) => string | undefined;
 }) {
@@ -51,6 +59,17 @@ export function FilterRail({
           if (id) api.setFreshness(id);
         }}
       />
+      {roleOptions ? (
+        <MultiSelect
+          title="role"
+          options={roleOptions}
+          selected={filters.roleIds}
+          onToggle={api.toggleRole}
+          searchable
+          searchPlaceholder="search role…"
+          extra={roleExtra}
+        />
+      ) : null}
       <EnumSection
         title="seniority"
         multiple
@@ -90,10 +109,7 @@ export function FilterRail({
           searchPlaceholder="search domain…"
         />
       ) : null}
-      <ExperienceSection
-        selected={filters.experienceYears}
-        onToggle={api.toggleExperience}
-      />
+      <ExperienceSection selected={filters.experienceYears} onToggle={api.toggleExperience} />
       {lens === "warm" ? (
         <EnumSection
           title="min fit"

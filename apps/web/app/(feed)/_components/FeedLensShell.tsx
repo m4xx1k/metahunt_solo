@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { FeedShell } from "@/app/(feed)/_components/FeedShell";
@@ -149,6 +149,11 @@ export function FeedLensShell({
     [saved, setCv],
   );
 
+  const warmRoleOptions = useMemo<OptionRow[] | undefined>(
+    () => roleCatalog?.map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
+    [roleCatalog],
+  );
+
   const isSample = cv != null && samples.some((s) => s.candidateId === cv);
   const uploaded = uploadInfo?.candidateId === cv ? uploadInfo : null;
   const sampleLabel = samples.find((s) => s.candidateId === cv)?.label;
@@ -216,6 +221,7 @@ export function FeedLensShell({
             api={search}
             candidateId={cv}
             domainOptions={domainOptions}
+            roleOptions={warmRoleOptions}
             profileTitle={profileTitle}
             profileRole={uploaded?.role}
             profileSeniority={uploaded?.seniority}

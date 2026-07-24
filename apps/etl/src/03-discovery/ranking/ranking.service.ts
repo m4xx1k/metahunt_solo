@@ -5,6 +5,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
@@ -12,13 +13,16 @@ import { FeedService } from "../feed/feed.service";
 import {
   FIT_GOOD_MIN,
   FIT_STRONG_MIN,
+  ROLE_SUGGEST_WINDOW_DAYS,
   type FitTier,
   type MatchFilters,
   type MatchResponse,
   type RankedVacancy,
   type ResolveResult,
+  type RoleSuggestionsResponse,
   type SkillRef,
 } from "./ranking.contract";
+import { deriveRoleSuggestions } from "./role-suggestions.derive";
 
 // Ordinal of each Fit tier, mirroring the SQL tier_bucket CASE. The minFitTier
 // filter keeps rows with tier_bucket >= the requested tier's ordinal.
@@ -39,6 +43,7 @@ export class RankingService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly feed: FeedService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   async resolveSkills(skills: string[]): Promise<ResolveResult> {
@@ -166,51 +171,15 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    // Per-vacancy relevance + tier_bucket (mirrors fitTierWeighted: IDF-weighted
-    // required coverage; STRONG=2/GOOD=1/STRETCH=0). Shared by page + count query.
+    // Per-vacancy relevance + coverage + tier_bucket (mirrors fitTierWeighted:
+    // STRONG=2/GOOD=1/STRETCH=0). Shared by page + count + match_scored query.
     const rankedCte = sql`
-      cand(node_id) AS (VALUES ${cand}),
-      -- candidate stack-set; empty => on_stack uniformly true (no-op). ADR-0010.
-      css AS (
-        SELECT DISTINCT m.stack FROM cand c
-        JOIN node_tech_meta m ON m.node_id = c.node_id
-        WHERE m.is_core AND m.stack IS NOT NULL
-      ),
-      -- vacancies worth scoring: overlap probe (vacancy_nodes.node_id index).
-      ov AS (
-        SELECT DISTINCT vn.vacancy_id AS id
-        FROM vacancy_nodes vn
-        JOIN cand c ON c.node_id = vn.node_id
-      ),
-      -- one pass per scored vacancy: relevance + weighted denominators + stack
-      -- flags. node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
-      agg AS (
-        SELECT vn.vacancy_id AS id,
-               SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
-               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND vn.is_required), 0)::float8 AS matched_required_w,
-               count(*) FILTER (WHERE vn.is_required) AS required_total,
-               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS required_total_w,
-               COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
-               bool_or(tm.is_core AND vn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
-               bool_or(tm.is_core AND vn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
-        FROM ov
-        JOIN vacancy_nodes vn ON vn.vacancy_id = ov.id
-        JOIN node_stats ns ON ns.node_id = vn.node_id
-        LEFT JOIN cand c ON c.node_id = vn.node_id
-        LEFT JOIN node_tech_meta tm ON tm.node_id = vn.node_id
-        GROUP BY vn.vacancy_id
-      ),
+      ${this.coverageCtes(cand)},
       ranked AS (
-        SELECT id, relevance,
+        SELECT id, relevance, coverage,
                CASE
-                 WHEN required_total = 0 THEN
-                   CASE
-                     WHEN all_w > 0 AND relevance / all_w >= ${FIT_STRONG_MIN} THEN 2
-                     WHEN all_w > 0 AND relevance / all_w >= ${FIT_GOOD_MIN} THEN 1
-                     ELSE 0
-                   END
-                 WHEN required_total_w > 0 AND matched_required_w / required_total_w >= ${FIT_STRONG_MIN} THEN 2
-                 WHEN required_total_w > 0 AND matched_required_w / required_total_w >= ${FIT_GOOD_MIN} THEN 1
+                 WHEN coverage >= ${FIT_STRONG_MIN} THEN 2
+                 WHEN coverage >= ${FIT_GOOD_MIN} THEN 1
                  ELSE 0
                END AS tier_bucket,
                -- off-stack only when the vacancy positively belongs to another
@@ -221,7 +190,7 @@ export class RankingService {
                       AND NOT COALESCE(has_instack_core, false) THEN false
                  ELSE true
                END AS on_stack
-        FROM agg
+        FROM scored
       )`;
 
     const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
@@ -273,8 +242,145 @@ export class RankingService {
       total = totalRes.rows[0]?.count ?? 0;
     }
 
+    // Calibration raw data (design §8): sampled to first pages — every fresh
+    // match starts at page 1, so this sees each scoring context once.
+    if (page === 1) void this.emitMatchScored(rankedCte, where, nodeIds.length);
+
     const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
     return { resolved, items, page, pageSize, total };
+  }
+
+  // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
+  // the filtered result set, pre-collapse. Fire-and-forget — a telemetry
+  // failure must never affect the match response.
+  private async emitMatchScored(rankedCte: SQL, where: SQL, skillsCount: number): Promise<void> {
+    try {
+      const res = await this.db.execute<{ bucket: number; n: number }>(sql`
+        WITH ${rankedCte}
+        SELECT least(floor(rk.coverage * 10), 9)::int AS bucket, count(*)::int AS n
+        FROM ranked rk
+        JOIN vacancies v ON v.id = rk.id
+        WHERE ${where}
+        GROUP BY 1
+      `);
+      const hist = Array.from({ length: 10 }, () => 0);
+      for (const r of res.rows) hist[r.bucket] = r.n;
+      const sum = (from: number, to: number) => hist.slice(from, to).reduce((a, b) => a + b, 0);
+      this.analytics.matchScored({
+        skills_count: skillsCount,
+        total: sum(0, 10),
+        strong_count: sum(8, 10),
+        good_count: sum(5, 8),
+        stretch_count: sum(0, 5),
+        coverage_hist: hist,
+      });
+    } catch {
+      // swallow: calibration telemetry only
+    }
+  }
+
+  // The shared aggregation pipeline: candidate VALUES → stack-set → overlap
+  // probe → one weighted pass per scored vacancy → coverage (fitTierWeighted's
+  // SQL twin). Consumed by rankByRefs (ranked/tier_bucket) and suggestRoles.
+  private coverageCtes(cand: SQL): SQL {
+    return sql`
+      cand(node_id) AS (VALUES ${cand}),
+      -- candidate stack-set; empty => on_stack uniformly true (no-op). ADR-0010.
+      css AS (
+        SELECT DISTINCT m.stack FROM cand c
+        JOIN node_tech_meta m ON m.node_id = c.node_id
+        WHERE m.is_core AND m.stack IS NOT NULL
+      ),
+      -- vacancies worth scoring: overlap probe (vacancy_nodes.node_id index).
+      ov AS (
+        SELECT DISTINCT vn.vacancy_id AS id
+        FROM vacancy_nodes vn
+        JOIN cand c ON c.node_id = vn.node_id
+      ),
+      -- one pass per scored vacancy: relevance + weighted denominators + stack
+      -- flags. node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
+      agg AS (
+        SELECT vn.vacancy_id AS id,
+               SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
+               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND vn.is_required), 0)::float8 AS matched_required_w,
+               count(*) FILTER (WHERE vn.is_required) AS required_total,
+               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS required_total_w,
+               COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
+               bool_or(tm.is_core AND vn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
+               bool_or(tm.is_core AND vn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
+        FROM ov
+        JOIN vacancy_nodes vn ON vn.vacancy_id = ov.id
+        JOIN node_stats ns ON ns.node_id = vn.node_id
+        LEFT JOIN cand c ON c.node_id = vn.node_id
+        LEFT JOIN node_tech_meta tm ON tm.node_id = vn.node_id
+        GROUP BY vn.vacancy_id
+      ),
+      -- weighted required coverage; all-skills share when nothing is required.
+      scored AS (
+        SELECT agg.*,
+               CASE
+                 WHEN required_total = 0 THEN
+                   CASE WHEN all_w > 0 THEN COALESCE(relevance, 0) / all_w ELSE 0 END
+                 ELSE
+                   CASE WHEN required_total_w > 0 THEN matched_required_w / required_total_w ELSE 0 END
+               END AS coverage
+        FROM agg
+      )`;
+  }
+
+  // Score each ROLE node by how well the candidate's skill set covers its
+  // last-30d vacancies: total per role, GOOD+ count, and mean coverage (the
+  // cold-start signal). Selection/smoothing lives in deriveRoleSuggestions.
+  async suggestRoles(
+    candidate: SkillRef[],
+    pinnedRoleId: string | null,
+  ): Promise<RoleSuggestionsResponse> {
+    const nodeIds = candidate.map((m) => m.id);
+    if (nodeIds.length === 0) return { reduced: true, items: [] };
+    const cand = sql.join(
+      nodeIds.map((id) => sql`(${id}::uuid)`),
+      sql`, `,
+    );
+
+    // LEFT JOIN: a role vacancy with zero candidate overlap counts in the
+    // denominator with coverage 0 — totals span the whole role, not the probe.
+    const result = await this.db.execute<{
+      role_id: string;
+      slug: string | null;
+      name: string;
+      total: number;
+      good: number;
+      avg_coverage: number;
+    }>(sql`
+      WITH ${this.coverageCtes(cand)},
+      per_vacancy AS (
+        SELECT v.role_node_id AS role_id, COALESCE(s.coverage, 0) AS coverage
+        FROM vacancies v
+        LEFT JOIN scored s ON s.id = v.id
+        WHERE ${ELIGIBLE_VACANCY}
+          AND coalesce(v.published_at, v.loaded_at) >
+              now() - make_interval(days => ${ROLE_SUGGEST_WINDOW_DAYS})
+      )
+      SELECT r.id::text AS role_id, r.slug AS slug, r.canonical_name AS name,
+             count(*)::int AS total,
+             (count(*) FILTER (WHERE pv.coverage >= ${FIT_GOOD_MIN}))::int AS good,
+             avg(pv.coverage)::float8 AS avg_coverage
+      FROM per_vacancy pv
+      JOIN nodes r ON r.id = pv.role_id
+      GROUP BY r.id, r.slug, r.canonical_name
+    `);
+
+    return deriveRoleSuggestions(
+      result.rows.map((r) => ({
+        roleId: r.role_id,
+        slug: r.slug,
+        name: r.name,
+        goodCount: r.good,
+        totalCount: r.total,
+        avgCoverage: r.avg_coverage,
+      })),
+      pinnedRoleId,
+    );
   }
 
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
@@ -377,6 +483,10 @@ export class RankingService {
     // Domain (OR): keep vacancies tagged with any listed DOMAIN node — a vacancy
     // filter, mirroring the feed (the candidate stays the query).
     if (f.domainIds?.length) inText(sql`v.domain_node_id`, f.domainIds);
+
+    // Role (OR, hard filter): the user's explicit role choice — unlike the
+    // inferred on_stack signal, it filters instead of demoting.
+    if (f.roleNodeIds?.length) inText(sql`v.role_node_id`, f.roleNodeIds);
 
     // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
     // — unstated experience always passes; only explicit non-matches drop. Mirrors

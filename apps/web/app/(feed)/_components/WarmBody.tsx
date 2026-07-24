@@ -10,6 +10,7 @@ import { MatchFilters } from "./MatchFilters";
 import { Pagination } from "@/ui/navigation/Pagination";
 import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
 import { useFeedWarm } from "../_hooks/use-feed-warm";
+import { useRoleSuggestions } from "../_hooks/use-role-suggestions";
 import { CvSelect } from "./CvSelect";
 import { WarmCard } from "./WarmCard";
 import { WarmSubscribe } from "./WarmSubscribe";
@@ -22,6 +23,7 @@ export function WarmBody({
   api,
   candidateId,
   domainOptions,
+  roleOptions,
   profileTitle,
   profileRole,
   profileSeniority,
@@ -32,6 +34,8 @@ export function WarmBody({
   api: FiltersApi;
   candidateId: string;
   domainOptions?: OptionRow[];
+  /** Full ROLE catalog for the role hard-filter search. */
+  roleOptions?: OptionRow[];
   profileTitle: string;
   profileRole?: string | null;
   profileSeniority?: string | null;
@@ -45,6 +49,7 @@ export function WarmBody({
     isSample,
     !isSample,
   );
+  const roleSuggestions = useRoleSuggestions(candidateId, isSample);
 
   // Fire at most once per candidate — dropping it flips to cold and unmounts
   // this component, so a re-fire would loop against its own state updates.
@@ -67,7 +72,13 @@ export function WarmBody({
           label={profileTitle}
           disabled={isSample}
         />
-        <MatchFilters api={api} domainOptions={domainOptions} disabled={busy} />
+        <MatchFilters
+          api={api}
+          domainOptions={domainOptions}
+          roleCatalog={roleOptions}
+          roleSuggestions={roleSuggestions}
+          disabled={busy}
+        />
       </div>
 
       <div className="flex flex-col gap-5">
