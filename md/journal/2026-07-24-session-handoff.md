@@ -21,9 +21,16 @@ Nothing in the product surface (feed, landings, digest, matching) was touched.
 
 `app/(investigation)` **no longer exists**. Every protected screen is now `app/dashboard/*`:
 
+Iteration 2 (PR #119, `9288be4`) reordered the home around users and made the period switch
+authoritative — see the tracker's "Iteration 2" section. Short version: `/dashboard` is
+**Users → product → pipeline strip**, every number on it is period-scoped flow (`ProductPeriodFlow`
+from `product_events` inside the window), `lastActionAt` counts only `USER_ACTION_EVENTS` (never
+our own `digest_sent`), and a new first-touch `channels` table answers "which channel converts"
+from our own ledger. All-time subscription state now lives only on Analytics → Identity.
+
 | route | screen |
 |---|---|
-| `/dashboard` | Overview — widget grid, every tile drills down |
+| `/dashboard` | Overview — users roster first, then product, then a one-line pipeline strip |
 | `/dashboard/analytics` | funnel / subscribers / identity / journeys (tabs) |
 | `/dashboard/runs` (+ `?tab=failed`), `/dashboard/runs/[id]` | ingest history, failures, run detail |
 | `/dashboard/costs` | prompts / models / recent (tabs) |
@@ -108,7 +115,7 @@ gauge `s4kBt1WL`.
 | 4 | Deactivate after N `chat_unreachable` | S | stops burning sends on dead chats |
 | 5 | Add `utm_*`+`path` to `landing_view`; `source`+journey to `apply_clicked` | S | makes channel analysis possible |
 | 6 | Verify `subscription_create_failed` fires | XS | last blind spot on signup |
-| 7 | Visual pass over `/dashboard/*` in prod | XS | never rendered authed locally |
+| 7 | Visual pass over `/dashboard/*` in prod | XS | never rendered authed locally (incl. the new Users widget) |
 | 7b | Timeout on the `sitemap.ts` tracks fetch | XS | a slow ETL API currently fails Vercel builds (see below) |
 | 8 | **Then** buy traffic: DOU forum + UA IT Telegram | — | 33% channel conversion deserves volume |
 | — | Gate 0 (5 clean E2E, [`funnel-e2e-test.md`](../runbook/funnel-e2e-test.md)) | — | still open from the audit |
