@@ -25,28 +25,31 @@ function hasSupply(track: TrackDto, all: TrackDto[]): boolean {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Each source degrades on its own: a backend gap should cost us that section,
-  // never the whole sitemap.
+  // never the whole sitemap. The hard deadline exists because a slow-but-
+  // connecting backend once hung past Next's 60s export cap and failed a whole
+  // Vercel build (PR #118) — the .catch alone can't rescue a hang.
+  const deadline = (): RequestInit => ({ signal: AbortSignal.timeout(5_000) });
   const [tracks, lastSync, vacancies, roles, companies] = await Promise.all([
     tracksApi
-      .get()
+      .get(deadline())
       .then((r) => r.tracks)
       .catch((): TrackDto[] => []),
     aggregatesApi
-      .get()
+      .get(deadline())
       .then((a) => a.lastSyncAt)
       .catch(() => null),
     // Fresh only, matching JobPosting's validThrough window: a URL we would mark
     // expired has no business being advertised as worth crawling.
     sitemapApi
-      .vacancies(VACANCY_VALID_DAYS)
+      .vacancies(VACANCY_VALID_DAYS, deadline())
       .then((r) => r.items)
       .catch(() => []),
     facetsApi
-      .roles()
+      .roles(deadline())
       .then((r) => r.roles)
       .catch((): NodeFacet[] => []),
     sitemapApi
-      .companies()
+      .companies(deadline())
       .then((r) => r.companies)
       .catch((): CompanyFacet[] => []),
   ]);
