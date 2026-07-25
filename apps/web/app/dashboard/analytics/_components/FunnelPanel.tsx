@@ -44,7 +44,7 @@ export function FunnelPanel({ funnel, feedEngagement, population }: Props) {
   return (
     <Panel
       title="Funnel"
-      meta={`${population} · independent per step`}
+      meta={`${population} · journeys per step · % of landing`}
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 font-mono text-2xs uppercase tracking-[0.12em] text-text-muted">
@@ -69,19 +69,18 @@ export function FunnelPanel({ funnel, feedEngagement, population }: Props) {
         height={24}
         ariaLabel="journey volume per funnel step, in chronological order"
       />
+      {/* % of the entry step, not of the previous row: steps are counted
+          independently, so row-over-row ratios can exceed 100% and mislead. */}
       <div className="flex flex-col gap-4 pt-2">
-        {funnel.map((step, index) => {
-          const previous = index === 0 ? step.journeys : funnel[index - 1].journeys;
-          return (
-            <MeterRow
-              key={step.name}
-              label={eventLabel(step.name)}
-              value={`${formatCount(step.journeys)} · ${formatPercent(step.journeys, previous)}`}
-              pct={(step.journeys / entry) * 100}
-              tone={index === 0 ? "neutral" : "accent"}
-            />
-          );
-        })}
+        {funnel.map((step, index) => (
+          <MeterRow
+            key={step.name}
+            label={eventLabel(step.name)}
+            value={`${formatCount(step.journeys)} · ${formatPercent(step.journeys, entry)}`}
+            pct={(step.journeys / entry) * 100}
+            tone={index === 0 ? "neutral" : "accent"}
+          />
+        ))}
       </div>
     </Panel>
   );

@@ -15,6 +15,7 @@ import { PageBody } from "@/ui/layout/PageBody";
 import { PageHeader } from "@/ui/layout/PageHeader";
 import { UrlSegments } from "@/ui/navigation/UrlSegments";
 import { UrlTabPanel, UrlTabs, UrlTabsList, type UrlTab } from "@/ui/navigation/UrlTabs";
+import { DeliveryPanel } from "./_components/DeliveryPanel";
 import { FunnelPanel } from "./_components/FunnelPanel";
 import { IdentityPanel } from "./_components/IdentityPanel";
 import { JourneysPanel } from "./_components/JourneysPanel";
@@ -39,6 +40,7 @@ const POPULATION_OPTIONS: Array<{ value: ProductAnalyticsPopulation; label: stri
 const TABS: UrlTab[] = [
   { value: "funnel", label: "Funnel" },
   { value: "subscribers", label: "Subscribers" },
+  { value: "delivery", label: "Delivery" },
   { value: "identity", label: "Identity" },
   { value: "journeys", label: "Journeys" },
 ];
@@ -90,34 +92,32 @@ export default async function AnalyticsPage({
       />
 
       <PageBody>
-        {/* Every tile is period-scoped flow; all-time subscription state lives
-            on the Identity tab, where it can't be mistaken for movement. */}
+        {/* `joined` and the conversion follow the period; the three lifecycle
+            states are all-time per chat — a state can't be period-scoped, and
+            counting `unsubscribed` events here double-counted every /stop. */}
         <StatGrid cols={5}>
           <StatCard label="joined" value={formatCount(data.flow.joined)} hint="new subscriptions" />
           <StatCard
-            label="activated"
-            value={formatCount(data.flow.activated)}
-            hint="linked telegram"
+            label="active"
+            value={formatCount(data.subscriberStates.active)}
+            hint="subscribed chats, alive"
           />
           <StatCard
-            label="digest clicks"
-            value={formatCount(data.flow.digestClicks)}
-            hint="taps from telegram"
+            label="dormant"
+            value={formatCount(data.subscriberStates.dormant)}
+            hint="digests land, no reaction 14d"
+            tone={data.subscriberStates.dormant > 0 ? "danger" : "default"}
           />
           <StatCard
             label="churned"
-            value={formatCount(data.flow.churned)}
-            hint={
-              data.flow.churned > 0
-                ? `${formatPercent(data.flow.churned, data.flow.joined)} of joins`
-                : "no unsubscribes"
-            }
-            tone={data.flow.churned > 0 ? "danger" : "default"}
+            value={formatCount(data.subscriberStates.churned)}
+            hint="unsubscribed everything or blocked"
+            tone={data.subscriberStates.churned > 0 ? "danger" : "default"}
           />
           <StatCard
-            label="landing → click"
+            label="landing → linked"
             value={formatPercent(exit, entry)}
-            hint="end-to-end conversion"
+            hint="acquisition conversion"
             tone="accent"
           />
         </StatGrid>
@@ -132,6 +132,14 @@ export default async function AnalyticsPage({
 
         <UrlTabPanel value="subscribers">
           <SubscribersPanel subscribers={data.subscriberActivity} />
+        </UrlTabPanel>
+
+        <UrlTabPanel value="delivery">
+          <DeliveryPanel
+            delivery={data.delivery}
+            digestClicks={data.flow.digestClicks}
+            population={population}
+          />
         </UrlTabPanel>
 
         <UrlTabPanel value="identity">

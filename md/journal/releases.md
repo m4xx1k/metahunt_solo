@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-25
+
+- **Analytics dashboard tells acquisition apart from retention** (`feat/subscriber-states`). The funnel shrinks to the 4-step anonymous acquisition chain (`landing_view → landing_cta_clicked → subscription_created → telegram_linked`) with every row shown as **% of landing** — row-over-row ratios on independently-counted steps produced nonsense like 125% and are gone. The headline churn tile stops counting `unsubscribed` events (one /stop with N subscriptions counted N times, narrowing tracks counted as churn) and becomes a per-chat lifecycle state: **active / dormant / churned** — dormant = an active subscription that received ≥3 digests in 14 days with zero user actions back (the recoverable ones), churned = every linked subscription deactivated. New **Delivery** tab isolates system events from user behavior: digests sent, **messages per chat per day** (the churn-risk number, flagged past 2/day), failures by kind, unsubscribes, and a fixed 7-day daily table. Handoff/activation/digest steps keep firing as events — they just stop being funnel rows. Int spec extended with a state-classification + delivery-health case.
+
+---
+
 ## 2026-07-24
 
 - **Console home rebuilt around users and one period** (`feat/console-users-widget`). `/dashboard` now leads with a **Users** widget (subscriber, joined, last action, digest/feed clicks) — the operator's first question is "who is here". Product comes second (five period-scoped tiles + activation funnel + a new first-touch **Channels** table), the ETL collapses into one `PipelineStrip` line, and its former home panels moved back to their own screens. Every number on the page now answers the 24h/7d/all switch: state metrics were rewritten as flow (`ProductPeriodFlow` counted from `product_events` in the window), and all-time subscription state stays only on Analytics → Identity. New `USER_ACTION_EVENTS`/`SYSTEM_EMITTED_EVENTS` split (spec-enforced partition) makes `lastActionAt` mean "the subscriber did something", not "we sent them a digest"; the roster keeps a subscriber if they joined **or** acted in the window. Additive backend only, no migration; three new integration cases cover last-action semantics, the roster filter, flow counts, and first-touch attribution. → [tracker](./migrations/_done/operator-console.md)
