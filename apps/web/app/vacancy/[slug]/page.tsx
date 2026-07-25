@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import sanitizeHtml from "sanitize-html";
 
 import { Footer } from "@/app/_components/Footer";
@@ -22,13 +22,27 @@ import {
   formatSalary,
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
+import { breadcrumbJsonLd } from "@/lib/seo/breadcrumbs";
+import { buildJobPosting, isExpired } from "@/lib/seo/job-posting";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { pageMetadata } from "@/lib/seo/metadata";
+import { parseVacancyId, vacancyPath } from "@/lib/seo/vacancy-url";
 import { Tag } from "@/ui";
 
-const SITE_URL = "https://www.metahunt.app";
+// Was force-dynamic, which sent `cache-control: no-store` and made every
+// Googlebot hit a full uncached render (~1.9s). At ~4.9k indexable vacancies
+// that is the crawl budget, so these pages are ISR now.
+//
+// force-static is what makes it stick: lib/api reads the session cookie on every
+// server call, and a cookie read alone keeps the route dynamic and uncacheable.
+// force-static makes cookies() return empty, which is the correct answer here —
+// this page renders identically for everyone, signed in or not.
+export const dynamic = "force-static";
+export const revalidate = 900;
 
-export const dynamic = "force-dynamic";
+const SIMILAR_COUNT = 4;
 
-type PageParams = { id: string };
+type PageParams = { slug: string };
 
 // DOU/Djinni descriptions arrive as raw HTML — sanitize server-side before
 // dangerouslySetInnerHTML so only a safe, styled subset ever reaches the client.
@@ -64,9 +78,9 @@ const DESCRIPTION_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   },
 };
 
-// Any vacancy row 404s the same way (bad uuid or missing row) — the
-// controller always throws NotFoundException, so this is the one place that
-// tells "not found" apart from a real backend outage.
+// Any vacancy row 404s the same way (bad uuid or missing row) — the controller
+// always throws NotFoundException, so this is the one place that tells "not
+// found" apart from a real backend outage.
 async function loadVacancy(id: string): Promise<VacancyDto | null> {
   return vacanciesApi.byId(id).catch((err) => {
     if (err instanceof Error && err.message.includes(" 404 ")) return null;
@@ -74,19 +88,39 @@ async function loadVacancy(id: string): Promise<VacancyDto | null> {
   });
 }
 
+// The expiry check needs a clock, and buildJobPosting takes `now` as an argument
+// so its expiry branch stays testable. Reading it here rather than inline in the
+// component keeps that injection point while satisfying react-hooks/purity: this
+// page is ISR, so it renders once per revalidation, and the window is 30 days —
+// a render-time clock read cannot make the result unstable.
+function clockNow(): number {
+  return Date.now();
+}
+
+// Other openings for the same role. `roleIds` takes node slugs, but the resolver
+// passes a UUID straight through, so the DTO's role id works as-is.
+async function loadSimilar(vacancy: VacancyDto): Promise<VacancyDto[]> {
+  if (!vacancy.role) return [];
+  const res = await vacanciesApi
+    .list({ roleIds: [vacancy.role.id], page: 1, pageSize: SIMILAR_COUNT + 1 })
+    .catch(() => null);
+  return (res?.items ?? []).filter((v) => v.id !== vacancy.id).slice(0, SIMILAR_COUNT);
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<PageParams>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { slug } = await params;
+  const id = parseVacancyId(slug);
+  if (!id) return {};
   const vacancy = await loadVacancy(id);
   if (!vacancy) return {};
 
   const role = vacancy.role?.name ?? vacancy.title;
   const company = vacancy.company?.name;
-  const url = `${SITE_URL}/vacancy/${id}`;
-  const title = `${role}${company ? ` at ${company}` : ""}`;
+  const title = `${role}${company ? ` — ${company}` : ""}`;
 
   const salary = formatSalary({
     min: vacancy.salary.min,
@@ -95,36 +129,55 @@ export async function generateMetadata({
   });
   const dedupLine =
     vacancy.duplicateCount && vacancy.duplicateCount > 1
-      ? ` Reposted ${vacancy.duplicateCount}× across ${vacancy.duplicateSourceCount ?? 1} sources — deduped to one listing by metahunt.`
+      ? ` Опубліковано ${vacancy.duplicateCount}× на ${vacancy.duplicateSourceCount ?? 1} джерелах — metahunt звів до однієї картки.`
       : "";
   const description = [
-    `${role}${company ? ` at ${company}` : ""}.`,
+    `${role}${company ? ` в ${company}` : ""}${vacancy.locations[0] ? `, ${vacancy.locations[0]}` : ""}.`,
     salary ? `${salary}.` : "",
-    dedupLine,
+    dedupLine || " Вакансія з DOU і Djinni в одному списку, без дублів.",
   ]
     .filter(Boolean)
     .join(" ")
     .trim();
 
-  return {
+  return pageMetadata({
     title,
     description,
-    alternates: { canonical: url },
-    openGraph: { title, description, url, siteName: "metahunt", type: "website" },
-    twitter: { card: "summary", title, description },
-  };
+    // Always the slugged form, never the requested one — a bare-uuid request
+    // must not self-canonicalise or both URLs stay in the index.
+    path: vacancyPath({ id, roleName: vacancy.role?.name, title: vacancy.title }),
+    // Google requires expired postings out of its index; the page stays up for
+    // people who followed a link, but it stops asking to be ranked.
+    noindex: isExpired(vacancy.publishedAt, clockNow()),
+  });
 }
 
 export default async function VacancyDetailPage({ params }: { params: Promise<PageParams> }) {
-  const { id } = await params;
+  const { slug } = await params;
+  const id = parseVacancyId(slug);
+  if (!id) notFound();
   const vacancy = await loadVacancy(id);
   if (!vacancy) notFound();
 
+  // One vacancy, one URL: the bare-uuid form and any stale slug (the role was
+  // renamed, someone hand-edited the path) redirect onto the canonical one.
+  const canonicalPath = vacancyPath({
+    id,
+    roleName: vacancy.role?.name,
+    title: vacancy.title,
+  });
+  if (`/vacancy/${slug}` !== canonicalPath) permanentRedirect(canonicalPath);
+
   // Named sources for the hero stat ("DOU + Djinni"); falls back to the bare
   // counter already on the vacancy DTO if the group fetch hiccups.
-  const group = vacancy.uniqueVacancyId
-    ? await vacanciesApi.group(vacancy.uniqueVacancyId).catch((): FeedDuplicateGroup | null => null)
-    : null;
+  // `similar` gives these pages an internal route to each other — without it a
+  // vacancy is a dead end and only the sitemap ever points at it.
+  const [group, similar] = await Promise.all([
+    vacancy.uniqueVacancyId
+      ? vacanciesApi.group(vacancy.uniqueVacancyId).catch((): FeedDuplicateGroup | null => null)
+      : Promise.resolve(null),
+    loadSimilar(vacancy),
+  ]);
   const sourceNames = group
     ? Array.from(new Set(group.members.map((m) => m.source.displayName.trim())))
     : [];
@@ -145,9 +198,19 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
     ? sanitizeHtml(vacancy.description, DESCRIPTION_SANITIZE_OPTIONS).trim()
     : "";
 
+  const jobPosting = buildJobPosting(vacancy, clockNow());
+
   return (
     <>
-      <Header links={[{ label: "browse the feed", href: "/" }]} cta={null} />
+      {/* Null whenever a Google-required field is missing — see job-posting.ts. */}
+      {jobPosting ? <JsonLd data={jobPosting} /> : null}
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Вакансії", path: "/" },
+          { name: role, path: canonicalPath },
+        ])}
+      />
+      <Header links={[{ label: "усі вакансії", href: "/" }]} cta={null} />
       <main
         className="bg-bg"
         style={{
@@ -272,12 +335,35 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
               </div>
             ) : null}
 
+            {similar.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                <Tag>&gt; схожі вакансії</Tag>
+                <ul className="flex flex-col">
+                  {similar.map((s) => (
+                    <li key={s.id} className="border-b border-border last:border-b-0">
+                      <Link
+                        href={vacancyPath({ id: s.id, roleName: s.role?.name, title: s.title })}
+                        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3 transition-colors hover:text-accent"
+                      >
+                        <span className="font-mono text-sm text-text-primary">
+                          {s.role?.name ?? s.title}
+                        </span>
+                        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                          {s.company?.name ?? s.source.displayName.trim()}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
               <Link
                 href="/"
                 className="font-mono text-xs uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
               >
-                ← back to the feed
+                ← усі вакансії
               </Link>
               {vacancy.link ? (
                 <ApplyLink vacancyId={vacancy.id} sourceName={vacancy.source.displayName.trim()} />

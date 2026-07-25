@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 
+import Link from "next/link";
 import { ClipboardList, ShieldCheck } from "lucide-react";
 
 import { DuplicatesBadge } from "./DuplicatesBadge";
@@ -15,6 +16,7 @@ import {
   formatSalary,
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
+import { vacancyPath } from "@/lib/seo/vacancy-url";
 import type { VacancyDto } from "@/lib/api/vacancies";
 
 import { ApplyLink } from "./ApplyLink";
@@ -83,7 +85,10 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
             </div>
           ) : null}
 
-          {/* 2 — headline: outline seniority before the role (never filled) */}
+          {/* 2 — headline: outline seniority before the role (never filled).
+              The role links to the detail page — without this the feed's only
+              outbound link is the external apply, and every /vacancy/* page is
+              an orphan no crawler can reach. */}
           <div className="flex flex-wrap items-center gap-3">
             {v.seniority ? (
               <SeniorityBadge
@@ -93,7 +98,12 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
               />
             ) : null}
             <h3 className="break-words font-mono text-lg font-bold leading-tight text-text-primary md:text-xl">
-              {role}
+              <Link
+                href={vacancyPath({ id: v.id, roleName: v.role?.name, title: v.title })}
+                className="transition-colors hover:text-accent hover:underline"
+              >
+                {role}
+              </Link>
             </h3>
           </div>
 
