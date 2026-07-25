@@ -1,62 +1,78 @@
 import type { MetadataRoute } from "next";
 
-import { tracksApi } from "@/lib/api/tracks";
-import { SITE_URL } from "@/lib/seo/site";
+import { aggregatesApi } from "@/lib/api/aggregates";
+import { sitemapApi } from "@/lib/api/sitemap";
+import { tracksApi, type TrackDto } from "@/lib/api/tracks";
+import { VACANCY_VALID_DAYS } from "@/lib/seo/job-posting";
+import { SITE_URL, absoluteUrl } from "@/lib/seo/site";
+import { vacancyPath } from "@/lib/seo/vacancy-url";
 
-const TRACKS = [
-  "backend",
-  "fullstack",
-  "frontend",
-  "data-ai",
-  "qa",
-  "devops",
-  "mobile",
-  "hardware",
-  "security",
-  "gamedev",
-  "blockchain",
-] as const;
+// One file, deliberately. generateSitemaps() would let Search Console report
+// vacancy coverage separately from hub coverage, but it also removes /sitemap.xml
+// in favour of /sitemap/<id>.xml — and that URL is the one already submitted and
+// advertised in robots.txt. ~5k URLs is a tenth of Google's 50k cap; split when
+// the vacancy set actually approaches it.
+export const revalidate = 3600;
+
+// Every track the feed serves, from the live tree. The previous hardcoded list of
+// 11 disciplines left ~30 live pages out entirely — /fullstack-react alone has
+// over a thousand vacancies.
+function hasSupply(track: TrackDto, all: TrackDto[]): boolean {
+  return track.count > 0 || all.some((t) => t.parentSlug === track.slug && t.count > 0);
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: SITE_URL, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE_URL}/radar`, changeFrequency: "daily", priority: 0.9 },
-    { url: `${SITE_URL}/how-it-works`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE_URL}/privacy`, changeFrequency: "monthly", priority: 0.4 },
-  ];
+  // Each source degrades on its own: a backend gap should cost us that section,
+  // never the whole sitemap.
+  const [tracks, lastSync, vacancies] = await Promise.all([
+    tracksApi
+      .get()
+      .then((r) => r.tracks)
+      .catch((): TrackDto[] => []),
+    aggregatesApi
+      .get()
+      .then((a) => a.lastSyncAt)
+      .catch(() => null),
+    // Fresh only, matching JobPosting's validThrough window: a URL we would mark
+    // expired has no business being advertised as worth crawling.
+    sitemapApi
+      .vacancies(VACANCY_VALID_DAYS)
+      .then((r) => r.items)
+      .catch(() => []),
+  ]);
 
-  // Promoted radar landings: the top-level disciplines (by sortOrder, real
-  // supply) plus backend's stack children — sourced from the live tracks tree,
-  // never invented slugs. Tolerates a build-time API gap: falls back to the
-  // static routes + legacy /<track> list rather than failing the sitemap.
-  let radarRoutes: MetadataRoute.Sitemap = [];
-  try {
-    const { tracks } = await tracksApi.get();
-    const hasSupply = (t: (typeof tracks)[number]) =>
-      t.count > 0 || tracks.some((c) => c.parentSlug === t.slug && c.count > 0);
-    const disciplines = tracks
-      .filter((t) => t.parentSlug === null && hasSupply(t))
-      .sort((a, b) => a.sortOrder - b.sortOrder);
-    const backendChildren = tracks
-      .filter((t) => t.parentSlug === "backend" && t.count > 0)
-      .sort((a, b) => a.sortOrder - b.sortOrder);
-
-    radarRoutes = [...disciplines, ...backendChildren].map((t) => ({
-      url: `${SITE_URL}/radar/${t.slug}`,
-      changeFrequency: "daily" as const,
-      priority: t.parentSlug === null ? 0.9 : 0.7,
-    }));
-  } catch {
-    radarRoutes = [{ url: `${SITE_URL}/radar/backend`, changeFrequency: "daily", priority: 0.9 }];
-  }
+  // A feed page's content changes on the ingest, so that is its real lastmod.
+  const ingestedAt = lastSync ? new Date(lastSync) : undefined;
+  const withSupply = tracks.filter((t) => hasSupply(t, tracks));
 
   return [
-    ...staticRoutes,
-    ...radarRoutes,
-    ...TRACKS.map((track) => ({
-      url: `${SITE_URL}/${track}`,
+    { url: SITE_URL, lastModified: ingestedAt, changeFrequency: "daily", priority: 1 },
+    { url: absoluteUrl("/radar"), changeFrequency: "daily", priority: 0.9 },
+    { url: absoluteUrl("/match"), changeFrequency: "monthly", priority: 0.8 },
+    { url: absoluteUrl("/how-it-works"), changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/privacy"), changeFrequency: "yearly", priority: 0.3 },
+
+    ...withSupply.map((t) => ({
+      url: absoluteUrl(`/${t.slug}`),
+      lastModified: ingestedAt,
       changeFrequency: "daily" as const,
-      priority: 0.8,
+      // Disciplines outrank their stack children.
+      priority: t.parentSlug === null ? 0.9 : 0.7,
+    })),
+
+    ...withSupply
+      .filter((t) => t.parentSlug === null || t.count > 0)
+      .map((t) => ({
+        url: absoluteUrl(`/radar/${t.slug}`),
+        changeFrequency: "daily" as const,
+        priority: t.parentSlug === null ? 0.8 : 0.6,
+      })),
+
+    ...vacancies.map((v) => ({
+      url: absoluteUrl(vacancyPath({ id: v.id, roleName: v.roleName, title: v.title })),
+      lastModified: new Date(v.updatedAt),
+      changeFrequency: "daily" as const,
+      priority: 0.6,
     })),
   ];
 }
