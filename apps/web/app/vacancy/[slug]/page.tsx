@@ -17,6 +17,7 @@ import {
   EMPLOYMENT_LABELS,
   ENGAGEMENT_LABELS,
   ENGLISH_LABELS,
+  SENIORITY_LABELS,
   WORK_FORMAT_LABELS,
   formatExperience,
   formatSalary,
@@ -26,6 +27,7 @@ import { breadcrumbJsonLd } from "@/lib/seo/breadcrumbs";
 import { buildJobPosting, isExpired } from "@/lib/seo/job-posting";
 import { JsonLd } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
+import { vacancyTitle } from "@/lib/seo/vacancy-meta";
 import { parseVacancyId, vacancyPath } from "@/lib/seo/vacancy-url";
 import { Tag } from "@/ui";
 
@@ -120,7 +122,12 @@ export async function generateMetadata({
 
   const role = vacancy.role?.name ?? vacancy.title;
   const company = vacancy.company?.name;
-  const title = `${role}${company ? ` — ${company}` : ""}`;
+  const title = vacancyTitle({
+    role,
+    seniority: vacancy.seniority ? SENIORITY_LABELS[vacancy.seniority] : null,
+    // Most specific distinguishing fact available, in that order.
+    qualifier: company ?? vacancy.locations[0] ?? vacancy.source.displayName.trim(),
+  });
 
   const salary = formatSalary({
     min: vacancy.salary.min,
