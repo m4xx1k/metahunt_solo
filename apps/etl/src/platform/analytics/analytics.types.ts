@@ -43,3 +43,13 @@ export interface UnsubscribedEvent {
   subscriptionId: string;
   count?: number;
 }
+
+export interface BotBlockedEvent {
+  // chat_member = Telegram's my_chat_member update; delivery_failure = N
+  // consecutive unreachable digest sends.
+  method: "chat_member" | "delivery_failure";
+  subscriptionId: string;
+  count?: number;
+}
+
+export type ReactivationMethod = "account" | "unblock";

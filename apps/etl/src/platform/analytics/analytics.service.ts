@@ -13,15 +13,18 @@ import {
   type ProductEventWriter,
 } from "./analytics.ports";
 import type {
+  BotBlockedEvent,
   BrowserProductEvent,
   DigestDeliveryFailedEvent,
   DigestEvaluatedEvent,
   DigestSentEvent,
+  ReactivationMethod,
   SubscriptionProductEvent,
   UnsubscribedEvent,
 } from "./analytics.types";
 import { ANALYTICS_EVENTS } from "./events";
 import {
+  botBlockedEvent,
   digestSentEvent,
   subscriptionCreatedEvent,
   subscriptionReactivatedEvent,
@@ -214,17 +217,35 @@ export class AnalyticsService {
     );
   }
 
-  async subscriptionReactivated(subscriptionId: string): Promise<void> {
-    await this.enqueueSubscriptionEvent(subscriptionReactivatedEvent(subscriptionId));
+  async subscriptionReactivated(
+    subscriptionId: string,
+    method: ReactivationMethod = "account",
+  ): Promise<void> {
+    await this.enqueueSubscriptionEvent(subscriptionReactivatedEvent(subscriptionId, method));
   }
 
   async enqueueSubscriptionReactivated(
     executor: AnalyticsExecutor,
     subscriptionId: string,
     journeyId: string,
+    method: ReactivationMethod = "account",
   ): Promise<void> {
     await this.outbox.enqueue(
-      withInsertId({ ...subscriptionReactivatedEvent(subscriptionId), journeyId }),
+      withInsertId({ ...subscriptionReactivatedEvent(subscriptionId, method), journeyId }),
+      executor,
+    );
+  }
+
+  async botBlocked(props: BotBlockedEvent): Promise<void> {
+    await this.enqueueSubscriptionEvent(botBlockedEvent(props));
+  }
+
+  async enqueueBotBlocked(
+    executor: AnalyticsExecutor,
+    props: BotBlockedEvent & { journeyId: string },
+  ): Promise<void> {
+    await this.outbox.enqueue(
+      withInsertId({ ...botBlockedEvent(props), journeyId: props.journeyId }),
       executor,
     );
   }

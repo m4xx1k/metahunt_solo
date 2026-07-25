@@ -320,7 +320,7 @@ export class SubscriptionsService {
     return this.db.transaction(async (tx) => {
       const stopped = await tx
         .update(subscriptions)
-        .set({ isActive: false, deactivatedAt: sql`now()` })
+        .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "user" })
         .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
         .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
 
@@ -354,7 +354,7 @@ export class SubscriptionsService {
     return this.db.transaction(async (tx) => {
       const [stopped] = await tx
         .update(subscriptions)
-        .set({ isActive: false, deactivatedAt: sql`now()` })
+        .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "user" })
         .where(
           and(
             eq(subscriptions.id, id),
