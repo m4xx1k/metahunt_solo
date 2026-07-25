@@ -1,0 +1,29 @@
+name: seo
+
+# The audit needs a running app AND a reachable API, and the ci.yml jobs have
+# neither — so it runs against the Vercel deployment once that finishes, rather
+# than trying to boot web plus a database inside the runner.
+on:
+  deployment_status:
+
+jobs:
+  contract:
+    name: contract (seo)
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audit the deployment
+        run: pnpm seo:audit "${{ github.event.deployment_status.environment_url }}"
