@@ -4,31 +4,20 @@ import Link from "next/link";
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
 import { tracksApi, type TrackDto } from "@/lib/api/tracks";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { Tag } from "@/ui";
-
-const SITE_URL = "https://www.metahunt.app";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Радар вакансій в Telegram · metahunt",
+export const metadata: Metadata = pageMetadata({
+  title: "Радар вакансій в Telegram",
   description:
     "Обери напрям — і отримуй нові IT-вакансії з DOU і Djinni щодня в Telegram. Без резюме, без дублів.",
-  alternates: { canonical: `${SITE_URL}/radar` },
-  openGraph: {
-    title: "Обери напрям — радар сам знайде вакансії",
-    description:
-      "Backend, frontend, QA, data, devops та інші напрями. Тільки нові — прямо в Telegram.",
-    url: `${SITE_URL}/radar`,
-    siteName: "metahunt",
-    type: "website",
-  },
-  twitter: {
-    card: "summary",
-    title: "Радар вакансій · metahunt",
-    description: "Обери напрям — нові IT-вакансії щодня в Telegram.",
-  },
-};
+  path: "/radar",
+  ogTitle: "Обери напрям — радар сам знайде вакансії",
+  ogDescription:
+    "Backend, frontend, QA, data, devops та інші напрями. Тільки нові — прямо в Telegram.",
+});
 
 // Same "has real supply" rule as the feed's TracksBand: a discipline is worth
 // promoting either by its own count, or because a stack child has one.

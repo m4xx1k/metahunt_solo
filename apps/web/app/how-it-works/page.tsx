@@ -9,8 +9,16 @@ import { MatchSection } from "./_components/MatchSection";
 import { NumbersSection } from "./_components/NumbersSection";
 import { ParseSection } from "./_components/ParseSection";
 import { StackSection } from "./_components/StackSection";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = { title: "How it works · metahunt" };
+// Copy on this page is still English, so its title stays English too — a
+// Ukrainian title over an English body is a worse signal than either alone.
+export const metadata: Metadata = pageMetadata({
+  title: "How it works",
+  description:
+    "How metahunt collects Ukrainian tech jobs from DOU and Djinni, structures them with AI, collapses reposts of the same role, and ranks them against your CV.",
+  path: "/how-it-works",
+});
 
 export default function HowItWorksPage() {
   return (

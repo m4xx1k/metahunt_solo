@@ -9,33 +9,23 @@ import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { formatKyivTime } from "@/lib/format";
 import { Tag } from "@/ui";
+import { pageMetadata } from "@/lib/seo/metadata";
 
 import { MatchStepper } from "./_components/MatchStepper";
 
-const SITE_URL = "https://www.metahunt.app";
 const HERO_DISCIPLINES = 8;
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Вакансії під твій стек · metahunt",
+export const metadata: Metadata = pageMetadata({
+  title: "Вакансії під твій стек",
   description:
     "MetaHunt показує тільки релевантні вакансії — і доводить, чому кожна з них твоя. 2 хвилини: CV або навички вручну — і добірка з DOU та Djinni готова.",
-  alternates: { canonical: `${SITE_URL}/match` },
-  openGraph: {
-    title: "Тільки релевантні вакансії — з доказами",
-    description:
-      "Скинь CV або обери навички — побачиш лише вакансії під свій стек, зі збігом на кожній картці.",
-    url: `${SITE_URL}/match`,
-    siteName: "metahunt",
-    type: "website",
-  },
-  twitter: {
-    card: "summary",
-    title: "Вакансії під твій стек · metahunt",
-    description: "Тільки релевантні вакансії з DOU і Djinni — з доказом на кожній картці.",
-  },
-};
+  path: "/match",
+  ogTitle: "Тільки релевантні вакансії — з доказами",
+  ogDescription:
+    "Скинь CV або обери навички — побачиш лише вакансії під свій стек, зі збігом на кожній картці.",
+});
 
 export default async function MatchPage({
   searchParams,

@@ -45,6 +45,12 @@ export function formatCount(n: number): string {
   return new Intl.NumberFormat("en-US").format(n);
 }
 
+// Ukrainian grouping (a space, not a comma) — for public copy where the count
+// sits inside a Ukrainian sentence and "2,463 вакансії" would read as an error.
+export function formatCountUa(n: number): string {
+  return new Intl.NumberFormat("uk-UA").format(n);
+}
+
 // "HH:MM GMT+3" in Kyiv time — the "last sync" stamp on marketing landings.
 export function formatKyivTime(value: string | null): string {
   if (!value) return "очікує синхронізації";

@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 
 import { tracksApi } from "@/lib/api/tracks";
+import { SITE_URL } from "@/lib/seo/site";
 
-const SITE_URL = "https://www.metahunt.app";
 const TRACKS = [
   "backend",
   "fullstack",

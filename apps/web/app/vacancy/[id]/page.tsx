@@ -86,7 +86,7 @@ export async function generateMetadata({
   const role = vacancy.role?.name ?? vacancy.title;
   const company = vacancy.company?.name;
   const url = `${SITE_URL}/vacancy/${id}`;
-  const title = `${role}${company ? ` at ${company}` : ""} · metahunt`;
+  const title = `${role}${company ? ` at ${company}` : ""}`;
 
   const salary = formatSalary({
     min: vacancy.salary.min,
