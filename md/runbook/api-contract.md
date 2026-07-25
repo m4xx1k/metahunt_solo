@@ -28,6 +28,14 @@ manual digest delivery, raw monitoring, dedup review, extraction-cost reporting,
 and taxonomy reads/writes. A public route must be explicitly justified by a
 product flow; rate limiting is never an authorization substitute.
 
+## Crawlers
+
+Every response carries `X-Robots-Tag: noindex, nofollow`. `api.metahunt.app`
+serves no `robots.txt`, so without the header its JSON payloads and the
+`/go/:id` apply redirect were crawlable — thin duplicates competing with the
+web pages that render the same data. The API is a machine surface; nothing on
+it should ever appear in a search result.
+
 ## Contract rules
 
 - Public product APIs return only the data needed by the product UI.
