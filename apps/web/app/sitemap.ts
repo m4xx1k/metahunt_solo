@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 
 import { aggregatesApi } from "@/lib/api/aggregates";
-import { sitemapApi } from "@/lib/api/sitemap";
+import { facetsApi, type NodeFacet } from "@/lib/api/facets";
+import { sitemapApi, type CompanyFacet } from "@/lib/api/sitemap";
 import { tracksApi, type TrackDto } from "@/lib/api/tracks";
+import { COMPANY_HUB_MIN_VACANCIES, ROLE_HUB_MIN_VACANCIES } from "@/lib/seo/hub-meta";
 import { VACANCY_VALID_DAYS } from "@/lib/seo/job-posting";
 import { SITE_URL, absoluteUrl } from "@/lib/seo/site";
 import { vacancyPath } from "@/lib/seo/vacancy-url";
@@ -24,7 +26,7 @@ function hasSupply(track: TrackDto, all: TrackDto[]): boolean {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Each source degrades on its own: a backend gap should cost us that section,
   // never the whole sitemap.
-  const [tracks, lastSync, vacancies] = await Promise.all([
+  const [tracks, lastSync, vacancies, roles, companies] = await Promise.all([
     tracksApi
       .get()
       .then((r) => r.tracks)
@@ -39,6 +41,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .vacancies(VACANCY_VALID_DAYS)
       .then((r) => r.items)
       .catch(() => []),
+    facetsApi
+      .roles()
+      .then((r) => r.roles)
+      .catch((): NodeFacet[] => []),
+    sitemapApi
+      .companies()
+      .then((r) => r.companies)
+      .catch((): CompanyFacet[] => []),
   ]);
 
   // A feed page's content changes on the ingest, so that is its real lastmod.
@@ -66,6 +76,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: absoluteUrl(`/radar/${t.slug}`),
         changeFrequency: "daily" as const,
         priority: t.parentSlug === null ? 0.8 : 0.6,
+      })),
+
+    // Hubs are listed only above their supply threshold — the same guard the
+    // routes enforce, so the sitemap never advertises a page that 404s.
+    ...roles
+      .filter((r) => r.count >= ROLE_HUB_MIN_VACANCIES)
+      .map((r) => ({
+        url: absoluteUrl(`/role/${r.id}`),
+        lastModified: ingestedAt,
+        changeFrequency: "daily" as const,
+        priority: 0.7,
+      })),
+
+    ...companies
+      .filter((c) => c.slug.trim() && c.count >= COMPANY_HUB_MIN_VACANCIES)
+      .map((c) => ({
+        url: absoluteUrl(`/company/${c.slug}`),
+        lastModified: ingestedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.5,
       })),
 
     ...vacancies.map((v) => ({

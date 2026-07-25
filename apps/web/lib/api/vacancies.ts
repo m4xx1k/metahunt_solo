@@ -190,6 +190,8 @@ export interface ListVacanciesQuery {
   q?: string;
   sourceId?: string;
   companyId?: string;
+  /** Hiring company slug — resolved to an id at the feed boundary. */
+  companySlug?: string;
   roleId?: string;
   /**
    * Match ANY of these ROLE node slugs (OR). With `trackSlug` it overrides the
