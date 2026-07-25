@@ -12,6 +12,7 @@ import { FlagPills } from "@/entities/vacancy/FlagPills";
 import { formatLocations } from "@/entities/vacancy/format-locations";
 import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 import { VacancySkills } from "@/entities/vacancy/VacancySkills";
+import { facetsApi, type NodeFacet } from "@/lib/api/facets";
 import { vacanciesApi, type FeedDuplicateGroup, type VacancyDto } from "@/lib/api/vacancies";
 import {
   EMPLOYMENT_LABELS,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/extracted-vacancy";
 import { formatRelative } from "@/lib/format";
 import { breadcrumbJsonLd } from "@/lib/seo/breadcrumbs";
+import { ROLE_HUB_MIN_VACANCIES } from "@/lib/seo/hub-meta";
 import { buildJobPosting, isExpired } from "@/lib/seo/job-posting";
 import { JsonLd } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -97,6 +99,22 @@ async function loadVacancy(id: string): Promise<VacancyDto | null> {
 // a render-time clock read cannot make the result unstable.
 function clockNow(): number {
   return Date.now();
+}
+
+/**
+ * The role hub lives on the role's slug, but the vacancy DTO carries the role's
+ * UUID — so the slug is looked up by canonical name from the facet catalog. Worth
+ * one cached request: it is the crawl path from ~4,900 vacancy pages into the
+ * role hubs, which otherwise only the sitemap points at.
+ */
+async function loadRoleHubSlug(vacancy: VacancyDto): Promise<string | null> {
+  if (!vacancy.role) return null;
+  const roles = await facetsApi
+    .roles()
+    .then((r) => r.roles)
+    .catch((): NodeFacet[] => []);
+  const match = roles.find((r) => r.name === vacancy.role?.name);
+  return match && match.count >= ROLE_HUB_MIN_VACANCIES ? match.id : null;
 }
 
 // Other openings for the same role. `roleIds` takes node slugs, but the resolver
@@ -182,11 +200,12 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
   // counter already on the vacancy DTO if the group fetch hiccups.
   // `similar` gives these pages an internal route to each other — without it a
   // vacancy is a dead end and only the sitemap ever points at it.
-  const [group, similar] = await Promise.all([
+  const [group, similar, roleHubSlug] = await Promise.all([
     vacancy.uniqueVacancyId
       ? vacanciesApi.group(vacancy.uniqueVacancyId).catch((): FeedDuplicateGroup | null => null)
       : Promise.resolve(null),
     loadSimilar(vacancy),
+    loadRoleHubSlug(vacancy),
   ]);
   const sourceNames = group
     ? Array.from(new Set(group.members.map((m) => m.source.displayName.trim())))
@@ -342,6 +361,30 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
                     dangerouslySetInnerHTML={{ __html: descriptionHtml }}
                   />
                 </div>
+              </div>
+            ) : null}
+
+            {roleHubSlug || vacancy.company?.slug ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-border pt-6">
+                <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                  дивитись також:
+                </span>
+                {roleHubSlug ? (
+                  <Link
+                    href={`/role/${roleHubSlug}`}
+                    className="border border-border bg-bg-card px-3 py-1.5 font-mono text-xs text-text-secondary transition-colors hover:border-accent hover:text-accent"
+                  >
+                    усі вакансії {role}
+                  </Link>
+                ) : null}
+                {vacancy.company?.slug ? (
+                  <Link
+                    href={`/company/${vacancy.company.slug}`}
+                    className="border border-border bg-bg-card px-3 py-1.5 font-mono text-xs text-text-secondary transition-colors hover:border-accent hover:text-accent"
+                  >
+                    вакансії в {vacancy.company.name}
+                  </Link>
+                ) : null}
               </div>
             ) : null}
 
