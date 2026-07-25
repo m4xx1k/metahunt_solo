@@ -21,6 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // Search Console ownership proof. Removing this un-verifies the property, which
+  // silently stops sitemap reporting and Request Indexing — so it stays.
+  verification: { google: "E0ojzUzPhmw0j-6FNXV2dMoP8wG0A5wVp59Ixwg1Wi4" },
   title: {
     default: FEED_INDEX_TITLE,
     // Pages supply the bare subject; the brand is appended here exactly once.
