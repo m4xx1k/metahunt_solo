@@ -25,6 +25,12 @@ const MUST_NOINDEX = ["/welcome", "/?cv=00000000-0000-0000-0000-000000000000"];
 /** How many sitemap URLs of each shape to sample. */
 const SAMPLE = 12;
 
+// Vercel's deployment protection 302s every route on a protected preview. With
+// the project's bypass secret in the environment the crawl gets through; without
+// it the workflow skips previews entirely rather than reporting 15 false defects.
+const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const HEADERS: HeadersInit = BYPASS ? { "x-vercel-protection-bypass": BYPASS } : {};
+
 const failures: string[] = [];
 const notes: string[] = [];
 const fail = (route: string, msg: string) => failures.push(`${route}: ${msg}`);
@@ -45,7 +51,7 @@ type Head = {
 const all = (html: string, re: RegExp) => [...html.matchAll(re)].map((m) => m[1]);
 
 async function head(url: string): Promise<Head> {
-  const res = await fetch(url, { redirect: "manual" });
+  const res = await fetch(url, { redirect: "manual", headers: HEADERS });
   const html = res.status === 200 ? await res.text() : "";
   // Only real <script type="application/ld+json"> tags: the RSC payload embeds a
   // serialised copy of them, and counting those double-counts every block.
@@ -111,8 +117,23 @@ function checkIndexable(route: string, h: Head, expectPath: string) {
 }
 
 async function main() {
+  // Distinguish "I could not reach the app" from "the app has SEO defects".
+  // A protected Vercel preview 302s every route, which would otherwise be
+  // reported as a dozen unrelated failures.
+  const reachable = await fetch(`${BASE}/`, { redirect: "manual", headers: HEADERS });
+  if (reachable.status !== 200) {
+    console.error(
+      `cannot audit ${BASE}: / returned ${reachable.status}` +
+        (reachable.status >= 300 && reachable.status < 400
+          ? ` -> ${reachable.headers.get("location")}\n` +
+            "A protected Vercel preview does this. Set VERCEL_AUTOMATION_BYPASS_SECRET."
+          : ""),
+    );
+    process.exit(2);
+  }
+
   // ── the sitemap is the source of truth for what we claim is indexable ──────
-  const smRes = await fetch(`${BASE}/sitemap.xml`);
+  const smRes = await fetch(`${BASE}/sitemap.xml`, { headers: HEADERS });
   if (smRes.status !== 200) fail("/sitemap.xml", `status ${smRes.status}`);
   const sm = smRes.status === 200 ? await smRes.text() : "";
   const locs = all(sm, /<loc>([^<]+)<\/loc>/g);
@@ -171,7 +192,7 @@ async function main() {
   }
 
   // ── robots.txt ───────────────────────────────────────────────────────────
-  const robots = await (await fetch(`${BASE}/robots.txt`)).text();
+  const robots = await (await fetch(`${BASE}/robots.txt`, { headers: HEADERS })).text();
   for (const rule of ["Disallow: /dashboard", "Disallow: /me", "Disallow: /*cv="]) {
     if (!robots.includes(rule)) fail("/robots.txt", `missing "${rule}"`);
   }
@@ -181,19 +202,19 @@ async function main() {
 
   // ── icons the SERP favicon depends on ───────────────────────────────────
   for (const asset of ["/favicon.ico", "/icon.png", "/apple-icon.png", "/manifest.webmanifest"]) {
-    const res = await fetch(`${BASE}${asset}`);
+    const res = await fetch(`${BASE}${asset}`, { headers: HEADERS });
     if (res.status !== 200) fail(asset, `status ${res.status}`);
   }
 
   // ── anti-orphan: vacancy pages must be reachable from the feed ───────────
-  const feed = await (await fetch(`${BASE}/`)).text();
+  const feed = await (await fetch(`${BASE}/`, { headers: HEADERS })).text();
   const feedLinks = all(feed, /href="(\/vacancy\/[^"]+)"/g);
   if (feedLinks.length === 0) {
     fail("/", "no links to /vacancy/* — the detail pages are orphans again");
   } else {
     notes.push(`feed links to ${new Set(feedLinks).size} vacancy pages`);
     // A feed link must land on the canonical form, not bounce through a redirect.
-    const probe = await fetch(`${BASE}${feedLinks[0]}`, { redirect: "manual" });
+    const probe = await fetch(`${BASE}${feedLinks[0]}`, { redirect: "manual", headers: HEADERS });
     if (probe.status !== 200) fail(feedLinks[0], `feed link returns ${probe.status}, expected 200`);
   }
 
@@ -201,7 +222,7 @@ async function main() {
   const anyVacancy = vacancyLocs[0]?.replace(CANONICAL_ORIGIN, "");
   const uuid = anyVacancy?.match(/([0-9a-f-]{36})$/)?.[1];
   if (uuid) {
-    const res = await fetch(`${BASE}/vacancy/${uuid}`, { redirect: "manual" });
+    const res = await fetch(`${BASE}/vacancy/${uuid}`, { redirect: "manual", headers: HEADERS });
     if (res.status !== 308) fail(`/vacancy/${uuid}`, `expected 308 to the slug form, got ${res.status}`);
   }
 
