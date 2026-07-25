@@ -17,7 +17,12 @@ const HERO_DISCIPLINES = 8;
 
 export const dynamic = "force-dynamic";
 
+// Draft, not finished — hidden from search until it is. Deliberately NOT also
+// disallowed in robots.txt: blocking the crawl would stop Google from ever seeing
+// this noindex, which is how a page ends up stuck in the index without a snippet.
+// Still reachable by direct link, which is what a draft needs.
 export const metadata: Metadata = pageMetadata({
+  noindex: true,
   title: "Вакансії під твій стек",
   description:
     "MetaHunt показує тільки релевантні вакансії — і доводить, чому кожна з них твоя. 2 хвилини: CV або навички вручну — і добірка з DOU та Djinni готова.",
