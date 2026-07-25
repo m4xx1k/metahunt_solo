@@ -30,7 +30,7 @@ export interface DomainFacetsResponse {
 const ISR = { next: { revalidate: 60 } } satisfies RequestInit;
 
 export const facetsApi = {
-  roles: () => apiGet<RoleFacetsResponse>("/feed/roles", ISR),
+  roles: (init?: RequestInit) => apiGet<RoleFacetsResponse>("/feed/roles", init ?? ISR),
   skills: () => apiGet<SkillFacetsResponse>("/feed/skills", ISR),
   domains: () => apiGet<DomainFacetsResponse>("/feed/domains", ISR),
 };

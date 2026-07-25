@@ -57,7 +57,7 @@ export class AuthService {
     // or removing an admin is just an ADMIN_TELEGRAM_IDS change + re-login.
     const roles = this.adminIds.has(telegramId) ? ["user", "admin"] : ["user"];
 
-    const userId = await this.upsertUser(telegramId, username, firstName, roles);
+    const { userId, created } = await this.upsertUser(telegramId, username, firstName, roles);
     await this.claimTelegramSubscriptions(userId, telegramId);
 
     const token = this.jwt.sign({
@@ -65,8 +65,12 @@ export class AuthService {
       tid: telegramId,
       roles,
     } satisfies JwtPayload);
-    this.logger.log(`login user ${userId} roles=[${roles.join(",")}]`);
-    return { token, user: { id: userId, telegramId, username, firstName, roles } };
+    this.logger.log(`login user ${userId} roles=[${roles.join(",")}] new=${created}`);
+    return {
+      token,
+      user: { id: userId, telegramId, username, firstName, roles },
+      isNewUser: created,
+    };
   }
 
   async getMe(userId: string): Promise<AuthUser | null> {
@@ -101,7 +105,7 @@ export class AuthService {
     username: string | null,
     firstName: string | null,
     roles: string[],
-  ): Promise<string> {
+  ): Promise<{ userId: string; created: boolean }> {
     const [identity] = await this.db
       .select({ userId: authIdentities.userId })
       .from(authIdentities)
@@ -117,7 +121,7 @@ export class AuthService {
         .where(
           and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, telegramId)),
         );
-      return identity.userId;
+      return { userId: identity.userId, created: false };
     }
 
     const [created] = await this.db
@@ -131,7 +135,7 @@ export class AuthService {
       username,
       firstName,
     });
-    return created.id;
+    return { userId: created.id, created: true };
   }
 
   // A Telegram private-chat id is server-trusted. Browser-provided candidate

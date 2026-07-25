@@ -19,4 +19,7 @@ export interface AuthUser {
 export interface TelegramLoginResponse {
   token: string;
   user: AuthUser;
+  // First-ever login for this Telegram identity — the client's signal to emit
+  // the `signup` analytics event exactly once, on the identified person.
+  isNewUser: boolean;
 }

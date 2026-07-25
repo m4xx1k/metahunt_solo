@@ -65,6 +65,7 @@ export function TelegramLoginButton({
   const [busy, setBusy] = useState(false);
 
   const handleClick = useCallback(async () => {
+    const startedAt = Date.now();
     analytics.telegramLoginStarted();
     if (!BOT_ID) {
       analytics.telegramLoginFailed("configuration");
@@ -76,13 +77,14 @@ export function TelegramLoginButton({
       await loadWidget();
       window.Telegram!.Login!.auth({ bot_id: BOT_ID, request_access: "write" }, async (tgUser) => {
         if (!tgUser) {
-          analytics.telegramLoginCancelled();
+          analytics.telegramLoginCancelled(Date.now() - startedAt);
           setBusy(false);
           return; // popup closed / access denied
         }
         try {
           const res = await authApi.loginTelegram(tgUser);
           login(res);
+          if (res.isNewUser) analytics.signedUp();
           analytics.loggedIn();
           const name = res.user.username ? `@${res.user.username}` : (res.user.firstName ?? "you");
           toast.success(`logged in as ${name}`);

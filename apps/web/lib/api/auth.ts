@@ -25,6 +25,7 @@ export interface AuthUser {
 export interface TelegramLoginResponse {
   token: string;
   user: AuthUser;
+  isNewUser: boolean;
 }
 
 export const authApi = {

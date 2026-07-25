@@ -24,6 +24,7 @@ const ANALYTICS_EVENTS = {
   telegramLoginCancelled: "telegram_login_cancelled",
   telegramLoginFailed: "telegram_login_failed",
   loggedIn: "logged_in",
+  signup: "signup",
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
   matchFlowStarted: "match_flow_started",
@@ -141,8 +142,12 @@ export function useAnalytics() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginStarted);
       },
 
-      telegramLoginCancelled() {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled);
+      // ms_since_start separates a human closing the popup (seconds) from a
+      // popup that never opened — blocker or widget failure (sub-second).
+      telegramLoginCancelled(msSinceStart: number) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled, {
+          ms_since_start: msSinceStart,
+        });
       },
 
       telegramLoginFailed(stage: "configuration" | "widget" | "session") {
@@ -154,6 +159,12 @@ export function useAnalytics() {
           login_method: "telegram",
           method: "telegram",
         });
+      },
+
+      // Fired once per account, on the first-ever Telegram login (the server
+      // says whether the user row was just created).
+      signedUp() {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.signup, { method: "telegram" });
       },
 
       // Up/down vote on a vacancy card (demand signal, gated by the
