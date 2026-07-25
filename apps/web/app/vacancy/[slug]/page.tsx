@@ -149,6 +149,9 @@ export async function generateMetadata({
     // Google requires expired postings out of its index; the page stays up for
     // people who followed a link, but it stops asking to be ranked.
     noindex: isExpired(vacancy.publishedAt, clockNow()),
+    // This route has its own opengraph-image.tsx; taking the site default too
+    // would emit two og:image tags and leave the winner to the crawler.
+    ogImagePath: null,
   });
 }
 
