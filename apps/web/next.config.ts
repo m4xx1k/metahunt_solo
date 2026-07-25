@@ -38,9 +38,11 @@ const nextConfig: NextConfig = {
       { source: "/dashboard/extraction", destination: "/dashboard/costs", permanent: true },
       { source: "/dashboard/ingests/:id", destination: "/dashboard/runs/:id", permanent: true },
       // /merged (former beta) and standalone /reverse-ats folded into the home feed.
-      { source: "/merged", destination: "/", permanent: false },
-      { source: "/merged/:slug*", destination: "/:slug*", permanent: false },
-      { source: "/reverse-ats", destination: "/", permanent: false },
+      // Permanent (308), not 307: these routes are gone for good, and only a
+      // permanent redirect passes their accumulated link equity to the feed.
+      { source: "/merged", destination: "/", permanent: true },
+      { source: "/merged/:slug*", destination: "/:slug*", permanent: true },
+      { source: "/reverse-ats", destination: "/", permanent: true },
     ];
   },
 };
