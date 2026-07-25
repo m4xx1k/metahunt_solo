@@ -55,7 +55,7 @@ The generated client lands in `apps/etl/src/baml_client/` and is committed (so `
 | Test | Purpose |
 |---|---|
 | `senior_backend_remote` | Tiny synthetic posting; fast smoke for prompt regressions. |
-| `dou_fullstack_talanovyti` | Real RSS item captured 2026-04-24. Same shape (`Title: …\n\n<description>`) that `RssExtractActivity` feeds the extractor. Re-exported as a TS fixture from [`src/baml-extraction/__fixtures__/dou-fullstack-talanovyti.ts`](src/baml-extraction/__fixtures__/dou-fullstack-talanovyti.ts) so unit tests and BAML share one source. |
+| `dou_fullstack_talanovyti` | Real RSS item captured 2026-04-24. Same shape (`Title: …\n\n<description>`) that `RssExtractActivity` feeds the extractor. Re-exported as a TS fixture from [`src/02-enrich/extraction/__fixtures__/dou-fullstack-talanovyti.ts`](src/02-enrich/extraction/__fixtures__/dou-fullstack-talanovyti.ts) so unit tests and BAML share one source. |
 
 Run them:
 

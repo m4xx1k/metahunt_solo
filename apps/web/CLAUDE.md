@@ -10,7 +10,7 @@ This version (16.2.3 + React 19.2.4) has breaking changes — APIs, conventions,
 
 ## Structure — light-FSD layers
 
-Background + full rationale: [`md/journal/migrations/front-refactor/rules.md`](../../md/journal/migrations/front-refactor/rules.md).
+Background + full rationale: [`md/journal/migrations/_done/front-refactor/rules.md`](../../md/journal/migrations/_done/front-refactor/rules.md).
 
 | Layer | Lives in | Contains | Imports from |
 |---|---|---|---|

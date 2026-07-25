@@ -76,4 +76,4 @@ state, legacy coverage, account joins, integrity gaps, and recent journeys.
 
 - Parent funnel tracker: [`real-user-funnel.md`](../real-user-funnel.md)
 - Measurement runbook: [`../../../runbook/first-user-funnel.md`](../../../runbook/first-user-funnel.md)
-- Baseline: [`../../../analysis/2026-07-22-production-status-and-next-steps.md`](../../../analysis/2026-07-22-production-status-and-next-steps.md)
+- Baseline: local-only, `.private/analysis/2026-07-22-production-status-and-next-steps.md`

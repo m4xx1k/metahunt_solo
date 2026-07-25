@@ -45,6 +45,8 @@ If a package ever accumulates enough internal-only context that it dominates thi
 
 ## Hygiene
 
+- **MUST: no real user PII in any doc.** The repo is a distribution channel, not a datastore. Never write a Telegram id, `@username`, real name, email, phone, or CV text into `md/` — not even in a session handoff or an incident note. Refer to people as `owner` / `tester-1..N`; identities stay in prod (`subscriptions.tg_username`). Same rule already applies to analytics: [`runbook/first-user-cohort.md`](runbook/first-user-cohort.md). Committed docs are unrecallable — a later `git rm` does not remove them from clones or archives.
+- **MUST: business docs never enter the repo.** Strategy, funnel/revenue metrics, pricing, market sizing, launch plans, ad copy, and session handoffs go to `.private/{strategy,analysis,journal}/` — gitignored, local-only. The repo is public; anything tracked is published. `md/` is for *engineering* only. Do not recreate `md/analysis/` or `md/strategy/`.
 - **Snapshot files contain "is" statements.** No dates, no "recently". If you want to write "we recently migrated…", that's a journal entry.
 - **Journal files contain "happened" statements.** No "currently we use X" — that's a snapshot.
 - **ADRs are not edited after `accepted`.** Exception: typos or broken links. Decision changed → write a superseding ADR.
