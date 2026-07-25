@@ -515,9 +515,13 @@ function toDto(
     title: row.title,
     description: null,
 
+    // Keyed on id + name, not slug: a legacy empty slug is falsy, and requiring
+    // it reported ~380 vacancies as having no employer at all — which also made
+    // them permanently ineligible for JobPosting, where hiringOrganization is
+    // required. Slugs are non-empty going forward (see slugifyCompany).
     company:
-      row.companyId && row.companyName && row.companySlug
-        ? { id: row.companyId, name: row.companyName, slug: row.companySlug }
+      row.companyId && row.companyName
+        ? { id: row.companyId, name: row.companyName, slug: row.companySlug ?? "" }
         : null,
     role: row.roleNodeId && row.roleName ? { id: row.roleNodeId, name: row.roleName } : null,
     domain:

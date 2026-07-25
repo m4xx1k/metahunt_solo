@@ -413,3 +413,29 @@ describe("company facet + filter (integration)", () => {
     expect(res.total).toBe(1);
   });
 });
+
+describe("company on the DTO (integration)", () => {
+  it("still reports the employer when a legacy row has an empty slug", async () => {
+    // Regression: the DTO required companySlug to be truthy, so the one company
+    // whose slug had degraded to "" (every Cyrillic-only employer collapsed into
+    // it — 380 vacancies in production) came back as company: null. That also
+    // made those pages permanently ineligible for JobPosting, which requires
+    // hiringOrganization.
+    const s = await seedSource();
+    const role = await seedRole();
+    const legacy = await seedCompany("ЛУН", "");
+    const id = await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - DAY),
+      companyId: legacy,
+    });
+
+    const res = await feed.search({ page: 1, pageSize: 10 });
+    const card = res.items.find((i) => i.id === id)!;
+
+    expect(card.company).not.toBeNull();
+    expect(card.company!.name).toBe("ЛУН");
+  });
+});

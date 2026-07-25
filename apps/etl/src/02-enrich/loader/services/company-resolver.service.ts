@@ -3,6 +3,8 @@ import { Injectable } from "@nestjs/common";
 import { CompanyRepository } from "../repositories/company.repository";
 import type { Executor } from "../repositories/executor";
 
+import { slugifyCompany } from "./company-slug";
+
 @Injectable()
 export class CompanyResolverService {
   constructor(private readonly repo: CompanyRepository) {}
@@ -15,7 +17,7 @@ export class CompanyResolverService {
     const byIdentifier = await this.repo.findIdByIdentifier(sourceId, sourceCompanyName, executor);
     if (byIdentifier) return byIdentifier;
 
-    const slug = slugify(sourceCompanyName);
+    const slug = slugifyCompany(sourceCompanyName);
 
     // resolve-or-create with race recovery: try existing slug, else insert,
     // else re-read (a concurrent insert won and RETURNING came back empty).
@@ -32,12 +34,4 @@ export class CompanyResolverService {
     await this.repo.linkIdentifier(sourceId, sourceCompanyName, companyId, executor);
     return companyId;
   }
-}
-
-export function slugify(input: string): string {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
