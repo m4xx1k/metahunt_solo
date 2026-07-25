@@ -25,5 +25,25 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Preview deployments sit behind Vercel's deployment protection, so an
+      # unauthenticated crawl gets a 302 to the SSO login on every route — which
+      # reads as "every SEO invariant is broken" rather than "I could not get in".
+      # Production is public. To gate previews too, add the project's protection
+      # bypass secret as VERCEL_AUTOMATION_BYPASS_SECRET; the audit sends it as
+      # x-vercel-protection-bypass and nothing else needs to change.
       - name: Audit the deployment
-        run: pnpm seo:audit "${{ github.event.deployment_status.environment_url }}"
+        env:
+          DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
+          DEPLOY_ENV: ${{ github.event.deployment_status.environment }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "No environment_url on this deployment event — nothing to audit."
+            exit 0
+          fi
+          if [ "$DEPLOY_ENV" != "Production" ] && [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            echo "Skipping: '$DEPLOY_ENV' is protected and no bypass secret is configured."
+            echo "Set VERCEL_AUTOMATION_BYPASS_SECRET to audit previews as well."
+            exit 0
+          fi
+          pnpm seo:audit "$DEPLOY_URL"

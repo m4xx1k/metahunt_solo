@@ -47,6 +47,17 @@ hardcoded list stops covering the thing it guards the moment someone adds a page
 running app *and* a reachable API, and the `ci.yml` jobs have neither. Running it
 against the Vercel deployment avoids booting web plus a database in the runner.
 
+**Production only, by default.** Vercel's deployment protection 302s every route
+on a preview to `vercel.com/sso-api`, so an unauthenticated crawl sees a login
+page and would report every invariant as broken. The audit detects that and exits
+2 with the redirect target rather than emitting a dozen false defects.
+
+To gate previews too — which makes it a pre-merge check rather than a
+post-deploy alarm — put the project's protection bypass secret in the repo as
+`VERCEL_AUTOMATION_BYPASS_SECRET` (Vercel → Project → Settings → Deployment
+Protection → Protection Bypass for Automation). The audit sends it as
+`x-vercel-protection-bypass`; no other change is needed.
+
 ## Proving it can fail
 
 An assertion nobody has seen fail is not an assertion. To re-check: delete
