@@ -328,6 +328,9 @@ describe("FeedService.listForSitemap (integration)", () => {
     const [item] = await feed.listForSitemap(30);
 
     expect(item.title).toBe("Backend Engineer");
+    // The URL slug comes from the role, so the sitemap must carry it or it
+    // would emit URLs that redirect to the ones the detail page builds.
+    expect(item.roleName).toMatch(/^Backend Developer /);
     expect(item.publishedAt).toBe(published.toISOString());
     expect(new Date(item.updatedAt).getTime()).toBeGreaterThan(0);
   });

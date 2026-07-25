@@ -235,6 +235,10 @@ export interface CompanyFacetsResponse {
 export interface SitemapVacancy {
   id: string;
   title: string;
+  /** Verified role name — what the detail page headlines, so the URL slug can
+   *  be derived identically here and there (a mismatch means the sitemap would
+   *  list URLs that redirect). Null when the vacancy has no verified role. */
+  roleName: string | null;
   /** ISO 8601, or null when the source never stated one. */
   publishedAt: string | null;
   updatedAt: string;

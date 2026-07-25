@@ -223,12 +223,14 @@ export class FeedService {
     const res = await this.db.execute<{
       id: string;
       title: string;
+      role_name: string | null;
       published_at: Date | null;
       updated_at: Date;
     }>(sql`
       WITH filtered AS (
         SELECT vacancies.id AS id,
                vacancies.title AS title,
+               role_node.canonical_name AS role_name,
                vacancies.published_at AS published_at,
                vacancies.updated_at AS updated_at,
                coalesce(vacancies.published_at, vacancies.loaded_at) AS freshness,
@@ -238,12 +240,13 @@ export class FeedService {
                ) AS rn
         ${feedFrom(where)}
       )
-      SELECT id, title, published_at, updated_at FROM filtered WHERE rn = 1
+      SELECT id, title, role_name, published_at, updated_at FROM filtered WHERE rn = 1
       ORDER BY freshness DESC, id DESC
     `);
     return res.rows.map((r) => ({
       id: r.id,
       title: r.title,
+      roleName: r.role_name,
       publishedAt: r.published_at ? new Date(r.published_at).toISOString() : null,
       updatedAt: new Date(r.updated_at).toISOString(),
     }));
