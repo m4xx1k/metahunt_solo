@@ -16,9 +16,12 @@ import {
   type ProductAnalyticsPeriod,
   type ProductAnalyticsPopulation,
   type ProductChannel,
+  type ProductDeliveryDay,
+  type ProductDeliveryHealth,
   type ProductFeedEngagement,
   type ProductIdentityHealth,
   type ProductPeriodFlow,
+  type ProductSubscriberStates,
   type RecentProductJourney,
   type SubscriberActivity,
   type SubscriberSubscription,
@@ -29,9 +32,23 @@ const { analyticsJourneys, nodes, productEvents, sentNotifications, subscription
 const RECENT_JOURNEY_LIMIT = 30;
 const SUBSCRIBER_ACTIVITY_LIMIT = 50;
 const UNLABELED_TRACK = "усі ролі";
+const DAY_MS = 24 * 60 * 60 * 1000;
+// Dormant guards against marking a quiet-week narrow-track subscriber
+// churned: digests must actually be landing with zero reply.
+const DORMANT_WINDOW_DAYS = 14;
+const DORMANT_MIN_DIGESTS = 3;
+const DELIVERY_DAILY_WINDOW_DAYS = 7;
 
 function isNonNull<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
+}
+
+// `since` (period) takes precedence; for "all" fall back to the span since
+// the earliest scoped event so the ratio isn't divided by an arbitrary unit.
+function periodDaysFor(since: Date | null, earliestAt: Date | null): number {
+  if (since) return (Date.now() - since.getTime()) / DAY_MS;
+  if (!earliestAt) return 0;
+  return Math.max((Date.now() - earliestAt.getTime()) / DAY_MS, 1);
 }
 
 @Injectable()
@@ -76,9 +93,12 @@ export class ProductAnalyticsService {
       this.feedEngagement(since, population),
     ]);
 
-    const [flow, channels] = await Promise.all([
+    const [flow, channels, subscriberStates, deliverySummary, deliveryDaily] = await Promise.all([
       this.periodFlow(since, population),
       this.channels(since, population),
+      this.subscriberStates(population),
+      this.deliverySummary(since, population),
+      this.deliveryDaily(population),
     ]);
 
     const subscriptionsRow = subscriptionRows[0];
@@ -111,6 +131,8 @@ export class ProductAnalyticsService {
       recentJourneys,
       subscriberActivity,
       feedEngagement,
+      subscriberStates,
+      delivery: { ...deliverySummary, daily: deliveryDaily, unsubscribed: flow.churned },
     };
   }
 
@@ -235,6 +257,205 @@ export class ProductAnalyticsService {
       feedClicks: Number(row?.feed_clicks ?? 0),
       churned: Number(row?.churned ?? 0),
     };
+  }
+
+  // Lifecycle STATE per chat_id, all-time (not period-scoped): churned = every
+  // linked subscription deactivated; dormant = active but ≥3 digests landed in
+  // 14d with zero USER_ACTION_EVENTS in reply; active = the rest. Digests are
+  // matched to the chat's own subscriptions (never a shared journey's), so a
+  // narrow track's silence can't be padded by a sibling subscription's clicks.
+  private async subscriberStates(
+    population: ProductAnalyticsPopulation,
+  ): Promise<ProductSubscriberStates> {
+    const dormantSince = new Date(Date.now() - DORMANT_WINDOW_DAYS * DAY_MS);
+    const userActionNames = sql.join(
+      USER_ACTION_EVENTS.map((name) => sql`${name}`),
+      sql`, `,
+    );
+    const result = await this.db.execute<{ active: number; dormant: number; churned: number }>(sql`
+      WITH chat_subs AS (
+        SELECT s.chat_id, s.id AS subscription_id, s.journey_id, s.is_active
+        FROM subscriptions s
+        JOIN analytics_journeys j ON j.id = s.journey_id
+        WHERE s.chat_id IS NOT NULL
+          AND (
+            ${population} = 'all'
+            OR (${population} = 'production' AND NOT j.is_test)
+            OR (${population} = 'test' AND j.is_test)
+          )
+      ),
+      chat_state AS (
+        SELECT chat_id, bool_or(is_active) AS has_active
+        FROM chat_subs
+        GROUP BY chat_id
+      ),
+      recent_digests AS (
+        SELECT cs.chat_id, COUNT(*)::int AS digests
+        FROM product_events e
+        JOIN chat_subs cs ON cs.subscription_id = e.subscription_id
+        WHERE e.name = ${ANALYTICS_EVENTS.digestSent}
+          AND e.occurred_at >= ${dormantSince}
+        GROUP BY cs.chat_id
+      ),
+      recent_actions AS (
+        SELECT DISTINCT cs.chat_id
+        FROM product_events e
+        JOIN chat_subs cs ON cs.journey_id = e.journey_id
+        WHERE e.name IN (${userActionNames})
+          AND e.occurred_at >= ${dormantSince}
+      )
+      SELECT
+        COUNT(*) FILTER (
+          WHERE cs2.has_active
+            AND NOT (COALESCE(rd.digests, 0) >= ${DORMANT_MIN_DIGESTS} AND ra.chat_id IS NULL)
+        )::int AS active,
+        COUNT(*) FILTER (
+          WHERE cs2.has_active
+            AND COALESCE(rd.digests, 0) >= ${DORMANT_MIN_DIGESTS}
+            AND ra.chat_id IS NULL
+        )::int AS dormant,
+        COUNT(*) FILTER (WHERE NOT cs2.has_active)::int AS churned
+      FROM chat_state cs2
+      LEFT JOIN recent_digests rd ON rd.chat_id = cs2.chat_id
+      LEFT JOIN recent_actions ra ON ra.chat_id = cs2.chat_id
+    `);
+    const row = result.rows[0];
+    return {
+      active: Number(row?.active ?? 0),
+      dormant: Number(row?.dormant ?? 0),
+      churned: Number(row?.churned ?? 0),
+    };
+  }
+
+  // System health (our pipeline, not user behavior): what got sent and what
+  // failed, period-scoped. `messagesPerChatPerDay` is the churn-risk number —
+  // "all" falls back to the span since the earliest scoped digest.
+  private async deliverySummary(
+    since: Date | null,
+    population: ProductAnalyticsPopulation,
+  ): Promise<Omit<ProductDeliveryHealth, "daily" | "unsubscribed">> {
+    const result = await this.db.execute<{
+      digests_sent: number;
+      chats_reached: number;
+      earliest_at: string | null;
+      chat_unreachable: number;
+      transient: number;
+    }>(sql`
+      WITH digests AS (
+        SELECT e.occurred_at, s.chat_id
+        FROM product_events e
+        JOIN subscriptions s ON s.id = e.subscription_id
+        JOIN analytics_journeys j ON j.id = e.journey_id
+        WHERE e.name = ${ANALYTICS_EVENTS.digestSent}
+          AND (${since}::timestamptz IS NULL OR e.occurred_at >= ${since})
+          AND (
+            ${population} = 'all'
+            OR (${population} = 'production' AND NOT j.is_test)
+            OR (${population} = 'test' AND j.is_test)
+          )
+      ),
+      failures AS (
+        SELECT e.properties
+        FROM product_events e
+        JOIN analytics_journeys j ON j.id = e.journey_id
+        WHERE e.name = ${ANALYTICS_EVENTS.digestDeliveryFailed}
+          AND (${since}::timestamptz IS NULL OR e.occurred_at >= ${since})
+          AND (
+            ${population} = 'all'
+            OR (${population} = 'production' AND NOT j.is_test)
+            OR (${population} = 'test' AND j.is_test)
+          )
+      )
+      SELECT
+        (SELECT COUNT(*) FROM digests)::int AS digests_sent,
+        (SELECT COUNT(DISTINCT chat_id) FROM digests)::int AS chats_reached,
+        (SELECT MIN(occurred_at) FROM digests) AS earliest_at,
+        (SELECT COUNT(*) FROM failures WHERE properties->>'failure_kind' = 'chat_unreachable')::int AS chat_unreachable,
+        (SELECT COUNT(*) FROM failures WHERE properties->>'failure_kind' = 'transient')::int AS transient
+    `);
+    const row = result.rows[0];
+    const digestsSent = Number(row?.digests_sent ?? 0);
+    const chatsReached = Number(row?.chats_reached ?? 0);
+    const earliestAt = row?.earliest_at ? new Date(row.earliest_at) : null;
+    const days = periodDaysFor(since, earliestAt);
+    return {
+      digestsSent,
+      chatsReached,
+      messagesPerChatPerDay: chatsReached > 0 && days > 0 ? digestsSent / (chatsReached * days) : 0,
+      failures: {
+        chatUnreachable: Number(row?.chat_unreachable ?? 0),
+        transient: Number(row?.transient ?? 0),
+      },
+    };
+  }
+
+  // Fixed 7-day drill-down for the Delivery panel, independent of the page's
+  // period selector — a supplementary trend, not the headline number.
+  private async deliveryDaily(
+    population: ProductAnalyticsPopulation,
+  ): Promise<ProductDeliveryDay[]> {
+    const result = await this.db.execute<{
+      date: string;
+      digests: number;
+      chats: number;
+      failures: number;
+    }>(sql`
+      WITH buckets AS (
+        SELECT (date_trunc('day', now()) - (day_offset::text || ' days')::interval)::date AS day
+        FROM generate_series(0, ${DELIVERY_DAILY_WINDOW_DAYS - 1}) AS day_offset
+      ),
+      digests AS (
+        SELECT date_trunc('day', e.occurred_at)::date AS day, s.chat_id
+        FROM product_events e
+        JOIN subscriptions s ON s.id = e.subscription_id
+        JOIN analytics_journeys j ON j.id = e.journey_id
+        WHERE e.name = ${ANALYTICS_EVENTS.digestSent}
+          AND e.occurred_at >= now() - (${DELIVERY_DAILY_WINDOW_DAYS}::text || ' days')::interval
+          AND (
+            ${population} = 'all'
+            OR (${population} = 'production' AND NOT j.is_test)
+            OR (${population} = 'test' AND j.is_test)
+          )
+      ),
+      digest_counts AS (
+        SELECT day, COUNT(*)::int AS digests, COUNT(DISTINCT chat_id)::int AS chats
+        FROM digests
+        GROUP BY day
+      ),
+      failures AS (
+        SELECT date_trunc('day', e.occurred_at)::date AS day, COUNT(*)::int AS failures
+        FROM product_events e
+        JOIN analytics_journeys j ON j.id = e.journey_id
+        WHERE e.name = ${ANALYTICS_EVENTS.digestDeliveryFailed}
+          AND e.occurred_at >= now() - (${DELIVERY_DAILY_WINDOW_DAYS}::text || ' days')::interval
+          AND (
+            ${population} = 'all'
+            OR (${population} = 'production' AND NOT j.is_test)
+            OR (${population} = 'test' AND j.is_test)
+          )
+        GROUP BY day
+      )
+      SELECT
+        to_char(buckets.day, 'YYYY-MM-DD') AS date,
+        COALESCE(digest_counts.digests, 0)::int AS digests,
+        COALESCE(digest_counts.chats, 0)::int AS chats,
+        COALESCE(failures.failures, 0)::int AS failures
+      FROM buckets
+      LEFT JOIN digest_counts ON digest_counts.day = buckets.day
+      LEFT JOIN failures ON failures.day = buckets.day
+      ORDER BY buckets.day
+    `);
+    return result.rows.map((row) => {
+      const digests = Number(row.digests);
+      const chats = Number(row.chats);
+      return {
+        date: row.date,
+        digests,
+        chats,
+        perChat: chats > 0 ? digests / chats : 0,
+        failures: Number(row.failures),
+      };
+    });
   }
 
   // First-touch attribution: a journey's source is the utm_source on its

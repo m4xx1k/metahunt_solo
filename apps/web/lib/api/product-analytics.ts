@@ -69,6 +69,36 @@ export interface ProductAnalyticsOverview {
   feedEngagement: ProductFeedEngagement;
   flow: ProductPeriodFlow;
   channels: ProductChannel[];
+  subscriberStates: ProductSubscriberStates;
+  delivery: ProductDeliveryHealth;
+}
+
+// Lifecycle STATE per chat, all-time — the headline churn numbers. Unlike
+// `flow.churned` (unsubscribe events, one /stop can count several), these
+// partition every linked chat exactly once.
+export interface ProductSubscriberStates {
+  active: number;
+  dormant: number;
+  churned: number;
+}
+
+export interface ProductDeliveryDay {
+  date: string;
+  digests: number;
+  chats: number;
+  perChat: number;
+  failures: number;
+}
+
+// System health: what OUR pipeline sent, period-scoped; `daily` is a fixed
+// 7-day drill-down independent of the period selector.
+export interface ProductDeliveryHealth {
+  digestsSent: number;
+  chatsReached: number;
+  messagesPerChatPerDay: number;
+  failures: { chatUnreachable: number; transient: number };
+  unsubscribed: number;
+  daily: ProductDeliveryDay[];
 }
 
 export interface ProductFeedEngagement {
