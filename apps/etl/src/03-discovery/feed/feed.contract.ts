@@ -215,3 +215,31 @@ export interface SkillFacetsResponse {
 export interface DomainFacetsResponse {
   domains: NodeFacet[];
 }
+
+/** Hiring companies with open vacancies — backs the `/company/<slug>` landings. */
+export interface CompanyFacet {
+  slug: string;
+  name: string;
+  count: number;
+}
+
+export interface CompanyFacetsResponse {
+  companies: CompanyFacet[];
+}
+
+// ────────────────────────── Sitemap ───────────────────────────
+// Slim projection of every publicly visible vacancy: enough to build its URL,
+// its slug and its <lastmod>, and nothing else. The browse endpoint caps
+// pageSize at 100, so a sitemap built from it would need ~49 round trips.
+
+export interface SitemapVacancy {
+  id: string;
+  title: string;
+  /** ISO 8601, or null when the source never stated one. */
+  publishedAt: string | null;
+  updatedAt: string;
+}
+
+export interface SitemapResponse {
+  items: SitemapVacancy[];
+}

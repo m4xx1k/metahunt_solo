@@ -3,6 +3,7 @@ import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
 
+import { FacetsService } from "../../src/03-discovery/feed/facets.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 
 import { makeTestDb, truncateAll } from "./db";
@@ -32,11 +33,20 @@ async function seedRole(): Promise<string> {
   return n.id;
 }
 
+async function seedCompany(name: string, slug: string): Promise<string> {
+  const [c] = await db
+    .insert(schema.companies)
+    .values({ name, slug })
+    .returning({ id: schema.companies.id });
+  return c.id;
+}
+
 async function seedVacancy(opts: {
   sourceId: string;
   ingestId: string;
-  roleNodeId: string;
+  roleNodeId: string | null;
   publishedAt: Date;
+  companyId?: string;
 }): Promise<string> {
   const externalId = `ext-${++seq}`;
   const [rec] = await db
@@ -59,6 +69,7 @@ async function seedVacancy(opts: {
       lastRssRecordId: rec.id,
       title: "Backend Engineer",
       roleNodeId: opts.roleNodeId,
+      companyId: opts.companyId,
       publishedAt: opts.publishedAt,
     })
     .returning({ id: schema.vacancies.id });
@@ -217,6 +228,185 @@ describe("FeedService.search — dedup collapse (integration)", () => {
     const res = await feed.search({ page: 1, pageSize: 50, hasDuplicates: true });
 
     expect(res.items.map((i) => i.id)).toEqual([newer]);
+    expect(res.total).toBe(1);
+  });
+});
+
+describe("FeedService.listForSitemap (integration)", () => {
+  it("lists one URL per dedup group, not one per member", async () => {
+    const s1 = await seedSource();
+    const s2 = await seedSource();
+    const role = await seedRole();
+    const base = new Date(Date.now() - DAY);
+    const older = await seedVacancy({
+      sourceId: s1.sourceId,
+      ingestId: s1.ingestId,
+      roleNodeId: role,
+      publishedAt: base,
+    });
+    const newer = await seedVacancy({
+      sourceId: s2.sourceId,
+      ingestId: s2.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(base.getTime() + DAY / 2),
+    });
+    const [group] = await db
+      .insert(schema.uniqueVacancies)
+      .values({
+        canonicalVacancyId: older,
+        sourceCount: 2,
+        vacancyCount: 2,
+        firstSeenAt: base,
+        lastSeenAt: new Date(base.getTime() + DAY / 2),
+      })
+      .returning({ id: schema.uniqueVacancies.id });
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: group.id })
+      .where(inArray(schema.vacancies.id, [older, newer]));
+
+    const items = await feed.listForSitemap(30);
+
+    // Publishing both members would be two URLs for one job — self-inflicted
+    // duplicate content, which is the whole thing the sitemap must not do.
+    expect(items.map((i) => i.id)).toEqual([newer]);
+  });
+
+  it("excludes vacancies outside the freshness window", async () => {
+    const s = await seedSource();
+    const role = await seedRole();
+    const fresh = await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - 5 * DAY),
+    });
+    await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - 100 * DAY),
+    });
+
+    const items = await feed.listForSitemap(30);
+
+    expect(items.map((i) => i.id)).toEqual([fresh]);
+  });
+
+  it("excludes vacancies the feed itself hides (no verified role)", async () => {
+    const s = await seedSource();
+    const role = await seedRole();
+    const visible = await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - DAY),
+    });
+    await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: null,
+      publishedAt: new Date(Date.now() - DAY),
+    });
+
+    const items = await feed.listForSitemap(30);
+
+    expect(items.map((i) => i.id)).toEqual([visible]);
+  });
+
+  it("carries the title and timestamps a <url> entry needs", async () => {
+    const s = await seedSource();
+    const role = await seedRole();
+    const published = new Date(Date.now() - 2 * DAY);
+    await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: published,
+    });
+
+    const [item] = await feed.listForSitemap(30);
+
+    expect(item.title).toBe("Backend Engineer");
+    expect(item.publishedAt).toBe(published.toISOString());
+    expect(new Date(item.updatedAt).getTime()).toBeGreaterThan(0);
+  });
+});
+
+describe("company facet + filter (integration)", () => {
+  it("counts a company's vacancies with dedup groups collapsed", async () => {
+    const facets = new FacetsService(db);
+    const s1 = await seedSource();
+    const s2 = await seedSource();
+    const role = await seedRole();
+    const acme = await seedCompany("Acme", "acme");
+    const base = new Date(Date.now() - DAY);
+    const older = await seedVacancy({
+      sourceId: s1.sourceId,
+      ingestId: s1.ingestId,
+      roleNodeId: role,
+      publishedAt: base,
+      companyId: acme,
+    });
+    const newer = await seedVacancy({
+      sourceId: s2.sourceId,
+      ingestId: s2.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(base.getTime() + DAY / 2),
+      companyId: acme,
+    });
+    const [group] = await db
+      .insert(schema.uniqueVacancies)
+      .values({
+        canonicalVacancyId: older,
+        sourceCount: 2,
+        vacancyCount: 2,
+        firstSeenAt: base,
+        lastSeenAt: new Date(base.getTime() + DAY / 2),
+      })
+      .returning({ id: schema.uniqueVacancies.id });
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: group.id })
+      .where(inArray(schema.vacancies.id, [older, newer]));
+
+    const { companies } = await facets.getCompanyFacets();
+
+    // A repost across two boards is one opening, so the landing must say 1.
+    expect(companies).toEqual([{ slug: "acme", name: "Acme", count: 1 }]);
+  });
+
+  it("resolves a slug to its id and returns null for an unknown one", async () => {
+    const facets = new FacetsService(db);
+    const acme = await seedCompany("Acme", "acme");
+
+    await expect(facets.resolveCompanySlug("acme")).resolves.toBe(acme);
+    await expect(facets.resolveCompanySlug("nope")).resolves.toBeNull();
+  });
+
+  it("filters the feed down to one company", async () => {
+    const s = await seedSource();
+    const role = await seedRole();
+    const acme = await seedCompany("Acme", "acme");
+    const other = await seedCompany("Other", "other");
+    const mine = await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - DAY),
+      companyId: acme,
+    });
+    await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - DAY),
+      companyId: other,
+    });
+
+    const res = await feed.search({ page: 1, pageSize: 50, companyId: acme });
+
+    expect(res.items.map((i) => i.id)).toEqual([mine]);
     expect(res.total).toBe(1);
   });
 });

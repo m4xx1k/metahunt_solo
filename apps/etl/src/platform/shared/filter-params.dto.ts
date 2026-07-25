@@ -139,6 +139,12 @@ export class FeedQueryDto extends FilterParamsDto {
   @IsString()
   roleId?: string;
 
+  @ApiPropertyOptional({ description: "Hiring company slug.", example: "softserve" })
+  @IsOptional()
+  @trimmed()
+  @IsString()
+  companySlug?: string;
+
   @ApiPropertyOptional({
     type: [String],
     description: "ROLE slugs. Multiple values are OR-combined.",

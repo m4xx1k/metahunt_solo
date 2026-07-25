@@ -28,6 +28,7 @@ import type {
   FeedResponse,
   NodeRef,
   Seniority,
+  SitemapVacancy,
   VacancyDto,
   WorkFormat,
 } from "./feed.contract";
@@ -45,6 +46,8 @@ export interface FeedSearchParams {
   q?: string;
   /** Filter by sources.id (UUID). */
   sourceId?: string;
+  /** Filter by companies.id (UUID) — the controller resolves the public slug. */
+  companyId?: string;
   /** Filter by vacancies.roleNodeId (a ROLE node UUID). */
   roleId?: string;
   /** Match vacancies whose role is ANY of these ROLE node UUIDs (OR). */
@@ -131,6 +134,20 @@ interface VacancyRow {
   duplicateSourceCount: number | null;
 }
 
+// Shared FROM + filter for every collapse query. Mirrors selectVacancies'
+// population (inner sources+rss, verified-role + group left joins); buildWhere
+// renders its column refs against these exact aliases.
+function feedFrom(where: SQL | undefined): SQL {
+  return sql`
+      FROM vacancies
+      JOIN sources ON sources.id = vacancies.source_id
+      JOIN rss_records ON rss_records.id = vacancies.last_rss_record_id
+      LEFT JOIN nodes role_node
+        ON role_node.id = vacancies.role_node_id AND role_node.status = 'VERIFIED'
+      LEFT JOIN unique_vacancies ON unique_vacancies.id = vacancies.unique_vacancy_id
+      WHERE ${where ?? sql`true`}`;
+}
+
 const roleNode = alias(nodes, "role_node");
 const domainNode = alias(nodes, "domain_node");
 
@@ -149,17 +166,7 @@ export class FeedService {
   async search(params: FeedSearchParams): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params);
-    // Shared FROM + filter for the collapse. Mirrors selectVacancies' population
-    // (inner sources+rss, verified-role + group left joins); buildWhere renders
-    // its column refs against these exact aliases.
-    const base = sql`
-      FROM vacancies
-      JOIN sources ON sources.id = vacancies.source_id
-      JOIN rss_records ON rss_records.id = vacancies.last_rss_record_id
-      LEFT JOIN nodes role_node
-        ON role_node.id = vacancies.role_node_id AND role_node.status = 'VERIFIED'
-      LEFT JOIN unique_vacancies ON unique_vacancies.id = vacancies.unique_vacancy_id
-      WHERE ${where ?? sql`true`}`;
+    const base = feedFrom(where);
 
     // Collapse each dedup group to its freshest member (rn = 1) over the
     // FILTERED set, then paginate. Same idiom as ranking.rankByRefs.
@@ -202,6 +209,44 @@ export class FeedService {
       .filter((x): x is VacancyDto => x !== null);
 
     return { items, page: params.page, pageSize: params.pageSize, total };
+  }
+
+  /**
+   * Every publicly visible vacancy URL, slim, unpaginated — backs the sitemap.
+   * Reuses `buildWhere` + the same dedup collapse as `search`, so the sitemap
+   * can never list a URL the feed hides, nor N members of one dedup group as N
+   * separate pages. `pageSize` caps the browse endpoint at 100, which would
+   * mean ~49 round trips per sitemap regeneration.
+   */
+  async listForSitemap(postedWithinDays: number): Promise<SitemapVacancy[]> {
+    const where = buildWhere({ page: 1, pageSize: 1, postedWithinDays });
+    const res = await this.db.execute<{
+      id: string;
+      title: string;
+      published_at: Date | null;
+      updated_at: Date;
+    }>(sql`
+      WITH filtered AS (
+        SELECT vacancies.id AS id,
+               vacancies.title AS title,
+               vacancies.published_at AS published_at,
+               vacancies.updated_at AS updated_at,
+               coalesce(vacancies.published_at, vacancies.loaded_at) AS freshness,
+               row_number() OVER (
+                 PARTITION BY coalesce(vacancies.unique_vacancy_id, vacancies.id)
+                 ORDER BY coalesce(vacancies.published_at, vacancies.loaded_at) DESC, vacancies.id DESC
+               ) AS rn
+        ${feedFrom(where)}
+      )
+      SELECT id, title, published_at, updated_at FROM filtered WHERE rn = 1
+      ORDER BY freshness DESC, id DESC
+    `);
+    return res.rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      publishedAt: r.published_at ? new Date(r.published_at).toISOString() : null,
+      updatedAt: new Date(r.updated_at).toISOString(),
+    }));
   }
 
   // Hydrate full vacancy DTOs by id — feed-identical cards for the reverse-ATS
@@ -354,6 +399,9 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   const conds: SQL[] = [];
   if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
   if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
+  // Filtered on the id, not a companies join: `feedFrom` deliberately doesn't
+  // join companies, so the slug is resolved at the controller boundary.
+  if (params.companyId) conds.push(eq(vacancies.companyId, params.companyId));
   if (params.roleId) conds.push(eq(vacancies.roleNodeId, params.roleId));
   // Multi-role filter (OR): match any of the listed roles.
   if (params.roleIds && params.roleIds.length > 0) {

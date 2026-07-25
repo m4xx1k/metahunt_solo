@@ -8,6 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 
 import type {
+  CompanyFacetsResponse,
   DomainFacetsResponse,
   RoleFacetsResponse,
   SkillFacetsResponse,
@@ -79,5 +80,35 @@ export class FacetsService {
     return {
       domains: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
     };
+  }
+
+  // Counts collapse dedup groups the way the feed does, so a company's number
+  // matches what its landing actually lists rather than counting reposts twice.
+  async getCompanyFacets(): Promise<CompanyFacetsResponse> {
+    const rows = await this.db.execute<{
+      slug: string;
+      name: string;
+      count: number;
+    }>(sql`
+      SELECT c.slug AS slug,
+             c.name AS name,
+             COUNT(DISTINCT COALESCE(v.unique_vacancy_id, v.id))::int AS count
+      FROM vacancies v
+      JOIN companies c ON c.id = v.company_id
+      WHERE ${ELIGIBLE_VACANCY}
+      GROUP BY c.id, c.slug, c.name
+      ORDER BY COUNT(DISTINCT COALESCE(v.unique_vacancy_id, v.id)) DESC, c.name
+    `);
+    return {
+      companies: rows.rows.map((r) => ({ slug: r.slug, name: r.name, count: r.count })),
+    };
+  }
+
+  /** Public company slug -> companies.id, so downstream SQL stays id-based. */
+  async resolveCompanySlug(slug: string): Promise<string | null> {
+    const rows = await this.db.execute<{ id: string }>(sql`
+      SELECT id FROM companies WHERE slug = ${slug} LIMIT 1
+    `);
+    return rows.rows[0]?.id ?? null;
   }
 }

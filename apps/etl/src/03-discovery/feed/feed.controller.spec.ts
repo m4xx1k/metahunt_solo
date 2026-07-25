@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
@@ -22,6 +22,8 @@ const EMPTY: FeedResponse = {
 describe("FeedController", () => {
   const search = jest.fn();
   const getById = jest.fn();
+  const listForSitemap = jest.fn();
+  const resolveCompanySlug = jest.fn();
   // Identity resolver: slug->id resolution is covered separately; here it must
   // pass values through so the DTO→FeedSearchParams mapping stays assertable.
   const slugs = {
@@ -33,11 +35,13 @@ describe("FeedController", () => {
   beforeEach(async () => {
     search.mockReset().mockResolvedValue(EMPTY);
     getById.mockReset();
+    listForSitemap.mockReset().mockResolvedValue([]);
+    resolveCompanySlug.mockReset().mockResolvedValue(null);
     const moduleRef = await Test.createTestingModule({
       controllers: [FeedController],
       providers: [
-        { provide: FeedService, useValue: { search, getById } },
-        { provide: FacetsService, useValue: {} },
+        { provide: FeedService, useValue: { search, getById, listForSitemap } },
+        { provide: FacetsService, useValue: { resolveCompanySlug } },
         { provide: DedupService, useValue: {} },
         { provide: NodeSlugResolver, useValue: slugs },
       ],
@@ -88,6 +92,60 @@ describe("FeedController", () => {
         page: 2,
       }),
     );
+  });
+
+  describe("companySlug", () => {
+    it("resolves the slug to a company id before filtering", async () => {
+      resolveCompanySlug.mockResolvedValue("company-uuid");
+
+      await controller.search(dto({ companySlug: "acme" }));
+
+      expect(resolveCompanySlug).toHaveBeenCalledWith("acme");
+      expect(search).toHaveBeenCalledWith(expect.objectContaining({ companyId: "company-uuid" }));
+    });
+
+    it("matches nothing for an unknown slug instead of dropping the filter", async () => {
+      resolveCompanySlug.mockResolvedValue(null);
+
+      await controller.search(dto({ companySlug: "does-not-exist" }));
+
+      // Falling through to `undefined` here would return the whole feed under
+      // a company landing that has no vacancies.
+      const [params] = search.mock.calls[0];
+      expect(params.companyId).toBe("00000000-0000-0000-0000-000000000000");
+    });
+
+    it("leaves the filter off when no slug is given", async () => {
+      await controller.search(dto());
+
+      expect(resolveCompanySlug).not.toHaveBeenCalled();
+      expect(search).toHaveBeenCalledWith(expect.objectContaining({ companyId: undefined }));
+    });
+  });
+
+  describe("sitemap", () => {
+    it("defaults to the product's 30-day freshness window", async () => {
+      await controller.sitemap(undefined);
+
+      expect(listForSitemap).toHaveBeenCalledWith(30);
+    });
+
+    it("honours an explicit window", async () => {
+      await controller.sitemap("7");
+
+      expect(listForSitemap).toHaveBeenCalledWith(7);
+    });
+
+    it("caps the window so one request cannot ask for the whole table", async () => {
+      await controller.sitemap("99999");
+
+      expect(listForSitemap).toHaveBeenCalledWith(365);
+    });
+
+    it("rejects a non-positive window", async () => {
+      await expect(controller.sitemap("0")).rejects.toBeInstanceOf(BadRequestException);
+      await expect(controller.sitemap("abc")).rejects.toBeInstanceOf(BadRequestException);
+    });
   });
 
   describe("vacancy", () => {

@@ -18,11 +18,21 @@ import {
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
-import { DEFAULT_PAGE_SIZE, isUuid } from "../../platform/shared/query-parsing";
+import { DEFAULT_PAGE_SIZE, isUuid, parseDays } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import { FacetsService } from "./facets.service";
+import type { SitemapResponse } from "./feed.contract";
 import { FeedService, type FeedSearchParams } from "./feed.service";
+
+// Matches the product's own 30-day freshness window; the cap keeps a hand-typed
+// ?postedWithinDays=99999 from asking for the entire table.
+const SITEMAP_DEFAULT_DAYS = 30;
+const SITEMAP_MAX_DAYS = 365;
+
+// The nil UUID: `companies.id` is defaultRandom(), so it can never collide.
+// An unknown company slug must match nothing rather than dropping the filter.
+const UNMATCHABLE_ID = "00000000-0000-0000-0000-000000000000";
 
 @Controller("feed")
 @ApiTags("feed")
@@ -48,13 +58,40 @@ export class FeedController {
   @ApiOkResponse({ description: "A page of structured vacancies and facets." })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async search(@Query() dto: FeedQueryDto) {
-    [dto.roleIds, dto.skillIds, dto.domainIds, dto.roleId] = await Promise.all([
+    let companyId: string | undefined;
+    [dto.roleIds, dto.skillIds, dto.domainIds, dto.roleId, companyId] = await Promise.all([
       this.slugs.toIds("ROLE", dto.roleIds),
       this.slugs.toIds("SKILL", dto.skillIds),
       this.slugs.toIds("DOMAIN", dto.domainIds),
       this.slugs.toId("ROLE", dto.roleId),
+      this.resolveCompany(dto.companySlug),
     ]);
-    return this.feed.search(toSearchParams(dto));
+    return this.feed.search({ ...toSearchParams(dto), companyId });
+  }
+
+  // Companies aren't taxonomy nodes, so they don't go through NodeSlugResolver.
+  // An unknown slug must match nothing rather than silently dropping the filter.
+  private async resolveCompany(slug: string | undefined): Promise<string | undefined> {
+    if (!slug) return undefined;
+    return (await this.facets.resolveCompanySlug(slug)) ?? UNMATCHABLE_ID;
+  }
+
+  // Every publicly visible vacancy URL in one response. The browse endpoint caps
+  // pageSize at 100, so building a sitemap from it costs ~49 round trips; this
+  // ships only the four fields a <url> entry needs.
+  @Get("sitemap")
+  @ApiOperation({ summary: "List every publicly visible vacancy, slim, for the sitemap" })
+  @ApiOkResponse({ description: "Vacancy ids, titles and timestamps." })
+  async sitemap(@Query("postedWithinDays") postedWithinDays?: string): Promise<SitemapResponse> {
+    const days = parseDays("postedWithinDays", postedWithinDays) ?? SITEMAP_DEFAULT_DAYS;
+    return { items: await this.feed.listForSitemap(Math.min(days, SITEMAP_MAX_DAYS)) };
+  }
+
+  @Get("companies")
+  @ApiOperation({ summary: "List hiring companies with open vacancies" })
+  @ApiOkResponse({ description: "Company slugs, names and vacancy counts." })
+  companies() {
+    return this.facets.getCompanyFacets();
   }
 
   @Get("skills")
