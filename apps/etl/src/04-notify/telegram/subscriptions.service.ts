@@ -33,6 +33,8 @@ const { analyticsJourneys, subscriptions, nodes, authIdentities, userCvs } = sch
 const TELEGRAM_PROVIDER = "telegram";
 
 const MAX_SUMMARY_ROLES = 2;
+// Consecutive bounced digest sends before a chat is treated as gone.
+const UNREACHABLE_DEACTIVATE_AFTER = 3;
 
 // Store a resolved node-id axis, or drop the key entirely when nothing resolved
 // (an empty array would persist as a no-op filter).
@@ -376,6 +378,109 @@ export class SubscriptionsService {
       }
       return true;
     });
+  }
+
+  /**
+   * The user blocked the bot (my_chat_member → kicked). Deactivate everything
+   * on the chat with reason `blocked` so an unblock can restore exactly this
+   * set — unlike an explicit unsubscribe, which must stay off.
+   */
+  async deactivateForBlock(chatId: string): Promise<number> {
+    return this.db.transaction(async (tx) => {
+      const blocked = await tx
+        .update(subscriptions)
+        .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "blocked" })
+        .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
+        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+
+      for (const sub of blocked) {
+        const props = {
+          method: "chat_member" as const,
+          subscriptionId: sub.id,
+          count: blocked.length,
+        };
+        if (sub.journeyId) {
+          await this.analytics.enqueueBotBlocked(tx, { ...props, journeyId: sub.journeyId });
+        } else {
+          void this.analytics.botBlocked(props);
+        }
+      }
+      return blocked.length;
+    });
+  }
+
+  /** Unblock restores only what the block (or bounced deliveries) turned off. */
+  async reactivateAfterUnblock(chatId: string): Promise<number> {
+    return this.db.transaction(async (tx) => {
+      const restored = await tx
+        .update(subscriptions)
+        .set({
+          isActive: true,
+          deactivatedAt: null,
+          deactivatedReason: null,
+          unreachableCount: 0,
+        })
+        .where(
+          and(
+            eq(subscriptions.chatId, chatId),
+            eq(subscriptions.isActive, false),
+            inArray(subscriptions.deactivatedReason, ["blocked", "unreachable"]),
+          ),
+        )
+        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+
+      for (const sub of restored) {
+        if (sub.journeyId) {
+          await this.analytics.enqueueSubscriptionReactivated(tx, sub.id, sub.journeyId, "unblock");
+        } else {
+          void this.analytics.subscriptionReactivated(sub.id, "unblock");
+        }
+      }
+      return restored.length;
+    });
+  }
+
+  /**
+   * A digest send bounced with a 403. Count it; after the threshold the chat is
+   * considered gone and the subscription stops burning an hourly send forever.
+   * my_chat_member normally fires first — this is the safety net for updates
+   * the poller missed (downtime, chats deleted without a block).
+   */
+  async recordUnreachableDelivery(id: string): Promise<void> {
+    return this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(subscriptions)
+        .set({ unreachableCount: sql`${subscriptions.unreachableCount} + 1` })
+        .where(and(eq(subscriptions.id, id), eq(subscriptions.isActive, true)))
+        .returning({
+          unreachableCount: subscriptions.unreachableCount,
+          journeyId: subscriptions.journeyId,
+        });
+      if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return;
+
+      await tx
+        .update(subscriptions)
+        .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "unreachable" })
+        .where(eq(subscriptions.id, id));
+      const props = {
+        method: "delivery_failure" as const,
+        subscriptionId: id,
+        count: row.unreachableCount,
+      };
+      if (row.journeyId) {
+        await this.analytics.enqueueBotBlocked(tx, { ...props, journeyId: row.journeyId });
+      } else {
+        void this.analytics.botBlocked(props);
+      }
+    });
+  }
+
+  /** A send got through — the chat is reachable, restart the bounce counter. */
+  async clearUnreachable(id: string): Promise<void> {
+    await this.db
+      .update(subscriptions)
+      .set({ unreachableCount: 0 })
+      .where(and(eq(subscriptions.id, id), ne(subscriptions.unreachableCount, 0)));
   }
 
   /**

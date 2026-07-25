@@ -108,6 +108,7 @@ export class MeService {
         .set({
           isActive,
           deactivatedAt: isActive ? null : sql`now()`,
+          deactivatedReason: isActive ? null : "user",
         })
         .where(
           and(

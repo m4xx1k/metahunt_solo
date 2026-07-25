@@ -6,6 +6,12 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-25
+
+- **Bot blocks become a churn signal; dead chats stop burning sends** (`feat/bot-blocked-churn`). A `my_chat_member` → `kicked` update now deactivates the chat's subscriptions with reason `blocked` and emits a new `bot_blocked` product event (`method: chat_member`); an unblock (`member`) restores exactly the block/unreachable-deactivated set and emits `subscription_reactivated` (`method: unblock`) — explicit unsubscribes stay off. Safety net for updates the poller missed: three consecutive `chat_unreachable` digest bounces deactivate the subscription (`method: delivery_failure`) instead of retrying it hourly forever; any successful send resets the counter. Migration `0031` adds `deactivated_reason` + `unreachable_count` to subscriptions; explicit /stop, inline-button and account unsubscribes now stamp reason `user`. No dashboard changes here — the state-based churn tile lands with `feat/subscriber-states`.
+
+---
+
 ## 2026-07-24
 
 - **Console home rebuilt around users and one period** (`feat/console-users-widget`). `/dashboard` now leads with a **Users** widget (subscriber, joined, last action, digest/feed clicks) — the operator's first question is "who is here". Product comes second (five period-scoped tiles + activation funnel + a new first-touch **Channels** table), the ETL collapses into one `PipelineStrip` line, and its former home panels moved back to their own screens. Every number on the page now answers the 24h/7d/all switch: state metrics were rewritten as flow (`ProductPeriodFlow` counted from `product_events` in the window), and all-time subscription state stays only on Analytics → Identity. New `USER_ACTION_EVENTS`/`SYSTEM_EMITTED_EVENTS` split (spec-enforced partition) makes `lastActionAt` mean "the subscriber did something", not "we sent them a digest"; the roster keeps a subscriber if they joined **or** acted in the window. Additive backend only, no migration; three new integration cases cover last-action semantics, the roster filter, flow counts, and first-touch attribution. → [tracker](./migrations/_done/operator-console.md)

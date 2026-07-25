@@ -70,6 +70,8 @@ describe("DigestService", () => {
   const sendMessage = jest.fn();
   const digestEvaluated = jest.fn();
   const digestDeliveryFailed = jest.fn();
+  const recordUnreachableDelivery = jest.fn();
+  const clearUnreachable = jest.fn();
   let service: DigestService;
 
   beforeEach(async () => {
@@ -89,13 +91,18 @@ describe("DigestService", () => {
     sendMessage.mockReset().mockResolvedValue(undefined);
     digestEvaluated.mockReset();
     digestDeliveryFailed.mockReset();
+    recordUnreachableDelivery.mockReset().mockResolvedValue(undefined);
+    clearUnreachable.mockReset().mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         DigestService,
         { provide: ConfigService, useValue: { get: () => BASE } },
         { provide: SubscriptionMatcherService, useValue: { matchNew } },
-        { provide: SubscriptionsService, useValue: { getActiveById } },
+        {
+          provide: SubscriptionsService,
+          useValue: { getActiveById, recordUnreachableDelivery, clearUnreachable },
+        },
         {
           provide: SentNotificationsService,
           useValue: { pendingDelivery, hasCompletedDelivery, createDelivery, record },
@@ -231,6 +238,29 @@ describe("DigestService", () => {
         isFirstDigest: true,
         profileType: "feed",
       });
+      expect(recordUnreachableDelivery).toHaveBeenCalledWith("sub-1");
+      expect(clearUnreachable).not.toHaveBeenCalled();
+    });
+
+    it("does not count a transient failure toward the unreachable threshold", async () => {
+      getActiveById.mockResolvedValue(activeSub());
+      matchNew.mockResolvedValue(digestMatch([createVacancy()], 1));
+      const error = { error_code: 500 };
+      sendMessage.mockRejectedValue(error);
+
+      await expect(service.deliver("sub-1")).rejects.toBe(error);
+
+      expect(recordUnreachableDelivery).not.toHaveBeenCalled();
+    });
+
+    it("resets the unreachable counter after a fully delivered digest", async () => {
+      getActiveById.mockResolvedValue(activeSub());
+      matchNew.mockResolvedValue(digestMatch([createVacancy()], 1));
+
+      await expect(service.deliver("sub-1")).resolves.toBe(1);
+
+      expect(clearUnreachable).toHaveBeenCalledWith("sub-1");
+      expect(recordUnreachableDelivery).not.toHaveBeenCalled();
     });
 
     it("preserves the first-digest envelope after a partial multi-page failure", async () => {
