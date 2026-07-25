@@ -42,6 +42,12 @@ export function Footer() {
             how it works
           </Link>
           <Link
+            href="/releases"
+            className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
+          >
+            що нового
+          </Link>
+          <Link
             href="/privacy"
             className="font-body text-xs text-text-secondary transition-colors hover:text-text-primary"
           >

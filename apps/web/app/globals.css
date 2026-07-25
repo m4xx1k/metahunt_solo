@@ -198,3 +198,22 @@ input:-webkit-autofill:focus {
   border: none;
   padding: 0;
 }
+
+/* Release bodies come from md/journal/releases.md through lib/releases.ts, which
+   escapes first and only then emits <strong>/<em>/<code>/<a>. */
+.release-body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.release-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elev);
+  padding: 0.1em 0.35em;
+}
+.release-body strong {
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
