@@ -1,51 +1,36 @@
 # Runbook — brand icon family
 
-How the favicon / app-icon set is produced, and why it isn't the marketing logo.
+Every icon is the real `public/logo.webp`, round-cropped. Owner's call, made after
+seeing the alternatives.
 
-## Round, and split by size band
+## Round, from the logo itself
 
-Every icon is a **circle** — the app already renders the logo `rounded-full`, so a square tab icon read as wrong.
+The app renders the logo `rounded-full` everywhere, so the icons are circles too.
 
-`logo.webp` is a detailed puzzle-eye: dozens of thin strokes inside a circular iris. Rasterise it at 16px and you get brown speckle; at 32px it is still mud. That is arithmetic, not craft — there are five concentric rings with thin separators and only 16 pixels to put them in. So the family splits:
+The crop is a square centred on the **ink bounding box** (x 55..968, y 212..819 of
+the 1024² source), side 950 — *not* `sharp.trim()`. The logo has a light sparkle in
+its bottom-right corner, so trim stops at the sparkle and its box is not centred on
+the eye: the result pushed the eye upward and left an empty crescent beneath it.
+Side 950 puts the 914-wide almond at ~96% of the circle's diameter.
 
-| Size | What it is |
-|---|---|
-| 16 | reduced mark, **no** iris ring — the ring-to-pupil gap lands under one physical pixel and merges into a blob |
-| 32, 48 | reduced mark **with** the iris ring (the logo's own structural cue, and the only one that survives) |
-| 128+ (`icon.png`, manifest 192/512) | the **real logo**, round-cropped — the puzzle detail resolves from here up, which is the band Google and Android pull from |
+**At 16px this is a speckled blob, and that is accepted.** The iris holds five
+concentric rings of thin-stroked puzzle pieces and a tab favicon has 16 pixels — the
+detail cannot survive, it is arithmetic. It resolves from ~32px, which is what
+Google and Android use. Reduced marks were tried and rejected in favour of brand
+consistency; see git history of this file if that trade is ever revisited.
 
-Things that were tried and rejected, so they don't get tried again: a ring of chunky notches around the iris (reads as gear teeth), four radial spokes (reads as a compass, the eye disappears), and the round-cropped logo at 16/32 (mud).
-
-`apple-icon.png` and the maskable icon are deliberately **square and opaque**: iOS renders transparency as black, and Android crops maskable icons to a circle itself. Everything else keeps its transparent corners so the circle shows.
-
-## Sources of truth
-
-`apps/web/public/brand/` holds the three SVG marks the rasters are generated from:
-
-| File | Used for |
-|---|---|
-| `mark-16.svg` | the 16px `favicon.ico` frame (no iris ring) |
-| `mark-32.svg` | the 32px frame |
-| `mark.svg` | the 48px frame |
-
-Geometry: a 48×48 viewBox, an accent (`#FFB380`) **circle** filling the box, an ink (`#0D0F12`) almond lens drawn as two symmetric quadratic arcs, an accent iris ring, and an accent pupil.
-
-The one non-obvious parameter: a quadratic Bézier reaches only **half** its control-point offset at the apex (`(P0 + 2C + P2)/4`), so the `spread` value is roughly twice the lens half-height you actually want. Small sizes get a fatter lens and a larger pupil so they survive the downsample:
-
-| Band | pad | spread | pupil | ring r / width |
-|---|---|---|---|---|
-| 16 | 1 | 38 | 8 | — (dropped) |
-| 32 | 2 | 35 | 6.2 | 12.4 / 2.8 |
-| 48 | 3 | 32 | 6 | 12.8 / 2.4 |
+`apple-icon.png` and the maskable icon are square and **opaque**: iOS paints
+transparency black, and Android crops maskable icons to a circle itself. Everything
+else keeps transparent corners so the circle shows.
 
 ## Regenerating
 
-The rasters are committed, so this is only needed if a mark changes. `sharp` is **not** a declared dependency — it is deliberately not added, because adding it would touch `apps/web/package.json` and `pnpm-lock.yaml` for a once-a-year asset job. Rasterise with any tool that reads SVG; the required outputs are:
+The rasters are committed, so this is only needed if a mark changes. `sharp` is **not** a declared dependency — it is deliberately not added, because adding it would touch `apps/web/package.json` and `pnpm-lock.yaml` for a once-a-year asset job. Every output is derived from `public/logo.webp` by the crop above; the required set is:
 
-- `apps/web/app/favicon.ico` — 3 frames from `mark-16.svg`, `mark-32.svg`, `mark.svg`
-- `apps/web/app/icon.png` — 512, `logo.webp` round-cropped
-- `apps/web/app/apple-icon.png` — 180, `logo.webp` square and opaque
-- `apps/web/public/brand/icon-192.png`, `icon-512.png` — `logo.webp` round-cropped
+- `apps/web/app/favicon.ico` — 3 round frames: 16, 32, 48
+- `apps/web/app/icon.png` — 512, round
+- `apps/web/app/apple-icon.png` — 180, square and opaque
+- `apps/web/public/brand/icon-192.png`, `icon-512.png` — round
 - `apps/web/public/brand/icon-512-maskable.png` — `logo.webp` at 410px padded to 512 on an accent field (the inner-80% safe area). Note: sharp reorders `resize`/`extend` inside one pipeline, so the padding needs a second pass over the buffer or it comes out 614px.
 
 `.ico` has no encoder in most image libraries: the container is a 6-byte header, one 16-byte directory entry per frame (width, height, 0 palette, 0 reserved, 1 plane, 32bpp, byte length, byte offset), then the PNG payloads concatenated in the same order.
