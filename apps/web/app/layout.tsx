@@ -6,6 +6,8 @@ import { AppToaster } from "@/app/_components/AppToaster";
 import { VercelAnalytics } from "@/lib/vercel-analytics";
 import { PostHogProvider } from "@/lib/posthog";
 import { Providers } from "@/app/providers";
+import { FEED_INDEX_DESCRIPTION, FEED_INDEX_TITLE } from "@/lib/seo/feed-meta";
+import { SITE_LANG, SITE_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo/site";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const spaceGrotesk = Space_Grotesk({
@@ -18,26 +20,25 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.metahunt.app"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "metahunt · Ukrainian tech jobs in one feed",
-    template: "%s",
+    default: FEED_INDEX_TITLE,
+    // Pages supply the bare subject; the brand is appended here exactly once.
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Browse structured Ukrainian tech jobs from DOU and Djinni, match them to your CV, and get new results in Telegram.",
+  description: FEED_INDEX_DESCRIPTION,
   openGraph: {
-    title: "metahunt · Ukrainian tech jobs in one feed",
-    description:
-      "Browse DOU and Djinni in one structured feed, remove repeats, and get new matching jobs in Telegram.",
+    title: FEED_INDEX_TITLE,
+    description: FEED_INDEX_DESCRIPTION,
     url: "/",
-    siteName: "metahunt",
-    locale: "en_US",
+    siteName: SITE_NAME,
+    locale: SITE_LOCALE,
     type: "website",
   },
   twitter: {
-    card: "summary",
-    title: "metahunt · Ukrainian tech jobs in one feed",
-    description: "Structured jobs, CV matching, and Telegram alerts from DOU and Djinni.",
+    card: "summary_large_image",
+    title: FEED_INDEX_TITLE,
+    description: FEED_INDEX_DESCRIPTION,
   },
 };
 
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   // attributes, never real mismatches inside the tree.
   return (
     <html
-      lang="en"
+      lang={SITE_LANG}
       suppressHydrationWarning
       className={cn(
         "h-full antialiased",

@@ -1,5 +1,6 @@
 import {
   formatCount,
+  formatCountUa,
   formatDateOnly,
   formatDateRange,
   formatDateTime,
@@ -24,9 +25,7 @@ describe("formatDateTime", () => {
   });
 
   it("renders ISO as 'YYYY-MM-DD HH:MM:SS UTC'", () => {
-    expect(formatDateTime("2026-05-30T12:34:56.789Z")).toBe(
-      "2026-05-30 12:34:56 UTC",
-    );
+    expect(formatDateTime("2026-05-30T12:34:56.789Z")).toBe("2026-05-30 12:34:56 UTC");
   });
 });
 
@@ -145,44 +144,43 @@ describe("formatDateOnly", () => {
 
 describe("formatDateRange", () => {
   it("collapses to one date when both ends are the same day", () => {
-    expect(
-      formatDateRange("2026-05-30T01:00:00Z", "2026-05-30T20:00:00Z"),
-    ).toBe("2026-05-30");
+    expect(formatDateRange("2026-05-30T01:00:00Z", "2026-05-30T20:00:00Z")).toBe("2026-05-30");
   });
 
   it("shows an arrow range across different days", () => {
-    expect(
-      formatDateRange("2026-05-01T00:00:00Z", "2026-05-30T00:00:00Z"),
-    ).toBe("2026-05-01 → 2026-05-30");
+    expect(formatDateRange("2026-05-01T00:00:00Z", "2026-05-30T00:00:00Z")).toBe(
+      "2026-05-01 → 2026-05-30",
+    );
   });
 });
 
 describe("formatSalaryRange", () => {
   it("renders both bounds", () => {
-    expect(formatSalaryRange({ min: 100, max: 200, currency: "USD" })).toBe(
-      "100-200 USD",
-    );
+    expect(formatSalaryRange({ min: 100, max: 200, currency: "USD" })).toBe("100-200 USD");
   });
 
   it("renders a single open bound with a prefix", () => {
-    expect(formatSalaryRange({ min: 100, max: null, currency: "USD" })).toBe(
-      "from 100 USD",
-    );
-    expect(formatSalaryRange({ min: null, max: 200, currency: "USD" })).toBe(
-      "up to 200 USD",
-    );
+    expect(formatSalaryRange({ min: 100, max: null, currency: "USD" })).toBe("from 100 USD");
+    expect(formatSalaryRange({ min: null, max: 200, currency: "USD" })).toBe("up to 200 USD");
   });
 
   it("trims the trailing space when currency is missing", () => {
-    expect(formatSalaryRange({ min: 100, max: 200, currency: null })).toBe(
-      "100-200",
-    );
+    expect(formatSalaryRange({ min: 100, max: 200, currency: null })).toBe("100-200");
   });
 
   it("renders an em dash when both bounds are absent", () => {
-    expect(formatSalaryRange({ min: null, max: null, currency: "USD" })).toBe(
-      "—",
-    );
+    expect(formatSalaryRange({ min: null, max: null, currency: "USD" })).toBe("—");
+  });
+});
+
+describe("formatCountUa", () => {
+  it("groups thousands with a space, not a comma", () => {
+    expect(formatCountUa(2463)).toMatch(/^2\s463$/);
+    expect(formatCountUa(11073)).toMatch(/^11\s073$/);
+  });
+
+  it("leaves counts below a thousand untouched", () => {
+    expect(formatCountUa(107)).toBe("107");
   });
 });
 

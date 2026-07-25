@@ -2,6 +2,7 @@
 // ranked list under a CV, seeded server-side so a shared /?cv=X link renders
 // warm on first paint. The lens is derived from ?cv inside <FeedLensShell>.
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
@@ -18,7 +19,17 @@ import { readerFrom, readFilterState } from "@/features/vacancy-filters/url-para
 import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
 import { fetchMatch } from "@/features/vacancy-filters/warm-query";
 import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
+import { TrackIntro } from "@/app/(feed)/_components/market/TrackIntro";
 import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
+import {
+  FEED_INDEX_DESCRIPTION,
+  FEED_INDEX_TITLE,
+  trackDescription,
+  trackTitle,
+} from "@/lib/seo/feed-meta";
+import { JsonLd } from "@/lib/seo/json-ld";
+import { pageMetadata } from "@/lib/seo/metadata";
+import { organizationJsonLd, webSiteJsonLd } from "@/lib/seo/organization";
 import { FeedLensShell } from "../_components/FeedLensShell";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +63,44 @@ const getTrackSkills = unstable_cache((s: string) => tracksApi.skills(s), ["feed
   revalidate: CATALOG_TTL,
 });
 
+// One file serves the index and ~40 track slugs. Without per-track metadata all
+// of them shipped the same title, description and (missing) canonical, so they
+// competed with each other instead of ranking.
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug?: string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
+  const trackSlug = slug?.[0];
+  // `?cv` is a capability token for someone's uploaded CV. Indexing one would
+  // publish it, so any URL carrying it is noindex (robots.txt blocks it too).
+  const noindex = typeof sp.cv === "string" && sp.cv.length > 0;
+
+  if (!trackSlug) {
+    return pageMetadata({
+      title: FEED_INDEX_TITLE,
+      description: FEED_INDEX_DESCRIPTION,
+      path: "/",
+      absoluteTitle: true,
+      noindex,
+    });
+  }
+
+  const { tracks } = await getTracks();
+  const track = tracks.find((t) => t.slug === trackSlug);
+  if (!track) return {};
+
+  return pageMetadata({
+    title: trackTitle(track.label),
+    description: trackDescription(track),
+    path: `/${trackSlug}`,
+    noindex,
+  });
+}
+
 export default async function FeedPage({
   params,
   searchParams,
@@ -66,7 +115,8 @@ export default async function FeedPage({
 
   const [aggregates, { tracks }] = await Promise.all([getAggregates(), getTracks()]);
 
-  if (trackSlug && !tracks.some((t) => t.slug === trackSlug)) {
+  const track = trackSlug ? (tracks.find((t) => t.slug === trackSlug) ?? null) : null;
+  if (trackSlug && !track) {
     notFound();
   }
 
@@ -118,6 +168,13 @@ export default async function FeedPage({
 
   return (
     <>
+      {/* Organisation markup belongs on the single most representative page. */}
+      {!track ? (
+        <>
+          <JsonLd data={organizationJsonLd()} />
+          <JsonLd data={webSiteJsonLd()} />
+        </>
+      ) : null}
       <Header cta={<HeaderAuth />} />
       <main
         className="flex min-h-screen flex-col bg-bg"
@@ -130,8 +187,17 @@ export default async function FeedPage({
         <FeedHero
           aggregates={aggregates}
           showPipeline={!trackSlug}
-          matchCta={{ label: "Upload your CV", event: "feed:upload-cv" }}
+          matchCta={{ label: "Завантажити резюме", event: "feed:upload-cv" }}
+          heading={
+            track
+              ? {
+                  title: trackTitle(track.label),
+                  subtitle: "Свіжі вакансії з DOU і Djinni. Дублі згорнуті, фільтри поруч.",
+                }
+              : undefined
+          }
         />
+        {track ? <TrackIntro track={track} /> : null}
         <div className="mx-auto w-full max-w-[1536px] px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <FeedLensShell

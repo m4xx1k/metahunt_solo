@@ -20,6 +20,7 @@ import { vacanciesApi, type VacancyDto } from "@/lib/api/vacancies";
 import { formatSalary, SENIORITY_LABELS } from "@/lib/extracted-vacancy";
 import { formatKyivTime, formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { Badge, Card, Tag } from "@/ui";
 import { chipClass } from "@/ui/inputs/pill";
 import { SubscribeCta } from "@/features/subscribe/SubscribeCta";
@@ -27,7 +28,6 @@ import { SubscribeCta } from "@/features/subscribe/SubscribeCta";
 const PROOF_VACANCY_COUNT = 3;
 const TEASER_SKILL_COUNT = 3;
 
-const SITE_URL = "https://www.metahunt.app";
 const DEFAULT_FRESHNESS_DAYS = 30;
 
 export const dynamic = "force-dynamic";
@@ -45,25 +45,14 @@ export async function generateMetadata({
   if (!track) return {};
 
   const labelLower = track.label.toLowerCase();
-  const url = `${SITE_URL}/radar/${slug}`;
 
-  return {
-    title: `Радар ${labelLower}-вакансій в Telegram · metahunt`,
+  return pageMetadata({
+    title: `Радар ${labelLower}-вакансій в Telegram`,
     description: `Нові ${labelLower}-вакансії з DOU і Djinni, без дублів, прямо в Telegram. Без резюме.`,
-    alternates: { canonical: url },
-    openGraph: {
-      title: "Не перевіряй DOU і Djinni вручну",
-      description: `Безкоштовний радар ${labelLower}-вакансій. Тільки нові — прямо в Telegram.`,
-      url,
-      siteName: "metahunt",
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title: `Радар ${labelLower}-вакансій · metahunt`,
-      description: `Нові ${labelLower}-вакансії з DOU і Djinni — прямо в Telegram.`,
-    },
-  };
+    path: `/radar/${slug}`,
+    ogTitle: "Не перевіряй DOU і Djinni вручну",
+    ogDescription: `Безкоштовний радар ${labelLower}-вакансій. Тільки нові — прямо в Telegram.`,
+  });
 }
 
 export default async function TrackRadarPage({

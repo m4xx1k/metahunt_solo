@@ -17,24 +17,31 @@ type Props = {
   showPipeline?: boolean;
   /** Overrides the pipeline's Match CTA (merged: open the CV picker). */
   matchCta?: { label: string; event: string };
+  /** Track pages replace the index headline so each one has an h1 of its own. */
+  heading?: { title: React.ReactNode; subtitle: string };
 };
 
-export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Props) {
+export function FeedHero({ aggregates: a, showPipeline = false, matchCta, heading }: Props) {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
         <div className="flex flex-col justify-center gap-5">
           <h1 className="font-display text-4xl font-bold leading-tight tracking-tight text-text-primary md:text-5xl">
-            Ukrainian tech jobs — <span className="text-accent">in one list</span>.
+            {heading?.title ?? (
+              <>
+                Українські IT-вакансії — <span className="text-accent">в одному списку</span>.
+              </>
+            )}
           </h1>
           <p className="max-w-[560px] font-body text-base leading-[1.55] text-text-secondary md:text-lg">
-            We pull from every source, structure it with AI, and match it to your CV.
+            {heading?.subtitle ??
+              "Збираємо з усіх джерел, структуруємо через AI і підбираємо під твоє резюме."}
           </p>
           <Link
             href="/how-it-works"
             className="w-fit font-mono text-xs uppercase tracking-wider text-text-muted underline-offset-4 transition-colors hover:text-accent hover:underline"
           >
-            &gt; how it works
+            &gt; як це працює
           </Link>
         </div>
         <TotalCounter total={a.total} lastSyncAt={a.lastSyncAt} sources={a.sources} />
@@ -43,7 +50,7 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta }: Prop
       {showPipeline && (
         <div className="flex flex-col gap-6">
           <div className="flex justify-center">
-            <Tag>{"> how it works"}</Tag>
+            <Tag>{"> як це працює"}</Tag>
           </div>
           <HowItWorks aggregates={a} matchCta={matchCta} />
         </div>

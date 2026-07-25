@@ -5,15 +5,15 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
 import { Card, Tag } from "@/ui";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-const SITE_URL = "https://www.metahunt.app";
-
-export const metadata: Metadata = {
-  title: "Privacy and data controls · metahunt",
+// English title over still-English legal copy, deliberately — see how-it-works.
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy and data controls",
   description:
-    "What MetaHunt processes for job alerts and CV matching, what it stores, and how to delete it.",
-  alternates: { canonical: `${SITE_URL}/privacy` },
-};
+    "What MetaHunt processes for job alerts and CV matching, what it stores, how long it keeps it, and how to delete it.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (
