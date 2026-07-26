@@ -19,9 +19,10 @@ if (!BASE) {
 }
 
 /** Routes that must exist and be indexable, beyond whatever the sitemap lists. */
-const ALWAYS_CHECK = ["/", "/how-it-works", "/privacy", "/match", "/radar"];
+const ALWAYS_CHECK = ["/", "/how-it-works", "/privacy", "/radar", "/releases"];
 /** Routes that must be reachable but must NOT be indexable. */
-const MUST_NOINDEX = ["/welcome", "/?cv=00000000-0000-0000-0000-000000000000"];
+// /match is an unfinished draft; it must stay out of the index until it ships.
+const MUST_NOINDEX = ["/welcome", "/match", "/?cv=00000000-0000-0000-0000-000000000000"];
 /** How many sitemap URLs of each shape to sample. */
 const SAMPLE = 12;
 

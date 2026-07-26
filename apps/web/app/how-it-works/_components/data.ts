@@ -4,7 +4,7 @@
 export const hero = {
   kicker: "> how it actually works",
   titleLines: ["raw job feeds in.", "one clean, ranked market out."],
-  body: "metahunt turns the scattered, duplicated, unstructured Ukrainian tech job market into a single clean dataset — then ranks it against your CV. No black box: here is the whole system, with the real numbers.",
+  body: "One clean dataset out of a scattered, duplicated job market — then ranked against your CV. No black box: the whole system, with real numbers.",
 };
 
 export const stack = {
@@ -75,17 +75,14 @@ export const dedup = {
     "RSS content-hash blocks re-ingesting an unchanged item.",
   ],
   softFilters: [
-    "Each vacancy → a 1536-d embedding (text-embedding-3-small).",
-    "pgvector finds the top-20 nearest by cosine, within a ±45-day window.",
+    "Each vacancy → a 1536-d embedding; pgvector takes the top-20 nearest within ±45 days.",
     "Structural gates: same role & seniority, different companies excluded.",
-    "Join only if pairwise ≥ 0.92 and group-centroid ≥ 0.92; gold tier at ≥ 0.95.",
+    "Join only if pairwise and group-centroid both ≥ 0.92; gold tier at ≥ 0.95.",
     "Canonical = earliest-published member; every source link is kept.",
   ],
   funnel: [
     { label: "all vacancies (100% embedded)", value: "10,839" },
-    { down: "top-20 nearest · ±45d · role/seniority gates" },
-    { label: "candidate pairs scored (cosine)", value: "pairwise", threshold: "≥ 0.92" },
-    { down: "pairwise + centroid threshold" },
+    { down: "top-20 nearest · ±45d · role/seniority gates · cosine ≥ 0.92" },
     { label: "unique job groups", value: "9,228", accent: true },
     { down: "of which merged from 2+ postings" },
     { label: "multi-member groups merged", value: "1,107" },
@@ -110,6 +107,8 @@ export const match = {
   ],
 };
 
+// The headline four only. Every other figure this section used to list is already
+// on screen in the substats of the stage that produces it.
 export const numbers = {
   items: [
     {
@@ -119,14 +118,6 @@ export const numbers = {
     },
     { value: "10,839", label: "vacancies processed", note: "100% embedded · 2026-07-07" },
     { value: "9,228", label: "unique job groups", note: "after dedup collapse" },
-    {
-      value: "1,107",
-      label: "multi-member merges",
-      note: "groups with 2+ postings · 400 span multiple boards",
-    },
     { value: "89%", label: "dedup recall", note: "194/219 in-window pairs" },
-    { value: "0.92 / 0.95", label: "merge / gold cosine", note: "pairwise + centroid" },
-    { value: "$0.14/$0.28", label: "LLM $/1M tokens", note: "deepseek-v4-flash in/out" },
-    { value: "1536-d", label: "embedding vectors", note: "text-embedding-3-small" },
   ],
 };

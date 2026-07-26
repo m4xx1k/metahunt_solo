@@ -68,11 +68,6 @@ export function DedupSection() {
                   >
                     {step.value}
                   </div>
-                  {step.threshold && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-2xs text-accent">
-                      {step.threshold}
-                    </span>
-                  )}
                 </div>
               ),
             )}
