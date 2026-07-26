@@ -103,19 +103,24 @@ export class DigestService {
         await this.sentNotifications.record(sub.id, page.vacancyIds, delivery, completesDelivery);
         sentThisAttempt += page.vacancyIds.length;
       } catch (error) {
+        const unreachable = isChatUnreachable(error);
         void this.analytics.digestDeliveryFailed({
           subscriptionId: sub.id,
           vacancies: delivery.vacancies,
           pages: delivery.pages,
           failedPage: delivery.sentPages + pageIndex + 1,
           deliveryId: delivery.id,
-          failureKind: isChatUnreachable(error) ? "chat_unreachable" : "transient",
+          failureKind: unreachable ? "chat_unreachable" : "transient",
           isFirstDigest: delivery.isFirstDigest,
           profileType: delivery.profileType,
         });
+        // Safety net behind my_chat_member: enough consecutive bounces
+        // deactivate the subscription instead of retrying it hourly forever.
+        if (unreachable) void this.subscriptions.recordUnreachableDelivery(sub.id);
         throw error;
       }
     }
+    void this.subscriptions.clearUnreachable(sub.id);
 
     this.logger.log(
       `digest → sub ${sub.id}: ${deliveryItems.length} new in ${pages.length} page(s)`,

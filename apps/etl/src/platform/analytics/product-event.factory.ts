@@ -4,7 +4,9 @@ import { countObjectKeys } from "../shared/object-properties";
 
 import type { ProductEventWrite } from "./analytics.ports";
 import type {
+  BotBlockedEvent,
   DigestSentEvent,
+  ReactivationMethod,
   SubscriptionProductEvent,
   UnsubscribedEvent,
 } from "./analytics.types";
@@ -66,13 +68,29 @@ export function unsubscribedEvent(props: UnsubscribedEvent): SubscriptionProduct
   };
 }
 
-export function subscriptionReactivatedEvent(subscriptionId: string): SubscriptionProductEvent {
+export function subscriptionReactivatedEvent(
+  subscriptionId: string,
+  method: ReactivationMethod = "account",
+): SubscriptionProductEvent {
   return {
     subscriptionId,
     name: ANALYTICS_EVENTS.subscriptionReactivated,
-    source: "api",
+    source: method === "account" ? "api" : "telegram",
     dedupeKey: `subscription_reactivated:${subscriptionId}:${randomUUID()}`,
-    properties: { method: "account" },
+    properties: { method },
+  };
+}
+
+export function botBlockedEvent(props: BotBlockedEvent): SubscriptionProductEvent {
+  return {
+    subscriptionId: props.subscriptionId,
+    name: ANALYTICS_EVENTS.botBlocked,
+    source: "telegram",
+    dedupeKey: `bot_blocked:${props.subscriptionId}:${randomUUID()}`,
+    properties: {
+      method: props.method,
+      ...(props.count === undefined ? {} : { count: props.count }),
+    },
   };
 }
 
