@@ -131,6 +131,12 @@ export interface SubscriberSubscription {
 // `lastActionAt` is the newest USER_ACTION_EVENTS timestamp across this
 // subscriber's journeys and subscriptions — deliberately not counting the
 // digests we send, so a silent subscriber reads as silent.
+// Lifecycle per chat — the same rules the subscriberStates tiles aggregate:
+// blocked = deactivated because the bot was cut off (block / unreachable),
+// churned = the user unsubscribed everything, dormant = digests land but no
+// user action for the dormancy window, active = the rest.
+export type SubscriberStatus = "active" | "dormant" | "churned" | "blocked";
+
 export interface SubscriberActivity {
   chatId: string;
   tgUsername: string | null;
@@ -143,6 +149,7 @@ export interface SubscriberActivity {
   vacancyClicks: number;
   feedClicks: number;
   isActive: boolean;
+  status: SubscriberStatus;
   subscriptions: SubscriberSubscription[];
 }
 

@@ -246,5 +246,6 @@ export const vacanciesApi = {
   /** Members + "why merged" reasons for one dedup group (the badge drawer). */
   group: (uniqueVacancyId: string) => apiGet<FeedDuplicateGroup>(`/feed/group/${uniqueVacancyId}`),
   /** Full detail for one vacancy, including `description` (the public detail page). */
-  byId: (vacancyId: string) => apiGet<VacancyDto>(`/feed/vacancy/${vacancyId}`),
+  byId: (vacancyId: string, init?: RequestInit) =>
+    apiGet<VacancyDto>(`/feed/vacancy/${vacancyId}`, init),
 };

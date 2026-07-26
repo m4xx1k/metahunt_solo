@@ -12,7 +12,11 @@ export const revalidate = 900;
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const id = parseVacancyId(slug);
-  const vacancy = id ? await vacanciesApi.byId(id).catch(() => null) : null;
+  // Same deadline as the root og-image: a hanging fetch must degrade to the
+  // generic card, never stall rendering.
+  const vacancy = id
+    ? await vacanciesApi.byId(id, { signal: AbortSignal.timeout(5_000) }).catch(() => null)
+    : null;
 
   if (!vacancy) {
     return ogImage({ eyebrow: "Вакансія", title: "Вакансії з DOU і Djinni в одному списку" });

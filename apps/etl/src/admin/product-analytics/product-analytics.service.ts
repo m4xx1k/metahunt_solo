@@ -24,6 +24,7 @@ import {
   type ProductSubscriberStates,
   type RecentProductJourney,
   type SubscriberActivity,
+  type SubscriberStatus,
   type SubscriberSubscription,
   type UpdateAnalyticsJourneyDto,
 } from "./product-analytics.contract";
@@ -739,6 +740,7 @@ export class ProductAnalyticsService {
         tgFirstName: subscriptions.tgFirstName,
         candidateId: subscriptions.candidateId,
         isActive: subscriptions.isActive,
+        deactivatedReason: subscriptions.deactivatedReason,
         createdAt: subscriptions.createdAt,
         linkedAt: subscriptions.linkedAt,
         journeyId: subscriptions.journeyId,
@@ -757,11 +759,13 @@ export class ProductAnalyticsService {
     const subscriptionIds = subs.map((row) => row.id);
     const roleIds = [...new Set(subs.flatMap((row) => asStringArray(row.params.roleIds)))];
 
+    const dormantSince = new Date(Date.now() - DORMANT_WINDOW_DAYS * DAY_MS);
     const [
       firstEvents,
       ctaEvents,
       telegramEvents,
       vacancyClickEvents,
+      recentDigestEvents,
       roleNodes,
       journeySubscriptionCounts,
       feedClickEvents,
@@ -812,6 +816,23 @@ export class ProductAnalyticsService {
           and(
             inArray(productEvents.subscriptionId, subscriptionIds),
             eq(productEvents.name, ANALYTICS_EVENTS.digestLinkClicked),
+          ),
+        )
+        .groupBy(productEvents.subscriptionId),
+      // Dormancy input: digests that actually landed recently — the same
+      // definition the subscriberStates tiles use, so the row badge and the
+      // headline numbers can never disagree.
+      this.db
+        .select({
+          subscriptionId: productEvents.subscriptionId,
+          digests: count(),
+        })
+        .from(productEvents)
+        .where(
+          and(
+            inArray(productEvents.subscriptionId, subscriptionIds),
+            eq(productEvents.name, ANALYTICS_EVENTS.digestSent),
+            gte(productEvents.occurredAt, dormantSince),
           ),
         )
         .groupBy(productEvents.subscriptionId),
@@ -895,6 +916,13 @@ export class ProductAnalyticsService {
         )
         .map((row) => [row.subscriptionId, row.clicks]),
     );
+    const recentDigestsBySub = new Map(
+      recentDigestEvents
+        .filter(
+          (row): row is { subscriptionId: string; digests: number } => row.subscriptionId !== null,
+        )
+        .map((row) => [row.subscriptionId, row.digests]),
+    );
     const roleNameById = new Map(roleNodes.map((node) => [node.id, node.name]));
     const subscriptionCountByJourney = new Map(
       journeySubscriptionCounts.map((row) => [row.journeyId, row.subscriptionCount]),
@@ -958,6 +986,11 @@ export class ProductAnalyticsService {
       ]);
       const tgUsername = subRows.map((row) => row.tgUsername).find(isNonNull) ?? null;
       const tgFirstName = subRows.map((row) => row.tgFirstName).find(isNonNull) ?? null;
+      const isActive = subRows.some((row) => row.isActive);
+      const recentDigests = subRows.reduce(
+        (sum, row) => sum + (recentDigestsBySub.get(row.id) ?? 0),
+        0,
+      );
 
       return {
         chatId,
@@ -970,7 +1003,8 @@ export class ProductAnalyticsService {
         lastActionAt,
         vacancyClicks,
         feedClicks,
-        isActive: subRows.some((row) => row.isActive),
+        isActive,
+        status: this.subscriberStatus(subRows, isActive, recentDigests, lastActionAt, dormantSince),
         subscriptions: subscriptionSummaries,
       };
     });
@@ -992,6 +1026,27 @@ export class ProductAnalyticsService {
           (a.lastActionAt?.getTime() ?? a.joinedAt.getTime()),
       )
       .slice(0, SUBSCRIBER_ACTIVITY_LIMIT);
+  }
+
+  // Same lifecycle rules as the subscriberStates tiles, applied per chat.
+  // Blocked outranks churned: both mean "no active subs", but blocked was not
+  // the user pressing unsubscribe — it's the bot being cut off.
+  private subscriberStatus(
+    subRows: Array<{ deactivatedReason: string | null }>,
+    isActive: boolean,
+    recentDigests: number,
+    lastActionAt: Date | null,
+    dormantSince: Date,
+  ): SubscriberStatus {
+    if (!isActive) {
+      const blocked = subRows.some(
+        (row) => row.deactivatedReason === "blocked" || row.deactivatedReason === "unreachable",
+      );
+      return blocked ? "blocked" : "churned";
+    }
+    const silent = lastActionAt === null || lastActionAt < dormantSince;
+    if (silent && recentDigests >= DORMANT_MIN_DIGESTS) return "dormant";
+    return "active";
   }
 
   private trackLabel(params: Record<string, unknown>, roleNameById: Map<string, string>): string {
