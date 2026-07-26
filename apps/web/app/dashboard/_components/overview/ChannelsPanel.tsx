@@ -7,10 +7,13 @@ import { Panel } from "@/ui/layout/Panel";
 const COLUMNS: Array<Column<ProductChannel>> = [
   {
     key: "source",
-    header: "source",
+    header: "source · campaign",
     render: (row) => (
       <span className={row.source ? "text-accent" : "text-text-muted"}>
         {row.source ?? "direct"}
+        {row.campaign ? (
+          <span className="pl-1.5 font-mono text-2xs text-text-muted">· {row.campaign}</span>
+        ) : null}
       </span>
     ),
   },
@@ -58,7 +61,7 @@ export function ChannelsPanel({
         <DataTable
           columns={COLUMNS}
           rows={channels}
-          rowKey={(row) => row.source ?? "direct"}
+          rowKey={(row) => `${row.source ?? "direct"}:${row.campaign ?? ""}`}
           minWidth={520}
         />
       )}

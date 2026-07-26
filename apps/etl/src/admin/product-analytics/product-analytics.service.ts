@@ -64,7 +64,7 @@ export class ProductAnalyticsService {
     const populationFilter = this.populationFilter(population);
 
     const [
-      eventRows,
+      funnelChain,
       subscriptionRows,
       identityRows,
       recentJourneys,
@@ -109,10 +109,8 @@ export class ProductAnalyticsService {
       generatedAt: new Date(),
       period,
       population,
-      funnel: PRODUCT_FUNNEL_STEPS.map((name) => {
-        const row = eventRows.find((item) => item.name === name);
-        return { name, events: row?.events ?? 0, journeys: row?.journeys ?? 0 };
-      }),
+      funnel: funnelChain.steps,
+      funnelBypass: funnelChain.bypass,
       subscriptions: {
         total: subscriptionsRow?.total ?? 0,
         createdInPeriod: subscriptionsRow?.createdInPeriod ?? 0,
@@ -156,19 +154,31 @@ export class ProductAnalyticsService {
     return updated ?? null;
   }
 
+  // Ordered chain anchored at landing_view: a journey counts at step N only if
+  // it also has every earlier step, so rows are monotonic by construction and
+  // "% of landing" is a real conversion. Journeys that subscribe without ever
+  // landing (feed, warm lens) are reported separately as `bypass`.
   private async orderedFunnel(since: Date | null, population: ProductAnalyticsPopulation) {
-    const stepValues = sql.join(
-      PRODUCT_FUNNEL_STEPS.map((name, index) => sql`(${index + 1}::int, ${name}::text)`),
-      sql`, `,
+    const stepFlags = PRODUCT_FUNNEL_STEPS.map(
+      (name, index) => sql`bool_or(event.name = ${name}) AS ${sql.raw(`step_${index}`)}`,
     );
-    const result = await this.db.execute<{
-      name: (typeof PRODUCT_FUNNEL_STEPS)[number];
-      events: number;
-      journeys: number;
-    }>(sql`
-      WITH
-      step_definitions(step_index, name) AS (VALUES ${stepValues}),
-      cohort AS (
+    const chainCounts = PRODUCT_FUNNEL_STEPS.map((_, index) => {
+      const required = sql.join(
+        PRODUCT_FUNNEL_STEPS.slice(0, index + 1).map((__, i) => sql.raw(`step_${i}`)),
+        sql` AND `,
+      );
+      return sql`COUNT(*) FILTER (WHERE ${required})::int AS ${sql.raw(`journeys_${index}`)}`;
+    });
+    const eventCounts = PRODUCT_FUNNEL_STEPS.map(
+      (_, index) => sql`SUM(${sql.raw(`events_${index}`)})::int AS ${sql.raw(`events_${index}`)}`,
+    );
+    const eventFlags = PRODUCT_FUNNEL_STEPS.map(
+      (name, index) =>
+        sql`COUNT(*) FILTER (WHERE event.name = ${name})::int AS ${sql.raw(`events_${index}`)}`,
+    );
+
+    const result = await this.db.execute<Record<string, number>>(sql`
+      WITH cohort AS (
         SELECT id
         FROM analytics_journeys
         WHERE (${since}::timestamptz IS NULL OR created_at >= ${since})
@@ -177,25 +187,35 @@ export class ProductAnalyticsService {
             OR (${population} = 'production' AND NOT is_test)
             OR (${population} = 'test' AND is_test)
           )
+      ),
+      journey_steps AS (
+        SELECT
+          event.journey_id,
+          ${sql.join(stepFlags, sql`, `)},
+          ${sql.join(eventFlags, sql`, `)}
+        FROM product_events event
+        JOIN cohort ON cohort.id = event.journey_id
+        WHERE event.name IN (${sql.join(
+          PRODUCT_FUNNEL_STEPS.map((name) => sql`${name}`),
+          sql`, `,
+        )})
+        GROUP BY event.journey_id
       )
-      -- Independent per-step counts, no landing anchor: browser/server journeys
-      -- differ pre-identify. Revisit an ordered chain once they share one UUID.
       SELECT
-        definition.name,
-        COUNT(event.id)::int AS events,
-        COUNT(DISTINCT event.journey_id)::int AS journeys
-      FROM step_definitions definition
-      LEFT JOIN product_events event
-        ON event.name = definition.name
-        AND EXISTS (SELECT 1 FROM cohort WHERE cohort.id = event.journey_id)
-      GROUP BY definition.step_index, definition.name
-      ORDER BY definition.step_index
+        ${sql.join(chainCounts, sql`, `)},
+        ${sql.join(eventCounts, sql`, `)},
+        COUNT(*) FILTER (WHERE NOT step_0)::int AS bypass
+      FROM journey_steps
     `);
-    return result.rows.map((row) => ({
-      name: row.name,
-      events: Number(row.events),
-      journeys: Number(row.journeys),
-    }));
+    const row = result.rows[0] ?? {};
+    return {
+      steps: PRODUCT_FUNNEL_STEPS.map((name, index) => ({
+        name,
+        events: Number(row[`events_${index}`] ?? 0),
+        journeys: Number(row[`journeys_${index}`] ?? 0),
+      })),
+      bypass: Number(row.bypass ?? 0),
+    };
   }
 
   // Feed clicks (#103) aren't part of the linear subscribe→digest chain — a
@@ -468,6 +488,7 @@ export class ProductAnalyticsService {
   ): Promise<ProductChannel[]> {
     const result = await this.db.execute<{
       source: string | null;
+      campaign: string | null;
       landed: number;
       subscribed: number;
       activated: number;
@@ -477,13 +498,14 @@ export class ProductAnalyticsService {
         SELECT
           event.journey_id,
           (ARRAY_AGG(NULLIF(event.properties->>'utm_source', '') ORDER BY event.occurred_at))[1] AS source,
+          (ARRAY_AGG(NULLIF(event.properties->>'utm_campaign', '') ORDER BY event.occurred_at))[1] AS campaign,
           MIN(event.occurred_at) AS landed_at
         FROM product_events event
         WHERE event.name IN (${ANALYTICS_EVENTS.landingView}, ${ANALYTICS_EVENTS.landingCtaClicked})
         GROUP BY event.journey_id
       ),
       scoped AS (
-        SELECT first_touch.journey_id, first_touch.source
+        SELECT first_touch.journey_id, first_touch.source, first_touch.campaign
         FROM first_touch
         JOIN analytics_journeys journey ON journey.id = first_touch.journey_id
         WHERE (${since}::timestamptz IS NULL OR first_touch.landed_at >= ${since})
@@ -496,26 +518,29 @@ export class ProductAnalyticsService {
       per_journey AS (
         SELECT
           scoped.source,
+          scoped.campaign,
           scoped.journey_id,
           COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.subscriptionCreated}) > 0 AS subscribed,
           COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.telegramLinked}) > 0 AS activated,
           COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.digestLinkClicked})::int AS digest_clicks
         FROM scoped
         LEFT JOIN product_events event ON event.journey_id = scoped.journey_id
-        GROUP BY scoped.source, scoped.journey_id
+        GROUP BY scoped.source, scoped.campaign, scoped.journey_id
       )
       SELECT
         source,
+        campaign,
         COUNT(*)::int AS landed,
         COUNT(*) FILTER (WHERE subscribed)::int AS subscribed,
         COUNT(*) FILTER (WHERE activated)::int AS activated,
         COALESCE(SUM(digest_clicks), 0)::int AS digest_clicks
       FROM per_journey
-      GROUP BY source
-      ORDER BY landed DESC, source ASC NULLS LAST
+      GROUP BY source, campaign
+      ORDER BY landed DESC, source ASC NULLS LAST, campaign ASC NULLS LAST
     `);
     return result.rows.map((row) => ({
       source: row.source,
+      campaign: row.campaign,
       landed: Number(row.landed),
       subscribed: Number(row.subscribed),
       activated: Number(row.activated),

@@ -3,7 +3,7 @@
 import { forwardRef, useRef, type KeyboardEvent, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { useAnalytics, type Lens } from "@/lib/hooks/use-analytics";
+import { useAnalytics, type Lens } from "@/lib/analytics/use-analytics";
 import { Badge } from "@/ui";
 
 // Ids shared with the lens tabpanel in the feed shell so the tablist ↔ panel

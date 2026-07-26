@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/ui";
-import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { subscriptionsApi, type CvMatchParams } from "@/lib/api/subscriptions";
 import {

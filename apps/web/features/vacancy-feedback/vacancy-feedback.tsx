@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
@@ -25,8 +25,7 @@ function read(): Votes {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return EMPTY;
     const p = JSON.parse(raw);
-    if (p?.version !== VERSION || typeof p.votes !== "object" || p.votes === null)
-      return EMPTY;
+    if (p?.version !== VERSION || typeof p.votes !== "object" || p.votes === null) return EMPTY;
     return p.votes as Votes;
   } catch {
     return EMPTY;

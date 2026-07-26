@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 
-import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
 import { useFeatureFlag } from "./use-feature-flag";
@@ -37,11 +37,7 @@ export function BaitButtons({ vacancyId }: { vacancyId: string }) {
     <div className="flex items-center gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
-            type="button"
-            className={btn}
-            onClick={() => bait("cover_letter", vacancyId)}
-          >
+          <button type="button" className={btn} onClick={() => bait("cover_letter", vacancyId)}>
             ⚡ cover letter
           </button>
         </TooltipTrigger>

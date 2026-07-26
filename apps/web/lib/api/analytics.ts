@@ -1,4 +1,4 @@
-import { getOrCreateJourneyId } from "@/lib/analytics-journey";
+import { getOrCreateJourneyId } from "@/lib/analytics/journey";
 
 import { apiPost } from "./client";
 

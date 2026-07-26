@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptions";
-import { useAnalytics, type AcquisitionAttribution } from "@/lib/hooks/use-analytics";
+import { useAnalytics, type AcquisitionAttribution } from "@/lib/analytics/use-analytics";
 import { Button } from "@/ui";
 
 // One-tap "get it in Telegram" conversion CTA: creates the subscription and

@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/ui";
-import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptions";
 
 // Single tap: create a fresh pending subscription from the current facet filter

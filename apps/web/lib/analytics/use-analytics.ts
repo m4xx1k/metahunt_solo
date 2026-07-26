@@ -2,9 +2,12 @@ import { useMemo } from "react";
 import { usePostHog } from "posthog-js/react";
 import type { PostHog } from "posthog-js";
 
-import { getOrCreateJourneyId } from "@/lib/analytics-journey";
+import { resolveAttribution, type AcquisitionAttribution } from "@/lib/analytics/attribution";
+import { getOrCreateJourneyId } from "@/lib/analytics/journey";
 import { analyticsApi, type BrowserAnalyticsEventName } from "@/lib/api/analytics";
 import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
+
+export type { AcquisitionAttribution } from "@/lib/analytics/attribution";
 
 // Single source of truth for client-side event names (mirrors the backend
 // events.ts) — no event-name string literals in components.
@@ -31,12 +34,6 @@ const ANALYTICS_EVENTS = {
 
 export type Lens = "cold" | "warm";
 export type SubscriptionProfile = "feed" | "cv";
-export type AcquisitionAttribution = Partial<
-  Record<
-    "utm_source" | "utm_medium" | "utm_campaign" | "utm_content" | "utm_term" | "creative_id",
-    string
-  >
->;
 
 type AnalyticsProperty = string | number | boolean | undefined;
 
@@ -72,11 +69,13 @@ export function useAnalytics() {
 
   return useMemo(
     () => ({
+      // Attribution falls back to the stored first touch when the current URL
+      // carries no tags — internal navigation drops the query string.
       landingViewed(variant: string, attribution: AcquisitionAttribution) {
         captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingView, {
           landing_variant: variant,
           path: window.location.pathname,
-          ...attribution,
+          ...resolveAttribution(attribution),
         });
       },
 
@@ -84,7 +83,7 @@ export function useAnalytics() {
         captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingCtaClicked, {
           landing_variant: variant,
           destination: "telegram_subscription",
-          ...attribution,
+          ...resolveAttribution(attribution),
         });
       },
 

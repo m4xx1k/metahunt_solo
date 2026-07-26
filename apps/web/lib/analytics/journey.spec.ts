@@ -1,8 +1,4 @@
-import {
-  readOrCreateStoredJourney,
-  resolveJourneyId,
-  type JourneyStorage,
-} from "./analytics-journey";
+import { readOrCreateStoredJourney, resolveJourneyId, type JourneyStorage } from "./journey";
 
 describe("resolveJourneyId", () => {
   const existing = "7ba87d7c-2005-4b28-b4f7-29a3f7be3a8d";

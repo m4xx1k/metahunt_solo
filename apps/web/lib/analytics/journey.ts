@@ -1,4 +1,4 @@
-import { isUuid } from "./uuid";
+import { isUuid } from "@/lib/uuid";
 
 const JOURNEY_STORAGE_KEY = "metahunt.analytics.journey_id";
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";

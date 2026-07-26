@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { FiltersApi } from "@/features/vacancy-filters/types";
-import type { Lens } from "@/lib/hooks/use-analytics";
+import type { Lens } from "@/lib/analytics/use-analytics";
 import { isUuid } from "@/lib/uuid";
 
 export interface FeedSearch extends FiltersApi {

@@ -27,6 +27,39 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Vanity campaign links for channels where a long UTM tail can't survive
+      // (spoken in a video, typed from a screen). 302 on purpose — the
+      // destination campaign changes per post.
+      {
+        source: "/yt",
+        destination: "/radar?utm_source=youtube&utm_medium=video&utm_campaign=vanity-yt",
+        permanent: false,
+      },
+      {
+        source: "/tt",
+        destination: "/radar?utm_source=tiktok&utm_medium=video&utm_campaign=vanity-tt",
+        permanent: false,
+      },
+      {
+        source: "/tg",
+        destination: "/radar?utm_source=telegram&utm_medium=post&utm_campaign=vanity-tg",
+        permanent: false,
+      },
+      {
+        source: "/ig",
+        destination: "/radar?utm_source=instagram&utm_medium=post&utm_campaign=vanity-ig",
+        permanent: false,
+      },
+      {
+        source: "/th",
+        destination: "/radar?utm_source=threads&utm_medium=post&utm_campaign=vanity-th",
+        permanent: false,
+      },
+      {
+        source: "/x",
+        destination: "/radar?utm_source=x&utm_medium=post&utm_campaign=vanity-x",
+        permanent: false,
+      },
       { source: "/monitoring", destination: "/dashboard", permanent: true },
       { source: "/monitoring/:path*", destination: "/dashboard", permanent: true },
       // The operator console moved under /dashboard/* (one guarded subtree).
