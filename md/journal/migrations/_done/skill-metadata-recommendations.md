@@ -8,7 +8,7 @@ auto-applied via Railway preDeploy; `node_tech_meta` backfilled 1228 rows (TSV, 
 verified skills). Gates in `recommendation.service.ts`; constants in `ranking.contract.ts`;
 governed by ADR-0010. Follow-on: ranking off-stack soft-demote reused this metadata
 (`feat/reverse-ats-v2-role-fit`). The spec below is the as-built plan (kept for reference).
-Derived from the research in [`skill-weighting-research.md`](skill-weighting-research.md)
+Derived from the research in [`skill-weighting-research.md`](../skill-weighting-research.md)
 (verdict = approach E).
 
 ## Branch plan (decided)

@@ -23,7 +23,7 @@ validation, not code — paid traffic remains gated on that cohort's activation
 and alert-quality results.
 
 Tracker: [`real-user-funnel`](./journal/migrations/real-user-funnel.md). Launch
-plan: [`METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../METAHUNT_AUDIT_AND_NEXT_STEPS.md).
+plan: local-only in `.private/strategy/` (business docs stay out of a public repo).
 
 ## Next
 

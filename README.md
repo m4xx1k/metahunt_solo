@@ -201,5 +201,5 @@ How to write — see `md/README.md`.
 ## What's next
 
 Small changes go into `md/journal/releases.md`. Bigger milestones go into `md/roadmap.md`.
-Current focus: Stage 08 (first-user validation). See `md/roadmap.md` and
-[`METAHUNT_AUDIT_AND_NEXT_STEPS.md`](METAHUNT_AUDIT_AND_NEXT_STEPS.md).
+Current focus: Stage 08 (first-user validation). See `md/roadmap.md`. The launch
+audit and business plan are local-only in `.private/` — not in this repo.
