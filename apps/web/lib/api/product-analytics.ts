@@ -145,6 +145,11 @@ export interface SubscriberSubscription {
   createdAt: string;
 }
 
+// Lifecycle per chat, same rules as the subscriberStates tiles. blocked =
+// the bot was cut off (block / bounced sends), churned = unsubscribed
+// everything, dormant = digests land but no user action in the window.
+export type SubscriberStatus = "active" | "dormant" | "churned" | "blocked";
+
 // `lastActionAt` is the newest event the subscriber themselves caused — the
 // digests we send at them are deliberately excluded, so silence reads as silence.
 export interface SubscriberActivity {
@@ -159,6 +164,7 @@ export interface SubscriberActivity {
   vacancyClicks: number;
   feedClicks: number;
   isActive: boolean;
+  status: SubscriberStatus;
   subscriptions: SubscriberSubscription[];
 }
 

@@ -41,7 +41,6 @@ export const USER_ACTION_EVENTS = [
   ANALYTICS_EVENTS.applyClicked,
   ANALYTICS_EVENTS.subscriptionReactivated,
   ANALYTICS_EVENTS.unsubscribed,
-  ANALYTICS_EVENTS.botBlocked,
 ] as const;
 
 // The complement: emitted by us (delivery pipeline, scoring), never by a tap.
@@ -50,6 +49,9 @@ export const SYSTEM_EMITTED_EVENTS = [
   ANALYTICS_EVENTS.digestEvaluated,
   ANALYTICS_EVENTS.digestSent,
   ANALYTICS_EVENTS.digestDeliveryFailed,
+  // Recorded when WE detect the block (my_chat_member or bounced sends), so
+  // its timestamp is detection time — it must not read as "the user acted".
+  ANALYTICS_EVENTS.botBlocked,
   ANALYTICS_EVENTS.matchScored,
 ] as const;
 

@@ -425,11 +425,13 @@ describe("first-party product analytics ledger", () => {
     const aliveJourneyId = randomUUID();
     const dormantJourneyId = randomUUID();
     const goneJourneyId = randomUUID();
+    const blockedJourneyId = randomUUID();
 
     await db.insert(analyticsJourneys).values([
       { id: aliveJourneyId, origin: "browser" },
       { id: dormantJourneyId, origin: "browser" },
       { id: goneJourneyId, origin: "browser" },
+      { id: blockedJourneyId, origin: "browser" },
     ]);
     const [aliveSub] = await db
       .insert(subscriptions)
@@ -439,9 +441,22 @@ describe("first-party product analytics ledger", () => {
       .insert(subscriptions)
       .values({ chatId: "chat-dormant", journeyId: dormantJourneyId, params: {}, isActive: true })
       .returning({ id: subscriptions.id });
-    await db
-      .insert(subscriptions)
-      .values({ chatId: "chat-gone", journeyId: goneJourneyId, params: {}, isActive: false });
+    await db.insert(subscriptions).values([
+      {
+        chatId: "chat-gone",
+        journeyId: goneJourneyId,
+        params: {},
+        isActive: false,
+        deactivatedReason: "user",
+      },
+      {
+        chatId: "chat-blocked",
+        journeyId: blockedJourneyId,
+        params: {},
+        isActive: false,
+        deactivatedReason: "blocked",
+      },
+    ]);
 
     const digestSentRow = (journeyId: string, subscriptionId: string, offsetMs: number) => ({
       journeyId,
@@ -480,7 +495,16 @@ describe("first-party product analytics ledger", () => {
 
     const overview = await dashboard.overview("week");
 
-    expect(overview.subscriberStates).toEqual({ active: 1, dormant: 1, churned: 1 });
+    // The blocked chat counts as churned in the aggregate tiles (no active
+    // subscriptions), but the roster tells the two apart per row.
+    expect(overview.subscriberStates).toEqual({ active: 1, dormant: 1, churned: 2 });
+    const statusByChat = new Map(
+      overview.subscriberActivity.map((row) => [row.chatId, row.status]),
+    );
+    expect(statusByChat.get("chat-alive")).toBe("active");
+    expect(statusByChat.get("chat-dormant")).toBe("dormant");
+    expect(statusByChat.get("chat-gone")).toBe("churned");
+    expect(statusByChat.get("chat-blocked")).toBe("blocked");
     expect(overview.delivery.digestsSent).toBe(4);
     expect(overview.delivery.chatsReached).toBe(2);
     expect(overview.delivery.failures).toEqual({ chatUnreachable: 1, transient: 0 });
