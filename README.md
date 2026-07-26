@@ -4,6 +4,12 @@ Candidate-first job radar for the Ukrainian IT market. MetaHunt aggregates DOU
 and Djinni, structures and deduplicates vacancies, ranks them against optional
 CV profiles, and delivers new matches through Telegram.
 
+**Live: [metahunt.app](https://www.metahunt.app)** · [What shipped lately](https://www.metahunt.app/releases)
+
+Why it exists: the same Ukrainian IT vacancy lives in up to 18 copies across
+boards — across ~13k processed vacancies, 15.5% turned out to be duplicates.
+MetaHunt collapses them into one structured, deduplicated feed.
+
 ## Layout
 
 ```
