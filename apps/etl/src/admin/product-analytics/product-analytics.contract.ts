@@ -39,6 +39,9 @@ export interface ProductAnalyticsOverview {
   period: ProductAnalyticsPeriod;
   population: ProductAnalyticsPopulation;
   funnel: Array<{ name: ProductFunnelStep; events: number; journeys: number }>;
+  // Journeys in the cohort that reached a later step without ever landing
+  // (feed/warm-lens subscribers) — excluded from the anchored funnel above.
+  funnelBypass: number;
   subscriptions: {
     total: number;
     createdInPeriod: number;
@@ -158,6 +161,9 @@ export interface ProductPeriodFlow {
 // organic, or a link that dropped the params).
 export interface ProductChannel {
   source: string | null;
+  // First-touch utm_campaign — one row per (source, campaign) so every post
+  // gets its own funnel line. Null = arrived without a campaign tag.
+  campaign: string | null;
   landed: number;
   subscribed: number;
   activated: number;

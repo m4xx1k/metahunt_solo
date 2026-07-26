@@ -4,6 +4,8 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { type PropsWithChildren, useEffect } from "react";
 
+import { persistFirstTouch } from "@/lib/analytics/attribution";
+
 // Client-side PostHog. Dormant without NEXT_PUBLIC_POSTHOG_KEY (mirrors the
 // backend AnalyticsService) so local dev ships nothing. `identified_only` keeps
 // anonymous browsing from minting person profiles — a person is created once
@@ -14,6 +16,9 @@ import { type PropsWithChildren, useEffect } from "react";
 // the server correlates on the journey UUID, not the subscription id.
 export function PostHogProvider({ children }: PropsWithChildren) {
   useEffect(() => {
+    // Runs on every page's first load, independent of the PostHog key: the
+    // first-touch store also feeds the first-party ledger's attribution.
+    persistFirstTouch(window.location.search);
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!key) return;
     posthog.init(key, {

@@ -8,7 +8,7 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { SubscribeCta } from "@/features/subscribe/SubscribeCta";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
-import { useAnalytics, type AcquisitionAttribution } from "@/lib/hooks/use-analytics";
+import { useAnalytics, type AcquisitionAttribution } from "@/lib/analytics/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { cn } from "@/lib/utils";

@@ -220,17 +220,19 @@ describe("first-party product analytics ledger", () => {
     const everyone = await dashboard.overview("week", "all");
 
     expect(productionWeek.population).toBe("production");
-    expect(productionWeek.funnel.map((step) => step.journeys)).toEqual([4, 4, 3, 4]);
-    expect(productionAll.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5]);
+    // Ordered chain: the journey missing subscription_created stops counting
+    // from that step on, even though it has telegram_linked.
+    expect(productionWeek.funnel.map((step) => step.journeys)).toEqual([4, 4, 3, 3]);
+    expect(productionAll.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 4]);
     expect(tests.funnel.map((step) => step.journeys)).toEqual([1, 1, 1, 1]);
-    expect(everyone.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5]);
+    expect(everyone.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 4]);
     expect(productionWeek.recentJourneys.every((journey) => !journey.isTest)).toBe(true);
     expect(tests.recentJourneys).toEqual([
       expect.objectContaining({ isTest: true, cohortId: "controlled-a" }),
     ]);
   });
 
-  it("still counts steps a journey completed even without a landing_view event", async () => {
+  it("reports a journey that skipped the landing as bypass, not as funnel rows", async () => {
     const dashboard = new ProductAnalyticsService(db);
     const start = new Date();
     await seedFunnelJourney({
@@ -242,9 +244,8 @@ describe("first-party product analytics ledger", () => {
 
     const overview = await dashboard.overview("all");
 
-    expect(overview.funnel[0].journeys).toBe(0);
-    expect(overview.funnel[1].journeys).toBe(1);
-    expect(overview.funnel[3].journeys).toBe(1);
+    expect(overview.funnel.map((step) => step.journeys)).toEqual([0, 0, 0, 0]);
+    expect(overview.funnelBypass).toBe(1);
   });
 
   it("reclassifies a journey into the controlled-test population", async () => {
@@ -522,7 +523,7 @@ describe("first-party product analytics ledger", () => {
         source: "browser" as const,
         dedupeKey: randomUUID(),
         occurredAt: insideWindow,
-        properties: { utm_source: "reddit" },
+        properties: { utm_source: "reddit", utm_campaign: "20260723-launch" },
       },
       {
         journeyId: redditJourneyId,
@@ -599,8 +600,15 @@ describe("first-party product analytics ledger", () => {
       churned: 1,
     });
     expect(day.channels).toEqual([
-      { source: "reddit", landed: 1, subscribed: 1, activated: 1, digestClicks: 1 },
-      { source: null, landed: 1, subscribed: 0, activated: 0, digestClicks: 0 },
+      {
+        source: "reddit",
+        campaign: "20260723-launch",
+        landed: 1,
+        subscribed: 1,
+        activated: 1,
+        digestClicks: 1,
+      },
+      { source: null, campaign: null, landed: 1, subscribed: 0, activated: 0, digestClicks: 0 },
     ]);
 
     const allTime = await dashboard.overview("all");

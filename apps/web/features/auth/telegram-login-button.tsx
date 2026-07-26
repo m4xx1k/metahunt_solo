@@ -7,7 +7,7 @@ import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/ui";
 import { cn } from "@/lib/utils";
 import { authApi, type TelegramAuthPayload } from "@/lib/api/auth";
-import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { useSession } from "./use-session";
 
 // Numeric bot id (the part before ":" in the bot token). Required for

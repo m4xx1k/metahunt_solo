@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 import { publicApiBase } from "@/lib/api/client";
-import { getOrCreateJourneyId } from "@/lib/analytics-journey";
+import { getOrCreateJourneyId } from "@/lib/analytics/journey";
 
 type Props = {
   vacancyId: string;

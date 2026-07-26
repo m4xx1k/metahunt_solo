@@ -125,6 +125,7 @@ export default async function AnalyticsPage({
         <UrlTabPanel value="funnel">
           <FunnelPanel
             funnel={data.funnel}
+            funnelBypass={data.funnelBypass}
             feedEngagement={data.feedEngagement}
             population={population}
           />

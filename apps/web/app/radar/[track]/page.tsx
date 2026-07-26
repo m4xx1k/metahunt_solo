@@ -11,7 +11,7 @@ import {
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
-import { readAcquisitionAttribution } from "@/lib/acquisition-attribution";
+import { readAcquisitionAttribution } from "@/lib/analytics/attribution";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { publicApiBase } from "@/lib/api/client";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";

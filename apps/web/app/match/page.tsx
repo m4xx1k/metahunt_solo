@@ -4,7 +4,7 @@ import { CheckCircleIcon, EyeSlashIcon, ListChecksIcon } from "@phosphor-icons/r
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
-import { readAcquisitionAttribution } from "@/lib/acquisition-attribution";
+import { readAcquisitionAttribution } from "@/lib/analytics/attribution";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { formatKyivTime } from "@/lib/format";

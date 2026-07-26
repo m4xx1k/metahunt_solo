@@ -3,9 +3,12 @@ import Link from "next/link";
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
+import { readAcquisitionAttribution } from "@/lib/analytics/attribution";
 import { tracksApi, type TrackDto } from "@/lib/api/tracks";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { Tag } from "@/ui";
+
+import { LandingViewTracker } from "./_components/LandingViewTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +29,12 @@ function hasSupply(discipline: TrackDto, all: TrackDto[]): boolean {
   return all.some((t) => t.parentSlug === discipline.slug && t.count > 0);
 }
 
-export default async function RadarIndexPage() {
+export default async function RadarIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const attribution = readAcquisitionAttribution(await searchParams);
   const { tracks } = await tracksApi.get();
   const disciplines = tracks
     .filter((t) => t.parentSlug === null)
@@ -35,6 +43,7 @@ export default async function RadarIndexPage() {
 
   return (
     <>
+      <LandingViewTracker variant="radar-picker" attribution={attribution} />
       <Header links={[{ label: "приватність", href: "/privacy" }]} cta={null} />
       <main
         className="bg-bg"

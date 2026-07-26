@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { FeedShell } from "@/app/(feed)/_components/FeedShell";
 import { cn } from "@/lib/utils";
 import { cvApi, type CvIngestResult, type SampleCandidate } from "@/lib/api/cv";
-import { useAnalytics } from "@/lib/hooks/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { useSession } from "@/features/auth/use-session";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
