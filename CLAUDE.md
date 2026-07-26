@@ -11,7 +11,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 - `md/` — all written documentation:
   - `md/architecture/`, `md/journal/`, `md/runbook/`, `md/roadmap.md`, `md/README.md` — metahunt-specific source of truth (snapshot + journal).
   - `md/engineering/` — general engineering reference (style, design, errors, security, testing, review).
-- `product/` — product / business / UX context (user flow, pain, economics, market).
+- `.private/` — product / business / strategy context (gitignored, local-only): `strategy/`, `analysis/`, `research/`, `journal/`.
 - `apps/`, `libs/` — code.
 
 ## Read budget
@@ -36,7 +36,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 | Operational how-to (deploy, debug, env) | `md/runbook/` |
 | Code style / pattern question | `md/engineering/STYLE.md` or `md/engineering/DESIGN.md` |
 | Errors / logging / security / testing / review | `md/engineering/<TOPIC>.md` |
-| Product / UX / pricing / market | `product/README.md` |
+| Product / UX / pricing / market | `.private/strategy/` (gitignored; canonical digests live in Linear Documents) |
 | Stage status / what's next | `md/roadmap.md` |
 | Recent changes / "what shipped lately" | `md/journal/releases.md` |
 
@@ -49,12 +49,12 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 | Migration tracker | 600 lines | The initiative needs a sibling tracker |
 | Runbook entry | 300 lines | Split by sub-topic |
 | `md/engineering/*` style guide | 200 lines | Spawn a new topic file |
-| `product/*` | 300 lines | One concept per file |
 
 ## Hygiene
 
+- **MUST: never write real user PII into the repo** — no Telegram ids, `@usernames`, real names, emails, phones, or CV text in any doc, fixture, or comment. Use `owner` / `tester-1..N`. Full rule: [`md/README.md#hygiene`](md/README.md#hygiene).
 - **MUST: minimal code comments — the non-obvious *why* only, ≤2 lines, never paragraphs.** Clarity comes from naming and small focused units, not prose; make a comment unnecessary before writing it. Full rule: [`md/engineering/STYLE.md#comments`](md/engineering/STYLE.md#comments).
-- Don't duplicate facts. Code reality lives in `md/architecture/`. Link to it from `md/engineering/*` or `product/*` — don't restate.
+- Don't duplicate facts. Code reality lives in `md/architecture/`. Link to it from `md/engineering/*` — don't restate.
 - Don't read all of `md/engineering/` to "get oriented." Pick the one file you need.
 - Don't write a 1000-line file when 3×300 would do.
 - Snapshot files (`md/architecture/`) contain "is" statements; journal files (`md/journal/`) contain "happened" statements. Don't mix.
@@ -67,7 +67,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 Before any commit that touches docs, run:
 
 ```bash
-find md product -name '*.md' -exec wc -l {} \; | sort -rn | head
+find md -name '*.md' -exec wc -l {} \; | sort -rn | head
 ```
 
 If a file exceeds its cap above, split before committing.

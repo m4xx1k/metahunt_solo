@@ -19,6 +19,10 @@ apps/*/next-env.d.ts
 apps/*/tsconfig.tsbuildinfo
 apps/*/.env*.local
 
+# Business strategy, funnel metrics, session handoffs, drafts. Local-only:
+# the repo is public, so anything here would be published. See md/README.md#hygiene.
+.private/
+
 # Personal notes (not engineering docs) — keep out of the project repo
 diploma.md
 article.md
@@ -29,3 +33,6 @@ THESIS_TODO.md
 # Stale Prisma-era artifacts kept locally for reference, not committed
 offy-db/
 backups/
+
+# business/session docs — never commit
+.private/

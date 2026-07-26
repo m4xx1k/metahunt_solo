@@ -54,6 +54,6 @@ Telegram E2E and traffic remain owner gates.
 - Master brief: [`metahunt-coding-agent-master-brief.md`](../../../../metahunt-coding-agent-master-brief.md)
 - Release history: [`../releases.md`](../releases.md)
 - Privacy boundary: [`../../runbook/cv-privacy.md`](../../runbook/cv-privacy.md)
-- Audit and launch plan: [`../../../METAHUNT_AUDIT_AND_NEXT_STEPS.md`](../../../METAHUNT_AUDIT_AND_NEXT_STEPS.md)
+- Audit and launch plan: local-only, `.private/strategy/METAHUNT_AUDIT_AND_NEXT_STEPS.md`
 - Cohort operations: [`../../runbook/first-user-cohort.md`](../../runbook/first-user-cohort.md)
 - PR: [`#93`](https://github.com/m4xx1k/metahunt_solo/pull/93) — merged as `f71cff8`
