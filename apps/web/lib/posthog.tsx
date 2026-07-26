@@ -23,6 +23,8 @@ export function PostHogProvider({ children }: PropsWithChildren) {
       // Real UI host so toolbar / "view in PostHog" links resolve correctly.
       ui_host: "https://eu.posthog.com",
       person_profiles: "identified_only",
+      // Noisy DOM-click firehose; domain events in use-analytics.ts cover what matters.
+      autocapture: false,
       // The shareable ?cv=<uuid> is a bearer capability — redact it from
       // auto-captured URL properties so it never lands in analytics.
       sanitize_properties: (props) => {

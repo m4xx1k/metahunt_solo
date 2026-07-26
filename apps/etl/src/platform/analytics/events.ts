@@ -20,6 +20,9 @@ export const ANALYTICS_EVENTS = {
   applyClicked: "apply_clicked",
   subscriptionReactivated: "subscription_reactivated",
   unsubscribed: "unsubscribed",
+  // Telegram told us the user blocked the bot (or deliveries kept bouncing) —
+  // the silent churn that `unsubscribed` never captures.
+  botBlocked: "bot_blocked",
   matchScored: "match_scored",
 } as const;
 
@@ -38,6 +41,7 @@ export const USER_ACTION_EVENTS = [
   ANALYTICS_EVENTS.applyClicked,
   ANALYTICS_EVENTS.subscriptionReactivated,
   ANALYTICS_EVENTS.unsubscribed,
+  ANALYTICS_EVENTS.botBlocked,
 ] as const;
 
 // The complement: emitted by us (delivery pipeline, scoring), never by a tap.

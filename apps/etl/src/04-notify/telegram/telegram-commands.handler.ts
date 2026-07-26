@@ -119,6 +119,21 @@ export class TelegramCommandsHandler {
       await ctx.reply(copy.help());
     });
 
+    // Telegram reports block/unblock via my_chat_member (in the default
+    // allowed_updates). Block deactivates with reason `blocked`; unblock
+    // restores only block/unreachable deactivations — never explicit ones.
+    bot.on("my_chat_member", async (ctx) => {
+      const status = ctx.myChatMember.new_chat_member.status;
+      const chatId = String(ctx.myChatMember.chat.id);
+      if (status === "kicked") {
+        const blocked = await this.subscriptions.deactivateForBlock(chatId);
+        if (blocked > 0) this.logger.log(`chat blocked the bot → ${blocked} sub(s) deactivated`);
+      } else if (status === "member") {
+        const restored = await this.subscriptions.reactivateAfterUnblock(chatId);
+        if (restored > 0) this.logger.log(`chat unblocked the bot → ${restored} sub(s) restored`);
+      }
+    });
+
     // Catch-all: any text that isn't a handled command. Registered last so the
     // commands above take precedence; keeps the bot from silently ignoring input.
     bot.on("message", async (ctx) => {

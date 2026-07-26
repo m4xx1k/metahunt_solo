@@ -79,6 +79,8 @@ describe("TelegramCommandsHandler", () => {
   const describe_ = jest.fn();
   const deactivateByChat = jest.fn();
   const deactivateById = jest.fn();
+  const deactivateForBlock = jest.fn();
+  const reactivateAfterUnblock = jest.fn();
   const sample = jest.fn();
   const get = jest.fn();
   const activationValueShown = jest.fn();
@@ -90,6 +92,8 @@ describe("TelegramCommandsHandler", () => {
     describe: describe_,
     deactivateByChat,
     deactivateById,
+    deactivateForBlock,
+    reactivateAfterUnblock,
   } as unknown as SubscriptionsService;
   const matcher = { sample } as unknown as SubscriptionMatcherService;
   const config = { get } as unknown as ConfigService;
@@ -228,6 +232,37 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("stop")!(ctx);
 
       expect(ctx.reply).toHaveBeenCalledWith(copy.stop.empty);
+    });
+  });
+
+  describe("my_chat_member", () => {
+    function memberCtx(status: string, chatId = 42) {
+      return { myChatMember: { chat: { id: chatId }, new_chat_member: { status } } };
+    }
+
+    it("deactivates the chat's subscriptions when the bot is blocked", async () => {
+      deactivateForBlock.mockResolvedValue(2);
+
+      await events.get("my_chat_member")!(memberCtx("kicked"));
+
+      expect(deactivateForBlock).toHaveBeenCalledWith("42");
+      expect(reactivateAfterUnblock).not.toHaveBeenCalled();
+    });
+
+    it("restores block-deactivated subscriptions on unblock", async () => {
+      reactivateAfterUnblock.mockResolvedValue(1);
+
+      await events.get("my_chat_member")!(memberCtx("member"));
+
+      expect(reactivateAfterUnblock).toHaveBeenCalledWith("42");
+      expect(deactivateForBlock).not.toHaveBeenCalled();
+    });
+
+    it("ignores other membership transitions", async () => {
+      await events.get("my_chat_member")!(memberCtx("administrator"));
+
+      expect(deactivateForBlock).not.toHaveBeenCalled();
+      expect(reactivateAfterUnblock).not.toHaveBeenCalled();
     });
   });
 

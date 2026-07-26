@@ -24,6 +24,7 @@ const browserEventSchema = z
 const ALLOWED_PROPERTIES: Record<BrowserAnalyticsEventName, ReadonlySet<string>> = {
   landing_view: new Set([
     "landing_variant",
+    "path",
     "utm_source",
     "utm_medium",
     "utm_campaign",

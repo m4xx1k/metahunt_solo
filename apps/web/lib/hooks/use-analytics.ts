@@ -14,16 +14,15 @@ const ANALYTICS_EVENTS = {
   subscriptionCreateStarted: "subscription_create_started",
   subscriptionHandoffOpened: "subscription_handoff_opened",
   subscriptionCreateFailed: "subscription_create_failed",
-  subscribeClicked: "subscribe_clicked",
   lensSwitch: "lens_switch",
   cvUploadStarted: "cv_upload_started",
   cvUploadCompleted: "cv_upload_completed",
   cvUploadFailed: "cv_upload_failed",
-  cvUpload: "cv_upload",
   telegramLoginStarted: "telegram_login_started",
   telegramLoginCancelled: "telegram_login_cancelled",
   telegramLoginFailed: "telegram_login_failed",
   loggedIn: "logged_in",
+  signup: "signup",
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
   matchFlowStarted: "match_flow_started",
@@ -76,6 +75,7 @@ export function useAnalytics() {
       landingViewed(variant: string, attribution: AcquisitionAttribution) {
         captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingView, {
           landing_variant: variant,
+          path: window.location.pathname,
           ...attribution,
         });
       },
@@ -95,12 +95,6 @@ export function useAnalytics() {
         captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionCreateStarted, {
           profile_type: profile,
           filter_count: Object.keys(params).length,
-        });
-      },
-
-      subscriptionCreated(params: SubscriptionParams | CvMatchParams) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.subscribeClicked, {
-          filterCount: Object.keys(params).length,
         });
       },
 
@@ -130,7 +124,6 @@ export function useAnalytics() {
 
       cvUpload(reused: boolean) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadCompleted, { reused });
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUpload, { reused });
       },
 
       cvUploadFailed() {
@@ -141,8 +134,12 @@ export function useAnalytics() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginStarted);
       },
 
-      telegramLoginCancelled() {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled);
+      // ms_since_start separates a human closing the popup (seconds) from a
+      // popup that never opened — blocker or widget failure (sub-second).
+      telegramLoginCancelled(msSinceStart: number) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled, {
+          ms_since_start: msSinceStart,
+        });
       },
 
       telegramLoginFailed(stage: "configuration" | "widget" | "session") {
@@ -152,8 +149,13 @@ export function useAnalytics() {
       loggedIn() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.loggedIn, {
           login_method: "telegram",
-          method: "telegram",
         });
+      },
+
+      // Fired once per account, on the first-ever Telegram login (the server
+      // says whether the user row was just created).
+      signedUp() {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.signup, { method: "telegram" });
       },
 
       // Up/down vote on a vacancy card (demand signal, gated by the

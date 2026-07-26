@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, jsonb, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  jsonb,
+  boolean,
+  timestamp,
+  index,
+  integer,
+} from "drizzle-orm/pg-core";
 
 import { analyticsJourneys } from "./analytics-journeys";
 import { users } from "./users";
@@ -29,6 +38,10 @@ export const subscriptions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     linkedAt: timestamp("linked_at", { withTimezone: true }),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
+    // 'user' = explicit unsubscribe; 'blocked'/'unreachable' auto-reactivate on
+    // unblock. Null on rows deactivated before this column existed.
+    deactivatedReason: text("deactivated_reason").$type<"user" | "blocked" | "unreachable">(),
+    unreachableCount: integer("unreachable_count").notNull().default(0),
   },
   (t) => [
     index("subscriptions_chat_id_idx").on(t.chatId),
