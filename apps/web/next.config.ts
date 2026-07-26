@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
         destination: "/radar?utm_source=instagram&utm_medium=post&utm_campaign=vanity-ig",
         permanent: false,
       },
+      {
+        source: "/th",
+        destination: "/radar?utm_source=threads&utm_medium=post&utm_campaign=vanity-th",
+        permanent: false,
+      },
+      {
+        source: "/x",
+        destination: "/radar?utm_source=x&utm_medium=post&utm_campaign=vanity-x",
+        permanent: false,
+      },
       { source: "/monitoring", destination: "/dashboard", permanent: true },
       { source: "/monitoring/:path*", destination: "/dashboard", permanent: true },
       // The operator console moved under /dashboard/* (one guarded subtree).
