@@ -220,10 +220,10 @@ describe("first-party product analytics ledger", () => {
     const everyone = await dashboard.overview("week", "all");
 
     expect(productionWeek.population).toBe("production");
-    expect(productionWeek.funnel.map((step) => step.journeys)).toEqual([4, 4, 3, 4, 4, 4, 4, 4, 4]);
-    expect(productionAll.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5, 5, 5, 5, 5, 5]);
-    expect(tests.funnel.map((step) => step.journeys)).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1]);
-    expect(everyone.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5, 5, 5, 5, 5, 5]);
+    expect(productionWeek.funnel.map((step) => step.journeys)).toEqual([4, 4, 3, 4]);
+    expect(productionAll.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5]);
+    expect(tests.funnel.map((step) => step.journeys)).toEqual([1, 1, 1, 1]);
+    expect(everyone.funnel.map((step) => step.journeys)).toEqual([5, 5, 4, 5]);
     expect(productionWeek.recentJourneys.every((journey) => !journey.isTest)).toBe(true);
     expect(tests.recentJourneys).toEqual([
       expect.objectContaining({ isTest: true, cohortId: "controlled-a" }),
@@ -236,7 +236,7 @@ describe("first-party product analytics ledger", () => {
     await seedFunnelJourney({
       events: [
         { name: PRODUCT_FUNNEL_STEPS[1], occurredAt: start },
-        { name: PRODUCT_FUNNEL_STEPS[8], occurredAt: new Date(start.getTime() + 60_000) },
+        { name: PRODUCT_FUNNEL_STEPS[3], occurredAt: new Date(start.getTime() + 60_000) },
       ],
     });
 
@@ -244,7 +244,7 @@ describe("first-party product analytics ledger", () => {
 
     expect(overview.funnel[0].journeys).toBe(0);
     expect(overview.funnel[1].journeys).toBe(1);
-    expect(overview.funnel[8].journeys).toBe(1);
+    expect(overview.funnel[3].journeys).toBe(1);
   });
 
   it("reclassifies a journey into the controlled-test population", async () => {
@@ -416,6 +416,77 @@ describe("first-party product analytics ledger", () => {
     // we merely sent a digest to drops out.
     const day = await dashboard.overview("24h");
     expect(day.subscriberActivity.map((row) => row.chatId)).toEqual(["chat-active"]);
+  });
+
+  it("classifies subscribers into active/dormant/churned and reports delivery health", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const recent = new Date(Date.now() - 2 * 86_400_000);
+    const aliveJourneyId = randomUUID();
+    const dormantJourneyId = randomUUID();
+    const goneJourneyId = randomUUID();
+
+    await db.insert(analyticsJourneys).values([
+      { id: aliveJourneyId, origin: "browser" },
+      { id: dormantJourneyId, origin: "browser" },
+      { id: goneJourneyId, origin: "browser" },
+    ]);
+    const [aliveSub] = await db
+      .insert(subscriptions)
+      .values({ chatId: "chat-alive", journeyId: aliveJourneyId, params: {}, isActive: true })
+      .returning({ id: subscriptions.id });
+    const [dormantSub] = await db
+      .insert(subscriptions)
+      .values({ chatId: "chat-dormant", journeyId: dormantJourneyId, params: {}, isActive: true })
+      .returning({ id: subscriptions.id });
+    await db
+      .insert(subscriptions)
+      .values({ chatId: "chat-gone", journeyId: goneJourneyId, params: {}, isActive: false });
+
+    const digestSentRow = (journeyId: string, subscriptionId: string, offsetMs: number) => ({
+      journeyId,
+      subscriptionId,
+      name: ANALYTICS_EVENTS.digestSent,
+      source: "worker" as const,
+      dedupeKey: randomUUID(),
+      occurredAt: new Date(recent.getTime() + offsetMs),
+    });
+
+    await db.insert(productEvents).values([
+      // Dormant: three digests landed inside the window, zero reactions.
+      digestSentRow(dormantJourneyId, dormantSub.id, 0),
+      digestSentRow(dormantJourneyId, dormantSub.id, 3_600_000),
+      digestSentRow(dormantJourneyId, dormantSub.id, 7_200_000),
+      // Alive: digests land too, but the user clicked back.
+      digestSentRow(aliveJourneyId, aliveSub.id, 0),
+      {
+        journeyId: aliveJourneyId,
+        subscriptionId: aliveSub.id,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: recent,
+      },
+      {
+        journeyId: dormantJourneyId,
+        subscriptionId: dormantSub.id,
+        name: ANALYTICS_EVENTS.digestDeliveryFailed,
+        source: "worker" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: recent,
+        properties: { failure_kind: "chat_unreachable" },
+      },
+    ]);
+
+    const overview = await dashboard.overview("week");
+
+    expect(overview.subscriberStates).toEqual({ active: 1, dormant: 1, churned: 1 });
+    expect(overview.delivery.digestsSent).toBe(4);
+    expect(overview.delivery.chatsReached).toBe(2);
+    expect(overview.delivery.failures).toEqual({ chatUnreachable: 1, transient: 0 });
+    expect(overview.delivery.unsubscribed).toBe(0);
+    expect(overview.delivery.messagesPerChatPerDay).toBeGreaterThan(0);
+    expect(overview.delivery.daily).toHaveLength(7);
+    expect(overview.delivery.daily.reduce((sum, day) => sum + day.digests, 0)).toBe(4);
   });
 
   it("counts period flow from events and first-touch channels from landing utm", async () => {

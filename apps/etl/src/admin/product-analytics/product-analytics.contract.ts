@@ -21,16 +21,15 @@ export class UpdateAnalyticsJourneyDto {
   cohortId?: string | null;
 }
 
+// Anonymous-journey acquisition chain only. Diagnostics/system/known-user
+// steps (handoff, activation, digest send/click) moved off the funnel to
+// Subscribers/Delivery — the events themselves keep firing, just not as rows
+// here. See `.private/analysis/2026-07-25-analytics-simplification-plan.md`.
 export const PRODUCT_FUNNEL_STEPS = [
   ANALYTICS_EVENTS.landingView,
   ANALYTICS_EVENTS.landingCtaClicked,
-  ANALYTICS_EVENTS.subscriptionCreateStarted,
   ANALYTICS_EVENTS.subscriptionCreated,
-  ANALYTICS_EVENTS.subscriptionHandoffOpened,
   ANALYTICS_EVENTS.telegramLinked,
-  ANALYTICS_EVENTS.activationValueShown,
-  ANALYTICS_EVENTS.digestSent,
-  ANALYTICS_EVENTS.digestLinkClicked,
 ] as const;
 
 export type ProductFunnelStep = (typeof PRODUCT_FUNNEL_STEPS)[number];
@@ -58,6 +57,8 @@ export interface ProductAnalyticsOverview {
   recentJourneys: RecentProductJourney[];
   subscriberActivity: SubscriberActivity[];
   feedEngagement: ProductFeedEngagement;
+  subscriberStates: ProductSubscriberStates;
+  delivery: ProductDeliveryHealth;
 }
 
 // Distinct journeys (and raw event count) that clicked a feed vacancy
@@ -161,4 +162,37 @@ export interface ProductChannel {
   subscribed: number;
   activated: number;
   digestClicks: number;
+}
+
+// Subscriber lifecycle STATE per chat_id, all-time (not period-scoped) —
+// replaces the broken `flow.churned` event-count headline. See product-events
+// query in the service for the active/dormant/churned definitions.
+export interface ProductSubscriberStates {
+  active: number;
+  dormant: number;
+  churned: number;
+}
+
+export interface ProductDeliveryFailures {
+  chatUnreachable: number;
+  transient: number;
+}
+
+export interface ProductDeliveryDay {
+  date: string;
+  digests: number;
+  chats: number;
+  perChat: number;
+  failures: number;
+}
+
+// System health, not user behavior: what OUR delivery pipeline did. `daily`
+// is always the last 7 days, independent of the page's period selector.
+export interface ProductDeliveryHealth {
+  digestsSent: number;
+  chatsReached: number;
+  messagesPerChatPerDay: number;
+  failures: ProductDeliveryFailures;
+  unsubscribed: number;
+  daily: ProductDeliveryDay[];
 }
