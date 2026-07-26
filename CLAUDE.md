@@ -11,7 +11,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 - `md/` — all written documentation:
   - `md/architecture/`, `md/journal/`, `md/runbook/`, `md/roadmap.md`, `md/README.md` — metahunt-specific source of truth (snapshot + journal).
   - `md/engineering/` — general engineering reference (style, design, errors, security, testing, review).
-- `product/` — product / business / UX context (user flow, pain, economics, market).
+- `.private/` — product / business / strategy context (gitignored, local-only): `strategy/`, `analysis/`, `research/`, `journal/`.
 - `apps/`, `libs/` — code.
 
 ## Read budget
@@ -36,7 +36,7 @@ This file is auto-loaded into every session. It's the routing layer; the actual 
 | Operational how-to (deploy, debug, env) | `md/runbook/` |
 | Code style / pattern question | `md/engineering/STYLE.md` or `md/engineering/DESIGN.md` |
 | Errors / logging / security / testing / review | `md/engineering/<TOPIC>.md` |
-| Product / UX / pricing / market | `product/README.md` |
+| Product / UX / pricing / market | `.private/strategy/` (gitignored; canonical digests live in Linear Documents) |
 | Stage status / what's next | `md/roadmap.md` |
 | Recent changes / "what shipped lately" | `md/journal/releases.md` |
 
