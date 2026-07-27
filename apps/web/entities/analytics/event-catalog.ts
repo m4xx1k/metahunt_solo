@@ -200,6 +200,27 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     means: "the Google sign-in errored",
   },
   {
+    name: "identity_linked",
+    label: "provider linked",
+    actor: "user",
+    sink: "posthog-only",
+    means: "attached a second sign-in provider",
+  },
+  {
+    name: "identity_unlinked",
+    label: "provider unlinked",
+    actor: "user",
+    sink: "posthog-only",
+    means: "detached a sign-in provider",
+  },
+  {
+    name: "identity_link_conflict",
+    label: "link conflict",
+    actor: "user",
+    sink: "posthog-only",
+    means: "that provider already belongs to another account",
+  },
+  {
     name: "logged_in",
     label: "logged in",
     actor: "user",
