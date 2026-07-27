@@ -73,6 +73,8 @@ type Resolved = {
   detail: string[];
   sourceId?: string;
   targetId?: string;
+  /** Vacancies attached at resolve time — a hide's contribution to the feed drop. */
+  attached?: number;
 };
 
 // Mirrors normalizeAliasName in taxonomy.service.ts — the CLI needs the same
@@ -195,6 +197,11 @@ async function main(): Promise<void> {
         `${before.withRole === after.withRole ? " OK" : "  *** CHANGED ***"}\n`,
     );
     process.stdout.write(`feed-visible: ${before.feedVisible} -> ${after.feedVisible}\n`);
+    const expectedHidden = resolvedByPhase
+      .flatMap((p) => p.items)
+      .filter((r) => r.op.op === "hide" && r.verdict !== "SKIP" && r.verdict !== "REFUSE")
+      .reduce((n, r) => n + (r.attached ?? 0), 0);
+    await reportRoleVisibility(db, expectedHidden, before.feedVisible - after.feedVisible);
     await postChecks(db);
   } finally {
     await app.close();
@@ -305,6 +312,7 @@ async function resolve(db: DrizzleDB, op: PlanOp, ov: Overlay): Promise<Resolved
     verdict: op.op === "hide" && attached > 0 ? "WARN" : "APPLY",
     reason: op.op === "hide" && attached > 0 ? `${attached} vacancies leave the feed` : "",
     sourceId: src.id,
+    attached,
     detail,
   };
 }
@@ -446,8 +454,10 @@ async function postChecks(db: DrizzleDB) {
   process.stdout.write(`\npost-checks (all must be 0):\n`);
   const checks: [string, ReturnType<typeof sql>][] = [
     [
-      "vacancies on a non-VERIFIED role",
-      sql`SELECT count(*) FROM vacancies v JOIN nodes n ON n.id = v.role_node_id WHERE n.status <> 'VERIFIED'`,
+      "vacancies whose role node was DELETED (impossible via FK — sanity only)",
+      sql`SELECT count(*) FROM vacancies v
+          WHERE v.role_node_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM nodes n WHERE n.id = v.role_node_id)`,
     ],
     [
       "child tracks with zero presets (would inherit parent)",
@@ -484,8 +494,31 @@ async function postChecks(db: DrizzleDB) {
     process.stdout.write(`  ${n === 0 ? "OK  " : "FAIL"}  ${name}: ${n}\n`);
   }
   process.stdout.write(
-    `\nstill to do by hand: subscription repair, REFRESH node_stats + node_skill_cooc,` +
-      ` dedup-cli embed --force, pnpm skills:classify, /role 308s\n`,
+    `\nstill to do by hand: dedup-cli embed --force (renames changed the hashed` +
+      ` embedding text), pnpm skills:classify if any skill was promoted,` +
+      ` and 308s for the retired slugs in node_slug_aliases\n`,
+  );
+}
+
+// Vacancies sitting on a NEW or HIDDEN role are normal, not a failure: the
+// extractor is free to invent role names, and an operator's hide is final. So
+// report the split rather than asserting zero — the meaningful assertion is that
+// the feed lost exactly the vacancies this run's hides were carrying.
+async function reportRoleVisibility(db: DrizzleDB, expectedHidden: number, lost: number) {
+  const { rows } = await db.execute<{ status: string; vacancies: string; nodes: string }>(sql`
+    SELECT n.status::text, count(*)::text AS vacancies, count(DISTINCT n.id)::text AS nodes
+    FROM vacancies v JOIN nodes n ON n.id = v.role_node_id
+    WHERE n.status <> 'VERIFIED' GROUP BY n.status ORDER BY 2 DESC
+  `);
+  process.stdout.write(`\nvacancies not visible in the feed, by role status:\n`);
+  for (const r of rows) {
+    process.stdout.write(
+      `  ${r.status.padEnd(8)} ${r.vacancies} vacanc(ies) on ${r.nodes} node(s)\n`,
+    );
+  }
+  const ok = lost === expectedHidden;
+  process.stdout.write(
+    `  ${ok ? "OK  " : "FAIL"}  feed lost ${lost}, this run's hides were carrying ${expectedHidden}\n`,
   );
 }
 
