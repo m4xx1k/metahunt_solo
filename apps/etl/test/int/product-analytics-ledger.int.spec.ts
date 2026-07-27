@@ -55,6 +55,19 @@ async function seedFunnelJourney(options: SeedFunnelJourneyOptions): Promise<str
   return journeyId;
 }
 
+// Midnight UTC of the Monday `weeksAgo` weeks back — the same boundary
+// Postgres `date_trunc('week', ...)` lands on.
+function mondayUtc(weeksAgo: number): Date {
+  const now = new Date();
+  const midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const sinceMonday = (now.getUTCDay() + 6) % 7;
+  return new Date(midnight - (sinceMonday + weeksAgo * 7) * 86_400_000);
+}
+
+function isoDate(at: Date): string {
+  return at.toISOString().slice(0, 10);
+}
+
 function orderedEvents(start: Date, offsetDays = 0) {
   return PRODUCT_FUNNEL_STEPS.map((name, index) => ({
     name,
@@ -639,5 +652,105 @@ describe("first-party product analytics ledger", () => {
     expect(allTime.channels.map((row) => row.source)).toEqual(
       expect.arrayContaining(["reddit", "dou", null]),
     );
+  });
+
+  it("buckets growth and retention by the first link, ignoring the test population", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    // Anchors are pinned to a Monday so the assertion cannot drift with the
+    // weekday the suite happens to run on (Postgres weeks start Monday, UTC).
+    const oldAnchor = new Date(mondayUtc(3).getTime() + 86_400_000);
+    const freshAnchor = new Date(mondayUtc(0).getTime() + 3_600_000);
+
+    const returningJourneyId = randomUUID();
+    const freshJourneyId = randomUUID();
+    const testJourneyId = randomUUID();
+    await db.insert(analyticsJourneys).values([
+      { id: returningJourneyId, origin: "browser", createdAt: oldAnchor },
+      { id: freshJourneyId, origin: "browser", createdAt: freshAnchor },
+      { id: testJourneyId, origin: "browser", isTest: true, createdAt: oldAnchor },
+    ]);
+
+    const [returningSub] = await db
+      .insert(subscriptions)
+      .values({
+        chatId: "chat-returning",
+        journeyId: returningJourneyId,
+        params: {},
+        isActive: true,
+        createdAt: oldAnchor,
+        linkedAt: oldAnchor,
+      })
+      .returning({ id: subscriptions.id });
+    await db.insert(subscriptions).values([
+      {
+        chatId: "chat-fresh",
+        journeyId: freshJourneyId,
+        params: {},
+        isActive: true,
+        createdAt: freshAnchor,
+        linkedAt: freshAnchor,
+      },
+      {
+        chatId: "chat-test-population",
+        journeyId: testJourneyId,
+        params: {},
+        isActive: true,
+        createdAt: oldAnchor,
+        linkedAt: oldAnchor,
+      },
+    ]);
+
+    await db.insert(productEvents).values([
+      // Week 0 of its own anchor, then a gap, then week 2 — proves the offset is
+      // rolling from that chat's link, not from the calendar week.
+      {
+        journeyId: returningJourneyId,
+        subscriptionId: returningSub.id,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: new Date(oldAnchor.getTime() + 2 * 3_600_000),
+      },
+      {
+        journeyId: returningJourneyId,
+        subscriptionId: returningSub.id,
+        name: ANALYTICS_EVENTS.digestLinkClicked,
+        source: "api" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: new Date(oldAnchor.getTime() + 14 * 86_400_000 + 2 * 3_600_000),
+      },
+      // Ours, not theirs: a send must never mark a cohort as retained.
+      {
+        journeyId: freshJourneyId,
+        name: ANALYTICS_EVENTS.digestSent,
+        source: "worker" as const,
+        dedupeKey: randomUUID(),
+        occurredAt: new Date(freshAnchor.getTime() + 3_600_000),
+      },
+    ]);
+
+    const overview = await dashboard.overview("all", "production");
+
+    expect(overview.growth.totalLinked).toBe(2);
+    expect(overview.growth.current).toBe(1);
+    const byWeek = new Map(overview.growth.weeks.map((week) => [week.weekStart, week]));
+    expect(byWeek.get(isoDate(mondayUtc(3)))?.linked).toBe(1);
+    expect(byWeek.get(isoDate(mondayUtc(2)))?.linked).toBe(0);
+    expect(byWeek.get(isoDate(mondayUtc(0)))?.cumulative).toBe(2);
+
+    const cohorts = new Map(overview.retention.cohorts.map((row) => [row.weekStart, row]));
+    expect(cohorts.get(isoDate(mondayUtc(3)))).toEqual({
+      weekStart: isoDate(mondayUtc(3)),
+      size: 1,
+      returned: [1, 0, 1, 0, 0, 0],
+    });
+    // Linked but never acted: it counts in the denominator and nowhere else.
+    expect(cohorts.get(isoDate(mondayUtc(0)))).toEqual({
+      weekStart: isoDate(mondayUtc(0)),
+      size: 1,
+      returned: [0, 0, 0, 0, 0, 0],
+    });
+    expect([...cohorts.keys()]).not.toContain("chat-test-population");
+    expect(overview.retention.cohorts.reduce((sum, row) => sum + row.size, 0)).toBe(2);
   });
 });
