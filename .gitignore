@@ -36,3 +36,6 @@ backups/
 
 # business/session docs — never commit
 .private/
+
+# MET-54 PoC scratch — never committed
+.poc-artifacts/
