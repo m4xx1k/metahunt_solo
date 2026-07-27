@@ -34,10 +34,47 @@ export const PRODUCT_FUNNEL_STEPS = [
 
 export type ProductFunnelStep = (typeof PRODUCT_FUNNEL_STEPS)[number];
 
+// Both are chat-level and anchored at the first link, so the console's two
+// headline questions ("growing?" / "sticking?") divide the same population.
+export const GROWTH_WINDOW_WEEKS = 8;
+export const RETENTION_WINDOW_WEEKS = 6;
+
+export interface ProductGrowthWeek {
+  weekStart: string;
+  linked: number;
+  cumulative: number;
+}
+
+// The north-star series: newly linked chats per ISO week. `current`/`previous`
+// are the last two complete-or-current weeks — the week-over-week rate.
+export interface ProductGrowth {
+  weeks: ProductGrowthWeek[];
+  current: number;
+  previous: number;
+  totalLinked: number;
+}
+
+// Cohorts are grouped by the calendar week of the first link, but `returned[i]`
+// counts a ROLLING 7-day window from each chat's own anchor — i=0 is that
+// chat's first week, not the rest of the calendar week. `size` is the
+// denominator, and must be shown next to any percentage derived from it.
+export interface ProductRetentionCohort {
+  weekStart: string;
+  size: number;
+  returned: number[];
+}
+
+export interface ProductRetention {
+  windowWeeks: number;
+  cohorts: ProductRetentionCohort[];
+}
+
 export interface ProductAnalyticsOverview {
   generatedAt: Date;
   period: ProductAnalyticsPeriod;
   population: ProductAnalyticsPopulation;
+  growth: ProductGrowth;
+  retention: ProductRetention;
   funnel: Array<{ name: ProductFunnelStep; events: number; journeys: number }>;
   // Journeys in the cohort that reached a later step without ever landing
   // (feed/warm-lens subscribers) — excluded from the anchored funnel above.

@@ -33,7 +33,7 @@ export function FunnelPanel({ funnel, funnelBypass, feedEngagement, population }
 
   if (entry === 0) {
     return (
-      <Panel title="Funnel" meta={population}>
+      <Panel title="Funnel" meta={population} scope="period">
         <EmptyState
           title="no journeys in this period"
           hint="widen the period, or switch population to all traffic."
@@ -45,7 +45,8 @@ export function FunnelPanel({ funnel, funnelBypass, feedEngagement, population }
   return (
     <Panel
       title="Funnel"
-      meta={`${population} · ordered from landing · % of landing`}
+      meta={`${population} · % of landing`}
+      scope="period"
       footer={
         <div className="flex flex-col gap-2">
           {funnelBypass > 0 ? (

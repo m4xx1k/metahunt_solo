@@ -7,19 +7,21 @@ import {
   type ProductAnalyticsPeriod,
   type ProductAnalyticsPopulation,
 } from "@/lib/api/product-analytics";
+import { GrowthPanel } from "@/entities/analytics/GrowthPanel";
 import { firstSearchParam } from "@/lib/search-params";
-import { formatCount, formatPercent } from "@/lib/format";
-import { StatCard } from "@/ui/data/StatCard";
-import { StatGrid } from "@/ui/data/StatGrid";
 import { PageBody } from "@/ui/layout/PageBody";
 import { PageHeader } from "@/ui/layout/PageHeader";
 import { UrlSegments } from "@/ui/navigation/UrlSegments";
 import { UrlTabPanel, UrlTabs, UrlTabsList, type UrlTab } from "@/ui/navigation/UrlTabs";
 import { DeliveryPanel } from "./_components/DeliveryPanel";
+import { EventsPanel } from "./_components/EventsPanel";
 import { FunnelPanel } from "./_components/FunnelPanel";
 import { IdentityPanel } from "./_components/IdentityPanel";
 import { JourneysPanel } from "./_components/JourneysPanel";
+import { LeakPanel } from "./_components/LeakPanel";
+import { RetentionPanel } from "./_components/RetentionPanel";
 import { SubscribersPanel } from "./_components/SubscribersPanel";
+import { TalkToPanel } from "./_components/TalkToPanel";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Analytics" };
@@ -37,17 +39,17 @@ const POPULATION_OPTIONS: Array<{ value: ProductAnalyticsPopulation; label: stri
   { value: "all", label: "all" },
 ];
 
+// Three tabs, in the order the questions get asked: what to do now, what the
+// events mean, and the plumbing you only open when a number looks wrong.
 const TABS: UrlTab[] = [
-  { value: "funnel", label: "Funnel" },
-  { value: "subscribers", label: "Subscribers" },
-  { value: "delivery", label: "Delivery" },
-  { value: "identity", label: "Identity" },
-  { value: "journeys", label: "Journeys" },
+  { value: "now", label: "Now" },
+  { value: "events", label: "Events" },
+  { value: "debug", label: "Debug" },
 ];
 
-// browser → api → telegram → digest, from the first-party event ledger.
-// Period and population live in the URL (server refetch); the tab lives in the
-// URL too, but switches client-side since every panel is already rendered.
+// Four widgets carry the first tab: are we growing, where do we leak, do they
+// stick, who do I talk to. Everything that answers none of those moved to Debug
+// rather than competing for the same attention.
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -62,8 +64,6 @@ export default async function AnalyticsPage({
     rawPopulation && isProductAnalyticsPopulation(rawPopulation) ? rawPopulation : "production";
 
   const data = await productAnalyticsApi.overview(period, population);
-  const entry = data.funnel[0]?.journeys ?? 0;
-  const exit = data.funnel.at(-1)?.journeys ?? 0;
 
   return (
     <UrlTabs tabs={TABS}>
@@ -92,62 +92,33 @@ export default async function AnalyticsPage({
       />
 
       <PageBody>
-        {/* `joined` and the conversion follow the period; the three lifecycle
-            states are all-time per chat — a state can't be period-scoped, and
-            counting `unsubscribed` events here double-counted every /stop. */}
-        <StatGrid cols={5}>
-          <StatCard label="joined" value={formatCount(data.flow.joined)} hint="new subscriptions" />
-          <StatCard
-            label="active"
-            value={formatCount(data.subscriberStates.active)}
-            hint="subscribed chats, alive"
-          />
-          <StatCard
-            label="dormant"
-            value={formatCount(data.subscriberStates.dormant)}
-            hint="digests land, no reaction 14d"
-            tone={data.subscriberStates.dormant > 0 ? "danger" : "default"}
-          />
-          <StatCard
-            label="churned"
-            value={formatCount(data.subscriberStates.churned)}
-            hint="unsubscribed everything or blocked"
-            tone={data.subscriberStates.churned > 0 ? "danger" : "default"}
-          />
-          <StatCard
-            label="landing → linked"
-            value={formatPercent(exit, entry)}
-            hint="acquisition conversion"
-            tone="accent"
-          />
-        </StatGrid>
+        <UrlTabPanel value="now">
+          <div className="grid gap-3 lg:grid-cols-2">
+            <GrowthPanel growth={data.growth} />
+            <LeakPanel funnel={data.funnel} />
+            <RetentionPanel retention={data.retention} />
+            <TalkToPanel subscribers={data.subscriberActivity} />
+          </div>
+        </UrlTabPanel>
 
-        <UrlTabPanel value="funnel">
+        <UrlTabPanel value="events">
+          <EventsPanel />
+        </UrlTabPanel>
+
+        <UrlTabPanel value="debug">
           <FunnelPanel
             funnel={data.funnel}
             funnelBypass={data.funnelBypass}
             feedEngagement={data.feedEngagement}
             population={population}
           />
-        </UrlTabPanel>
-
-        <UrlTabPanel value="subscribers">
           <SubscribersPanel subscribers={data.subscriberActivity} />
-        </UrlTabPanel>
-
-        <UrlTabPanel value="delivery">
           <DeliveryPanel
             delivery={data.delivery}
             digestClicks={data.flow.digestClicks}
             population={population}
           />
-        </UrlTabPanel>
-
-        <UrlTabPanel value="identity">
           <IdentityPanel subscriptions={data.subscriptions} identity={data.identity} />
-        </UrlTabPanel>
-
-        <UrlTabPanel value="journeys">
           <JourneysPanel journeys={data.recentJourneys} generatedAt={data.generatedAt} />
         </UrlTabPanel>
       </PageBody>

@@ -20,10 +20,41 @@ export interface ProductFunnelStep {
   journeys: number;
 }
 
+export interface ProductGrowthWeek {
+  weekStart: string;
+  linked: number;
+  cumulative: number;
+}
+
+// The north star: newly linked chats per ISO week. `current`/`previous` are the
+// last two weeks of the series — the week-over-week rate.
+export interface ProductGrowth {
+  weeks: ProductGrowthWeek[];
+  current: number;
+  previous: number;
+  totalLinked: number;
+}
+
+// Grouped by the calendar week of the first link, but `returned[i]` counts a
+// ROLLING 7-day window from each chat's own anchor. `size` is the denominator
+// and must be rendered next to any percentage derived from it.
+export interface ProductRetentionCohort {
+  weekStart: string;
+  size: number;
+  returned: number[];
+}
+
+export interface ProductRetention {
+  windowWeeks: number;
+  cohorts: ProductRetentionCohort[];
+}
+
 export interface ProductAnalyticsOverview {
   generatedAt: string;
   period: ProductAnalyticsPeriod;
   population: ProductAnalyticsPopulation;
+  growth: ProductGrowth;
+  retention: ProductRetention;
   funnel: ProductFunnelStep[];
   // Journeys that hit a later step without ever landing (feed/warm subscribers)
   // — excluded from the anchored funnel, shown as a footnote instead.

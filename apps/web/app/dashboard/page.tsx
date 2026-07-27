@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { isStatsPeriod, monitoringApi, type StatsPeriod } from "@/lib/api/monitoring";
 import { productAnalyticsApi } from "@/lib/api/product-analytics";
+import { GrowthPanel } from "@/entities/analytics/GrowthPanel";
 import { formatCount, formatPercent } from "@/lib/format";
 import { StatCard } from "@/ui/data/StatCard";
 import { StatGrid } from "@/ui/data/StatGrid";
@@ -80,12 +81,12 @@ export default async function OverviewPage({
           />
         )}
 
-        <StatGrid cols={5}>
+        <StatGrid cols={4}>
           <StatCard
             label="joined"
             value={formatCount(flow.joined)}
-            hint="new subscriptions"
-            href="/dashboard/analytics?tab=subscribers"
+            hint="new subs"
+            href="/dashboard/analytics?tab=debug"
           />
           <StatCard
             label="activated"
@@ -95,31 +96,24 @@ export default async function OverviewPage({
             href="/dashboard/analytics"
           />
           <StatCard
-            label="digest clicks"
-            value={formatCount(flow.digestClicks)}
-            hint="taps from telegram"
-            href="/dashboard/analytics?tab=subscribers"
-          />
-          <StatCard
-            label="feed clicks"
-            value={formatCount(flow.feedClicks)}
-            hint="taps in the web feed"
-            href="/dashboard/analytics?tab=funnel"
+            label="clicks"
+            value={formatCount(flow.digestClicks + flow.feedClicks)}
+            hint="digest + feed"
+            href="/dashboard/analytics?tab=debug"
           />
           <StatCard
             label="churned"
             value={formatCount(flow.churned)}
             hint={
-              flow.churned > 0
-                ? `${formatPercent(flow.churned, flow.joined)} of joins`
-                : "no unsubscribes"
+              flow.churned > 0 ? `${formatPercent(flow.churned, flow.joined)} of joins` : "none"
             }
             tone={flow.churned > 0 ? "danger" : "success"}
-            href="/dashboard/analytics?tab=subscribers"
+            href="/dashboard/analytics?tab=debug"
           />
         </StatGrid>
 
         <div className="grid gap-3 lg:grid-cols-2">
+          {product ? <GrowthPanel growth={product.growth} /> : null}
           <ActivationPanel funnel={product?.funnel ?? []} period={periodLabel} />
           <ChannelsPanel channels={product?.channels ?? []} period={periodLabel} />
         </div>

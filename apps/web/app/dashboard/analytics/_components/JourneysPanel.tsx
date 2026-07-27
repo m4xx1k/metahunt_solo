@@ -1,7 +1,9 @@
 import type { ProductAnalyticsOverview } from "@/lib/api/product-analytics";
+import { eventLabel } from "@/entities/analytics/event-labels";
 import { formatCount, formatRelative } from "@/lib/format";
 import { DataTable, type Column } from "@/ui/data/DataTable";
 import { Panel } from "@/ui/layout/Panel";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 import { JourneyActions } from "./JourneyActions";
 
 type Journey = ProductAnalyticsOverview["recentJourneys"][number];
@@ -11,9 +13,14 @@ const COLUMNS: Array<Column<Journey>> = [
     key: "id",
     header: "journey",
     render: (row) => (
-      <span className="text-text-primary" title={row.id}>
-        {row.id.slice(0, 8)}…
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="text-text-primary hover:text-accent">
+            {row.id.slice(0, 8)}…
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{row.id}</TooltipContent>
+      </Tooltip>
     ),
   },
   { key: "origin", header: "origin", render: (row) => row.origin },
@@ -39,7 +46,18 @@ const COLUMNS: Array<Column<Journey>> = [
     key: "events",
     header: "events",
     align: "right",
-    render: (row) => <span title={row.eventNames.join(", ")}>{formatCount(row.events)}</span>,
+    render: (row) => (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="tabular-nums hover:text-accent">
+            {formatCount(row.events)}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {row.eventNames.map((name) => eventLabel(name)).join(", ") || "no events"}
+        </TooltipContent>
+      </Tooltip>
+    ),
   },
   {
     key: "lastSignal",
@@ -65,7 +83,7 @@ export function JourneysPanel({
   generatedAt: string;
 }) {
   return (
-    <Panel title="Journeys" meta={`updated ${formatRelative(generatedAt)}`}>
+    <Panel title="Journeys" meta={`updated ${formatRelative(generatedAt)}`} scope="period">
       <DataTable
         columns={COLUMNS}
         rows={journeys}

@@ -10,7 +10,9 @@ import { asStringArray } from "../../platform/shared/coerce";
 import { reportingPeriodSince } from "../../platform/shared/reporting-period";
 
 import {
+  GROWTH_WINDOW_WEEKS,
   PRODUCT_FUNNEL_STEPS,
+  RETENTION_WINDOW_WEEKS,
   type AnalyticsJourneyClassification,
   type ProductAnalyticsOverview,
   type ProductAnalyticsPeriod,
@@ -19,8 +21,10 @@ import {
   type ProductDeliveryDay,
   type ProductDeliveryHealth,
   type ProductFeedEngagement,
+  type ProductGrowth,
   type ProductIdentityHealth,
   type ProductPeriodFlow,
+  type ProductRetention,
   type ProductSubscriberStates,
   type RecentProductJourney,
   type SubscriberActivity,
@@ -94,13 +98,16 @@ export class ProductAnalyticsService {
       this.feedEngagement(since, population),
     ]);
 
-    const [flow, channels, subscriberStates, deliverySummary, deliveryDaily] = await Promise.all([
-      this.periodFlow(since, population),
-      this.channels(since, population),
-      this.subscriberStates(population),
-      this.deliverySummary(since, population),
-      this.deliveryDaily(population),
-    ]);
+    const [flow, channels, subscriberStates, deliverySummary, deliveryDaily, growth, retention] =
+      await Promise.all([
+        this.periodFlow(since, population),
+        this.channels(since, population),
+        this.subscriberStates(population),
+        this.deliverySummary(since, population),
+        this.deliveryDaily(population),
+        this.growth(population),
+        this.retention(population),
+      ]);
 
     const subscriptionsRow = subscriptionRows[0];
     const delivered = subscriptionsRow?.delivered ?? 0;
@@ -110,6 +117,8 @@ export class ProductAnalyticsService {
       generatedAt: new Date(),
       period,
       population,
+      growth,
+      retention,
       funnel: funnelChain.steps,
       funnelBypass: funnelChain.bypass,
       subscriptions: {
@@ -345,6 +354,139 @@ export class ProductAnalyticsService {
       active: Number(row?.active ?? 0),
       dormant: Number(row?.dormant ?? 0),
       churned: Number(row?.churned ?? 0),
+    };
+  }
+
+  // Chats that reached a linked state, keyed by the FIRST link. Anchored on
+  // `subscriptions.linked_at` rather than the `telegram_linked` event: the
+  // event ledger only exists since analytics shipped, so the event would
+  // silently drop every older subscriber out of both growth and retention.
+  private linkedChatsCte(population: ProductAnalyticsPopulation) {
+    return sql`
+      SELECT s.chat_id, MIN(s.linked_at) AS anchor_at
+      FROM subscriptions s
+      JOIN analytics_journeys j ON j.id = s.journey_id
+      WHERE s.chat_id IS NOT NULL
+        AND s.linked_at IS NOT NULL
+        AND (
+          ${population} = 'all'
+          OR (${population} = 'production' AND NOT j.is_test)
+          OR (${population} = 'test' AND j.is_test)
+        )
+      GROUP BY s.chat_id
+    `;
+  }
+
+  // The north star: newly linked chats per ISO week (Postgres weeks start
+  // Monday). Buckets are generated so a zero week reads as a zero, not a gap.
+  private async growth(population: ProductAnalyticsPopulation): Promise<ProductGrowth> {
+    const result = await this.db.execute<{
+      week_start: string;
+      linked: number;
+      cumulative: number;
+      total_linked: number;
+    }>(sql`
+      WITH linked_chats AS (${this.linkedChatsCte(population)}),
+      buckets AS (
+        SELECT (date_trunc('week', now()) - (week_offset::text || ' weeks')::interval)::date AS week_start
+        FROM generate_series(0, ${GROWTH_WINDOW_WEEKS - 1}) AS week_offset
+      ),
+      per_week AS (
+        SELECT date_trunc('week', anchor_at)::date AS week_start, COUNT(*)::int AS linked
+        FROM linked_chats
+        GROUP BY 1
+      )
+      SELECT
+        to_char(buckets.week_start, 'YYYY-MM-DD') AS week_start,
+        COALESCE(per_week.linked, 0)::int AS linked,
+        (
+          SELECT COUNT(*)
+          FROM linked_chats lc
+          WHERE lc.anchor_at < buckets.week_start + interval '7 days'
+        )::int AS cumulative,
+        (SELECT COUNT(*) FROM linked_chats)::int AS total_linked
+      FROM buckets
+      LEFT JOIN per_week ON per_week.week_start = buckets.week_start
+      ORDER BY buckets.week_start
+    `);
+
+    const weeks = result.rows.map((row) => ({
+      weekStart: row.week_start,
+      linked: Number(row.linked),
+      cumulative: Number(row.cumulative),
+    }));
+    return {
+      weeks,
+      current: weeks.at(-1)?.linked ?? 0,
+      previous: weeks.at(-2)?.linked ?? 0,
+      totalLinked: Number(result.rows[0]?.total_linked ?? 0),
+    };
+  }
+
+  // Weekly cohorts of linked chats vs. whether they acted again. The action
+  // join goes through journey OR subscription, matching how `lastActionAt` is
+  // resolved — otherwise a digest tap and a landing visit land in different
+  // cohorts for the same person.
+  private async retention(population: ProductAnalyticsPopulation): Promise<ProductRetention> {
+    const userActionNames = sql.join(
+      USER_ACTION_EVENTS.map((name) => sql`${name}`),
+      sql`, `,
+    );
+    const returnedColumns = Array.from(
+      { length: RETENTION_WINDOW_WEEKS },
+      (_, offset) =>
+        sql`COUNT(DISTINCT o.chat_id) FILTER (WHERE o.week_offset = ${offset})::int AS ${sql.raw(
+          `returned_${offset}`,
+        )}`,
+    );
+
+    const result = await this.db.execute<Record<string, string | number>>(sql`
+      WITH linked_chats AS (${this.linkedChatsCte(population)}),
+      cohorts AS (
+        SELECT chat_id, anchor_at, date_trunc('week', anchor_at)::date AS week_start
+        FROM linked_chats
+        WHERE anchor_at >= date_trunc('week', now()) - (${RETENTION_WINDOW_WEEKS - 1}::text || ' weeks')::interval
+      ),
+      chat_subs AS (
+        SELECT s.chat_id, s.id AS subscription_id, s.journey_id
+        FROM subscriptions s
+        WHERE s.chat_id IN (SELECT chat_id FROM cohorts)
+      ),
+      actions AS (
+        SELECT DISTINCT cs.chat_id, e.occurred_at
+        FROM product_events e
+        JOIN chat_subs cs
+          ON cs.journey_id = e.journey_id
+          OR cs.subscription_id = e.subscription_id
+        WHERE e.name IN (${userActionNames})
+      ),
+      offsets AS (
+        SELECT
+          c.chat_id,
+          FLOOR(EXTRACT(EPOCH FROM (a.occurred_at - c.anchor_at)) / 604800)::int AS week_offset
+        FROM cohorts c
+        JOIN actions a ON a.chat_id = c.chat_id
+        WHERE a.occurred_at >= c.anchor_at
+      )
+      SELECT
+        to_char(c.week_start, 'YYYY-MM-DD') AS week_start,
+        COUNT(DISTINCT c.chat_id)::int AS size,
+        ${sql.join(returnedColumns, sql`, `)}
+      FROM cohorts c
+      LEFT JOIN offsets o ON o.chat_id = c.chat_id
+      GROUP BY c.week_start
+      ORDER BY c.week_start
+    `);
+
+    return {
+      windowWeeks: RETENTION_WINDOW_WEEKS,
+      cohorts: result.rows.map((row) => ({
+        weekStart: String(row.week_start),
+        size: Number(row.size),
+        returned: Array.from({ length: RETENTION_WINDOW_WEEKS }, (_, offset) =>
+          Number(row[`returned_${offset}`] ?? 0),
+        ),
+      })),
     };
   }
 
