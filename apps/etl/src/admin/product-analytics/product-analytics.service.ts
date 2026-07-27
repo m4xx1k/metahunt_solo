@@ -9,6 +9,7 @@ import { ANALYTICS_EVENTS, USER_ACTION_EVENTS } from "../../platform/analytics/e
 import { asStringArray } from "../../platform/shared/coerce";
 import { reportingPeriodSince } from "../../platform/shared/reporting-period";
 
+import { compareChannels, resolveChannelSource } from "./channel-source";
 import {
   GROWTH_WINDOW_WEEKS,
   PRODUCT_FUNNEL_STEPS,
@@ -621,10 +622,13 @@ export class ProductAnalyticsService {
     });
   }
 
-  // First-touch attribution: a journey's source is the utm_source on its
-  // earliest landing event, so a later untagged visit can't overwrite it. The
-  // period filters on that landing, not on journey creation — "who arrived in
-  // this window".
+  // First-touch attribution: a journey's channel comes from the utm_source on
+  // its earliest landing event, falling back to that landing's referrer for the
+  // untagged third of arrivals. SQL groups by the raw pair; `resolveChannelSource`
+  // then folds domains into channels in TS, so several referrers (threads.com,
+  // threads.net, an in-app package name) collapse into one row. The period
+  // filters on the landing, not on journey creation — "who arrived in this
+  // window".
   private async channels(
     since: Date | null,
     population: ProductAnalyticsPopulation,
@@ -632,6 +636,7 @@ export class ProductAnalyticsService {
     const result = await this.db.execute<{
       source: string | null;
       campaign: string | null;
+      referrer_domain: string | null;
       landed: number;
       subscribed: number;
       activated: number;
@@ -642,13 +647,18 @@ export class ProductAnalyticsService {
           event.journey_id,
           (ARRAY_AGG(NULLIF(event.properties->>'utm_source', '') ORDER BY event.occurred_at))[1] AS source,
           (ARRAY_AGG(NULLIF(event.properties->>'utm_campaign', '') ORDER BY event.occurred_at))[1] AS campaign,
+          (ARRAY_AGG(NULLIF(event.properties->>'referrer_domain', '') ORDER BY event.occurred_at))[1] AS referrer_domain,
           MIN(event.occurred_at) AS landed_at
         FROM product_events event
         WHERE event.name IN (${ANALYTICS_EVENTS.landingView}, ${ANALYTICS_EVENTS.landingCtaClicked})
         GROUP BY event.journey_id
       ),
       scoped AS (
-        SELECT first_touch.journey_id, first_touch.source, first_touch.campaign
+        SELECT
+          first_touch.journey_id,
+          first_touch.source,
+          first_touch.campaign,
+          first_touch.referrer_domain
         FROM first_touch
         JOIN analytics_journeys journey ON journey.id = first_touch.journey_id
         WHERE (${since}::timestamptz IS NULL OR first_touch.landed_at >= ${since})
@@ -662,33 +672,48 @@ export class ProductAnalyticsService {
         SELECT
           scoped.source,
           scoped.campaign,
+          scoped.referrer_domain,
           scoped.journey_id,
           COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.subscriptionCreated}) > 0 AS subscribed,
           COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.telegramLinked}) > 0 AS activated,
           COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.digestLinkClicked})::int AS digest_clicks
         FROM scoped
         LEFT JOIN product_events event ON event.journey_id = scoped.journey_id
-        GROUP BY scoped.source, scoped.campaign, scoped.journey_id
+        GROUP BY scoped.source, scoped.campaign, scoped.referrer_domain, scoped.journey_id
       )
       SELECT
         source,
         campaign,
+        referrer_domain,
         COUNT(*)::int AS landed,
         COUNT(*) FILTER (WHERE subscribed)::int AS subscribed,
         COUNT(*) FILTER (WHERE activated)::int AS activated,
         COALESCE(SUM(digest_clicks), 0)::int AS digest_clicks
       FROM per_journey
-      GROUP BY source, campaign
-      ORDER BY landed DESC, source ASC NULLS LAST, campaign ASC NULLS LAST
+      GROUP BY source, campaign, referrer_domain
     `);
-    return result.rows.map((row) => ({
-      source: row.source,
-      campaign: row.campaign,
-      landed: Number(row.landed),
-      subscribed: Number(row.subscribed),
-      activated: Number(row.activated),
-      digestClicks: Number(row.digest_clicks),
-    }));
+
+    const merged = new Map<string, ProductChannel>();
+    for (const row of result.rows) {
+      const channel = resolveChannelSource(row.source, row.referrer_domain);
+      const key = `${channel}|${row.campaign ?? ""}`;
+      const existing = merged.get(key);
+      const next: ProductChannel = existing ?? {
+        source: channel,
+        campaign: row.campaign,
+        landed: 0,
+        subscribed: 0,
+        activated: 0,
+        digestClicks: 0,
+      };
+      next.landed += Number(row.landed);
+      next.subscribed += Number(row.subscribed);
+      next.activated += Number(row.activated);
+      next.digestClicks += Number(row.digest_clicks);
+      merged.set(key, next);
+    }
+
+    return [...merged.values()].sort(compareChannels);
   }
 
   private async identityHealth(
@@ -913,6 +938,7 @@ export class ProductAnalyticsService {
       feedClickEvents,
       lastActionByJourneyRows,
       lastActionBySubRows,
+      firstTouchRows,
     ] = await Promise.all([
       this.db
         .select({
@@ -1037,6 +1063,29 @@ export class ProductAnalyticsService {
           ),
         )
         .groupBy(productEvents.subscriptionId),
+      // First touch per journey — the same pair the Channels panel groups on, so
+      // a subscriber's row and the channel total can never disagree. Guarded on
+      // empty: unlike drizzle's inArray, a raw `IN ()` is a syntax error, and
+      // every subscription having a null journey_id is a real state.
+      journeyIds.length === 0
+        ? Promise.resolve({ rows: [] })
+        : this.db.execute<{
+            journey_id: string;
+            source: string | null;
+            referrer_domain: string | null;
+          }>(sql`
+        SELECT
+          event.journey_id,
+          (ARRAY_AGG(NULLIF(event.properties->>'utm_source', '') ORDER BY event.occurred_at))[1] AS source,
+          (ARRAY_AGG(NULLIF(event.properties->>'referrer_domain', '') ORDER BY event.occurred_at))[1] AS referrer_domain
+        FROM product_events event
+        WHERE event.journey_id IN (${sql.join(
+          journeyIds.map((id) => sql`${id}::uuid`),
+          sql`, `,
+        )})
+          AND event.name IN (${ANALYTICS_EVENTS.landingView}, ${ANALYTICS_EVENTS.landingCtaClicked})
+        GROUP BY event.journey_id
+      `),
     ]);
 
     // node-postgres's driver returns raw `min(timestamptz)` aggregates as
@@ -1077,6 +1126,12 @@ export class ProductAnalyticsService {
       lastActionBySubRows
         .filter((row): row is { subscriptionId: string; at: Date } => row.subscriptionId !== null)
         .map((row) => [row.subscriptionId, new Date(row.at)]),
+    );
+    const sourceByJourney = new Map(
+      firstTouchRows.rows.map((row) => [
+        row.journey_id,
+        resolveChannelSource(row.source, row.referrer_domain),
+      ]),
     );
 
     const byChat = new Map<string, (typeof subs)[number][]>();
@@ -1145,6 +1200,8 @@ export class ProductAnalyticsService {
         lastActionAt,
         vacancyClicks,
         feedClicks,
+        source:
+          subRows.map((row) => sourceByJourney.get(row.journeyId ?? "")).find(isNonNull) ?? null,
         isActive,
         status: this.subscriberStatus(subRows, isActive, recentDigests, lastActionAt, dormantSince),
         subscriptions: subscriptionSummaries,

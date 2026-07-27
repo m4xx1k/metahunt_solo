@@ -185,6 +185,10 @@ export interface SubscriberActivity {
   lastActionAt: Date | null;
   vacancyClicks: number;
   feedClicks: number;
+  // First-touch channel of this subscriber's journey — the same label the
+  // Channels panel aggregates. Null when the journey has no landing event at
+  // all (feed/warm-lens entry, or a subscription older than the ledger).
+  source: string | null;
   isActive: boolean;
   status: SubscriberStatus;
   subscriptions: SubscriberSubscription[];
@@ -204,7 +208,9 @@ export interface ProductPeriodFlow {
 // landing event. `null` source means the visit arrived without one (direct,
 // organic, or a link that dropped the params).
 export interface ProductChannel {
-  source: string | null;
+  // Always a label, never null: an untagged, unreferred arrival is "direct".
+  // Classification lives in `channel-source.ts`.
+  source: string;
   // First-touch utm_campaign — one row per (source, campaign) so every post
   // gets its own funnel line. Null = arrived without a campaign tag.
   campaign: string | null;

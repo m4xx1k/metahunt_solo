@@ -2,7 +2,11 @@ import { useMemo } from "react";
 import { usePostHog } from "posthog-js/react";
 import type { PostHog } from "posthog-js";
 
-import { resolveAttribution, type AcquisitionAttribution } from "@/lib/analytics/attribution";
+import {
+  currentReferrerDomain,
+  resolveAttribution,
+  type AcquisitionAttribution,
+} from "@/lib/analytics/attribution";
 import { getOrCreateJourneyId } from "@/lib/analytics/journey";
 import { analyticsApi, type BrowserAnalyticsEventName } from "@/lib/api/analytics";
 import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
@@ -78,7 +82,7 @@ export function useAnalytics() {
         captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingView, {
           landing_variant: variant,
           path: window.location.pathname,
-          ...resolveAttribution(attribution),
+          ...resolveAttribution({ ...attribution, ...currentReferrerDomain() }),
         });
       },
 
@@ -86,7 +90,7 @@ export function useAnalytics() {
         captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingCtaClicked, {
           landing_variant: variant,
           destination: "telegram_subscription",
-          ...resolveAttribution(attribution),
+          ...resolveAttribution({ ...attribution, ...currentReferrerDomain() }),
         });
       },
 

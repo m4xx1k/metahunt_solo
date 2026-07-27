@@ -153,7 +153,9 @@ export interface ProductPeriodFlow {
 // First-touch acquisition. `source: null` = arrived without a utm_source
 // (direct, organic, or a link that dropped the params).
 export interface ProductChannel {
-  source: string | null;
+  // Always a label, never null: utm_source when tagged, else the referrer
+  // folded into a channel, else "direct".
+  source: string;
   // First-touch utm_campaign — one row per (source, campaign) = one row per post.
   campaign: string | null;
   landed: number;
@@ -194,6 +196,9 @@ export interface SubscriberActivity {
   lastActionAt: string | null;
   vacancyClicks: number;
   feedClicks: number;
+  // First-touch channel of this subscriber's journey. Null when the journey has
+  // no landing event at all (feed/warm entry, or older than the ledger).
+  source: string | null;
   isActive: boolean;
   status: SubscriberStatus;
   subscriptions: SubscriberSubscription[];

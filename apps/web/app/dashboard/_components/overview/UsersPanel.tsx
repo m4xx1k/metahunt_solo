@@ -6,22 +6,22 @@ import type { SubscriberActivity } from "@/lib/api/product-analytics";
 import { LastAction } from "@/entities/subscriber/LastAction";
 import { SubscriberIdentity } from "@/entities/subscriber/SubscriberIdentity";
 import { SubscriberStatusBadge } from "@/entities/subscriber/SubscriberStatusBadge";
-import { formatCount, formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { DataTable, type Column } from "@/ui/data/DataTable";
 import { EmptyState } from "@/ui/feedback/EmptyState";
 import { Panel } from "@/ui/layout/Panel";
 import { PanelLink } from "@/ui/navigation/PanelLink";
 
-type SortKey = "joined" | "lastAction" | "digestClicks" | "feedClicks";
+type SortKey = "lastAction";
 
 // null last actions sort as "oldest" so silent subscribers sink on desc.
 const SORT_VALUE: Record<SortKey, (row: SubscriberActivity) => number> = {
-  joined: (row) => new Date(row.joinedAt).getTime(),
   lastAction: (row) => (row.lastActionAt ? new Date(row.lastActionAt).getTime() : 0),
-  digestClicks: (row) => row.vacancyClicks,
-  feedClicks: (row) => row.feedClicks,
 };
+
+// A glance, not a ledger — the full roster with clicks and joined dates lives on
+// the analytics screen. Past this the panel stops being scannable.
+const GLANCE_LIMIT = 8;
 
 function SortHeader({
   label,
@@ -55,9 +55,11 @@ function SortHeader({
 export function UsersPanel({
   subscribers,
   period,
+  className,
 }: {
   subscribers: SubscriberActivity[];
   period: string;
+  className?: string;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("lastAction");
   const [descending, setDescending] = useState(true);
@@ -74,7 +76,9 @@ export function UsersPanel({
   const rows = useMemo(() => {
     const value = SORT_VALUE[sortKey];
     const direction = descending ? -1 : 1;
-    return [...subscribers].sort((a, b) => direction * (value(a) - value(b)));
+    return [...subscribers]
+      .sort((a, b) => direction * (value(a) - value(b)))
+      .slice(0, GLANCE_LIMIT);
   }, [subscribers, sortKey, descending]);
 
   const sortHeader = (key: SortKey, label: string) => (
@@ -102,10 +106,12 @@ export function UsersPanel({
       ),
     },
     {
-      key: "joined",
-      header: sortHeader("joined", "joined"),
+      key: "source",
+      header: "from",
       render: (row) => (
-        <span className="tabular-nums text-text-secondary">{formatRelative(row.joinedAt)}</span>
+        <span className={row.source && row.source !== "direct" ? "text-accent" : "text-text-muted"}>
+          {row.source ?? "—"}
+        </span>
       ),
     },
     {
@@ -113,29 +119,22 @@ export function UsersPanel({
       header: sortHeader("lastAction", "last action"),
       render: (row) => <LastAction at={row.lastActionAt} />,
     },
-    {
-      key: "digestClicks",
-      header: sortHeader("digestClicks", "digest clicks"),
-      align: "right",
-      render: (row) => formatCount(row.vacancyClicks),
-    },
-    {
-      key: "feedClicks",
-      header: sortHeader("feedClicks", "feed clicks"),
-      align: "right",
-      render: (row) => formatCount(row.feedClicks),
-    },
   ];
 
   return (
-    <Panel title="Users" meta={`${subscribers.length} active or joined · ${period}`}>
+    <Panel
+      title="Users"
+      meta={`${subscribers.length} active or joined · ${period}`}
+      scope="period"
+      className={className}
+    >
       {subscribers.length === 0 ? (
         <EmptyState
           title="nobody in this window"
           hint="no subscriber joined or acted here — widen the period."
         />
       ) : (
-        <DataTable columns={columns} rows={rows} rowKey={(row) => row.chatId} minWidth={720} />
+        <DataTable columns={columns} rows={rows} rowKey={(row) => row.chatId} minWidth={420} />
       )}
       <div className="mt-auto pt-1">
         <PanelLink href="/dashboard/analytics?tab=debug">full subscriber ledger</PanelLink>
