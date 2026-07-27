@@ -8,6 +8,7 @@ import {
   type VacancyUpsertValues,
 } from "../repositories/vacancy.repository";
 
+import { applyAtsPrecedence, type AtsStructuredFields } from "./ats-field-precedence";
 import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
 
@@ -84,7 +85,12 @@ export class VacancyLoaderService {
         publishedAt: record.publishedAt,
       };
 
-      return this.repo.upsertWithSkills(values, skillLinks, tx);
+      const withAtsFacts = applyAtsPrecedence(
+        values,
+        record.atsFields as AtsStructuredFields | null,
+      );
+
+      return this.repo.upsertWithSkills(withAtsFacts, skillLinks, tx);
     });
   }
 

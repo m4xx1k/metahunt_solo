@@ -1,0 +1,1 @@
+ALTER TABLE "rss_records" ADD COLUMN "ats_fields" jsonb;

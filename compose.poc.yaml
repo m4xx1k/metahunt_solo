@@ -10,7 +10,7 @@
 #
 # ISOLATION: this file must never reference `metahunt_railway_pgdata` — that
 # external volume holds the prod restore the rest of the dev stack runs on.
-# Port 54399 keeps a fat-fingered psql away from the 54323 dev DB.
+# Port 55433 keeps a fat-fingered psql away from the 54323 dev DB.
 
 services:
   ats-poc-db:
@@ -21,8 +21,10 @@ services:
       POSTGRES_DB: ats_poc
       POSTGRES_USER: metahunt
       POSTGRES_PASSWORD: ${POC_POSTGRES_PASSWORD:-atspoc}
+    # Was 54399 until that port leaked into Docker Desktop's forwarder on a
+    # crash and started 500ing on every bind. Still clear of the 54323 restore.
     ports:
-      - "54399:5432"
+      - "55433:5432"
     # pg18 moved the data dir under a version subdir and declares the volume at
     # /var/lib/postgresql — mounting .../data instead makes the image refuse to
     # start. Same shape as compose.infra.yaml.

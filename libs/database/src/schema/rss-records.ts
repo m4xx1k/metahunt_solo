@@ -20,6 +20,10 @@ export const rssRecords = pgTable(
     description: text("description"),
     link: text("link"),
     category: text("category"),
+    // Structured facts the ATS itself stated (salary, locations, employment
+    // type, department). Kept apart from `extracted_data` so an employer's
+    // claim and the LLM's reading of prose never get confused for each other.
+    atsFields: jsonb("ats_fields"),
     extractedData: jsonb("extracted_data"),
     extractedAt: timestamp("extracted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
