@@ -23,8 +23,8 @@ export const subscriptions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     chatId: text("chat_id"),
-    // Captured from the Telegram `from` field at /start link time (backfilled
-    // for older rows via scripts/backfill-tg-usernames.ts). username is
+    // Captured from the Telegram `from` field at /start link time; older rows
+    // were backfilled once (see scripts/README.md, Retired). username is
     // optional + mutable, so firstName is the more durable identifier.
     tgUsername: text("tg_username"),
     tgFirstName: text("tg_first_name"),

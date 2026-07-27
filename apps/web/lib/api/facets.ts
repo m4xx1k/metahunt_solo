@@ -14,6 +14,11 @@ export interface NodeFacet {
 
 export interface RoleFacetsResponse {
   roles: NodeFacet[];
+  /**
+   * Retired slug → surviving slug, for 308s off merged-away role hubs.
+   * Optional so a web deploy that lands before the API one still parses.
+   */
+  retired?: Record<string, string>;
 }
 
 export interface SkillFacetsResponse {

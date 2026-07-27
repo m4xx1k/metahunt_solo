@@ -57,8 +57,18 @@ export class FacetsService {
       GROUP BY n.id, n.canonical_name
       ORDER BY COUNT(*) DESC, n.canonical_name
     `);
+    // Retired slugs ride along on this already-ISR-cached call so the role hub
+    // can 308 a merged-away URL instead of 404ing it, without a second request.
+    const retired = await this.db.execute<{ from_slug: string; to_slug: string }>(sql`
+      SELECT a.slug AS from_slug, n.slug AS to_slug
+      FROM node_slug_aliases a
+      JOIN nodes n ON n.id = a.node_id AND n.status = 'VERIFIED'
+      WHERE a.type = 'ROLE' AND n.slug IS NOT NULL
+    `);
+
     return {
       roles: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
+      retired: Object.fromEntries(retired.rows.map((r) => [r.from_slug, r.to_slug])),
     };
   }
 

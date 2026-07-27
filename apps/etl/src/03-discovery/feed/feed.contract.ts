@@ -206,6 +206,8 @@ export interface NodeFacet {
 
 export interface RoleFacetsResponse {
   roles: NodeFacet[];
+  /** Retired slug → the surviving node's slug, for 308s off merged-away hubs. */
+  retired: Record<string, string>;
 }
 
 export interface SkillFacetsResponse {

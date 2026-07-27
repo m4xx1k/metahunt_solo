@@ -4,38 +4,18 @@
 // extracting libs/contracts.
 
 export type Seniority =
-  | "INTERN"
-  | "JUNIOR"
-  | "MIDDLE"
-  | "SENIOR"
-  | "LEAD"
-  | "PRINCIPAL"
-  | "C_LEVEL";
+  "INTERN" | "JUNIOR" | "MIDDLE" | "SENIOR" | "LEAD" | "PRINCIPAL" | "C_LEVEL";
 
 export type WorkFormat = "REMOTE" | "OFFICE" | "HYBRID";
 
-export type EmploymentType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "FREELANCE"
-  | "INTERNSHIP";
+export type EmploymentType = "FULL_TIME" | "PART_TIME" | "CONTRACT" | "FREELANCE" | "INTERNSHIP";
 
 export type EnglishLevel =
-  | "BEGINNER"
-  | "INTERMEDIATE"
-  | "UPPER_INTERMEDIATE"
-  | "ADVANCED"
-  | "NATIVE";
+  "BEGINNER" | "INTERMEDIATE" | "UPPER_INTERMEDIATE" | "ADVANCED" | "NATIVE";
 
 export type Currency = "USD" | "EUR" | "UAH";
 
-export type EngagementType =
-  | "PRODUCT"
-  | "OUTSOURCE"
-  | "OUTSTAFF"
-  | "STARTUP"
-  | "AGENCY";
+export type EngagementType = "PRODUCT" | "OUTSOURCE" | "OUTSTAFF" | "STARTUP" | "AGENCY";
 
 export interface ExtractedLocation {
   city: string;
@@ -119,10 +99,7 @@ export const ENGAGEMENT_LABELS: Record<EngagementType, string> = {
 
 const TITLE_FALLBACK_MAX = 90;
 
-export function displayTitle(input: {
-  title: string;
-  extractedData: unknown;
-}): string {
+export function displayTitle(input: { title: string; extractedData: unknown }): string {
   const ex = safeExtracted(input.extractedData);
   if (ex?.role) return ex.role;
   return input.title.length <= TITLE_FALLBACK_MAX
@@ -130,9 +107,7 @@ export function displayTitle(input: {
     : `${input.title.slice(0, TITLE_FALLBACK_MAX)}…`;
 }
 
-export function extractedSeniority(input: {
-  extractedData: unknown;
-}): Seniority | null {
+export function extractedSeniority(input: { extractedData: unknown }): Seniority | null {
   return safeExtracted(input.extractedData)?.seniority ?? null;
 }
 
@@ -144,20 +119,15 @@ export function formatSalary(salary: ExtractedSalary | null): string | null {
   if (!salary) return null;
   const { min, max, currency } = salary;
   if (min == null && max == null) return null;
-  const sign =
-    currency === "USD"
-      ? "$"
-      : currency === "EUR"
-        ? "€"
-        : currency === "UAH"
-          ? "₴"
-          : "";
+  // The code, not a glyph: "$" reads as US-only to a UA audience, and € / ₴ are
+  // easy to misread at the card's font size.
+  const code = currency ? ` ${currency}` : "";
   if (min != null && max != null && min !== max) {
-    return `${sign}${compactThousands(min)}–${compactThousands(max)}`;
+    return `${compactThousands(min)}–${compactThousands(max)}${code}`;
   }
   const v = max ?? min;
   if (v == null) return null;
-  return `${sign}${compactThousands(v)}`;
+  return `${compactThousands(v)}${code}`;
 }
 
 export function formatLocations(
@@ -165,9 +135,7 @@ export function formatLocations(
   max = 2,
 ): string | null {
   if (!locations || locations.length === 0) return null;
-  const cities = locations
-    .map((l) => l.city)
-    .filter((c): c is string => Boolean(c));
+  const cities = locations.map((l) => l.city).filter((c): c is string => Boolean(c));
   if (cities.length === 0) return null;
   if (cities.length <= max) return cities.join(" · ");
   return `${cities.slice(0, max).join(" · ")} · +${cities.length - max}`;

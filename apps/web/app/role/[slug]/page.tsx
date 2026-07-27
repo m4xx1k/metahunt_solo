@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { HubShell } from "@/app/_components/HubShell";
-import { facetsApi, type NodeFacet } from "@/lib/api/facets";
+import { facetsApi, type NodeFacet, type RoleFacetsResponse } from "@/lib/api/facets";
 import { vacanciesApi } from "@/lib/api/vacancies";
 import { breadcrumbJsonLd } from "@/lib/seo/breadcrumbs";
 import {
@@ -27,14 +27,21 @@ const RELATED_COUNT = 8;
 type PageParams = { slug: string };
 
 async function loadRole(slug: string): Promise<NodeFacet | null> {
-  const roles = await facetsApi
+  const { roles, retired } = await facetsApi
     .roles()
-    .then((r) => r.roles)
-    .catch((): NodeFacet[] => []);
+    .catch((): RoleFacetsResponse => ({ roles: [], retired: {} }));
   const role = roles.find((r) => r.id === slug) ?? null;
+  // A taxonomy merge deletes the node, so its indexed hub would 404. Send the
+  // link equity to the surviving role instead — same reasoning as the retired
+  // routes in next.config.ts.
+  if (!role) {
+    const successor = retired?.[slug];
+    if (successor && successor !== slug) permanentRedirect(`/role/${successor}`);
+    return null;
+  }
   // The threshold is the anti-thin-content guard: a landing with two openings on
   // it is a doorway page, and Google treats a pile of them as a quality problem.
-  return role && role.count >= ROLE_HUB_MIN_VACANCIES ? role : null;
+  return role.count >= ROLE_HUB_MIN_VACANCIES ? role : null;
 }
 
 export async function generateMetadata({
