@@ -48,7 +48,26 @@ export const englishLevel = pgEnum("english_level", [
   "NATIVE",
 ]);
 
-export const currency = pgEnum("currency", ["USD", "EUR", "UAH"]);
+// GBP/INR/COP observed on live ATS boards (clickup, intellias, everai); PLN
+// and CAD added because dropping a salary for an unrepresentable currency is
+// worse than carrying the code.
+export const currency = pgEnum("currency", [
+  "USD",
+  "EUR",
+  "UAH",
+  "GBP",
+  "PLN",
+  "CAD",
+  "INR",
+  "COP",
+]);
+
+/**
+ * Where the numbers in `salary_min`/`salary_max` came from. An ATS field the
+ * employer filled in and a figure an LLM read out of prose are not the same
+ * claim, and the loader must never let the second overwrite the first.
+ */
+export const salarySource = pgEnum("salary_source", ["ATS_STRUCTURED", "LLM_TEXT"]);
 
 export const engagementType = pgEnum("engagement_type", [
   "PRODUCT",
@@ -86,6 +105,10 @@ export const vacancies = pgTable(
     salaryMin: integer("salary_min"),
     salaryMax: integer("salary_max"),
     currency: currency("currency"),
+    salarySource: salarySource("salary_source"),
+    // Verbatim source string/JSON, so a parser fix can be replayed without
+    // paying to re-extract.
+    salaryRaw: text("salary_raw"),
 
     engagementType: engagementType("engagement_type"),
     hasTestAssignment: boolean("has_test_assignment"),
@@ -118,6 +141,10 @@ export const vacancies = pgTable(
     // intentionally no DB-side mapping, the JSON is served verbatim.
     // Null for canonical members and for unresolved vacancies.
     dedupReason: jsonb("dedup_reason"),
+
+    // Every ATS fetch is a complete board snapshot, so a posting that vanishes
+    // between cycles is provably closed — a signal RSS cannot give us.
+    closedAt: timestamp("closed_at", { withTimezone: true }),
 
     loadedAt: timestamp("loaded_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
