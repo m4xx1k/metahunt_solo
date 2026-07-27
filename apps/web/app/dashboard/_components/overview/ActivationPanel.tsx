@@ -18,7 +18,7 @@ export function ActivationPanel({
   const entry = funnel[0]?.journeys ?? 0;
 
   return (
-    <Panel title="Activation" meta={period}>
+    <Panel title="Activation" meta={period} scope="period">
       {entry === 0 ? (
         <EmptyState title="no journeys yet" hint="nobody entered the funnel in this period." />
       ) : (

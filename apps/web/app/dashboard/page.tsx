@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 
 import { isStatsPeriod, monitoringApi, type StatsPeriod } from "@/lib/api/monitoring";
 import { productAnalyticsApi } from "@/lib/api/product-analytics";
-import { GrowthPanel } from "@/entities/analytics/GrowthPanel";
-import { formatCount, formatPercent } from "@/lib/format";
-import { StatCard } from "@/ui/data/StatCard";
-import { StatGrid } from "@/ui/data/StatGrid";
+import { HeadlineStrip } from "@/entities/analytics/HeadlineStrip";
 import { EmptyState } from "@/ui/feedback/EmptyState";
 import { PageBody } from "@/ui/layout/PageBody";
 import { PageHeader } from "@/ui/layout/PageHeader";
@@ -30,8 +27,9 @@ const PERIOD_LABEL: Record<StatsPeriod, string> = {
   all: "all time",
 };
 
-// Product first, pipeline second — and one period drives every number on the
-// page: both fetches take it, and each widget only shows period-scoped flow.
+// Read top to bottom: the headline says whether the product works, channels say
+// where the people came from, the roster says who is here, the strip says
+// whether the pipeline behind it is healthy. One period drives all of it.
 export default async function OverviewPage({
   searchParams,
 }: {
@@ -46,13 +44,6 @@ export default async function OverviewPage({
   ]);
 
   const periodLabel = PERIOD_LABEL[period];
-  const flow = product?.flow ?? {
-    joined: 0,
-    activated: 0,
-    digestClicks: 0,
-    feedClicks: 0,
-    churned: 0,
-  };
 
   return (
     <>
@@ -72,51 +63,34 @@ export default async function OverviewPage({
 
       <PageBody>
         {product ? (
-          <UsersPanel subscribers={product.subscriberActivity} period={periodLabel} />
+          <>
+            {/* Four bands by emphasis: the headline, then where they come from,
+                then who is here, then the pipeline that feeds all of it. */}
+            <HeadlineStrip
+              growth={product.growth}
+              funnel={product.funnel}
+              flow={product.flow}
+              period={periodLabel}
+            />
+
+            <div className="grid gap-3 lg:grid-cols-3">
+              <ChannelsPanel
+                channels={product.channels}
+                period={periodLabel}
+                className="lg:col-span-2"
+              />
+              <ActivationPanel funnel={product.funnel} period={periodLabel} />
+            </div>
+
+            <UsersPanel subscribers={product.subscriberActivity} period={periodLabel} />
+          </>
         ) : (
           <EmptyState
             title="product analytics api unavailable"
-            hint="the users, activation and channel widgets need /admin/product-analytics."
+            hint="the headline, channel and user widgets need /admin/product-analytics."
             tone="danger"
           />
         )}
-
-        <StatGrid cols={4}>
-          <StatCard
-            label="joined"
-            value={formatCount(flow.joined)}
-            hint="new subs"
-            href="/dashboard/analytics?tab=debug"
-          />
-          <StatCard
-            label="activated"
-            value={formatCount(flow.activated)}
-            hint="linked telegram"
-            tone="accent"
-            href="/dashboard/analytics"
-          />
-          <StatCard
-            label="clicks"
-            value={formatCount(flow.digestClicks + flow.feedClicks)}
-            hint="digest + feed"
-            href="/dashboard/analytics?tab=debug"
-          />
-          <StatCard
-            label="churned"
-            value={formatCount(flow.churned)}
-            hint={
-              flow.churned > 0 ? `${formatPercent(flow.churned, flow.joined)} of joins` : "none"
-            }
-            tone={flow.churned > 0 ? "danger" : "success"}
-            href="/dashboard/analytics?tab=debug"
-          />
-        </StatGrid>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          {product ? <GrowthPanel growth={product.growth} /> : null}
-          <ActivationPanel funnel={product?.funnel ?? []} period={periodLabel} />
-          <ChannelsPanel channels={product?.channels ?? []} period={periodLabel} />
-        </div>
 
         <PipelineStrip stats={stats} period={periodLabel} />
       </PageBody>
