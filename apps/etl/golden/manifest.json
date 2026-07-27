@@ -1,0 +1,1531 @@
+{
+  "generatedAt": "2026-07-27T05:52:03.480Z",
+  "size": 25,
+  "poolSize": 10720,
+  "coverage": [
+    {
+      "cell": "category:(none)",
+      "picked": 7,
+      "pool": 3901,
+      "cap": 13
+    },
+    {
+      "cell": "category:.NET",
+      "picked": 1,
+      "pool": 204,
+      "cap": 4
+    },
+    {
+      "cell": "category:2D Artist",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:3D Artist",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:AI",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:ASIC / Chip Design",
+      "picked": 0,
+      "pool": 6,
+      "cap": 4
+    },
+    {
+      "cell": "category:ASP.NET",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Affiliate Manager",
+      "picked": 0,
+      "pool": 3,
+      "cap": 4
+    },
+    {
+      "cell": "category:Android",
+      "picked": 0,
+      "pool": 70,
+      "cap": 4
+    },
+    {
+      "cell": "category:Angular",
+      "picked": 0,
+      "pool": 17,
+      "cap": 4
+    },
+    {
+      "cell": "category:Architect",
+      "picked": 0,
+      "pool": 78,
+      "cap": 4
+    },
+    {
+      "cell": "category:Artist",
+      "picked": 0,
+      "pool": 7,
+      "cap": 4
+    },
+    {
+      "cell": "category:Business Analyst",
+      "picked": 0,
+      "pool": 31,
+      "cap": 4
+    },
+    {
+      "cell": "category:Business Development",
+      "picked": 0,
+      "pool": 8,
+      "cap": 4
+    },
+    {
+      "cell": "category:C Lang",
+      "picked": 0,
+      "pool": 32,
+      "cap": 4
+    },
+    {
+      "cell": "category:C++",
+      "picked": 1,
+      "pool": 86,
+      "cap": 4
+    },
+    {
+      "cell": "category:CAD Designer",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:CBDO",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:CMO",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:CPP",
+      "picked": 0,
+      "pool": 71,
+      "cap": 4
+    },
+    {
+      "cell": "category:CTO",
+      "picked": 1,
+      "pool": 9,
+      "cap": 4
+    },
+    {
+      "cell": "category:Content Manager",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Content Writing",
+      "picked": 0,
+      "pool": 6,
+      "cap": 4
+    },
+    {
+      "cell": "category:Data Analyst",
+      "picked": 1,
+      "pool": 216,
+      "cap": 4
+    },
+    {
+      "cell": "category:Data Analytics",
+      "picked": 0,
+      "pool": 8,
+      "cap": 4
+    },
+    {
+      "cell": "category:Data Engineer",
+      "picked": 1,
+      "pool": 414,
+      "cap": 4
+    },
+    {
+      "cell": "category:Data Science",
+      "picked": 0,
+      "pool": 137,
+      "cap": 4
+    },
+    {
+      "cell": "category:DefTech",
+      "picked": 0,
+      "pool": 23,
+      "cap": 4
+    },
+    {
+      "cell": "category:Design",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:DevOps",
+      "picked": 1,
+      "pool": 388,
+      "cap": 4
+    },
+    {
+      "cell": "category:Digital Marketing",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Digital Marketing Manager",
+      "picked": 0,
+      "pool": 3,
+      "cap": 4
+    },
+    {
+      "cell": "category:Dotnet Cloud",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Dotnet Desktop",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Dotnet Mobile",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Dotnet Web",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Drupal",
+      "picked": 0,
+      "pool": 6,
+      "cap": 4
+    },
+    {
+      "cell": "category:ERP",
+      "picked": 0,
+      "pool": 33,
+      "cap": 4
+    },
+    {
+      "cell": "category:Electronic Warfare",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Electronics / PCB Design",
+      "picked": 0,
+      "pool": 7,
+      "cap": 4
+    },
+    {
+      "cell": "category:Elixir",
+      "picked": 0,
+      "pool": 4,
+      "cap": 4
+    },
+    {
+      "cell": "category:Embedded",
+      "picked": 0,
+      "pool": 146,
+      "cap": 4
+    },
+    {
+      "cell": "category:Engineering / CAD Design",
+      "picked": 0,
+      "pool": 9,
+      "cap": 4
+    },
+    {
+      "cell": "category:Engineering Manager",
+      "picked": 0,
+      "pool": 18,
+      "cap": 4
+    },
+    {
+      "cell": "category:FPGA Engineer",
+      "picked": 0,
+      "pool": 14,
+      "cap": 4
+    },
+    {
+      "cell": "category:Finance Manager",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Finances",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Firmware Engineer",
+      "picked": 0,
+      "pool": 27,
+      "cap": 4
+    },
+    {
+      "cell": "category:Flutter",
+      "picked": 0,
+      "pool": 34,
+      "cap": 4
+    },
+    {
+      "cell": "category:Fullstack",
+      "picked": 1,
+      "pool": 603,
+      "cap": 5
+    },
+    {
+      "cell": "category:Game Design",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Game Developer",
+      "picked": 0,
+      "pool": 26,
+      "cap": 4
+    },
+    {
+      "cell": "category:Golang",
+      "picked": 0,
+      "pool": 108,
+      "cap": 4
+    },
+    {
+      "cell": "category:Graphic Design",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:HR",
+      "picked": 1,
+      "pool": 10,
+      "cap": 4
+    },
+    {
+      "cell": "category:Hardware",
+      "picked": 0,
+      "pool": 13,
+      "cap": 4
+    },
+    {
+      "cell": "category:Hardware Engineer",
+      "picked": 0,
+      "pool": 109,
+      "cap": 4
+    },
+    {
+      "cell": "category:Head Chief",
+      "picked": 0,
+      "pool": 13,
+      "cap": 4
+    },
+    {
+      "cell": "category:Information Security",
+      "picked": 0,
+      "pool": 28,
+      "cap": 4
+    },
+    {
+      "cell": "category:Java",
+      "picked": 0,
+      "pool": 220,
+      "cap": 4
+    },
+    {
+      "cell": "category:JavaScript",
+      "picked": 0,
+      "pool": 154,
+      "cap": 4
+    },
+    {
+      "cell": "category:JavaScript, Fullstack",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Kotlin",
+      "picked": 0,
+      "pool": 8,
+      "cap": 4
+    },
+    {
+      "cell": "category:Laravel",
+      "picked": 0,
+      "pool": 34,
+      "cap": 4
+    },
+    {
+      "cell": "category:Lead",
+      "picked": 1,
+      "pool": 128,
+      "cap": 4
+    },
+    {
+      "cell": "category:Lead Generation",
+      "picked": 0,
+      "pool": 22,
+      "cap": 4
+    },
+    {
+      "cell": "category:Level Design",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:ML AI",
+      "picked": 1,
+      "pool": 343,
+      "cap": 4
+    },
+    {
+      "cell": "category:MS Dynamics",
+      "picked": 0,
+      "pool": 18,
+      "cap": 4
+    },
+    {
+      "cell": "category:Magento",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Marketing",
+      "picked": 0,
+      "pool": 17,
+      "cap": 4
+    },
+    {
+      "cell": "category:Marketing Analyst",
+      "picked": 0,
+      "pool": 4,
+      "cap": 4
+    },
+    {
+      "cell": "category:Markup",
+      "picked": 0,
+      "pool": 6,
+      "cap": 4
+    },
+    {
+      "cell": "category:Mechanical Engineering",
+      "picked": 0,
+      "pool": 10,
+      "cap": 4
+    },
+    {
+      "cell": "category:Media Buying",
+      "picked": 0,
+      "pool": 26,
+      "cap": 4
+    },
+    {
+      "cell": "category:Military Software / C4ISR",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Motion Design",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:No Code",
+      "picked": 1,
+      "pool": 19,
+      "cap": 4
+    },
+    {
+      "cell": "category:Node.js",
+      "picked": 0,
+      "pool": 202,
+      "cap": 4
+    },
+    {
+      "cell": "category:Odoo",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Other",
+      "picked": 1,
+      "pool": 77,
+      "cap": 4
+    },
+    {
+      "cell": "category:Other tech",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:PHP",
+      "picked": 0,
+      "pool": 112,
+      "cap": 4
+    },
+    {
+      "cell": "category:PR Manager",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Penetration Tester",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Performance Marketing",
+      "picked": 0,
+      "pool": 15,
+      "cap": 4
+    },
+    {
+      "cell": "category:Product Design",
+      "picked": 0,
+      "pool": 3,
+      "cap": 4
+    },
+    {
+      "cell": "category:Product Manager",
+      "picked": 0,
+      "pool": 4,
+      "cap": 4
+    },
+    {
+      "cell": "category:Product Owner",
+      "picked": 0,
+      "pool": 3,
+      "cap": 4
+    },
+    {
+      "cell": "category:Project Manager",
+      "picked": 0,
+      "pool": 8,
+      "cap": 4
+    },
+    {
+      "cell": "category:Python",
+      "picked": 1,
+      "pool": 378,
+      "cap": 4
+    },
+    {
+      "cell": "category:QA",
+      "picked": 1,
+      "pool": 398,
+      "cap": 4
+    },
+    {
+      "cell": "category:QA Automation",
+      "picked": 0,
+      "pool": 340,
+      "cap": 4
+    },
+    {
+      "cell": "category:QA Hardware / Embedded",
+      "picked": 0,
+      "pool": 95,
+      "cap": 4
+    },
+    {
+      "cell": "category:Quality Assurance",
+      "picked": 1,
+      "pool": 14,
+      "cap": 4
+    },
+    {
+      "cell": "category:RF Engineer",
+      "picked": 0,
+      "pool": 38,
+      "cap": 4
+    },
+    {
+      "cell": "category:React Native",
+      "picked": 0,
+      "pool": 56,
+      "cap": 4
+    },
+    {
+      "cell": "category:React.js",
+      "picked": 0,
+      "pool": 62,
+      "cap": 4
+    },
+    {
+      "cell": "category:React.js, JavaScript",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Recruiter",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:Robotics Engineer",
+      "picked": 0,
+      "pool": 15,
+      "cap": 4
+    },
+    {
+      "cell": "category:Ruby",
+      "picked": 0,
+      "pool": 25,
+      "cap": 4
+    },
+    {
+      "cell": "category:Rust",
+      "picked": 0,
+      "pool": 25,
+      "cap": 4
+    },
+    {
+      "cell": "category:SAP",
+      "picked": 0,
+      "pool": 5,
+      "cap": 4
+    },
+    {
+      "cell": "category:SEO",
+      "picked": 0,
+      "pool": 7,
+      "cap": 4
+    },
+    {
+      "cell": "category:SQL",
+      "picked": 0,
+      "pool": 73,
+      "cap": 4
+    },
+    {
+      "cell": "category:Sales",
+      "picked": 0,
+      "pool": 14,
+      "cap": 4
+    },
+    {
+      "cell": "category:Sales Leadership",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Sales Manager",
+      "picked": 0,
+      "pool": 8,
+      "cap": 4
+    },
+    {
+      "cell": "category:Salesforce",
+      "picked": 0,
+      "pool": 27,
+      "cap": 4
+    },
+    {
+      "cell": "category:Scala",
+      "picked": 0,
+      "pool": 6,
+      "cap": 4
+    },
+    {
+      "cell": "category:Security",
+      "picked": 1,
+      "pool": 103,
+      "cap": 4
+    },
+    {
+      "cell": "category:Security Analyst",
+      "picked": 0,
+      "pool": 8,
+      "cap": 4
+    },
+    {
+      "cell": "category:Social Media",
+      "picked": 0,
+      "pool": 32,
+      "cap": 4
+    },
+    {
+      "cell": "category:Support",
+      "picked": 0,
+      "pool": 54,
+      "cap": 4
+    },
+    {
+      "cell": "category:Symfony",
+      "picked": 0,
+      "pool": 10,
+      "cap": 4
+    },
+    {
+      "cell": "category:Sysadmin",
+      "picked": 0,
+      "pool": 188,
+      "cap": 4
+    },
+    {
+      "cell": "category:Technical Writing",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:UAV / Drone Engineer",
+      "picked": 1,
+      "pool": 68,
+      "cap": 4
+    },
+    {
+      "cell": "category:UAV / Drone Pilot",
+      "picked": 0,
+      "pool": 3,
+      "cap": 4
+    },
+    {
+      "cell": "category:UI UX",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Unity",
+      "picked": 0,
+      "pool": 4,
+      "cap": 4
+    },
+    {
+      "cell": "category:Unity Developer",
+      "picked": 0,
+      "pool": 36,
+      "cap": 4
+    },
+    {
+      "cell": "category:Unreal Developer",
+      "picked": 0,
+      "pool": 40,
+      "cap": 4
+    },
+    {
+      "cell": "category:VFX Artist",
+      "picked": 0,
+      "pool": 3,
+      "cap": 4
+    },
+    {
+      "cell": "category:Video Editor",
+      "picked": 0,
+      "pool": 4,
+      "cap": 4
+    },
+    {
+      "cell": "category:Vue.js",
+      "picked": 0,
+      "pool": 27,
+      "cap": 4
+    },
+    {
+      "cell": "category:WPF",
+      "picked": 0,
+      "pool": 1,
+      "cap": 4
+    },
+    {
+      "cell": "category:Weapons Systems",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:Web Analyst",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:WordPress",
+      "picked": 1,
+      "pool": 58,
+      "cap": 4
+    },
+    {
+      "cell": "category:Yii",
+      "picked": 0,
+      "pool": 2,
+      "cap": 4
+    },
+    {
+      "cell": "category:iOS",
+      "picked": 0,
+      "pool": 58,
+      "cap": 4
+    },
+    {
+      "cell": "lang:cyrillic",
+      "picked": 10,
+      "pool": 4136,
+      "cap": 13
+    },
+    {
+      "cell": "lang:en",
+      "picked": 11,
+      "pool": 6456,
+      "cap": 19
+    },
+    {
+      "cell": "lang:mixed",
+      "picked": 4,
+      "pool": 128,
+      "cap": 4
+    },
+    {
+      "cell": "len:p25",
+      "picked": 5,
+      "pool": 2147,
+      "cap": 9
+    },
+    {
+      "cell": "len:p5",
+      "picked": 4,
+      "pool": 537,
+      "cap": 5
+    },
+    {
+      "cell": "len:p50",
+      "picked": 4,
+      "pool": 2677,
+      "cap": 10
+    },
+    {
+      "cell": "len:p75",
+      "picked": 4,
+      "pool": 2680,
+      "cap": 10
+    },
+    {
+      "cell": "len:p95",
+      "picked": 4,
+      "pool": 2145,
+      "cap": 9
+    },
+    {
+      "cell": "len:p95+",
+      "picked": 4,
+      "pool": 534,
+      "cap": 5
+    },
+    {
+      "cell": "multi-city:no",
+      "picked": 19,
+      "pool": 9718,
+      "cap": 26
+    },
+    {
+      "cell": "multi-city:yes",
+      "picked": 6,
+      "pool": 1002,
+      "cap": 6
+    },
+    {
+      "cell": "prod-nulls:few",
+      "picked": 5,
+      "pool": 544,
+      "cap": 5
+    },
+    {
+      "cell": "prod-nulls:many",
+      "picked": 10,
+      "pool": 2983,
+      "cap": 10
+    },
+    {
+      "cell": "prod-nulls:some",
+      "picked": 10,
+      "pool": 7193,
+      "cap": 20
+    },
+    {
+      "cell": "prod-tech:false",
+      "picked": 4,
+      "pool": 234,
+      "cap": 4
+    },
+    {
+      "cell": "prod-tech:true",
+      "picked": 9,
+      "pool": 2429,
+      "cap": 9
+    },
+    {
+      "cell": "prod-tech:unknown",
+      "picked": 12,
+      "pool": 8057,
+      "cap": 22
+    },
+    {
+      "cell": "prod:error",
+      "picked": 4,
+      "pool": 322,
+      "cap": 4
+    },
+    {
+      "cell": "prod:ok",
+      "picked": 21,
+      "pool": 10398,
+      "cap": 28
+    },
+    {
+      "cell": "reservation:no",
+      "picked": 19,
+      "pool": 9465,
+      "cap": 26
+    },
+    {
+      "cell": "reservation:yes",
+      "picked": 6,
+      "pool": 1255,
+      "cap": 6
+    },
+    {
+      "cell": "salary-text:no",
+      "picked": 15,
+      "pool": 7774,
+      "cap": 22
+    },
+    {
+      "cell": "salary-text:yes",
+      "picked": 10,
+      "pool": 2946,
+      "cap": 10
+    },
+    {
+      "cell": "seniority-title:no",
+      "picked": 12,
+      "pool": 5154,
+      "cap": 16
+    },
+    {
+      "cell": "seniority-title:yes",
+      "picked": 13,
+      "pool": 5566,
+      "cap": 16
+    },
+    {
+      "cell": "source:djinni",
+      "picked": 18,
+      "pool": 6830,
+      "cap": 19
+    },
+    {
+      "cell": "source:dou",
+      "picked": 7,
+      "pool": 3890,
+      "cap": 13
+    },
+    {
+      "cell": "test-assignment:no",
+      "picked": 21,
+      "pool": 10343,
+      "cap": 28
+    },
+    {
+      "cell": "test-assignment:yes",
+      "picked": 4,
+      "pool": 377,
+      "cap": 4
+    }
+  ],
+  "entries": [
+    {
+      "id": "00060c1e-3eb9-4c5c-a26e-f336321feb0e",
+      "source": "djinni",
+      "category": ".NET",
+      "title": "Dynamics 365 Business Central Developer (AL, .NET)",
+      "link": "https://djinni.co/jobs/822594-dynamics-365-business-central-developer-al-ne/",
+      "publishedAt": "2026-05-04T04:38:37.000Z",
+      "cells": [
+        "source:djinni",
+        "category:.NET",
+        "len:p50",
+        "lang:en",
+        "salary-text:yes",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "994281fe-0891-4474-b8c6-aff5760a72f6",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Senior/Lead Data Analyst (Wellbeing product) в Kiss My Apps, за кордоном, віддалено",
+      "link": "https://jobs.dou.ua/companies/kiss-my-apps/vacancies/355991/?utm_source=jobsrss",
+      "publishedAt": "2026-06-23T14:57:13.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p95+",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:yes",
+        "test-assignment:no",
+        "prod-nulls:few",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:yes"
+      ]
+    },
+    {
+      "id": "44bb481d-57ac-434f-8541-10004153158e",
+      "source": "djinni",
+      "category": "Data Analyst",
+      "title": "Data Analyst",
+      "link": "https://djinni.co/jobs/834786-data-analyst/",
+      "publishedAt": "2026-07-20T09:29:32.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Data Analyst",
+        "len:p25",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:yes",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:false",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "ae3cb4b6-ef09-4b66-8b12-6668c8c298cd",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Senior Full Stack Developer (React + Node.js) в Aimprosoft, віддалено",
+      "link": "https://jobs.dou.ua/companies/aimprosoft/vacancies/364273/?utm_source=jobsrss",
+      "publishedAt": "2026-07-01T15:16:33.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p95",
+        "lang:en",
+        "salary-text:yes",
+        "seniority-title:yes",
+        "reservation:yes",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:error",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "8b163199-c077-4791-aece-d4717764fb8c",
+      "source": "djinni",
+      "category": "Python",
+      "title": "Senior AI/LLM Python developer with LangGraph",
+      "link": "https://djinni.co/jobs/827105-senior-ai-llm-python-developer-with-langgraph/",
+      "publishedAt": "2026-07-03T19:28:37.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Python",
+        "len:p75",
+        "lang:mixed",
+        "salary-text:yes",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "127749e3-9277-4842-bb5c-d32583e18c43",
+      "source": "djinni",
+      "category": "Quality Assurance",
+      "title": "QA Engineer",
+      "link": "https://djinni.co/jobs/825742-qa-engineer/",
+      "publishedAt": "2026-05-18T11:31:18.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Quality Assurance",
+        "len:p5",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:yes",
+        "prod-nulls:many",
+        "prod:error",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "d2a46405-1db7-43c8-a196-3e1045c1cce2",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Payment Data Analyst в Zeely AI, віддалено",
+      "link": "https://jobs.dou.ua/companies/zeely-ai/vacancies/367002/?utm_source=jobsrss",
+      "publishedAt": "2026-07-23T14:07:52.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p75",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:yes",
+        "prod-nulls:few",
+        "prod:ok",
+        "prod-tech:false",
+        "multi-city:yes"
+      ]
+    },
+    {
+      "id": "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e",
+      "source": "djinni",
+      "category": "ML AI",
+      "title": "Full Stack AI Engineer (для чинних військовослужбовців/можливе переведення)",
+      "link": "https://djinni.co/jobs/829670-full-stack-ai-engineer-dlia-chinnikh-viis-kov/",
+      "publishedAt": "2026-06-04T15:36:48.000Z",
+      "cells": [
+        "source:djinni",
+        "category:ML AI",
+        "len:p50",
+        "lang:mixed",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:yes",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:error",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "c92417fc-130a-495f-b26c-f6d3f9007a6c",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Integration Engineer в Swarmer, Київ, Львів, Варшава (Польща)",
+      "link": "https://jobs.dou.ua/companies/swarmer/vacancies/320314/?utm_source=jobsrss",
+      "publishedAt": "2026-07-10T12:35:32.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p95",
+        "lang:en",
+        "salary-text:yes",
+        "seniority-title:no",
+        "reservation:yes",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:yes"
+      ]
+    },
+    {
+      "id": "1c16aa37-74c4-4fe0-b0f3-8ce536b01baa",
+      "source": "djinni",
+      "category": "HR",
+      "title": "Head of Learning and Development",
+      "link": "https://djinni.co/jobs/818437-head-of-learning-and-development/",
+      "publishedAt": "2026-07-22T15:55:20.000Z",
+      "cells": [
+        "source:djinni",
+        "category:HR",
+        "len:p95+",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:yes",
+        "test-assignment:yes",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:false",
+        "multi-city:yes"
+      ]
+    },
+    {
+      "id": "654c2490-e2f1-43ab-9890-832e3495117f",
+      "source": "djinni",
+      "category": "Fullstack",
+      "title": "Tech Lead Full Stack Laravel / React",
+      "link": "https://djinni.co/jobs/822260-tech-lead-full-stack-laravel-react/",
+      "publishedAt": "2026-07-09T14:33:36.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Fullstack",
+        "len:p25",
+        "lang:en",
+        "salary-text:yes",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:few",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "e33ce465-c738-4ca6-8db7-f0e923e64083",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Senior Control Engineer — Drones and Robotics в A19Lab.com, від&nbsp;$4000, Київ, Варшава (Польща), віддалено",
+      "link": "https://jobs.dou.ua/companies/a19lab/vacancies/285536/?utm_source=jobsrss",
+      "publishedAt": "2026-05-28T22:17:26.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p5",
+        "lang:mixed",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:yes"
+      ]
+    },
+    {
+      "id": "4f4e000c-089d-4a4e-9165-de6fb698c8e8",
+      "source": "djinni",
+      "category": "Lead",
+      "title": "BIM VDC Team Lead",
+      "link": "https://djinni.co/jobs/829717-bim-vdc-team-lead/",
+      "publishedAt": "2026-06-04T16:46:33.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Lead",
+        "len:p50",
+        "lang:en",
+        "salary-text:yes",
+        "seniority-title:yes",
+        "reservation:yes",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:error",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "a06e6d98-332c-4605-92eb-8992f8fd147a",
+      "source": "djinni",
+      "category": "Data Engineer",
+      "title": "Data Engineer",
+      "link": "https://djinni.co/jobs/833332-data-engineer/",
+      "publishedAt": "2026-06-23T10:17:39.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Data Engineer",
+        "len:p95",
+        "lang:en",
+        "salary-text:yes",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:few",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:yes"
+      ]
+    },
+    {
+      "id": "ff9765ef-de34-4382-aeb4-ca26c0a219eb",
+      "source": "djinni",
+      "category": "No Code",
+      "title": "Trainee/Junior Assembler / No-code AI Developer for iGaming",
+      "link": "https://djinni.co/jobs/809436-trainee-junior-assembler-no-code-ai-developer/",
+      "publishedAt": "2026-06-23T11:06:13.000Z",
+      "cells": [
+        "source:djinni",
+        "category:No Code",
+        "len:p95+",
+        "lang:cyrillic",
+        "salary-text:yes",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:few",
+        "prod:ok",
+        "prod-tech:false",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "3e3cd609-3b14-4c83-90fa-af7e3eaff8a6",
+      "source": "djinni",
+      "category": "CTO",
+      "title": "CTO  (iGaming / Online Casino)",
+      "link": "https://djinni.co/jobs/835495-cto-igaming-online-casino/",
+      "publishedAt": "2026-07-04T14:07:56.000Z",
+      "cells": [
+        "source:djinni",
+        "category:CTO",
+        "len:p75",
+        "lang:mixed",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "00d54c50-e14a-4a10-abea-dffbee2bcbf0",
+      "source": "djinni",
+      "category": "C++",
+      "title": "Senior C++ Engineer (Desktop Applications)",
+      "link": "https://djinni.co/jobs/838561-senior-c-engineer-desktop-applications/",
+      "publishedAt": "2026-07-21T14:41:47.000Z",
+      "cells": [
+        "source:djinni",
+        "category:C++",
+        "len:p25",
+        "lang:en",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "0cbdf1dc-08e3-4c03-a720-636cc41143ef",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Embedded Systems (Hardware) QA (EM Value Stream) в Svarock, Київ",
+      "link": "https://jobs.dou.ua/companies/svarock/vacancies/341446/?utm_source=jobsrss",
+      "publishedAt": "2026-05-29T08:20:19.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p5",
+        "lang:cyrillic",
+        "salary-text:yes",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "00345013-b591-4336-b1f2-335fb414c716",
+      "source": "djinni",
+      "category": "DevOps",
+      "title": "DevOps Team Lead (AWS)",
+      "link": "https://djinni.co/jobs/822548-devops-team-lead-aws/",
+      "publishedAt": "2026-06-04T08:55:28.000Z",
+      "cells": [
+        "source:djinni",
+        "category:DevOps",
+        "len:p95",
+        "lang:en",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "46c98bf9-179d-4015-8430-4401c8d9494b",
+      "source": "djinni",
+      "category": "UAV / Drone Engineer",
+      "title": "Software Engineer (Embedded / Networks / UAV Systems)",
+      "link": "https://djinni.co/jobs/838623-software-engineer-embedded-networks-uav-syste/",
+      "publishedAt": "2026-07-22T06:48:25.000Z",
+      "cells": [
+        "source:djinni",
+        "category:UAV / Drone Engineer",
+        "len:p25",
+        "lang:cyrillic",
+        "salary-text:yes",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "00d60864-b357-4d22-9aa6-c4674ffb970c",
+      "source": "djinni",
+      "category": "Other",
+      "title": "GoHighLevel Expert / CRM Automation Lead",
+      "link": "https://djinni.co/jobs/829309-gohighlevel-expert-crm-automation-lead/",
+      "publishedAt": "2026-06-03T12:30:08.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Other",
+        "len:p50",
+        "lang:en",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "13a0fd86-dfac-44bb-9845-4242a139d405",
+      "source": "djinni",
+      "category": "Security",
+      "title": "Інженер з інформаційної безпеки/Information Security Engineer",
+      "link": "https://djinni.co/jobs/837993-inzhener-z-informatsiinoyi-bezpeki-informatio/",
+      "publishedAt": "2026-07-18T07:56:23.000Z",
+      "cells": [
+        "source:djinni",
+        "category:Security",
+        "len:p95+",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:ok",
+        "prod-tech:true",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2",
+      "source": "djinni",
+      "category": "QA",
+      "title": "Embedeed Software Quality Assurance Engineer",
+      "link": "https://djinni.co/jobs/820809-embedeed-software-quality-assurance-engineer/",
+      "publishedAt": "2026-05-12T09:11:19.000Z",
+      "cells": [
+        "source:djinni",
+        "category:QA",
+        "len:p75",
+        "lang:en",
+        "salary-text:no",
+        "seniority-title:no",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "5596ee51-a05c-4523-bcb8-384ea7d14653",
+      "source": "dou",
+      "category": "(none)",
+      "title": "Архітектор рішень, керівник технічного напряму (Solutions Architect, Tech Lead) в 13 бригада оперативного призначення НГУ «Хартія», $670–1800",
+      "link": "https://jobs.dou.ua/companies/13-brigada-operativnogo-priznachennya-hartiya/vacancies/359654/?utm_source=jobsrss",
+      "publishedAt": "2026-05-27T07:44:04.000Z",
+      "cells": [
+        "source:dou",
+        "category:(none)",
+        "len:p5",
+        "lang:cyrillic",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:some",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    },
+    {
+      "id": "0093c6a8-1f44-467a-839a-68e4a0b69294",
+      "source": "djinni",
+      "category": "WordPress",
+      "title": "Middle/Senior WordPress Developer",
+      "link": "https://djinni.co/jobs/823817-middle-senior-wordpress-developer/",
+      "publishedAt": "2026-05-08T07:24:47.000Z",
+      "cells": [
+        "source:djinni",
+        "category:WordPress",
+        "len:p25",
+        "lang:en",
+        "salary-text:no",
+        "seniority-title:yes",
+        "reservation:no",
+        "test-assignment:no",
+        "prod-nulls:many",
+        "prod:ok",
+        "prod-tech:unknown",
+        "multi-city:no"
+      ]
+    }
+  ]
+}

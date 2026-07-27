@@ -38,7 +38,9 @@
     "dedup:reset": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/02-enrich/dedup/dedup.cli.js reset",
     "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
     "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int",
-    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js"
+    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js",
+    "golden": "node --env-file-if-exists=.env -r ts-node/register/transpile-only apps/etl/src/eval/golden.cli.ts",
+    "golden:sample": "pnpm golden sample"
   },
   "engines": {
     "node": ">=22"
