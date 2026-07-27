@@ -39,7 +39,9 @@ const AshbyJob = z.object({
   compensation: z
     .object({
       compensationTierSummary: z.string().nullish(),
-      compensationTiers: z.array(z.object({ components: z.array(CompensationComponent).nullish() })).nullish(),
+      compensationTiers: z
+        .array(z.object({ components: z.array(CompensationComponent).nullish() }))
+        .nullish(),
     })
     .nullish(),
 });
@@ -54,7 +56,11 @@ const AshbyBoard = z.object({ jobs: z.array(AshbyJob) });
 function toSalary(compensation: z.infer<typeof AshbyJob>["compensation"]): NormalizedSalary | null {
   const salaryComponent = compensation?.compensationTiers
     ?.flatMap((tier) => tier.components ?? [])
-    .find((c) => c.compensationType?.toLowerCase() === "salary" && (c.minValue != null || c.maxValue != null));
+    .find(
+      (c) =>
+        c.compensationType?.toLowerCase() === "salary" &&
+        (c.minValue != null || c.maxValue != null),
+    );
   if (!salaryComponent) return null;
 
   return {
@@ -76,24 +82,26 @@ export const ashbyAdapter: AtsAdapter = {
   toItems(payload, slug) {
     const board = AshbyBoard.parse(payload);
 
-    return board.jobs
-      // `isListed: false` is a posting the company has taken off its own board.
-      .filter((job) => job.isListed !== false)
-      .map((job) => ({
-        externalId: job.id,
-        title: job.title,
-        descriptionHtml: job.descriptionHtml ?? job.descriptionPlain ?? "",
-        link: job.jobUrl ?? job.applyUrl ?? `https://jobs.ashbyhq.com/${slug}/${job.id}`,
-        publishedAt: job.publishedAt ? new Date(job.publishedAt) : null,
-        locations: cleanLocations([
-          job.location,
-          ...(job.secondaryLocations ?? []).map((l) => (typeof l === "string" ? l : l.location)),
-        ]),
-        isRemote: normalizeRemote(job.workplaceType, job.isRemote),
-        employmentType: normalizeEmploymentType(job.employmentType),
-        department: job.department ?? null,
-        team: job.team ?? null,
-        salary: toSalary(job.compensation),
-      })) satisfies NormalizedItem[];
+    return (
+      board.jobs
+        // `isListed: false` is a posting the company has taken off its own board.
+        .filter((job) => job.isListed !== false)
+        .map((job) => ({
+          externalId: job.id,
+          title: job.title,
+          descriptionHtml: job.descriptionHtml ?? job.descriptionPlain ?? "",
+          link: job.jobUrl ?? job.applyUrl ?? `https://jobs.ashbyhq.com/${slug}/${job.id}`,
+          publishedAt: job.publishedAt ? new Date(job.publishedAt) : null,
+          locations: cleanLocations([
+            job.location,
+            ...(job.secondaryLocations ?? []).map((l) => (typeof l === "string" ? l : l.location)),
+          ]),
+          isRemote: normalizeRemote(job.workplaceType, job.isRemote),
+          employmentType: normalizeEmploymentType(job.employmentType),
+          department: job.department ?? null,
+          team: job.team ?? null,
+          salary: toSalary(job.compensation),
+        })) satisfies NormalizedItem[]
+    );
   },
 };

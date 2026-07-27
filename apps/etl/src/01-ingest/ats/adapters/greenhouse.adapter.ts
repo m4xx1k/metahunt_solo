@@ -34,17 +34,21 @@ const ENTITIES: Record<string, string> = {
 };
 
 export function unescapeHtml(input: string): string {
-  return input
-    .replace(/&(?:lt|gt|quot|#39|apos|nbsp);/g, (m) => ENTITIES[m] ?? m)
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
-    // `&amp;` last, so "&amp;lt;" does not become a literal "<".
-    .replace(/&amp;/g, "&");
+  return (
+    input
+      .replace(/&(?:lt|gt|quot|#39|apos|nbsp);/g, (m) => ENTITIES[m] ?? m)
+      .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
+      // `&amp;` last, so "&amp;lt;" does not become a literal "<".
+      .replace(/&amp;/g, "&")
+  );
 }
 
 // Greenhouse has no employment-type field. Some boards put it in `metadata`
 // under a free-text name; read it where present rather than sending every
 // posting to the LLM for something the board already knows.
-function employmentFromMetadata(metadata: z.infer<typeof GreenhouseJob>["metadata"]): string | null {
+function employmentFromMetadata(
+  metadata: z.infer<typeof GreenhouseJob>["metadata"],
+): string | null {
   const entry = metadata?.find((m) => /employment|job\s*type|contract\s*type/i.test(m.name ?? ""));
   return typeof entry?.value === "string" ? entry.value : null;
 }
@@ -60,7 +64,10 @@ export const greenhouseAdapter: AtsAdapter = {
     const board = GreenhouseBoard.parse(payload);
 
     return board.jobs.map((job) => {
-      const locations = cleanLocations([job.location?.name, ...(job.offices ?? []).map((o) => o.name)]);
+      const locations = cleanLocations([
+        job.location?.name,
+        ...(job.offices ?? []).map((o) => o.name),
+      ]);
 
       return {
         externalId: String(job.id),

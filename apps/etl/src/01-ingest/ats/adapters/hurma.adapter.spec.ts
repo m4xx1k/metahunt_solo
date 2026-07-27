@@ -34,7 +34,9 @@ describe("hurmaAdapter", () => {
   it("reads employment type and remote out of the same Ukrainian work_types array", () => {
     const [item] = hurmaAdapter.toItems(
       {
-        result: { data: [{ id: 1, name: "Розробник", work_types: ["Віддалена", "Повна зайнятість"] }] },
+        result: {
+          data: [{ id: 1, name: "Розробник", work_types: ["Віддалена", "Повна зайнятість"] }],
+        },
       },
       "acme",
     );
@@ -93,6 +95,8 @@ describe("hurmaAdapter", () => {
     expect(hurmaNextPageUrl({ result: { data: [], current_page: 1, last_page: 3 } }, "acme")).toBe(
       "https://acme.hurma.work/api/vacancies?page=2",
     );
-    expect(hurmaNextPageUrl({ result: { data: [], current_page: 3, last_page: 3 } }, "acme")).toBeNull();
+    expect(
+      hurmaNextPageUrl({ result: { data: [], current_page: 3, last_page: 3 } }, "acme"),
+    ).toBeNull();
   });
 });

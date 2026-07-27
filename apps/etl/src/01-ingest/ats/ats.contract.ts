@@ -8,11 +8,7 @@ export type AtsType = (typeof ATS_TYPES)[number];
 
 /** Mirrors the `employment_type` pgEnum. */
 export type NormalizedEmploymentType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "FREELANCE"
-  | "INTERNSHIP";
+  "FULL_TIME" | "PART_TIME" | "CONTRACT" | "FREELANCE" | "INTERNSHIP";
 
 export interface NormalizedSalary {
   min: number | null;
@@ -99,7 +95,9 @@ const EMPLOYMENT_ALIASES: Record<string, NormalizedEmploymentType> = {
   стажування: "INTERNSHIP",
 };
 
-export function normalizeEmploymentType(raw: string | null | undefined): NormalizedEmploymentType | null {
+export function normalizeEmploymentType(
+  raw: string | null | undefined,
+): NormalizedEmploymentType | null {
   if (!raw) return null;
   return EMPLOYMENT_ALIASES[raw.trim().toLowerCase()] ?? null;
 }

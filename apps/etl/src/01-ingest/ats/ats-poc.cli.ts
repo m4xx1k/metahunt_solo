@@ -64,7 +64,8 @@ interface BoardReport {
   medianDescriptionChars: number;
 }
 
-const UA_LOCATION = /ukrain|kyiv|kiev|lviv|kharkiv|dnipro|odesa|odessa|vinnyts|київ|львів|харків|дніпро|одеса|україн/i;
+const UA_LOCATION =
+  /ukrain|kyiv|kiev|lviv|kharkiv|dnipro|odesa|odessa|vinnyts|київ|львів|харків|дніпро|одеса|україн/i;
 
 function readUaTier(): Board[] {
   const tsv = readFileSync(join(REPO_ROOT, "md/todo/ats-sources/ats-slugs.tsv"), "utf8");
@@ -138,7 +139,9 @@ async function probeBoard(board: Board): Promise<BoardReport> {
       withEmploymentType: items.filter((i) => i.employmentType !== null).length,
       withDepartment: items.filter((i) => i.department !== null).length,
       withSalary: items.filter((i) => i.salary !== null).length,
-      salaryCurrencies: [...new Set(items.flatMap((i) => (i.salary?.currency ? [i.salary.currency] : [])))],
+      salaryCurrencies: [
+        ...new Set(items.flatMap((i) => (i.salary?.currency ? [i.salary.currency] : []))),
+      ],
       medianDescriptionChars: median(items.map((i) => i.descriptionHtml.length)),
     };
   } catch (error) {
@@ -146,8 +149,12 @@ async function probeBoard(board: Board): Promise<BoardReport> {
   }
 }
 
-async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
   let cursor = 0;
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, async () => {
@@ -197,12 +204,30 @@ function renderTable(reports: BoardReport[]): string {
       `${group.length} boards`,
       jobs,
       sum((r) => r.uaJobs),
-      pct(sum((r) => r.withLocation), jobs),
-      pct(sum((r) => r.withRemote), jobs),
-      pct(sum((r) => r.withPublishedAt), jobs),
-      pct(sum((r) => r.withEmploymentType), jobs),
-      pct(sum((r) => r.withDepartment), jobs),
-      pct(sum((r) => r.withSalary), jobs),
+      pct(
+        sum((r) => r.withLocation),
+        jobs,
+      ),
+      pct(
+        sum((r) => r.withRemote),
+        jobs,
+      ),
+      pct(
+        sum((r) => r.withPublishedAt),
+        jobs,
+      ),
+      pct(
+        sum((r) => r.withEmploymentType),
+        jobs,
+      ),
+      pct(
+        sum((r) => r.withDepartment),
+        jobs,
+      ),
+      pct(
+        sum((r) => r.withSalary),
+        jobs,
+      ),
       [...new Set(group.flatMap((r) => r.salaryCurrencies))].join("/") || "—",
       median(group.map((r) => r.medianDescriptionChars)),
     ].join(" | ");

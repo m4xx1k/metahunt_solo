@@ -51,9 +51,15 @@ const LeverBoard = z.array(LeverPosting);
  */
 function toDescription(posting: z.infer<typeof LeverPosting>): string {
   const sections = (posting.lists ?? []).map((section) =>
-    [section.text ? `<h3>${section.text}</h3>` : "", section.content ?? ""].filter(Boolean).join("\n"),
+    [section.text ? `<h3>${section.text}</h3>` : "", section.content ?? ""]
+      .filter(Boolean)
+      .join("\n"),
   );
-  return [posting.description ?? posting.descriptionBody ?? posting.descriptionPlain ?? "", ...sections, posting.additional ?? ""]
+  return [
+    posting.description ?? posting.descriptionBody ?? posting.descriptionPlain ?? "",
+    ...sections,
+    posting.additional ?? "",
+  ]
     .filter((part) => part.trim())
     .join("\n\n");
 }
@@ -92,7 +98,8 @@ export const leverAdapter: AtsAdapter = {
         externalId: posting.id,
         title: posting.text,
         descriptionHtml: toDescription(posting),
-        link: posting.hostedUrl ?? posting.applyUrl ?? `https://jobs.lever.co/${slug}/${posting.id}`,
+        link:
+          posting.hostedUrl ?? posting.applyUrl ?? `https://jobs.lever.co/${slug}/${posting.id}`,
         publishedAt: posting.createdAt ? new Date(posting.createdAt) : null,
         locations,
         isRemote: normalizeRemote(posting.workplaceType),

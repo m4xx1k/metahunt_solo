@@ -32,7 +32,13 @@ describe("ashbyAdapter", () => {
               compensationTiers: [
                 {
                   components: [
-                    { compensationType: "Salary", interval: "1 YEAR", currencyCode: "USD", minValue: 210000, maxValue: 400000 },
+                    {
+                      compensationType: "Salary",
+                      interval: "1 YEAR",
+                      currencyCode: "USD",
+                      minValue: 210000,
+                      maxValue: 400000,
+                    },
                     { compensationType: "Bonus", currencyCode: "USD", minValue: 31500 },
                   ],
                 },
@@ -55,7 +61,12 @@ describe("ashbyAdapter", () => {
 
   it("drops postings the company has unlisted", () => {
     const result = ashbyAdapter.toItems(
-      { jobs: [{ id: "a", title: "Shown" }, { id: "b", title: "Hidden", isListed: false }] },
+      {
+        jobs: [
+          { id: "a", title: "Shown" },
+          { id: "b", title: "Hidden", isListed: false },
+        ],
+      },
       "acme",
     );
     expect(result.map((i) => i.externalId)).toEqual(["a"]);

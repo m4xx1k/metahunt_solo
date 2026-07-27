@@ -43,8 +43,14 @@ describe("leverAdapter", () => {
   });
 
   it("reads lowercase workplaceType", () => {
-    const [hybrid] = leverAdapter.toItems([{ id: "x", text: "E", workplaceType: "hybrid" }], "acme");
-    const [remote] = leverAdapter.toItems([{ id: "y", text: "E", workplaceType: "remote" }], "acme");
+    const [hybrid] = leverAdapter.toItems(
+      [{ id: "x", text: "E", workplaceType: "hybrid" }],
+      "acme",
+    );
+    const [remote] = leverAdapter.toItems(
+      [{ id: "y", text: "E", workplaceType: "remote" }],
+      "acme",
+    );
     expect(hybrid.isRemote).toBe(false);
     expect(remote.isRemote).toBe(true);
   });
@@ -96,7 +102,14 @@ describe("leverAdapter", () => {
 
   it("still produces a body when description is empty but lists are not", () => {
     const [item] = leverAdapter.toItems(
-      [{ id: "x", text: "Engineer", description: "", lists: [{ text: "Requirements:", content: "<div>Go</div>" }] }],
+      [
+        {
+          id: "x",
+          text: "Engineer",
+          description: "",
+          lists: [{ text: "Requirements:", content: "<div>Go</div>" }],
+        },
+      ],
       "acme",
     );
     expect(item.descriptionHtml.length).toBeGreaterThan(0);
