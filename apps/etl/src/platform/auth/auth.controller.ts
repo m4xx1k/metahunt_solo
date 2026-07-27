@@ -2,7 +2,9 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   UnauthorizedException,
   UseGuards,
@@ -22,6 +24,7 @@ import { ApiErrorResponseDto, OkResponseDto } from "../swagger/api-error.dto";
 
 import type {
   AuthUser,
+  GoogleLoginRequest,
   TelegramLoginPollRequest,
   TelegramLoginPollResponse,
   TelegramLoginRequest,
@@ -31,6 +34,7 @@ import type {
 import { AuthService } from "./auth.service";
 import {
   AuthUserDto,
+  GoogleLoginRequestDto,
   TelegramLoginPollRequestDto,
   TelegramLoginPollResponseDto,
   TelegramLoginRequestDto,
@@ -103,6 +107,78 @@ export class AuthController {
     return this.auth.loginTelegram(tg);
   }
 
+  @Post("google")
+  @ApiOperation({ summary: "Verify a Google ID token and return a Bearer session" })
+  @ApiBody({ type: GoogleLoginRequestDto })
+  @ApiOkResponse({ type: TelegramLoginResponseDto })
+  @ApiUnauthorizedResponse({
+    description: "Google verification failed.",
+    type: ApiErrorResponseDto,
+  })
+  @Throttle(TELEGRAM_LOGIN_THROTTLE)
+  async google(@Body() body: Partial<GoogleLoginRequest>): Promise<TelegramLoginResponse> {
+    if (typeof body?.credential !== "string" || body.credential.length === 0) {
+      throw new BadRequestException("credential is required");
+    }
+    return this.auth.loginGoogle(body.credential);
+  }
+
+  @Post("link/google")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Attach a Google account to the current session" })
+  @ApiBearerAuth()
+  @ApiBody({ type: GoogleLoginRequestDto })
+  @ApiOkResponse({ type: AuthUserDto })
+  @Throttle(TELEGRAM_LOGIN_THROTTLE)
+  async linkGoogle(
+    @CurrentUser() user: JwtUser,
+    @Body() body: Partial<GoogleLoginRequest>,
+  ): Promise<AuthUser> {
+    if (typeof body?.credential !== "string" || body.credential.length === 0) {
+      throw new BadRequestException("credential is required");
+    }
+    await this.auth.linkGoogleTo(user.userId, body.credential);
+    return this.requireMe(user.userId);
+  }
+
+  // Linking Telegram is what starts digest delivery for a Google-first account,
+  // so it also adopts whatever that chat already owns.
+  @Post("link/telegram")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Attach a Telegram account to the current session" })
+  @ApiBearerAuth()
+  @ApiBody({ type: TelegramLoginRequestDto })
+  @ApiOkResponse({ type: AuthUserDto })
+  @Throttle(TELEGRAM_LOGIN_THROTTLE)
+  async linkTelegram(
+    @CurrentUser() user: JwtUser,
+    @Body() body: Partial<TelegramLoginRequest>,
+  ): Promise<AuthUser> {
+    const tg = body?.telegram;
+    if (!tg || typeof tg !== "object" || typeof tg.id === "undefined") {
+      throw new BadRequestException("telegram payload is required");
+    }
+    await this.auth.linkTelegramTo(user.userId, tg);
+    return this.requireMe(user.userId);
+  }
+
+  @Delete("link/:provider")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Detach a sign-in method (never the last one)" })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: AuthUserDto })
+  @ApiBadRequestResponse({ description: "Unknown or last provider.", type: ApiErrorResponseDto })
+  async unlink(
+    @CurrentUser() user: JwtUser,
+    @Param("provider") provider: string,
+  ): Promise<AuthUser> {
+    if (provider !== "telegram" && provider !== "google") {
+      throw new BadRequestException("unknown provider");
+    }
+    await this.auth.unlinkIdentity(user.userId, provider);
+    return this.requireMe(user.userId);
+  }
+
   @Get("me")
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "Resolve the current Bearer session" })
@@ -113,7 +189,11 @@ export class AuthController {
     type: ApiErrorResponseDto,
   })
   async me(@CurrentUser() user: JwtUser): Promise<AuthUser> {
-    const me = await this.auth.getMe(user.userId);
+    return this.requireMe(user.userId);
+  }
+
+  private async requireMe(userId: string): Promise<AuthUser> {
+    const me = await this.auth.getMe(userId);
     if (!me) throw new UnauthorizedException("user not found");
     return me;
   }

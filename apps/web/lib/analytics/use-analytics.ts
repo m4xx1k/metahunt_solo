@@ -24,6 +24,7 @@ const ANALYTICS_EVENTS = {
   telegramLoginStarted: "telegram_login_started",
   telegramLoginCancelled: "telegram_login_cancelled",
   telegramLoginFailed: "telegram_login_failed",
+  googleLoginFailed: "google_login_failed",
   loggedIn: "logged_in",
   signup: "signup",
   vacancyFeedback: "vacancy_feedback",
@@ -34,6 +35,7 @@ const ANALYTICS_EVENTS = {
 
 export type Lens = "cold" | "warm";
 export type TelegramLoginMethod = "deeplink" | "widget";
+export type LoginProvider = "telegram" | "google";
 export type SubscriptionProfile = "feed" | "cv";
 
 type AnalyticsProperty = string | number | boolean | undefined;
@@ -152,16 +154,20 @@ export function useAnalytics() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginFailed, { stage, method });
       },
 
-      loggedIn() {
+      googleLoginFailed(stage: "widget" | "session") {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.googleLoginFailed, { stage });
+      },
+
+      loggedIn(provider: LoginProvider) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.loggedIn, {
-          login_method: "telegram",
+          login_method: provider,
         });
       },
 
-      // Fired once per account, on the first-ever Telegram login (the server
-      // says whether the user row was just created).
-      signedUp() {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.signup, { method: "telegram" });
+      // Fired once per account, on the first-ever login through any provider
+      // (the server says whether the user row was just created).
+      signedUp(provider: LoginProvider) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.signup, { method: provider });
       },
 
       // Up/down vote on a vacancy card (demand signal, gated by the

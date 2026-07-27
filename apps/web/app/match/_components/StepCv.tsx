@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { FileArrowUpIcon, ListPlusIcon } from "@phosphor-icons/react/dist/ssr";
 
-import { TelegramLoginButton } from "@/features/auth/telegram-login-button";
+import { AuthChoice } from "@/features/auth/auth-choice";
 import { useSession } from "@/features/auth/use-session";
 import type { CvIngestResult } from "@/lib/api/cv";
 import { cn } from "@/lib/utils";
@@ -95,7 +95,7 @@ export function StepCv({
             </Button>
           ) : (
             <div className="mt-1 flex flex-col items-center gap-2">
-              <TelegramLoginButton />
+              <AuthChoice />
               <p className="font-mono text-2xs text-text-muted">
                 вхід через Telegram — щоб CV був тільки твій
               </p>

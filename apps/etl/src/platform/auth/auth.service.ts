@@ -1,25 +1,37 @@
 import {
+  BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
 
-import type { AuthUser, TelegramLoginResponse } from "./auth.contract";
+import type { AuthProvider, AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
+import { verifyGoogleIdToken } from "./google-verify";
 import { verifyTelegramAuth, type TelegramAuthPayload } from "./telegram-verify";
 
 const { users, authIdentities, subscriptions } = schema;
 
-const PROVIDER = "telegram";
+// Waitlist rows are stored lowercased (users.service.ts), and Postgres eq() is
+// case-sensitive — without this the adoption lookup silently never matches.
+function normalizeEmail(email: string | null | undefined): string | null {
+  const trimmed = email?.trim().toLowerCase();
+  return trimmed && trimmed.length > 0 ? trimmed : null;
+}
+
+const TELEGRAM = "telegram";
+const GOOGLE = "google";
 // Telegram login: verify the widget payload, upsert the user + identity, claim
 // only server-trusted Telegram subscriptions, and mint the app's own session JWT.
 // Telegram is only the login event — every later request is authed by our JWT.
@@ -72,12 +84,177 @@ export class AuthService {
     firstName: string | null,
     db: DrizzleExecutor = this.db,
   ): Promise<{ userId: string; created: boolean }> {
-    // Admin membership is env-driven and re-evaluated every login, so promoting
-    // or removing an admin is just an ADMIN_TELEGRAM_IDS change + re-login.
-    const roles = this.adminIds.has(telegramId) ? ["user", "admin"] : ["user"];
-    const { userId, created } = await this.upsertUser(telegramId, username, firstName, roles, db);
+    const { userId, created } = await this.upsertIdentity(
+      { provider: TELEGRAM, providerUserId: telegramId },
+      { username, firstName },
+      { source: "telegram-login", db },
+    );
+    await this.syncRoles(userId, db);
     await this.claimTelegramSubscriptions(userId, telegramId, db);
     return { userId, created };
+  }
+
+  /**
+   * Recompute admin membership from the account's *current* Telegram identities.
+   * Must run on every session mint and every link/unlink: granting without a
+   * matching revoke would leave an ex-admin permanently privileged, and removing
+   * them from ADMIN_TELEGRAM_IDS would silently do nothing.
+   */
+  private async syncRoles(userId: string, db: DrizzleExecutor): Promise<void> {
+    const owned = await db
+      .select({ providerUserId: authIdentities.providerUserId })
+      .from(authIdentities)
+      .where(and(eq(authIdentities.userId, userId), eq(authIdentities.provider, TELEGRAM)));
+    const isAdmin = owned.some((i) => this.adminIds.has(i.providerUserId));
+    await db
+      .update(users)
+      .set({ roles: isAdmin ? ["user", "admin"] : ["user"] })
+      .where(eq(users.id, userId));
+  }
+
+  /**
+   * Google sign-in. Mirrors the Telegram path: verify the provider's proof,
+   * resolve a user, mint our own session. Google is a login event, nothing more.
+   */
+  async loginGoogle(credential: string): Promise<TelegramLoginResponse> {
+    const profile = await this.verifyGoogle(credential);
+    const { userId, created } = await this.db.transaction(async (tx) => {
+      const result = await this.upsertIdentity(
+        { provider: GOOGLE, providerUserId: profile.sub },
+        { username: null, firstName: profile.firstName, email: profile.email },
+        { source: "google-login", db: tx },
+      );
+      await this.syncRoles(result.userId, tx);
+      return result;
+    });
+    return this.issueSession(userId, created);
+  }
+
+  async linkGoogleTo(userId: string, credential: string): Promise<void> {
+    const profile = await this.verifyGoogle(credential);
+    await this.linkIdentity(userId, GOOGLE, profile.sub, {
+      username: null,
+      firstName: profile.firstName,
+      email: profile.email,
+    });
+  }
+
+  async linkTelegramTo(userId: string, payload: TelegramAuthPayload): Promise<void> {
+    const botToken = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
+    if (botToken.length === 0) {
+      throw new ServiceUnavailableException("Telegram login is not configured");
+    }
+    if (!verifyTelegramAuth(payload, botToken)) {
+      throw new UnauthorizedException("Telegram authentication failed");
+    }
+
+    const telegramId = String(payload.id);
+    await this.linkIdentity(userId, TELEGRAM, telegramId, {
+      username: typeof payload.username === "string" ? payload.username : null,
+      firstName: typeof payload.first_name === "string" ? payload.first_name : null,
+    });
+    // Same trust as a Telegram login — the HMAC proves this is their account.
+    await this.syncRoles(userId, this.db);
+    await this.claimTelegramSubscriptions(userId, telegramId, this.db);
+  }
+
+  // Verified email only: an unverified address must never key an adoption or
+  // land on the user row, or anyone could claim a waitlist signup by typing it.
+  private async verifyGoogle(
+    credential: string,
+  ): Promise<{ sub: string; firstName: string | null; email: string | null }> {
+    const clientId = this.config.get<string>("GOOGLE_CLIENT_ID") ?? "";
+    if (clientId.length === 0) {
+      throw new ServiceUnavailableException("Google login is not configured");
+    }
+    const profile = await verifyGoogleIdToken(credential, clientId);
+    if (!profile) throw new UnauthorizedException("Google authentication failed");
+    return {
+      sub: profile.sub,
+      firstName: profile.firstName,
+      email: profile.emailVerified ? profile.email : null,
+    };
+  }
+
+  /**
+   * Attach a provider to the *caller's* account. Refuses when the identity
+   * already belongs to someone else: merging two accounts is destructive and
+   * irreversible, so it needs a real merge flow, not a silent reassignment.
+   */
+  async linkIdentity(
+    userId: string,
+    provider: string,
+    providerUserId: string,
+    profile: { username: string | null; firstName: string | null; email?: string | null },
+  ): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      // Let the unique constraint arbitrate instead of check-then-insert: two
+      // concurrent links would both see "free" and one would die on a raw 23505.
+      const inserted = await tx
+        .insert(authIdentities)
+        .values({
+          userId,
+          provider,
+          providerUserId,
+          username: profile.username,
+          firstName: profile.firstName,
+          email: profile.email ?? null,
+        })
+        .onConflictDoNothing()
+        .returning({ id: authIdentities.id });
+      if (inserted.length > 0) return;
+
+      const [owner] = await tx
+        .select({ userId: authIdentities.userId })
+        .from(authIdentities)
+        .where(
+          and(
+            eq(authIdentities.provider, provider),
+            eq(authIdentities.providerUserId, providerUserId),
+          ),
+        );
+      if (!owner || owner.userId !== userId) {
+        throw new ConflictException(`This ${provider} account is already linked elsewhere`);
+      }
+      // Already ours: refresh the snapshot so a relink is a no-op, not an error.
+      await tx
+        .update(authIdentities)
+        .set({
+          username: profile.username,
+          firstName: profile.firstName,
+          email: profile.email ?? null,
+        })
+        .where(and(eq(authIdentities.userId, userId), eq(authIdentities.provider, provider)));
+    });
+    this.logger.log(`linked ${provider} to user ${userId}`);
+  }
+
+  /** Unlinking the last identity would lock the account out of itself. */
+  async unlinkIdentity(userId: string, provider: string): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      // Locked, and counted by survivors rather than by total — two concurrent
+      // unlinks would otherwise each see "2 left" and take one apiece.
+      const owned = await tx
+        .select({ id: authIdentities.id, provider: authIdentities.provider })
+        .from(authIdentities)
+        .where(eq(authIdentities.userId, userId))
+        .for("update");
+      const doomed = owned.filter((i) => i.provider === provider);
+      if (doomed.length === 0) {
+        throw new NotFoundException(`No ${provider} identity on this account`);
+      }
+      if (owned.length - doomed.length < 1) {
+        throw new BadRequestException("Cannot unlink your only sign-in method");
+      }
+      await tx.delete(authIdentities).where(
+        inArray(
+          authIdentities.id,
+          doomed.map((i) => i.id),
+        ),
+      );
+      await this.syncRoles(userId, tx);
+    });
+    this.logger.log(`unlinked ${provider} from user ${userId}`);
   }
 
   /** Mint the session JWT for an already-resolved user. */
@@ -94,70 +271,111 @@ export class AuthService {
     return { token, user, isNewUser };
   }
 
+  // The guard calls this on every authenticated request, so the identity list
+  // rides along on the same join rather than a second query.
   async getMe(userId: string): Promise<AuthUser | null> {
-    const [row] = await this.db
+    const rows = await this.db
       .select({
         id: users.id,
         roles: users.roles,
-        telegramId: authIdentities.providerUserId,
+        waitlistEmail: users.email,
+        provider: authIdentities.provider,
+        providerUserId: authIdentities.providerUserId,
         username: authIdentities.username,
         firstName: authIdentities.firstName,
+        email: authIdentities.email,
+        linkedAt: authIdentities.createdAt,
       })
       .from(users)
-      .leftJoin(
-        authIdentities,
-        and(eq(authIdentities.userId, users.id), eq(authIdentities.provider, PROVIDER)),
-      )
-      .where(eq(users.id, userId));
-    if (!row) return null;
+      .leftJoin(authIdentities, eq(authIdentities.userId, users.id))
+      .where(eq(users.id, userId))
+      // Unordered rows would let the display name flip between requests.
+      .orderBy(authIdentities.createdAt);
+    if (rows.length === 0) return null;
+
+    const linked = rows.filter((r) => r.provider !== null);
+    const telegram = linked.find((r) => r.provider === TELEGRAM);
+    // Any identity's name beats none, so a Google-only account still renders
+    // something in the header instead of an anonymous chip.
+    const named = telegram ?? linked[0];
+
     return {
-      id: row.id,
-      telegramId: row.telegramId ?? null,
-      username: row.username ?? null,
-      firstName: row.firstName ?? null,
-      roles: row.roles ?? [],
+      id: rows[0].id,
+      telegramId: telegram?.providerUserId ?? null,
+      username: named?.username ?? null,
+      firstName: named?.firstName ?? null,
+      email: linked.find((r) => r.email !== null)?.email ?? rows[0].waitlistEmail,
+      roles: rows[0].roles ?? [],
+      identities: linked.map((r) => ({
+        provider: r.provider as AuthProvider,
+        username: r.username,
+        firstName: r.firstName,
+        linkedAt: r.linkedAt!.toISOString(),
+      })),
     };
   }
 
-  // Find the telegram identity or create a fresh user + identity. Roles and the
-  // profile snapshot are refreshed on every login.
-  private async upsertUser(
-    telegramId: string,
-    username: string | null,
-    firstName: string | null,
-    roles: string[],
-    db: DrizzleExecutor,
+  private async upsertIdentity(
+    identity: { provider: string; providerUserId: string },
+    profile: { username: string | null; firstName: string | null; email?: string | null },
+    opts: { source: string; db: DrizzleExecutor },
   ): Promise<{ userId: string; created: boolean }> {
-    const [identity] = await db
+    const { db, source } = opts;
+    const email = normalizeEmail(profile.email);
+    const match = and(
+      eq(authIdentities.provider, identity.provider),
+      eq(authIdentities.providerUserId, identity.providerUserId),
+    );
+
+    const [existing] = await db
       .select({ userId: authIdentities.userId })
       .from(authIdentities)
-      .where(
-        and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, telegramId)),
-      );
+      .where(match);
 
-    if (identity) {
-      await db.update(users).set({ roles }).where(eq(users.id, identity.userId));
+    if (existing) {
       await db
         .update(authIdentities)
-        .set({ username, firstName })
-        .where(
-          and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, telegramId)),
-        );
-      return { userId: identity.userId, created: false };
+        .set({ username: profile.username, firstName: profile.firstName, email })
+        .where(match);
+      return { userId: existing.userId, created: false };
     }
 
-    const [created] = await db
-      .insert(users)
-      .values({ source: "telegram-login", roles })
-      .returning({ id: users.id });
+    const adopted = email ? await this.findAdoptableUserByEmail(email, db) : null;
+    const userId =
+      adopted ??
+      (
+        await db
+          .insert(users)
+          .values({ source, roles: ["user"] })
+          .returning({ id: users.id })
+      )[0].id;
+
     await db.insert(authIdentities).values({
-      userId: created.id,
-      provider: PROVIDER,
-      providerUserId: telegramId,
-      username,
-      firstName,
+      userId,
+      provider: identity.provider,
+      providerUserId: identity.providerUserId,
+      username: profile.username,
+      firstName: profile.firstName,
+      email,
     });
-    return { userId: created.id, created: true };
+    return { userId, created: adopted === null };
+  }
+
+  /**
+   * A waitlist row and nothing else. The guard is "has no identity at all" —
+   * any row with one has a real owner, and letting a verified address reach it
+   * would hand the account to whoever controls that mailbox at the provider.
+   */
+  private async findAdoptableUserByEmail(
+    email: string,
+    db: DrizzleExecutor,
+  ): Promise<string | null> {
+    const [row] = await db
+      .select({ id: users.id })
+      .from(users)
+      .leftJoin(authIdentities, eq(authIdentities.userId, users.id))
+      .where(and(eq(users.email, email), isNull(authIdentities.id)));
+    return row?.id ?? null;
   }
 
   // A Telegram private-chat id is server-trusted. Browser-provided candidate

@@ -157,6 +157,10 @@ export function validateEnv(config: RawEnv): RawEnv {
   // CSV of Telegram user ids granted the 'admin' role at login. Empty = no admins.
   const adminTelegramIds = asString(config.ADMIN_TELEGRAM_IDS) ?? "";
 
+  // Audience for Google ID-token verification. Empty = Google login is dormant
+  // (the endpoint 503s), same shape as the dormant bot and PostHog above.
+  const googleClientId = asString(config.GOOGLE_CLIENT_ID) ?? "";
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -183,5 +187,6 @@ export function validateEnv(config: RawEnv): RawEnv {
     POSTHOG_HOST: posthogHost,
     JWT_SECRET: jwtSecret,
     ADMIN_TELEGRAM_IDS: adminTelegramIds,
+    GOOGLE_CLIENT_ID: googleClientId,
   };
 }

@@ -7,7 +7,7 @@ import { SESSION_COOKIE, SESSION_COOKIE_MAX_AGE } from "@/lib/api/session-cookie
 // an httpOnly cookie so (investigation) Server Components can forward it as
 // a Bearer token — the browser never sends localStorage to the server, so
 // admin API reads during SSR were otherwise unauthenticated. See
-// md/runbook/telegram-auth.md #Roles/admin.
+// md/runbook/auth.md #Roles/admin.
 export async function POST(request: Request) {
   const { token } = (await request.json().catch(() => ({}))) as { token?: string };
   if (!token) {

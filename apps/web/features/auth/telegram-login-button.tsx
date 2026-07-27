@@ -119,8 +119,8 @@ export function TelegramLoginButton({
       // and the token already minted, so dropping it would burn a real session.
       stopped = true;
       login(result);
-      if (result.isNewUser) analytics.signedUp();
-      analytics.loggedIn();
+      if (result.isNewUser) analytics.signedUp("telegram");
+      analytics.loggedIn("telegram");
       setPending(null);
       setPhase("idle");
       const name = result.user.username

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { TelegramLoginButton } from "./telegram-login-button";
+import { AuthChoice } from "./auth-choice";
 import { useSession } from "./use-session";
 
 // Value-moment nudge in the warm lens: prompt an anonymous visitor to log in via
@@ -31,7 +31,7 @@ export function SaveCvNudge() {
       <p className="mb-2.5 font-body text-xs leading-relaxed text-text-secondary">
         Log in with Telegram to keep this CV and get new matches in your chat.
       </p>
-      <TelegramLoginButton className="w-full" onDone={() => setDismissed(true)} />
+      <AuthChoice className="w-full" onDone={() => setDismissed(true)} />
     </div>
   );
 }
