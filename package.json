@@ -39,7 +39,8 @@
     "dedup:resolve": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js resolve",
     "dedup:reset": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/dedup/dedup.cli.js reset",
     "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
-    "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int"
+    "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int",
+    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js"
   },
   "engines": {
     "node": ">=22"

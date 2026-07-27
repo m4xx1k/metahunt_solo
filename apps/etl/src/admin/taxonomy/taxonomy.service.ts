@@ -526,9 +526,13 @@ export class TaxonomyService {
       if (source.type !== target.type) {
         throw new BadRequestException(`cannot merge across types: ${source.type} → ${target.type}`);
       }
-      if (source.status === "NEW" && target.status !== "VERIFIED") {
+      // A non-VERIFIED target is never right: the feed and facets show VERIFIED
+      // only, so merging *into* a NEW/HIDDEN node silently hides everything that
+      // moved. Guarding every source (not just NEW ones) also catches a swapped
+      // source/target, which is otherwise undetectable after the fact.
+      if (target.status !== "VERIFIED") {
         throw new BadRequestException(
-          `NEW node can only be merged into a VERIFIED target; target status is ${target.status}`,
+          `merge target must be VERIFIED; ${target.canonicalName} is ${target.status}`,
         );
       }
 
@@ -592,6 +596,57 @@ export class TaxonomyService {
         .update(schema.candidateNodes)
         .set({ nodeId: targetId })
         .where(eq(schema.candidateNodes.nodeId, sourceId));
+
+      // 4c) Re-point track_nodes. The FK is ON DELETE CASCADE, so without this the
+      // browse preset just vanishes — and `track_counts` COALESCEs a child track's
+      // own role_ids with its parent's, so a track left with zero presets silently
+      // starts serving the parent's whole vacancy set. Same dupe-drop as above
+      // (composite PK on track_id + node_id).
+      await tx.execute(sql`
+        DELETE FROM track_nodes
+        WHERE node_id = ${sourceId}
+          AND track_id IN (
+            SELECT track_id FROM track_nodes WHERE node_id = ${targetId}
+          )
+      `);
+      await tx
+        .update(schema.trackNodes)
+        .set({ nodeId: targetId })
+        .where(eq(schema.trackNodes.nodeId, sourceId));
+
+      // 4d) Carry the source's classification over when the target has none —
+      // node_tech_meta also cascades, and losing `stack`/`generic` silently
+      // degrades the reverse-ATS on_stack gate rather than failing.
+      await tx.execute(sql`
+        INSERT INTO node_tech_meta (node_id, category, stack, is_core, generic, classified_at)
+        SELECT ${targetId}, m.category, m.stack, m.is_core, m.generic, m.classified_at
+        FROM node_tech_meta m
+        WHERE m.node_id = ${sourceId}
+        ON CONFLICT (node_id) DO NOTHING
+      `);
+
+      // 4e) Retire the source's slug onto the target so its indexed hub URL can
+      // 308 instead of 404, and saved ?roles=<old-slug> filters keep resolving.
+      // The slug dies with the node — nothing else can recover it afterwards.
+      // Slug aliases the source already carried move too, or a chained merge
+      // (A→B then B→C) would cascade-drop A's slug.
+      await tx.execute(sql`
+        UPDATE node_slug_aliases
+        SET node_id = ${targetId}
+        WHERE node_id = ${sourceId}
+          AND NOT EXISTS (
+            SELECT 1 FROM node_slug_aliases s2
+            WHERE s2.slug = node_slug_aliases.slug AND s2.type = node_slug_aliases.type
+              AND s2.node_id = ${targetId}
+          )
+      `);
+      await tx.execute(sql`
+        INSERT INTO node_slug_aliases (slug, type, node_id)
+        SELECT n.slug, n.type, ${targetId}
+        FROM nodes n
+        WHERE n.id = ${sourceId} AND n.slug IS NOT NULL
+        ON CONFLICT (slug, type) DO NOTHING
+      `);
 
       // 5) Delete source. Any lingering aliases cascade automatically.
       await tx.delete(schema.nodeAliases).where(and(eq(schema.nodeAliases.nodeId, sourceId)));

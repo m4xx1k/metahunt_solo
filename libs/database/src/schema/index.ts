@@ -5,6 +5,7 @@ export * from "./companies";
 export * from "./company-identifiers";
 export * from "./nodes";
 export * from "./node-aliases";
+export * from "./node-slug-aliases";
 export * from "./vacancies";
 export * from "./vacancy-nodes";
 export * from "./tracks";
