@@ -22,16 +22,22 @@ function PopoverContent({
   className,
   sideOffset = 6,
   align = "start",
+  forceMount,
   children,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
-    <PopoverPrimitive.Portal>
+    // The Portal unmounts its subtree on close unless it is force-mounted too,
+    // so passing forceMount only to Content silently does nothing.
+    <PopoverPrimitive.Portal forceMount={forceMount}>
       <PopoverPrimitive.Content
+        forceMount={forceMount}
         sideOffset={sideOffset}
         align={align}
         className={cn(
           "z-50 max-w-[min(24rem,90vw)] border border-border bg-bg-card p-4 font-mono text-xs normal-case tracking-normal text-text-secondary shadow-brut-sm outline-none",
+          // Only bites when force-mounted; otherwise the content is already gone.
+          "data-[state=closed]:hidden",
           className,
         )}
         {...props}

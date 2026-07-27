@@ -67,7 +67,7 @@ export function TelegramWidgetButton({
   onPayload?: (payload: TelegramAuthPayload) => Promise<void>;
   className?: string;
   label?: string;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "ghost";
 }) {
   const { login } = useSession();
   const analytics = useAnalytics();
@@ -131,7 +131,9 @@ export function TelegramWidgetButton({
         className,
       )}
     >
-      <PaperPlaneTiltIcon weight="fill" className="h-3.5 w-3.5" aria-hidden />
+      {variant === "ghost" ? null : (
+        <PaperPlaneTiltIcon weight="fill" className="h-3.5 w-3.5" aria-hidden />
+      )}
       {busy ? "opening…" : label}
     </Button>
   );

@@ -5,11 +5,8 @@ import { toast } from "sonner";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { Button } from "@/ui";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/overlay/Popover";
-import { cn } from "@/lib/utils";
 import { authApi } from "@/lib/api/auth";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
-import { TelegramWidgetButton } from "./telegram-widget-button";
 import { useSession } from "./use-session";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
@@ -36,10 +33,11 @@ interface Pending {
  */
 export function TelegramLoginButton({
   onDone,
-  className,
+  onInFlightChange,
 }: {
   onDone?: () => void;
-  className?: string;
+  /** True while a nonce is live, so the surface around us can stay mounted. */
+  onInFlightChange?: (inFlight: boolean) => void;
 }) {
   const { login } = useSession();
   const analytics = useAnalytics();
@@ -50,9 +48,16 @@ export function TelegramLoginButton({
   // Held in a ref so an inline `onDone` from the caller doesn't restart the
   // polling effect on every render.
   const onDoneRef = useRef(onDone);
+  const onInFlightRef = useRef(onInFlightChange);
   useEffect(() => {
     onDoneRef.current = onDone;
+    onInFlightRef.current = onInFlightChange;
   });
+
+  useEffect(() => {
+    onInFlightRef.current?.(phase === "opening" || phase === "waiting");
+  }, [phase]);
+  useEffect(() => () => onInFlightRef.current?.(false), []);
 
   const reset = useCallback(() => {
     setPending(null);
@@ -92,6 +97,8 @@ export function TelegramLoginButton({
     const expire = () => {
       stopped = true;
       analytics.telegramLoginFailed("expired", "deeplink");
+      // The panel saying so may already be unmounted, so say it out loud.
+      toast.error("telegram link expired");
       setPending(null);
       setPhase("expired");
     };
@@ -151,70 +158,56 @@ export function TelegramLoginButton({
     reset();
   }, [phase, analytics, reset]);
 
-  return (
-    <Popover
-      open={phase === "waiting" || phase === "expired"}
-      onOpenChange={(open) => {
-        if (!open) handleCancel();
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          variant="primary"
-          size="sm"
-          // Radix toggles the popover after this fires, so a click while a
-          // request is live must not mint a second one and orphan the first.
-          onClick={() => {
-            if (phase === "idle") void handleClick();
-          }}
-          disabled={phase === "opening"}
-          aria-label="Log in with Telegram"
-          className={cn("gap-1.5 bg-accent-secondary hover:bg-accent-secondary", className)}
-        >
-          <PaperPlaneTiltIcon weight="fill" className="h-3.5 w-3.5" aria-hidden />
-          {phase === "opening" ? "opening…" : "log in"}
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent className="flex flex-col gap-3">
+  if (phase === "waiting" || phase === "expired") {
+    return (
+      <div className="flex w-full flex-col gap-3">
         {pending ? (
           <>
             <p className="font-display text-2xl tracking-widest text-text-primary">
               {pending.verificationCode}
             </p>
-            <p>confirm this code in telegram</p>
+            <p className="font-mono text-2xs text-text-secondary">confirm this code in telegram</p>
             {/* tg:// hands off to the app and leaves this tab where it is, so
                 switching back lands on the site already logged in. */}
-            <a href={pending.appLink} className="uppercase tracking-wider text-accent underline">
+            <a
+              href={pending.appLink}
+              className="font-mono text-2xs uppercase tracking-wider text-accent underline"
+            >
               open telegram →
             </a>
             <a
               href={pending.webLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-text-muted underline"
+              className="font-mono text-2xs text-text-muted underline"
             >
               no app?
             </a>
-            <p className="text-text-muted">waiting…</p>
+            <p className="font-mono text-2xs text-text-muted">waiting…</p>
           </>
         ) : (
-          <p>link expired</p>
+          <p className="font-mono text-2xs text-text-secondary">link expired</p>
         )}
-        <div className="flex items-center gap-2 border-t border-border pt-3">
-          <Button variant="secondary" size="sm" onClick={reset}>
-            {pending ? "cancel" : "try again"}
-          </Button>
-          <TelegramWidgetButton
-            variant="secondary"
-            label="use the widget"
-            onDone={() => {
-              reset(); // also stops the deep-link poll we no longer need
-              onDoneRef.current?.();
-            }}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+        <Button variant="secondary" size="sm" onClick={handleCancel} className="w-full">
+          {pending ? "cancel" : "try again"}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={() => void handleClick()}
+      disabled={phase === "opening"}
+      aria-label="Continue with Telegram"
+      // 40px and full width to sit flush with the Google button GIS draws next
+      // to it — the provider colour lives in the icon, not the fill.
+      className="h-10 w-full justify-start gap-3 px-4"
+    >
+      <PaperPlaneTiltIcon weight="fill" className="h-4 w-4 text-accent-secondary" aria-hidden />
+      {phase === "opening" ? "opening…" : "Continue with Telegram"}
+    </Button>
   );
 }

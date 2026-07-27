@@ -1,12 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function IconBox({
-  label,
-  className,
-}: {
-  label: React.ReactNode;
-  className?: string;
-}) {
+export function IconBox({ label, className }: { label: React.ReactNode; className?: string }) {
   return (
     <div
       className={cn(

@@ -27,12 +27,12 @@ export function CollapsibleSection({
         className="flex w-full items-baseline justify-between gap-3 px-4 py-3 text-left"
       >
         <span className="flex items-baseline gap-2 font-mono text-2xs uppercase tracking-wider">
-          <span aria-hidden className="text-text-muted">{open ? "⌄" : ">"}</span>
+          <span aria-hidden className="text-text-muted">
+            {open ? "⌄" : ">"}
+          </span>
           <span className="font-bold text-text-primary">{title}</span>
         </span>
-        <span className="truncate font-mono text-2xs text-text-secondary">
-          {summary}
-        </span>
+        <span className="truncate font-mono text-2xs text-text-secondary">{summary}</span>
       </button>
       <div className={cn(open ? "block" : "hidden")}>
         <div className="px-4 pb-4">{children}</div>

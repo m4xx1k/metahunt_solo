@@ -35,14 +35,11 @@ export function EnumSection({
   // ordered scales like the experience buttons.
   singleRow?: boolean;
 }) {
-  const isActive = (id: string) =>
-    multiple ? activeIds.includes(id) : activeId === id;
+  const isActive = (id: string) => (multiple ? activeIds.includes(id) : activeId === id);
 
   const summary = multiple
     ? activeIds.length > 0
-      ? activeIds
-          .map((id) => options.find((o) => o.id === id)?.label ?? id)
-          .join(", ")
+      ? activeIds.map((id) => options.find((o) => o.id === id)?.label ?? id).join(", ")
       : "any"
     : activeId !== null
       ? (options.find((o) => o.id === activeId)?.label ?? "any")
@@ -55,12 +52,7 @@ export function EnumSection({
 
   return (
     <CollapsibleSection title={title} summary={summary}>
-      <div
-        className={cn(
-          "flex gap-2",
-          singleRow ? "flex-nowrap overflow-x-auto" : "flex-wrap",
-        )}
-      >
+      <div className={cn("flex gap-2", singleRow ? "flex-nowrap overflow-x-auto" : "flex-wrap")}>
         {options.map((o) => {
           const active = isActive(o.id);
           const tone = active ? activeClassFor?.(o.id) : undefined;

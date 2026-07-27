@@ -3,8 +3,7 @@ import { cn } from "@/lib/utils";
 type Level = "section" | "h1" | "h2" | "h3";
 
 const styles: Record<Level, string> = {
-  section:
-    "font-display text-6xl font-bold tracking-[-0.04em] leading-[1.1] text-text-primary",
+  section: "font-display text-6xl font-bold tracking-[-0.04em] leading-[1.1] text-text-primary",
   h1: "font-display text-7xl font-black tracking-[-0.03em] leading-none text-text-primary",
   h2: "font-display text-5xl font-bold tracking-[-0.02em] leading-[1.1] text-text-primary",
   h3: "font-display text-3xl font-bold leading-[1.2] text-text-primary",

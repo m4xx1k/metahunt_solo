@@ -52,9 +52,10 @@ let gisReady: Promise<void> | undefined;
 
 function dispatchCredential(credential: string): void {
   const only = mounted.size === 1 ? [...mounted][0] : null;
-  const target = armed ?? only;
-  // Ambiguous is not a coin flip: guessing here can sign someone into the
-  // wrong account. Better to do nothing than to do the wrong thing.
+  // A stale `armed` still gets a late chooser result, but never hands it to a
+  // different button: sign-in and link are opposite actions on one credential.
+  const target = armed ? (mounted.has(armed) || mounted.size === 0 ? armed : null) : only;
+  armed = null;
   target?.(credential);
 }
 
@@ -83,10 +84,17 @@ function ensureGis(clientId: string): Promise<void> {
 export function GoogleLoginButton({
   onDone,
   onCredential,
+  width = 220,
+  size = "medium",
+  text = "signin_with",
   className,
 }: {
   onDone?: () => void;
   onCredential?: (credential: string) => Promise<void>;
+  /** Google draws into an iframe, so these are told, not styled. */
+  width?: number;
+  size?: "medium" | "large";
+  text?: "signin_with" | "continue_with";
   className?: string;
 }) {
   const { login } = useSession();
@@ -126,6 +134,7 @@ export function GoogleLoginButton({
   useEffect(() => {
     if (!CLIENT_ID) return;
     let cancelled = false;
+    const container = slot.current;
     mounted.add(handleCredential);
     void ensureGis(CLIENT_ID)
       .then(() => {
@@ -135,9 +144,9 @@ export function GoogleLoginButton({
           type: "standard",
           theme: "filled_black",
           shape: "square",
-          size: "medium",
-          text: "signin_with",
-          width: 220,
+          size,
+          text,
+          width,
         });
       })
       .catch(() => {
@@ -146,9 +155,10 @@ export function GoogleLoginButton({
     return () => {
       cancelled = true;
       mounted.delete(handleCredential);
-      if (armed === handleCredential) armed = null;
+      // renderButton appends; without this a re-render stacks a second button.
+      if (container) container.innerHTML = "";
     };
-  }, [handleCredential]);
+  }, [handleCredential, width, size, text]);
 
   // The rendered button lives in a Google iframe, so its clicks never reach us;
   // entering the wrapper is the last signal we get before the credential lands.
@@ -162,7 +172,7 @@ export function GoogleLoginButton({
       ref={slot}
       onPointerEnter={arm}
       onFocusCapture={arm}
-      className={cn("min-h-[36px]", className)}
+      className={cn(size === "large" ? "min-h-[40px]" : "min-h-[36px]", className)}
     />
   );
 }
