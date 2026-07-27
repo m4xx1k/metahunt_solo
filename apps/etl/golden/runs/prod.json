@@ -1,0 +1,850 @@
+{
+  "00060c1e-3eb9-4c5c-a26e-f336321feb0e": {
+    "role": "Backend Developer",
+    "domain": null,
+    "salary": null,
+    "skills": {
+      "optional": [],
+      "required": [
+        "AL",
+        "C/AL",
+        "Microsoft Dynamics 365 Business Central",
+        ".NET",
+        "T-SQL",
+        "Git",
+        "APIs",
+        "Azure DevOps"
+      ]
+    },
+    "locations": [],
+    "seniority": "MIDDLE",
+    "workFormat": null,
+    "companyName": null,
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "994281fe-0891-4474-b8c6-aff5760a72f6": {
+    "_v": 3,
+    "role": "Data Analyst",
+    "_usage": {
+      "in": 5865,
+      "ms": 2771,
+      "out": 227,
+      "model": "gpt-5.4-mini",
+      "cached": 0,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "HealthTech",
+    "isTech": true,
+    "salary": {
+      "max": null,
+      "min": null,
+      "currency": null
+    },
+    "skills": {
+      "optional": [
+        "A/B Testing",
+        "Cohort Analysis",
+        "Marketing Analytics",
+        "LTV Modeling",
+        "Attribution",
+        "ROAS",
+        "CAC"
+      ],
+      "required": ["SQL", "Tableau"]
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      },
+      {
+        "city": "Warsaw",
+        "country": "Poland"
+      }
+    ],
+    "seniority": "SENIOR",
+    "workFormat": "REMOTE",
+    "companyName": "Kiss My Apps",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": true,
+    "experienceYears": 2,
+    "hasTestAssignment": null
+  },
+  "44bb481d-57ac-434f-8541-10004153158e": {
+    "_v": 3,
+    "role": "Data Analyst",
+    "_usage": {
+      "in": 4479,
+      "ms": 1828,
+      "out": 130,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": null,
+    "isTech": false,
+    "salary": null,
+    "skills": {
+      "optional": ["Python"],
+      "required": ["Power BI"]
+    },
+    "locations": [],
+    "seniority": "JUNIOR",
+    "workFormat": "REMOTE",
+    "companyName": "Repalm",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": 1,
+    "hasTestAssignment": true
+  },
+  "ae3cb4b6-ef09-4b66-8b12-6668c8c298cd": {
+    "_v": 3,
+    "_error": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
+    "_usage": {
+      "in": 0,
+      "ms": 192,
+      "out": 0,
+      "model": "gpt-5.4-mini",
+      "cached": 0,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    }
+  },
+  "8b163199-c077-4791-aece-d4717764fb8c": {
+    "_v": 3,
+    "role": "Backend Developer",
+    "_usage": {
+      "in": 4225,
+      "ms": 2284,
+      "out": 189,
+      "model": "gpt-5.4-mini",
+      "cached": 3328,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "AI",
+    "isTech": true,
+    "salary": {
+      "max": 6000,
+      "min": 4000,
+      "currency": "USD"
+    },
+    "skills": {
+      "optional": ["React", "Next.js", "Temporal", "Qdrant", "Docker"],
+      "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph"]
+    },
+    "locations": [],
+    "seniority": "SENIOR",
+    "workFormat": "REMOTE",
+    "companyName": "Workeron.ai",
+    "englishLevel": "UPPER_INTERMEDIATE",
+    "employmentType": null,
+    "engagementType": "STARTUP",
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "127749e3-9277-4842-bb5c-d32583e18c43": {
+    "_v": 2,
+    "_error": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
+    "_usage": {
+      "in": 0,
+      "ms": 144,
+      "out": 0,
+      "model": "gpt-5.4-mini",
+      "cached": 0,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    }
+  },
+  "d2a46405-1db7-43c8-a196-3e1045c1cce2": {
+    "_v": 3,
+    "role": "Data Analyst",
+    "_usage": {
+      "in": 5120,
+      "ms": 6652,
+      "out": 182,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": "AdTech",
+    "isTech": false,
+    "salary": null,
+    "skills": {
+      "optional": ["Python"],
+      "required": ["SQL", "dbt"]
+    },
+    "locations": [
+      {
+        "city": "Warsaw",
+        "country": "Poland"
+      },
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      }
+    ],
+    "seniority": "MIDDLE",
+    "workFormat": "REMOTE",
+    "companyName": "Zeely AI",
+    "englishLevel": "UPPER_INTERMEDIATE",
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": false,
+    "experienceYears": 3,
+    "hasTestAssignment": true
+  },
+  "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e": {
+    "_v": 2,
+    "_error": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
+    "_usage": {
+      "in": 0,
+      "ms": 185,
+      "out": 0,
+      "model": "gpt-5.4-mini",
+      "cached": 0,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    }
+  },
+  "c92417fc-130a-495f-b26c-f6d3f9007a6c": {
+    "_v": 3,
+    "role": "Embedded Software Engineer",
+    "_usage": {
+      "in": 4613,
+      "ms": 3157,
+      "out": 247,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": "Defense",
+    "isTech": true,
+    "salary": null,
+    "skills": {
+      "optional": ["MAVLink", "ArduPilot", "PX4", "Raspberry Pi", "IoT", "RF Engineering"],
+      "required": [
+        "Embedded Linux",
+        "Microcontrollers",
+        "C",
+        "C++",
+        "Python",
+        "Linux",
+        "Shell Scripting",
+        "Docker",
+        "SQL",
+        "NoSQL"
+      ]
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      },
+      {
+        "city": "Lviv",
+        "country": "Ukraine"
+      },
+      {
+        "city": "Warsaw",
+        "country": "Poland"
+      }
+    ],
+    "seniority": null,
+    "workFormat": "HYBRID",
+    "companyName": "Swarmer",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": true,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "1c16aa37-74c4-4fe0-b0f3-8ce536b01baa": {
+    "_v": 3,
+    "role": null,
+    "_usage": {
+      "in": 5718,
+      "ms": 2307,
+      "out": 174,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": null,
+    "isTech": false,
+    "salary": null,
+    "skills": {
+      "optional": [],
+      "required": []
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      },
+      {
+        "city": "Warsaw",
+        "country": "Poland"
+      }
+    ],
+    "seniority": "C_LEVEL",
+    "workFormat": "REMOTE",
+    "companyName": "Kiss My Apps",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": true,
+    "experienceYears": 2,
+    "hasTestAssignment": true
+  },
+  "654c2490-e2f1-43ab-9890-832e3495117f": {
+    "_v": 3,
+    "role": "Full Stack Developer",
+    "_usage": {
+      "in": 4071,
+      "ms": 2191,
+      "out": 192,
+      "model": "deepseek-v4-flash",
+      "cached": 0,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": "Ecommerce",
+    "isTech": true,
+    "salary": {
+      "max": 5000,
+      "min": null,
+      "currency": "USD"
+    },
+    "skills": {
+      "optional": [],
+      "required": ["PHP", "Laravel", "React", "Magento", "Shopware", "WooCommerce", "API"]
+    },
+    "locations": [],
+    "seniority": "LEAD",
+    "workFormat": "REMOTE",
+    "companyName": "3DVisual Studio",
+    "englishLevel": "UPPER_INTERMEDIATE",
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": null,
+    "experienceYears": 5,
+    "hasTestAssignment": null
+  },
+  "e33ce465-c738-4ca6-8db7-f0e923e64083": {
+    "_v": 2,
+    "role": "Embedded Software Engineer",
+    "_usage": {
+      "in": 3054,
+      "ms": 2514,
+      "out": 246,
+      "model": "gpt-5.4-mini",
+      "cached": 2304,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "Hardware",
+    "salary": {
+      "max": null,
+      "min": 4000,
+      "currency": "USD"
+    },
+    "skills": {
+      "optional": [
+        "Computer Vision",
+        "Hardware Engineering",
+        "Path Planning",
+        "Aerodynamics",
+        "Statistics"
+      ],
+      "required": [
+        "C/C++",
+        "MATLAB",
+        "Octave",
+        "Sensor Fusion",
+        "Optimal Control",
+        "Systems Modeling"
+      ]
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      },
+      {
+        "city": "Warsaw",
+        "country": "Poland"
+      }
+    ],
+    "seniority": "SENIOR",
+    "workFormat": "REMOTE",
+    "companyName": "A19Lab.com",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "STARTUP",
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "4f4e000c-089d-4a4e-9165-de6fb698c8e8": {
+    "_v": 2,
+    "_error": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
+    "_usage": {
+      "in": 0,
+      "ms": 186,
+      "out": 0,
+      "model": "gpt-5.4-mini",
+      "cached": 0,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    }
+  },
+  "a06e6d98-332c-4605-92eb-8992f8fd147a": {
+    "_v": 3,
+    "role": "Data Engineer",
+    "_usage": {
+      "in": 4823,
+      "ms": 3230,
+      "out": 207,
+      "model": "gpt-5.4-mini",
+      "cached": 3328,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "SaaS",
+    "isTech": true,
+    "salary": null,
+    "skills": {
+      "optional": ["ETL", "Data Warehousing"],
+      "required": ["SQL", "Python", "Google Cloud", "BigQuery", "Apache Airflow", "dbt"]
+    },
+    "locations": [
+      {
+        "city": "Lviv",
+        "country": "Ukraine"
+      },
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      }
+    ],
+    "seniority": "JUNIOR",
+    "workFormat": "HYBRID",
+    "companyName": "EverHelp",
+    "englishLevel": "UPPER_INTERMEDIATE",
+    "employmentType": null,
+    "engagementType": "OUTSOURCE",
+    "hasReservation": null,
+    "experienceYears": 1,
+    "hasTestAssignment": false
+  },
+  "ff9765ef-de34-4382-aeb4-ca26c0a219eb": {
+    "_v": 3,
+    "role": "UI/UX Designer",
+    "_usage": {
+      "in": 5953,
+      "ms": 1717,
+      "out": 175,
+      "model": "gpt-5.4-mini",
+      "cached": 3328,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "iGaming",
+    "isTech": false,
+    "salary": {
+      "max": 500,
+      "min": 200,
+      "currency": "EUR"
+    },
+    "skills": {
+      "optional": ["3D", "Spine"],
+      "required": ["Adobe Photoshop"]
+    },
+    "locations": [],
+    "seniority": "JUNIOR",
+    "workFormat": "HYBRID",
+    "companyName": "LeaSoft",
+    "englishLevel": "INTERMEDIATE",
+    "employmentType": "FULL_TIME",
+    "engagementType": "OUTSOURCE",
+    "hasReservation": null,
+    "experienceYears": 0,
+    "hasTestAssignment": null
+  },
+  "3e3cd609-3b14-4c83-90fa-af7e3eaff8a6": {
+    "_v": 3,
+    "role": "CTO (Chief Technology Officer)",
+    "_usage": {
+      "in": 4302,
+      "ms": 2713,
+      "out": 157,
+      "model": "gpt-5.4-mini",
+      "cached": 3328,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "iGaming",
+    "isTech": true,
+    "salary": null,
+    "skills": {
+      "optional": [
+        "System Architecture",
+        "Payment Processing",
+        "Payment Orchestration",
+        "KYC",
+        "AML",
+        "Anti-Fraud Systems"
+      ],
+      "required": []
+    },
+    "locations": [],
+    "seniority": "C_LEVEL",
+    "workFormat": null,
+    "companyName": null,
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "00d54c50-e14a-4a10-abea-dffbee2bcbf0": {
+    "_v": 3,
+    "role": "Software Engineer",
+    "_usage": {
+      "in": 4049,
+      "ms": 1855,
+      "out": 156,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": "HealthTech",
+    "isTech": true,
+    "salary": null,
+    "skills": {
+      "optional": ["OpenAI API"],
+      "required": ["C++", "Qt", "Make", "Conan", "MSVC", "CEF"]
+    },
+    "locations": [],
+    "seniority": "SENIOR",
+    "workFormat": null,
+    "companyName": null,
+    "englishLevel": "INTERMEDIATE",
+    "employmentType": null,
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": 5,
+    "hasTestAssignment": null
+  },
+  "0cbdf1dc-08e3-4c03-a720-636cc41143ef": {
+    "_v": 2,
+    "role": "Manual QA Engineer",
+    "_usage": {
+      "in": 3141,
+      "ms": 2236,
+      "out": 168,
+      "model": "gpt-5.4-mini",
+      "cached": 2304,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": null,
+    "salary": null,
+    "skills": {
+      "optional": ["Schematic Design"],
+      "required": ["Electronics", "Hardware Testing", "Test Cases", "Test Plans"]
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      }
+    ],
+    "seniority": null,
+    "workFormat": null,
+    "companyName": "Svarock",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": null,
+    "experienceYears": 2,
+    "hasTestAssignment": null
+  },
+  "00345013-b591-4336-b1f2-335fb414c716": {
+    "_v": 2,
+    "role": "DevOps Engineer",
+    "_usage": {
+      "in": 3537,
+      "ms": 2138,
+      "out": 199,
+      "model": "gpt-5.4-mini",
+      "cached": 2304,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "iGaming",
+    "salary": null,
+    "skills": {
+      "optional": ["ArgoCD", "Jenkins", "Prometheus", "Kafka", "Cloudflare"],
+      "required": [
+        "AWS",
+        "Kubernetes",
+        "Terraform",
+        "Helm",
+        "GitHub Actions",
+        "Grafana",
+        "New Relic",
+        "Redis",
+        "Python",
+        "Bash"
+      ]
+    },
+    "locations": [],
+    "seniority": "LEAD",
+    "workFormat": null,
+    "companyName": "NuxGame",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": null,
+    "experienceYears": 5,
+    "hasTestAssignment": null
+  },
+  "46c98bf9-179d-4015-8430-4401c8d9494b": {
+    "_v": 3,
+    "role": "Embedded Software Engineer",
+    "_usage": {
+      "in": 4316,
+      "ms": 3222,
+      "out": 195,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": "Defense",
+    "isTech": true,
+    "salary": null,
+    "skills": {
+      "optional": ["PX4", "ArduPilot", "Computer Vision"],
+      "required": ["C", "C++", "Python", "Linux", "Embedded Linux", "CI/CD", "GIT", "Networking"]
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      }
+    ],
+    "seniority": "MIDDLE",
+    "workFormat": "HYBRID",
+    "companyName": "LIRA",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "PRODUCT",
+    "hasReservation": null,
+    "experienceYears": 2,
+    "hasTestAssignment": null
+  },
+  "00d60864-b357-4d22-9aa6-c4674ffb970c": {
+    "_v": 2,
+    "role": "CRM Developer",
+    "_usage": {
+      "in": 3218,
+      "ms": 2321,
+      "out": 165,
+      "model": "gpt-5.4-mini",
+      "cached": 2304,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "Real Estate",
+    "salary": null,
+    "skills": {
+      "optional": [],
+      "required": ["GoHighLevel", "Voice AI", "Webhooks", "API Integrations"]
+    },
+    "locations": [],
+    "seniority": null,
+    "workFormat": null,
+    "companyName": "Real Estate Bees",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": "STARTUP",
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "13a0fd86-dfac-44bb-9845-4242a139d405": {
+    "_v": 3,
+    "role": "Information Security Engineer",
+    "_usage": {
+      "in": 5740,
+      "ms": 2180,
+      "out": 231,
+      "model": "deepseek-v4-flash",
+      "cached": 3712,
+      "client": "DeepSeekClient",
+      "provider": "openai-generic"
+    },
+    "domain": "Insurance",
+    "isTech": true,
+    "salary": null,
+    "skills": {
+      "optional": [
+        "Microsoft Purview",
+        "DLP",
+        "Microsoft Intune",
+        "PowerShell",
+        "Bash",
+        "Python",
+        "Ansible",
+        "Elastic Stack",
+        "Splunk"
+      ],
+      "required": [
+        "Windows Server",
+        "Group Policy",
+        "DNS",
+        "DHCP",
+        "Linux",
+        "TCP/IP",
+        "VLAN",
+        "VPN",
+        "Microsoft 365",
+        "Azure",
+        "Jira"
+      ]
+    },
+    "locations": [],
+    "seniority": null,
+    "workFormat": null,
+    "companyName": "UNIVERSALNA",
+    "englishLevel": null,
+    "employmentType": null,
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2": {
+    "_v": 2,
+    "role": "Manual QA Engineer",
+    "_usage": {
+      "in": 3435,
+      "ms": 2543,
+      "out": 204,
+      "model": "gpt-5.4-mini",
+      "cached": 2304,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "Defense",
+    "salary": null,
+    "skills": {
+      "optional": ["pytest-bdd", "asyncio", "xRay", "Hardware-in-the-loop"],
+      "required": [
+        "C",
+        "Python",
+        "Pytest",
+        "GitLab",
+        "GitHub Actions",
+        "Jenkins",
+        "CMake",
+        "Bazel",
+        "Make",
+        "TestRail"
+      ]
+    },
+    "locations": [
+      {
+        "city": "Kyiv",
+        "country": "Ukraine"
+      }
+    ],
+    "seniority": "SENIOR",
+    "workFormat": "OFFICE",
+    "companyName": "Quantum-Systems",
+    "englishLevel": "INTERMEDIATE",
+    "employmentType": "FULL_TIME",
+    "engagementType": "PRODUCT",
+    "hasReservation": null,
+    "experienceYears": 3,
+    "hasTestAssignment": null
+  },
+  "5596ee51-a05c-4523-bcb8-384ea7d14653": {
+    "_v": 2,
+    "role": "Solutions Architect",
+    "_usage": {
+      "in": 3204,
+      "ms": 2636,
+      "out": 202,
+      "model": "gpt-5.4-mini",
+      "cached": 2304,
+      "client": "OpenAIClient",
+      "provider": "openai"
+    },
+    "domain": "Defense",
+    "salary": {
+      "max": 80000,
+      "min": 30000,
+      "currency": "UAH"
+    },
+    "skills": {
+      "optional": [],
+      "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"]
+    },
+    "locations": [
+      {
+        "city": "Kharkiv",
+        "country": "Ukraine"
+      }
+    ],
+    "seniority": "LEAD",
+    "workFormat": null,
+    "companyName": "13 бригада оперативного призначення НГУ «Хартія»",
+    "englishLevel": null,
+    "employmentType": "FULL_TIME",
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": null,
+    "hasTestAssignment": null
+  },
+  "0093c6a8-1f44-467a-839a-68e4a0b69294": {
+    "role": "Software Engineer",
+    "domain": null,
+    "salary": null,
+    "skills": {
+      "optional": ["React", "Figma", "ACF", "VWO"],
+      "required": ["WordPress", "PHP", "HTML", "CSS", "JavaScript", "jQuery", "MySQL", "Git"]
+    },
+    "locations": [],
+    "seniority": "MIDDLE",
+    "workFormat": "REMOTE",
+    "companyName": null,
+    "englishLevel": "INTERMEDIATE",
+    "employmentType": null,
+    "engagementType": null,
+    "hasReservation": null,
+    "experienceYears": 4,
+    "hasTestAssignment": null
+  }
+}
