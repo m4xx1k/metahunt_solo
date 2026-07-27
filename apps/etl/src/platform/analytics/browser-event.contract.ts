@@ -25,6 +25,7 @@ const ALLOWED_PROPERTIES: Record<BrowserAnalyticsEventName, ReadonlySet<string>>
   landing_view: new Set([
     "landing_variant",
     "path",
+    "referrer_domain",
     "utm_source",
     "utm_medium",
     "utm_campaign",
@@ -35,6 +36,7 @@ const ALLOWED_PROPERTIES: Record<BrowserAnalyticsEventName, ReadonlySet<string>>
   landing_cta_clicked: new Set([
     "landing_variant",
     "destination",
+    "referrer_domain",
     "utm_source",
     "utm_medium",
     "utm_campaign",

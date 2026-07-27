@@ -68,6 +68,17 @@ function isoDate(at: Date): string {
   return at.toISOString().slice(0, 10);
 }
 
+function landing(journeyId: string, occurredAt: Date, properties: Record<string, string>) {
+  return {
+    journeyId,
+    name: ANALYTICS_EVENTS.landingView,
+    source: "browser" as const,
+    dedupeKey: randomUUID(),
+    occurredAt,
+    properties,
+  };
+}
+
 function orderedEvents(start: Date, offsetDays = 0) {
   return PRODUCT_FUNNEL_STEPS.map((name, index) => ({
     name,
@@ -601,7 +612,7 @@ describe("first-party product analytics ledger", () => {
         dedupeKey: randomUUID(),
         occurredAt: insideWindow,
       },
-      // Untagged visit → its own `null` channel row, no subscription.
+      // Untagged visit with no referrer either → the "direct" channel row.
       {
         journeyId: directJourneyId,
         name: ANALYTICS_EVENTS.landingView,
@@ -645,13 +656,73 @@ describe("first-party product analytics ledger", () => {
         activated: 1,
         digestClicks: 1,
       },
-      { source: null, campaign: null, landed: 1, subscribed: 0, activated: 0, digestClicks: 0 },
+      { source: "direct", campaign: null, landed: 1, subscribed: 0, activated: 0, digestClicks: 0 },
     ]);
 
     const allTime = await dashboard.overview("all");
     expect(allTime.channels.map((row) => row.source)).toEqual(
-      expect.arrayContaining(["reddit", "dou", null]),
+      expect.arrayContaining(["reddit", "dou", "direct"]),
     );
+  });
+
+  it("attributes untagged landings by referrer and folds our own host into direct", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const at = new Date(Date.now() - 3_600_000);
+    const threadsAppId = randomUUID();
+    const threadsWebId = randomUUID();
+    const internalId = randomUUID();
+    const taggedId = randomUUID();
+
+    await db.insert(analyticsJourneys).values([
+      { id: threadsAppId, origin: "browser" },
+      { id: threadsWebId, origin: "browser" },
+      { id: internalId, origin: "browser" },
+      { id: taggedId, origin: "browser" },
+    ]);
+
+    await db.insert(productEvents).values([
+      // Two different Threads hostnames must collapse into one channel row.
+      landing(threadsAppId, at, { referrer_domain: "l.threads.com" }),
+      landing(threadsWebId, at, { referrer_domain: "threads.net" }),
+      // Our own host is internal navigation, not acquisition.
+      landing(internalId, at, { referrer_domain: "www.metahunt.app" }),
+      // An explicit tag outranks a referrer that says otherwise.
+      landing(taggedId, at, { utm_source: "dou", referrer_domain: "l.threads.com" }),
+    ]);
+
+    const overview = await dashboard.overview("all", "production");
+    const byChannel = new Map(overview.channels.map((row) => [row.source, row.landed]));
+
+    expect(byChannel.get("threads")).toBe(2);
+    expect(byChannel.get("direct")).toBe(1);
+    expect(byChannel.get("dou")).toBe(1);
+    expect(byChannel.has("metahunt.app")).toBe(false);
+    expect(byChannel.has("www.metahunt.app")).toBe(false);
+  });
+
+  it("reports each subscriber's first-touch channel on their roster row", async () => {
+    const dashboard = new ProductAnalyticsService(db);
+    const at = new Date(Date.now() - 3_600_000);
+    const referredId = randomUUID();
+    const unknownId = randomUUID();
+
+    await db.insert(analyticsJourneys).values([
+      { id: referredId, origin: "browser" },
+      { id: unknownId, origin: "browser" },
+    ]);
+    await db.insert(subscriptions).values([
+      { chatId: "chat-from-threads", journeyId: referredId, params: {}, isActive: true },
+      { chatId: "chat-from-nowhere", journeyId: unknownId, params: {}, isActive: true },
+    ]);
+    // Only the first journey ever landed; the second has no landing event, so it
+    // has no channel rather than a fabricated "direct".
+    await db.insert(productEvents).values([landing(referredId, at, { referrer_domain: "t.me" })]);
+
+    const overview = await dashboard.overview("all", "production");
+    const roster = new Map(overview.subscriberActivity.map((row) => [row.chatId, row.source]));
+
+    expect(roster.get("chat-from-threads")).toBe("telegram");
+    expect(roster.get("chat-from-nowhere")).toBeNull();
   });
 
   it("buckets growth and retention by the first link, ignoring the test population", async () => {

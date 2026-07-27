@@ -1,4 +1,4 @@
-import { readAcquisitionAttribution } from "./attribution";
+import { currentReferrerDomain, readAcquisitionAttribution } from "./attribution";
 
 describe("readAcquisitionAttribution", () => {
   it("keeps bounded campaign identifiers", () => {
@@ -89,5 +89,48 @@ describe("first-touch persistence", () => {
     const { storedFirstTouch } = await loadWithWindow(win);
 
     expect(storedFirstTouch()).toEqual({});
+  });
+});
+
+// This suite runs in the node environment (no document, no location), which is
+// exactly the shape that used to break persistFirstTouch — so the globals are
+// stubbed the same way `fakeWindow` stubs window.
+describe("currentReferrerDomain", () => {
+  type Globals = { document?: unknown; location?: unknown };
+
+  function stub(referrer: string, hostname = "metahunt.app") {
+    (globalThis as Globals).document = { referrer };
+    (globalThis as Globals).location = { hostname };
+  }
+
+  afterEach(() => {
+    delete (globalThis as Globals).document;
+    delete (globalThis as Globals).location;
+  });
+
+  it("returns the referring hostname", () => {
+    stub("https://l.threads.com/some/path?x=1");
+    expect(currentReferrerDomain()).toEqual({ referrer_domain: "l.threads.com" });
+  });
+
+  it("is empty for a direct arrival", () => {
+    stub("");
+    expect(currentReferrerDomain()).toEqual({});
+  });
+
+  it("is empty when there is no document at all", () => {
+    expect(currentReferrerDomain()).toEqual({});
+  });
+
+  // Internal navigation is not acquisition — counting it would invent a channel
+  // named after ourselves.
+  it("drops a same-host referrer", () => {
+    stub("https://metahunt.app/radar", "metahunt.app");
+    expect(currentReferrerDomain()).toEqual({});
+  });
+
+  it("survives a malformed referrer", () => {
+    stub("not-a-url");
+    expect(currentReferrerDomain()).toEqual({});
   });
 });
