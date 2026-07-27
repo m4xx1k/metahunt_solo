@@ -348,5 +348,59 @@ describe("TaxonomyService", () => {
       expect(updatedTables).toContain(schema.candidateNodes);
       expect(updatedTables).toContain(schema.vacancyNodes);
     });
+
+    it("repoints track_nodes so a browse preset is not cascade-deleted", async () => {
+      const db = emptyDbMock();
+      const tx = buildMergeTx(
+        { id: SRC, canonicalName: "FPGA Engineer", type: "ROLE", status: "VERIFIED" },
+        { id: DST, canonicalName: "Hardware Engineer", type: "ROLE", status: "VERIFIED" },
+      );
+      wireMergeTx(db, tx);
+      const svc = await bootstrap(db);
+
+      await svc.mergeInto(SRC, DST);
+
+      // track_nodes.node_id is ON DELETE CASCADE, and track_counts COALESCEs a
+      // child track's own role_ids with its parent's — a track left with zero
+      // presets silently serves the parent's whole vacancy set.
+      expect(tx.update.mock.calls.map((c) => c[0])).toContain(schema.trackNodes);
+    });
+
+    it("carries the source classification and retires its slug onto the target", async () => {
+      const db = emptyDbMock();
+      const tx = buildMergeTx(
+        { id: SRC, canonicalName: "SDET", type: "ROLE", status: "VERIFIED" },
+        { id: DST, canonicalName: "Automation QA Engineer", type: "ROLE", status: "VERIFIED" },
+      );
+      wireMergeTx(db, tx);
+      const svc = await bootstrap(db);
+
+      await svc.mergeInto(SRC, DST);
+
+      // Drizzle's sql`` chunks are objects; JSON is the cheapest way to assert
+      // which tables a raw statement touched.
+      const joined = JSON.stringify(tx.execute.mock.calls);
+      // node_tech_meta also cascades; losing stack/generic silently degrades the
+      // reverse-ATS on_stack gate instead of failing.
+      expect(joined).toContain("node_tech_meta");
+      // The slug dies with the node — without this the indexed hub URL 404s and
+      // a saved ?roles=<old-slug> filter silently widens to the whole feed.
+      expect(joined).toContain("node_slug_aliases");
+    });
+
+    it("refuses a non-VERIFIED target even when the source is VERIFIED", async () => {
+      const db = emptyDbMock();
+      const tx = buildMergeTx(
+        { id: SRC, canonicalName: "Cloud Engineer", type: "ROLE", status: "VERIFIED" },
+        { id: DST, canonicalName: "DevOps Engineer", type: "ROLE", status: "NEW" },
+      );
+      wireMergeTx(db, tx);
+      const svc = await bootstrap(db);
+
+      // Only NEW sources were guarded before, so a swapped source/target moved
+      // vacancy_nodes onto a feed-invisible node with no error.
+      await expect(svc.mergeInto(SRC, DST)).rejects.toBeInstanceOf(BadRequestException);
+      expect(tx.update).not.toHaveBeenCalled();
+    });
   });
 });

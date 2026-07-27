@@ -1,0 +1,81 @@
+{
+  "name": "role-v2",
+  "description": "Collapse 83 VERIFIED roles to 28 disciplines. Engineer canonical, Developer kept as alias. AI/ML/DS/DE/DA stay separate by owner decision (2026-07-27). FPGA Engineer stays separate — merging it would strand the hw-fpga track.",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "renames",
+      "why": "Four of these mint merge targets that do not exist yet, so nothing else can run first. Status-neutral and slug-stable, so zero user-visible risk.",
+      "ops": [
+        { "op": "rename", "type": "ROLE", "from": "Backend Developer", "to": "Backend Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Full Stack Developer", "to": "Full Stack Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Frontend Developer", "to": "Frontend Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Embedded Software Engineer", "to": "Embedded Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Game Developer", "to": "Game Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Mobile Developer (iOS)", "to": "iOS Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Mobile Developer (Android)", "to": "Android Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "Mobile Developer (Cross-platform)", "to": "Cross-platform Mobile Engineer" },
+        { "op": "rename", "type": "ROLE", "from": "WordPress Developer", "to": "Web / CMS Engineer", "why": "mints the target for Web Developer; larger side renamed so the smaller node is the one deleted" },
+        { "op": "rename", "type": "ROLE", "from": "ERP Developer (SAP/ABAP/Odoo)", "to": "ERP / CRM Engineer", "why": "mints the target for CRM Developer" },
+        { "op": "rename", "type": "ROLE", "from": "Technical Support Engineer", "to": "IT Support Engineer", "why": "mints the target for IT Support Specialist" },
+        { "op": "rename", "type": "ROLE", "from": "Database Administrator", "to": "Database Engineer", "why": "pure rename, no second node involved" }
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "role merges",
+      "why": "Every pair below failed the 85% skill-profile separability test. Three targets only exist after phase 1.",
+      "ops": [
+        { "op": "merge", "type": "ROLE", "from": "Site Reliability Engineer", "into": "DevOps Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Platform Engineer", "into": "DevOps Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Cloud Engineer", "into": "DevOps Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Cloud Architect", "into": "DevOps Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Information Security Analyst", "into": "Security Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Penetration Tester", "into": "Security Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "IAM Specialist", "into": "Security Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Security Architect", "into": "Security Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "SDET", "into": "Automation QA Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Web Developer", "into": "Web / CMS Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "CRM Developer", "into": "ERP / CRM Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "IT Support Specialist", "into": "IT Support Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Data Architect", "into": "Data Engineer" },
+        { "op": "merge", "type": "ROLE", "from": "Systems Analyst", "into": "Business Analyst" }
+      ]
+    },
+    {
+      "phase": 5,
+      "title": "hide non-tech",
+      "why": "Out of scope for an IT board. Partial tracking is worse than none — 73 leaked vacancies made isTech look functional when it is not.",
+      "ops": [
+        { "op": "hide", "type": "ROLE", "name": "Copywriter / Content Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Game Artist (2D/3D)" },
+        { "op": "hide", "type": "ROLE", "name": "CEO / General Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Project Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Customer Support Representative" },
+        { "op": "hide", "type": "ROLE", "name": "Motion Designer" },
+        { "op": "hide", "type": "ROLE", "name": "Account Manager / CSM" },
+        { "op": "hide", "type": "ROLE", "name": "Finance Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Product Designer" },
+        { "op": "hide", "type": "ROLE", "name": "HR Manager / People Partner" },
+        { "op": "hide", "type": "ROLE", "name": "UI/UX Designer" },
+        { "op": "hide", "type": "ROLE", "name": "Accountant (FOP Support)" },
+        { "op": "hide", "type": "ROLE", "name": "Delivery Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Game Designer" },
+        { "op": "hide", "type": "ROLE", "name": "Graphic Designer" },
+        { "op": "hide", "type": "ROLE", "name": "Office Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Talent Sourcer" },
+        { "op": "hide", "type": "ROLE", "name": "CMO (Chief Marketing Officer)" },
+        { "op": "hide", "type": "ROLE", "name": "COO (Chief Operating Officer)" },
+        { "op": "hide", "type": "ROLE", "name": "IT Lawyer / Legal Counsel" },
+        { "op": "hide", "type": "ROLE", "name": "IT Recruiter" },
+        { "op": "hide", "type": "ROLE", "name": "Lead Generation Specialist" },
+        { "op": "hide", "type": "ROLE", "name": "PR Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Product Manager" },
+        { "op": "hide", "type": "ROLE", "name": "Product Owner" },
+        { "op": "hide", "type": "ROLE", "name": "Scrum Master" },
+        { "op": "hide", "type": "ROLE", "name": "SEO Specialist" },
+        { "op": "hide", "type": "ROLE", "name": "Developer Advocate" }
+      ]
+    }
+  ]
+}

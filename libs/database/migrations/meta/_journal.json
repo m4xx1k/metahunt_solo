@@ -239,6 +239,13 @@
       "when": 1785134356255,
       "tag": "0033_omniscient_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1785145685293,
+      "tag": "0034_eager_bloodstrike",
+      "breakpoints": true
     }
   ]
 }
