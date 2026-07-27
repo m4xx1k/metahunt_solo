@@ -13,7 +13,8 @@ wants to save or subscribe.
 
 ```
 POST /auth/telegram/start  -> { nonce, pollSecret, verificationCode, startPayload }
-browser -> opens t.me/<bot>?start=login_<nonce>, shows verificationCode
+browser -> tg://resolve?domain=<bot>&start=login_<nonce>, shows verificationCode
+           (t.me/... only as the no-app fallback — it navigates the tab away)
 bot     -> /start login_<nonce>  -> shows the code + [confirm] / [not me]
 bot     -> callback login:ok:<nonce> -> chat_id is server-trusted -> upsert user
 browser -> POST /auth/telegram/poll { nonce, pollSecret } -> { token, user }
@@ -32,6 +33,12 @@ Three properties hold this up, and all three are load-bearing:
 
 Requests are single-use and live 5 minutes; `TelegramLoginGc` sweeps expired rows
 hourly.
+
+**The handoff must not navigate the tab.** `tg://resolve` opens the app and
+leaves the page where it is, so switching back to the browser lands on the site,
+already logged in (the poll fires on `visibilitychange`). A plain `t.me` link
+strands the user on Telegram's web page and makes them press Back to return —
+it stays only as the fallback for people with no app installed.
 
 **Known residual — consent phishing.** An attacker who starts the flow holds the
 code, so they can send "confirm your account, your code is K7QM" and the bot will

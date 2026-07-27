@@ -23,7 +23,10 @@ interface Pending {
   nonce: string;
   pollSecret: string;
   verificationCode: string;
-  deepLink: string;
+  /** Hands off to the installed app without navigating this tab away. */
+  appLink: string;
+  /** For anyone without the app — this one does leave the page. */
+  webLink: string;
 }
 
 /**
@@ -71,12 +74,13 @@ export function TelegramLoginButton({
         nonce: started.nonce,
         pollSecret: started.pollSecret,
         verificationCode: started.verificationCode,
-        deepLink: `https://t.me/${BOT_USERNAME}?start=${started.startPayload}`,
+        appLink: `tg://resolve?domain=${BOT_USERNAME}&start=${started.startPayload}`,
+        webLink: `https://t.me/${BOT_USERNAME}?start=${started.startPayload}`,
       });
       setPhase("waiting");
     } catch {
       analytics.telegramLoginFailed("session", "deeplink");
-      toast.error("Couldn't start Telegram login. Please try again.");
+      toast.error("login failed, try again");
       setPhase("idle");
     }
   }, [analytics]);
@@ -175,23 +179,27 @@ export function TelegramLoginButton({
       <PopoverContent className="flex flex-col gap-3">
         {pending ? (
           <>
-            <p>
-              open the bot and confirm the code{" "}
-              <b className="text-text-primary">{pending.verificationCode}</b>. it will ask — that is
-              how you know nobody else started this.
+            <p className="font-display text-2xl tracking-widest text-text-primary">
+              {pending.verificationCode}
             </p>
-            <a
-              href={pending.deepLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="uppercase tracking-wider text-accent underline"
-            >
+            <p>confirm this code in telegram</p>
+            {/* tg:// hands off to the app and leaves this tab where it is, so
+                switching back lands on the site already logged in. */}
+            <a href={pending.appLink} className="uppercase tracking-wider text-accent underline">
               open telegram →
             </a>
-            <p className="text-text-muted">waiting for your confirmation…</p>
+            <a
+              href={pending.webLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-muted underline"
+            >
+              no app?
+            </a>
+            <p className="text-text-muted">waiting…</p>
           </>
         ) : (
-          <p>that login link expired. links live 5 minutes.</p>
+          <p>link expired</p>
         )}
         <div className="flex items-center gap-2 border-t border-border pt-3">
           <Button variant="secondary" size="sm" onClick={reset}>
