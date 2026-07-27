@@ -1,0 +1,162 @@
+{
+ "result": {
+  "current_page": 1,
+  "data": [
+   {
+    "id": "158",
+    "template_id": "",
+    "status_id": "1",
+    "on_site_id": "0",
+    "name": "Анкета кандидата для пошуку роботи (Бориспіль)",
+    "workspace": "",
+    "description": "Шановний кандидате!\r\n\r\nДякуємо за інтерес до роботи в нашій компанії.\r\nПросимо Вас уважно та правдиво заповнити цю анкету — вона допоможе нам краще познайомитися з Вами, оцінити Ваш досвід, навички та професійні очікування.\r\n\r\nАнкета призначена для кандидатів на виробничі та робітничі посади. Надана…[trimmed]",
+    "demand": "",
+    "addition": "",
+    "responsibility": "",
+    "working_conditions": "",
+    "open_date": "",
+    "close_date": "",
+    "hot_flag": "0",
+    "created_at": "2026-02-20 11:16:41",
+    "updated_at": "2026-02-25 13:43:50",
+    "company_name": "Кондитерська Корпорація \"Рошен\"",
+    "published": "1",
+    "residence": "",
+    "number_of_positions": "1",
+    "department_id": "",
+    "custom_properties": "",
+    "screening_enabled": "0",
+    "work_types": [],
+    "salary": [],
+    "experience": "Без досвіду"
+   },
+   {
+    "id": "159",
+    "template_id": "",
+    "status_id": "1",
+    "on_site_id": "0",
+    "name": "Анкета кандидата для пошуку роботи (ПрАТ \"Київська кондитерська фабрика \"РОШЕН)",
+    "workspace": "",
+    "description": "Шановний кандидате!\r\n\r\nДякуємо за інтерес до роботи в нашій компанії.\r\nПросимо Вас уважно та правдиво заповнити цю анкету — вона допоможе нам краще познайомитися з Вами, оцінити Ваш досвід, навички та професійні очікування.\r\n\r\nАнкета призначена для кандидатів на виробничі та робітничі посади. Надана…[trimmed]",
+    "demand": "",
+    "addition": "",
+    "responsibility": "",
+    "working_conditions": "",
+    "open_date": "",
+    "close_date": "",
+    "hot_flag": "0",
+    "created_at": "2026-02-20 11:33:07",
+    "updated_at": "2026-02-23 10:09:36",
+    "company_name": "ПрАТ \"Київська кондитерська фабрика \"РОШЕН",
+    "published": "1",
+    "residence": "",
+    "number_of_positions": "1",
+    "department_id": "",
+    "custom_properties": "",
+    "screening_enabled": "0",
+    "work_types": [
+     "Повна зайнятість"
+    ],
+    "salary": [],
+    "experience": "Без досвіду"
+   },
+   {
+    "id": "164",
+    "template_id": "",
+    "status_id": "1",
+    "on_site_id": "0",
+    "name": "Анкета кандидата для пошуку роботи (ПрАТ \"Київська кондитерська фабрика \"РОШЕН)_олх",
+    "workspace": "",
+    "description": "Шановний кандидате!\r\n\r\nДякуємо за інтерес до роботи в нашій компанії.\r\nПросимо Вас уважно та правдиво заповнити цю анкету — вона допоможе нам краще познайомитися з Вами, оцінити Ваш досвід, навички та професійні очікування.\r\n\r\nАнкета призначена для кандидатів на виробничі та робітничі посади. Надана…[trimmed]",
+    "demand": "",
+    "addition": "",
+    "responsibility": "",
+    "working_conditions": "",
+    "open_date": "",
+    "close_date": "",
+    "hot_flag": "0",
+    "created_at": "2026-03-05 13:50:18",
+    "updated_at": "2026-03-05 17:40:00",
+    "company_name": "Кондитерська Корпорація \"Рошен\"",
+    "published": "1",
+    "residence": "",
+    "number_of_positions": "50",
+    "department_id": "",
+    "custom_properties": "",
+    "screening_enabled": "0",
+    "work_types": [
+     "Повна зайнятість"
+    ],
+    "salary": [],
+    "experience": "Без досвіду"
+   },
+   {
+    "id": "74",
+    "template_id": "",
+    "status_id": "4",
+    "on_site_id": "0",
+    "name": "Інженер-програміст BAS",
+    "workspace": "",
+    "description": "",
+    "demand": "Вища профільна освіта\r\nНе менше 4 років досвіду роботи за напрямом, бажано у крупних виробничих компаніях\r\nЗнання можливостей та механізмів платформи BAS 8.3 \r\nІнтеграції (API, web-сервіси, XML, JSON, EDI)",
+    "addition": "Досвід налаштування та оптимізація баз даних MS SQL\r\nПрофайлер MS SQL Server\r\nMS Tabular (DAX), SSIS\r\nНавички проектної діяльності\r\nNet, Azure, Kafka, RabbitMQ, Android (Java/Kotlin), React Native, Angular",
+    "responsibility": "Розробка конфігурацій, що не належать до типових, на основі BAS\r\nЗабезпечування стабільної роботу ERP/BAS та пов’язаних мобільних і webсервісів\r\nСтворення архітектури конфігурації\r\nРозробка підсистем інтеграції між внутрішніми та зовнішніми системами\r\nТестування системи\r\nСкладання технічної документ…[trimmed]",
+    "working_conditions": "Конкурентна заробітна плата\r\nРобота в офісному форматі open space, понеділок - четвер 09:00–18:00, п'ятниця - скорочений робочий день\r\nКорпоративне навчання\r\nКорпоративні заходи\r\nСмачні обіди за рахунок компанії.",
+    "open_date": "2025-10-02 22:51:11",
+    "close_date": "",
+    "hot_flag": "1",
+    "created_at": "2025-10-02 22:51:11",
+    "updated_at": "2026-02-23 11:08:51",
+    "company_name": "Кондитерська Корпорація \"Рошен\"",
+    "published": "1",
+    "residence": "Київ",
+    "number_of_positions": "2",
+    "department_id": "3",
+    "custom_properties": "",
+    "screening_enabled": "0",
+    "work_types": [
+     "Повна зайнятість"
+    ],
+    "salary": {
+     "from": 110000,
+     "to": 130000,
+     "currency": "UAH"
+    },
+    "experience": "3-5 років досвіду"
+   }
+  ],
+  "first_page_url": "https://roshen.hurma.work/api/vacancies?page=1",
+  "from": 1,
+  "last_page": 1,
+  "last_page_url": "https://roshen.hurma.work/api/vacancies?page=1",
+  "links": [
+   {
+    "url": null,
+    "label": "&laquo; Поп.",
+    "page": null,
+    "active": false
+   },
+   {
+    "url": "https://roshen.hurma.work/api/vacancies?page=1",
+    "label": "1",
+    "page": 1,
+    "active": true
+   },
+   {
+    "url": null,
+    "label": "Наст. &raquo;",
+    "page": null,
+    "active": false
+   }
+  ],
+  "next_page_url": null,
+  "path": "https://roshen.hurma.work/api/vacancies",
+  "per_page": 12,
+  "prev_page_url": null,
+  "to": 6,
+  "total": 6
+ },
+ "error": false,
+ "code": 200,
+ "messages": []
+}

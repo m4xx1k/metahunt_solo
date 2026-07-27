@@ -1,0 +1,166 @@
+{
+ "jobs": [
+  {
+   "absolute_url": "https://job-boards.eu.greenhouse.io/appflame/jobs/4929889101",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4468039101,
+   "location": {
+    "name": "Europe; Poland; Ukraine"
+   },
+   "metadata": null,
+   "id": 4929889101,
+   "updated_at": "2026-07-23T07:18:49-04:00",
+   "requisition_id": "15",
+   "title": "Creative Producer",
+   "company_name": "appflame",
+   "first_published": "2026-07-16T10:10:48-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;&lt;strong&gt;appflame&lt;/strong&gt; — a Ukrainian IT company building world-class products: Hily, Taimi, AdConnect, Mailkeeper, and more.&lt;/p&gt;\n&lt;p&gt;&lt;strong&gt;Who we are today:&lt;/strong&gt;&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;7 years on the market, 500+ employees, offices in Kyiv, London, and Limassol, plus a coworking space in Warsaw.…[trimmed]",
+   "departments": [
+    {
+     "id": 4073525101,
+     "name": "Astari - Marketing",
+     "child_ids": [],
+     "parent_id": 4073524101
+    }
+   ],
+   "offices": [
+    {
+     "id": 4043527101,
+     "name": "Kyiv",
+     "location": "Kyiv, Kyiv, Ukraine",
+     "child_ids": [],
+     "parent_id": null
+    },
+    {
+     "id": 4043714101,
+     "name": "Remote",
+     "location": "Remote",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": "<p>We use Greenhouse’s AI-powered Talent Matching tool to compare your application against our job requirements.</p>",
+   "include_ai_disclaimer": false,
+   "ai_opt_out_request_url": "http://s101.recruiting.eu.greenhouse.io/ai_opt_out_request/job_post/4929889101/ai_opt_out"
+  },
+  {
+   "absolute_url": "https://job-boards.eu.greenhouse.io/appflame/jobs/4905253101",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4489968101,
+   "location": {
+    "name": "Kyiv, Ukraine"
+   },
+   "metadata": null,
+   "id": 4905253101,
+   "updated_at": "2026-07-23T04:47:00-04:00",
+   "requisition_id": "45",
+   "title": "Creator Partnerships Manager ",
+   "company_name": "appflame",
+   "first_published": "2026-06-26T08:51:29-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;&lt;strong&gt;appflame&lt;/strong&gt; — a Ukrainian IT company building world-class products: Hily, Taimi, AdConnect, Mailkeeper, and more.&lt;/p&gt;\n&lt;p&gt;&lt;strong&gt;Who we are today:&lt;/strong&gt;&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;7 years on the market, 500+ employees, offices in Kyiv, London, and Limassol, plus a coworking space in Warsaw.…[trimmed]",
+   "departments": [
+    {
+     "id": 4073483101,
+     "name": "Taimi - Brand & Communication",
+     "child_ids": [],
+     "parent_id": 4073481101
+    }
+   ],
+   "offices": [
+    {
+     "id": 4043527101,
+     "name": "Kyiv",
+     "location": "Kyiv, Kyiv, Ukraine",
+     "child_ids": [],
+     "parent_id": null
+    },
+    {
+     "id": 4043714101,
+     "name": "Remote",
+     "location": "Remote",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": "<p>We use Greenhouse’s AI-powered Talent Matching tool to compare your application against our job requirements.</p>",
+   "include_ai_disclaimer": false,
+   "ai_opt_out_request_url": "http://s101.recruiting.eu.greenhouse.io/ai_opt_out_request/job_post/4905253101/ai_opt_out"
+  },
+  {
+   "absolute_url": "https://job-boards.eu.greenhouse.io/appflame/jobs/4913432101",
+   "data_compliance": [
+    {
+     "type": "gdpr",
+     "requires_consent": false,
+     "requires_processing_consent": false,
+     "requires_retention_consent": false,
+     "retention_period": null,
+     "demographic_data_consent_applies": false
+    }
+   ],
+   "internal_job_id": 4489489101,
+   "location": {
+    "name": "Kyiv, remote"
+   },
+   "metadata": null,
+   "id": 4913432101,
+   "updated_at": "2026-07-23T04:47:00-04:00",
+   "requisition_id": "43",
+   "title": "Engineering Manager – Engagement Stream",
+   "company_name": "appflame",
+   "first_published": "2026-06-30T10:53:13-04:00",
+   "language": "en",
+   "application_deadline": null,
+   "content": "&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;&lt;strong&gt;appflame&lt;/strong&gt; — a Ukrainian IT company building world-class products: Hily, Taimi, AdConnect, Mailkeeper, and more.&lt;/p&gt;\n&lt;p&gt;&lt;strong&gt;Who we are today:&lt;/strong&gt;&lt;/p&gt;\n&lt;ul&gt;\n&lt;li&gt;7 years on the market, 500+ employees, offices in Kyiv, London, and Limassol, plus a coworking space in Warsaw.…[trimmed]",
+   "departments": [
+    {
+     "id": 4073490101,
+     "name": "Hily - Engineering",
+     "child_ids": [
+      4073492101,
+      4073491101,
+      4073493101
+     ],
+     "parent_id": 4073489101
+    }
+   ],
+   "offices": [
+    {
+     "id": 4043527101,
+     "name": "Kyiv",
+     "location": "Kyiv, Kyiv, Ukraine",
+     "child_ids": [],
+     "parent_id": null
+    }
+   ],
+   "ai_disclaimer": "<p>We use Greenhouse’s AI-powered Talent Matching tool to compare your application against our job requirements.</p>",
+   "include_ai_disclaimer": false,
+   "ai_opt_out_request_url": "http://s101.recruiting.eu.greenhouse.io/ai_opt_out_request/job_post/4913432101/ai_opt_out"
+  }
+ ],
+ "meta": {
+  "total": 18
+ }
+}

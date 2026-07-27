@@ -1,0 +1,92 @@
+{
+ "jobs": [
+  {
+   "id": "676cdecf-4bdf-4b54-854b-52e533e9eb72",
+   "title": "AI Creative Designer",
+   "department": "Marketing ",
+   "team": "Marketing ",
+   "employmentType": "FullTime",
+   "location": "Ukraine ",
+   "shouldDisplayCompensationOnJobPostings": false,
+   "secondaryLocations": [],
+   "publishedAt": "2026-04-07T20:23:25.196+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressCountry": "Ukraine"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/mindly/676cdecf-4bdf-4b54-854b-52e533e9eb72",
+   "applyUrl": "https://jobs.ashbyhq.com/mindly/676cdecf-4bdf-4b54-854b-52e533e9eb72/application",
+   "descriptionHtml": "<h2><strong>About Mindly </strong></h2><p style=\"min-height:1.5em\"><br /><strong>Mindly</strong> is an international product company — a marketplace for psychologists and their clients. We have over <strong>1,000,000 clients in more than 40 countries worldwide</strong>, with a primary focus on <strong>Tier-1 markets</strong>. Mindly is one of the fastest-growing companies in the HealthTech sector …[trimmed]",
+   "descriptionPlain": "ABOUT MINDLY\n\n\nMindly is an international product company — a marketplace for psychologists and their clients. We have over 1,000,000 clients in more than 40 countries worldwide, with a primary focus on Tier-1 markets. Mindly is one of the fastest-growing companies in the HealthTech sector globally. Our goal is to help people live healthy, happy, and fulfilling lives. We are growing extremely fast…[trimmed]",
+   "compensation": {
+    "compensationTierSummary": null,
+    "scrapeableCompensationSalarySummary": null,
+    "compensationTiers": [],
+    "summaryComponents": []
+   }
+  },
+  {
+   "id": "86f818da-688d-42d6-9a92-caaf45520f09",
+   "title": "Talent Acquisition Specialist ",
+   "department": "Recruitment",
+   "team": "Recruitment",
+   "employmentType": "FullTime",
+   "location": "Ukraine ",
+   "shouldDisplayCompensationOnJobPostings": false,
+   "secondaryLocations": [],
+   "publishedAt": "2026-04-23T13:36:53.982+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressCountry": "Ukraine"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/mindly/86f818da-688d-42d6-9a92-caaf45520f09",
+   "applyUrl": "https://jobs.ashbyhq.com/mindly/86f818da-688d-42d6-9a92-caaf45520f09/application",
+   "descriptionHtml": "<h2><strong>About Mindly </strong></h2><p style=\"min-height:1.5em\"><br /><strong>Mindly</strong> is an international product company — a marketplace for psychologists and their clients. We have over <strong>1,000,000 clients in more than 40 countries worldwide</strong>, with a primary focus on <strong>Tier-1 markets</strong>. Mindly is one of the fastest-growing companies in the HealthTech sector …[trimmed]",
+   "descriptionPlain": "ABOUT MINDLY\n\n\nMindly is an international product company — a marketplace for psychologists and their clients. We have over 1,000,000 clients in more than 40 countries worldwide, with a primary focus on Tier-1 markets. Mindly is one of the fastest-growing companies in the HealthTech sector globally. Our goal is to help people live healthy, happy, and fulfilling lives. We are growing extremely fast…[trimmed]",
+   "compensation": {
+    "compensationTierSummary": null,
+    "scrapeableCompensationSalarySummary": null,
+    "compensationTiers": [],
+    "summaryComponents": []
+   }
+  },
+  {
+   "id": "4cd75b2e-afc1-4084-9ee4-477e996d53ed",
+   "title": "Product Analyst ",
+   "department": "Analytics ",
+   "team": "Analytics ",
+   "employmentType": "FullTime",
+   "location": "Ukraine ",
+   "shouldDisplayCompensationOnJobPostings": false,
+   "secondaryLocations": [],
+   "publishedAt": "2026-06-10T08:56:51.993+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressCountry": "Ukraine"
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/mindly/4cd75b2e-afc1-4084-9ee4-477e996d53ed",
+   "applyUrl": "https://jobs.ashbyhq.com/mindly/4cd75b2e-afc1-4084-9ee4-477e996d53ed/application",
+   "descriptionHtml": "<h2><strong>About Mindly </strong></h2><p style=\"min-height:1.5em\"><br /><strong>Mindly</strong> is an international product company — a marketplace for psychologists and their clients. We have over <strong>1,000,000 clients in more than 40 countries worldwide</strong>, with a primary focus on <strong>Tier-1 markets</strong>. Mindly is one of the fastest-growing companies in the HealthTech sector …[trimmed]",
+   "descriptionPlain": "ABOUT MINDLY\n\n\nMindly is an international product company — a marketplace for psychologists and their clients. We have over 1,000,000 clients in more than 40 countries worldwide, with a primary focus on Tier-1 markets. Mindly is one of the fastest-growing companies in the HealthTech sector globally. Our goal is to help people live healthy, happy, and fulfilling lives. We are growing extremely fast…[trimmed]",
+   "compensation": {
+    "compensationTierSummary": null,
+    "scrapeableCompensationSalarySummary": null,
+    "compensationTiers": [],
+    "summaryComponents": []
+   }
+  }
+ ],
+ "apiVersion": "1"
+}
