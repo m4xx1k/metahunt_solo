@@ -16,7 +16,12 @@ export function AboutMe() {
         <div className="flex flex-col md:flex-row">
           <div className="flex flex-col justify-center gap-5 border-b border-border px-8 py-10 md:w-[360px] md:border-r md:border-b-0 md:px-10">
             <div className="relative flex h-[320px] items-center justify-center border border-border-strong bg-bg-card">
-              <Image src={"/me.jpg"} alt="me" fill className="object-contain bg-black/50" />
+              <Image
+                src={"/me.jpg"}
+                alt="me"
+                fill
+                className="object-contain bg-black/50"
+              />
             </div>
 
             <div className="border border-border bg-bg-elev p-4">
@@ -47,14 +52,21 @@ export function AboutMe() {
                 <span className="h-2 w-2 rounded-full bg-[#FFBD2E]" />
                 <span className="h-2 w-2 rounded-full bg-[#27C93F]" />
               </div>
-              <p className="font-mono text-xs text-text-muted">{aboutMeSection.terminalTitle}</p>
+              <p className="font-mono text-xs text-text-muted">
+                {aboutMeSection.terminalTitle}
+              </p>
             </div>
 
             <div className="flex flex-col gap-3 border border-border bg-bg-elev p-4 md:p-5">
-              <p className="font-mono text-xs font-bold text-accent">{"$ cat profile.yml"}</p>
+              <p className="font-mono text-xs font-bold text-accent">
+                {"$ cat profile.yml"}
+              </p>
               <div className="space-y-1">
                 {aboutMeSection.profile.map((line) => (
-                  <p key={line} className="font-mono text-xs text-text-primary">
+                  <p
+                    key={line}
+                    className="font-mono text-xs text-text-primary"
+                  >
                     {line}
                   </p>
                 ))}
@@ -62,7 +74,9 @@ export function AboutMe() {
 
               <Divider />
 
-              <p className="font-mono text-xs font-bold text-accent">{"$ cat story.txt"}</p>
+              <p className="font-mono text-xs font-bold text-accent">
+                {"$ cat story.txt"}
+              </p>
               <p className="font-body text-xs leading-[1.6] text-text-secondary">
                 {aboutMeSection.story}
               </p>
@@ -74,7 +88,10 @@ export function AboutMe() {
               </p>
               <div className="space-y-1">
                 {aboutMeSection.achievements.map((line) => (
-                  <p key={line} className="font-mono text-xs text-text-primary">
+                  <p
+                    key={line}
+                    className="font-mono text-xs text-text-primary"
+                  >
                     {line}
                   </p>
                 ))}

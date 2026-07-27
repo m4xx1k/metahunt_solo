@@ -6,7 +6,13 @@ export const UPLOAD_BTN =
 
 // The upload button. Drag-and-drop is handled by the surrounding control bar and
 // the file input lives in <FeedLensShell>; this just triggers the picker.
-export function CvDropzone({ onClick, busy = false }: { onClick: () => void; busy?: boolean }) {
+export function CvDropzone({
+  onClick,
+  busy = false,
+}: {
+  onClick: () => void;
+  busy?: boolean;
+}) {
   return (
     <button type="button" onClick={onClick} disabled={busy} className={UPLOAD_BTN}>
       {busy ? "Reading…" : "+ Upload CV"}

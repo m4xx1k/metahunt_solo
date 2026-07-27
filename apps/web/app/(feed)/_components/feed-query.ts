@@ -54,12 +54,17 @@ export function buildFeedListQuery(
   const domainIds = readList(p.get("domains"));
 
   const sourceCode = p.get("source");
-  const sourceId = sourceCode ? sources.find((s) => s.code === sourceCode)?.id : undefined;
+  const sourceId = sourceCode
+    ? sources.find((s) => s.code === sourceCode)?.id
+    : undefined;
 
   const seniorities = coerceEnumList(SENIORITY_VALUES, p.get("seniorities") ?? undefined);
   const workFormats = coerceEnumList(WORK_FORMAT_VALUES, p.get("workFormats") ?? undefined);
   const englishLevels = coerceEnumList(ENGLISH_LEVEL_VALUES, p.get("english") ?? undefined);
-  const employmentTypes = coerceEnumList(EMPLOYMENT_TYPE_VALUES, p.get("employment") ?? undefined);
+  const employmentTypes = coerceEnumList(
+    EMPLOYMENT_TYPE_VALUES,
+    p.get("employment") ?? undefined,
+  );
   const postedWithinDays =
     FRESHNESS_DAYS[p.get("fresh") ?? ""] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS];
   const experience = readList(p.get("experience"));

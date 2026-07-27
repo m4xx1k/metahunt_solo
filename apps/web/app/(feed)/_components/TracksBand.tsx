@@ -47,7 +47,9 @@ export function TracksBand({
     };
   }, [tracks]);
 
-  const visibleRoots = roots.filter((r) => r.count > 0 || childrenOf(r.slug).length > 0);
+  const visibleRoots = roots.filter(
+    (r) => r.count > 0 || childrenOf(r.slug).length > 0,
+  );
 
   // The discipline whose children to expand: the active node's parent, or the
   // active root itself.
@@ -59,7 +61,9 @@ export function TracksBand({
 
   const kids = activeParent ? childrenOf(activeParent) : [];
   const parentLabel =
-    activeParent != null ? (tracks.find((t) => t.slug === activeParent)?.label ?? "") : "";
+    activeParent != null
+      ? (tracks.find((t) => t.slug === activeParent)?.label ?? "")
+      : "";
 
   return (
     <nav aria-label="tracks" className="flex flex-col gap-2">
@@ -80,7 +84,9 @@ export function TracksBand({
                 key={disc.slug}
                 label={disc.label}
                 isExact={activeSlug === disc.slug}
-                isGroupFocus={activeParent === disc.slug && activeSlug !== disc.slug}
+                isGroupFocus={
+                  activeParent === disc.slug && activeSlug !== disc.slug
+                }
                 ariaPressed={activeParent === disc.slug}
                 onClick={() => onSelect(disc.slug)}
                 reduceMotion={!!reduceMotion}

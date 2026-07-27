@@ -32,9 +32,9 @@ export function ParseSection() {
               deepseek-v4-flash
             </code>
             , reasoning disabled for speed &amp; cost) through{" "}
-            <ExtLink href="https://www.boundaryml.com">BAML</ExtLink> — a typed schema language for
-            LLM calls that validates and retries until the model returns exactly the shape we asked
-            for.
+            <ExtLink href="https://www.boundaryml.com">BAML</ExtLink> — a typed schema language
+            for LLM calls that validates and retries until the model returns exactly the shape we
+            asked for.
           </p>
           <ul className="mb-3.5 list-disc space-y-1.5 pl-5 font-body text-sm leading-[1.5] text-text-secondary marker:text-border-strong">
             {parse.list.map((item) => (
@@ -44,7 +44,8 @@ export function ParseSection() {
           <Callout>
             <span className="font-mono font-bold text-accent">Why BAML?</span> It turns
             &ldquo;prompt an LLM and hope the JSON parses&rdquo; into a typed function call with
-            schema validation and automatic retries — the structure is guaranteed, not best-effort.
+            schema validation and automatic retries — the structure is guaranteed, not
+            best-effort.
             <span className="mt-1.5 block font-mono text-2xs text-text-muted">
               per-token pricing verified in code; per-vacancy cost is a fraction of a cent
               (estimate).
@@ -54,9 +55,9 @@ export function ParseSection() {
 
         <Panel label="raw text → structured (via BAML)">
           <div className="border border-border bg-bg p-2.5 font-mono text-2xs leading-[1.55] text-text-secondary">
-            Шукаємо <span className="text-accent">Senior Golang</span> інженера. Досвід від 5 років.{" "}
-            <span className="text-accent-secondary">Go, PostgreSQL, Kafka</span>, буде плюсом gRPC.{" "}
-            <span className="text-success">Remote</span>, вилка{" "}
+            Шукаємо <span className="text-accent">Senior Golang</span> інженера. Досвід від 5
+            років. <span className="text-accent-secondary">Go, PostgreSQL, Kafka</span>, буде
+            плюсом gRPC. <span className="text-success">Remote</span>, вилка{" "}
             <span className="text-success">$6000–8000</span>. Тестове завдання.
           </div>
           <div className="my-2.5 text-center font-mono text-xs font-bold text-accent">

@@ -14,7 +14,11 @@ export function Result() {
             <RawJobCard key={job.title} {...job} />
           ))}
         </div>
-        <ArrowDown weight="bold" className="h-8 w-8 text-accent" aria-hidden />
+        <ArrowDown
+          weight="bold"
+          className="h-8 w-8 text-accent"
+          aria-hidden
+        />
         <GoldenJobCard job={goldenJob} />
       </div>
     </Section>

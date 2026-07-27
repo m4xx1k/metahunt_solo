@@ -41,7 +41,9 @@ export function CvSelect({
       >
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="text-text-muted">CV</span>
-          <span className="truncate text-text-primary">{active?.label ?? "Switch CV"}</span>
+          <span className="truncate text-text-primary">
+            {active?.label ?? "Switch CV"}
+          </span>
         </span>
         <span aria-hidden className="text-[8px] leading-none">
           {open ? "▴" : "▾"}
@@ -69,7 +71,9 @@ export function CvSelect({
                 {cv.candidateId === activeId ? "● " : ""}
                 {cv.label}
               </span>
-              <span className="block text-2xs text-text-muted">{formatUploadedAt(cv.addedAt)}</span>
+              <span className="block text-2xs text-text-muted">
+                {formatUploadedAt(cv.addedAt)}
+              </span>
             </button>
           ))}
         </div>

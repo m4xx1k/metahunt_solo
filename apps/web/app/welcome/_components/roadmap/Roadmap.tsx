@@ -39,7 +39,9 @@ export function Roadmap() {
               >
                 {item.tag}
               </span>
-              <h4 className="font-display text-xl font-bold text-text-primary">{item.title}</h4>
+              <h4 className="font-display text-xl font-bold text-text-primary">
+                {item.title}
+              </h4>
               <p className="font-body text-xs leading-[1.55] text-text-secondary">
                 {item.description}
               </p>

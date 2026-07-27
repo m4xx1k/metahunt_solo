@@ -51,8 +51,14 @@ export function FeedShell({
   const searchParams = useSearchParams();
   const push = useShallowSearchParams();
 
-  const presetRoleIds = useMemo(() => (presetRoles ?? []).map((r) => r.id), [presetRoles]);
-  const presetSkillIds = useMemo(() => (presetSkills ?? []).map((s) => s.id), [presetSkills]);
+  const presetRoleIds = useMemo(
+    () => (presetRoles ?? []).map((r) => r.id),
+    [presetRoles],
+  );
+  const presetSkillIds = useMemo(
+    () => (presetSkills ?? []).map((s) => s.id),
+    [presetSkills],
+  );
 
   const { query, offset } = useMemo(
     () =>

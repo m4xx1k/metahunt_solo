@@ -12,7 +12,8 @@ export const steps: StepItem[] = [
   {
     number: "01",
     title: "01 · aggregation",
-    description: "we pull jobs from Djinni, DOU, and other sources every hour, 24/7.",
+    description:
+      "we pull jobs from Djinni, DOU, and other sources every hour, 24/7.",
   },
   {
     number: "02",

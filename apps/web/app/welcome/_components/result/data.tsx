@@ -1,4 +1,8 @@
-import { SparkleIcon, RobotIcon, PlusIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  SparkleIcon,
+  RobotIcon,
+  PlusIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import type { ComponentProps } from "react";
 import type { RawJobCard } from "./RawJobCard";
 import type { GoldenJob } from "./GoldenJobCard";

@@ -79,13 +79,17 @@ export function TotalCounter({ total, lastSyncAt, sources }: Props) {
   const shown = sources.slice(0, SOURCES_SHOWN).map((s) => s.displayName);
   const extra = sources.length - shown.length;
   const sourceLabel =
-    shown.length === 0 ? "—" : shown.join(" + ") + (extra > 0 ? ` +${extra}` : "");
+    shown.length === 0
+      ? "—"
+      : shown.join(" + ") + (extra > 0 ? ` +${extra}` : "");
   return (
     <div className="flex flex-col items-start gap-2 md:items-end md:justify-center md:text-right">
       <span className="font-display text-6xl font-bold leading-none text-accent md:text-7xl">
         <CountUp value={total} />
       </span>
-      <span className="font-body text-sm text-text-secondary">jobs indexed</span>
+      <span className="font-body text-sm text-text-secondary">
+        jobs indexed
+      </span>
       <span className="flex items-center gap-2 font-mono text-xs text-text-muted">
         <StatusDot />
         <RelativeTime iso={lastSyncAt} /> · {sourceLabel}
