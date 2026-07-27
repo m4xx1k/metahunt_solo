@@ -1,6 +1,9 @@
 import { Client } from "pg";
 
+import type { NodeType } from "@metahunt/database";
+
 import { cleanDescription } from "../02-enrich/dedup/sanitize";
+import { joinNamesByType } from "../platform/shared/node-names";
 
 import type { FeatureRow } from "./sampling";
 import type { Extraction } from "./types";
@@ -99,4 +102,31 @@ export async function loadTexts(client: Client, ids: string[]): Promise<Map<stri
   return new Map(
     rows.map((r) => [r.id, `Title: ${r.title}\n\n${cleanDescription(r.description)}`]),
   );
+}
+
+export async function loadTaxonomy(client: Client): Promise<{
+  roles: string;
+  domains: string;
+  skills: string;
+}> {
+  const { rows } = await client.query<{ type: NodeType; name: string }>(
+    `select type, canonical_name as name from nodes where status = 'VERIFIED'`,
+  );
+  return {
+    roles: joinNamesByType(rows, "ROLE"),
+    domains: joinNamesByType(rows, "DOMAIN"),
+    skills: joinNamesByType(rows, "SKILL"),
+  };
+}
+
+// `TYPE:lowercased-alias` → canonical name. Keyed by type because "Android" is both
+// a skill and a role, and collapsing them would let a wrong role score as correct.
+export async function loadAliases(client: Client): Promise<Record<string, string>> {
+  const { rows } = await client.query<{ type: string; name: string; canonical: string }>(
+    `select a.type as type, a.name as name, n.canonical_name as canonical
+     from node_aliases a join nodes n on n.id = a.node_id`,
+  );
+  const map: Record<string, string> = {};
+  for (const r of rows) map[`${r.type}:${r.name.toLowerCase().trim()}`] = r.canonical;
+  return map;
 }

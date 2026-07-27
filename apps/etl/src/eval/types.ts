@@ -20,6 +20,10 @@ export const FIELDS = [
 
 export type Field = (typeof FIELDS)[number];
 
+// Scored as their own number so a role regression is not averaged away by noise in
+// a field like `hasTestAssignment`.
+export const CORE_FIELDS: readonly Field[] = ["isTech", "role", "skills", "seniority", "salary"];
+
 // Sidecar keys `RssExtractActivity` merges alongside the extraction. `Partial` because
 // rows predating a field (isTech) or a failed run carry only some of them.
 export type Extraction = Partial<ExtractedVacancy> & {
@@ -39,6 +43,54 @@ export type ManifestEntry = {
 };
 
 export type CoverageCell = { cell: string; picked: number; pool: number; cap: number };
+
+export type Decision = {
+  approved: boolean;
+  overrides: Record<string, unknown>;
+  /** Snapshot of what was approved, so a later `merge` cannot rewrite a signed-off row. */
+  values: Extraction;
+  reviewedAt: string;
+};
+
+export type DecisionsFile = { generatedAt: string; decisions: Record<string, Decision> };
+
+export type GoldenRow = {
+  id: string;
+  title: string;
+  link: string | null;
+  source: string;
+  values: Extraction;
+  approvedAt: string;
+};
+
+export type DatasetFile = { generatedAt: string; rows: GoldenRow[] };
+
+export type CandidatesFile = { generatedAt: string; candidates: LabelCandidate[] };
+
+export type LabelFile = {
+  batch: number;
+  labeller: string;
+  labels: { id: string; values: Extraction; notes?: Record<string, string> }[];
+};
+
+export type FieldVerdict = "agreed" | "prod-differs" | "contested";
+
+export type CandidateField = {
+  value: unknown;
+  verdict: FieldVerdict;
+  a: unknown;
+  b: unknown;
+  prod: unknown;
+  arbiter?: unknown;
+};
+
+export type LabelCandidate = {
+  id: string;
+  title: string;
+  link: string | null;
+  source: string;
+  fields: Record<string, CandidateField>;
+};
 
 export type Manifest = {
   generatedAt: string;
