@@ -232,6 +232,13 @@
       "when": 1785115046637,
       "tag": "0032_greedy_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1785134356255,
+      "tag": "0033_omniscient_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

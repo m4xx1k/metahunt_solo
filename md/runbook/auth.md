@@ -1,6 +1,13 @@
-# Telegram auth — setup + operations
+# Auth — setup + operations
 
-Consumer login for the public site: **Log in with Telegram** in the header. The
+Two ways in: **Telegram** (also the delivery channel) and **Google**. Both are
+rows in `auth_identities` against one `users` row, and both end the same way —
+the backend mints its **own** session JWT and every later request is authed by
+that, not by the provider. Adding a third provider changes nothing else.
+
+## Telegram
+
+The
 primary path is a **bot deep link** — the browser never talks to Telegram at all.
 The legacy Login Widget survives only as a "use the widget" fallback and will be
 removed (MET-5). Either way the backend mints its **own** session JWT, and every
@@ -39,6 +46,13 @@ leaves the page where it is, so switching back to the browser lands on the site,
 already logged in (the poll fires on `visibilitychange`). A plain `t.me` link
 strands the user on Telegram's web page and makes them press Back to return —
 it stays only as the fallback for people with no app installed.
+
+**Known gap — ID tokens carry no nonce.** A captured Google credential is
+replayable for its ~1h life, and `POST /auth/link/google` makes that worse than
+plain session theft: an attacker who obtains a live token for an unlinked
+address can attach it to *their* account, after which the victim's own Google
+sign-in resolves there. Closing it means a server-issued single-use nonce
+threaded through `initialize()`. Not built — tracked on MET-45.
 
 **Known residual — consent phishing.** An attacker who starts the flow holds the
 code, so they can send "confirm your account, your code is K7QM" and the bot will
@@ -87,11 +101,79 @@ To exercise it, tunnel (cloudflared/ngrok) with a **separate dev bot** so you
 don't repoint the production bot's domain, or curl `POST /auth/telegram`
 directly (see Verify below).
 
+## Google
+
+`POST /auth/google` takes the ID token Google Identity Services hands the
+browser. `google-auth-library` checks its RS256 signature against Google's
+published keys, the issuer, the expiry, and that `aud` is our client id — that
+last one is what stops a token minted for some other site being replayed here.
+No client secret exists in this flow; nothing is exchanged with Google
+server-side.
+
+**Bring-up.** Google Cloud Console → Auth Platform → *Branding*: External
+audience, scopes `openid`/`email`/`profile` only. Those are non-sensitive, so
+publishing is immediate — no verification review. Then *Clients* → **Web
+application** → Authorized JavaScript origins `http://localhost:4000`,
+`https://www.metahunt.app`, `https://metahunt.app`. No redirect URIs. Put the
+client id in `GOOGLE_CLIENT_ID` (Railway) and `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+(Vercel + `apps/web/.env.local`). Empty on the API → `/auth/google` 503s; empty
+on the web → the button does not render.
+
+**Email adoption.** On sign-in, a *verified* email that matches a `users` row
+**with no identity of any kind** adopts that row instead of creating a second
+account. The "no identity" part is the whole safety argument: a row with an
+identity has a real owner, and letting an email reach it would hand the account
+to whoever controls that mailbox at the provider — a Workspace address gets
+reassigned and the successor inherits the CV, the subscriptions and the roles.
+Provider emails therefore live on `auth_identities.email`, never on `users`, so
+`users.email` keeps meaning exactly one thing: a waitlist signup. Emails are
+lowercased on both sides, since waitlist rows are stored that way and Postgres
+comparison is case-sensitive.
+
+**Roles are recomputed, never granted.** `syncRoles` derives them from the
+account's *current* Telegram identities on every session mint and every
+link/unlink. Granting without a matching revoke was the bug this replaced: an
+admin who linked Google and unlinked Telegram would have kept `admin` forever,
+with no id left in `ADMIN_TELEGRAM_IDS` to remove.
+
+**Button styling.** GIS does not allow a custom trigger for the ID-token flow —
+`renderButton` draws Google's own button in an iframe. We use the black square
+variant. One Tap is deliberately off: under FedCM the browser owns the prompt,
+and an unprompted card on a cold first visit is a distraction.
+
+## Linking providers
+
+`POST /auth/link/google`, `POST /auth/link/telegram` and
+`DELETE /auth/link/:provider` are JWT-guarded and act on the **caller's**
+account. Each answers with the account's new shape, so the client replaces its
+session user rather than refetching.
+
+- An identity already owned by a *different* account → **409**. Merging two
+  accounts is destructive and irreversible; it needs a real merge flow, not a
+  silent reassignment. The insert leans on the unique constraint rather than a
+  check-then-insert, so two concurrent links resolve to one 409 and not a 500.
+- Relinking what you already have is a no-op, not an error.
+- Unlinking your **last** identity → **400**, counted by *survivors* under a row
+  lock. Two concurrent unlinks would otherwise each see "two left" and take one
+  apiece, and `users` rows are only reachable through `auth_identities` — a
+  stranded account is unrecoverable.
+- Linking Telegram also refreshes admin membership and claims that chat's
+  orphan subscriptions — same trust as a Telegram login, since the HMAC proves
+  the account is theirs. This is what starts digest delivery for someone who
+  signed up with Google.
+
+Linking Telegram currently drives the legacy widget, because
+`/auth/link/telegram` takes an HMAC payload. When the widget is deleted (MET-5),
+the deep-link handshake needs a link mode — a `link_user_id` on
+`telegram_login_requests` — so the bot attaches to the caller instead of
+minting a session.
+
 ## Roles / admin
 
-- Membership is env-driven and re-evaluated on **every** login: a user is `admin`
-  iff their telegram id is in `ADMIN_TELEGRAM_IDS`. Promote/demote = edit the var
-  + re-login. Roles are persisted on `users.roles` and ride in the JWT.
+- Membership is env-driven and recomputed on **every** session mint and every
+  link/unlink: a user is `admin` iff one of the Telegram identities *currently*
+  on their account is in `ADMIN_TELEGRAM_IDS`. Promote/demote = edit the var +
+  re-login. Roles are persisted on `users.roles` and ride in the JWT.
 - **What's admin-gated (API layer):** every operator controller: RSS triggering
   and recovery, loader backfill/cleanup, manual digest delivery, dedup review,
   extraction-cost reporting, raw monitoring, and taxonomy reads/writes. Guarded

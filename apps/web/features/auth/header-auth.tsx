@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { TelegramLoginButton } from "./telegram-login-button";
+import { AuthChoice } from "./auth-choice";
 import { useSession } from "./use-session";
 
 // Header auth slot. Logged out → a direct blue "log in with telegram" button
@@ -25,5 +25,5 @@ export function HeaderAuth() {
     );
   }
 
-  return <TelegramLoginButton />;
+  return <AuthChoice className="items-end" />;
 }

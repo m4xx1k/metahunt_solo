@@ -28,6 +28,25 @@ export class TelegramLoginRequestDto {
   telegram!: TelegramWidgetPayloadDto;
 }
 
+export class GoogleLoginRequestDto {
+  @ApiProperty({ description: "The ID token Google Identity Services returns." })
+  credential!: string;
+}
+
+export class AuthIdentityDto {
+  @ApiProperty({ enum: ["telegram", "google"] })
+  provider!: "telegram" | "google";
+
+  @ApiProperty({ nullable: true, example: "metahunt_user" })
+  username!: string | null;
+
+  @ApiProperty({ nullable: true, example: "Maksym" })
+  firstName!: string | null;
+
+  @ApiProperty({ format: "date-time" })
+  linkedAt!: string;
+}
+
 export class AuthUserDto {
   @ApiProperty({ format: "uuid" })
   id!: string;
@@ -41,8 +60,14 @@ export class AuthUserDto {
   @ApiProperty({ nullable: true, example: "Maksym" })
   firstName!: string | null;
 
+  @ApiProperty({ nullable: true, format: "email" })
+  email!: string | null;
+
   @ApiProperty({ type: [String], example: ["user"] })
   roles!: string[];
+
+  @ApiProperty({ type: [AuthIdentityDto] })
+  identities!: AuthIdentityDto[];
 }
 
 export class TelegramLoginResponseDto {

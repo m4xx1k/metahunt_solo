@@ -6,14 +6,31 @@ export interface TelegramLoginRequest {
   telegram: TelegramAuthPayload;
 }
 
-// Public shape of the logged-in user (no secrets). `username`/`firstName` come
-// from the Telegram profile snapshot on auth_identities.
+export type AuthProvider = "telegram" | "google";
+
+export interface AuthIdentitySummary {
+  provider: AuthProvider;
+  username: string | null;
+  firstName: string | null;
+  linkedAt: string;
+}
+
+// Public shape of the logged-in user (no secrets). `telegramId`/`username`/
+// `firstName` stay flat for the header chip; `identities` is what the account
+// page reads to render connect/disconnect per provider.
 export interface AuthUser {
   id: string;
   telegramId: string | null;
   username: string | null;
   firstName: string | null;
+  email: string | null;
   roles: string[];
+  identities: AuthIdentitySummary[];
+}
+
+// POST /auth/google — the `credential` an ID-token client hands back.
+export interface GoogleLoginRequest {
+  credential: string;
 }
 
 export interface TelegramLoginResponse {

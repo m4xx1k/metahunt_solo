@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
 import { Button } from "@/ui";
-import { TelegramLoginButton } from "@/features/auth/telegram-login-button";
+import { AuthChoice } from "@/features/auth/auth-choice";
 import { useSession } from "@/features/auth/use-session";
+import { ConnectionsPanel } from "./_components/ConnectionsPanel";
 import { DeleteAccountPanel } from "./_components/DeleteAccountPanel";
 import { MyCvPanel } from "./_components/MyCvPanel";
 import { SubscriptionList } from "./_components/SubscriptionList";
@@ -32,7 +33,7 @@ export default function MePage() {
         <p className="mb-4 font-mono text-2xs uppercase tracking-wider text-text-secondary">
           your CV match + telegram alerts live here
         </p>
-        <TelegramLoginButton />
+        <AuthChoice />
       </div>
     );
   }
@@ -54,6 +55,7 @@ export default function MePage() {
           log out
         </Button>
       </div>
+      {user ? <ConnectionsPanel user={user} /> : null}
       <MyCvPanel />
       <SubscriptionList />
       <DeleteAccountPanel onDeleted={handleAccountDeleted} />

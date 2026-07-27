@@ -56,11 +56,15 @@ function loadWidget(): Promise<void> {
 // has proven itself in prod — see MET-5.
 export function TelegramWidgetButton({
   onDone,
+  onPayload,
   className,
   label = "log in",
   variant = "primary",
 }: {
   onDone?: () => void;
+  /** Replaces sign-in with the caller's own use of the verified payload —
+   *  linking Telegram to an account that already exists, for instance. */
+  onPayload?: (payload: TelegramAuthPayload) => Promise<void>;
   className?: string;
   label?: string;
   variant?: "primary" | "secondary";
@@ -87,12 +91,18 @@ export function TelegramWidgetButton({
           return; // popup closed / access denied
         }
         try {
-          const res = await authApi.loginTelegram(tgUser);
-          login(res);
-          if (res.isNewUser) analytics.signedUp();
-          analytics.loggedIn();
-          const name = res.user.username ? `@${res.user.username}` : (res.user.firstName ?? "you");
-          toast.success(`logged in as ${name}`);
+          if (onPayload) {
+            await onPayload(tgUser);
+          } else {
+            const res = await authApi.loginTelegram(tgUser);
+            login(res);
+            if (res.isNewUser) analytics.signedUp("telegram");
+            analytics.loggedIn("telegram");
+            const name = res.user.username
+              ? `@${res.user.username}`
+              : (res.user.firstName ?? "you");
+            toast.success(`logged in as ${name}`);
+          }
           onDone?.();
         } catch {
           analytics.telegramLoginFailed("session", "widget");
@@ -106,7 +116,7 @@ export function TelegramWidgetButton({
       toast.error("Couldn't open Telegram login.");
       setBusy(false);
     }
-  }, [login, analytics, onDone]);
+  }, [login, analytics, onDone, onPayload]);
 
   return (
     <Button

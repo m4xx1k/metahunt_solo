@@ -36,6 +36,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "fast-xml-parser": "^4.5.0",
+    "google-auth-library": "^10.9.1",
     "grammy": "^1.43.0",
     "isbot": "^5.2.1",
     "nestjs-temporal-core": "^3.2.7",

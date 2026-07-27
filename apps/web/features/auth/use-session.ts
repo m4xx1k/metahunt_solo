@@ -43,6 +43,15 @@ export function useSession() {
     [qc],
   );
 
+  // Link/unlink return the account's new shape; writing it straight into the
+  // cache keeps every consumer in step without a refetch.
+  const setUser = useCallback(
+    (next: AuthUser) => {
+      qc.setQueryData(SESSION_KEY, next);
+    },
+    [qc],
+  );
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -63,6 +72,7 @@ export function useSession() {
     isLoading,
     roles: user?.roles ?? [],
     login,
+    setUser,
     logout,
   };
 }
