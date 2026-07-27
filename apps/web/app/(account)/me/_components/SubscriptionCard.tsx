@@ -16,11 +16,9 @@ export function SubscriptionCard({
   busy: boolean;
 }) {
   return (
-    <li className="flex items-center justify-between gap-4 border border-border bg-bg-card p-4 shadow-brut-sm">
+    <li className="flex flex-col gap-3 border border-border bg-bg p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="truncate font-display text-sm text-text-primary">
-          {sub.label}
-        </p>
+        <p className="truncate font-display text-sm text-text-primary">{sub.label}</p>
         <p className="mt-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
           {sub.isCv ? "cv match" : "feed filter"} ·{" "}
           <span className={sub.isActive ? "text-success" : "text-text-muted"}>
@@ -28,7 +26,7 @@ export function SubscriptionCard({
           </span>
         </p>
       </div>
-      <div className="flex shrink-0 gap-2">
+      <div className="flex flex-wrap gap-2 sm:shrink-0">
         <Button variant="secondary" size="sm" onClick={onToggle} disabled={busy}>
           {sub.isActive ? "pause" : "resume"}
         </Button>

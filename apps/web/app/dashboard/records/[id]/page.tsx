@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ApiError } from "@/lib/api/client";
 import { monitoringApi } from "@/lib/api/monitoring";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { displayTitle, extractedSeniority } from "@/lib/extracted-vacancy";
@@ -25,7 +26,7 @@ export default async function RecordDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
 
   const record = await monitoringApi.getRecord(id).catch((err) => {
-    if (err instanceof Error && err.message.includes(" 404 ")) return null;
+    if (err instanceof ApiError && err.status === 404) return null;
     throw err;
   });
 

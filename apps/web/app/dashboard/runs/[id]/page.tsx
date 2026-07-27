@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { ApiError } from "@/lib/api/client";
 import { monitoringApi } from "@/lib/api/monitoring";
 import { nonNegativeIntegerSearchParam } from "@/lib/search-params";
 import { formatCount, formatDateTime, formatDuration, formatRelative } from "@/lib/format";
@@ -31,7 +32,7 @@ export default async function RunDetailPage({
   const offset = nonNegativeIntegerSearchParam(sp.offset);
 
   const run = await monitoringApi.getIngest(id).catch((err) => {
-    if (err instanceof Error && err.message.includes(" 404 ")) return null;
+    if (err instanceof ApiError && err.status === 404) return null;
     throw err;
   });
 
@@ -70,7 +71,7 @@ export default async function RunDetailPage({
         </StatGrid>
 
         {run.errorMessage ? (
-          <Panel title="Error" className="border-danger/60">
+          <Panel title="Error" tone="danger" className="border-danger/60">
             <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-danger">
               {run.errorMessage}
             </pre>

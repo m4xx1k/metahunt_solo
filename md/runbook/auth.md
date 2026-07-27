@@ -162,6 +162,18 @@ session user rather than refetching.
   the account is theirs. This is what starts digest delivery for someone who
   signed up with Google.
 
+**What the user is told.** `/me` → *sign-in* spells out the consequence, because
+it is not guessable: both methods sign in to one account, connecting there is
+what joins them, and signing in with a method that is not listed creates a
+*separate* account that cannot be merged afterwards. That last clause is the
+one people need before they act, not after.
+
+**How often it happens is measured, not assumed.** The 409 is emitted as
+`identity_link_conflict` (with `identity_linked` / `identity_unlinked`
+alongside), so "one person ended up with two accounts" is a number rather than
+a hunch. MET-82 (a merge flow) is deliberately gated on that number: at 5 users
+the honest answer is to merge by hand in SQL and see whether it repeats.
+
 Linking Telegram currently drives the legacy widget, because
 `/auth/link/telegram` takes an HMAC payload. When the widget is deleted (MET-5),
 the deep-link handshake needs a link mode — a `link_user_id` on

@@ -87,6 +87,7 @@ export function GoogleLoginButton({
   width = 220,
   size = "medium",
   text = "signin_with",
+  disabled = false,
   className,
 }: {
   onDone?: () => void;
@@ -95,6 +96,8 @@ export function GoogleLoginButton({
   width?: number;
   size?: "medium" | "large";
   text?: "signin_with" | "continue_with";
+  /** GIS owns the iframe, so `inert` is the only real disable available. */
+  disabled?: boolean;
   className?: string;
 }) {
   const { login } = useSession();
@@ -170,9 +173,14 @@ export function GoogleLoginButton({
   return (
     <div
       ref={slot}
-      onPointerEnter={arm}
-      onFocusCapture={arm}
-      className={cn(size === "large" ? "min-h-[40px]" : "min-h-[36px]", className)}
+      inert={disabled}
+      onPointerEnter={disabled ? undefined : arm}
+      onFocusCapture={disabled ? undefined : arm}
+      className={cn(
+        size === "large" ? "min-h-[40px]" : "min-h-[36px]",
+        disabled && "opacity-50",
+        className,
+      )}
     />
   );
 }

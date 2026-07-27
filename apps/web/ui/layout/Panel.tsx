@@ -9,6 +9,7 @@ import { ScopeChip, type Scope } from "@/ui/data/ScopeChip";
 // clock the panel's numbers are on; pass it on anything time-dependent.
 export function Panel({
   title,
+  tone = "default",
   meta,
   scope,
   footer,
@@ -17,6 +18,7 @@ export function Panel({
   children,
 }: {
   title?: string;
+  tone?: "default" | "danger";
   meta?: ReactNode;
   scope?: Scope;
   footer?: ReactNode;
@@ -25,10 +27,18 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("flex h-full flex-col border border-border bg-bg-card", className)}>
+    <section
+      aria-label={title}
+      className={cn("flex h-full flex-col border border-border bg-bg-card", className)}
+    >
       {title ? (
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-5 py-4">
-          <h2 className="font-display text-sm font-bold tracking-tight text-text-primary">
+          <h2
+            className={cn(
+              "font-display text-sm font-bold tracking-tight",
+              tone === "danger" ? "text-danger" : "text-text-primary",
+            )}
+          >
             {title}
           </h2>
           <span className="flex items-center gap-2">
