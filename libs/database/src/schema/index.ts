@@ -17,6 +17,7 @@ export * from "./users";
 export * from "./analytics-journeys";
 export * from "./analytics-outbox";
 export * from "./auth-identities";
+export * from "./telegram-login-requests";
 export * from "./user-cvs";
 export * from "./subscriptions";
 export * from "./sent-notifications";
