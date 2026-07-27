@@ -1,19 +1,8 @@
 import { cn } from "@/lib/utils";
 
-export function Tag({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
+export function Tag({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <span
-      className={cn(
-        "font-mono text-xs uppercase tracking-wider text-accent",
-        className,
-      )}
-    >
+    <span className={cn("font-mono text-xs uppercase tracking-wider text-accent", className)}>
       {children}
     </span>
   );

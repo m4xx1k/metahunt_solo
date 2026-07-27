@@ -1,10 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function SearchInput({
-  className,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+export function SearchInput({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label
       className={cn(

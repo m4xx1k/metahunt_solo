@@ -21,10 +21,7 @@ export function SectionHeader({
       )}
     >
       {tag && <Tag>{tag}</Tag>}
-      <Heading
-        level="section"
-        className="text-center text-4xl md:text-6xl"
-      >
+      <Heading level="section" className="text-center text-4xl md:text-6xl">
         {title}
       </Heading>
       {subtitle && (

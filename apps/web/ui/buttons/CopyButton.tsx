@@ -9,11 +9,7 @@ type Props = {
   className?: string;
 };
 
-export function CopyButton({
-  value,
-  ariaLabel = "copy to clipboard",
-  className,
-}: Props) {
+export function CopyButton({ value, ariaLabel = "copy to clipboard", className }: Props) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {

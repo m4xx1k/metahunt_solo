@@ -7,8 +7,7 @@ import type { SelectOption } from "./types";
 
 const DEFAULT_MAX = 8;
 
-const byCount = (a: SelectOption, b: SelectOption) =>
-  (b.count ?? 0) - (a.count ?? 0);
+const byCount = (a: SelectOption, b: SelectOption) => (b.count ?? 0) - (a.count ?? 0);
 
 // Generic searchable multi-select rendered as toggle chips inside a
 // CollapsibleSection. Domain-free: callers map their own data into
@@ -62,8 +61,7 @@ export function MultiSelect({
     return rest.filter((o) => o.label.toLowerCase().includes(q));
   }, [rest, q]);
 
-  const visibleRest =
-    q.length > 0 || showAll ? filteredRest : filteredRest.slice(0, max);
+  const visibleRest = q.length > 0 || showAll ? filteredRest : filteredRest.slice(0, max);
   const hiddenCount = filteredRest.length - visibleRest.length;
 
   const summary = selected.length > 0 ? `${selected.length} selected` : "any";

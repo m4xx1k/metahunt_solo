@@ -21,11 +21,7 @@ type Props = {
 
 const MIN_LABEL_PCT = 4;
 
-function layout(
-  segments: Segment[],
-  sum: number,
-  showLabels: boolean,
-): LaidOutSegment[] {
+function layout(segments: Segment[], sum: number, showLabels: boolean): LaidOutSegment[] {
   const out: LaidOutSegment[] = [];
   let cursor = 0;
   for (const s of segments) {
