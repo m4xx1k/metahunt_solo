@@ -4,6 +4,10 @@ import { ConfigService } from "@nestjs/config";
 import { Bot, InlineKeyboard } from "grammy";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import {
+  isLoginStartPayload,
+  TelegramLoginService,
+} from "../../platform/auth/telegram-login.service";
 
 import { renderDigest } from "./digest.renderer";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
@@ -28,6 +32,7 @@ export class TelegramCommandsHandler {
     private readonly subscriptions: SubscriptionsService,
     private readonly matcher: SubscriptionMatcherService,
     private readonly analytics: AnalyticsService,
+    private readonly login: TelegramLoginService,
   ) {}
 
   /** Wire every command/callback handler onto the bot. Call before `bot.start()`. */
@@ -42,6 +47,13 @@ export class TelegramCommandsHandler {
           parse_mode: "HTML",
           ...NO_LINK_PREVIEW,
         });
+        return;
+      }
+
+      // Two token kinds share `/start`: `login_<nonce>` completes a web login,
+      // anything else is a subscription deep link.
+      if (isLoginStartPayload(token)) {
+        await this.handleLoginStart(token, ctx.reply.bind(ctx));
         return;
       }
 
@@ -110,6 +122,38 @@ export class TelegramCommandsHandler {
       if (stopped) await ctx.editMessageText(copy.unsub.confirmed);
     });
 
+    bot.callbackQuery(/^login:(ok|no):(.+)$/, async (ctx) => {
+      const [, action, nonce] = ctx.match;
+      if (action === "no") {
+        await this.login.decline(nonce);
+        await ctx.answerCallbackQuery();
+        await ctx.editMessageText(copy.start.loginDeclined);
+        return;
+      }
+
+      // `callback_data` is client-supplied — a custom client can send this from
+      // a group, where chat.id is the group's. Sessions key on the private-chat
+      // id, so confirming anywhere else would mint a shared account.
+      const chatId = ctx.chat?.id;
+      if (ctx.chat?.type !== "private" || chatId === undefined) {
+        await ctx.answerCallbackQuery({ text: copy.start.loginPrivateOnly });
+        return;
+      }
+
+      const result = await this.login.confirm(nonce, String(chatId), {
+        username: ctx.from?.username,
+        firstName: ctx.from?.first_name,
+      });
+      await ctx.answerCallbackQuery();
+      await ctx.editMessageText(
+        result === "authorized"
+          ? copy.start.loginConfirmed
+          : result === "already_authorized"
+            ? copy.start.loginAlreadyDone
+            : copy.start.loginExpired(this.config.get<string>("WEB_BASE_URL")!),
+      );
+    });
+
     bot.command("stop", async (ctx) => {
       const stopped = await this.subscriptions.deactivateByChat(String(ctx.chat.id));
       await ctx.reply(stopped > 0 ? copy.stop.done : copy.stop.empty);
@@ -146,6 +190,29 @@ export class TelegramCommandsHandler {
       // Surface the failure to the user instead of leaving them hanging; the
       // reply itself may fail (e.g. the original error was a send), so swallow it.
       await err.ctx.reply(copy.error).catch(() => undefined);
+    });
+  }
+
+  // Pressing START must not be what logs anyone in — a forwarded link would
+  // then hand the tapper's account to whoever minted it. All this does is ask.
+  private async handleLoginStart(
+    token: string,
+    reply: (text: string, options?: Record<string, unknown>) => Promise<unknown>,
+  ): Promise<void> {
+    const request = await this.login.describe(token);
+    if (!request) {
+      const webUrl = this.config.get<string>("WEB_BASE_URL")!;
+      await reply(copy.start.loginExpired(webUrl), NO_LINK_PREVIEW);
+      return;
+    }
+
+    await reply(copy.start.loginConfirm(request.verificationCode), {
+      parse_mode: "HTML",
+      reply_markup: new InlineKeyboard()
+        .text(copy.start.loginConfirmButton, `login:ok:${request.nonce}`)
+        .row()
+        .text(copy.start.loginDeclineButton, `login:no:${request.nonce}`),
+      ...NO_LINK_PREVIEW,
     });
   }
 

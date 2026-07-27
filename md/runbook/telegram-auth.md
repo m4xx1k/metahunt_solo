@@ -1,46 +1,84 @@
 # Telegram auth — setup + operations
 
-Consumer login for the public site: **Log in with Telegram** on the header
-account menu. The backend verifies Telegram's payload itself (HMAC over the same
-`TELEGRAM_BOT_TOKEN` the digest bot uses), then mints its **own** session JWT.
-Every later request is authed by that JWT (Bearer, `Authorization` header), not
-by Telegram. The same session carries an env-driven `admin` role for operator
-APIs. Login is progressive: the feed stays anonymous; the menu only converts
-value when a user wants to save or subscribe.
+Consumer login for the public site: **Log in with Telegram** in the header. The
+primary path is a **bot deep link** — the browser never talks to Telegram at all.
+The legacy Login Widget survives only as a "use the widget" fallback and will be
+removed (MET-5). Either way the backend mints its **own** session JWT, and every
+later request is authed by that JWT (Bearer, `Authorization` header), not by
+Telegram. The same session carries an env-driven `admin` role for operator APIs.
+Login is progressive: the feed stays anonymous; login only converts when a user
+wants to save or subscribe.
+
+## Deep-link login (primary path)
+
+```
+POST /auth/telegram/start  -> { nonce, pollSecret, verificationCode, startPayload }
+browser -> opens t.me/<bot>?start=login_<nonce>, shows verificationCode
+bot     -> /start login_<nonce>  -> shows the code + [confirm] / [not me]
+bot     -> callback login:ok:<nonce> -> chat_id is server-trusted -> upsert user
+browser -> POST /auth/telegram/poll { nonce, pollSecret } -> { token, user }
+```
+
+Three properties hold this up, and all three are load-bearing:
+
+- **`pollSecret` never enters the link.** Only the originating browser can
+  collect the session, so observing or forwarding the URL buys nothing.
+- **Pressing START authorizes nothing.** The bot only asks. Without the explicit
+  confirm step, anyone could post a login link publicly and take over the
+  account of whoever tapped it — the standard device-code phishing attack.
+- **Confirmation is refused outside a private chat.** `callback_data` is
+  client-supplied, so a forged confirm from a group would otherwise mint an
+  account keyed on the group id and shared by everyone in it.
+
+Requests are single-use and live 5 minutes; `TelegramLoginGc` sweeps expired rows
+hourly.
+
+**Known residual — consent phishing.** An attacker who starts the flow holds the
+code, so they can send "confirm your account, your code is K7QM" and the bot will
+echo a matching code. The code defeats *accidental* confirmation, not a prepared
+story; this is the RFC 8628 §5.2 weakness, structural to every device-code flow.
+Closing it further means putting non-forgeable context in the prompt (browser
+family, approximate location, start time). Not built — revisit if abused.
 
 ## One-time bring-up
 
-1. **Register the login domain with @BotFather.** DM `@BotFather` → `/setdomain`
-   → pick the bot → send the **public web domain** (the Vercel production domain,
-   e.g. `metahunt.io`). The Login Widget / `Telegram.Login.auth` only works on the
-   exact registered origin. This does **not** disturb the bot's long-polling or
-   commands — it's a separate setting on the same bot.
-2. **Backend env** (`@metahunt/etl`, Railway):
-   - `TELEGRAM_BOT_TOKEN` — already set (the digest bot); reused for login HMAC.
+1. **Backend env** (`@metahunt/etl`, Railway):
+   - `TELEGRAM_BOT_TOKEN` — already set (the digest bot); also the widget's HMAC key.
    - `JWT_SECRET` — **required in production** (signs session tokens). Any long
      random string. Non-prod falls back to an insecure default so local/CI boot.
    - `ADMIN_TELEGRAM_IDS` — comma-separated Telegram **user ids** granted `admin`
      at login (e.g. your own id). Empty = no admins.
-3. **Web env** (`@metahunt/web`, Vercel + `apps/web/.env.local`):
+2. **Web env** (`@metahunt/web`, Vercel + `apps/web/.env.local`):
+   - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` — the bot's @username **without the `@`**.
+     Prod and preview: `metahuntapp_bot`. Local `.env.local`: `mh_solo_bot` (the
+     dev bot). Builds the deep link. **Unset = the primary login button is dead**:
+     it fails with a `configuration` toast and no fallback, since the widget lives
+     inside the popover that only a successful start opens. It is `NEXT_PUBLIC_*`,
+     so it is baked at build time — changing it needs a redeploy, not a restart.
    - `NEXT_PUBLIC_TELEGRAM_BOT_ID` — the bot's **numeric** id (the part before `:`
-     in `TELEGRAM_BOT_TOKEN`). `Telegram.Login.auth` keys on the id, not @username.
-4. **Migration:** `0027_amused_vermin.sql` adds `auth_identities`, `user_cvs`,
-   `users.roles`, `subscriptions.user_id` and makes `users.email` nullable. Applied
-   by the Railway pre-deploy migrate step (`libs/database/migrate.ts`). Migration
+     in `TELEGRAM_BOT_TOKEN`). Only the legacy widget needs it.
+3. **Widget fallback only — register the login domain with @BotFather.** DM
+   `@BotFather` → `/setdomain` → pick the bot → send the **public web domain**. The
+   widget works only on that exact origin; the deep-link path does not care. This
+   does **not** disturb the bot's long-polling or commands.
+4. **Migrations:** `0027_amused_vermin.sql` adds `auth_identities`, `user_cvs`,
+   `users.roles`, `subscriptions.user_id` and makes `users.email` nullable.
    `0028_far_chronomancer.sql` makes account-owned subscriptions and their sent
-   history cascade on deletion.
+   history cascade on deletion. `0032_greedy_shiva.sql` adds
+   `telegram_login_requests` (the deep-link handshake). Applied by the Railway
+   pre-deploy migrate step (`libs/database/migrate.ts`).
 
-## Local dev gotcha (important)
+## Local dev
 
-`Telegram.Login.auth` checks the request origin against the `/setdomain` value, so
-**it will not work on `http://localhost`.** Options:
+The deep-link flow **works on `http://localhost`** — no tunnel, no `/setdomain`.
+Set `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`, run the API so the bot polls, and log in
+against the real bot from a local browser.
 
-- **Tunnel:** run a tunnel (cloudflared/ngrok) to your local web dev port and set
-  that tunnel URL as the login domain — easiest with a **separate dev bot** so you
-  don't repoint the production bot's domain.
-- **Curl the API directly:** the login endpoint is independently testable — sign a
-  payload with the dev bot token and `POST /auth/telegram` (see Verify below). No
-  browser/domain needed for the backend half.
+The widget fallback is the one that still needs a public origin: it checks the
+request origin against the `/setdomain` value, so it cannot work on localhost.
+To exercise it, tunnel (cloudflared/ngrok) with a **separate dev bot** so you
+don't repoint the production bot's domain, or curl `POST /auth/telegram`
+directly (see Verify below).
 
 ## Roles / admin
 
@@ -78,6 +116,12 @@ message the user, so digests work without a separate `/start`.
 
 ## Verify (end-to-end)
 
+- **Deep link, real bot:** `POST /auth/telegram/start` → open the `t.me` link →
+  the bot shows the same 4-char code the response returned → confirm → `POST
+  /auth/telegram/poll` with `{nonce, pollSecret}` → `{ token, user }`. Polling a
+  second time, polling with a wrong `pollSecret`, and polling an unknown nonce
+  must all return exactly `{"status":"expired"}` — anything more specific is an
+  oracle. Pressing "not me" must make the poll return `expired` too.
 - **Backend, no browser:** forge a payload signed with the dev bot token
   (`hash = HMAC_SHA256(data_check_string, SHA256(botToken))`), `POST /auth/telegram`
   → expect `{ token, user }`; `GET /auth/me` with `Authorization: Bearer <token>`

@@ -11,7 +11,7 @@ import { JwtService } from "@nestjs/jwt";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
+import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
 
 import type { AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
@@ -50,27 +50,48 @@ export class AuthService {
       throw new UnauthorizedException("Telegram authentication failed");
     }
 
-    const telegramId = String(payload.id);
     const username = typeof payload.username === "string" ? payload.username : null;
     const firstName = typeof payload.first_name === "string" ? payload.first_name : null;
+
+    const { userId, created } = await this.resolveTelegramUser(
+      String(payload.id),
+      username,
+      firstName,
+    );
+    return this.issueSession(userId, created);
+  }
+
+  /**
+   * Upsert the user behind a Telegram id and adopt what that chat owns.
+   * **Server-trusted callers only** — either a widget payload whose HMAC has
+   * already been verified, or a chat id straight off a Bot API update.
+   */
+  async resolveTelegramUser(
+    telegramId: string,
+    username: string | null,
+    firstName: string | null,
+    db: DrizzleExecutor = this.db,
+  ): Promise<{ userId: string; created: boolean }> {
     // Admin membership is env-driven and re-evaluated every login, so promoting
     // or removing an admin is just an ADMIN_TELEGRAM_IDS change + re-login.
     const roles = this.adminIds.has(telegramId) ? ["user", "admin"] : ["user"];
+    const { userId, created } = await this.upsertUser(telegramId, username, firstName, roles, db);
+    await this.claimTelegramSubscriptions(userId, telegramId, db);
+    return { userId, created };
+  }
 
-    const { userId, created } = await this.upsertUser(telegramId, username, firstName, roles);
-    await this.claimTelegramSubscriptions(userId, telegramId);
+  /** Mint the session JWT for an already-resolved user. */
+  async issueSession(userId: string, isNewUser: boolean): Promise<TelegramLoginResponse> {
+    const user = await this.getMe(userId);
+    if (!user) throw new UnauthorizedException("user not found");
 
     const token = this.jwt.sign({
-      sub: userId,
-      tid: telegramId,
-      roles,
+      sub: user.id,
+      tid: user.telegramId,
+      roles: user.roles,
     } satisfies JwtPayload);
-    this.logger.log(`login user ${userId} roles=[${roles.join(",")}] new=${created}`);
-    return {
-      token,
-      user: { id: userId, telegramId, username, firstName, roles },
-      isNewUser: created,
-    };
+    this.logger.log(`login user ${user.id} roles=[${user.roles.join(",")}] new=${isNewUser}`);
+    return { token, user, isNewUser };
   }
 
   async getMe(userId: string): Promise<AuthUser | null> {
@@ -105,8 +126,9 @@ export class AuthService {
     username: string | null,
     firstName: string | null,
     roles: string[],
+    db: DrizzleExecutor,
   ): Promise<{ userId: string; created: boolean }> {
-    const [identity] = await this.db
+    const [identity] = await db
       .select({ userId: authIdentities.userId })
       .from(authIdentities)
       .where(
@@ -114,8 +136,8 @@ export class AuthService {
       );
 
     if (identity) {
-      await this.db.update(users).set({ roles }).where(eq(users.id, identity.userId));
-      await this.db
+      await db.update(users).set({ roles }).where(eq(users.id, identity.userId));
+      await db
         .update(authIdentities)
         .set({ username, firstName })
         .where(
@@ -124,11 +146,11 @@ export class AuthService {
       return { userId: identity.userId, created: false };
     }
 
-    const [created] = await this.db
+    const [created] = await db
       .insert(users)
       .values({ source: "telegram-login", roles })
       .returning({ id: users.id });
-    await this.db.insert(authIdentities).values({
+    await db.insert(authIdentities).values({
       userId: created.id,
       provider: PROVIDER,
       providerUserId: telegramId,
@@ -140,8 +162,12 @@ export class AuthService {
 
   // A Telegram private-chat id is server-trusted. Browser-provided candidate
   // UUIDs are not: accepting them would let anyone claim another user's CV.
-  private async claimTelegramSubscriptions(userId: string, telegramId: string): Promise<void> {
-    await this.db
+  private async claimTelegramSubscriptions(
+    userId: string,
+    telegramId: string,
+    db: DrizzleExecutor,
+  ): Promise<void> {
+    await db
       .update(subscriptions)
       .set({ userId })
       .where(

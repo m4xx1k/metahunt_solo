@@ -23,3 +23,23 @@ export interface TelegramLoginResponse {
   // the `signup` analytics event exactly once, on the identified person.
   isNewUser: boolean;
 }
+
+// POST /auth/telegram/start — no body. The browser keeps `pollSecret`, shows
+// `verificationCode`, and sends the user to `t.me/<bot>?start=<startPayload>`.
+export interface TelegramLoginStartResponse {
+  nonce: string;
+  pollSecret: string;
+  verificationCode: string;
+  startPayload: string;
+}
+
+export interface TelegramLoginPollRequest {
+  nonce: string;
+  pollSecret: string;
+}
+
+// `pending` = the user hasn't finished in Telegram yet. `expired` covers every
+// other outcome (unknown nonce, wrong secret, spent request) deliberately —
+// distinguishing them would leak whether a nonce exists.
+export type TelegramLoginPollResponse =
+  { status: "pending" } | { status: "expired" } | ({ status: "ready" } & TelegramLoginResponse);

@@ -4,6 +4,7 @@ import type { Bot } from "grammy";
 
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import type { AnalyticsService } from "../../platform/analytics/analytics.service";
+import type { TelegramLoginService } from "../../platform/auth/telegram-login.service";
 
 import type { SubscriptionMatcherService } from "./subscription-matcher.service";
 import type { SubscriptionsService } from "./subscriptions.service";
@@ -98,6 +99,14 @@ describe("TelegramCommandsHandler", () => {
   const matcher = { sample } as unknown as SubscriptionMatcherService;
   const config = { get } as unknown as ConfigService;
   const analytics = { activationValueShown } as unknown as AnalyticsService;
+  const describeLogin = jest.fn();
+  const confirmLogin = jest.fn();
+  const declineLogin = jest.fn();
+  const login = {
+    describe: describeLogin,
+    confirm: confirmLogin,
+    decline: declineLogin,
+  } as unknown as TelegramLoginService;
 
   let commands: Map<string, Handler>;
   let callbacks: { pattern: RegExp; handler: Handler }[];
@@ -107,7 +116,7 @@ describe("TelegramCommandsHandler", () => {
     jest.clearAllMocks();
     describe_.mockResolvedValue("Backend");
     get.mockReturnValue("https://metahunt.test");
-    const handler = new TelegramCommandsHandler(config, subscriptions, matcher, analytics);
+    const handler = new TelegramCommandsHandler(config, subscriptions, matcher, analytics, login);
     const wired = fakeBot();
     handler.register(wired.bot);
     commands = wired.commands;
@@ -124,6 +133,30 @@ describe("TelegramCommandsHandler", () => {
       const [text, opts] = ctx.reply.mock.calls[0];
       expect(text).toBe(copy.start.greeting(WEB_URL));
       expect(opts).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
+    });
+
+    it("asks a login_ payload to be confirmed instead of logging anyone in", async () => {
+      describeLogin.mockResolvedValue({ nonce: "abc123", verificationCode: "K7QM" });
+      const ctx = commandCtx("login_abc123");
+
+      await commands.get("start")!(ctx);
+
+      expect(describeLogin).toHaveBeenCalledWith("login_abc123");
+      expect(confirmLogin).not.toHaveBeenCalled();
+      expect(linkChat).not.toHaveBeenCalled();
+      const [text, opts] = ctx.reply.mock.calls[0];
+      expect(text).toBe(copy.start.loginConfirm("K7QM"));
+      expect(JSON.stringify(opts.reply_markup)).toContain("login:ok:abc123");
+      expect(JSON.stringify(opts.reply_markup)).toContain("login:no:abc123");
+    });
+
+    it("tells the user a stale login link is stale", async () => {
+      describeLogin.mockResolvedValue(null);
+      const ctx = commandCtx("login_gone");
+
+      await commands.get("start")!(ctx);
+
+      expect(ctx.reply.mock.calls[0][0]).toBe(copy.start.loginExpired(WEB_URL));
     });
 
     it.each([
@@ -300,6 +333,63 @@ describe("TelegramCommandsHandler", () => {
 
       expect(ctx.answerCallbackQuery).toHaveBeenCalledWith(copy.unsub.notFound);
       expect(ctx.editMessageText).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("login callback", () => {
+    const CHAT = { id: 42, type: "private" };
+
+    function loginCtx(data: string, chat: { id: number; type: string } | undefined = CHAT) {
+      const cb = callbacks.find((c) => c.pattern.test(data))!;
+      return {
+        cb,
+        ctx: {
+          match: cb.pattern.exec(data)!,
+          chat,
+          from: { username: "tguser", first_name: "Tessa" },
+          answerCallbackQuery: jest.fn(),
+          editMessageText: jest.fn(),
+        },
+      };
+    }
+
+    it.each([
+      ["authorized", copy.start.loginConfirmed],
+      ["already_authorized", copy.start.loginAlreadyDone],
+      ["invalid", copy.start.loginExpired(WEB_URL)],
+    ])("confirms with the chat id and reports %s", async (result, expected) => {
+      confirmLogin.mockResolvedValue(result);
+      const { cb, ctx } = loginCtx("login:ok:abc123");
+
+      await cb.handler(ctx);
+
+      expect(confirmLogin).toHaveBeenCalledWith("abc123", "42", {
+        username: "tguser",
+        firstName: "Tessa",
+      });
+      expect(ctx.editMessageText).toHaveBeenCalledWith(expected);
+    });
+
+    // callback_data is client-supplied, so a forged confirm can arrive from a
+    // group — where chat.id is the group's, not a person's.
+    it("refuses to confirm outside a private chat", async () => {
+      const { cb, ctx } = loginCtx("login:ok:abc123", { id: -1001234567890, type: "supergroup" });
+
+      await cb.handler(ctx);
+
+      expect(confirmLogin).not.toHaveBeenCalled();
+      expect(ctx.editMessageText).not.toHaveBeenCalled();
+      expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({ text: copy.start.loginPrivateOnly });
+    });
+
+    it("burns the request when the user says it wasn't them", async () => {
+      const { cb, ctx } = loginCtx("login:no:abc123");
+
+      await cb.handler(ctx);
+
+      expect(declineLogin).toHaveBeenCalledWith("abc123");
+      expect(confirmLogin).not.toHaveBeenCalled();
+      expect(ctx.editMessageText).toHaveBeenCalledWith(copy.start.loginDeclined);
     });
   });
 

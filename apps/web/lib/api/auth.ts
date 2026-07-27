@@ -28,9 +28,22 @@ export interface TelegramLoginResponse {
   isNewUser: boolean;
 }
 
+export interface TelegramLoginStartResponse {
+  nonce: string;
+  pollSecret: string;
+  verificationCode: string;
+  startPayload: string;
+}
+
+export type TelegramLoginPollResponse =
+  { status: "pending" } | { status: "expired" } | ({ status: "ready" } & TelegramLoginResponse);
+
 export const authApi = {
   loginTelegram: (telegram: TelegramAuthPayload) =>
     apiPost<TelegramLoginResponse>("/auth/telegram", { telegram }),
+  startTelegramLogin: () => apiPost<TelegramLoginStartResponse>("/auth/telegram/start", {}),
+  pollTelegramLogin: (nonce: string, pollSecret: string) =>
+    apiPost<TelegramLoginPollResponse>("/auth/telegram/poll", { nonce, pollSecret }),
   me: () => apiGet<AuthUser>("/auth/me"),
   logout: () => apiPost<{ ok: true }>("/auth/logout", {}),
 };
