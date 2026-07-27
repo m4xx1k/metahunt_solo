@@ -4,6 +4,7 @@ import { DataTable, type Column } from "@/ui/data/DataTable";
 import { StatCard } from "@/ui/data/StatCard";
 import { StatGrid } from "@/ui/data/StatGrid";
 import { Panel } from "@/ui/layout/Panel";
+import { ScopeChip } from "@/ui/data/ScopeChip";
 
 type DeliveryDay = ProductAnalyticsOverview["delivery"]["daily"][number];
 
@@ -37,7 +38,7 @@ export function DeliveryPanel({ delivery, digestClicks, population }: Props) {
   const perChatPerDay = delivery.messagesPerChatPerDay;
 
   return (
-    <Panel title="Delivery" meta={`${population} · system events, not user actions`}>
+    <Panel title="Delivery" meta={`${population} · ours, not theirs`} scope="period">
       <StatGrid cols={5}>
         <StatCard
           label="digests sent"
@@ -70,7 +71,15 @@ export function DeliveryPanel({ delivery, digestClicks, population }: Props) {
         />
       </StatGrid>
 
-      <div className="pt-4">
+      <div className="flex flex-col gap-2 pt-4">
+        {/* The daily breakdown ignores the period selector by design, so it
+            carries its own scope rather than inheriting the panel's. */}
+        <span className="flex items-center gap-2">
+          <span className="font-mono text-2xs uppercase tracking-[0.12em] text-text-muted">
+            per day
+          </span>
+          <ScopeChip scope="fixed-7d" />
+        </span>
         <DataTable
           columns={DAILY_COLUMNS}
           rows={delivery.daily}

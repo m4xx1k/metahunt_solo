@@ -3,6 +3,7 @@ import { formatCount, formatRelative } from "@/lib/format";
 import { DataTable, type Column } from "@/ui/data/DataTable";
 import { Panel } from "@/ui/layout/Panel";
 import { InfoHint } from "@/ui/overlay/InfoHint";
+import { LastActionHint } from "@/entities/analytics/LastActionHint";
 import { LastAction } from "@/entities/subscriber/LastAction";
 import { SubscriberIdentity } from "@/entities/subscriber/SubscriberIdentity";
 import { SubscriptionsPopover } from "./SubscriptionsPopover";
@@ -37,10 +38,7 @@ const COLUMNS: Array<Column<SubscriberActivity>> = [
     header: (
       <span className="inline-flex items-center gap-1.5">
         last action
-        <InfoHint label="what last action means">
-          The newest event the subscriber themselves caused — a click, an upload, a subscribe. The
-          digests we send at them don&apos;t count, so a quiet subscriber reads as quiet.
-        </InfoHint>
+        <LastActionHint />
       </span>
     ),
     render: (row) => <LastAction at={row.lastActionAt} />,
@@ -90,7 +88,7 @@ const COLUMNS: Array<Column<SubscriberActivity>> = [
 
 export function SubscribersPanel({ subscribers }: { subscribers: SubscriberActivity[] }) {
   return (
-    <Panel title="Subscribers" meta={`${subscribers.length} tracked`}>
+    <Panel title="Subscribers" meta={`${subscribers.length} tracked`} scope="period">
       <DataTable
         columns={COLUMNS}
         rows={subscribers}

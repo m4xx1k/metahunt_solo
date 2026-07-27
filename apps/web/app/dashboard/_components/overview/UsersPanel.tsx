@@ -138,7 +138,7 @@ export function UsersPanel({
         <DataTable columns={columns} rows={rows} rowKey={(row) => row.chatId} minWidth={720} />
       )}
       <div className="mt-auto pt-1">
-        <PanelLink href="/dashboard/analytics?tab=subscribers">full subscriber ledger</PanelLink>
+        <PanelLink href="/dashboard/analytics?tab=debug">full subscriber ledger</PanelLink>
       </div>
     </Panel>
   );
