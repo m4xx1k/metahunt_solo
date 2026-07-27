@@ -26,8 +26,7 @@ export const roadmapItems: RoadmapItem[] = [
   {
     tag: "ai + tracker",
     title: "ai + tracker",
-    description:
-      "gap analysis, cover letter, resume adaptation, application tracker.",
+    description: "gap analysis, cover letter, resume adaptation, application tracker.",
     status: "next",
   },
   {
@@ -39,8 +38,7 @@ export const roadmapItems: RoadmapItem[] = [
   {
     tag: "global",
     title: "global",
-    description:
-      "LinkedIn, Glassdoor, Wellfound, Indeed. expanding into Poland and the EU.",
+    description: "LinkedIn, Glassdoor, Wellfound, Indeed. expanding into Poland and the EU.",
     status: "next",
   },
 ];

@@ -7,11 +7,7 @@ export function Hero() {
     <section className="w-full px-6 pt-20 pb-24 md:px-20 md:pt-20 md:pb-[100px]">
       <div className="mx-auto flex w-full max-w-[1100px] flex-col items-center gap-12 text-center">
         <div className="flex flex-col items-center gap-8">
-          <Heading
-            level="h1"
-            as="h1"
-            className="text-center text-5xl leading-[1.05] md:text-8xl"
-          >
+          <Heading level="h1" as="h1" className="text-center text-5xl leading-[1.05] md:text-8xl">
             {hero.title}
           </Heading>
           <p className="max-w-[700px] font-body text-base leading-[1.55] text-text-secondary">
@@ -19,9 +15,7 @@ export function Hero() {
           </p>
         </div>
         <HeroWaitlist cta={hero.cta} />
-        <p className="font-body text-xs text-text-muted">
-          {hero.microCopy}
-        </p>
+        <p className="font-body text-xs text-text-muted">{hero.microCopy}</p>
       </div>
     </section>
   );

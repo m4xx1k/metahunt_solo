@@ -60,6 +60,7 @@ export function TelegramWidgetButton({
   className,
   label = "log in",
   variant = "primary",
+  disabled = false,
 }: {
   onDone?: () => void;
   /** Replaces sign-in with the caller's own use of the verified payload —
@@ -68,6 +69,7 @@ export function TelegramWidgetButton({
   className?: string;
   label?: string;
   variant?: "primary" | "secondary" | "ghost";
+  disabled?: boolean;
 }) {
   const { login } = useSession();
   const analytics = useAnalytics();
@@ -123,7 +125,7 @@ export function TelegramWidgetButton({
       variant={variant}
       size="sm"
       onClick={handleClick}
-      disabled={busy}
+      disabled={busy || disabled}
       aria-label="Log in with the Telegram widget"
       className={cn(
         "gap-1.5",

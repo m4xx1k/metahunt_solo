@@ -25,6 +25,9 @@ const ANALYTICS_EVENTS = {
   telegramLoginCancelled: "telegram_login_cancelled",
   telegramLoginFailed: "telegram_login_failed",
   googleLoginFailed: "google_login_failed",
+  identityLinked: "identity_linked",
+  identityUnlinked: "identity_unlinked",
+  identityLinkConflict: "identity_link_conflict",
   loggedIn: "logged_in",
   signup: "signup",
   vacancyFeedback: "vacancy_feedback",
@@ -156,6 +159,20 @@ export function useAnalytics() {
 
       googleLoginFailed(stage: "widget" | "session") {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.googleLoginFailed, { stage });
+      },
+
+      identityLinked(provider: LoginProvider) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityLinked, { provider });
+      },
+
+      identityUnlinked(provider: LoginProvider) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityUnlinked, { provider });
+      },
+
+      // The 409 is the measurable form of "one person, two accounts" — the only
+      // evidence that would justify building a merge flow (MET-82).
+      identityLinkConflict(provider: LoginProvider) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityLinkConflict, { provider });
       },
 
       loggedIn(provider: LoginProvider) {

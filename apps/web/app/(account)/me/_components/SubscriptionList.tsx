@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { Panel } from "@/ui/layout/Panel";
+import { EmptyState } from "@/ui/feedback/EmptyState";
 import { meApi } from "@/lib/api/me";
 import { SubscriptionCard } from "./SubscriptionCard";
 
@@ -33,21 +35,20 @@ export function SubscriptionList() {
     onError: () => toast.error("Couldn't remove subscription"),
   });
 
+  const active = subs?.filter((s) => s.isActive).length ?? 0;
+
   return (
-    <section>
-      <h2 className="mb-3 font-mono text-2xs uppercase tracking-wider text-text-muted">
-        my subscriptions
-      </h2>
+    <Panel
+      title="subscriptions"
+      meta={subs?.length ? `${active}/${subs.length} active` : undefined}
+    >
       {isLoading ? (
-        <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-          loading…
-        </p>
+        <EmptyState title="loading…" />
       ) : !subs || subs.length === 0 ? (
-        <div className="border border-dashed border-border bg-bg-card p-6">
-          <p className="font-mono text-2xs uppercase tracking-wider text-text-secondary">
-            no subscriptions yet — tune a feed and subscribe to get telegram alerts
-          </p>
-        </div>
+        <EmptyState
+          title="no subscriptions yet"
+          hint="tune a feed and subscribe — new matches arrive in telegram"
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {subs.map((sub) => (
@@ -61,6 +62,6 @@ export function SubscriptionList() {
           ))}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }

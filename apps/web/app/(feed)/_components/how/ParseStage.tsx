@@ -17,10 +17,7 @@ const TONE: Record<BadgeTone, string> = {
 
 export function ParseStage() {
   const [si, setSi] = useState(0);
-  const onDone = useCallback(
-    () => setSi((v) => (v + 1) % PARSE_SAMPLES.length),
-    [],
-  );
+  const onDone = useCallback(() => setSi((v) => (v + 1) % PARSE_SAMPLES.length), []);
   // Keyed remount per sample → fresh typing state without resetting in an effect.
   return <TypeOut key={si} sample={PARSE_SAMPLES[si]} onDone={onDone} />;
 }

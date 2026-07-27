@@ -72,18 +72,15 @@ export function FeedFilters({
   // Role/skill options come from the full /feed catalog (search reaches every
   // node), not the aggregates top-N. Counts only order the empty-query view.
   const roleOptions = useMemo<OptionRow[]>(
-    () =>
-      (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
+    () => (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
     [roleCatalog],
   );
   const skillOptions = useMemo<OptionRow[]>(
-    () =>
-      (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
+    () => (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
     [skillCatalog],
   );
   const domainOptions = useMemo<OptionRow[]>(
-    () =>
-      (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
+    () => (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
     [domainCatalog],
   );
   const api = useUrlFilters();
@@ -185,9 +182,7 @@ export function FeedFilters({
                 onToggle={api.toggleSkill}
                 searchable
                 searchPlaceholder="search skill…"
-                extra={
-                  api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null
-                }
+                extra={api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null}
               />
             </>
           )}

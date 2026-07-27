@@ -12,6 +12,7 @@ import { FlagPills } from "@/entities/vacancy/FlagPills";
 import { formatLocations } from "@/entities/vacancy/format-locations";
 import { SeniorityBadge } from "@/entities/vacancy/SeniorityBadge";
 import { VacancySkills } from "@/entities/vacancy/VacancySkills";
+import { ApiError } from "@/lib/api/client";
 import { facetsApi, type NodeFacet } from "@/lib/api/facets";
 import { vacanciesApi, type FeedDuplicateGroup, type VacancyDto } from "@/lib/api/vacancies";
 import {
@@ -87,7 +88,7 @@ const DESCRIPTION_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
 // found" apart from a real backend outage.
 async function loadVacancy(id: string): Promise<VacancyDto | null> {
   return vacanciesApi.byId(id).catch((err) => {
-    if (err instanceof Error && err.message.includes(" 404 ")) return null;
+    if (err instanceof ApiError && err.status === 404) return null;
     throw err;
   });
 }

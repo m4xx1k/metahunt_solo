@@ -1,13 +1,7 @@
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import { SENIORITY_VALUES, WORK_FORMAT_VALUES } from "@/lib/api/vacancies";
-import {
-  SENIORITY_LABELS,
-  WORK_FORMAT_LABELS,
-} from "@/lib/extracted-vacancy";
-import type {
-  FilterAggregates,
-  OptionRow,
-} from "@/features/vacancy-filters/types";
+import { SENIORITY_LABELS, WORK_FORMAT_LABELS } from "@/lib/extracted-vacancy";
+import type { FilterAggregates, OptionRow } from "@/features/vacancy-filters/types";
 
 // Maps the /market/aggregates headline snapshot into the filter shapes for the
 // closed-enum sections (sources, seniority, format). Role/skill options come
@@ -21,9 +15,7 @@ function distToOptions<T extends string>(
   labels: Record<T, string>,
   dist: Record<T, number>,
 ): OptionRow[] {
-  return order
-    .filter((v) => dist[v] > 0)
-    .map((v) => ({ id: v, label: labels[v], count: dist[v] }));
+  return order.filter((v) => dist[v] > 0).map((v) => ({ id: v, label: labels[v], count: dist[v] }));
 }
 
 export function toFilterAggregates(a: VacancyAggregates): FilterAggregates {
@@ -35,15 +27,7 @@ export function toFilterAggregates(a: VacancyAggregates): FilterAggregates {
       label: s.displayName,
       count: s.count,
     })),
-    seniorities: distToOptions(
-      SENIORITY_VALUES,
-      SENIORITY_LABELS,
-      a.seniorityDist,
-    ),
-    workFormats: distToOptions(
-      WORK_FORMAT_VALUES,
-      WORK_FORMAT_LABELS,
-      a.workFormatDist,
-    ),
+    seniorities: distToOptions(SENIORITY_VALUES, SENIORITY_LABELS, a.seniorityDist),
+    workFormats: distToOptions(WORK_FORMAT_VALUES, WORK_FORMAT_LABELS, a.workFormatDist),
   };
 }

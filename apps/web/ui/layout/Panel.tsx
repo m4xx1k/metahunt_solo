@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 // stop re-declaring the same border/padding/heading trio.
 export function Panel({
   title,
+  tone = "default",
   meta,
   footer,
   className,
@@ -14,6 +15,7 @@ export function Panel({
   children,
 }: {
   title?: string;
+  tone?: "default" | "danger";
   meta?: ReactNode;
   footer?: ReactNode;
   className?: string;
@@ -21,10 +23,18 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("flex h-full flex-col border border-border bg-bg-card", className)}>
+    <section
+      aria-label={title}
+      className={cn("flex h-full flex-col border border-border bg-bg-card", className)}
+    >
       {title ? (
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-5 py-4">
-          <h2 className="font-display text-sm font-bold tracking-tight text-text-primary">
+          <h2
+            className={cn(
+              "font-display text-sm font-bold tracking-tight",
+              tone === "danger" ? "text-danger" : "text-text-primary",
+            )}
+          >
             {title}
           </h2>
           {meta ? (

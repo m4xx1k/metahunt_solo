@@ -63,10 +63,7 @@ export function WarmCard({
               </span>
               <span
                 aria-hidden
-                className={cn(
-                  "text-2xs font-bold uppercase leading-none tracking-wider",
-                  t.text,
-                )}
+                className={cn("text-2xs font-bold uppercase leading-none tracking-wider", t.text)}
               >
                 {t.label}
               </span>
@@ -86,8 +83,8 @@ export function WarmCard({
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              This job targets a different stack than your main one, so it ranks
-              below jobs in your stack (individual skills may still fit).
+              This job targets a different stack than your main one, so it ranks below jobs in your
+              stack (individual skills may still fit).
             </TooltipContent>
           </Tooltip>
         ) : null}

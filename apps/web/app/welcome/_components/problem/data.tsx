@@ -1,8 +1,4 @@
-import {
-  StackIcon,
-  FunnelIcon,
-  HourglassIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { StackIcon, FunnelIcon, HourglassIcon } from "@phosphor-icons/react/dist/ssr";
 import type { ComponentProps } from "react";
 import type { ProblemCard } from "./ProblemCard";
 
@@ -26,7 +22,7 @@ export const problems: ProblemItem[] = [
     icon: <FunnelIcon weight="bold" className="h-6 w-6" />,
     title: "data with no standard",
     description:
-      "\"remote\" means office, the must-have stack is buried mid-description, test tasks go unmarked. formal filters just don't work.",
+      '"remote" means office, the must-have stack is buried mid-description, test tasks go unmarked. formal filters just don\'t work.',
   },
   {
     icon: <HourglassIcon weight="bold" className="h-6 w-6" />,

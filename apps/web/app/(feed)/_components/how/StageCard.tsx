@@ -34,9 +34,7 @@ export function StageCard({
   return (
     <div className="relative flex min-h-[340px] flex-1 flex-col overflow-hidden border border-border-strong bg-bg-card shadow-brut-lg">
       <div className="relative z-[5] flex items-center justify-between px-[18px] pt-4">
-        <span className="font-mono text-xs font-bold tracking-[0.1em] text-accent">
-          {n}
-        </span>
+        <span className="font-mono text-xs font-bold tracking-[0.1em] text-accent">{n}</span>
         <Link
           href={href}
           className="font-mono text-2xs uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
@@ -51,12 +49,8 @@ export function StageCard({
       </div>
 
       <div className="relative z-[5] px-[18px] pb-[18px]">
-        <span className="font-mono text-[22px] font-bold lowercase text-text-primary">
-          {label}
-        </span>
-        <span className="mt-0.5 block font-body text-xs text-text-secondary">
-          {sub}
-        </span>
+        <span className="font-mono text-[22px] font-bold lowercase text-text-primary">{label}</span>
+        <span className="mt-0.5 block font-body text-xs text-text-secondary">{sub}</span>
       </div>
     </div>
   );

@@ -32,7 +32,8 @@ function MatchBar({ percent }: { percent: number }) {
   const filled = Math.round((percent / 100) * 8);
   return (
     <span className="font-mono text-xs text-text-primary">
-      match: [{"█".repeat(filled)}{"░".repeat(8 - filled)}] {percent}%
+      match: [{"█".repeat(filled)}
+      {"░".repeat(8 - filled)}] {percent}%
     </span>
   );
 }
@@ -46,9 +47,7 @@ function Fact({ fact }: { fact: GoldenFact }) {
       <span
         className={cn(
           "font-mono text-xs",
-          fact.highlight
-            ? "text-success text-base font-bold"
-            : "text-text-primary",
+          fact.highlight ? "text-success text-base font-bold" : "text-text-primary",
         )}
       >
         {fact.value}
@@ -57,13 +56,7 @@ function Fact({ fact }: { fact: GoldenFact }) {
   );
 }
 
-export function GoldenJobCard({
-  job,
-  className,
-}: {
-  job: GoldenJob;
-  className?: string;
-}) {
+export function GoldenJobCard({ job, className }: { job: GoldenJob; className?: string }) {
   return (
     <div
       className={cn(
@@ -81,17 +74,11 @@ export function GoldenJobCard({
             ))}
           </div>
           <div className="flex flex-col gap-1">
-            <h3 className="font-mono text-lg font-bold text-text-primary">
-              {job.title}
-            </h3>
+            <h3 className="font-mono text-lg font-bold text-text-primary">{job.title}</h3>
             <div className="flex items-center gap-2">
-              <div className="font-body text-sm text-text-secondary">
-                {job.company}
-              </div>
+              <div className="font-body text-sm text-text-secondary">{job.company}</div>
               {job.productTag && (
-                <div className="font-mono text-xs text-text-muted">
-                  {job.productTag}
-                </div>
+                <div className="font-mono text-xs text-text-muted">{job.productTag}</div>
               )}
             </div>
           </div>
@@ -117,9 +104,7 @@ export function GoldenJobCard({
             </span>
             <MatchBar percent={job.ai.matchPercent} />
             {job.ai.gap && (
-              <span className="font-mono text-xs text-text-muted">
-                gap: {job.ai.gap}
-              </span>
+              <span className="font-mono text-xs text-text-muted">gap: {job.ai.gap}</span>
             )}
           </div>
           {job.actions.map((a) => (
@@ -136,18 +121,11 @@ export function GoldenJobCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-5">
-        <span className="font-mono text-xs font-bold text-accent">
-          &gt; apply on:
-        </span>
+        <span className="font-mono text-xs font-bold text-accent">&gt; apply on:</span>
         {job.appliesOn.map((src, i) => (
-          <span
-            key={src}
-            className="flex items-center gap-4 font-mono text-xs text-text-secondary"
-          >
+          <span key={src} className="flex items-center gap-4 font-mono text-xs text-text-secondary">
             {src}
-            {i < job.appliesOn.length - 1 && (
-              <span className="text-text-muted">·</span>
-            )}
+            {i < job.appliesOn.length - 1 && <span className="text-text-muted">·</span>}
           </span>
         ))}
       </div>

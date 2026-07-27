@@ -12,9 +12,9 @@ export function MatchSection() {
       <SubStats items={match.substats} />
       <p className="mb-6 max-w-[680px] font-body text-sm leading-[1.6] text-text-secondary">
         Ranking your CV against the market isn&apos;t keyword counting. A rare skill should count
-        for more than one everybody lists. So each skill is weighted by inverse document
-        frequency — how uncommon it is across all vacancies — and your match score is the sum of
-        those weights over the skills you share.
+        for more than one everybody lists. So each skill is weighted by inverse document frequency —
+        how uncommon it is across all vacancies — and your match score is the sum of those weights
+        over the skills you share.
       </p>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-start">
@@ -27,21 +27,24 @@ export function MatchSection() {
               <span className="text-accent-secondary">df(s)</span> + 5) ), 0 )
             </div>
             <div className="whitespace-nowrap">
-              <span className="text-accent">relevance</span> <span className="text-text-muted">=</span>{" "}
-              <span className="text-text-muted">Σ</span> <span className="text-accent">IDF(s)</span>{" "}
+              <span className="text-accent">relevance</span>{" "}
+              <span className="text-text-muted">=</span> <span className="text-text-muted">Σ</span>{" "}
+              <span className="text-accent">IDF(s)</span>{" "}
               <span className="text-text-muted">for s in</span> (
               <span className="text-accent-secondary">CV</span> ∩{" "}
               <span className="text-accent-secondary">job</span> )
             </div>
             <div className="whitespace-nowrap">
-              <span className="text-accent">coverage</span> <span className="text-text-muted">=</span>{" "}
-              <span className="text-text-muted">Σ</span>IDF(required ∩ CV){" "}
-              <span className="text-text-muted">/</span> <span className="text-text-muted">Σ</span>
+              <span className="text-accent">coverage</span>{" "}
+              <span className="text-text-muted">=</span> <span className="text-text-muted">Σ</span>
+              IDF(required ∩ CV) <span className="text-text-muted">/</span>{" "}
+              <span className="text-text-muted">Σ</span>
               IDF(required)
             </div>
             <div className="whitespace-nowrap">
-              <span className="text-text-muted">tier =</span> <span className="text-success">STRONG</span>{" "}
-              if ≥ 0.8 · <span className="text-success">GOOD</span> if ≥ 0.5 · else STRETCH
+              <span className="text-text-muted">tier =</span>{" "}
+              <span className="text-success">STRONG</span> if ≥ 0.8 ·{" "}
+              <span className="text-success">GOOD</span> if ≥ 0.5 · else STRETCH
             </div>
           </div>
           <div className="mt-3 space-y-1 font-mono text-xs text-text-secondary">
@@ -62,8 +65,8 @@ export function MatchSection() {
           <div className="mt-4 border border-border bg-bg-elev p-3 font-mono text-xs">
             example — Go backend CV vs &quot;Middle Golang Developer&quot;:
             <br />
-            relevance = <span className="font-bold text-success">16.75</span> · required coverage
-            → tier <span className="font-bold text-accent">STRONG</span>
+            relevance = <span className="font-bold text-success">16.75</span> · required coverage →
+            tier <span className="font-bold text-accent">STRONG</span>
           </div>
         </div>
 

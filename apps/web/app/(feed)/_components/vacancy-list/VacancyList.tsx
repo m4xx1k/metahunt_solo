@@ -24,12 +24,9 @@ export function VacancyList({ result, offset, onNavigate, isFetching }: Props) {
       )}
     >
       <div className="flex items-baseline justify-between">
-        <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">
-          jobs
-        </h2>
+        <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">jobs</h2>
         <span className="font-mono text-xs text-text-muted">
-          <span className="text-text-secondary">{result.total}</span> found ·
-          page {result.page}
+          <span className="text-text-secondary">{result.total}</span> found · page {result.page}
         </span>
       </div>
 

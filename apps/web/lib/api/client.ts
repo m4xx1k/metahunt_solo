@@ -1,8 +1,7 @@
 // Shared backend boundary. Every lib/api fetcher goes through these:
 // one place resolves the base URL, builds the query string, and turns a
-// non-2xx response into a thrown error. Resource files only declare their
-// wire types + endpoint paths. (Taxonomy mutations keep their own typed
-// error path — see TaxonomyApiError.)
+// non-2xx response into a thrown ApiError. Resource files only declare their
+// wire types + endpoint paths.
 
 import { getToken } from "./auth-token";
 import { SESSION_COOKIE } from "./session-cookie";
@@ -26,6 +25,20 @@ async function serverToken(): Promise<string | undefined> {
     // cookies() throws inside unstable_cache() (the public homepage catalogs):
     // that scope is shared across users, so there's no per-request token to send.
     return undefined;
+  }
+}
+
+// Callers that branch on a status (a 409 means "already linked elsewhere", not
+// "something broke") need it structurally — substring-matching the message also
+// matches a response body that happens to contain the digits.
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+    readonly body: string,
+  ) {
+    super(`api ${status} ${path}: ${body}`);
+    this.name = "ApiError";
   }
 }
 
@@ -83,7 +96,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`api ${res.status} ${path}: ${body}`);
+    throw new ApiError(res.status, path, body);
   }
   return (await res.json()) as T;
 }
@@ -106,7 +119,7 @@ async function apiWrite<T>(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`api ${res.status} ${path}: ${text}`);
+    throw new ApiError(res.status, path, text);
   }
   return (await res.json()) as T;
 }
