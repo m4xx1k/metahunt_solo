@@ -12,7 +12,9 @@ The failure mode this rule exists to stop: a directory of scripts nobody dares d
 | `db-backup.sh` / `db-restore.sh` | run before and after anything destructive |
 | `dev-stop.sh` | local dev (`pnpm dev:stop`) |
 | `seo-audit.ts` | repeatable audit (`pnpm seo:audit`) — the SEO contract says run it before touching SEO |
+| `analytics-catalog.ts` | drift guard (`pnpm analytics:catalog`) — fails when an analytics event exists in code but not in the console's catalog, or vice versa |
 | `delete-temporal-schedule.ts` | ops: removes a schedule after its workflow is renamed or retired |
+| `temporal-schedules.ts` | pause / resume / list the three installed schedules — required before any migration that mutates taxonomy or vacancies |
 
 ## What a one-shot looks like, and where it goes instead
 
