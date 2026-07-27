@@ -106,9 +106,15 @@ export class DedupService {
     let embedded = 0;
     let skipped = 0;
 
+    // Keyset cursor, required in force mode: its WHERE is `true`, and writing a
+    // row does not change that, so an offset-less LIMIT re-fetches the same first
+    // page forever — an infinite loop that bills one batch of embeddings per turn.
+    let afterId: string | null = null;
+
     while (true) {
-      const batch = await this.fetchEmbedBatch(EMBED_BATCH_SIZE, force);
+      const batch = await this.fetchEmbedBatch(EMBED_BATCH_SIZE, force, afterId);
       if (batch.length === 0) break;
+      afterId = batch[batch.length - 1].id;
 
       const prepared = batch
         .map((row) => {
@@ -181,13 +187,20 @@ export class DedupService {
     return { processed, embedded, skipped };
   }
 
-  private async fetchEmbedBatch(limit: number, force: boolean): Promise<VacancyEmbeddingRow[]> {
+  private async fetchEmbedBatch(
+    limit: number,
+    force: boolean,
+    afterId: string | null = null,
+  ): Promise<VacancyEmbeddingRow[]> {
     // When not forcing, we only fetch rows that still need work:
     // either missing embedding or written by a stale model. Force
     // mode pulls everything so the in-JS hash check decides.
     const where = force
       ? sql`true`
       : sql`(v.embedding IS NULL OR v.embedding_model IS DISTINCT FROM ${this.openai.model})`;
+    // Ordering is by id alone so the cursor is a single comparable column. A full
+    // sweep has no reason to care about publication order.
+    const after = afterId === null ? sql`` : sql`AND v.id > ${afterId}::uuid`;
 
     const rows = await this.db.execute<{
       id: string;
@@ -222,9 +235,9 @@ export class DedupService {
       LEFT JOIN nodes role_node ON role_node.id = v.role_node_id
       LEFT JOIN vacancy_nodes vn ON vn.vacancy_id = v.id AND vn.is_required = true
       LEFT JOIN nodes skill_node ON skill_node.id = vn.node_id
-      WHERE ${where}
+      WHERE ${where} ${after}
       GROUP BY v.id, role_node.canonical_name
-      ORDER BY v.published_at ASC NULLS LAST, v.id ASC
+      ORDER BY v.id ASC
       LIMIT ${limit}
     `);
 
