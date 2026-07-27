@@ -1,4 +1,4 @@
-import { DIRECT_CHANNEL, resolveChannelSource } from "./channel-source";
+import { compareChannels, DIRECT_CHANNEL, resolveChannelSource } from "./channel-source";
 
 describe("resolveChannelSource", () => {
   it("prefers an explicit utm tag over the referrer", () => {
@@ -47,5 +47,35 @@ describe("resolveChannelSource", () => {
   it("matches on host boundaries, not bare string endings", () => {
     expect(resolveChannelSource(null, "notreddit.com")).toBe("notreddit.com");
     expect(resolveChannelSource(null, "fake-metahunt.app")).toBe("fake-metahunt.app");
+  });
+});
+
+describe("compareChannels", () => {
+  const row = (source: string, landed: number, campaign: string | null = null) => ({
+    source,
+    campaign,
+    landed,
+  });
+
+  it("orders by volume first", () => {
+    expect(
+      [row("direct", 1), row("threads", 9)].sort(compareChannels).map((r) => r.source),
+    ).toEqual(["threads", "direct"]);
+  });
+
+  // `direct` is the residue we could not attribute, so it must not outrank a
+  // named channel it merely ties with.
+  it("sinks direct below a named channel of equal volume", () => {
+    expect([row("direct", 1), row("reddit", 1)].sort(compareChannels).map((r) => r.source)).toEqual(
+      ["reddit", "direct"],
+    );
+  });
+
+  it("falls back to source then campaign for named channels", () => {
+    expect(
+      [row("threads", 1, "b"), row("threads", 1, "a"), row("dou", 1)]
+        .sort(compareChannels)
+        .map((r) => `${r.source}/${r.campaign ?? ""}`),
+    ).toEqual(["dou/", "threads/a", "threads/b"]);
   });
 });

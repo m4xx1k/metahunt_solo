@@ -9,7 +9,7 @@ import { ANALYTICS_EVENTS, USER_ACTION_EVENTS } from "../../platform/analytics/e
 import { asStringArray } from "../../platform/shared/coerce";
 import { reportingPeriodSince } from "../../platform/shared/reporting-period";
 
-import { resolveChannelSource } from "./channel-source";
+import { compareChannels, resolveChannelSource } from "./channel-source";
 import {
   GROWTH_WINDOW_WEEKS,
   PRODUCT_FUNNEL_STEPS,
@@ -713,12 +713,7 @@ export class ProductAnalyticsService {
       merged.set(key, next);
     }
 
-    return [...merged.values()].sort(
-      (a, b) =>
-        b.landed - a.landed ||
-        a.source.localeCompare(b.source) ||
-        (a.campaign ?? "").localeCompare(b.campaign ?? ""),
-    );
+    return [...merged.values()].sort(compareChannels);
   }
 
   private async identityHealth(

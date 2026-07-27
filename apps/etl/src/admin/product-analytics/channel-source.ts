@@ -41,6 +41,22 @@ function matchesHost(host: string, suffix: string): boolean {
 }
 
 /**
+ * Order channels for display: biggest first, but `direct` always sinks below a
+ * named channel of the same size. It is the unattributed residue, not a
+ * channel anyone can act on, so it should never head the table.
+ */
+export function compareChannels(
+  a: { source: string; campaign: string | null; landed: number },
+  b: { source: string; campaign: string | null; landed: number },
+): number {
+  if (a.landed !== b.landed) return b.landed - a.landed;
+  const aDirect = a.source === DIRECT_CHANNEL;
+  const bDirect = b.source === DIRECT_CHANNEL;
+  if (aDirect !== bDirect) return aDirect ? 1 : -1;
+  return a.source.localeCompare(b.source) || (a.campaign ?? "").localeCompare(b.campaign ?? "");
+}
+
+/**
  * An explicit tag always wins: a posted link we tagged ourselves is the exact
  * answer, and the referrer is only the fallback for untagged arrivals. An
  * unrecognised domain passes through as itself, so a channel we have never seen
