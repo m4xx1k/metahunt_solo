@@ -6,6 +6,8 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { RolesGuard } from "./roles.guard";
+import { TelegramLoginGc } from "./telegram-login.gc";
+import { TelegramLoginService } from "./telegram-login.service";
 
 // Consumer auth: Telegram Login → own session JWT + role guards. ConfigService
 // is global (ConfigModule.isGlobal), so JwtModule reads JWT_SECRET directly.
@@ -20,10 +22,10 @@ import { RolesGuard } from "./roles.guard";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, RolesGuard],
+  providers: [AuthService, TelegramLoginService, TelegramLoginGc, JwtAuthGuard, RolesGuard],
   // Guards declared on controllers are resolved in the consuming module's DI
   // context. Export AuthService with them so JwtAuthGuard's account-existence
   // recheck remains resolvable outside AuthModule (for example TaxonomyModule).
-  exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule],
+  exports: [AuthService, TelegramLoginService, JwtAuthGuard, RolesGuard, JwtModule],
 })
 export class AuthModule {}

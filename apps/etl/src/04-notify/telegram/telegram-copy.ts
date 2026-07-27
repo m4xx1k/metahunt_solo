@@ -27,6 +27,20 @@ export const copy = {
     duplicate: "ℹ️ Ти вже підписаний на цей фільтр — нову підписку не створював.",
     invalidToken: (webUrl: string): string =>
       `⚠️ Це посилання недійсне або застаріле. ${siteCta(webUrl)}`,
+    // Anyone can forward a login link, so the prompt has to make "I didn't
+    // start this" the obvious read — hence the code and the explicit warning.
+    loginConfirm: (code: string): string =>
+      `🔐 Хтось відкрив вхід у <b>metahunt</b> і код на сайті — <b>${code}</b>.\n\n` +
+      `Якщо це ти й код збігається — підтверди. ` +
+      `Якщо ти нічого не відкривав — тисни «Це не я»: інакше ти віддаси свій акаунт чужій людині.`,
+    loginConfirmButton: "✅ Це я, увійти",
+    loginDeclineButton: "🚫 Це не я",
+    loginConfirmed: "✅ Готово. Повертайся на сайт — вкладка вже оновилась.",
+    loginAlreadyDone: "ℹ️ Цей вхід уже підтверджено.",
+    loginDeclined: "🚫 Скасовано. Ніхто не увійшов у твій акаунт.",
+    loginPrivateOnly: "Вхід підтверджують лише в особистому чаті з ботом.",
+    loginExpired: (webUrl: string): string =>
+      `⚠️ Посилання для входу застаріле — вони живуть 5 хвилин. Спробуй ще раз: ${webUrl}`,
   },
   list: {
     empty: (webUrl: string): string => `У тебе немає активних підписок. ${siteCta(webUrl)}`,
