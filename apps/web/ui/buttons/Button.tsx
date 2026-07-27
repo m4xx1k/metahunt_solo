@@ -12,6 +12,10 @@ const buttonVariants = cva(
         secondary:
           "bg-bg text-text-primary border-border shadow-brut-sm font-display hover:shadow-brut-2xs hover:translate-x-[2px] hover:translate-y-[2px]",
         nav: "bg-accent text-bg border-transparent shadow-brut-sm hover:shadow-brut-2xs hover:translate-x-[2px] hover:translate-y-[2px] text-xs",
+        // A text action that carries no weight of its own — for the escape
+        // hatch next to a real choice, not for the choice itself.
+        ghost:
+          "bg-transparent border-transparent font-mono font-normal text-text-muted underline shadow-none active:translate-x-0 active:translate-y-0 hover:text-text-secondary",
       },
       size: {
         md: "px-5 py-3 text-sm",

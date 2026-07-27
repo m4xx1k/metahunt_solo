@@ -66,22 +66,21 @@ export function AuthChoice({
         forceMount={inFlight ? true : undefined}
         className="flex w-64 flex-col gap-3"
       >
-        <p className="font-mono text-2xs uppercase tracking-wider text-text-secondary">
-          new roles every hour
+        <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+          new roles, every hour
         </p>
 
         <TelegramLoginButton onDone={done} onInFlightChange={setInFlight} />
         <GoogleLoginButton onDone={done} width={224} size="large" text="continue_with" />
 
-        <div className="flex flex-col gap-2 border-t border-border pt-3">
-          <span className="font-mono text-2xs text-text-muted">telegram not opening?</span>
-          <TelegramWidgetButton
-            variant="secondary"
-            label="use the widget"
-            onDone={done}
-            className="w-full"
-          />
-        </div>
+        {/* The deprecated widget is a last resort, so it reads as a link and
+            not as a third thing to choose between. */}
+        <TelegramWidgetButton
+          variant="ghost"
+          label="telegram not opening?"
+          onDone={done}
+          className="h-auto justify-start p-0 text-2xs text-text-muted underline"
+        />
       </PopoverContent>
     </Popover>
   );

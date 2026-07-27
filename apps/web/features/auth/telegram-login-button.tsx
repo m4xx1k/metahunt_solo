@@ -197,16 +197,17 @@ export function TelegramLoginButton({
 
   return (
     <Button
-      variant="primary"
+      variant="secondary"
       size="sm"
       onClick={() => void handleClick()}
       disabled={phase === "opening"}
       aria-label="Continue with Telegram"
-      // 40px to match the Google button GIS renders beside it.
-      className="h-10 w-full gap-1.5 bg-accent-secondary hover:bg-accent-secondary"
+      // 40px and full width to sit flush with the Google button GIS draws next
+      // to it — the provider colour lives in the icon, not the fill.
+      className="h-10 w-full justify-start gap-3 px-4"
     >
-      <PaperPlaneTiltIcon weight="fill" className="h-3.5 w-3.5" aria-hidden />
-      {phase === "opening" ? "opening…" : "continue with telegram"}
+      <PaperPlaneTiltIcon weight="fill" className="h-4 w-4 text-accent-secondary" aria-hidden />
+      {phase === "opening" ? "opening…" : "Continue with Telegram"}
     </Button>
   );
 }
