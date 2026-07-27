@@ -49,10 +49,12 @@ family, approximate location, start time). Not built — revisit if abused.
    - `ADMIN_TELEGRAM_IDS` — comma-separated Telegram **user ids** granted `admin`
      at login (e.g. your own id). Empty = no admins.
 2. **Web env** (`@metahunt/web`, Vercel + `apps/web/.env.local`):
-   - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` — the bot's @username **without the `@`**
-     (currently `mh_solo_bot`). Builds the deep link. **Unset = the primary login
-     button is dead**: it fails with a `configuration` toast and no fallback, since
-     the widget lives inside the popover that only a successful start opens.
+   - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` — the bot's @username **without the `@`**.
+     Prod and preview: `metahuntapp_bot`. Local `.env.local`: `mh_solo_bot` (the
+     dev bot). Builds the deep link. **Unset = the primary login button is dead**:
+     it fails with a `configuration` toast and no fallback, since the widget lives
+     inside the popover that only a successful start opens. It is `NEXT_PUBLIC_*`,
+     so it is baked at build time — changing it needs a redeploy, not a restart.
    - `NEXT_PUBLIC_TELEGRAM_BOT_ID` — the bot's **numeric** id (the part before `:`
      in `TELEGRAM_BOT_TOKEN`). Only the legacy widget needs it.
 3. **Widget fallback only — register the login domain with @BotFather.** DM
