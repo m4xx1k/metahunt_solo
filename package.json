@@ -46,7 +46,8 @@
     "golden:batch": "pnpm golden batch",
     "golden:merge": "pnpm golden merge",
     "golden:arbitrate": "pnpm golden arbitrate",
-    "golden:review": "pnpm golden review"
+    "golden:review": "pnpm golden review",
+    "golden:score": "pnpm golden score"
   },
   "engines": {
     "node": ">=22"
