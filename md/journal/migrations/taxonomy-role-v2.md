@@ -105,7 +105,7 @@ The same read-only preflight reported zero for deleted role references, child tr
 presets, subscriptions holding dead node UUIDs, active subscriptions without a VERIFIED role arm,
 VERIFIED skills without `node_tech_meta`, and `node_stats` rows for deleted nodes.
 
-## Re-run gate before golden-set work (2026-07-28)
+## Re-run gate before golden-set work (closed 2026-07-28)
 
 Do not issue another `--apply` until the operational state of this plan is established. The plan
 is still present in the repository, while commit `8d649a0` records post-check fixes discovered on
@@ -121,11 +121,11 @@ exactly one of these outcomes:
 | Applied          | dry-run resolves every operation as `SKIP` and post-checks remain clean          | archive the plan and record the audit                |
 | Mixed or refused | any combination of `APPLY`, `SKIP`, or `REFUSE`                                  | no apply; write a reconciliation plan from the audit |
 
-MET-24 must not freeze role labels before that outcome. Nine reviewed rows need a role rebaseline
-when the plan's target names are final: `00060c1e-3eb9-4c5c-a26e-f336321feb0e`,
+The observed outcome is **Applied**, so this gate no longer blocks MET-24. Golden role labels must
+use the recorded VERIFIED taxonomy/alias snapshot rather than a later live lookup. Nine reviewed
+rows remain a manual rebaseline queue when verifying the plan's target names:
+`00060c1e-3eb9-4c5c-a26e-f336321feb0e`,
 `ae3cb4b6-ef09-4b66-8b12-6668c8c298cd`, `654c2490-e2f1-43ab-9890-832e3495117f`,
 `0093c6a8-1f44-467a-839a-68e4a0b69294`, `c92417fc-130a-495f-b26c-f6d3f9007a6c`,
 `e33ce465-c738-4ca6-8db7-f0e923e64083`, `46c98bf9-179d-4015-8430-4401c8d9494b`,
 `ff9765ef-de34-4382-aeb4-ca26c0a219eb`, and `00d60864-b357-4d22-9aa6-c4674ffb970c`.
-Snapshot the resulting VERIFIED roles and aliases with the golden run; the scorer must not resolve
-them through a later live taxonomy.
