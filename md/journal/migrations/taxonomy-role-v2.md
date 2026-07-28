@@ -92,3 +92,28 @@ Pause `rss-ingest-hourly`, `tg-digest-daytime` and `dedup-sweep` first: ingest m
 - Phases 3 and 4 of the plan (dumpster reassignment, then their hides) are not in `role-v2.plan.json` — the driver has no per-vacancy reassignment op yet, and `mergeInto` is the only writer of `vacancies.role_node_id` outside the loader.
 - 11 child tracks are keyed on ROLE presets. With `track_nodes` now repointed by `mergeInto` and `FPGA Engineer` out of the merge list, nothing strands under *this* plan — the driver's post-checks assert it. Re-keying them onto SKILL presets is future-proofing for the next collapse, not a blocker.
 - Rollback is the verified `pg_dump` taken before any of this. Restore is all-or-nothing across the node-dependent tables: a partial restore of `nodes` alone leaves `vacancies.role_node_id` pointing at the merge targets, produces no FK error, and **passes the conservation checks while being wrong**.
+
+## Re-run gate before golden-set work (2026-07-28)
+
+Do not issue another `--apply` until the operational state of this plan is established. The plan
+is still present in the repository, while commit `8d649a0` records post-check fixes discovered on
+the first real production run. That is evidence of a run, not a durable applied-plan record; a
+second apply against an unknown partial state is not safe.
+
+The owner-approved, read-only preflight must preserve the plan SHA and CLI JSONL audit, then have
+exactly one of these outcomes:
+
+| outcome          | evidence                                                                         | next action                                          |
+| ---------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Unapplied        | dry-run resolves every operation as `APPLY`, with only intentional hide warnings | schedule the existing migration window               |
+| Applied          | dry-run resolves every operation as `SKIP` and post-checks remain clean          | archive the plan and record the audit                |
+| Mixed or refused | any combination of `APPLY`, `SKIP`, or `REFUSE`                                  | no apply; write a reconciliation plan from the audit |
+
+MET-24 must not freeze role labels before that outcome. Nine reviewed rows need a role rebaseline
+when the plan's target names are final: `00060c1e-3eb9-4c5c-a26e-f336321feb0e`,
+`ae3cb4b6-ef09-4b66-8b12-6668c8c298cd`, `654c2490-e2f1-43ab-9890-832e3495117f`,
+`0093c6a8-1f44-467a-839a-68e4a0b69294`, `c92417fc-130a-495f-b26c-f6d3f9007a6c`,
+`e33ce465-c738-4ca6-8db7-f0e923e64083`, `46c98bf9-179d-4015-8430-4401c8d9494b`,
+`ff9765ef-de34-4382-aeb4-ca26c0a219eb`, and `00d60864-b357-4d22-9aa6-c4674ffb970c`.
+Snapshot the resulting VERIFIED roles and aliases with the golden run; the scorer must not resolve
+them through a later live taxonomy.
