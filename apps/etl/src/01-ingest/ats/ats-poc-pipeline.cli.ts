@@ -289,9 +289,11 @@ async function extract(
     .innerJoin(schema.sources, eq(schema.sources.id, schema.rssRecords.sourceId))
     .where(and(eq(schema.sources.kind, "ats"), isNull(schema.rssRecords.extractedAt)))
     // UA-located first: if the budget runs out, it runs out on the jobs that
-    // matter least to this audience.
+    // matter least to this audience. Cyrillic spellings belong here — the
+    // Ukrainian ATS writes "Київ", and a Latin-only pattern sorted exactly the
+    // most relevant source to the back of the queue.
     .orderBy(
-      sql`(${schema.rssRecords.atsFields}->>'locations') !~* 'Ukrain|Kyiv|Lviv|Kharkiv|Dnipro|Odesa'`,
+      sql`(${schema.rssRecords.atsFields}->>'locations') !~* 'Ukrain|Kyiv|Lviv|Kharkiv|Dnipro|Odesa|Україн|Київ|Львів|Харків|Дніпро|Одеса'`,
     )
     .limit(limit);
 
