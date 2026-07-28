@@ -18,6 +18,34 @@ export interface AtsStructuredFields {
 
 const SUPPORTED_CURRENCIES = new Set(["USD", "EUR", "UAH", "GBP", "PLN", "CAD", "INR", "COP"]);
 
+// Boards spell the same period several ways: "1 YEAR", "per-year-salary",
+// "MONTH", "1 HOUR".
+function toPeriod(interval: string | null | undefined): "HOUR" | "MONTH" | "YEAR" | null {
+  const value = interval?.toLowerCase() ?? "";
+  if (!value) return null;
+  if (value.includes("year") || value.includes("annual")) return "YEAR";
+  if (value.includes("month")) return "MONTH";
+  if (value.includes("hour")) return "HOUR";
+  return null;
+}
+
+// 21 working days × 8h. Only used for the handful of hourly US postings; a
+// rough monthly equivalent beats leaving an hourly rate in a monthly column.
+const HOURS_PER_MONTH = 168;
+
+/**
+ * The stored corpus is monthly — 13k RSS vacancies set that convention and the
+ * LLM already normalizes to it. Boards overwhelmingly quote annual (938 of 989
+ * observed), so taking their number verbatim put $195k next to ₴50k in the same
+ * column. Convert, and keep the original period so nothing is guessed later.
+ */
+function toMonthly(amount: number | null | undefined, period: string | null): number | null {
+  if (amount == null) return null;
+  if (period === "YEAR") return Math.round(amount / 12);
+  if (period === "HOUR") return Math.round(amount * HOURS_PER_MONTH);
+  return Math.round(amount);
+}
+
 function toCurrency(code: string | null | undefined): VacancyUpsertValues["currency"] | null {
   const upper = code?.trim().toUpperCase();
   return upper && SUPPORTED_CURRENCIES.has(upper)
@@ -50,8 +78,10 @@ export function applyAtsPrecedence(
 
   const hasAtsSalary = ats.salary && (ats.salary.min != null || ats.salary.max != null);
   if (hasAtsSalary) {
-    merged.salaryMin = ats.salary?.min != null ? Math.round(ats.salary.min) : null;
-    merged.salaryMax = ats.salary?.max != null ? Math.round(ats.salary.max) : null;
+    const period = toPeriod(ats.salary?.interval);
+    merged.salaryPeriod = period;
+    merged.salaryMin = toMonthly(ats.salary?.min, period);
+    merged.salaryMax = toMonthly(ats.salary?.max, period);
     // An unrepresentable currency nulls the enum but keeps the numbers and the
     // raw string, so a later enum widening can recover it without re-extracting.
     merged.currency = toCurrency(ats.salary?.currency);

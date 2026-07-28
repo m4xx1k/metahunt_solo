@@ -260,6 +260,13 @@
       "when": 1785195150787,
       "tag": "0036_stale_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1785205165256,
+      "tag": "0037_mixed_whizzer",
+      "breakpoints": true
     }
   ]
 }

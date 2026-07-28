@@ -69,6 +69,14 @@ export const currency = pgEnum("currency", [
  */
 export const salarySource = pgEnum("salary_source", ["ATS_STRUCTURED", "LLM_TEXT"]);
 
+/**
+ * The period the SOURCE quoted. `salary_min`/`salary_max` are always stored
+ * monthly — the convention the RSS corpus set — so this records what had to be
+ * converted. Without it an annual US figure and a monthly Ukrainian one sit in
+ * the same column indistinguishable, and every sort by salary is wrong.
+ */
+export const salaryPeriod = pgEnum("salary_period", ["HOUR", "MONTH", "YEAR"]);
+
 export const engagementType = pgEnum("engagement_type", [
   "PRODUCT",
   "OUTSOURCE",
@@ -106,6 +114,7 @@ export const vacancies = pgTable(
     salaryMax: integer("salary_max"),
     currency: currency("currency"),
     salarySource: salarySource("salary_source"),
+    salaryPeriod: salaryPeriod("salary_period"),
     // Verbatim source string/JSON, so a parser fix can be replayed without
     // paying to re-extract.
     salaryRaw: text("salary_raw"),

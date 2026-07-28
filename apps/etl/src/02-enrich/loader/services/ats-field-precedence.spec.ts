@@ -54,6 +54,47 @@ describe("applyAtsPrecedence", () => {
     expect(result.salaryRaw).toContain("JPY");
   });
 
+  // The corpus is monthly. Boards quote annual 938 times out of 989, so taking
+  // the number verbatim put a $195k median next to the corpus's $1.5k.
+  it("converts an annual board figure to the corpus's monthly convention", () => {
+    const result = applyAtsPrecedence(base(), {
+      salary: { min: 120000, max: 240000, currency: "USD", interval: "1 YEAR", raw: "{}" },
+    });
+    expect(result).toMatchObject({ salaryMin: 10000, salaryMax: 20000, salaryPeriod: "YEAR" });
+  });
+
+  it("recognises the other spellings boards use for the same period", () => {
+    const perYear = applyAtsPrecedence(base(), {
+      salary: { min: 120000, currency: "USD", interval: "per-year-salary", raw: "{}" },
+    });
+    const monthly = applyAtsPrecedence(base(), {
+      salary: { min: 5000, currency: "USD", interval: "per-month-salary", raw: "{}" },
+    });
+    expect(perYear).toMatchObject({ salaryMin: 10000, salaryPeriod: "YEAR" });
+    expect(monthly).toMatchObject({ salaryMin: 5000, salaryPeriod: "MONTH" });
+  });
+
+  it("leaves a monthly figure alone", () => {
+    const result = applyAtsPrecedence(base(), {
+      salary: { min: 110000, max: 130000, currency: "UAH", interval: "MONTH", raw: "{}" },
+    });
+    expect(result).toMatchObject({ salaryMin: 110000, salaryMax: 130000, salaryPeriod: "MONTH" });
+  });
+
+  it("turns an hourly rate into a monthly equivalent rather than storing it raw", () => {
+    const result = applyAtsPrecedence(base(), {
+      salary: { min: 50, currency: "USD", interval: "1 HOUR", raw: "{}" },
+    });
+    expect(result).toMatchObject({ salaryMin: 8400, salaryPeriod: "HOUR" });
+  });
+
+  it("treats an unstated period as already monthly", () => {
+    const result = applyAtsPrecedence(base(), {
+      salary: { min: 3000, currency: "USD", interval: null, raw: "{}" },
+    });
+    expect(result).toMatchObject({ salaryMin: 3000, salaryPeriod: null });
+  });
+
   it("ignores an ats salary object carrying no numbers", () => {
     const result = applyAtsPrecedence(base({ salaryMin: 1000 }), {
       salary: { min: null, max: null, currency: "USD", raw: "{}" },
