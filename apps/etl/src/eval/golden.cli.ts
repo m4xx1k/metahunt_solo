@@ -4,6 +4,7 @@ import { batch } from "./commands/batch";
 import { merge } from "./commands/merge";
 import { review } from "./commands/review";
 import { sample } from "./commands/sample";
+import { score } from "./commands/score";
 import { snapshot } from "./commands/snapshot";
 import { validate } from "./commands/validate";
 
@@ -14,6 +15,7 @@ const COMMANDS: Record<string, (argv: string[]) => Promise<void>> = {
   merge,
   arbitrate,
   review,
+  score,
   validate,
 };
 
