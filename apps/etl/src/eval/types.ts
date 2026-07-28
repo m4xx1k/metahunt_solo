@@ -99,3 +99,11 @@ export type Manifest = {
   coverage: CoverageCell[];
   entries: ManifestEntry[];
 };
+
+export type EvaluationSnapshot = {
+  generatedAt: string;
+  corpusSha256: string;
+  prompt: { version: number; sourceSha256: string };
+  taxonomy: { roles: string; domains: string; skills: string };
+  aliases: Record<string, string>;
+};

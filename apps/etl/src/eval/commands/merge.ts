@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 
-import { loadAliases, withDb } from "../db";
 import { paths, readJson, writeJson } from "../paths";
 import { scoreField } from "../scoring";
 import {
@@ -10,6 +9,7 @@ import {
   type LabelCandidate,
   type LabelFile,
   type Manifest,
+  type EvaluationSnapshot,
 } from "../types";
 
 const LABELLERS = ["a", "b"] as const;
@@ -41,7 +41,7 @@ function collectArbiter(): Map<string, Extraction> {
 export async function merge(): Promise<void> {
   const manifest = readJson<Manifest>(paths.manifest);
   const prod = readJson<Record<string, Extraction>>(paths.run("prod"));
-  const aliases = await withDb(loadAliases);
+  const aliases = readJson<EvaluationSnapshot>(paths.snapshot).aliases;
 
   const batches = batchCount(manifest);
   const [a, b] = LABELLERS.map((l) => collectLabels(batches, l));

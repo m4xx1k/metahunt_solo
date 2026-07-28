@@ -6,6 +6,7 @@ export const GOLDEN_DIR = resolve(__dirname, "../../golden");
 export const paths = {
   manifest: resolve(GOLDEN_DIR, "manifest.json"),
   corpus: resolve(GOLDEN_DIR, "corpus.enc.json"),
+  snapshot: resolve(GOLDEN_DIR, "snapshot.json"),
   candidates: resolve(GOLDEN_DIR, "candidates.json"),
   arbitration: resolve(GOLDEN_DIR, "arbitration.json"),
   decisions: resolve(GOLDEN_DIR, "decisions.json"),
