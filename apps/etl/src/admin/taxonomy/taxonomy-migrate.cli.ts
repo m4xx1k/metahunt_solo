@@ -7,7 +7,7 @@
  * Dry-run is the DEFAULT — nothing mutates without `--apply`.
  *
  * Usage (wrapped by the `taxonomy:migrate` npm script at repo root):
- *   pnpm taxonomy:migrate --plan apps/etl/src/admin/taxonomy/plans/role-v2.plan.json
+ *   pnpm taxonomy:migrate --plan apps/etl/src/admin/taxonomy/plans/<reviewed-plan>.json
  *   pnpm taxonomy:migrate --plan <path> --phase 1
  *   pnpm taxonomy:migrate --plan <path> --apply
  *

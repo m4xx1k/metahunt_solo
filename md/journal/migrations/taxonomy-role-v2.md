@@ -1,6 +1,6 @@
 # Taxonomy role v2 — 83 VERIFIED roles → 28 disciplines
 
-Active. Linear: MET-80 (safe merges, this commit), MET-81 (runbook), MET-70/71/72/73/79 (the plan itself), MET-77 (re-extraction), MET-24 (golden set, blocked on all of it).
+Active. Linear: MET-80 (safe merges, this commit), MET-81 (runbook), MET-70/71/72/73/79 (the plan itself), MET-77 (re-extraction). MET-24 is no longer blocked on the applied role-v2 plan; its own evaluation contract remains separate work.
 
 ## Why
 
@@ -42,7 +42,9 @@ New `node_slug_aliases (slug, type, node_id)` keeps a retired slug resolvable so
 
 ## The driver
 
-`pnpm taxonomy:migrate --plan apps/etl/src/admin/taxonomy/plans/role-v2.plan.json`
+`role-v2.plan.json` is applied and archived under `apps/etl/src/admin/taxonomy/plans/_done/`.
+Use `pnpm taxonomy:migrate --plan apps/etl/src/admin/taxonomy/plans/<reviewed-plan>.json` only for
+a new reviewed plan.
 
 **Dry-run is the default.** `--apply` mutates; `--phase N` runs one phase.
 
@@ -89,9 +91,19 @@ Pause `rss-ingest-hourly`, `tg-digest-daytime` and `dedup-sweep` first: ingest m
 
 ## Not yet done
 
-- Phases 3 and 4 of the plan (dumpster reassignment, then their hides) are not in `role-v2.plan.json` — the driver has no per-vacancy reassignment op yet, and `mergeInto` is the only writer of `vacancies.role_node_id` outside the loader.
+- Dumpster reassignment and its gated hides are future work, not an unapplied part of role-v2. They need a new reviewed plan because the driver still has no per-vacancy reassignment op and `mergeInto` is the only writer of `vacancies.role_node_id` outside the loader.
 - 11 child tracks are keyed on ROLE presets. With `track_nodes` now repointed by `mergeInto` and `FPGA Engineer` out of the merge list, nothing strands under *this* plan — the driver's post-checks assert it. Re-keying them onto SKILL presets is future-proofing for the next collapse, not a blocker.
 - Rollback is the verified `pg_dump` taken before any of this. Restore is all-or-nothing across the node-dependent tables: a partial restore of `nodes` alone leaves `vacancies.role_node_id` pointing at the merge targets, produces no FK error, and **passes the conservation checks while being wrong**.
+
+## Applied plan verification (2026-07-28)
+
+The owner-approved production dry-run resolved all 54 operations as `SKIP`, with zero `APPLY`,
+`REFUSE`, or warning verdicts. This establishes that role-v2 phases 1, 2, and 5 were already
+applied; the plan is archived and must not be re-run with `--apply`.
+
+The same read-only preflight reported zero for deleted role references, child tracks without
+presets, subscriptions holding dead node UUIDs, active subscriptions without a VERIFIED role arm,
+VERIFIED skills without `node_tech_meta`, and `node_stats` rows for deleted nodes.
 
 ## Re-run gate before golden-set work (2026-07-28)
 
