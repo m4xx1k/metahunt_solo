@@ -175,6 +175,20 @@ describe("scoreRun", () => {
     expect(report.missing).toBe(1);
   });
 
+  it("scores a recorded extraction failure as a hard zero and reports it separately", () => {
+    const report = scoreRun(
+      golden,
+      { one: golden[0].values, two: { _error: "provider quota exhausted" } },
+      aliases,
+    );
+    const failed = report.perPosting.find((p) => p.id === "two")!;
+    expect(failed.core).toBe(0);
+    expect(failed.all).toBe(0);
+    expect(report.missing).toBe(0);
+    expect(report.failures).toBe(1);
+    expect(report.failureRate).toBe(0.5);
+  });
+
   it("reports core separately so long-tail noise cannot mask a core regression", () => {
     const run = {
       one: { ...golden[0].values, role: "Frontend Developer", hasReservation: true },

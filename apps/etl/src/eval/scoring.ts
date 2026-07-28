@@ -117,6 +117,9 @@ export type ScoreReport = {
   postings: number;
   /** Golden rows the run produced nothing for — scored 0, counted here so it is visible. */
   missing: number;
+  /** Golden rows whose extraction returned an error — scored 0, not null-matched. */
+  failures: number;
+  failureRate: number;
   core: number;
   all: number;
   byField: { field: Field; score: number }[];
@@ -132,13 +135,13 @@ export function scoreRun(
   aliases: Aliases,
 ): ScoreReport {
   const perPosting = golden.map((row) => {
-    // A posting the run produced nothing for scores zero everywhere. Falling back to
-    // an empty object instead rewarded every null golden field and scored a total
-    // extraction crash at 0.87 — blind to the failure the harness exists to catch.
+    // Missing output or recorded errors score zero; otherwise errors null-match
+    // absent golden fields and look like partial successes.
     const actual = run[row.id];
+    const unavailable = !actual || actual._error !== undefined;
     const scores: Record<string, number> = {};
     for (const field of FIELDS) {
-      scores[field] = actual ? scoreField(field, row.values, actual, aliases) : 0;
+      scores[field] = unavailable ? 0 : scoreField(field, row.values, actual, aliases);
     }
     return {
       id: row.id,
@@ -147,10 +150,13 @@ export function scoreRun(
       scores,
     };
   });
+  const failures = golden.filter((row) => run[row.id]?._error !== undefined).length;
 
   return {
     postings: golden.length,
     missing: golden.filter((row) => !run[row.id]).length,
+    failures,
+    failureRate: golden.length === 0 ? 0 : failures / golden.length,
     core: mean(perPosting.map((p) => p.core)),
     all: mean(perPosting.map((p) => p.all)),
     byField: FIELDS.map((field) => ({
