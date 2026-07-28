@@ -28,6 +28,9 @@ const remoteSource: Source = {
   displayName: "Djinni",
   baseUrl: "https://djinni.co",
   rssUrl: "https://djinni.co/jobs/rss/",
+  kind: "rss",
+  atsType: null,
+  atsSlug: null,
   createdAt: new Date(),
 };
 
@@ -37,6 +40,9 @@ const localSource: Source = {
   displayName: "DOU",
   baseUrl: "https://dou.ua",
   rssUrl: null,
+  kind: "rss",
+  atsType: null,
+  atsSlug: null,
   createdAt: new Date(),
 };
 
