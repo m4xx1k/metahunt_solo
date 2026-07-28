@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { decodeText } from "../corpus-codec";
-import { loadTaxonomy, withDb } from "../db";
 import { paths, readJson, writeJson } from "../paths";
-import type { Manifest } from "../types";
+import { assertCorpusSnapshot } from "../snapshot";
+import type { EvaluationSnapshot, Manifest } from "../types";
 
 const BATCH_SIZE = 5;
 const SPEC_FILE = resolve(__dirname, "../../../baml_src/extract-vacancy.baml");
@@ -21,7 +21,8 @@ function loadFieldSpec(): string {
 export async function batch(): Promise<void> {
   const manifest = readJson<Manifest>(paths.manifest);
   const corpus = readJson<Record<string, string>>(paths.corpus);
-  const taxonomy = await withDb(loadTaxonomy);
+  const snapshot = readJson<EvaluationSnapshot>(paths.snapshot);
+  assertCorpusSnapshot(corpus, snapshot);
 
   const spec = loadFieldSpec();
   const batches = Math.ceil(manifest.entries.length / BATCH_SIZE);
@@ -32,7 +33,7 @@ export async function batch(): Promise<void> {
       batch: i + 1,
       of: batches,
       spec,
-      taxonomy,
+      taxonomy: snapshot.taxonomy,
       postings: slice.map((e) => ({ id: e.id, text: decodeText(corpus[e.id]) })),
     });
   }
