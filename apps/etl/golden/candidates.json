@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T05:59:14.577Z",
+  "generatedAt": "2026-07-28T22:39:10.010Z",
   "candidates": [
     {
       "id": "00060c1e-3eb9-4c5c-a26e-f336321feb0e",
@@ -213,7 +213,7 @@
         },
         "salary": {
           "value": null,
-          "verdict": "prod-differs",
+          "verdict": "agreed",
           "a": null,
           "b": null,
           "prod": {
@@ -476,7 +476,10 @@
           "prod": null
         },
         "skills": {
-          "value": null,
+          "value": {
+            "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
+            "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
+          },
           "verdict": "contested",
           "a": {
             "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
@@ -486,7 +489,11 @@
             "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
             "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
           },
-          "prod": null
+          "prod": null,
+          "arbiter": {
+            "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
+            "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
+          }
         },
         "experienceYears": {
           "value": 5,
@@ -531,11 +538,12 @@
           "prod": null
         },
         "domain": {
-          "value": null,
+          "value": "Utilities",
           "verdict": "contested",
           "a": null,
           "b": "Utilities",
-          "prod": null
+          "prod": null,
+          "arbiter": "Utilities"
         },
         "engagementType": {
           "value": "OUTSOURCE",
@@ -595,7 +603,10 @@
           "prod": "SENIOR"
         },
         "skills": {
-          "value": null,
+          "value": {
+            "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
+            "optional": ["React", "Next.js", "Temporal", "Qdrant", "LiteLLM"]
+          },
           "verdict": "contested",
           "a": {
             "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
@@ -608,6 +619,10 @@
           "prod": {
             "optional": ["React", "Next.js", "Temporal", "Qdrant", "Docker"],
             "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph"]
+          },
+          "arbiter": {
+            "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
+            "optional": ["React", "Next.js", "Temporal", "Qdrant", "LiteLLM"]
           }
         },
         "experienceYears": {
@@ -1016,7 +1031,21 @@
           "prod": null
         },
         "skills": {
-          "value": null,
+          "value": {
+            "required": [
+              "Python",
+              "Go",
+              "Java",
+              "Node.js",
+              ".NET",
+              "React",
+              "Angular",
+              "Vue.js",
+              "PostgreSQL",
+              "LLM"
+            ],
+            "optional": ["RAG", "LangChain", "LlamaIndex", "Haystack"]
+          },
           "verdict": "contested",
           "a": {
             "required": [
@@ -1048,7 +1077,22 @@
             ],
             "optional": ["RAG", "Vector Databases", "LangChain", "LlamaIndex", "Haystack"]
           },
-          "prod": null
+          "prod": null,
+          "arbiter": {
+            "required": [
+              "Python",
+              "Go",
+              "Java",
+              "Node.js",
+              ".NET",
+              "React",
+              "Angular",
+              "Vue.js",
+              "PostgreSQL",
+              "LLM"
+            ],
+            "optional": ["RAG", "LangChain", "LlamaIndex", "Haystack"]
+          }
         },
         "experienceYears": {
           "value": 2,
@@ -2137,11 +2181,12 @@
           ]
         },
         "domain": {
-          "value": null,
+          "value": "Customer Support",
           "verdict": "contested",
           "a": "Customer Support",
           "b": null,
-          "prod": "SaaS"
+          "prod": "SaaS",
+          "arbiter": "Customer Support"
         },
         "engagementType": {
           "value": "OUTSOURCE",
@@ -2224,10 +2269,15 @@
           "verdict": "contested",
           "a": 0,
           "b": null,
-          "prod": 0
+          "prod": 0,
+          "arbiter": null
         },
         "salary": {
-          "value": null,
+          "value": {
+            "min": 200,
+            "max": 500,
+            "currency": "EUR"
+          },
           "verdict": "contested",
           "a": {
             "min": 500,
@@ -2242,6 +2292,11 @@
           "prod": {
             "max": 500,
             "min": 200,
+            "currency": "EUR"
+          },
+          "arbiter": {
+            "min": 200,
+            "max": 500,
             "currency": "EUR"
           }
         },
@@ -2755,7 +2810,21 @@
           "prod": "LEAD"
         },
         "skills": {
-          "value": null,
+          "value": {
+            "required": [
+              "AWS",
+              "Kubernetes",
+              "Terraform",
+              "Helm",
+              "GitHub Actions",
+              "ArgoCD",
+              "Prometheus",
+              "Grafana",
+              "Redis",
+              "Python"
+            ],
+            "optional": ["Kafka", "Linux", "Cloudflare"]
+          },
           "verdict": "contested",
           "a": {
             "required": [
@@ -2801,6 +2870,21 @@
               "Python",
               "Bash"
             ]
+          },
+          "arbiter": {
+            "required": [
+              "AWS",
+              "Kubernetes",
+              "Terraform",
+              "Helm",
+              "GitHub Actions",
+              "ArgoCD",
+              "Prometheus",
+              "Grafana",
+              "Redis",
+              "Python"
+            ],
+            "optional": ["Kafka", "Linux", "Cloudflare"]
           }
         },
         "experienceYears": {
@@ -2896,11 +2980,12 @@
           "prod": true
         },
         "role": {
-          "value": null,
+          "value": "Embedded Software Engineer",
           "verdict": "contested",
           "a": "Embedded Software Engineer",
           "b": "Software Engineer",
-          "prod": "Embedded Software Engineer"
+          "prod": "Embedded Software Engineer",
+          "arbiter": "Embedded Software Engineer"
         },
         "seniority": {
           "value": "MIDDLE",
@@ -3189,7 +3274,19 @@
           "prod": null
         },
         "skills": {
-          "value": null,
+          "value": {
+            "required": [
+              "Windows Server",
+              "Active Directory",
+              "Microsoft Entra ID",
+              "Microsoft 365",
+              "Azure",
+              "Linux",
+              "TCP/IP",
+              "Jira"
+            ],
+            "optional": ["Microsoft Purview", "Microsoft Intune", "Splunk", "PowerShell", "Python"]
+          },
           "verdict": "contested",
           "a": {
             "required": [
@@ -3241,6 +3338,19 @@
               "Azure",
               "Jira"
             ]
+          },
+          "arbiter": {
+            "required": [
+              "Windows Server",
+              "Active Directory",
+              "Microsoft Entra ID",
+              "Microsoft 365",
+              "Azure",
+              "Linux",
+              "TCP/IP",
+              "Jira"
+            ],
+            "optional": ["Microsoft Purview", "Microsoft Intune", "Splunk", "PowerShell", "Python"]
           }
         },
         "experienceYears": {
@@ -3286,11 +3396,12 @@
           "prod": []
         },
         "domain": {
-          "value": null,
+          "value": "Insurance",
           "verdict": "contested",
           "a": "Insurance",
           "b": "Fintech",
-          "prod": "Insurance"
+          "prod": "Insurance",
+          "arbiter": "Insurance"
         },
         "engagementType": {
           "value": "PRODUCT",
@@ -3336,11 +3447,12 @@
           "prod": null
         },
         "role": {
-          "value": null,
+          "value": "QA Engineer",
           "verdict": "contested",
           "a": "QA Engineer",
           "b": "Automation QA Engineer",
-          "prod": "Manual QA Engineer"
+          "prod": "Manual QA Engineer",
+          "arbiter": "QA Engineer"
         },
         "seniority": {
           "value": "MIDDLE",
