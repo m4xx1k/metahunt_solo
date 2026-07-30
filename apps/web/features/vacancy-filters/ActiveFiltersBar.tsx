@@ -56,6 +56,7 @@ export function ActiveFiltersBar({
           </span>
         </button>
       ))}
+      <ExcludedSkillChips api={api} skills={skills} />
       {api.activeCount === 0 ? (
         <span className="font-mono text-2xs text-text-muted">nothing selected</span>
       ) : (
@@ -131,8 +132,7 @@ function buildChips(
       chips.push({
         key: `seniority-${o.id}`,
         label: `seniority: ${o.label}`,
-        tone:
-          SENIORITY_OUTLINE_TONE[o.id as Seniority] ?? "border-accent text-accent",
+        tone: SENIORITY_OUTLINE_TONE[o.id as Seniority] ?? "border-accent text-accent",
         onRemove: () => api.toggleSeniority(o.id),
       });
     }
@@ -185,4 +185,23 @@ function buildChips(
   }
 
   return chips;
+}
+
+export function ExcludedSkillChips({ api, skills }: { api: FiltersApi; skills: OptionRow[] }) {
+  return api.filters.excludedSkillIds.map((id) => {
+    const skill = skills.find((option) => option.id === id);
+    return (
+      <button
+        key={`excluded-skill-${id}`}
+        type="button"
+        onClick={() => api.toggleExcludedSkill(id)}
+        className="inline-flex items-center gap-2 border border-danger/60 px-2 py-[2px] font-mono text-2xs text-danger hover:bg-bg-elev"
+      >
+        без: {skill?.label ?? id}
+        <span aria-hidden className="text-text-muted">
+          ×
+        </span>
+      </button>
+    );
+  });
 }

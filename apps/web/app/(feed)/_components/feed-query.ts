@@ -51,20 +51,16 @@ export function buildFeedListQuery(
   // Axis params: absent → the track's preset; present (even "") → the explicit set.
   const roleIds = p.has("roles") ? readList(p.get("roles")) : presetRoleIds;
   const skillIds = p.has("skills") ? readList(p.get("skills")) : presetSkillIds;
+  const excludedSkillIds = readList(p.get("excludeSkills"));
   const domainIds = readList(p.get("domains"));
 
   const sourceCode = p.get("source");
-  const sourceId = sourceCode
-    ? sources.find((s) => s.code === sourceCode)?.id
-    : undefined;
+  const sourceId = sourceCode ? sources.find((s) => s.code === sourceCode)?.id : undefined;
 
   const seniorities = coerceEnumList(SENIORITY_VALUES, p.get("seniorities") ?? undefined);
   const workFormats = coerceEnumList(WORK_FORMAT_VALUES, p.get("workFormats") ?? undefined);
   const englishLevels = coerceEnumList(ENGLISH_LEVEL_VALUES, p.get("english") ?? undefined);
-  const employmentTypes = coerceEnumList(
-    EMPLOYMENT_TYPE_VALUES,
-    p.get("employment") ?? undefined,
-  );
+  const employmentTypes = coerceEnumList(EMPLOYMENT_TYPE_VALUES, p.get("employment") ?? undefined);
   const postedWithinDays =
     FRESHNESS_DAYS[p.get("fresh") ?? ""] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS];
   const experience = readList(p.get("experience"));
@@ -77,6 +73,7 @@ export function buildFeedListQuery(
     pageSize: PAGE_SIZE,
     roleIds: roleIds.length > 0 ? roleIds : undefined,
     skillIds: skillIds.length > 0 ? skillIds : undefined,
+    excludedSkillIds: excludedSkillIds.length > 0 ? excludedSkillIds : undefined,
     domainIds: domainIds.length > 0 ? domainIds : undefined,
     includeOptionalSkills: p.get("nice") === "true" ? true : undefined,
     sourceId: sourceId ?? undefined,
@@ -99,6 +96,7 @@ export function toSubscriptionParams(q: ListVacanciesQuery): SubscriptionParams 
   return {
     roleIds: q.roleIds,
     skillIds: q.skillIds,
+    excludedSkillIds: q.excludedSkillIds,
     domainIds: q.domainIds,
     sourceId: q.sourceId,
     seniorities: q.seniorities,

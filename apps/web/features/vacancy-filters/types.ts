@@ -49,6 +49,7 @@ export interface FilterState {
   roleIds: string[];
   /** IDs of required (must-have) skills. */
   skillIds: string[];
+  excludedSkillIds: string[];
   /** IDs of domains to match (OR-combined). */
   domainIds: string[];
   sourceCode: string | null;
@@ -70,6 +71,7 @@ export interface FilterState {
 export const EMPTY_FILTERS: FilterState = {
   roleIds: [],
   skillIds: [],
+  excludedSkillIds: [],
   domainIds: [],
   sourceCode: null,
   seniorities: [],
@@ -96,6 +98,7 @@ export interface FiltersApi {
   filters: FilterState;
   toggleRole: (id: string) => void;
   toggleSkill: (id: string) => void;
+  toggleExcludedSkill: (id: string) => void;
   toggleDomain: (id: string) => void;
   setSource: (code: string | null) => void;
   toggleSeniority: (v: string) => void;

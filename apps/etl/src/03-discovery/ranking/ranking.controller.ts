@@ -49,6 +49,11 @@ export class RankingController {
   @ApiOkResponse({ description: "Ranked vacancies and match metadata." })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async match(@Body() dto: MatchDto) {
+    const [domainIds, roleNodeIds, excludedSkillNodeIds] = await Promise.all([
+      this.slugs.toIds("DOMAIN", dto.domainIds),
+      this.slugs.toIds("ROLE", dto.roleIds),
+      this.slugs.toIds("SKILL", dto.excludedSkillIds),
+    ]);
     return this.ranking.match(
       dto.skills ?? [],
       {
@@ -56,8 +61,9 @@ export class RankingController {
         workFormats: dto.workFormats,
         englishLevels: dto.englishLevels,
         employmentTypes: dto.employmentTypes,
-        domainIds: await this.slugs.toIds("DOMAIN", dto.domainIds),
-        roleNodeIds: await this.slugs.toIds("ROLE", dto.roleIds),
+        domainIds,
+        roleNodeIds,
+        excludedSkillNodeIds,
         experienceYears: dto.experienceYears,
         hasTestAssignment: dto.hasTestAssignment,
         hasReservation: dto.hasReservation,

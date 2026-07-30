@@ -9,7 +9,7 @@ import { RolesGuard } from "./roles.guard";
 import { TelegramLoginGc } from "./telegram-login.gc";
 import { TelegramLoginService } from "./telegram-login.service";
 
-// Consumer auth: Telegram Login → own session JWT + role guards. ConfigService
+// Consumer auth: provider identity → own session JWT + role guards. ConfigService
 // is global (ConfigModule.isGlobal), so JwtModule reads JWT_SECRET directly.
 @Module({
   imports: [

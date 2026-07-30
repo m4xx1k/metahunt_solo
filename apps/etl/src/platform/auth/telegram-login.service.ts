@@ -1,6 +1,13 @@
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
 
@@ -21,7 +28,8 @@ const TTL_MS = 5 * 60_000;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 4;
 
-export type TelegramLoginConfirmResult = "authorized" | "already_authorized" | "invalid";
+export type TelegramLoginConfirmResult =
+  "authorized" | "already_authorized" | "identity_conflict" | "invalid";
 
 export function isLoginStartPayload(payload: string): boolean {
   return payload.startsWith(START_PREFIX);
@@ -46,7 +54,7 @@ function verificationCode(): string {
 }
 
 /**
- * Telegram login without the widget, guarded on two sides: the poll secret
+ * Telegram login without a browser widget, guarded on two sides: the poll secret
  * never leaves the originating browser, and confirmation in the bot is explicit
  * and code-matched — so a forwarded link cannot hand the tapper's account to
  * whoever minted it.
@@ -58,9 +66,13 @@ export class TelegramLoginService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly auth: AuthService,
+    private readonly config: ConfigService,
   ) {}
 
-  async start(): Promise<TelegramLoginStartResponse> {
+  async start(linkUserId?: string): Promise<TelegramLoginStartResponse> {
+    if (!(this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "")) {
+      throw new ServiceUnavailableException("Telegram login is not configured");
+    }
     const nonce = randomBytes(NONCE_BYTES).toString("base64url");
     const pollSecret = randomBytes(POLL_SECRET_BYTES).toString("base64url");
     const code = verificationCode();
@@ -69,6 +81,7 @@ export class TelegramLoginService {
       nonce,
       pollSecretHash: hash(pollSecret),
       verificationCode: code,
+      linkUserId,
       expiresAt: new Date(Date.now() + TTL_MS),
     });
 
@@ -78,16 +91,25 @@ export class TelegramLoginService {
   // Deliberately side-effect free: pressing START must not authorize a login.
   async describe(
     startPayload: string,
-  ): Promise<{ nonce: string; verificationCode: string } | null> {
+  ): Promise<{ nonce: string; verificationCode: string; mode: "login" | "link" } | null> {
     if (!isLoginStartPayload(startPayload)) return null;
     const nonce = startPayload.slice(START_PREFIX.length);
     if (nonce.length === 0) return null;
 
     const [row] = await this.db
-      .select({ verificationCode: telegramLoginRequests.verificationCode })
+      .select({
+        verificationCode: telegramLoginRequests.verificationCode,
+        linkUserId: telegramLoginRequests.linkUserId,
+      })
       .from(telegramLoginRequests)
       .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()));
-    return row ? { nonce, verificationCode: row.verificationCode } : null;
+    return row
+      ? {
+          nonce,
+          verificationCode: row.verificationCode,
+          mode: row.linkUserId === null ? "login" : "link",
+        }
+      : null;
   }
 
   // `chatId` comes off a Bot API update, so it needs no HMAC. The row is locked
@@ -99,25 +121,56 @@ export class TelegramLoginService {
   ): Promise<TelegramLoginConfirmResult> {
     return this.db.transaction(async (tx) => {
       const [row] = await tx
-        .select({ userId: telegramLoginRequests.userId })
+        .select({
+          userId: telegramLoginRequests.userId,
+          linkUserId: telegramLoginRequests.linkUserId,
+          failure: telegramLoginRequests.failure,
+        })
         .from(telegramLoginRequests)
         .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()))
         .for("update");
       if (!row) return "invalid";
       if (row.userId !== null) return "already_authorized";
+      if (row.failure === "identity_conflict") return "identity_conflict";
 
-      const { userId, created } = await this.auth.resolveTelegramUser(
-        chatId,
-        profile.username ?? null,
-        profile.firstName ?? null,
-        tx,
-      );
+      let userId: string;
+      let created: boolean;
+      try {
+        if (row.linkUserId !== null) {
+          userId = row.linkUserId;
+          created = false;
+          await this.auth.linkTrustedTelegramUser(
+            userId,
+            chatId,
+            { username: profile.username ?? null, firstName: profile.firstName ?? null },
+            tx,
+          );
+        } else {
+          const resolved = await this.auth.resolveTelegramUser(
+            chatId,
+            profile.username ?? null,
+            profile.firstName ?? null,
+            tx,
+          );
+          userId = resolved.userId;
+          created = resolved.created;
+        }
+      } catch (error) {
+        if (!(error instanceof ConflictException)) throw error;
+        await tx
+          .update(telegramLoginRequests)
+          .set({ failure: "identity_conflict" })
+          .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()));
+        return "identity_conflict";
+      }
       await tx
         .update(telegramLoginRequests)
         .set({ userId, isNewUser: created })
         .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()));
 
-      this.logger.log(`telegram deep-link login confirmed for user ${userId} new=${created}`);
+      this.logger.log(
+        `telegram deep-link ${row.linkUserId === null ? "login" : "link"} confirmed for user ${userId} new=${created}`,
+      );
       return "authorized";
     });
   }
@@ -137,20 +190,20 @@ export class TelegramLoginService {
         pollSecretHash: telegramLoginRequests.pollSecretHash,
         userId: telegramLoginRequests.userId,
         isNewUser: telegramLoginRequests.isNewUser,
+        failure: telegramLoginRequests.failure,
       })
       .from(telegramLoginRequests)
       .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()));
     if (!row || !secretMatches(pollSecret, row.pollSecretHash)) return { status: "expired" };
+    if (row.failure === "identity_conflict") {
+      const consumed = await this.consume(nonce);
+      return consumed ? { status: "conflict" } : { status: "expired" };
+    }
     if (row.userId === null) return { status: "pending" };
 
     // Single-use: the `consumed_at IS NULL` predicate is what makes two
     // concurrent polls resolve to one session rather than two.
-    const consumed = await this.db
-      .update(telegramLoginRequests)
-      .set({ consumedAt: new Date() })
-      .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()))
-      .returning({ nonce: telegramLoginRequests.nonce });
-    if (consumed.length === 0) return { status: "expired" };
+    if (!(await this.consume(nonce))) return { status: "expired" };
 
     const session = await this.auth.issueSession(row.userId, row.isNewUser);
     return { status: "ready", ...session };
@@ -171,5 +224,14 @@ export class TelegramLoginService {
       isNull(telegramLoginRequests.consumedAt),
       gt(telegramLoginRequests.expiresAt, sql`now()`),
     ];
+  }
+
+  private async consume(nonce: string): Promise<boolean> {
+    const consumed = await this.db
+      .update(telegramLoginRequests)
+      .set({ consumedAt: new Date() })
+      .where(and(eq(telegramLoginRequests.nonce, nonce), ...this.livePredicates()))
+      .returning({ nonce: telegramLoginRequests.nonce });
+    return consumed.length > 0;
   }
 }

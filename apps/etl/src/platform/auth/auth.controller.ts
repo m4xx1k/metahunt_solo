@@ -27,7 +27,6 @@ import type {
   GoogleLoginRequest,
   TelegramLoginPollRequest,
   TelegramLoginPollResponse,
-  TelegramLoginRequest,
   TelegramLoginResponse,
   TelegramLoginStartResponse,
 } from "./auth.contract";
@@ -37,7 +36,6 @@ import {
   GoogleLoginRequestDto,
   TelegramLoginPollRequestDto,
   TelegramLoginPollResponseDto,
-  TelegramLoginRequestDto,
   TelegramLoginResponseDto,
   TelegramLoginStartResponseDto,
 } from "./auth.swagger.dto";
@@ -84,29 +82,6 @@ export class AuthController {
     return this.telegramLogin.poll(nonce, pollSecret);
   }
 
-  @Post("telegram")
-  @ApiOperation({ summary: "Verify Telegram login and return a Bearer session" })
-  @ApiBody({ type: TelegramLoginRequestDto })
-  @ApiOkResponse({ type: TelegramLoginResponseDto })
-  @ApiBadRequestResponse({ description: "Malformed Telegram payload.", type: ApiErrorResponseDto })
-  @ApiUnauthorizedResponse({
-    description: "Telegram verification failed.",
-    type: ApiErrorResponseDto,
-  })
-  @Throttle(TELEGRAM_LOGIN_THROTTLE)
-  async telegram(@Body() body: Partial<TelegramLoginRequest>): Promise<TelegramLoginResponse> {
-    const tg = body?.telegram;
-    if (
-      !tg ||
-      typeof tg !== "object" ||
-      typeof tg.id === "undefined" ||
-      typeof tg.hash !== "string"
-    ) {
-      throw new BadRequestException("telegram payload is required");
-    }
-    return this.auth.loginTelegram(tg);
-  }
-
   @Post("google")
   @ApiOperation({ summary: "Verify a Google ID token and return a Bearer session" })
   @ApiBody({ type: GoogleLoginRequestDto })
@@ -141,25 +116,14 @@ export class AuthController {
     return this.requireMe(user.userId);
   }
 
-  // Linking Telegram is what starts digest delivery for a Google-first account,
-  // so it also adopts whatever that chat already owns.
-  @Post("link/telegram")
+  @Post("link/telegram/start")
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: "Attach a Telegram account to the current session" })
+  @ApiOperation({ summary: "Begin linking a Telegram account to the current session" })
   @ApiBearerAuth()
-  @ApiBody({ type: TelegramLoginRequestDto })
-  @ApiOkResponse({ type: AuthUserDto })
+  @ApiOkResponse({ type: TelegramLoginStartResponseDto })
   @Throttle(TELEGRAM_LOGIN_THROTTLE)
-  async linkTelegram(
-    @CurrentUser() user: JwtUser,
-    @Body() body: Partial<TelegramLoginRequest>,
-  ): Promise<AuthUser> {
-    const tg = body?.telegram;
-    if (!tg || typeof tg !== "object" || typeof tg.id === "undefined") {
-      throw new BadRequestException("telegram payload is required");
-    }
-    await this.auth.linkTelegramTo(user.userId, tg);
-    return this.requireMe(user.userId);
+  async startTelegramLink(@CurrentUser() user: JwtUser): Promise<TelegramLoginStartResponse> {
+    return this.telegramLogin.start(user.userId);
   }
 
   @Delete("link/:provider")

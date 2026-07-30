@@ -439,3 +439,38 @@ describe("company on the DTO (integration)", () => {
     expect(card.company!.name).toBe("ЛУН");
   });
 });
+
+describe("FeedService.search — excluded skills (integration)", () => {
+  it("hides required exclusions without hiding optional ones", async () => {
+    const source = await seedSource();
+    const role = await seedRole();
+    const [skill] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "PHP", status: "VERIFIED" })
+      .returning({ id: schema.nodes.id });
+    const required = await seedVacancy({
+      sourceId: source.sourceId,
+      ingestId: source.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(),
+    });
+    const optional = await seedVacancy({
+      sourceId: source.sourceId,
+      ingestId: source.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(),
+    });
+    await db.insert(schema.vacancyNodes).values([
+      { vacancyId: required, nodeId: skill.id, isRequired: true },
+      { vacancyId: optional, nodeId: skill.id, isRequired: false },
+    ]);
+
+    const result = await feed.search({
+      page: 1,
+      pageSize: 20,
+      excludedSkillIds: [skill.id],
+    });
+
+    expect(result.items.map((item) => item.id)).toEqual([optional]);
+  });
+});

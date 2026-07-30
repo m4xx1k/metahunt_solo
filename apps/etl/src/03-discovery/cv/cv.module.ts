@@ -7,6 +7,7 @@ import { RankingModule } from "../ranking/ranking.module";
 import { AdditionalSkillsService } from "./additional-skills.service";
 import { CANDIDATE_EXTRACTOR } from "./candidate-extractor.port";
 import { CandidateLoaderService } from "./candidate-loader.service";
+import { CandidateMatchService } from "./candidate-match.service";
 import { BamlCandidateExtractor } from "./candidate.extractor";
 import { CvController } from "./cv.controller";
 
@@ -14,10 +15,11 @@ import { CvController } from "./cv.controller";
   imports: [AuthModule, RankingModule, NodeSlugModule],
   providers: [
     CandidateLoaderService,
+    CandidateMatchService,
     AdditionalSkillsService,
     { provide: CANDIDATE_EXTRACTOR, useClass: BamlCandidateExtractor },
   ],
   controllers: [CvController],
-  exports: [CandidateLoaderService], // for the Telegram CV-sub digest
+  exports: [CandidateLoaderService, CandidateMatchService],
 })
 export class CvModule {}

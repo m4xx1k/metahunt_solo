@@ -48,16 +48,12 @@ export function useUrlFilters(): FiltersApi {
 
   // Freshness always resolves to a window; the default (month) is the clean URL.
   const setFreshness = useCallback(
-    (v: string) =>
-      commit((n) =>
-        v === DEFAULT_FRESHNESS ? n.delete("fresh") : n.set("fresh", v),
-      ),
+    (v: string) => commit((n) => (v === DEFAULT_FRESHNESS ? n.delete("fresh") : n.set("fresh", v))),
     [commit],
   );
 
   const setValue = useCallback(
-    (key: string, v: string | null) =>
-      commit((n) => (v ? n.set(key, v) : n.delete(key))),
+    (key: string, v: string | null) => commit((n) => (v ? n.set(key, v) : n.delete(key))),
     [commit],
   );
 
@@ -73,6 +69,7 @@ export function useUrlFilters(): FiltersApi {
         for (const key of [
           "roles",
           "skills",
+          "excludeSkills",
           "domains",
           "source",
           "seniorities",
@@ -94,6 +91,7 @@ export function useUrlFilters(): FiltersApi {
   const activeCount =
     filters.roleIds.length +
     filters.skillIds.length +
+    filters.excludedSkillIds.length +
     filters.domainIds.length +
     (filters.sourceCode ? 1 : 0) +
     filters.seniorities.length +
@@ -110,41 +108,21 @@ export function useUrlFilters(): FiltersApi {
     filters,
     toggleRole: useCallback((id: string) => toggleList("roles", id), [toggleList]),
     toggleSkill: useCallback((id: string) => toggleList("skills", id), [toggleList]),
-    toggleDomain: useCallback(
-      (id: string) => toggleList("domains", id),
-      [toggleList],
-    ),
+    toggleExcludedSkill: useCallback((id: string) => toggleList("excludeSkills", id), [toggleList]),
+    toggleDomain: useCallback((id: string) => toggleList("domains", id), [toggleList]),
     setSource: useCallback((code: string | null) => setValue("source", code), [setValue]),
-    toggleSeniority: useCallback(
-      (v: string) => toggleList("seniorities", v),
-      [toggleList],
-    ),
-    toggleWorkFormat: useCallback(
-      (v: string) => toggleList("workFormats", v),
-      [toggleList],
-    ),
-    toggleEnglishLevel: useCallback(
-      (v: string) => toggleList("english", v),
-      [toggleList],
-    ),
-    toggleEmploymentType: useCallback(
-      (v: string) => toggleList("employment", v),
-      [toggleList],
-    ),
-    toggleExperience: useCallback(
-      (v: string) => toggleList("experience", v),
-      [toggleList],
-    ),
+    toggleSeniority: useCallback((v: string) => toggleList("seniorities", v), [toggleList]),
+    toggleWorkFormat: useCallback((v: string) => toggleList("workFormats", v), [toggleList]),
+    toggleEnglishLevel: useCallback((v: string) => toggleList("english", v), [toggleList]),
+    toggleEmploymentType: useCallback((v: string) => toggleList("employment", v), [toggleList]),
+    toggleExperience: useCallback((v: string) => toggleList("experience", v), [toggleList]),
     setFreshness,
     setTest: useCallback((v: boolean | null) => setTristate("test", v), [setTristate]),
     setReservation: useCallback(
       (v: boolean | null) => setTristate("reservation", v),
       [setTristate],
     ),
-    setMinFitTier: useCallback(
-      (v: string | null) => setValue("minFitTier", v),
-      [setValue],
-    ),
+    setMinFitTier: useCallback((v: string | null) => setValue("minFitTier", v), [setValue]),
     clear,
     activeCount,
   };

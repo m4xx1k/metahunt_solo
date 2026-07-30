@@ -41,7 +41,7 @@ const ANALYTICS_EVENTS = {
 } as const;
 
 export type Lens = "cold" | "warm";
-export type TelegramLoginMethod = "deeplink" | "widget";
+export type TelegramLoginMethod = "deeplink";
 export type LoginProvider = "telegram" | "google";
 export type SubscriptionProfile = "feed" | "cv";
 
@@ -139,14 +139,10 @@ export function useAnalytics() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadFailed);
       },
 
-      // `method` splits the bot deep-link flow from the legacy widget, so the
-      // two can be compared on the same funnel while both are live.
       telegramLoginStarted(method: TelegramLoginMethod) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginStarted, { method });
       },
 
-      // ms_since_start separates a human closing the popup (seconds) from a
-      // popup that never opened — blocker or widget failure (sub-second).
       telegramLoginCancelled(msSinceStart: number, method: TelegramLoginMethod) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled, {
           ms_since_start: msSinceStart,
@@ -155,7 +151,7 @@ export function useAnalytics() {
       },
 
       telegramLoginFailed(
-        stage: "configuration" | "widget" | "session" | "expired",
+        stage: "configuration" | "session" | "expired",
         method: TelegramLoginMethod,
       ) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginFailed, { stage, method });

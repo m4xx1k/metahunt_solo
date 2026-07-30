@@ -19,6 +19,8 @@ import type {
 export type SubscriptionParams = Omit<ListVacanciesQuery, "page" | "pageSize">;
 
 export interface CvMatchParams {
+  roleIds?: string[];
+  excludedSkillIds?: string[];
   seniorities?: Seniority[];
   workFormats?: WorkFormat[];
   englishLevels?: EnglishLevel[];

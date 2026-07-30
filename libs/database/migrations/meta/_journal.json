@@ -246,6 +246,13 @@
       "when": 1785145685293,
       "tag": "0034_eager_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1785368410247,
+      "tag": "0035_safe_auth_linking",
+      "breakpoints": true
     }
   ]
 }

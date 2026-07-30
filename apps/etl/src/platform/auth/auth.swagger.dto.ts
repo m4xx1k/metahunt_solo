@@ -1,33 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
-export class TelegramWidgetPayloadDto {
-  @ApiProperty({ example: 123456789 })
-  id!: number;
-
-  @ApiProperty({ example: 1760000000, description: "Unix timestamp from Telegram." })
-  auth_date!: number;
-
-  @ApiProperty({ description: "Telegram login-widget HMAC signature." })
-  hash!: string;
-
-  @ApiPropertyOptional({ example: "metahunt_user" })
-  username?: string;
-
-  @ApiPropertyOptional({ example: "Maksym" })
-  first_name?: string;
-
-  @ApiPropertyOptional({ example: "User" })
-  last_name?: string;
-
-  @ApiPropertyOptional({ format: "uri" })
-  photo_url?: string;
-}
-
-export class TelegramLoginRequestDto {
-  @ApiProperty({ type: TelegramWidgetPayloadDto })
-  telegram!: TelegramWidgetPayloadDto;
-}
-
 export class GoogleLoginRequestDto {
   @ApiProperty({ description: "The ID token Google Identity Services returns." })
   credential!: string;
@@ -104,8 +76,8 @@ export class TelegramLoginPollRequestDto {
 }
 
 export class TelegramLoginPollResponseDto {
-  @ApiProperty({ enum: ["pending", "expired", "ready"] })
-  status!: "pending" | "expired" | "ready";
+  @ApiProperty({ enum: ["pending", "expired", "conflict", "ready"] })
+  status!: "pending" | "expired" | "conflict" | "ready";
 
   @ApiPropertyOptional({ description: "Present when status is ready." })
   token?: string;

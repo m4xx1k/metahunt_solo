@@ -7,12 +7,10 @@ that, not by the provider. Adding a third provider changes nothing else.
 
 ## Telegram
 
-The
-primary path is a **bot deep link** — the browser never talks to Telegram at all.
-The legacy Login Widget survives only as a "use the widget" fallback and will be
-removed (MET-5). Either way the backend mints its **own** session JWT, and every
-later request is authed by that JWT (Bearer, `Authorization` header), not by
-Telegram. The same session carries an env-driven `admin` role for operator APIs.
+The only path is a **bot deep link** — the browser never talks to Telegram at
+all. The backend mints its **own** session JWT, and every later request is
+authed by that JWT (Bearer, `Authorization` header), not by Telegram. The same
+session carries an env-driven `admin` role for operator APIs.
 Login is progressive: the feed stays anonymous; login only converts when a user
 wants to save or subscribe.
 
@@ -50,13 +48,13 @@ it stays only as the fallback for people with no app installed.
 **Known gap — ID tokens carry no nonce.** A captured Google credential is
 replayable for its ~1h life, and `POST /auth/link/google` makes that worse than
 plain session theft: an attacker who obtains a live token for an unlinked
-address can attach it to *their* account, after which the victim's own Google
+address can attach it to _their_ account, after which the victim's own Google
 sign-in resolves there. Closing it means a server-issued single-use nonce
 threaded through `initialize()`. Not built — tracked on MET-45.
 
 **Known residual — consent phishing.** An attacker who starts the flow holds the
 code, so they can send "confirm your account, your code is K7QM" and the bot will
-echo a matching code. The code defeats *accidental* confirmation, not a prepared
+echo a matching code. The code defeats _accidental_ confirmation, not a prepared
 story; this is the RFC 8628 §5.2 weakness, structural to every device-code flow.
 Closing it further means putting non-forgeable context in the prompt (browser
 family, approximate location, start time). Not built — revisit if abused.
@@ -64,7 +62,7 @@ family, approximate location, start time). Not built — revisit if abused.
 ## One-time bring-up
 
 1. **Backend env** (`@metahunt/etl`, Railway):
-   - `TELEGRAM_BOT_TOKEN` — already set (the digest bot); also the widget's HMAC key.
+   - `TELEGRAM_BOT_TOKEN` — already set (the digest bot).
    - `JWT_SECRET` — **required in production** (signs session tokens). Any long
      random string. Non-prod falls back to an insecure default so local/CI boot.
    - `ADMIN_TELEGRAM_IDS` — comma-separated Telegram **user ids** granted `admin`
@@ -72,34 +70,24 @@ family, approximate location, start time). Not built — revisit if abused.
 2. **Web env** (`@metahunt/web`, Vercel + `apps/web/.env.local`):
    - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` — the bot's @username **without the `@`**.
      Prod and preview: `metahuntapp_bot`. Local `.env.local`: `mh_solo_bot` (the
-     dev bot). Builds the deep link. **Unset = the primary login button is dead**:
-     it fails with a `configuration` toast and no fallback, since the widget lives
-     inside the popover that only a successful start opens. It is `NEXT_PUBLIC_*`,
-     so it is baked at build time — changing it needs a redeploy, not a restart.
-   - `NEXT_PUBLIC_TELEGRAM_BOT_ID` — the bot's **numeric** id (the part before `:`
-     in `TELEGRAM_BOT_TOKEN`). Only the legacy widget needs it.
-3. **Widget fallback only — register the login domain with @BotFather.** DM
-   `@BotFather` → `/setdomain` → pick the bot → send the **public web domain**. The
-   widget works only on that exact origin; the deep-link path does not care. This
-   does **not** disturb the bot's long-polling or commands.
-4. **Migrations:** `0027_amused_vermin.sql` adds `auth_identities`, `user_cvs`,
+     dev bot). Builds the deep link. **Unset = Telegram login is disabled**. It is
+     `NEXT_PUBLIC_*`, so it is baked at build time — changing it needs a redeploy,
+     not a restart.
+   - `NEXT_PUBLIC_TELEGRAM_BOT_ID` is obsolete and unused; remove it from old
+     Vercel environments when convenient.
+3. **Migrations:** `0027_amused_vermin.sql` adds `auth_identities`, `user_cvs`,
    `users.roles`, `subscriptions.user_id` and makes `users.email` nullable.
    `0028_far_chronomancer.sql` makes account-owned subscriptions and their sent
    history cascade on deletion. `0032_greedy_shiva.sql` adds
-   `telegram_login_requests` (the deep-link handshake). Applied by the Railway
-   pre-deploy migrate step (`libs/database/migrate.ts`).
+   `telegram_login_requests` (the deep-link handshake); `0035_safe_auth_linking.sql`
+   adds its authenticated link mode. Applied by the Railway pre-deploy migrate
+   step (`libs/database/migrate.ts`).
 
 ## Local dev
 
 The deep-link flow **works on `http://localhost`** — no tunnel, no `/setdomain`.
 Set `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`, run the API so the bot polls, and log in
 against the real bot from a local browser.
-
-The widget fallback is the one that still needs a public origin: it checks the
-request origin against the `/setdomain` value, so it cannot work on localhost.
-To exercise it, tunnel (cloudflared/ngrok) with a **separate dev bot** so you
-don't repoint the production bot's domain, or curl `POST /auth/telegram`
-directly (see Verify below).
 
 ## Google
 
@@ -110,16 +98,19 @@ last one is what stops a token minted for some other site being replayed here.
 No client secret exists in this flow; nothing is exchanged with Google
 server-side.
 
-**Bring-up.** Google Cloud Console → Auth Platform → *Branding*: External
+**Bring-up.** Google Cloud Console → Auth Platform → _Branding_: External
 audience, scopes `openid`/`email`/`profile` only. Those are non-sensitive, so
-publishing is immediate — no verification review. Then *Clients* → **Web
+publishing is immediate — no verification review. Then _Clients_ → **Web
 application** → Authorized JavaScript origins `http://localhost:4000`,
 `https://www.metahunt.app`, `https://metahunt.app`. No redirect URIs. Put the
 client id in `GOOGLE_CLIENT_ID` (Railway) and `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 (Vercel + `apps/web/.env.local`). Empty on the API → `/auth/google` 503s; empty
-on the web → the button does not render.
+on the web → the button does not render. The two values must be the **same Web
+client ID**, and every origin is exact (scheme + host + port; no path or trailing
+slash). Changing the API env needs a service restart; changing the web env needs
+a new web build/deploy.
 
-**Email adoption.** On sign-in, a *verified* email that matches a `users` row
+**Email adoption.** On sign-in, a _verified_ email that matches a `users` row
 **with no identity of any kind** adopts that row instead of creating a second
 account. The "no identity" part is the whole safety argument: a row with an
 identity has a real owner, and letting an email reach it would hand the account
@@ -131,7 +122,7 @@ lowercased on both sides, since waitlist rows are stored that way and Postgres
 comparison is case-sensitive.
 
 **Roles are recomputed, never granted.** `syncRoles` derives them from the
-account's *current* Telegram identities on every session mint and every
+account's _current_ Telegram identities on every session mint and every
 link/unlink. Granting without a matching revoke was the bug this replaced: an
 admin who linked Google and unlinked Telegram would have kept `admin` forever,
 with no id left in `ADMIN_TELEGRAM_IDS` to remove.
@@ -143,29 +134,30 @@ and an unprompted card on a cold first visit is a distraction.
 
 ## Linking providers
 
-`POST /auth/link/google`, `POST /auth/link/telegram` and
+`POST /auth/link/google`, `POST /auth/link/telegram/start` and
 `DELETE /auth/link/:provider` are JWT-guarded and act on the **caller's**
-account. Each answers with the account's new shape, so the client replaces its
-session user rather than refetching.
+account. Google linking completes in the request. Telegram linking starts the
+same one-time deep-link handshake as login; the browser polls the result and
+receives a freshly minted session for the now-linked account.
 
-- An identity already owned by a *different* account → **409**. Merging two
-  accounts is destructive and irreversible; it needs a real merge flow, not a
-  silent reassignment. The insert leans on the unique constraint rather than a
-  check-then-insert, so two concurrent links resolve to one 409 and not a 500.
+- An identity already owned by a _different_ account → conflict (**409** for
+  Google; `{"status":"conflict"}` from the Telegram poll). Merging two accounts
+  is destructive and irreversible; it needs a real merge flow, not a silent
+  reassignment. The insert leans on the unique constraint rather than a
+  check-then-insert, so two concurrent links resolve to one conflict and not a 500.
 - Relinking what you already have is a no-op, not an error.
-- Unlinking your **last** identity → **400**, counted by *survivors* under a row
+- Unlinking your **last** identity → **400**, counted by _survivors_ under a row
   lock. Two concurrent unlinks would otherwise each see "two left" and take one
   apiece, and `users` rows are only reachable through `auth_identities` — a
   stranded account is unrecoverable.
 - Linking Telegram also refreshes admin membership and claims that chat's
-  orphan subscriptions — same trust as a Telegram login, since the HMAC proves
-  the account is theirs. This is what starts digest delivery for someone who
-  signed up with Google.
+  orphan subscriptions. This is what starts digest delivery for someone who
+  signed up with Google; the Bot API private-chat confirmation is the proof.
 
-**What the user is told.** `/me` → *sign-in* spells out the consequence, because
+**What the user is told.** `/me` → _sign-in_ spells out the consequence, because
 it is not guessable: both methods sign in to one account, connecting there is
 what joins them, and signing in with a method that is not listed creates a
-*separate* account that cannot be merged afterwards. That last clause is the
+_separate_ account that is not merged automatically. That last clause is the
 one people need before they act, not after.
 
 **How often it happens is measured, not assumed.** The 409 is emitted as
@@ -174,16 +166,14 @@ alongside), so "one person ended up with two accounts" is a number rather than
 a hunch. MET-82 (a merge flow) is deliberately gated on that number: at 5 users
 the honest answer is to merge by hand in SQL and see whether it repeats.
 
-Linking Telegram currently drives the legacy widget, because
-`/auth/link/telegram` takes an HMAC payload. When the widget is deleted (MET-5),
-the deep-link handshake needs a link mode — a `link_user_id` on
-`telegram_login_requests` — so the bot attaches to the caller instead of
-minting a session.
+Telegram linking uses the deep-link request's `link_user_id`: the guarded start
+request binds the attempt to the current account, then the private-chat bot
+confirmation attaches that Telegram identity instead of creating an account.
 
 ## Roles / admin
 
 - Membership is env-driven and recomputed on **every** session mint and every
-  link/unlink: a user is `admin` iff one of the Telegram identities *currently*
+  link/unlink: a user is `admin` iff one of the Telegram identities _currently_
   on their account is in `ADMIN_TELEGRAM_IDS`. Promote/demote = edit the var +
   re-login. Roles are persisted on `users.roles` and ride in the JWT.
 - **What's admin-gated (API layer):** every operator controller: RSS triggering
@@ -204,7 +194,7 @@ minting a session.
   role makes an already-issued token unusable immediately; signature validity
   alone is not sufficient.
 
-## Claim (what a login adopts)
+## Claim (what a Telegram login or link adopts)
 
 On login the backend claims only regular subscriptions whose `chat_id` equals
 the Telegram user id (private-chat id == user id — set when they tapped
@@ -212,28 +202,25 @@ the Telegram user id (private-chat id == user id — set when they tapped
 an authenticated account and creates its owner link atomically. See
 [`cv-privacy.md`](cv-privacy.md) for deletion and Telegram-delivery rules.
 
-`request_access: 'write'` on the widget also grants the bot permission to
-message the user, so digests work without a separate `/start`.
-
 ## Verify (end-to-end)
 
 - **Deep link, real bot:** `POST /auth/telegram/start` → open the `t.me` link →
   the bot shows the same 4-char code the response returned → confirm → `POST
-  /auth/telegram/poll` with `{nonce, pollSecret}` → `{ token, user }`. Polling a
+/auth/telegram/poll` with `{nonce, pollSecret}` → `{ token, user }`. Polling a
   second time, polling with a wrong `pollSecret`, and polling an unknown nonce
   must all return exactly `{"status":"expired"}` — anything more specific is an
   oracle. Pressing "not me" must make the poll return `expired` too.
-- **Backend, no browser:** forge a payload signed with the dev bot token
-  (`hash = HMAC_SHA256(data_check_string, SHA256(botToken))`), `POST /auth/telegram`
-  → expect `{ token, user }`; `GET /auth/me` with `Authorization: Bearer <token>`
-  → the user; tampered `hash` or `auth_date` older than 24h → 401. `GET
-  /me/subscriptions` with no token → 401.
+- **Telegram link:** sign in with Google → `/me` → _connect Telegram_ → complete
+  the same bot confirmation → the polling result contains the existing user id
+  and a Telegram identity. A Telegram identity already attached to another user
+  returns `{"status":"conflict"}` to the originating browser and attaches
+  nothing.
 - **Deletion:** `DELETE /me` with the Bearer token → 200; the same token on
   `GET /auth/me` → 401. Full data-boundary checks live in
   [`account-deletion.md`](account-deletion.md).
 - **Roles:** a non-admin JWT on `PATCH /admin/taxonomy/nodes/:id/hide` → 403; an
   admin JWT → 200; the public feed with no token → 200.
-- **UI (on the tunnel domain):** header `log in ▾` → Telegram popup → header flips
+- **UI:** header `log in ▾` → Telegram deep link → bot confirmation → header flips
   to `@username ▾` → refresh persists (localStorage token) → upload a CV →
   `/me` lists the account-owned CV + subscriptions → pause/delete work → log
   out clears.

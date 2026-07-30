@@ -19,7 +19,6 @@ import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
 import type { AuthProvider, AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
 import { verifyGoogleIdToken } from "./google-verify";
-import { verifyTelegramAuth, type TelegramAuthPayload } from "./telegram-verify";
 
 const { users, authIdentities, subscriptions } = schema;
 
@@ -32,9 +31,6 @@ function normalizeEmail(email: string | null | undefined): string | null {
 
 const TELEGRAM = "telegram";
 const GOOGLE = "google";
-// Telegram login: verify the widget payload, upsert the user + identity, claim
-// only server-trusted Telegram subscriptions, and mint the app's own session JWT.
-// Telegram is only the login event — every later request is authed by our JWT.
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -53,30 +49,9 @@ export class AuthService {
     );
   }
 
-  async loginTelegram(payload: TelegramAuthPayload): Promise<TelegramLoginResponse> {
-    const botToken = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
-    if (botToken.length === 0) {
-      throw new ServiceUnavailableException("Telegram login is not configured");
-    }
-    if (!verifyTelegramAuth(payload, botToken)) {
-      throw new UnauthorizedException("Telegram authentication failed");
-    }
-
-    const username = typeof payload.username === "string" ? payload.username : null;
-    const firstName = typeof payload.first_name === "string" ? payload.first_name : null;
-
-    const { userId, created } = await this.resolveTelegramUser(
-      String(payload.id),
-      username,
-      firstName,
-    );
-    return this.issueSession(userId, created);
-  }
-
   /**
    * Upsert the user behind a Telegram id and adopt what that chat owns.
-   * **Server-trusted callers only** — either a widget payload whose HMAC has
-   * already been verified, or a chat id straight off a Bot API update.
+   * **Server-trusted callers only** — a chat id straight off a Bot API update.
    */
   async resolveTelegramUser(
     telegramId: string,
@@ -139,23 +114,15 @@ export class AuthService {
     });
   }
 
-  async linkTelegramTo(userId: string, payload: TelegramAuthPayload): Promise<void> {
-    const botToken = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
-    if (botToken.length === 0) {
-      throw new ServiceUnavailableException("Telegram login is not configured");
-    }
-    if (!verifyTelegramAuth(payload, botToken)) {
-      throw new UnauthorizedException("Telegram authentication failed");
-    }
-
-    const telegramId = String(payload.id);
-    await this.linkIdentity(userId, TELEGRAM, telegramId, {
-      username: typeof payload.username === "string" ? payload.username : null,
-      firstName: typeof payload.first_name === "string" ? payload.first_name : null,
-    });
-    // Same trust as a Telegram login — the HMAC proves this is their account.
-    await this.syncRoles(userId, this.db);
-    await this.claimTelegramSubscriptions(userId, telegramId, this.db);
+  async linkTrustedTelegramUser(
+    userId: string,
+    telegramId: string,
+    profile: { username: string | null; firstName: string | null },
+    db: DrizzleExecutor = this.db,
+  ): Promise<void> {
+    await this.linkIdentityInTransaction(userId, TELEGRAM, telegramId, profile, db);
+    await this.syncRoles(userId, db);
+    await this.claimTelegramSubscriptions(userId, telegramId, db);
   }
 
   // Verified email only: an unverified address must never key an adoption or
@@ -188,45 +155,55 @@ export class AuthService {
     profile: { username: string | null; firstName: string | null; email?: string | null },
   ): Promise<void> {
     await this.db.transaction(async (tx) => {
-      // Let the unique constraint arbitrate instead of check-then-insert: two
-      // concurrent links would both see "free" and one would die on a raw 23505.
-      const inserted = await tx
-        .insert(authIdentities)
-        .values({
-          userId,
-          provider,
-          providerUserId,
-          username: profile.username,
-          firstName: profile.firstName,
-          email: profile.email ?? null,
-        })
-        .onConflictDoNothing()
-        .returning({ id: authIdentities.id });
-      if (inserted.length > 0) return;
-
-      const [owner] = await tx
-        .select({ userId: authIdentities.userId })
-        .from(authIdentities)
-        .where(
-          and(
-            eq(authIdentities.provider, provider),
-            eq(authIdentities.providerUserId, providerUserId),
-          ),
-        );
-      if (!owner || owner.userId !== userId) {
-        throw new ConflictException(`This ${provider} account is already linked elsewhere`);
-      }
-      // Already ours: refresh the snapshot so a relink is a no-op, not an error.
-      await tx
-        .update(authIdentities)
-        .set({
-          username: profile.username,
-          firstName: profile.firstName,
-          email: profile.email ?? null,
-        })
-        .where(and(eq(authIdentities.userId, userId), eq(authIdentities.provider, provider)));
+      await this.linkIdentityInTransaction(userId, provider, providerUserId, profile, tx);
     });
     this.logger.log(`linked ${provider} to user ${userId}`);
+  }
+
+  private async linkIdentityInTransaction(
+    userId: string,
+    provider: string,
+    providerUserId: string,
+    profile: { username: string | null; firstName: string | null; email?: string | null },
+    db: DrizzleExecutor,
+  ): Promise<void> {
+    // Let the unique constraint arbitrate instead of check-then-insert: two
+    // concurrent links would both see "free" and one would die on a raw 23505.
+    const inserted = await db
+      .insert(authIdentities)
+      .values({
+        userId,
+        provider,
+        providerUserId,
+        username: profile.username,
+        firstName: profile.firstName,
+        email: profile.email ?? null,
+      })
+      .onConflictDoNothing()
+      .returning({ id: authIdentities.id });
+    if (inserted.length > 0) return;
+
+    const [owner] = await db
+      .select({ userId: authIdentities.userId })
+      .from(authIdentities)
+      .where(
+        and(
+          eq(authIdentities.provider, provider),
+          eq(authIdentities.providerUserId, providerUserId),
+        ),
+      );
+    if (!owner || owner.userId !== userId) {
+      throw new ConflictException(`This ${provider} account is already linked elsewhere`);
+    }
+    // Already ours: refresh the snapshot so a relink is a no-op, not an error.
+    await db
+      .update(authIdentities)
+      .set({
+        username: profile.username,
+        firstName: profile.firstName,
+        email: profile.email ?? null,
+      })
+      .where(and(eq(authIdentities.userId, userId), eq(authIdentities.provider, provider)));
   }
 
   /** Unlinking the last identity would lock the account out of itself. */
@@ -341,24 +318,63 @@ export class AuthService {
     }
 
     const adopted = email ? await this.findAdoptableUserByEmail(email, db) : null;
-    const userId =
-      adopted ??
-      (
-        await db
-          .insert(users)
-          .values({ source, roles: ["user"] })
-          .returning({ id: users.id })
-      )[0].id;
+    const userId = adopted ?? (await this.createUser(source, db));
+    const inserted = await this.insertIdentity(userId, identity, profile, email, db);
+    if (inserted) return { userId, created: adopted === null };
 
-    await db.insert(authIdentities).values({
-      userId,
-      provider: identity.provider,
-      providerUserId: identity.providerUserId,
-      username: profile.username,
-      firstName: profile.firstName,
-      email,
-    });
-    return { userId, created: adopted === null };
+    const [winner] = await db
+      .select({ userId: authIdentities.userId })
+      .from(authIdentities)
+      .where(match);
+    if (winner) {
+      if (adopted === null) await db.delete(users).where(eq(users.id, userId));
+      return { userId: winner.userId, created: false };
+    }
+
+    if (adopted !== null) {
+      const freshUserId = await this.createUser(source, db);
+      const retried = await this.insertIdentity(freshUserId, identity, profile, email, db);
+      if (retried) return { userId: freshUserId, created: true };
+
+      const [retryWinner] = await db
+        .select({ userId: authIdentities.userId })
+        .from(authIdentities)
+        .where(match);
+      await db.delete(users).where(eq(users.id, freshUserId));
+      if (retryWinner) return { userId: retryWinner.userId, created: false };
+    }
+
+    throw new ConflictException(`Could not resolve ${identity.provider} account`);
+  }
+
+  private async createUser(source: string, db: DrizzleExecutor): Promise<string> {
+    const [created] = await db
+      .insert(users)
+      .values({ source, roles: ["user"] })
+      .returning({ id: users.id });
+    return created.id;
+  }
+
+  private async insertIdentity(
+    userId: string,
+    identity: { provider: string; providerUserId: string },
+    profile: { username: string | null; firstName: string | null },
+    email: string | null,
+    db: DrizzleExecutor,
+  ): Promise<boolean> {
+    const inserted = await db
+      .insert(authIdentities)
+      .values({
+        userId,
+        provider: identity.provider,
+        providerUserId: identity.providerUserId,
+        username: profile.username,
+        firstName: profile.firstName,
+        email,
+      })
+      .onConflictDoNothing()
+      .returning({ id: authIdentities.id });
+    return inserted.length > 0;
   }
 
   /**

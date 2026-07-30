@@ -40,7 +40,7 @@ const UNREACHABLE_DEACTIVATE_AFTER = 3;
 // (an empty array would persist as a no-op filter).
 function setAxis(
   params: SubscriptionParams,
-  key: "roleIds" | "skillIds" | "domainIds",
+  key: "roleIds" | "skillIds" | "excludedSkillIds" | "domainIds",
   ids: string[] | undefined,
 ): void {
   if (ids && ids.length > 0) params[key] = ids;
@@ -85,13 +85,15 @@ export class SubscriptionsService {
     // The role/skill/domain axes arrive as URL slugs; persist resolved node ids
     // so replay (FeedService.search) and describe() keep matching on ids — old
     // rows already store ids, so the stored shape stays uniform.
-    const [roleIds, skillIds, domainIds] = await Promise.all([
+    const [roleIds, skillIds, excludedSkillIds, domainIds] = await Promise.all([
       this.slugs.toIds("ROLE", asStringArray(rawParams.roleIds)),
       this.slugs.toIds("SKILL", asStringArray(rawParams.skillIds)),
+      this.slugs.toIds("SKILL", asStringArray(rawParams.excludedSkillIds)),
       this.slugs.toIds("DOMAIN", asStringArray(rawParams.domainIds)),
     ]);
     setAxis(params, "roleIds", roleIds);
     setAxis(params, "skillIds", skillIds);
+    setAxis(params, "excludedSkillIds", excludedSkillIds);
     setAxis(params, "domainIds", domainIds);
 
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {

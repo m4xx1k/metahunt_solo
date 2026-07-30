@@ -124,19 +124,19 @@ export class TelegramCommandsHandler {
 
     bot.callbackQuery(/^login:(ok|no):(.+)$/, async (ctx) => {
       const [, action, nonce] = ctx.match;
+      // Both confirmation and cancellation are bound to a private chat. A
+      // group callback is client-controlled and must not be able to mint — or
+      // burn — another browser's one-time login request.
+      const chatId = ctx.chat?.id;
+      if (ctx.chat?.type !== "private" || chatId === undefined) {
+        await ctx.answerCallbackQuery({ text: copy.start.loginPrivateOnly });
+        return;
+      }
+
       if (action === "no") {
         await this.login.decline(nonce);
         await ctx.answerCallbackQuery();
         await ctx.editMessageText(copy.start.loginDeclined);
-        return;
-      }
-
-      // `callback_data` is client-supplied — a custom client can send this from
-      // a group, where chat.id is the group's. Sessions key on the private-chat
-      // id, so confirming anywhere else would mint a shared account.
-      const chatId = ctx.chat?.id;
-      if (ctx.chat?.type !== "private" || chatId === undefined) {
-        await ctx.answerCallbackQuery({ text: copy.start.loginPrivateOnly });
         return;
       }
 
@@ -150,7 +150,9 @@ export class TelegramCommandsHandler {
           ? copy.start.loginConfirmed
           : result === "already_authorized"
             ? copy.start.loginAlreadyDone
-            : copy.start.loginExpired(this.config.get<string>("WEB_BASE_URL")!),
+            : result === "identity_conflict"
+              ? copy.start.loginIdentityConflict
+              : copy.start.loginExpired(this.config.get<string>("WEB_BASE_URL")!),
       );
     });
 
@@ -206,7 +208,7 @@ export class TelegramCommandsHandler {
       return;
     }
 
-    await reply(copy.start.loginConfirm(request.verificationCode), {
+    await reply(copy.start.loginConfirm(request.verificationCode, request.mode), {
       parse_mode: "HTML",
       reply_markup: new InlineKeyboard()
         .text(copy.start.loginConfirmButton, `login:ok:${request.nonce}`)

@@ -56,6 +56,7 @@ export interface FeedSearchParams {
   domainIds?: string[];
   /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
+  excludedSkillIds?: string[];
   /**
    * Skill-match scope. Default (false/undefined): a skill counts only when it's
    * `required` (must-have) on the vacancy. When true, a nice-to-have link also
@@ -476,6 +477,15 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
         ${requiredGate}
       GROUP BY vn.vacancy_id
       HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
+    )`);
+  }
+  if (params.excludedSkillIds?.length) {
+    conds.push(sql`NOT EXISTS (
+      SELECT 1
+      FROM vacancy_nodes excluded_vn
+      WHERE excluded_vn.vacancy_id = ${vacancies.id}
+        AND excluded_vn.node_id IN (${uuidList(params.excludedSkillIds)})
+        AND excluded_vn.is_required
     )`);
   }
   // When includeRoleless is off (default), require the verified role-node

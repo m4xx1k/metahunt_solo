@@ -488,6 +488,19 @@ export class RankingService {
     // inferred on_stack signal, it filters instead of demoting.
     if (f.roleNodeIds?.length) inText(sql`v.role_node_id`, f.roleNodeIds);
 
+    // An explicit skill exclusion means "do not show a vacancy that requires
+    // this stack". Optional mentions stay visible; they are not a job's ask.
+    if (f.excludedSkillNodeIds?.length) {
+      conds.push(sql`
+        NOT EXISTS (
+          SELECT 1 FROM vacancy_nodes excluded_skill
+          WHERE excluded_skill.vacancy_id = v.id
+            AND excluded_skill.is_required
+            AND excluded_skill.node_id IN (${uuidList(f.excludedSkillNodeIds)})
+        )
+      `);
+    }
+
     // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
     // — unstated experience always passes; only explicit non-matches drop. Mirrors
     // feed.service buildWhere.

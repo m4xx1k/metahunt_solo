@@ -56,6 +56,7 @@ export interface MatchFilters {
   hasReservation?: boolean; // UA military deferment ("бронь")
   minFitTier?: FitTier; // hide vacancies below this coverage tier (STRONG > GOOD > STRETCH)
   sourceId?: string;
+  excludedSkillNodeIds?: string[]; // hard exclusion when a vacancy requires any listed skill
   postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
   loadedAfter?: Date; // digest only: new-since floor
   excludeIds?: string[]; // digest only: already-sent anti-join

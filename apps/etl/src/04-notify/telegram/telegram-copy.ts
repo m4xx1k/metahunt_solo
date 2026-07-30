@@ -29,12 +29,14 @@ export const copy = {
       `⚠️ Це посилання недійсне або застаріле. ${siteCta(webUrl)}`,
     // A login link can be forwarded, so the code has to be the first thing
     // read: someone who never opened the site has nothing to match it against.
-    loginConfirm: (code: string): string =>
-      `🔐 Вхід у <b>metahunt</b>. Код на сайті: <b>${code}</b>\n\nНе ти? Тисни «Це не я».`,
+    loginConfirm: (code: string, mode: "login" | "link"): string =>
+      `🔐 ${mode === "link" ? "Підключення Telegram до" : "Вхід у"} <b>metahunt</b>. ` +
+      `Код на сайті: <b>${code}</b>\n\nНе ти? Тисни «Це не я».`,
     loginConfirmButton: "✅ Це я",
     loginDeclineButton: "🚫 Це не я",
     loginConfirmed: "✅ Готово — сайт уже оновився.",
     loginAlreadyDone: "ℹ️ Уже підтверджено.",
+    loginIdentityConflict: "⚠️ Цей Telegram уже підключено до іншого акаунта metahunt.",
     loginDeclined: "🚫 Скасовано.",
     loginPrivateOnly: "Вхід підтверджують лише в особистому чаті з ботом.",
     loginExpired: (webUrl: string): string => `⚠️ Посилання застаріле. Спробуй ще раз: ${webUrl}`,
