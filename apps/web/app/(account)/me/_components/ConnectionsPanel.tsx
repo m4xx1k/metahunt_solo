@@ -93,7 +93,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                       )
                     }
                   >
-                    disconnect
+                    відключити
                   </Button>
                 ) : provider === "google" ? (
                   <GoogleLoginButton

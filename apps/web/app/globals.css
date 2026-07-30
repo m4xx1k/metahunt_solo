@@ -89,6 +89,17 @@
     color: var(--color-bg);
   }
 }
+
+@layer components {
+  .page-dot-grid {
+    background-image:
+      radial-gradient(60% 50% at 50% 0%, rgba(255, 179, 128, 0.08), transparent 70%),
+      radial-gradient(var(--color-border) 1px, transparent 1px);
+    background-size:
+      auto,
+      22px 22px;
+  }
+}
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {

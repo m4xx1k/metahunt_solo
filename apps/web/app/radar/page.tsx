@@ -45,14 +45,7 @@ export default async function RadarIndexPage({
     <>
       <LandingViewTracker variant="radar-picker" attribution={attribution} />
       <Header links={[{ label: "приватність", href: "/privacy" }]} cta={null} />
-      <main
-        className="bg-bg"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "auto, 22px 22px",
-        }}
-      >
+      <main className="page-dot-grid bg-bg">
         <section className="border-b border-border px-6 py-20 md:px-12 md:py-28">
           <div className="mx-auto flex w-full max-w-[820px] flex-col items-center gap-7 text-center">
             <Tag>&gt; DOU + DJINNI</Tag>

@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
-import { DEFAULT_FRESHNESS } from "./types";
+import { countActiveFilters, DEFAULT_FRESHNESS } from "./types";
 import type { FiltersApi } from "./types";
 import { LIST_SEP, readFilterState, readList } from "./url-params";
 
@@ -88,21 +88,7 @@ export function useUrlFilters(): FiltersApi {
     [commit],
   );
 
-  const activeCount =
-    filters.roleIds.length +
-    filters.skillIds.length +
-    filters.excludedSkillIds.length +
-    filters.domainIds.length +
-    (filters.sourceCode ? 1 : 0) +
-    filters.seniorities.length +
-    filters.workFormats.length +
-    filters.englishLevels.length +
-    filters.employmentTypes.length +
-    filters.experienceYears.length +
-    (filters.freshness !== DEFAULT_FRESHNESS ? 1 : 0) +
-    (filters.test !== null ? 1 : 0) +
-    (filters.reservation !== null ? 1 : 0) +
-    (filters.minFitTier ? 1 : 0);
+  const activeCount = countActiveFilters(filters);
 
   return {
     filters,

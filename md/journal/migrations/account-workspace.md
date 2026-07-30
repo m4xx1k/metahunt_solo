@@ -1,22 +1,24 @@
 # account-workspace — editable CV-match subscriptions
 
 **Branch:** `feat/account-workspace`
-**Status:** in-progress
+**Status:** done
 **Started:** 2026-07-30
 
 ## Outcome
 
-_(fill in when closing)_
+Subscription names and CV-match criteria are editable through an owner-scoped account contract.
+Existing names are backfilled, public taxonomy refs fail closed, and the account UI reuses the shared
+filter system behind an admin-only beta gate. Feed subscription matching is unchanged.
 
 ## Subtasks
 
-- [ ] T0 — Add mutable subscription names — _done when:_ new and existing rows have a usable name and an owner-scoped rename contract.
-- [ ] T1 — Expose editable criteria — _done when:_ account reads return typed public refs and updates normalize them into stored node ids.
-- [ ] T2 — Protect ownership and compatibility — _done when:_ integration tests cover cross-account writes, legacy rows, and independent subscriptions over one CV.
-- [ ] T3 — Rebuild `/me` as an account workspace — _done when:_ account, subscriptions, and CVs have clear responsive sections on the shared page background.
-- [ ] T4 — Add subscription editing — _done when:_ a user can rename and edit one subscription without changing its CV or sibling subscriptions.
-- [ ] T5 — Add rollout affordances — _done when:_ existing users see the upgrade path while unfinished distribution remains out of public navigation.
-- [ ] T6 — Verify and document — _done when:_ lint, tests, builds, independent review, architecture, and release notes are complete.
+- [x] T0 — Add mutable subscription names — _done when:_ new and existing rows have a usable name and an owner-scoped rename contract.
+- [x] T1 — Expose editable criteria — _done when:_ account reads return typed public refs and updates normalize them into stored node ids.
+- [x] T2 — Protect ownership and compatibility — _done when:_ integration tests cover cross-account writes, legacy rows, and independent subscriptions over one CV.
+- [x] T3 — Rebuild `/me` as an account workspace — _done when:_ account, subscriptions, and CVs have clear responsive sections on the shared page background.
+- [x] T4 — Add subscription editing — _done when:_ a user can rename and edit one subscription without changing its CV or sibling subscriptions.
+- [x] T5 — Add rollout affordances — _done when:_ names are backfilled and the unfinished editor remains admin-only and outside public distribution.
+- [x] T6 — Verify and document — _done when:_ lint, tests, builds, independent review, architecture, and release notes are complete.
 
 ## Decisions
 

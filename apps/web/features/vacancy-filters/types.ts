@@ -85,6 +85,25 @@ export const EMPTY_FILTERS: FilterState = {
   minFitTier: null,
 };
 
+export function countActiveFilters(filters: FilterState): number {
+  return (
+    filters.roleIds.length +
+    filters.skillIds.length +
+    filters.excludedSkillIds.length +
+    filters.domainIds.length +
+    (filters.sourceCode ? 1 : 0) +
+    filters.seniorities.length +
+    filters.workFormats.length +
+    filters.englishLevels.length +
+    filters.employmentTypes.length +
+    filters.experienceYears.length +
+    (filters.freshness !== DEFAULT_FRESHNESS ? 1 : 0) +
+    (filters.test !== null ? 1 : 0) +
+    (filters.reservation !== null ? 1 : 0) +
+    (filters.minFitTier ? 1 : 0)
+  );
+}
+
 // FilterState keeps enum fields string-typed; narrow to the wire enum at the API
 // boundary (values only ever come from the closed option sets). Empty → undefined
 // so the request omits the key entirely.

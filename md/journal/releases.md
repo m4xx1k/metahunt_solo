@@ -6,6 +6,13 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-07-30
+
+- **Account workspace and editable CV subscriptions** (`feat/account-workspace`, MET-112). Existing subscriptions receive deterministic names; new subscriptions get the same stable naming rule and can be renamed. `/me` is now a responsive cabinet with subscription, CV, and account sections on the shared site background. The admin-only beta editor reuses the production vacancy-filter components to update one CV subscription's roles, excluded skills, and vacancy filters without mutating its CV or sibling subscriptions. Public slugs are validated and normalized at the API boundary; invalid or stale refs fail without replacing the stored snapshot, and unresolved node UUIDs never reach the browser. Feed subscriptions keep their existing matching behavior and remain rename/pause/delete only. → [tracker](./migrations/account-workspace.md)
+- **CV-match criteria and auth foundation merged** ([PR #154](https://github.com/m4xx1k/metahunt_solo/pull/154)). `/match` preview and Telegram delivery now share real subscription-scoped criteria instead of candidate-level intent or mock role/exclusion data. Google and Telegram remain separate linkable identities on one account; Telegram widget login is removed, linking conflicts never silently merge owners, and the legacy Google/Telegram data migration is race-safe. → [match tracker](./migrations/_done/match-preferences.md), [auth runbook](../runbook/auth.md)
+
+---
+
 ## 2026-07-27
 
 - **The account page is built from the same kit as everything else, and says what connecting actually does** (`feat/MET-51-user-dashboard`, MET-51). `/me` had grown five sections that each re-declared their own heading, container, empty state and loading line, and every row laid its label and two-to-three buttons out in a single flex line — which overflowed the moment the viewport was a phone. Now every section is a `Panel`, every nothing-here is an `EmptyState`, and each row stacks below `sm:`. Two columns from `lg:` with the CV panel spanning both, since its skill manager needs the width. New `AccountHeader` carries the handle, the connected providers and the admin flag, so the page opens by telling you what you are looking at. **The connect copy now states the part that is not guessable:** both methods sign into one account, connecting on this page is what joins them, and signing in with a method not listed there creates a separate account that cannot be merged afterwards. Three new events — `identity_linked`, `identity_unlinked`, `identity_link_conflict` — make "one person, two accounts" a number instead of a hunch; MET-82 (a merge flow) is gated on it.
