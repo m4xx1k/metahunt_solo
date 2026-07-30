@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { RoleSuggestionsResponse } from "@/lib/api/cv";
 import { FilterRail } from "@/features/vacancy-filters/FilterRail";
+import { ExcludedSkillChips } from "@/features/vacancy-filters/ActiveFiltersBar";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
 import type { FiltersApi, OptionRow } from "@/features/vacancy-filters/types";
 
@@ -15,6 +16,7 @@ export function MatchFilters({
   api,
   domainOptions,
   roleCatalog,
+  skillCatalog = [],
   roleSuggestions,
   disabled = false,
 }: {
@@ -23,6 +25,7 @@ export function MatchFilters({
   domainOptions?: OptionRow[];
   /** Full ROLE catalog (slug-keyed) so search reaches every role. */
   roleCatalog?: OptionRow[];
+  skillCatalog?: OptionRow[];
   /** Candidate's role fit — suggested roles lead the list with N/M numerators. */
   roleSuggestions?: RoleSuggestionsResponse;
   disabled?: boolean;
@@ -66,6 +69,11 @@ export function MatchFilters({
       </button>
 
       <div className={cn("flex-col gap-3 xl:flex", mobileOpen ? "flex" : "hidden")}>
+        {api.filters.excludedSkillIds.length > 0 ? (
+          <div className="flex flex-wrap gap-2 border border-border bg-bg-card px-3 py-2.5">
+            <ExcludedSkillChips api={api} skills={skillCatalog} />
+          </div>
+        ) : null}
         <aside className="flex flex-col border border-border bg-bg-card">
           <FilterRail
             api={api}

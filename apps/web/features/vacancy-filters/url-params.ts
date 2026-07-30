@@ -34,6 +34,7 @@ export function readFilterState(p: ParamReader): FilterState {
   return {
     roleIds: readList(p.get("roles")),
     skillIds: readList(p.get("skills")),
+    excludedSkillIds: readList(p.get("excludeSkills")),
     domainIds: readList(p.get("domains")),
     sourceCode: p.get("source"),
     seniorities: readList(p.get("seniorities")),

@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 
@@ -11,10 +10,10 @@ import { cvApi, type CvIngestResult } from "@/lib/api/cv";
 import { useAnalytics, type AcquisitionAttribution } from "@/lib/analytics/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
+import { buildMatchHref } from "@/lib/match-draft";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui";
 
-import { MOCK_ROLE_SUGGESTIONS } from "./_mocks";
 import { MATCH_STEPS, type MatchStep, type SkillPick } from "./flow";
 import { StepCv } from "./StepCv";
 import { StepExcludes } from "./StepExcludes";
@@ -30,12 +29,12 @@ const STEP_TITLES: Record<MatchStep, string> = {
 
 // The /match onboarding island. Step lives in ?step= (shallow pushState, so
 // browser back walks the flow); the profile state lives here: a stored
-// candidate for the CV path, local picks for the manual path. Roles/excludes
-// selections are local-only until their matcher-side PRs land.
+// candidate for the CV path, local picks for the manual path.
 export function MatchStepper({ attribution }: { attribution: AcquisitionAttribution }) {
   const analytics = useAnalytics();
   const saved = useSaved();
   const push = useShallowSearchParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -44,9 +43,7 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [manualSkills, setManualSkills] = useState<SkillPick[]>([]);
-  const [roleSlugs, setRoleSlugs] = useState<Set<string>>(
-    () => new Set(MOCK_ROLE_SUGGESTIONS.filter((r) => r.preselected).map((r) => r.slug)),
-  );
+  const [roleIds, setRoleIds] = useState<Set<string>>(new Set());
   const [excludes, setExcludes] = useState<SkillPick[]>([]);
 
   const impressionSent = useRef(false);
@@ -72,7 +69,9 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
     queryKey: ["cv", candidateId],
     queryFn: () => cvApi.get(candidateId as string),
     enabled: candidateId != null,
-    initialData: ingest ?? undefined,
+    placeholderData: ingest
+      ? { ...ingest, englishLevel: null, experienceYears: null, extracted: {} }
+      : undefined,
   });
 
   const skillCount = candidateId ? (cvData?.matched.length ?? 0) : manualSkills.length;
@@ -123,19 +122,29 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
   const next = () => goTo(MATCH_STEPS[stepIndex + 1]!.key);
   const back = () => goTo(MATCH_STEPS[stepIndex - 1]!.key);
 
-  const feedHref = candidateId
-    ? `/?cv=${candidateId}`
-    : manualSkills.length > 0
-      ? `/?skills=${manualSkills.map((s) => s.id).join(",")}`
-      : "/";
+  const feedHref = useMemo(
+    () => buildMatchHref(candidateId, manualSkills, roleIds, excludes),
+    [candidateId, manualSkills, roleIds, excludes],
+  );
 
-  const onComplete = () =>
+  const onComplete = useCallback(() => {
     analytics.matchFlowCompleted({
       has_cv: candidateId != null,
       skills_count: skillCount,
-      roles_count: roleSlugs.size,
+      roles_count: roleIds.size,
       excludes_count: excludes.length,
     });
+    router.push(feedHref);
+  }, [analytics, candidateId, skillCount, roleIds, excludes, router, feedHref]);
+
+  const toggleRole = useCallback((roleId: string) => {
+    setRoleIds((current) => {
+      const nextRoles = new Set(current);
+      if (nextRoles.has(roleId)) nextRoles.delete(roleId);
+      else nextRoles.add(roleId);
+      return nextRoles;
+    });
+  }, []);
 
   return (
     <div ref={rootRef} className="flex scroll-mt-24 flex-col gap-5">
@@ -166,17 +175,7 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
               onManualSkillsChange={setManualSkills}
             />
           ) : step === "roles" ? (
-            <StepRoles
-              selected={roleSlugs}
-              onToggle={(slug) =>
-                setRoleSlugs((prev) => {
-                  const nextSet = new Set(prev);
-                  if (nextSet.has(slug)) nextSet.delete(slug);
-                  else nextSet.add(slug);
-                  return nextSet;
-                })
-              }
-            />
+            <StepRoles candidateId={candidateId} selected={roleIds} onToggle={toggleRole} />
           ) : (
             <StepExcludes excludes={excludes} onChange={setExcludes} ownSkills={ownSkills} />
           )}
@@ -215,11 +214,9 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
                 >
                   ← назад
                 </button>
-                <Link href={feedHref} onClick={onComplete} className="sm:ml-auto">
-                  <Button size="lg" className="w-full">
-                    Показати мої вакансії →
-                  </Button>
-                </Link>
+                <Button size="lg" onClick={onComplete} className="w-full sm:ml-auto">
+                  Показати мої вакансії →
+                </Button>
               </div>
               {candidateId == null && manualSkills.length > 0 ? (
                 <div className="flex flex-col gap-2 sm:items-end">
@@ -227,6 +224,8 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
                     landingVariant="match_manual"
                     params={{
                       skillIds: manualSkills.map((s) => s.id),
+                      roleIds: [...roleIds],
+                      excludedSkillIds: excludes.map((skill) => skill.id),
                       postedWithinDays: 30,
                     }}
                     attribution={attribution}

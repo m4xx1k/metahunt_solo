@@ -12,10 +12,6 @@ import { Button } from "@/ui";
 
 const ACCEPT = ".pdf,.txt,application/pdf,text/plain";
 
-// Entry step: path A (drop a CV) or path B (pick skills by hand). Uploading
-// needs a Telegram session (the API binds the candidate to the user), so the
-// dropzone swaps its trigger for the login button until one exists. Path B
-// never asks for anything.
 export function StepCv({
   ingest,
   uploading,
@@ -24,7 +20,6 @@ export function StepCv({
   onManual,
   onNext,
 }: {
-  /** Already-parsed CV (back-navigation) — offer "continue" instead of re-upload. */
   ingest: CvIngestResult | null;
   uploading: boolean;
   error: string | null;
@@ -96,16 +91,14 @@ export function StepCv({
           ) : (
             <div className="mt-1 flex flex-col items-center gap-2">
               <AuthChoice />
-              <p className="font-mono text-2xs text-text-muted">
-                вхід через Telegram — щоб CV був тільки твій
-              </p>
+              <p className="font-mono text-2xs text-text-muted">увійди, щоб CV був тільки твій</p>
             </div>
           )}
           <Link
             href="/privacy#cv"
             className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
           >
-            CV не зберігаємо — лише навички
+            текст CV не зберігаємо
           </Link>
         </div>
 
@@ -128,8 +121,7 @@ export function StepCv({
 
       {uploading ? (
         <p className="font-mono text-xs text-text-secondary" role="status">
-          <span className="text-accent">▮▮▮</span> Читаємо CV… нікуди його не зберігаємо, лише
-          навички.
+          <span className="text-accent">▮▮▮</span> Читаємо CV… текст не зберігаємо.
         </p>
       ) : null}
       {error ? (

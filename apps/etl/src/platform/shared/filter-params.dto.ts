@@ -167,6 +167,13 @@ export class FeedQueryDto extends FilterParamsDto {
   @IsString({ each: true })
   skillIds?: string[];
 
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  excludedSkillIds?: string[];
+
   @ApiPropertyOptional({ description: "Show only representatives of a deduplication group." })
   @IsOptional()
   @toBool()
@@ -209,22 +216,8 @@ export class FeedQueryDto extends FilterParamsDto {
   pageSize?: number;
 }
 
-// POST /ranking/match body — the CV's plain-text skills + shared filters + the
-// warm-only coverage gate.
-export class MatchDto extends FilterParamsDto {
-  @ApiPropertyOptional({
-    type: [String],
-    description: "Plain-text candidate skills to resolve and rank vacancies against.",
-    example: ["TypeScript", "NestJS", "PostgreSQL"],
-  })
-  @IsOptional()
-  @Transform(({ value }) =>
-    Array.isArray(value) ? value.map((v) => String(v).trim()).filter((v) => v.length > 0) : [],
-  )
-  @IsArray()
-  @IsString({ each: true })
-  skills?: string[];
-
+// Filters shared by stored-CV matching and plain-text matching.
+export class CandidateMatchParamsDto extends FilterParamsDto {
   @ApiPropertyOptional({
     type: [String],
     description: "ROLE slugs — hard filter. Multiple values are OR-combined.",
@@ -235,6 +228,16 @@ export class MatchDto extends FilterParamsDto {
   @IsArray()
   @IsString({ each: true })
   roleIds?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: "SKILL references that must not be required by a returned vacancy.",
+  })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  excludedSkillIds?: string[];
 
   @ApiPropertyOptional({ enum: FIT_TIER_VALUES, description: "Minimum warm-match tier to return." })
   @IsOptional()
@@ -256,4 +259,19 @@ export class MatchDto extends FilterParamsDto {
   @Min(1)
   @Max(100)
   pageSize?: number;
+}
+
+export class MatchDto extends CandidateMatchParamsDto {
+  @ApiPropertyOptional({
+    type: [String],
+    description: "Plain-text candidate skills to resolve and rank vacancies against.",
+    example: ["TypeScript", "NestJS", "PostgreSQL"],
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value.map((v) => String(v).trim()).filter((v) => v.length > 0) : [],
+  )
+  @IsArray()
+  @IsString({ each: true })
+  skills?: string[];
 }

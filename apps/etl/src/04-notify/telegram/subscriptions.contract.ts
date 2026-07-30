@@ -17,6 +17,7 @@ export const FEED_PARAM_KEYS = [
   "roleId",
   "roleIds",
   "skillIds",
+  "excludedSkillIds",
   "domainIds",
   "seniority",
   "workFormat",

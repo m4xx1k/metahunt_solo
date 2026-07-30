@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 
 import { CvModule } from "../../03-discovery/cv/cv.module";
 import { FeedModule } from "../../03-discovery/feed/feed.module";
-import { RankingModule } from "../../03-discovery/ranking/ranking.module";
 import { AuthModule } from "../../platform/auth/auth.module";
 import { NodeSlugModule } from "../../platform/nodes/node-slug.module";
 
@@ -24,7 +23,7 @@ import { TelegramService } from "./telegram.service";
 // `POST /subscriptions` create endpoint (web "Subscribe") and the scheduled
 // digest engine (NotifyActivity + notifySubscribersWorkflow + NotifySchedulerService).
 @Module({
-  imports: [AuthModule, FeedModule, CvModule, RankingModule, NodeSlugModule],
+  imports: [AuthModule, FeedModule, CvModule, NodeSlugModule],
   controllers: [SubscriptionsController, DigestController],
   providers: [
     TelegramService,

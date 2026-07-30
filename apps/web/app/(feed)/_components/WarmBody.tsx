@@ -24,6 +24,7 @@ export function WarmBody({
   candidateId,
   domainOptions,
   roleOptions,
+  skillOptions,
   profileTitle,
   profileRole,
   profileSeniority,
@@ -36,6 +37,7 @@ export function WarmBody({
   domainOptions?: OptionRow[];
   /** Full ROLE catalog for the role hard-filter search. */
   roleOptions?: OptionRow[];
+  skillOptions?: OptionRow[];
   profileTitle: string;
   profileRole?: string | null;
   profileSeniority?: string | null;
@@ -76,6 +78,7 @@ export function WarmBody({
           api={api}
           domainOptions={domainOptions}
           roleCatalog={roleOptions}
+          skillCatalog={mergeSkillOptions(skillOptions, data?.resolved.matched ?? [])}
           roleSuggestions={roleSuggestions}
           disabled={busy}
         />
@@ -129,4 +132,15 @@ export function WarmBody({
       ) : null}
     </div>
   );
+}
+
+function mergeSkillOptions(
+  catalog: OptionRow[] | undefined,
+  matched: { id: string; name: string }[],
+): OptionRow[] {
+  const options = new Map((catalog ?? []).map((option) => [option.id, option]));
+  for (const skill of matched) {
+    options.set(skill.id, { id: skill.id, label: skill.name, count: 0 });
+  }
+  return [...options.values()];
 }

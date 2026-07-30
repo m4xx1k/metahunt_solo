@@ -1,10 +1,9 @@
 import { Test } from "@nestjs/testing";
 
-import { CandidateLoaderService } from "../../03-discovery/cv/candidate-loader.service";
+import { CandidateMatchService } from "../../03-discovery/cv/candidate-match.service";
 import type { FeedResponse, VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { FeedService } from "../../03-discovery/feed/feed.service";
 import type { MatchResponse } from "../../03-discovery/ranking/ranking.contract";
-import { RankingService } from "../../03-discovery/ranking/ranking.service";
 
 import { SentNotificationsService } from "./sent-notifications.service";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
@@ -77,8 +76,7 @@ function target(overrides: Partial<SubscriptionMatchTarget> = {}): SubscriptionM
 
 describe("SubscriptionMatcherService", () => {
   const search = jest.fn();
-  const rankByRefs = jest.fn();
-  const getMatchInput = jest.fn();
+  const matchCandidate = jest.fn();
   const sentVacancyIds = jest.fn();
   const sentVacancyIdsForChat = jest.fn();
   const describe_ = jest.fn();
@@ -86,8 +84,7 @@ describe("SubscriptionMatcherService", () => {
 
   beforeEach(async () => {
     search.mockReset().mockResolvedValue(feedResponse([]));
-    rankByRefs.mockReset().mockResolvedValue(matchResponse([]));
-    getMatchInput.mockReset().mockResolvedValue({ matched: [], unmatched: [] });
+    matchCandidate.mockReset().mockResolvedValue(matchResponse([]));
     sentVacancyIds.mockReset().mockResolvedValue([]);
     sentVacancyIdsForChat.mockReset().mockResolvedValue([]);
     describe_.mockReset().mockResolvedValue("Backend");
@@ -96,8 +93,7 @@ describe("SubscriptionMatcherService", () => {
       providers: [
         SubscriptionMatcherService,
         { provide: FeedService, useValue: { search } },
-        { provide: RankingService, useValue: { rankByRefs } },
-        { provide: CandidateLoaderService, useValue: { getMatchInput } },
+        { provide: CandidateMatchService, useValue: { match: matchCandidate } },
         { provide: SubscriptionsService, useValue: { describe: describe_ } },
         { provide: SentNotificationsService, useValue: { sentVacancyIds, sentVacancyIdsForChat } },
       ],
@@ -144,15 +140,11 @@ describe("SubscriptionMatcherService", () => {
       target({ candidateId: "cand-1", params });
 
     it("ranks against the candidate's CV, not the feed query", async () => {
-      getMatchInput.mockResolvedValue({
-        matched: [{ id: "n1", name: "Go", weight: 2 }],
-        unmatched: [],
-      });
-      rankByRefs.mockResolvedValue(matchResponse([createVacancy("v1")], 1));
+      matchCandidate.mockResolvedValue(matchResponse([createVacancy("v1")], 1));
 
       const res = await service.matchNew(cvSub());
 
-      expect(getMatchInput).toHaveBeenCalledWith("cand-1");
+      expect(matchCandidate).toHaveBeenCalledWith("cand-1", expect.any(Object), 1, 50);
       expect(search).not.toHaveBeenCalled();
       expect(res.items.map((v) => v.id)).toEqual(["v1"]);
     });
@@ -162,7 +154,7 @@ describe("SubscriptionMatcherService", () => {
       const sub = cvSub();
       await service.matchNew(sub);
 
-      const [, filters] = rankByRefs.mock.calls[0];
+      const [, filters] = matchCandidate.mock.calls[0];
       expect(filters.minFitTier).toBe("GOOD");
       expect(filters.loadedAfter).toBe(sub.createdAt);
       expect(filters.excludeIds).toEqual(["x"]);
@@ -171,16 +163,25 @@ describe("SubscriptionMatcherService", () => {
     it("respects a subscription's own minFitTier override", async () => {
       await service.matchNew(cvSub({ minFitTier: "STRONG" }));
 
-      expect(rankByRefs.mock.calls[0][1].minFitTier).toBe("STRONG");
+      expect(matchCandidate.mock.calls[0][1].minFitTier).toBe("STRONG");
     });
 
     // Replay-gap regression: a warm sub's stored domain + experience must reach
     // the ranker, or the CV digest silently ignores what the user filtered on.
-    it("threads stored domain and experience filters into the CV match", async () => {
-      await service.matchNew(cvSub({ domainIds: ["dom-fintech"], experienceYears: ["3", "6+"] }));
+    it("threads stored criteria into the CV match", async () => {
+      await service.matchNew(
+        cvSub({
+          domainIds: ["dom-fintech"],
+          roleIds: ["role-backend"],
+          excludedSkillIds: ["skill-php"],
+          experienceYears: ["3", "6+"],
+        }),
+      );
 
-      const [, filters] = rankByRefs.mock.calls[0];
-      expect(filters.domainIds).toEqual(["dom-fintech"]);
+      const [, filters] = matchCandidate.mock.calls[0];
+      expect(filters.domainRefs).toEqual(["dom-fintech"]);
+      expect(filters.roleRefs).toEqual(["role-backend"]);
+      expect(filters.excludedSkillRefs).toEqual(["skill-php"]);
       expect(filters.experienceYears).toEqual(["3", "6+"]);
     });
   });

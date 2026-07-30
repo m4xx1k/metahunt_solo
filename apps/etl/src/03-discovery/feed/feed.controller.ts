@@ -59,13 +59,15 @@ export class FeedController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async search(@Query() dto: FeedQueryDto) {
     let companyId: string | undefined;
-    [dto.roleIds, dto.skillIds, dto.domainIds, dto.roleId, companyId] = await Promise.all([
-      this.slugs.toIds("ROLE", dto.roleIds),
-      this.slugs.toIds("SKILL", dto.skillIds),
-      this.slugs.toIds("DOMAIN", dto.domainIds),
-      this.slugs.toId("ROLE", dto.roleId),
-      this.resolveCompany(dto.companySlug),
-    ]);
+    [dto.roleIds, dto.skillIds, dto.excludedSkillIds, dto.domainIds, dto.roleId, companyId] =
+      await Promise.all([
+        this.slugs.toIds("ROLE", dto.roleIds),
+        this.slugs.toIds("SKILL", dto.skillIds),
+        this.slugs.toIds("SKILL", dto.excludedSkillIds),
+        this.slugs.toIds("DOMAIN", dto.domainIds),
+        this.slugs.toId("ROLE", dto.roleId),
+        this.resolveCompany(dto.companySlug),
+      ]);
     return this.feed.search({ ...toSearchParams(dto), companyId });
   }
 
@@ -149,6 +151,7 @@ function toSearchParams(dto: FeedQueryDto): FeedSearchParams {
     roleId: dto.roleId,
     roleIds: dto.roleIds,
     skillIds: dto.skillIds,
+    excludedSkillIds: dto.excludedSkillIds,
     domainIds: dto.domainIds,
     seniorities: dto.seniorities,
     workFormats: dto.workFormats,

@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -6,6 +6,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionsService } from "../../src/04-notify/telegram/subscriptions.service";
 
+import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 
 const { subscriptions } = schema;
@@ -22,7 +23,9 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  await db.execute(sql`TRUNCATE TABLE sent_notifications, subscriptions RESTART IDENTITY CASCADE`);
+  await db.execute(
+    sql`TRUNCATE TABLE sent_notifications, subscriptions, analytics_outbox, analytics_journeys RESTART IDENTITY CASCADE`,
+  );
   await truncateAll(db);
 });
 
@@ -70,5 +73,37 @@ describe("SubscriptionsService.linkChat", () => {
         .from(subscriptions)
         .where(and(eq(subscriptions.chatId, "fixture-chat"), eq(subscriptions.isActive, true))),
     ).resolves.toHaveLength(1);
+  });
+});
+
+describe("SubscriptionsService.create", () => {
+  it("stores each subscription's match criteria independently", async () => {
+    const nodes = await db
+      .insert(schema.nodes)
+      .values([
+        { type: "ROLE", canonicalName: "Backend", slug: "backend", status: "VERIFIED" },
+        { type: "SKILL", canonicalName: "PHP", slug: "php", status: "VERIFIED" },
+        { type: "SKILL", canonicalName: "Go", slug: "go", status: "VERIFIED" },
+      ])
+      .returning({ id: schema.nodes.id, slug: schema.nodes.slug });
+    const bySlug = new Map(nodes.map((node) => [node.slug, node.id]));
+    const service = new SubscriptionsService(db, noopAnalytics(db), new NodeSlugResolver(db));
+
+    const firstId = await service.create({ roleIds: ["backend"], excludedSkillIds: ["php"] });
+    const secondId = await service.create({ roleIds: ["backend"], excludedSkillIds: ["go"] });
+    const rows = await db
+      .select({ id: subscriptions.id, params: subscriptions.params })
+      .from(subscriptions)
+      .where(inArray(subscriptions.id, [firstId, secondId]));
+    const byId = new Map(rows.map((row) => [row.id, row.params]));
+
+    expect(byId.get(firstId)).toMatchObject({
+      roleIds: [bySlug.get("backend")],
+      excludedSkillIds: [bySlug.get("php")],
+    });
+    expect(byId.get(secondId)).toMatchObject({
+      roleIds: [bySlug.get("backend")],
+      excludedSkillIds: [bySlug.get("go")],
+    });
   });
 });

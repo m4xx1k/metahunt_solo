@@ -201,6 +201,7 @@ export interface ListVacanciesQuery {
    */
   roleIds?: string[];
   skillIds?: string[];
+  excludedSkillIds?: string[];
   /** Match ANY of these DOMAIN node slugs (OR). Serialized as repeated ?domainIds=. */
   domainIds?: string[];
   /**

@@ -4,7 +4,10 @@ import type { Pool } from "pg";
 import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
+import { CandidateLoaderService } from "../../src/03-discovery/cv/candidate-loader.service";
+import { CandidateMatchService } from "../../src/03-discovery/cv/candidate-match.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
+import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 
 import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
@@ -12,6 +15,7 @@ import { makeTestDb, truncateAll } from "./db";
 let db: DrizzleDB;
 let pool: Pool;
 let ranking: RankingService;
+let candidateMatch: CandidateMatchService;
 let seq = 0;
 
 // ── factories ──────────────────────────────────────────────────────────────
@@ -72,9 +76,26 @@ async function refreshNodeStats() {
   await db.execute(sql`REFRESH MATERIALIZED VIEW node_stats`);
 }
 
+async function seedCandidate(skillIds: string[]): Promise<string> {
+  const [candidate] = await db
+    .insert(schema.candidates)
+    .values({
+      contentHash: `candidate-${++seq}`,
+      sourceText: "",
+      extracted: { unmatchedSkills: [] },
+    })
+    .returning({ id: schema.candidates.id });
+  await db
+    .insert(schema.candidateNodes)
+    .values(skillIds.map((nodeId) => ({ candidateId: candidate.id, nodeId })));
+  return candidate.id;
+}
+
 beforeAll(() => {
   ({ db, pool } = makeTestDb());
   ranking = new RankingService(db, new FeedService(db), noopAnalytics(db));
+  const candidates = new CandidateLoaderService(db, { extract: jest.fn() }, ranking);
+  candidateMatch = new CandidateMatchService(candidates, ranking, new NodeSlugResolver(db));
 });
 
 afterAll(async () => {
@@ -205,5 +226,54 @@ describe("RankingService.match (integration)", () => {
     const ids = res.items.map((i) => i.vacancy.id);
     expect(ids).toContain(visible);
     expect(ids).not.toContain(hidden);
+  });
+});
+
+describe("CandidateMatchService criteria (integration)", () => {
+  it("keeps role and excluded-skill criteria local to each match", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const backend = await seedNode("ROLE", "Backend Developer");
+    const frontend = await seedNode("ROLE", "Frontend Developer");
+    const typescript = await seedNode("SKILL", "TypeScript");
+    const php = await seedNode("SKILL", "PHP");
+    const backendVacancy = await seedVacancy(sourceId, ingestId, backend, "Backend");
+    const frontendVacancy = await seedVacancy(sourceId, ingestId, frontend, "Frontend");
+    await linkSkill(backendVacancy, typescript);
+    await linkSkill(backendVacancy, php);
+    await linkSkill(frontendVacancy, typescript);
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([typescript]);
+
+    const backendWithoutPhp = await candidateMatch.match(
+      candidateId,
+      { roleRefs: [backend], excludedSkillRefs: [php] },
+      1,
+      20,
+    );
+    const frontendResult = await candidateMatch.match(candidateId, { roleRefs: [frontend] }, 1, 20);
+    const backendResult = await candidateMatch.match(candidateId, { roleRefs: [backend] }, 1, 20);
+
+    expect(backendWithoutPhp.items).toHaveLength(0);
+    expect(frontendResult.items.map((item) => item.vacancy.id)).toEqual([frontendVacancy]);
+    expect(backendResult.items.map((item) => item.vacancy.id)).toEqual([backendVacancy]);
+  });
+
+  it("excludes required skills but allows the same optional skill", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const typescript = await seedNode("SKILL", "TypeScript");
+    const php = await seedNode("SKILL", "PHP");
+    const requiredPhp = await seedVacancy(sourceId, ingestId, role, "Required PHP");
+    const optionalPhp = await seedVacancy(sourceId, ingestId, role, "Optional PHP");
+    await linkSkill(requiredPhp, typescript);
+    await linkSkill(requiredPhp, php);
+    await linkSkill(optionalPhp, typescript);
+    await linkSkill(optionalPhp, php, false);
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([typescript]);
+
+    const result = await candidateMatch.match(candidateId, { excludedSkillRefs: [php] }, 1, 20);
+
+    expect(result.items.map((item) => item.vacancy.id)).toEqual([optionalPhp]);
   });
 });

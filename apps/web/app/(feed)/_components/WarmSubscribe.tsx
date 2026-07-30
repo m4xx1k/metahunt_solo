@@ -96,6 +96,8 @@ function toCvMatchParams(f: FilterState): CvMatchParams {
     englishLevels: asEnums<EnglishLevel>(f.englishLevels),
     employmentTypes: asEnums<EmploymentType>(f.employmentTypes),
     domainIds: f.domainIds.length ? f.domainIds : undefined,
+    roleIds: f.roleIds.length ? f.roleIds : undefined,
+    excludedSkillIds: f.excludedSkillIds.length ? f.excludedSkillIds : undefined,
     experienceYears: f.experienceYears.length ? f.experienceYears : undefined,
     hasTestAssignment: f.test ?? undefined,
     hasReservation: f.reservation ?? undefined,

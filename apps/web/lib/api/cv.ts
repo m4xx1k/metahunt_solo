@@ -13,6 +13,12 @@ export interface CvIngestResult {
   unmatched: string[];
 }
 
+export interface CandidateView extends CvIngestResult {
+  englishLevel: string | null;
+  experienceYears: number | null;
+  extracted: Record<string, unknown>;
+}
+
 // A seeded demo profile for the reverse-ATS picker — ranked via the same
 // candidateId path as an uploaded CV.
 export interface SampleCandidate {
@@ -32,6 +38,7 @@ export interface CvMatchQuery {
   domainIds?: string;
   /** CSV of ROLE node slugs — hard filter (resolved -> ids server-side). */
   roleIds?: string;
+  excludedSkillIds?: string;
   /** CSV of experience tokens ("0".."5" exact, "6+" = ≥6). */
   experienceYears?: string;
   hasTestAssignment?: boolean;
@@ -92,7 +99,7 @@ export const cvApi = {
 
   // Read-back for a stored candidate (role/seniority + current skill set) —
   // powers the account-side skill manager.
-  get: (id: string) => apiGet<CvIngestResult>(`/cv/${id}`),
+  get: (id: string) => apiGet<CandidateView>(`/cv/${id}`),
 
   matches: (id: string, query: CvMatchQuery = {}) =>
     apiGet<MatchResponse>(`/cv/${id}/matches${buildQs(query)}`),

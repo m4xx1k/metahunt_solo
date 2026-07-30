@@ -153,6 +153,11 @@ export function FeedLensShell({
     () => roleCatalog?.map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
     [roleCatalog],
   );
+  const warmSkillOptions = useMemo<OptionRow[] | undefined>(
+    () =>
+      skillCatalog?.map((skill) => ({ id: skill.id, label: skill.name, count: skill.count ?? 0 })),
+    [skillCatalog],
+  );
 
   const isSample = cv != null && samples.some((s) => s.candidateId === cv);
   const uploaded = uploadInfo?.candidateId === cv ? uploadInfo : null;
@@ -222,6 +227,7 @@ export function FeedLensShell({
             candidateId={cv}
             domainOptions={domainOptions}
             roleOptions={warmRoleOptions}
+            skillOptions={warmSkillOptions}
             profileTitle={profileTitle}
             profileRole={uploaded?.role}
             profileSeniority={uploaded?.seniority}

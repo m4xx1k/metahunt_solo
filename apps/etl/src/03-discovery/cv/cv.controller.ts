@@ -10,6 +10,8 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  UsePipes,
+  ValidationPipe,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiExcludeController } from "@nestjs/swagger";
@@ -20,29 +22,9 @@ import { CurrentUser } from "../../platform/auth/decorators/current-user.decorat
 import { Public } from "../../platform/auth/decorators/public.decorator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
+import { CandidateMatchParamsDto } from "../../platform/shared/filter-params.dto";
+import { DEFAULT_PAGE_SIZE, parseId } from "../../platform/shared/query-parsing";
 import {
-  EMPLOYMENT_TYPE_VALUES,
-  ENGLISH_LEVEL_VALUES,
-  SENIORITY_VALUES,
-  WORK_FORMAT_VALUES,
-  type EmploymentType,
-  type EnglishLevel,
-  type Seniority,
-  type WorkFormat,
-} from "../../platform/shared/contract";
-import {
-  parseBool,
-  parseCsv,
-  parseDays,
-  parseEnum,
-  parseEnumCsv,
-  parseId,
-  parsePage,
-  parsePageSize,
-} from "../../platform/shared/query-parsing";
-import {
-  FIT_TIER_VALUES,
-  type FitTier,
   type MatchResponse,
   type RecommendResponse,
   type RoleSuggestionsResponse,
@@ -52,6 +34,7 @@ import { RecommendationService } from "../ranking/recommendation.service";
 
 import { AdditionalSkillsService } from "./additional-skills.service";
 import { CandidateLoaderService } from "./candidate-loader.service";
+import { CandidateMatchService } from "./candidate-match.service";
 import type {
   CandidateNodeRef,
   CandidateView,
@@ -60,23 +43,6 @@ import type {
   SkillSuggestion,
 } from "./cv.contract";
 import { extractText } from "./text-extract";
-
-interface MatchQueryStrings {
-  seniorities?: string;
-  workFormats?: string;
-  englishLevels?: string;
-  employmentTypes?: string;
-  domainIds?: string;
-  roleIds?: string;
-  experienceYears?: string;
-  hasTestAssignment?: string;
-  hasReservation?: string;
-  minFitTier?: string;
-  sourceId?: string;
-  postedWithinDays?: string;
-  page?: string;
-  pageSize?: string;
-}
 
 // CV upload is LLM-backed (a BAML extraction per new file) + accepts user
 // uploads, so it gets two guards on top of the global rate limit:
@@ -94,6 +60,7 @@ const CV_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 export class CvController {
   constructor(
     private readonly loader: CandidateLoaderService,
+    private readonly candidateMatch: CandidateMatchService,
     private readonly ranking: RankingService,
     private readonly recommendation: RecommendationService,
     private readonly additionalSkills: AdditionalSkillsService,
@@ -130,9 +97,10 @@ export class CvController {
 
   @Get("samples/:id/matches")
   @Public()
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async sampleMatches(
     @Param("id") id: string,
-    @Query() query: MatchQueryStrings,
+    @Query() query: CandidateMatchParamsDto,
   ): Promise<MatchResponse> {
     await this.loader.assertSampleCandidate(id);
     return this.matchCandidate(id, query);
@@ -153,43 +121,36 @@ export class CvController {
 
   // Rank all vacancies for a stored candidate.
   @Get(":id/matches")
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async matches(
     @CurrentUser() user: JwtUser,
     @Param("id") id: string,
-    @Query() query: MatchQueryStrings,
+    @Query() query: CandidateMatchParamsDto,
   ): Promise<MatchResponse> {
     await this.loader.assertAccessibleCandidate(user.userId, id);
     return this.matchCandidate(id, query);
   }
 
-  private async matchCandidate(id: string, query: MatchQueryStrings): Promise<MatchResponse> {
-    const refs = await this.loader.getMatchInput(id);
-    return this.ranking.rankByRefs(
-      refs,
+  private matchCandidate(id: string, query: CandidateMatchParamsDto): Promise<MatchResponse> {
+    return this.candidateMatch.match(
+      id,
       {
-        seniorities: parseEnumCsv<Seniority>("seniorities", query.seniorities, SENIORITY_VALUES),
-        workFormats: parseEnumCsv<WorkFormat>("workFormats", query.workFormats, WORK_FORMAT_VALUES),
-        englishLevels: parseEnumCsv<EnglishLevel>(
-          "englishLevels",
-          query.englishLevels,
-          ENGLISH_LEVEL_VALUES,
-        ),
-        employmentTypes: parseEnumCsv<EmploymentType>(
-          "employmentTypes",
-          query.employmentTypes,
-          EMPLOYMENT_TYPE_VALUES,
-        ),
-        domainIds: await this.slugs.toIds("DOMAIN", parseCsv("domainIds", query.domainIds)),
-        roleNodeIds: await this.slugs.toIds("ROLE", parseCsv("roleIds", query.roleIds)),
-        experienceYears: parseCsv("experienceYears", query.experienceYears),
-        hasTestAssignment: parseBool("hasTestAssignment", query.hasTestAssignment),
-        hasReservation: parseBool("hasReservation", query.hasReservation),
-        minFitTier: parseEnum<FitTier>("minFitTier", query.minFitTier, FIT_TIER_VALUES),
-        sourceId: parseId("sourceId", query.sourceId),
-        postedWithinDays: parseDays("postedWithinDays", query.postedWithinDays),
+        seniorities: query.seniorities,
+        workFormats: query.workFormats,
+        englishLevels: query.englishLevels,
+        employmentTypes: query.employmentTypes,
+        domainRefs: query.domainIds,
+        roleRefs: query.roleIds,
+        excludedSkillRefs: query.excludedSkillIds,
+        experienceYears: query.experienceYears,
+        hasTestAssignment: query.hasTestAssignment,
+        hasReservation: query.hasReservation,
+        minFitTier: query.minFitTier,
+        sourceId: query.sourceId,
+        postedWithinDays: query.postedWithinDays,
       },
-      parsePage(query.page),
-      parsePageSize(query.pageSize),
+      query.page ?? 1,
+      query.pageSize ?? DEFAULT_PAGE_SIZE,
     );
   }
 

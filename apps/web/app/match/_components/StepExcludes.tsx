@@ -2,19 +2,14 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { facetsApi } from "@/lib/api/facets";
 import { chipClass } from "@/ui/inputs/pill";
 
-import { MOCK_EXCLUDE_PREVIEW_SKILL } from "./_mocks";
 import type { SkillPick } from "./flow";
 
 const SEARCH_MAX = 6;
 
-// Excludes step — "чого НЕ хочеш у вакансіях". Selection is local state only:
-// the skip/demote maths (EXCL_SKIP_SHARE) lands with the matcher-side PR, so
-// this step collects intent and previews how the feed will show it.
 export function StepExcludes({
   excludes,
   onChange,
@@ -22,7 +17,6 @@ export function StepExcludes({
 }: {
   excludes: SkillPick[];
   onChange: (excludes: SkillPick[]) => void;
-  /** The candidate's own skills — the typical source of "маю, але не хочу". */
   ownSkills: SkillPick[];
 }) {
   const [query, setQuery] = useState("");
@@ -56,13 +50,10 @@ export function StepExcludes({
     setQuery("");
   };
 
-  const previewSkill = excludes[0]?.name.toLowerCase() ?? MOCK_EXCLUDE_PREVIEW_SKILL;
-
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm leading-relaxed text-text-secondary">
-        Скажи, з чим не хочеш працювати — приберемо або попередимо. Вакансії, де це головна вимога —
-        сховаємо; де другорядна — позначимо ⚠️.
+        Сховаємо вакансії, де ці навички обовʼязкові.
       </p>
 
       {excludes.length > 0 ? (
@@ -135,20 +126,6 @@ export function StepExcludes({
             )}
           </ul>
         ) : null}
-      </div>
-
-      <div className="flex flex-col gap-2 border border-border bg-bg p-3.5">
-        <p className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-          як це виглядатиме у стрічці:
-        </p>
-        <span className="inline-flex w-fit items-center gap-1.5 border border-accent/50 bg-accent/10 px-2 py-[2px] font-mono text-xs text-text-secondary">
-          <WarningIcon className="h-3.5 w-3.5 text-accent" aria-hidden />
-          вимагає {previewSkill}
-        </span>
-        <p className="font-mono text-[10px] leading-relaxed text-text-muted">
-          нічого не зникає мовчки: приховані вакансії рахуються у футері стрічки — «приховано N ·
-          показати»
-        </p>
       </div>
     </div>
   );

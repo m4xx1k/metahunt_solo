@@ -18,6 +18,7 @@ export const MATCH_PAGE_SIZE = 20;
 export function warmFilterKey(f: FilterState) {
   return {
     roleIds: f.roleIds,
+    excludedSkillIds: f.excludedSkillIds,
     seniorities: f.seniorities,
     workFormats: f.workFormats,
     englishLevels: f.englishLevels,
@@ -41,6 +42,7 @@ export function fetchMatch(
     page,
     pageSize: MATCH_PAGE_SIZE,
     roleIds: toCsv(f.roleIds),
+    excludedSkillIds: toCsv(f.excludedSkillIds),
     seniorities: toCsv(f.seniorities),
     workFormats: toCsv(f.workFormats),
     englishLevels: toCsv(f.englishLevels),

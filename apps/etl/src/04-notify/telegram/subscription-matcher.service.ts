@@ -1,10 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
 
-import { CandidateLoaderService } from "../../03-discovery/cv/candidate-loader.service";
+import {
+  CandidateMatchService,
+  type CandidateMatchCriteria,
+} from "../../03-discovery/cv/candidate-match.service";
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { FeedService, type FeedSearchParams } from "../../03-discovery/feed/feed.service";
-import type { FitTier, MatchFilters } from "../../03-discovery/ranking/ranking.contract";
-import { RankingService } from "../../03-discovery/ranking/ranking.service";
+import type { FitTier } from "../../03-discovery/ranking/ranking.contract";
 import { asBoolean, asNumber, asString, asStringArray } from "../../platform/shared/coerce";
 import type {
   EmploymentType,
@@ -44,8 +46,7 @@ export class SubscriptionMatcherService {
 
   constructor(
     private readonly feed: FeedService,
-    private readonly ranking: RankingService,
-    private readonly candidates: CandidateLoaderService,
+    private readonly candidateMatch: CandidateMatchService,
     private readonly subscriptions: SubscriptionsService,
     private readonly sentNotifications: SentNotificationsService,
   ) {}
@@ -105,14 +106,13 @@ export class SubscriptionMatcherService {
     loadedAfter: Date,
     excludeIds: string[],
   ): Promise<DigestMatch> {
-    const refs = await this.candidates.getMatchInput(candidateId);
-    const filters = paramsToMatchFilters(sub.params);
+    const criteria = paramsToCandidateCriteria(sub.params);
     const [res, label] = await Promise.all([
-      this.ranking.rankByRefs(
-        refs,
+      this.candidateMatch.match(
+        candidateId,
         {
-          ...filters,
-          minFitTier: filters.minFitTier ?? DEFAULT_CV_MIN_FIT,
+          ...criteria,
+          minFitTier: criteria.minFitTier ?? DEFAULT_CV_MIN_FIT,
           loadedAfter,
           excludeIds,
         },
@@ -132,17 +132,16 @@ function candidateFloor(createdAt: Date): Date {
   return createdAt > windowStart ? createdAt : windowStart;
 }
 
-// Stored params (a jsonb bag, still unknown here) → RankingService MatchFilters.
-// Empty arrays are fine — buildFilters treats them as "no filter".
-function paramsToMatchFilters(params: SubscriptionParams): MatchFilters {
+// Stored JSONB params become typed candidate-match criteria here.
+function paramsToCandidateCriteria(params: SubscriptionParams): CandidateMatchCriteria {
   return {
     seniorities: asStringArray(params.seniorities) as Seniority[],
     workFormats: asStringArray(params.workFormats) as WorkFormat[],
     englishLevels: asStringArray(params.englishLevels) as EnglishLevel[],
     employmentTypes: asStringArray(params.employmentTypes) as EmploymentType[],
-    // Domain + experience are stored on warm subs (via FEED_PARAM_KEYS) but were
-    // dropped here, so CV digests ignored them — thread them to the ranker.
-    domainIds: asStringArray(params.domainIds),
+    domainRefs: asStringArray(params.domainIds),
+    roleRefs: asStringArray(params.roleIds),
+    excludedSkillRefs: asStringArray(params.excludedSkillIds),
     experienceYears: asStringArray(params.experienceYears),
     hasTestAssignment: asBoolean(params.hasTestAssignment),
     hasReservation: asBoolean(params.hasReservation),
