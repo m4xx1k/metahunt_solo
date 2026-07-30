@@ -17,9 +17,9 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
     mutationFn: meApi.deleteAccount,
     onSuccess: async () => {
       await onDeleted();
-      toast.success("Account data deleted");
+      toast.success("Акаунт видалено");
     },
-    onError: () => toast.error("Couldn't delete account"),
+    onError: () => toast.error("Не вдалося видалити акаунт"),
   });
 
   const handleOpen = useCallback(() => setConfirming(true), []);
@@ -35,17 +35,15 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
   }, [confirmation, remove]);
 
   return (
-    <Panel title="delete account" tone="danger" className="mt-6 border-danger/60 shadow-brut-sm">
+    <Panel title="видалити акаунт" tone="danger" className="border-danger/60 shadow-brut-sm">
       <p className="max-w-2xl font-mono text-2xs leading-relaxed text-text-secondary">
-        Permanently remove your MetaHunt account, Telegram identity, CV-derived profile and skills,
-        subscriptions, and notification history. Pseudonymous product analytics are handled
-        separately as described in the privacy notice. This cannot be undone.
+        Видалимо акаунт, CV, підписки та історію сповіщень. Це незворотно.
       </p>
 
       {confirming ? (
         <div className="flex max-w-md flex-col gap-3">
           <label htmlFor="account-delete-confirmation" className="font-mono text-xs text-danger">
-            Type {CONFIRMATION} to confirm
+            Введи {CONFIRMATION}
           </label>
           <input
             id="account-delete-confirmation"
@@ -64,7 +62,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
               disabled={confirmation !== CONFIRMATION || remove.isPending}
               className="border-danger text-danger hover:bg-danger hover:text-bg"
             >
-              {remove.isPending ? "deleting…" : "delete permanently"}
+              {remove.isPending ? "видаляю…" : "видалити назавжди"}
             </Button>
             <Button
               variant="secondary"
@@ -72,7 +70,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
               onClick={handleCancel}
               disabled={remove.isPending}
             >
-              cancel
+              скасувати
             </Button>
           </div>
         </div>
@@ -83,7 +81,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
           onClick={handleOpen}
           className="border-danger text-danger hover:bg-danger hover:text-bg"
         >
-          delete my account
+          видалити акаунт
         </Button>
       )}
     </Panel>

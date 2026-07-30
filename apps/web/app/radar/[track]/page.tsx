@@ -105,14 +105,7 @@ export default async function TrackRadarPage({
         ]}
         cta={null}
       />
-      <main
-        className="bg-bg"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "auto, 22px 22px",
-        }}
-      >
+      <main className="page-dot-grid bg-bg">
         <section className="border-b border-border px-6 py-20 md:px-12 md:py-28">
           <div className="mx-auto grid w-full max-w-[1180px] gap-12 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
             <div className="flex flex-col items-start gap-7">

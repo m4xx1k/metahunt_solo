@@ -1,12 +1,14 @@
 # match-preferences — subscription-scoped `/match` criteria
 
 **Branch:** `feat/match-preferences`
-**Status:** in-progress
-**Started:** 2026-07-28
+**Status:** done
+**Started:** 2026-07-28 · **Closed:** 2026-07-30
 
 ## Outcome
 
-_(fill in when closing)_
+CV facts remain reusable while roles, exclusions, and filters are scoped to a preview draft or one
+subscription. Web preview and Telegram delivery share one matcher. Existing subscriptions remain
+compatible, and real-Postgres tests protect ownership, exclusions, and subscription isolation.
 
 ## Subtasks
 
@@ -16,7 +18,7 @@ _(fill in when closing)_
 - [x] T3 — Replace `/match` mocks with a transient criteria draft — _done when:_ the preview uses real roles and exclusions without candidate-level persistence.
 - [x] T4 — Persist criteria when a CV subscription is created — _done when:_ two subscriptions over one CV can produce independent matches.
 - [x] T5 — Add behavior-level integration coverage — _done when:_ ownership, role filters, required-skill exclusions, and subscription isolation run against Postgres.
-- [ ] T6 — Verify and document the shipped surface — _done when:_ focused tests, typecheck/lint, review, and snapshot/release notes are complete.
+- [x] T6 — Verify and document the shipped surface — _done when:_ focused tests, typecheck/lint, review, and snapshot/release notes are complete.
 
 ## Decisions
 
@@ -28,5 +30,5 @@ _(fill in when closing)_
 
 - Linear: [MET-103](https://linear.app/metahunt/issue/MET-103/rebuild-match-onboarding-cv-facts-editable-profile-exclusions-role), [MET-25](https://linear.app/metahunt/issue/MET-25/connect-steproles-to-real-api-replace-113-mocks)
 - Account workspace: [MET-112](https://linear.app/metahunt/issue/MET-112/cv-match-account-workspace-and-editable-subscriptions)
-- ADR: [ADR-0011](../decisions/0011-subscription-scoped-match-criteria.md)
+- ADR: [ADR-0011](../../decisions/0011-subscription-scoped-match-criteria.md)
 - Follow-up ranker: [MET-104](https://linear.app/metahunt/issue/MET-104/design-and-validate-a-v2-hybrid-cv-vacancy-ranker)

@@ -241,14 +241,7 @@ export default async function VacancyDetailPage({ params }: { params: Promise<Pa
         ])}
       />
       <Header links={[{ label: "усі вакансії", href: "/" }]} cta={null} />
-      <main
-        className="bg-bg"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "auto, 22px 22px",
-        }}
-      >
+      <main className="page-dot-grid bg-bg">
         <section className="border-b border-border px-6 py-16 md:px-12 md:py-20">
           <div className="mx-auto flex w-full max-w-[880px] flex-col gap-6">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">

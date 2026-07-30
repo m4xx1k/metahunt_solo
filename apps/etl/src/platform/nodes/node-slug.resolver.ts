@@ -53,4 +53,19 @@ export class NodeSlugResolver {
     if (!slug) return slug;
     return (await this.toIds(type, [slug]))?.[0];
   }
+
+  async toSlugs(type: NodeType, refs: string[] | undefined): Promise<string[] | undefined> {
+    if (!refs || refs.length === 0) return refs;
+    const ids = refs.filter(isUuid);
+    if (ids.length === 0) return refs;
+
+    const rows = await this.db
+      .select({ id: schema.nodes.id, slug: schema.nodes.slug })
+      .from(schema.nodes)
+      .where(and(eq(schema.nodes.type, type), inArray(schema.nodes.id, ids)));
+    const byId = new Map(rows.map((row) => [row.id, row.slug]));
+    return refs
+      .map((ref) => (isUuid(ref) ? byId.get(ref) : ref))
+      .filter((slug): slug is string => typeof slug === "string");
+  }
 }

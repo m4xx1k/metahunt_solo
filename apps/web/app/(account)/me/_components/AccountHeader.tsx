@@ -2,11 +2,8 @@
 
 import { Button } from "@/ui";
 import type { AuthUser } from "@/lib/api/auth";
-
-// Who you are and how to leave. Everything else on the page is a Panel; this is
-// the one row that is not, so it reads as the page's own header.
 export function AccountHeader({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
-  const name = user.username ? `@${user.username}` : user.firstName || "your account";
+  const name = user.username ? `@${user.username}` : user.firstName || "твій акаунт";
 
   return (
     <header className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
@@ -20,7 +17,7 @@ export function AccountHeader({ user, onLogout }: { user: AuthUser; onLogout: ()
         </p>
       </div>
       <Button variant="secondary" size="sm" onClick={onLogout} className="self-start sm:self-auto">
-        log out
+        вийти
       </Button>
     </header>
   );

@@ -11,42 +11,39 @@ import { EmptyState } from "@/ui/feedback/EmptyState";
 import { meApi, type MeCv } from "@/lib/api/me";
 import { CvSkillManager } from "@/features/cv-match/CvSkillManager";
 
-const CV_KEY = ["me", "cv"];
+import { ACCOUNT_QUERY_KEYS } from "./query-keys";
 
-// The user's owned CVs (MVP: one active). Delete removes only the ownership link
-// — the shared candidate row survives (content-hash dedup).
 export function MyCvPanel({ className }: { className?: string }) {
   const qc = useQueryClient();
   const { data: cvs, isLoading } = useQuery({
-    queryKey: CV_KEY,
+    queryKey: ACCOUNT_QUERY_KEYS.cvs,
     queryFn: meApi.listCvs,
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => meApi.deleteCv(id),
     onSuccess: () => {
-      toast.success("CV removed");
-      void qc.invalidateQueries({ queryKey: CV_KEY });
+      toast.success("CV видалено");
+      void Promise.all([
+        qc.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEYS.cvs }),
+        qc.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEYS.subscriptions }),
+      ]);
     },
-    onError: () => toast.error("Couldn't remove CV"),
+    onError: () => toast.error("Не вдалося видалити CV"),
   });
 
   return (
-    <Panel
-      title="my cv"
-      meta={cvs?.length ? `${cvs.length} uploaded` : undefined}
-      className={className}
-    >
+    <Panel title="CV" meta={cvs?.length ? `${cvs.length}` : undefined} className={className}>
       {isLoading ? (
-        <EmptyState title="loading…" />
+        <EmptyState title="завантаження…" />
       ) : !cvs || cvs.length === 0 ? (
         <EmptyState
-          title="no CV yet"
-          hint="upload one on the feed to rank jobs against it"
+          title="CV ще немає"
+          hint="завантаж CV, щоб ранжувати вакансії"
           action={
             <Link href="/">
               <Button variant="secondary" size="sm">
-                go to feed →
+                до вакансій →
               </Button>
             </Link>
           }
@@ -54,12 +51,7 @@ export function MyCvPanel({ className }: { className?: string }) {
       ) : (
         <ul className="flex flex-col gap-3">
           {cvs.map((cv) => (
-            <CvRow
-              key={cv.id}
-              cv={cv}
-              onDelete={() => remove.mutate(cv.id)}
-              deleting={remove.isPending}
-            />
+            <CvRow key={cv.id} cv={cv} onDelete={remove.mutate} deleting={remove.isPending} />
           ))}
         </ul>
       )}
@@ -67,8 +59,18 @@ export function MyCvPanel({ className }: { className?: string }) {
   );
 }
 
-function CvRow({ cv, onDelete, deleting }: { cv: MeCv; onDelete: () => void; deleting: boolean }) {
+function CvRow({
+  cv,
+  onDelete,
+  deleting,
+}: {
+  cv: MeCv;
+  onDelete: (id: string) => void;
+  deleting: boolean;
+}) {
   const [managingSkills, setManagingSkills] = useState(false);
+  const handleSkills = () => setManagingSkills((visible) => !visible);
+  const handleDelete = () => onDelete(cv.id);
   const facts = [cv.seniority, cv.role, cv.experienceYears ? `${cv.experienceYears} yr` : null]
     .filter(Boolean)
     .join(" · ");
@@ -80,7 +82,7 @@ function CvRow({ cv, onDelete, deleting }: { cv: MeCv; onDelete: () => void; del
             {cv.label}
             {cv.isActive && (
               <span className="ml-2 font-mono text-2xs uppercase tracking-wider text-accent">
-                active
+                активне
               </span>
             )}
           </p>
@@ -93,19 +95,19 @@ function CvRow({ cv, onDelete, deleting }: { cv: MeCv; onDelete: () => void; del
         <div className="flex flex-wrap gap-2 sm:shrink-0">
           <Link href={`/?cv=${cv.candidateId}`}>
             <Button variant="secondary" size="sm">
-              view feed
+              вакансії
             </Button>
           </Link>
           <Button
             variant="secondary"
             size="sm"
             aria-expanded={managingSkills}
-            onClick={() => setManagingSkills((v) => !v)}
+            onClick={handleSkills}
           >
-            {managingSkills ? "hide skills" : "manage skills"}
+            {managingSkills ? "сховати навички" : "навички"}
           </Button>
-          <Button variant="secondary" size="sm" onClick={onDelete} disabled={deleting}>
-            delete
+          <Button variant="secondary" size="sm" onClick={handleDelete} disabled={deleting}>
+            видалити
           </Button>
         </div>
       </div>

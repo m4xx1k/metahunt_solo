@@ -32,14 +32,7 @@ export function HubShell({
   return (
     <>
       <Header links={[{ label: "усі вакансії", href: "/" }]} cta={null} />
-      <main
-        className="bg-bg"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "auto, 22px 22px",
-        }}
-      >
+      <main className="page-dot-grid bg-bg">
         <section className="border-b border-border px-6 py-16 md:px-12 md:py-20">
           <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5">
             <Tag>&gt; {eyebrow}</Tag>
