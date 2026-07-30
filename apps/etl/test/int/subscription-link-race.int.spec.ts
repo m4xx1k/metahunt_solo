@@ -4,6 +4,7 @@ import type { Pool } from "pg";
 import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
+import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 import { SubscriptionsService } from "../../src/04-notify/telegram/subscriptions.service";
 
 import { noopAnalytics } from "./analytics";
@@ -36,7 +37,11 @@ describe("SubscriptionsService.linkChat", () => {
       .values({ params: {} })
       .returning({ id: subscriptions.id });
     const analytics = { telegramLinked: jest.fn() };
-    const service = new SubscriptionsService(db, analytics as never, new NodeSlugResolver(db));
+    const service = new SubscriptionsService(
+      db,
+      analytics as never,
+      new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
+    );
 
     const results = await Promise.all([
       service.linkChat(pending.id, "fixture-chat"),
@@ -59,7 +64,11 @@ describe("SubscriptionsService.linkChat", () => {
       .values([{ params: { seniorities: ["MIDDLE"] } }, { params: { seniorities: ["MIDDLE"] } }])
       .returning({ id: subscriptions.id });
     const analytics = { telegramLinked: jest.fn() };
-    const service = new SubscriptionsService(db, analytics as never, new NodeSlugResolver(db));
+    const service = new SubscriptionsService(
+      db,
+      analytics as never,
+      new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
+    );
 
     const results = await Promise.all(
       pending.map((sub) => service.linkChat(sub.id, "fixture-chat")),
@@ -87,7 +96,11 @@ describe("SubscriptionsService.create", () => {
       ])
       .returning({ id: schema.nodes.id, slug: schema.nodes.slug });
     const bySlug = new Map(nodes.map((node) => [node.slug, node.id]));
-    const service = new SubscriptionsService(db, noopAnalytics(db), new NodeSlugResolver(db));
+    const service = new SubscriptionsService(
+      db,
+      noopAnalytics(db),
+      new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
+    );
 
     const firstId = await service.create({ roleIds: ["backend"], excludedSkillIds: ["php"] });
     const secondId = await service.create({ roleIds: ["backend"], excludedSkillIds: ["go"] });

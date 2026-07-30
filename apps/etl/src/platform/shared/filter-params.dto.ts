@@ -1,7 +1,17 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from "class-validator";
 
 import { FIT_TIER_VALUES, type FitTier } from "../../03-discovery/ranking/ranking.contract";
 
@@ -15,6 +25,8 @@ import {
   type Seniority,
   type WorkFormat,
 } from "./contract";
+
+const EXPERIENCE_YEAR_VALUES = ["0", "1", "2", "3", "4", "5", "6+"] as const;
 
 // Shared, validated filter contract for the endpoints that consume the vacancy
 // filters — GET /feed (query) and POST /ranking/match (body). One transport
@@ -50,7 +62,7 @@ export class FilterParamsDto {
   @ApiPropertyOptional({ description: "Vacancy source id." })
   @IsOptional()
   @trimmed()
-  @IsString()
+  @IsUUID()
   sourceId?: string;
 
   @ApiPropertyOptional({ enum: SENIORITY_VALUES, isArray: true })
@@ -114,7 +126,7 @@ export class FilterParamsDto {
   @IsOptional()
   @toList()
   @IsArray()
-  @IsString({ each: true })
+  @IsIn([...EXPERIENCE_YEAR_VALUES], { each: true })
   experienceYears?: string[];
 
   @ApiPropertyOptional({ description: "Only vacancies posted within this many days.", example: 30 })

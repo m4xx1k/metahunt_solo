@@ -1,18 +1,28 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 
-import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import type { SubscriptionParams } from "../04-notify/telegram/subscriptions.contract";
-import { SubscriptionsService } from "../04-notify/telegram/subscriptions.service";
 import { AnalyticsService } from "../platform/analytics/analytics.service";
+import {
+  InvalidSubscriptionCriteriaError,
+  SubscriptionCriteriaService,
+} from "../platform/subscriptions/subscription-criteria.service";
+import { createSubscriptionName } from "../platform/subscriptions/subscription-name";
+import type { SubscriptionParams } from "../platform/subscriptions/subscription.contract";
 
-import type { MeCv, MeSubscription } from "./me.contract";
+import type { EditableMatchCriteriaDto, MeCv, MeSubscription } from "./me.contract";
 
 const { authIdentities, userCvs, users, candidates, subscriptions } = schema;
 const TELEGRAM_PROVIDER = "telegram";
+
+interface SubscriptionUpdate {
+  name?: string;
+  isActive?: boolean;
+  params?: SubscriptionParams;
+}
 
 // Read + manage the logged-in user's owned CVs and subscriptions. Every query is
 // scoped to userId so one user can never touch another's rows.
@@ -20,7 +30,7 @@ const TELEGRAM_PROVIDER = "telegram";
 export class MeService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    private readonly subscriptionsSvc: SubscriptionsService,
+    private readonly criteria: SubscriptionCriteriaService,
     private readonly analytics: AnalyticsService,
   ) {}
 
@@ -78,6 +88,7 @@ export class MeService {
     const rows = await this.db
       .select({
         id: subscriptions.id,
+        name: subscriptions.name,
         params: subscriptions.params,
         candidateId: subscriptions.candidateId,
         isActive: subscriptions.isActive,
@@ -89,53 +100,100 @@ export class MeService {
       .where(eq(subscriptions.userId, userId))
       .orderBy(desc(subscriptions.createdAt));
     return Promise.all(
-      rows.map(async (r) => ({
-        id: r.id,
-        label: await this.subscriptionsSvc.describe(r.params as SubscriptionParams, r.candidateId),
-        isActive: r.isActive,
-        isCv: r.candidateId !== null,
-        createdAt: r.createdAt.toISOString(),
-        tgUsername: r.tgUsername,
-        tgFirstName: r.tgFirstName,
-      })),
+      rows.map(async (r) => {
+        const storedParams = r.params as SubscriptionParams;
+        const [label, params] = await Promise.all([
+          this.criteria.describe(storedParams, r.candidateId),
+          this.criteria.toPublic(storedParams),
+        ]);
+        const base = {
+          id: r.id,
+          name: r.name ?? createSubscriptionName(r.id),
+          label,
+          isActive: r.isActive,
+          createdAt: r.createdAt.toISOString(),
+          tgUsername: r.tgUsername,
+          tgFirstName: r.tgFirstName,
+        };
+        if (r.candidateId) {
+          return {
+            ...base,
+            isCv: true as const,
+            candidateId: r.candidateId,
+            params: params as EditableMatchCriteriaDto,
+          };
+        }
+        return { ...base, isCv: false as const, candidateId: null, params };
+      }),
     );
   }
 
   async setSubscriptionActive(userId: string, id: string, isActive: boolean): Promise<boolean> {
+    return this.updateSubscription(userId, id, { isActive });
+  }
+
+  async updateSubscription(
+    userId: string,
+    id: string,
+    patch: SubscriptionUpdate,
+  ): Promise<boolean> {
+    let params: SubscriptionParams | undefined;
+    try {
+      params = patch.params ? await this.criteria.normalizeEditable(patch.params) : undefined;
+    } catch (error) {
+      if (error instanceof InvalidSubscriptionCriteriaError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
     return this.db.transaction(async (tx) => {
-      const [updated] = await tx
+      const [existing] = await tx
+        .select({
+          id: subscriptions.id,
+          candidateId: subscriptions.candidateId,
+          isActive: subscriptions.isActive,
+          journeyId: subscriptions.journeyId,
+        })
+        .from(subscriptions)
+        .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
+        .for("update");
+      if (!existing) return false;
+      if (params && existing.candidateId === null) {
+        throw new BadRequestException("Only CV subscription criteria can be edited");
+      }
+
+      if (patch.name !== undefined) {
+        await tx
+          .update(subscriptions)
+          .set({ name: patch.name })
+          .where(eq(subscriptions.id, existing.id));
+      }
+      if (params !== undefined) {
+        await tx.update(subscriptions).set({ params }).where(eq(subscriptions.id, existing.id));
+      }
+
+      const activeChanged = patch.isActive !== undefined && patch.isActive !== existing.isActive;
+      if (!activeChanged || patch.isActive === undefined) return true;
+
+      await tx
         .update(subscriptions)
         .set({
-          isActive,
-          deactivatedAt: isActive ? null : sql`now()`,
-          deactivatedReason: isActive ? null : "user",
+          isActive: patch.isActive,
+          deactivatedAt: patch.isActive ? null : sql`now()`,
+          deactivatedReason: patch.isActive ? null : "user",
         })
-        .where(
-          and(
-            eq(subscriptions.id, id),
-            eq(subscriptions.userId, userId),
-            ne(subscriptions.isActive, isActive),
-          ),
-        )
-        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
-      if (!updated) {
-        const [existing] = await tx
-          .select({ id: subscriptions.id })
-          .from(subscriptions)
-          .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)));
-        return existing !== undefined;
-      }
-      if (updated.journeyId) {
-        if (isActive) {
-          await this.analytics.enqueueSubscriptionReactivated(tx, updated.id, updated.journeyId);
+        .where(eq(subscriptions.id, existing.id));
+      if (existing.journeyId) {
+        if (patch.isActive) {
+          await this.analytics.enqueueSubscriptionReactivated(tx, existing.id, existing.journeyId);
         } else {
           await this.analytics.enqueueUnsubscribed(tx, {
             method: "account",
-            subscriptionId: updated.id,
-            journeyId: updated.journeyId,
+            subscriptionId: existing.id,
+            journeyId: existing.journeyId,
           });
         }
-      } else if (isActive) {
+      } else if (patch.isActive) {
         void this.analytics.subscriptionReactivated(id);
       } else {
         void this.analytics.unsubscribed({ method: "account", subscriptionId: id });

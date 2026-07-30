@@ -1,15 +1,13 @@
 import { Module } from "@nestjs/common";
 
-import { TelegramModule } from "../04-notify/telegram/telegram.module";
 import { AuthModule } from "../platform/auth/auth.module";
+import { SubscriptionPlatformModule } from "../platform/subscriptions/subscription-platform.module";
 
 import { MeController } from "./me.controller";
 import { MeService } from "./me.service";
 
-// Logged-in account surface (/me). AuthModule provides the JwtAuthGuard;
-// TelegramModule provides SubscriptionsService (reused for subscription labels).
 @Module({
-  imports: [AuthModule, TelegramModule],
+  imports: [AuthModule, SubscriptionPlatformModule],
   controllers: [MeController],
   providers: [MeService],
 })

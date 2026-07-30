@@ -33,6 +33,7 @@ export const subscriptions = pgTable(
     journeyId: uuid("journey_id").references(() => analyticsJourneys.id, {
       onDelete: "set null",
     }),
+    name: text("name"),
     params: jsonb("params").notNull().$type<Record<string, unknown>>(),
     isActive: boolean("is_active").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

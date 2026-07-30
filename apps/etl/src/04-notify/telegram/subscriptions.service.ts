@@ -8,11 +8,11 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
-import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
-import { asString, asStringArray } from "../../platform/shared/coerce";
 import { isUuid } from "../../platform/shared/query-parsing";
+import { SubscriptionCriteriaService } from "../../platform/subscriptions/subscription-criteria.service";
+import { createSubscriptionName } from "../../platform/subscriptions/subscription-name";
 
-import { SUBSCRIPTION_PARAM_KEYS, type SubscriptionParams } from "./subscriptions.contract";
+import type { SubscriptionParams } from "./subscriptions.contract";
 import type {
   ActiveSubscription,
   CreateSubscriptionOptions,
@@ -20,7 +20,6 @@ import type {
   SubscriptionMatchTarget,
   TelegramLinkIdentity,
 } from "./subscriptions.types";
-import { copy } from "./telegram-copy";
 
 export type {
   ActiveSubscription,
@@ -29,37 +28,11 @@ export type {
   TelegramLinkIdentity,
 } from "./subscriptions.types";
 
-const { analyticsJourneys, subscriptions, nodes, authIdentities, userCvs } = schema;
+const { analyticsJourneys, subscriptions, authIdentities, userCvs } = schema;
 const TELEGRAM_PROVIDER = "telegram";
 
-const MAX_SUMMARY_ROLES = 2;
 // Consecutive bounced digest sends before a chat is treated as gone.
 const UNREACHABLE_DEACTIVATE_AFTER = 3;
-
-// Store a resolved node-id axis, or drop the key entirely when nothing resolved
-// (an empty array would persist as a no-op filter).
-function setAxis(
-  params: SubscriptionParams,
-  key: "roleIds" | "skillIds" | "excludedSkillIds" | "domainIds",
-  ids: string[] | undefined,
-): void {
-  if (ids && ids.length > 0) params[key] = ids;
-  else delete params[key];
-}
-
-// CV subs store array filters (`seniorities`), feed subs a scalar (`seniority`).
-function asEnumList(arrayVal: unknown, scalarVal: unknown): string[] {
-  const arr = asStringArray(arrayVal);
-  if (arr.length > 0) return arr;
-  const scalar = asString(scalarVal);
-  return scalar ? [scalar] : [];
-}
-
-/**
- * Thin persistence layer for the Telegram bot — link/unlink only. All vacancy
- * matching stays in the catalog services; the bot is transport, not business
- * logic.
- */
 @Injectable()
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
@@ -67,7 +40,7 @@ export class SubscriptionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
-    private readonly slugs: NodeSlugResolver,
+    private readonly criteria: SubscriptionCriteriaService,
   ) {}
 
   // Pending (inactive, unlinked) until `/start <id>`. Persists only whitelisted
@@ -76,30 +49,12 @@ export class SubscriptionsService {
     rawParams: SubscriptionParams,
     options: CreateSubscriptionOptions = {},
   ): Promise<string> {
-    const params: SubscriptionParams = {};
-    for (const key of SUBSCRIPTION_PARAM_KEYS) {
-      const value = rawParams[key];
-      if (value !== undefined && value !== null) params[key] = value;
-    }
-
-    // The role/skill/domain axes arrive as URL slugs; persist resolved node ids
-    // so replay (FeedService.search) and describe() keep matching on ids — old
-    // rows already store ids, so the stored shape stays uniform.
-    const [roleIds, skillIds, excludedSkillIds, domainIds] = await Promise.all([
-      this.slugs.toIds("ROLE", asStringArray(rawParams.roleIds)),
-      this.slugs.toIds("SKILL", asStringArray(rawParams.skillIds)),
-      this.slugs.toIds("SKILL", asStringArray(rawParams.excludedSkillIds)),
-      this.slugs.toIds("DOMAIN", asStringArray(rawParams.domainIds)),
-    ]);
-    setAxis(params, "roleIds", roleIds);
-    setAxis(params, "skillIds", skillIds);
-    setAxis(params, "excludedSkillIds", excludedSkillIds);
-    setAxis(params, "domainIds", domainIds);
-
+    const params = await this.criteria.normalize(rawParams);
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
       throw new Error(`invalid candidateId: ${options.candidateId}`);
     }
     const journeyId = options.journeyId ?? randomUUID();
+    const subscriptionId = randomUUID();
 
     const created = await this.db.transaction(async (tx) => {
       await tx
@@ -115,6 +70,8 @@ export class SubscriptionsService {
       const [subscription] = await tx
         .insert(subscriptions)
         .values({
+          id: subscriptionId,
+          name: createSubscriptionName(subscriptionId),
           params,
           candidateId: options.candidateId ?? null,
           userId: options.userId ?? null,
@@ -533,55 +490,7 @@ export class SubscriptionsService {
   // Human label distinguishing one sub from another: CV marker, roles/skills,
   // then the headline filters (seniority, format, бронь, fit gate).
   async describe(params: SubscriptionParams, candidateId?: string | null): Promise<string> {
-    const roleIds = asStringArray(params.roleIds);
-    const skillIds = asStringArray(params.skillIds);
-    const domainIds = asStringArray(params.domainIds);
-
-    const resolveNames = async (ids: string[]): Promise<string[]> =>
-      ids.length > 0
-        ? (
-            await this.db
-              .select({ name: nodes.canonicalName })
-              .from(nodes)
-              .where(inArray(nodes.id, ids))
-          ).map((r) => r.name)
-        : [];
-
-    const [roleNames, domainNames] = await Promise.all([
-      resolveNames(roleIds),
-      resolveNames(domainIds),
-    ]);
-
-    const parts: string[] = [];
-    const pushNames = (names: string[]) => {
-      if (names.length === 0) return;
-      const shown = names.slice(0, MAX_SUMMARY_ROLES).join(", ");
-      const extra = names.length - MAX_SUMMARY_ROLES;
-      parts.push(extra > 0 ? `${shown} +${extra}` : shown);
-    };
-    if (candidateId) parts.push(copy.describe.byCv);
-    pushNames(roleNames);
-    pushNames(domainNames);
-    if (skillIds.length > 0) parts.push(copy.describe.skills(skillIds.length));
-
-    const seniorities = asEnumList(params.seniorities, params.seniority);
-    if (seniorities.length > 0) {
-      parts.push(seniorities.map((s) => s.toLowerCase()).join("/"));
-    }
-    const formats = asEnumList(params.workFormats, params.workFormat);
-    if (formats.length > 0) {
-      parts.push(formats.map((f) => f.toLowerCase()).join("/"));
-    }
-    const experienceYears = asStringArray(params.experienceYears);
-    if (experienceYears.length > 0) {
-      parts.push(copy.describe.experience(experienceYears));
-    }
-    if (params.hasReservation === true) parts.push(copy.describe.reservation);
-    if (typeof params.minFitTier === "string") {
-      parts.push(`fit≥${params.minFitTier.toLowerCase()}`);
-    }
-
-    return parts.length > 0 ? parts.join(" · ") : copy.describe.all;
+    return this.criteria.describe(params, candidateId);
   }
 
   private async findUserIdForChat(chatId: string): Promise<string | null> {

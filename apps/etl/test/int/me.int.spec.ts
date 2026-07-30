@@ -1,9 +1,13 @@
+import { randomUUID } from "node:crypto";
+
 import { eq, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { MeService } from "../../src/account/me.service";
+import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
+import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
 import { makeTestDb, truncateAll } from "./db";
 
@@ -13,6 +17,7 @@ const {
   candidates,
   userCvs,
   sentNotifications,
+  nodes,
   sources,
   rssIngests,
   rssRecords,
@@ -26,7 +31,9 @@ const subscriptionReactivated = jest.fn();
 const unsubscribed = jest.fn();
 
 function makeService(): MeService {
-  return new MeService(db, {} as never, { subscriptionReactivated, unsubscribed } as never);
+  const analytics = { subscriptionReactivated, unsubscribed } as never;
+  const criteria = new SubscriptionCriteriaService(db, new NodeSlugResolver(db));
+  return new MeService(db, criteria, analytics);
 }
 
 async function seedUser(): Promise<string> {
@@ -64,12 +71,23 @@ async function seedSubscription(values: {
   userId?: string;
   chatId?: string;
   candidateId?: string;
+  name?: string;
+  params?: Record<string, unknown>;
 }): Promise<string> {
+  const { params = {}, ...subscription } = values;
   const [row] = await db
     .insert(subscriptions)
-    .values({ ...values, params: {}, isActive: true })
+    .values({ ...subscription, params, isActive: true })
     .returning({ id: subscriptions.id });
   return row.id;
+}
+
+async function seedNode(type: "ROLE" | "SKILL", name: string, slug: string): Promise<string> {
+  const [node] = await db
+    .insert(nodes)
+    .values({ type, canonicalName: name, slug, status: "VERIFIED" })
+    .returning({ id: nodes.id });
+  return node.id;
 }
 
 let vacancySeq = 0;
@@ -160,6 +178,137 @@ describe("MeService.setSubscriptionActive (integration)", () => {
     await expect(me.setSubscriptionActive(userId, subscriptionId, true)).resolves.toBe(true);
     expect(subscriptionReactivated).not.toHaveBeenCalled();
     expect(unsubscribed).not.toHaveBeenCalled();
+  });
+});
+
+describe("MeService.updateSubscription (integration)", () => {
+  it("renames only a subscription owned by the current account", async () => {
+    const me = makeService();
+    const owner = await seedUser();
+    const otherUser = await seedUser();
+    const ownedId = await seedSubscription({ userId: owner });
+    const otherId = await seedSubscription({ userId: otherUser, name: "Keep me" });
+
+    await expect(me.updateSubscription(owner, ownedId, { name: "Night Shift" })).resolves.toBe(
+      true,
+    );
+    await expect(me.updateSubscription(owner, otherId, { name: "Stolen" })).resolves.toBe(false);
+
+    const rows = await db
+      .select({ id: subscriptions.id, name: subscriptions.name })
+      .from(subscriptions);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { id: ownedId, name: "Night Shift" },
+        { id: otherId, name: "Keep me" },
+      ]),
+    );
+  });
+
+  it("replaces criteria on one CV subscription and returns public slugs", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const candidateId = await seedCandidate();
+    await link(userId, candidateId);
+    const roleId = await seedNode("ROLE", "Full-stack Developer", "full-stack-developer");
+    const skillId = await seedNode("SKILL", "PHP", "php");
+    const editedId = await seedSubscription({ userId, candidateId });
+    const siblingId = await seedSubscription({
+      userId,
+      candidateId,
+      params: { seniorities: ["MIDDLE"] },
+    });
+
+    await expect(
+      me.updateSubscription(userId, editedId, {
+        params: {
+          roleIds: ["full-stack-developer"],
+          excludedSkillIds: ["php"],
+          seniorities: ["SENIOR"],
+        },
+      }),
+    ).resolves.toBe(true);
+
+    const [edited] = await db
+      .select({ params: subscriptions.params })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, editedId));
+    expect(edited.params).toEqual({
+      roleIds: [roleId],
+      excludedSkillIds: [skillId],
+      seniorities: ["SENIOR"],
+    });
+    const [sibling] = await db
+      .select({ params: subscriptions.params })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, siblingId));
+    expect(sibling.params).toEqual({ seniorities: ["MIDDLE"] });
+
+    const listed = await me.listSubscriptions(userId);
+    expect(listed.find((subscription) => subscription.id === editedId)?.params).toEqual({
+      roleIds: ["full-stack-developer"],
+      excludedSkillIds: ["php"],
+      seniorities: ["SENIOR"],
+    });
+  });
+
+  it("keeps feed subscription criteria read-only", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const subscriptionId = await seedSubscription({ userId, params: { q: "nestjs" } });
+
+    await expect(
+      me.updateSubscription(userId, subscriptionId, { params: { seniorities: ["SENIOR"] } }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    const [subscription] = await db
+      .select({ params: subscriptions.params })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    expect(subscription.params).toEqual({ q: "nestjs" });
+  });
+
+  it("rejects unknown public refs without changing stored criteria", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const candidateId = await seedCandidate();
+    const subscriptionId = await seedSubscription({
+      userId,
+      candidateId,
+      params: { seniorities: ["MIDDLE"] },
+    });
+
+    await expect(
+      me.updateSubscription(userId, subscriptionId, {
+        params: { roleIds: ["missing-role"], seniorities: ["SENIOR"] },
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      me.updateSubscription(userId, subscriptionId, { params: { roleIds: null } }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    const [subscription] = await db
+      .select({ params: subscriptions.params })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    expect(subscription.params).toEqual({ seniorities: ["MIDDLE"] });
+  });
+
+  it("never exposes an unresolved stored node id", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const candidateId = await seedCandidate();
+    const missingNodeId = randomUUID();
+    const subscriptionId = await seedSubscription({
+      userId,
+      candidateId,
+      params: { roleIds: [missingNodeId], seniorities: ["MIDDLE"] },
+    });
+
+    const listed = await me.listSubscriptions(userId);
+    const params = listed.find((subscription) => subscription.id === subscriptionId)?.params;
+    expect(params).toEqual({ seniorities: ["MIDDLE"] });
+    expect(JSON.stringify(params)).not.toContain(missingNodeId);
   });
 });
 

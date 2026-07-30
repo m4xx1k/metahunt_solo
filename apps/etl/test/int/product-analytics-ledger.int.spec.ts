@@ -17,6 +17,7 @@ import { AnalyticsService } from "../../src/platform/analytics/analytics.service
 import { ANALYTICS_EVENTS } from "../../src/platform/analytics/events";
 import { ProductEventStore } from "../../src/platform/analytics/product-event.store";
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
+import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
 import { makeTestDb } from "./db";
 
@@ -106,7 +107,11 @@ describe("first-party product analytics ledger", () => {
     const sink: AnalyticsSink = { capture };
     const outbox = new AnalyticsOutboxStore(db);
     const analytics = new AnalyticsService(new ProductEventStore(db), outbox, sink);
-    const subscriptionsService = new SubscriptionsService(db, analytics, new NodeSlugResolver(db));
+    const subscriptionsService = new SubscriptionsService(
+      db,
+      analytics,
+      new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
+    );
     const dashboard = new ProductAnalyticsService(db);
     const journeyId = randomUUID();
     const browserEventId = randomUUID();

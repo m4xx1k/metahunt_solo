@@ -253,6 +253,13 @@
       "when": 1785368410247,
       "tag": "0035_safe_auth_linking",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1785384068938,
+      "tag": "0036_chilly_sir_ram",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -27,7 +28,7 @@ import { CurrentUser } from "../platform/auth/decorators/current-user.decorator"
 import { JwtAuthGuard } from "../platform/auth/jwt-auth.guard";
 import { ApiErrorResponseDto, OkResponseDto } from "../platform/swagger/api-error.dto";
 
-import { type MeCv, type MeSubscription, UpdateSubscriptionStateDto } from "./me.contract";
+import { type MeCv, type MeSubscription, UpdateSubscriptionDto } from "./me.contract";
 import { MeService } from "./me.service";
 
 // The logged-in user's own CVs + subscriptions. Guarded as a whole — no public
@@ -79,18 +80,21 @@ export class MeController {
   }
 
   @Patch("subscriptions/:id")
-  @ApiOperation({ summary: "Enable or disable one current-account subscription" })
-  @ApiBody({ type: UpdateSubscriptionStateDto })
+  @ApiOperation({ summary: "Update one current-account subscription" })
+  @ApiBody({ type: UpdateSubscriptionDto })
   @ApiOkResponse({ type: OkResponseDto })
-  @ApiBadRequestResponse({ description: "isActive must be boolean.", type: ApiErrorResponseDto })
+  @ApiBadRequestResponse({ description: "Invalid subscription update.", type: ApiErrorResponseDto })
   @ApiNotFoundResponse({ description: "Subscription was not found.", type: ApiErrorResponseDto })
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
   async patchSubscription(
     @CurrentUser() user: JwtUser,
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: UpdateSubscriptionStateDto,
+    @Body() body: UpdateSubscriptionDto,
   ): Promise<{ ok: true }> {
-    if (!(await this.me.setSubscriptionActive(user.userId, id, body.isActive))) {
+    if (body.name === undefined && body.isActive === undefined && body.params === undefined) {
+      throw new BadRequestException("At least one subscription field is required");
+    }
+    if (!(await this.me.updateSubscription(user.userId, id, body))) {
       throw new NotFoundException();
     }
     return { ok: true };

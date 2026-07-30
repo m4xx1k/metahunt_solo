@@ -12,6 +12,7 @@ import {
   type ActiveSubscription,
 } from "../../src/04-notify/telegram/subscriptions.service";
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
+import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
 import { makeTestDb, truncateAll } from "./db";
 
@@ -191,7 +192,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        new NodeSlugResolver(db),
+        new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
       fixtureMatcher(sent, vacancyId),
@@ -224,7 +225,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        new NodeSlugResolver(db),
+        new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
       fixtureMatcher(sent, vacancyId),
@@ -248,7 +249,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        new NodeSlugResolver(db),
+        new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
       fixtureMatcher(sent, vacancyId),
@@ -282,7 +283,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        new NodeSlugResolver(db),
+        new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
       fixtureMatcher(sent, vacancyId),
