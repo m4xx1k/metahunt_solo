@@ -9,22 +9,23 @@ import { ApiError } from "@/lib/api/client";
 import { authApi, type AuthProvider, type AuthUser } from "@/lib/api/auth";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { GoogleLoginButton } from "@/features/auth/google-login-button";
-import { TelegramWidgetButton } from "@/features/auth/telegram-widget-button";
+import { TelegramLoginButton } from "@/features/auth/telegram-login-button";
 import { useSession } from "@/features/auth/use-session";
 
 const ROLE: Record<AuthProvider, string> = {
-  telegram: "delivers your digests",
-  google: "sign in without a messenger",
+  telegram: "дайджести",
+  google: "вхід без месенджера",
 };
 const PROVIDERS = Object.keys(ROLE) as AuthProvider[];
 
 export function ConnectionsPanel({ user }: { user: AuthUser }) {
-  const { setUser } = useSession();
+  const { setUser, user: sessionUser } = useSession();
   const analytics = useAnalytics();
   const [busy, setBusy] = useState<AuthProvider | null>(null);
+  const account = sessionUser ?? user;
 
-  const linked = new Map(user.identities.map((i) => [i.provider, i]));
-  const canUnlink = user.identities.length > 1;
+  const linked = new Map(account.identities.map((i) => [i.provider, i]));
+  const canUnlink = account.identities.length > 1;
 
   const apply = useCallback(
     async (provider: AuthProvider, run: () => Promise<AuthUser>, ok: string) => {
@@ -38,9 +39,9 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
         // error the user can act on, and the one worth counting (MET-82).
         if (err instanceof ApiError && err.status === 409) {
           analytics.identityLinkConflict(provider);
-          toast.error(`that ${provider} is already another account's sign-in`);
+          toast.error(`${provider} уже підключено до іншого акаунта`);
         } else {
-          toast.error("could not update");
+          toast.error("Не вдалося оновити");
         }
       } finally {
         setBusy(null);
@@ -50,9 +51,9 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
   );
 
   return (
-    <Panel title="sign-in">
-      {user.email ? (
-        <p className="break-all font-mono text-2xs text-text-secondary">{user.email}</p>
+    <Panel title="вхід">
+      {account.email ? (
+        <p className="break-all font-mono text-2xs text-text-secondary">{account.email}</p>
       ) : null}
       <ul className="flex flex-col gap-3">
         {PROVIDERS.map((provider) => {
@@ -66,10 +67,10 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-primary">
                   {provider}
-                  {identity ? null : <span className="ml-2 text-text-muted">not connected</span>}
+                  {identity ? null : <span className="ml-2 text-text-muted">не підключено</span>}
                 </span>
                 <span className="truncate font-mono text-2xs text-text-muted">
-                  {identity ? who || "connected" : ROLE[provider]}
+                  {identity ? who || "підключено" : ROLE[provider]}
                 </span>
               </div>
 
@@ -79,7 +80,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                     variant="secondary"
                     size="sm"
                     disabled={!canUnlink || busy !== null}
-                    title={canUnlink ? undefined : "your only way back in"}
+                    title={canUnlink ? undefined : "єдиний спосіб входу"}
                     onClick={() =>
                       void apply(
                         provider,
@@ -88,7 +89,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                           analytics.identityUnlinked(provider);
                           return next;
                         },
-                        `${provider} disconnected`,
+                        `${provider} відключено`,
                       )
                     }
                   >
@@ -105,26 +106,15 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                           analytics.identityLinked("google");
                           return next;
                         },
-                        "google connected",
+                        "Google підключено",
                       )
                     }
                   />
                 ) : (
-                  <TelegramWidgetButton
-                    variant="secondary"
-                    label="connect"
+                  <TelegramLoginButton
+                    flow="link"
                     disabled={busy !== null}
-                    onPayload={(payload) =>
-                      apply(
-                        "telegram",
-                        async () => {
-                          const next = await authApi.linkTelegram(payload);
-                          analytics.identityLinked("telegram");
-                          return next;
-                        },
-                        "telegram connected — digests will arrive there",
-                      )
-                    }
+                    onInFlightChange={(inFlight) => setBusy(inFlight ? "telegram" : null)}
                   />
                 )}
               </div>
@@ -135,15 +125,12 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
 
       {!linked.has("telegram") ? (
         <p className="font-mono text-2xs leading-relaxed text-accent">
-          connect telegram to receive digests — that is where they are sent
+          Підключи Telegram для дайджестів
         </p>
       ) : null}
 
-      {/* The unguessable part, and the only part worth saying here — the rest
-          of the model lives in md/runbook/auth.md#linking-providers. */}
       <p className="font-mono text-2xs leading-relaxed text-text-muted">
-        one account, two ways in — signing in elsewhere makes a second one, and they cannot be
-        merged
+        Уже підключений профіль не переноситься автоматично
       </p>
     </Panel>
   );

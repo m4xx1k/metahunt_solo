@@ -8,7 +8,7 @@ import { RssIngestService } from "./rss-ingest.service";
 import { RssController } from "./rss.controller";
 
 // The @AdminOnly() mutations are gated by these guards; auth is exercised
-// separately (telegram-verify.spec + e2e). Stub them so this suite tests only
+// separately in auth integration tests. Stub them so this suite tests only
 // the controller's parsing/delegation logic.
 const allow = { canActivate: () => true };
 

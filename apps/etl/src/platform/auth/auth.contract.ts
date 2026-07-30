@@ -1,11 +1,3 @@
-import type { TelegramAuthPayload } from "./telegram-verify";
-
-// POST /auth/telegram — Telegram widget payload only. CVs are created for an
-// authenticated account and cannot be claimed with a browser-provided UUID.
-export interface TelegramLoginRequest {
-  telegram: TelegramAuthPayload;
-}
-
 export type AuthProvider = "telegram" | "google";
 
 export interface AuthIdentitySummary {
@@ -55,8 +47,10 @@ export interface TelegramLoginPollRequest {
   pollSecret: string;
 }
 
-// `pending` = the user hasn't finished in Telegram yet. `expired` covers every
-// other outcome (unknown nonce, wrong secret, spent request) deliberately —
-// distinguishing them would leak whether a nonce exists.
+// `conflict` is revealed only after the poll secret proves the initiating
+// browser. Unknown nonces, wrong secrets and spent requests all look expired.
 export type TelegramLoginPollResponse =
-  { status: "pending" } | { status: "expired" } | ({ status: "ready" } & TelegramLoginResponse);
+  | { status: "pending" }
+  | { status: "expired" }
+  | { status: "conflict" }
+  | ({ status: "ready" } & TelegramLoginResponse);

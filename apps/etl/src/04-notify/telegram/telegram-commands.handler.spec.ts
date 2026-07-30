@@ -136,7 +136,7 @@ describe("TelegramCommandsHandler", () => {
     });
 
     it("asks a login_ payload to be confirmed instead of logging anyone in", async () => {
-      describeLogin.mockResolvedValue({ nonce: "abc123", verificationCode: "K7QM" });
+      describeLogin.mockResolvedValue({ nonce: "abc123", verificationCode: "K7QM", mode: "login" });
       const ctx = commandCtx("login_abc123");
 
       await commands.get("start")!(ctx);
@@ -145,7 +145,7 @@ describe("TelegramCommandsHandler", () => {
       expect(confirmLogin).not.toHaveBeenCalled();
       expect(linkChat).not.toHaveBeenCalled();
       const [text, opts] = ctx.reply.mock.calls[0];
-      expect(text).toBe(copy.start.loginConfirm("K7QM"));
+      expect(text).toBe(copy.start.loginConfirm("K7QM", "login"));
       expect(JSON.stringify(opts.reply_markup)).toContain("login:ok:abc123");
       expect(JSON.stringify(opts.reply_markup)).toContain("login:no:abc123");
     });
@@ -356,6 +356,7 @@ describe("TelegramCommandsHandler", () => {
     it.each([
       ["authorized", copy.start.loginConfirmed],
       ["already_authorized", copy.start.loginAlreadyDone],
+      ["identity_conflict", copy.start.loginIdentityConflict],
       ["invalid", copy.start.loginExpired(WEB_URL)],
     ])("confirms with the chat id and reports %s", async (result, expected) => {
       confirmLogin.mockResolvedValue(result);
@@ -390,6 +391,15 @@ describe("TelegramCommandsHandler", () => {
       expect(declineLogin).toHaveBeenCalledWith("abc123");
       expect(confirmLogin).not.toHaveBeenCalled();
       expect(ctx.editMessageText).toHaveBeenCalledWith(copy.start.loginDeclined);
+    });
+
+    it("does not let a group callback cancel a login request", async () => {
+      const { cb, ctx } = loginCtx("login:no:abc123", { id: -1001234567890, type: "supergroup" });
+
+      await cb.handler(ctx);
+
+      expect(declineLogin).not.toHaveBeenCalled();
+      expect(ctx.answerCallbackQuery).toHaveBeenCalledWith({ text: copy.start.loginPrivateOnly });
     });
   });
 

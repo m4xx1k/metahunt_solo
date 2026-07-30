@@ -11,7 +11,7 @@ import { TelegramLoginService } from "../../src/platform/auth/telegram-login.ser
 
 import { makeTestDb } from "./db";
 
-const { telegramLoginRequests, authIdentities, subscriptions } = schema;
+const { telegramLoginRequests, authIdentities, subscriptions, users } = schema;
 
 const CHAT_ID = "555000111";
 const OTHER_CHAT_ID = "555000222";
@@ -20,12 +20,13 @@ let db: DrizzleDB;
 let pool: Pool;
 let login: TelegramLoginService;
 
-function makeLoginService(adminIds = ""): TelegramLoginService {
+function makeLoginService(adminIds = "", botToken = "test-bot-token"): TelegramLoginService {
   const jwt = new JwtService({ secret: "int-test-secret", signOptions: { expiresIn: "30d" } });
   const config = {
-    get: (key: string) => (key === "ADMIN_TELEGRAM_IDS" ? adminIds : undefined),
+    get: (key: string) =>
+      key === "ADMIN_TELEGRAM_IDS" ? adminIds : key === "TELEGRAM_BOT_TOKEN" ? botToken : undefined,
   } as unknown as ConfigService;
-  return new TelegramLoginService(db, new AuthService(db, jwt, config));
+  return new TelegramLoginService(db, new AuthService(db, jwt, config), config);
 }
 
 // start() → the bot's describe() → confirm(), i.e. the whole handshake minus
@@ -57,6 +58,12 @@ afterEach(async () => {
 });
 
 describe("TelegramLoginService", () => {
+  it("refuses to start when the bot is not configured", async () => {
+    login = makeLoginService("", "");
+
+    await expect(login.start()).rejects.toMatchObject({ status: 503 });
+  });
+
   it("mints a session once the user confirms in the bot", async () => {
     const started = await login.start();
 
@@ -65,7 +72,11 @@ describe("TelegramLoginService", () => {
     });
 
     const described = await login.describe(started.startPayload);
-    expect(described).toEqual({ nonce: started.nonce, verificationCode: started.verificationCode });
+    expect(described).toEqual({
+      nonce: started.nonce,
+      verificationCode: started.verificationCode,
+      mode: "login",
+    });
     await expect(
       login.confirm(started.nonce, CHAT_ID, { username: "tguser", firstName: "Tessa" }),
     ).resolves.toBe("authorized");
@@ -175,6 +186,31 @@ describe("TelegramLoginService", () => {
     expect(identities).toHaveLength(1);
   });
 
+  it("resolves concurrent first logins for one chat to one account", async () => {
+    const first = await login.start();
+    const second = await login.start();
+
+    await expect(
+      Promise.all([
+        login.confirm(first.nonce, CHAT_ID, {}),
+        login.confirm(second.nonce, CHAT_ID, {}),
+      ]),
+    ).resolves.toEqual(["authorized", "authorized"]);
+
+    const sessions = await Promise.all([
+      login.poll(first.nonce, first.pollSecret),
+      login.poll(second.nonce, second.pollSecret),
+    ]);
+    expect(sessions.map((session) => session.status)).toEqual(["ready", "ready"]);
+    if (sessions[0].status !== "ready" || sessions[1].status !== "ready") return;
+    expect(sessions[0].user.id).toBe(sessions[1].user.id);
+    expect([sessions[0].isNewUser, sessions[1].isNewUser].sort()).toEqual([false, true]);
+    await expect(db.select({ id: users.id }).from(users)).resolves.toHaveLength(1);
+    await expect(db.select({ id: authIdentities.id }).from(authIdentities)).resolves.toHaveLength(
+      1,
+    );
+  });
+
   it("treats a re-confirmed link as already authorized instead of a second login", async () => {
     const { started, result } = await startAndConfirm();
 
@@ -214,6 +250,46 @@ describe("TelegramLoginService", () => {
       .from(subscriptions)
       .where(eq(subscriptions.chatId, CHAT_ID));
     expect(claimed.userId).toBe(result.user.id);
+  });
+
+  it("links Telegram through the same explicit bot confirmation", async () => {
+    const [account] = await db
+      .insert(users)
+      .values({ source: "google-login" })
+      .returning({ id: users.id });
+
+    const linking = await login.start(account.id);
+    await expect(login.describe(linking.startPayload)).resolves.toMatchObject({ mode: "link" });
+    await expect(login.confirm(linking.nonce, OTHER_CHAT_ID, { username: "second" })).resolves.toBe(
+      "authorized",
+    );
+
+    const linked = await login.poll(linking.nonce, linking.pollSecret);
+    expect(linked).toMatchObject({
+      status: "ready",
+      user: { id: account.id, telegramId: OTHER_CHAT_ID },
+    });
+    if (linked.status !== "ready") return;
+    expect(linked.user.identities.map((i) => i.provider)).toEqual(["telegram"]);
+  });
+
+  it("reports a link conflict to the browser that started it", async () => {
+    const [account] = await db
+      .insert(users)
+      .values({ source: "google-login" })
+      .returning({ id: users.id });
+    await startAndConfirm(OTHER_CHAT_ID);
+    const linking = await login.start(account.id);
+
+    await expect(login.confirm(linking.nonce, OTHER_CHAT_ID, {})).resolves.toBe(
+      "identity_conflict",
+    );
+    await expect(login.poll(linking.nonce, linking.pollSecret)).resolves.toEqual({
+      status: "conflict",
+    });
+    await expect(login.poll(linking.nonce, linking.pollSecret)).resolves.toEqual({
+      status: "expired",
+    });
   });
 
   it("grants admin from ADMIN_TELEGRAM_IDS", async () => {

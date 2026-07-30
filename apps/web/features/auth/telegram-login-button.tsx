@@ -14,7 +14,8 @@ const POLL_INTERVAL_MS = 2_000;
 // Matches the backend request TTL (telegram-login.service.ts).
 const POLL_TIMEOUT_MS = 5 * 60_000;
 
-type Phase = "idle" | "opening" | "waiting" | "expired";
+type Phase = "idle" | "opening" | "waiting" | "expired" | "conflict";
+type Flow = "login" | "link";
 
 interface Pending {
   nonce: string;
@@ -26,18 +27,17 @@ interface Pending {
   webLink: string;
 }
 
-/**
- * Login by deep-linking into the bot instead of Telegram's login widget. On
- * mobile this hands off to the native app, where the user is already signed in
- * — the widget's phone-number-and-code path is what people were failing at.
- */
 export function TelegramLoginButton({
   onDone,
   onInFlightChange,
+  flow = "login",
+  disabled = false,
 }: {
   onDone?: () => void;
   /** True while a nonce is live, so the surface around us can stay mounted. */
   onInFlightChange?: (inFlight: boolean) => void;
+  flow?: Flow;
+  disabled?: boolean;
 }) {
   const { login } = useSession();
   const analytics = useAnalytics();
@@ -69,12 +69,13 @@ export function TelegramLoginButton({
     analytics.telegramLoginStarted("deeplink");
     if (!BOT_USERNAME) {
       analytics.telegramLoginFailed("configuration", "deeplink");
-      toast.error("Telegram login is not configured.");
+      toast.error("Вхід через Telegram недоступний.");
       return;
     }
     setPhase("opening");
     try {
-      const started = await authApi.startTelegramLogin();
+      const started =
+        flow === "link" ? await authApi.startTelegramLink() : await authApi.startTelegramLogin();
       setPending({
         nonce: started.nonce,
         pollSecret: started.pollSecret,
@@ -85,10 +86,10 @@ export function TelegramLoginButton({
       setPhase("waiting");
     } catch {
       analytics.telegramLoginFailed("session", "deeplink");
-      toast.error("login failed, try again");
+      toast.error("Не вдалося. Спробуй ще раз.");
       setPhase("idle");
     }
-  }, [analytics]);
+  }, [analytics, flow]);
 
   useEffect(() => {
     if (phase !== "waiting" || !pending) return;
@@ -97,8 +98,7 @@ export function TelegramLoginButton({
     const expire = () => {
       stopped = true;
       analytics.telegramLoginFailed("expired", "deeplink");
-      // The panel saying so may already be unmounted, so say it out loud.
-      toast.error("telegram link expired");
+      toast.error("Посилання застаріло.");
       setPending(null);
       setPhase("expired");
     };
@@ -121,19 +121,35 @@ export function TelegramLoginButton({
       }
       if (result.status === "pending") return;
       if (result.status === "expired") return stopped ? undefined : expire();
+      if (result.status === "conflict") {
+        stopped = true;
+        analytics.identityLinkConflict("telegram");
+        toast.error("Цей Telegram уже підключено до іншого акаунта.");
+        setPending(null);
+        setPhase("conflict");
+        return;
+      }
 
       // Deliberately ahead of the `stopped` check: the row is already consumed
       // and the token already minted, so dropping it would burn a real session.
       stopped = true;
       login(result);
-      if (result.isNewUser) analytics.signedUp("telegram");
-      analytics.loggedIn("telegram");
+      if (flow === "link") {
+        analytics.identityLinked("telegram");
+      } else {
+        if (result.isNewUser) analytics.signedUp("telegram");
+        analytics.loggedIn("telegram");
+      }
       setPending(null);
       setPhase("idle");
-      const name = result.user.username
-        ? `@${result.user.username}`
-        : (result.user.firstName ?? "you");
-      toast.success(`logged in as ${name}`);
+      if (flow === "link") {
+        toast.success("Telegram підключено");
+      } else {
+        const name = result.user.username
+          ? `@${result.user.username}`
+          : (result.user.firstName ?? "готово");
+        toast.success(`Вхід: ${name}`);
+      }
       onDoneRef.current?.();
     };
 
@@ -149,7 +165,7 @@ export function TelegramLoginButton({
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [phase, pending, analytics, login]);
+  }, [phase, pending, analytics, login, flow]);
 
   const handleCancel = useCallback(() => {
     if (phase === "waiting") {
@@ -158,7 +174,7 @@ export function TelegramLoginButton({
     reset();
   }, [phase, analytics, reset]);
 
-  if (phase === "waiting" || phase === "expired") {
+  if (phase === "waiting" || phase === "expired" || phase === "conflict") {
     return (
       <div className="flex w-full flex-col gap-3">
         {pending ? (
@@ -166,14 +182,14 @@ export function TelegramLoginButton({
             <p className="font-display text-2xl tracking-widest text-text-primary">
               {pending.verificationCode}
             </p>
-            <p className="font-mono text-2xs text-text-secondary">confirm this code in telegram</p>
+            <p className="font-mono text-2xs text-text-secondary">підтвердь код у Telegram</p>
             {/* tg:// hands off to the app and leaves this tab where it is, so
                 switching back lands on the site already logged in. */}
             <a
               href={pending.appLink}
               className="font-mono text-2xs uppercase tracking-wider text-accent underline"
             >
-              open telegram →
+              відкрити Telegram →
             </a>
             <a
               href={pending.webLink}
@@ -181,15 +197,19 @@ export function TelegramLoginButton({
               rel="noopener noreferrer"
               className="font-mono text-2xs text-text-muted underline"
             >
-              no app?
+              у браузері
             </a>
-            <p className="font-mono text-2xs text-text-muted">waiting…</p>
+            <p className="font-mono text-2xs text-text-muted">очікую…</p>
           </>
         ) : (
-          <p className="font-mono text-2xs text-text-secondary">link expired</p>
+          <p className="font-mono text-2xs text-text-secondary">
+            {phase === "conflict"
+              ? "цей Telegram уже підключено до іншого акаунта"
+              : "посилання застаріло"}
+          </p>
         )}
         <Button variant="secondary" size="sm" onClick={handleCancel} className="w-full">
-          {pending ? "cancel" : "try again"}
+          {pending ? "скасувати" : "ще раз"}
         </Button>
       </div>
     );
@@ -200,14 +220,18 @@ export function TelegramLoginButton({
       variant="secondary"
       size="sm"
       onClick={() => void handleClick()}
-      disabled={phase === "opening"}
-      aria-label="Continue with Telegram"
+      disabled={disabled || phase === "opening"}
+      aria-label={flow === "link" ? "Підключити Telegram" : "Увійти через Telegram"}
       // 40px and full width to sit flush with the Google button GIS draws next
       // to it — the provider colour lives in the icon, not the fill.
       className="h-10 w-full justify-start gap-3 px-4"
     >
       <PaperPlaneTiltIcon weight="fill" className="h-4 w-4 text-accent-secondary" aria-hidden />
-      {phase === "opening" ? "opening…" : "Continue with Telegram"}
+      {phase === "opening"
+        ? "відкриваю…"
+        : flow === "link"
+          ? "Підключити Telegram"
+          : "Увійти через Telegram"}
     </Button>
   );
 }

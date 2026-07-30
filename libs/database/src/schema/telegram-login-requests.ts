@@ -13,7 +13,9 @@ export const telegramLoginRequests = pgTable(
     nonce: text("nonce").primaryKey(),
     pollSecretHash: text("poll_secret_hash").notNull(),
     verificationCode: text("verification_code").notNull(),
+    linkUserId: uuid("link_user_id").references(() => users.id, { onDelete: "cascade" }),
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    failure: text("failure"),
     // Carried from the bot's upsert so the browser can emit `signup` exactly once.
     isNewUser: boolean("is_new_user").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

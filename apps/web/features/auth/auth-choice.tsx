@@ -6,7 +6,6 @@ import { Button } from "@/ui";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/overlay/Popover";
 import { GoogleLoginButton } from "./google-login-button";
 import { TelegramLoginButton } from "./telegram-login-button";
-import { TelegramWidgetButton } from "./telegram-widget-button";
 
 // One trigger, one surface — two bare provider buttons never agreed on size.
 export function AuthChoice({
@@ -72,15 +71,6 @@ export function AuthChoice({
 
         <TelegramLoginButton onDone={done} onInFlightChange={setInFlight} />
         <GoogleLoginButton onDone={done} width={224} size="large" text="continue_with" />
-
-        {/* The deprecated widget is a last resort, so it reads as a link and
-            not as a third thing to choose between. */}
-        <TelegramWidgetButton
-          variant="ghost"
-          label="telegram not opening?"
-          onDone={done}
-          className="h-auto justify-start p-0 text-2xs text-text-muted underline"
-        />
       </PopoverContent>
     </Popover>
   );

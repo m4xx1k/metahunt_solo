@@ -1,5 +1,3 @@
-import { createHash, createHmac } from "node:crypto";
-
 import type { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 
@@ -10,7 +8,6 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { AuthService } from "../../src/platform/auth/auth.service";
 import { verifyGoogleIdToken } from "../../src/platform/auth/google-verify";
-import type { TelegramAuthPayload } from "../../src/platform/auth/telegram-verify";
 
 import { makeTestDb } from "./db";
 
@@ -44,24 +41,6 @@ function makeAuth(adminIds = ""): AuthService {
             : undefined,
   } as unknown as ConfigService;
   return new AuthService(db, jwt, config);
-}
-
-// Real HMAC against the same bot token the service reads — linkTelegramTo runs
-// the production verifier, so a fake hash would be rejected.
-function signedTelegramPayload(): TelegramAuthPayload {
-  const fields: Record<string, unknown> = {
-    id: Number(TELEGRAM_ID),
-    auth_date: Math.floor(Date.now() / 1000),
-    username: "tguser",
-    first_name: "Tessa",
-  };
-  const dataCheckString = Object.keys(fields)
-    .sort()
-    .map((k) => `${k}=${String(fields[k])}`)
-    .join("\n");
-  const secret = createHash("sha256").update("test-bot-token").digest();
-  const hash = createHmac("sha256", secret).update(dataCheckString).digest("hex");
-  return { ...fields, hash } as TelegramAuthPayload;
 }
 
 function googleProfile(over: Partial<{ email: string | null; emailVerified: boolean }> = {}) {
@@ -110,6 +89,22 @@ describe("Google sign-in", () => {
     await expect(db.select({ id: users.id }).from(users)).resolves.toHaveLength(1);
   });
 
+  it("resolves concurrent first logins to one account", async () => {
+    googleProfile();
+
+    const [first, second] = await Promise.all([
+      auth.loginGoogle("credential"),
+      auth.loginGoogle("credential"),
+    ]);
+
+    expect(first.user.id).toBe(second.user.id);
+    expect([first.isNewUser, second.isNewUser].sort()).toEqual([false, true]);
+    await expect(db.select({ id: users.id }).from(users)).resolves.toHaveLength(1);
+    await expect(db.select({ id: authIdentities.id }).from(authIdentities)).resolves.toHaveLength(
+      1,
+    );
+  });
+
   it("adopts a waitlist row that already holds the verified email", async () => {
     const [waitlisted] = await db
       .insert(users)
@@ -147,8 +142,38 @@ describe("Google sign-in", () => {
     });
   });
 
-  // The adoption rule is only safe while an email can reach nothing but an
-  // ownerless row. Reassign a Workspace address and this is the takeover.
+  it("lets only one of two different Google identities adopt the same waitlist row", async () => {
+    const [waitlisted] = await db
+      .insert(users)
+      .values({ email: EMAIL, source: "waitlist" })
+      .returning({ id: users.id });
+    verifyMock
+      .mockResolvedValueOnce({
+        sub: "google-sub-a",
+        email: EMAIL,
+        emailVerified: true,
+        firstName: "Ada",
+      })
+      .mockResolvedValueOnce({
+        sub: "google-sub-b",
+        email: EMAIL,
+        emailVerified: true,
+        firstName: "Grace",
+      });
+
+    const sessions = await Promise.all([
+      auth.loginGoogle("credential-a"),
+      auth.loginGoogle("credential-b"),
+    ]);
+
+    expect(sessions.filter((session) => session.user.id === waitlisted.id)).toHaveLength(1);
+    expect(new Set(sessions.map((session) => session.user.id)).size).toBe(2);
+    await expect(db.select({ id: users.id }).from(users)).resolves.toHaveLength(2);
+    await expect(db.select({ id: authIdentities.id }).from(authIdentities)).resolves.toHaveLength(
+      2,
+    );
+  });
+
   it("refuses to adopt an account that already has an identity", async () => {
     googleProfile();
     const victim = await auth.loginGoogle("credential");
@@ -245,7 +270,10 @@ describe("linking", () => {
     const session = await auth.loginGoogle("credential");
     await db.insert(subscriptions).values({ chatId: TELEGRAM_ID, params: {}, isActive: true });
 
-    await auth.linkTelegramTo(session.user.id, signedTelegramPayload());
+    await auth.linkTrustedTelegramUser(session.user.id, TELEGRAM_ID, {
+      username: "tguser",
+      firstName: "Tessa",
+    });
 
     const [claimed] = await db
       .select({ userId: subscriptions.userId })
