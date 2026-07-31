@@ -6,6 +6,7 @@ import type {
   ProductAnalyticsPeriod,
 } from "@/lib/api/product-analytics";
 import { formatDateTime } from "@/lib/format";
+import { Badge } from "@/ui/badges/Badge";
 import { DataTable } from "@/ui/data/DataTable";
 import { StatCard } from "@/ui/data/StatCard";
 import { StatGrid } from "@/ui/data/StatGrid";
@@ -20,8 +21,9 @@ const SORTS: Array<{ value: CrmPeopleSort; label: string }> = [
   { value: "at_risk", label: "at risk" },
 ];
 
-function personLabel(id: string): string {
-  return `person · ${id.slice(0, 8)}`;
+function stateBadge(state: CrmPeoplePage["rows"][number]["state"]) {
+  const label = state === "no_subscription" ? "no sub" : state.replace("_", " ");
+  return <Badge variant={state === "at_risk" ? "dark" : "accent"}>{label}</Badge>;
 }
 
 export function PeoplePanel({
@@ -41,10 +43,10 @@ export function PeoplePanel({
 }) {
   const baseParams = { period, q, sort, from, to };
   return (
-    <Panel title="People" meta="CRM facts · all timestamps are absolute">
+    <Panel title="People" meta="one row = one person · CRM facts">
       <StatGrid cols={4} className="mb-5">
-        <StatCard label="known people" value={people.metrics.knownPeople} />
-        <StatCard label="Telegram connected" value={people.metrics.telegramConnected} />
+        <StatCard label="people" value={people.metrics.knownPeople} />
+        <StatCard label="Telegram linked" value={people.metrics.telegramConnected} />
         <StatCard
           label="job clickers"
           value={people.metrics.jobClickers}
@@ -53,8 +55,8 @@ export function PeoplePanel({
         <StatCard label="at risk" value={people.metrics.atRisk} tone="danger" />
       </StatGrid>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <UrlSearch placeholder="person id…" />
-        <div className="flex border border-border font-mono text-2xs">
+        <UrlSearch placeholder="name, email, or ID…" />
+        <div className="flex flex-wrap gap-1">
           {SORTS.map((option) => (
             <Link
               key={option.value}
@@ -64,7 +66,7 @@ export function PeoplePanel({
                 sort: option.value,
                 ...(from && to ? { from, to } : {}),
               })}`}
-              className={`px-2.5 py-1.5 ${sort === option.value ? "bg-bg-elev text-accent" : "text-text-muted hover:text-text-primary"}`}
+              className={`border px-2.5 py-1.5 font-mono text-2xs uppercase tracking-wide ${sort === option.value ? "border-accent bg-accent text-bg" : "border-border text-text-muted hover:border-accent hover:text-accent"}`}
             >
               {option.label}
             </Link>
@@ -112,12 +114,14 @@ export function PeoplePanel({
             header: "person",
             render: (row) => (
               <div>
-                <p className="text-text-primary">{personLabel(row.id)}</p>
-                <p className="mt-1 text-2xs text-text-muted">
-                  {[row.hasAccount && "account", row.hasTelegram && "telegram"]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
+                <p className="font-medium text-text-primary">{row.displayName}</p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {row.hasTelegram ? <Badge>telegram</Badge> : null}
+                  {row.hasAccount ? <Badge variant="dark">google/account</Badge> : null}
+                  {!row.hasTelegram && !row.hasAccount ? (
+                    <Badge variant="dark">anonymous</Badge>
+                  ) : null}
+                </div>
               </div>
             ),
           },
@@ -141,9 +145,14 @@ export function PeoplePanel({
             key: "clicks",
             header: "clicks",
             align: "right",
-            render: (row) => `${row.feedClicks} feed · ${row.telegramClicks} TG`,
+            render: (row) => (
+              <div className="flex justify-end gap-1.5">
+                <Badge variant="dark">feed {row.feedClicks}</Badge>
+                <Badge>tg {row.telegramClicks}</Badge>
+              </div>
+            ),
           },
-          { key: "state", header: "state", render: (row) => row.state.replace("_", " ") },
+          { key: "state", header: "state", render: (row) => stateBadge(row.state) },
         ]}
       />
       <div className="mt-4">

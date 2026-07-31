@@ -98,6 +98,7 @@ export type CrmPeopleSort = (typeof CRM_PEOPLE_SORTS)[number];
 
 export interface CrmPerson {
   id: string;
+  displayName: string;
   hasAccount: boolean;
   hasTelegram: boolean;
   firstKnownAt: Date;

@@ -198,6 +198,7 @@ export class ProductAnalyticsService {
     );
     const result = await this.db.execute<{
       id: string | null;
+      display_name: string | null;
       has_account: boolean;
       has_telegram: boolean;
       first_known_at: Date | string;
@@ -212,22 +213,47 @@ export class ProductAnalyticsService {
       job_clickers: number;
       at_risk: number;
     }>(sql`
-      WITH people AS (
+      WITH people_raw AS (
         SELECT
-          p.id,
-          bool_or(p.has_account) AS has_account,
-          bool_or(p.has_telegram) AS has_telegram,
-          MIN(p.first_known_at) AS first_known_at
-        FROM (
-          SELECT u.id, true AS has_account, false AS has_telegram, u.created_at AS first_known_at
-          FROM users u
-          UNION ALL
-          SELECT s.person_id AS id, false AS has_account, bool_or(s.chat_id IS NOT NULL) AS has_telegram,
-                 MIN(s.created_at) AS first_known_at
-          FROM subscriptions s
-          GROUP BY s.person_id
-        ) p
-        GROUP BY p.id
+          u.id,
+          true AS has_account,
+          false AS has_telegram,
+          u.created_at AS first_known_at,
+          COALESCE(
+            ip.display_name,
+            NULLIF(u.email, '')
+          ) AS display_name
+        FROM users u
+        LEFT JOIN (
+          SELECT
+            user_id,
+            MAX(NULLIF(trim(concat_ws(' ', first_name, username)), '')) AS display_name
+          FROM auth_identities
+          GROUP BY user_id
+        ) ip ON ip.user_id = u.id
+        UNION ALL
+        SELECT
+          s.person_id AS id,
+          false AS has_account,
+          bool_or(s.chat_id IS NOT NULL) AS has_telegram,
+          MIN(s.created_at) AS first_known_at,
+          COALESCE(
+            MAX(NULLIF(trim(s.tg_first_name), '')),
+            MAX(NULLIF(trim(s.tg_username), '')),
+            MAX(NULLIF(trim(s.name), ''))
+          ) AS display_name
+        FROM subscriptions s
+        GROUP BY s.person_id
+      ),
+      people AS (
+        SELECT
+          id,
+          bool_or(has_account) AS has_account,
+          bool_or(has_telegram) AS has_telegram,
+          MIN(first_known_at) AS first_known_at,
+          MAX(display_name) AS display_name
+        FROM people_raw
+        GROUP BY id
       ),
       activity AS (
         SELECT
@@ -254,7 +280,10 @@ export class ProductAnalyticsService {
       ),
       roster AS (
         SELECT
-          p.id, p.has_account, p.has_telegram, p.first_known_at,
+          p.id, COALESCE(MAX(p.display_name), 'Unknown person') AS display_name,
+          bool_or(p.has_account) AS has_account,
+          bool_or(p.has_telegram) AS has_telegram,
+          MIN(p.first_known_at) AS first_known_at,
           a.last_product_action_at,
           COALESCE(s.subscriptions, 0)::int AS subscriptions,
           COALESCE(a.feed_clicks, 0)::int AS feed_clicks,
@@ -271,7 +300,10 @@ export class ProductAnalyticsService {
         LEFT JOIN subscriptions_by_person s ON s.id = p.id
       ),
       filtered AS (
-        SELECT * FROM roster WHERE ${query} = '' OR id::text ILIKE ${`%${query}%`}
+        SELECT * FROM roster
+        WHERE ${query} = ''
+          OR id::text ILIKE ${`%${query}%`}
+          OR display_name ILIKE ${`%${query}%`}
       ),
       metrics AS (
         SELECT
@@ -304,6 +336,7 @@ export class ProductAnalyticsService {
         .filter((row): row is typeof row & { id: string } => row.id !== null)
         .map((row) => ({
           id: row.id,
+          displayName: row.display_name ?? "Unknown person",
           hasAccount: row.has_account,
           hasTelegram: row.has_telegram,
           firstKnownAt: new Date(row.first_known_at),
