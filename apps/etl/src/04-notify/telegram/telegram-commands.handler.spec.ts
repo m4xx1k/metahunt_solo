@@ -5,6 +5,7 @@ import type { Bot } from "grammy";
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import type { AnalyticsService } from "../../platform/analytics/analytics.service";
 import type { TelegramLoginService } from "../../platform/auth/telegram-login.service";
+import type { AuthService } from "../../platform/auth/auth.service";
 
 import type { SubscriptionMatcherService } from "./subscription-matcher.service";
 import type { SubscriptionsService } from "./subscriptions.service";
@@ -107,6 +108,8 @@ describe("TelegramCommandsHandler", () => {
     confirm: confirmLogin,
     decline: declineLogin,
   } as unknown as TelegramLoginService;
+  const resolveTelegramUser = jest.fn();
+  const auth = { resolveTelegramUser } as unknown as AuthService;
 
   let commands: Map<string, Handler>;
   let callbacks: { pattern: RegExp; handler: Handler }[];
@@ -115,8 +118,16 @@ describe("TelegramCommandsHandler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     describe_.mockResolvedValue("Backend");
+    resolveTelegramUser.mockResolvedValue({ userId: "person-1", created: false });
     get.mockReturnValue("https://metahunt.test");
-    const handler = new TelegramCommandsHandler(config, subscriptions, matcher, analytics, login);
+    const handler = new TelegramCommandsHandler(
+      config,
+      subscriptions,
+      matcher,
+      analytics,
+      login,
+      auth,
+    );
     const wired = fakeBot();
     handler.register(wired.bot);
     commands = wired.commands;
@@ -171,6 +182,7 @@ describe("TelegramCommandsHandler", () => {
       await commands.get("start")!(ctx);
 
       expect(linkChat).toHaveBeenCalledWith("the-token", "42", {
+        userId: "person-1",
         username: "tguser",
         firstName: "Tessa",
       });

@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import { Bot, InlineKeyboard } from "grammy";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import { AuthService } from "../../platform/auth/auth.service";
 import {
   isLoginStartPayload,
   TelegramLoginService,
@@ -33,6 +34,7 @@ export class TelegramCommandsHandler {
     private readonly matcher: SubscriptionMatcherService,
     private readonly analytics: AnalyticsService,
     private readonly login: TelegramLoginService,
+    private readonly auth: AuthService,
   ) {}
 
   /** Wire every command/callback handler onto the bot. Call before `bot.start()`. */
@@ -57,7 +59,13 @@ export class TelegramCommandsHandler {
         return;
       }
 
+      const identity = await this.auth.resolveTelegramUser(
+        chatId,
+        ctx.from?.username ?? null,
+        ctx.from?.first_name ?? null,
+      );
       const result = await this.subscriptions.linkChat(token, chatId, {
+        userId: identity.userId,
         username: ctx.from?.username,
         firstName: ctx.from?.first_name,
       });

@@ -5,6 +5,7 @@ import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { type PropsWithChildren, useEffect } from "react";
 
 import { persistFirstTouch } from "@/lib/analytics/attribution";
+import { PageViewTracker } from "@/lib/analytics/page-view-tracker";
 
 // Client-side PostHog. Dormant without NEXT_PUBLIC_POSTHOG_KEY (mirrors the
 // backend AnalyticsService) so local dev ships nothing. `identified_only` keeps
@@ -28,6 +29,7 @@ export function PostHogProvider({ children }: PropsWithChildren) {
       // Real UI host so toolbar / "view in PostHog" links resolve correctly.
       ui_host: "https://eu.posthog.com",
       person_profiles: "identified_only",
+      capture_pageview: false,
       // Noisy DOM-click firehose; domain events in use-analytics.ts cover what matters.
       autocapture: false,
       // The shareable ?cv=<uuid> is a bearer capability — redact it from
@@ -44,5 +46,10 @@ export function PostHogProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
-  return <PHProvider client={posthog}>{children}</PHProvider>;
+  return (
+    <PHProvider client={posthog}>
+      <PageViewTracker />
+      {children}
+    </PHProvider>
+  );
 }

@@ -12,12 +12,14 @@ describe("AnalyticsService", () => {
   const enqueue = jest.fn<Promise<void>, [ProductEventWrite]>();
   const drain = jest.fn<Promise<ProductEventWrite[]>, [number]>();
   const journeyForSubscription = jest.fn<Promise<string | null>, [string]>();
+  const personForJourney = jest.fn<Promise<string | null>, [string]>();
   const capture = jest.fn<void, [string, string, Record<string, unknown>]>();
+  const alias = jest.fn<void, [string, string]>();
 
   function makeService(): AnalyticsService {
-    const events: ProductEventWriter = { record, journeyForSubscription };
+    const events: ProductEventWriter = { record, journeyForSubscription, personForJourney };
     const outbox: AnalyticsOutboxWriter = { enqueue, drain };
-    const sink: AnalyticsSink = { capture };
+    const sink: AnalyticsSink = { capture, alias };
     return new AnalyticsService(events, outbox, sink);
   }
 
@@ -26,6 +28,7 @@ describe("AnalyticsService", () => {
     record.mockResolvedValue();
     enqueue.mockResolvedValue();
     journeyForSubscription.mockResolvedValue("journey-1");
+    personForJourney.mockResolvedValue("person-1");
   });
 
   it("summarizes subscription filters without sending their values", async () => {
@@ -154,7 +157,10 @@ describe("AnalyticsService", () => {
       expect.objectContaining({
         name: ANALYTICS_EVENTS.digestLinkClicked,
         journeyId: "journey-1",
-        properties: expect.objectContaining({ vacancyId: "vacancy-1" }),
+        properties: expect.objectContaining({
+          vacancy_id: "vacancy-1",
+          surface: "telegram_digest",
+        }),
       }),
     );
     expect(record).not.toHaveBeenCalled();
@@ -170,13 +176,13 @@ describe("AnalyticsService", () => {
         journeyId: "journey-2",
         name: ANALYTICS_EVENTS.applyClicked,
         source: "browser",
-        properties: expect.objectContaining({ vacancyId: "vacancy-1" }),
+        properties: expect.objectContaining({ vacancy_id: "vacancy-1", surface: "web_feed" }),
       }),
     );
     expect(capture).toHaveBeenCalledWith(
-      "journey-2",
-      ANALYTICS_EVENTS.applyClicked,
-      expect.objectContaining({ vacancyId: "vacancy-1" }),
+      "person-1",
+      ANALYTICS_EVENTS.vacancyOutboundClicked,
+      expect.objectContaining({ vacancy_id: "vacancy-1", surface: "web_feed" }),
     );
   });
 
@@ -189,8 +195,12 @@ describe("AnalyticsService", () => {
     expect(enqueue).not.toHaveBeenCalled();
     expect(capture).toHaveBeenCalledWith(
       expect.any(String),
-      ANALYTICS_EVENTS.applyClicked,
-      expect.objectContaining({ vacancyId: "vacancy-1", $process_person_profile: false }),
+      ANALYTICS_EVENTS.vacancyOutboundClicked,
+      expect.objectContaining({
+        vacancy_id: "vacancy-1",
+        surface: "web_feed",
+        $process_person_profile: false,
+      }),
     );
   });
 

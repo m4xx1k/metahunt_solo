@@ -61,11 +61,12 @@ export class SubscriptionsService {
         .insert(analyticsJourneys)
         .values({
           id: journeyId,
+          personId: options.userId ?? journeyId,
           origin: options.journeyId ? "browser" : "server",
         })
         .onConflictDoUpdate({
           target: analyticsJourneys.id,
-          set: { lastSeenAt: sql`now()` },
+          set: { personId: options.userId ?? journeyId, lastSeenAt: sql`now()` },
         });
       const [subscription] = await tx
         .insert(subscriptions)
@@ -75,6 +76,7 @@ export class SubscriptionsService {
           params,
           candidateId: options.candidateId ?? null,
           userId: options.userId ?? null,
+          personId: options.userId ?? journeyId,
           journeyId,
         })
         .returning({ id: subscriptions.id });
@@ -125,7 +127,8 @@ export class SubscriptionsService {
     ) {
       return "not_found";
     }
-    const linkedUserId = pending.userId ?? (await this.findUserIdForChat(chatId));
+    const linkedUserId =
+      pending.userId ?? telegramUser?.userId ?? (await this.findUserIdForChat(chatId));
 
     // Already activated: re-tapping the same link from the same chat is a
     // no-op; a token already claimed by another chat is treated as unusable.
@@ -177,6 +180,7 @@ export class SubscriptionsService {
           chatId,
           isActive: true,
           userId: linkedUserId,
+          personId: linkedUserId ?? pending.journeyId ?? token,
           linkedAt: sql`now()`,
           deactivatedAt: null,
           tgUsername: telegramUser?.username ?? null,
@@ -190,6 +194,12 @@ export class SubscriptionsService {
           ),
         )
         .returning({ id: subscriptions.id });
+      if (activated && pending.journeyId && linkedUserId) {
+        await tx
+          .update(analyticsJourneys)
+          .set({ personId: linkedUserId, lastSeenAt: sql`now()` })
+          .where(eq(analyticsJourneys.id, pending.journeyId));
+      }
       if (activated && pending.journeyId) {
         await this.analytics.enqueueTelegramLinked(tx, activated.id, pending.journeyId, "linked");
       }
@@ -208,6 +218,10 @@ export class SubscriptionsService {
     }
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
+
+    if (pending.journeyId && linkedUserId) {
+      this.analytics.aliasJourneyToPerson(pending.journeyId, linkedUserId);
+    }
 
     if (!pending.journeyId) void this.analytics.telegramLinked(token, "linked");
     return "linked";

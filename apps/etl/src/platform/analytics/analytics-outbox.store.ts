@@ -29,6 +29,8 @@ export class AnalyticsOutboxStore implements AnalyticsOutboxWriter {
       const pending = await tx.execute<{
         id: string;
         journey_id: string;
+        person_id: string;
+        is_test: boolean;
         subscription_id: string | null;
         name: string;
         source: ProductEventWrite["source"];
@@ -36,11 +38,12 @@ export class AnalyticsOutboxStore implements AnalyticsOutboxWriter {
         properties: Record<string, unknown>;
         occurred_at: string | Date;
       }>(sql`
-        SELECT id, journey_id, subscription_id, name, source, dedupe_key,
-               properties, occurred_at
-        FROM analytics_outbox
-        WHERE processed_at IS NULL
-        ORDER BY created_at ASC
+        SELECT outbox.id, outbox.journey_id, journey.person_id, journey.is_test, outbox.subscription_id,
+               outbox.name, outbox.source, outbox.dedupe_key, outbox.properties, outbox.occurred_at
+        FROM analytics_outbox outbox
+        JOIN analytics_journeys journey ON journey.id = outbox.journey_id
+        WHERE outbox.processed_at IS NULL
+        ORDER BY outbox.created_at ASC
         LIMIT ${limit}
         FOR UPDATE SKIP LOCKED
       `);
@@ -48,6 +51,8 @@ export class AnalyticsOutboxStore implements AnalyticsOutboxWriter {
 
       const events: ProductEventWrite[] = pending.rows.map((row) => ({
         journeyId: row.journey_id,
+        personId: row.person_id,
+        isTest: row.is_test,
         ...(row.subscription_id ? { subscriptionId: row.subscription_id } : {}),
         name: row.name,
         source: row.source,

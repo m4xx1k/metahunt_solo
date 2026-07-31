@@ -1,6 +1,3 @@
-// Web-side wire types + fetchers for account auth. Source of truth:
-// apps/etl/src/platform/auth/auth.contract.ts. Hand-mirrored per ADR-0005.
-
 import { apiDelete, apiGet, apiPost } from "./client";
 
 export type AuthProvider = "telegram" | "google";
@@ -22,7 +19,6 @@ export interface AuthUser {
   identities: AuthIdentity[];
 }
 
-// What Google Identity Services hands the callback. `credential` is the ID token.
 export interface GoogleCredentialResponse {
   credential: string;
 }
@@ -40,6 +36,11 @@ export interface TelegramLoginStartResponse {
   startPayload: string;
 }
 
+export interface AccountMergeStartResponse {
+  code: string;
+  expiresAt: string;
+}
+
 export type TelegramLoginPollResponse =
   | { status: "pending" }
   | { status: "expired" }
@@ -54,6 +55,8 @@ export const authApi = {
   loginGoogle: (credential: string) =>
     apiPost<TelegramLoginResponse>("/auth/google", { credential }),
   linkGoogle: (credential: string) => apiPost<AuthUser>("/auth/link/google", { credential }),
+  startAccountMerge: () => apiPost<AccountMergeStartResponse>("/auth/merge/start", {}),
+  confirmAccountMerge: (code: string) => apiPost<AuthUser>("/auth/merge/confirm", { code }),
   unlink: (provider: AuthProvider) => apiDelete<AuthUser>(`/auth/link/${provider}`),
   me: () => apiGet<AuthUser>("/auth/me"),
   logout: () => apiPost<{ ok: true }>("/auth/logout", {}),

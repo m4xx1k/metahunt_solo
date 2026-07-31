@@ -6,7 +6,6 @@ import { RefreshCw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-// Re-runs the current screen's server fetches without a full reload.
 export function RefreshButton({ label }: { label: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();

@@ -1,7 +1,3 @@
-// Single source of truth for server-side analytics event names. Domain methods
-// on AnalyticsService reference these — no event-name string literals scattered
-// across the codebase. Keep snake_case (PostHog convention) and stable: renaming
-// a value splits the metric in PostHog.
 export const ANALYTICS_EVENTS = {
   landingView: "landing_view",
   landingCtaClicked: "landing_cta_clicked",
@@ -14,10 +10,9 @@ export const ANALYTICS_EVENTS = {
   digestEvaluated: "digest_evaluated",
   digestSent: "digest_sent",
   digestDeliveryFailed: "digest_delivery_failed",
-  // Digest tap (attributed to a subscription) keeps its historical name so the
-  // live funnel stays intact; anonymous web apply taps get their own event.
   digestLinkClicked: "digest_link_clicked",
   applyClicked: "apply_clicked",
+  vacancyOutboundClicked: "vacancy_outbound_clicked",
   subscriptionReactivated: "subscription_reactivated",
   unsubscribed: "unsubscribed",
   // Telegram told us the user blocked the bot (or deliveries kept bouncing) —
@@ -39,11 +34,11 @@ export const USER_ACTION_EVENTS = [
   ANALYTICS_EVENTS.telegramLinked,
   ANALYTICS_EVENTS.digestLinkClicked,
   ANALYTICS_EVENTS.applyClicked,
+  ANALYTICS_EVENTS.vacancyOutboundClicked,
   ANALYTICS_EVENTS.subscriptionReactivated,
   ANALYTICS_EVENTS.unsubscribed,
 ] as const;
 
-// The complement: emitted by us (delivery pipeline, scoring), never by a tap.
 export const SYSTEM_EMITTED_EVENTS = [
   ANALYTICS_EVENTS.activationValueShown,
   ANALYTICS_EVENTS.digestEvaluated,
@@ -65,4 +60,10 @@ export const BROWSER_ANALYTICS_EVENTS = [
 
 export type BrowserAnalyticsEventName = (typeof BROWSER_ANALYTICS_EVENTS)[number];
 export type ProductEventSource = DatabaseProductEventSource;
+
+export function posthogEventName(name: string): string {
+  return name === ANALYTICS_EVENTS.digestLinkClicked || name === ANALYTICS_EVENTS.applyClicked
+    ? ANALYTICS_EVENTS.vacancyOutboundClicked
+    : name;
+}
 import type { ProductEventSource as DatabaseProductEventSource } from "@metahunt/database";

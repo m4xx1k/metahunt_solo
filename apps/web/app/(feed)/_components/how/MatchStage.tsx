@@ -12,8 +12,6 @@ const TIER_CLASS: Record<Tier, string> = {
   STRETCH: "text-text-muted border-border",
 };
 
-// Simple reverse-ATS read: a CV → its 3 top jobs, each with a match % + fit
-// tier. The % counts up, then it cycles to the next sample CV.
 export function MatchStage() {
   const [si, setSi] = useState(0);
   const onDone = useCallback(() => setSi((v) => (v + 1) % SCENARIOS.length), []);
@@ -24,7 +22,7 @@ export function MatchStage() {
 function RankedCard({ scenario, onDone }: { scenario: Scenario; onDone: () => void }) {
   const reduce = useReducedMotion();
   const jobs = scenario.jobs.slice(0, 3);
-  const [prog, setProg] = useState(reduce ? 100 : 0); // 0..100 drives the % count-up
+  const [prog, setProg] = useState(reduce ? 100 : 0);
 
   useEffect(() => {
     const timers: number[] = [];

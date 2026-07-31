@@ -107,6 +107,29 @@ export interface ProductAnalyticsOverview {
   delivery: ProductDeliveryHealth;
 }
 
+export const CRM_PEOPLE_SORTS = ["recent", "first_known", "clicks", "at_risk"] as const;
+export type CrmPeopleSort = (typeof CRM_PEOPLE_SORTS)[number];
+
+export interface CrmPerson {
+  id: string;
+  hasAccount: boolean;
+  hasTelegram: boolean;
+  firstKnownAt: string;
+  lastProductActionAt: string | null;
+  subscriptions: number;
+  feedClicks: number;
+  telegramClicks: number;
+  state: "active" | "at_risk" | "no_subscription";
+}
+
+export interface CrmPeoplePage {
+  metrics: { knownPeople: number; telegramConnected: number; jobClickers: number; atRisk: number };
+  rows: CrmPerson[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 // Lifecycle STATE per chat, all-time — the headline churn numbers. Unlike
 // `flow.churned` (unsubscribe events, one /stop can count several), these
 // partition every linked chat exactly once.
@@ -209,6 +232,14 @@ export const productAnalyticsApi = {
     apiGet<ProductAnalyticsOverview>(
       `/admin/product-analytics/overview${buildQs({ period, population })}`,
     ),
+  people: (input: {
+    period: ProductAnalyticsPeriod;
+    q?: string;
+    sort?: CrmPeopleSort;
+    offset?: number;
+    from?: string;
+    to?: string;
+  }) => apiGet<CrmPeoplePage>(`/admin/product-analytics/people${buildQs(input)}`),
   updateJourney: (id: string, input: { isTest: boolean; cohortId?: string | null }) =>
     apiPatch<AnalyticsJourneyClassification>(`/admin/product-analytics/journeys/${id}`, input),
 };

@@ -4,10 +4,10 @@ import {
   isProductAnalyticsPeriod,
   isProductAnalyticsPopulation,
   productAnalyticsApi,
+  type CrmPeopleSort,
   type ProductAnalyticsPeriod,
   type ProductAnalyticsPopulation,
 } from "@/lib/api/product-analytics";
-import { GrowthPanel } from "@/entities/analytics/GrowthPanel";
 import { firstSearchParam } from "@/lib/search-params";
 import { PageBody } from "@/ui/layout/PageBody";
 import { PageHeader } from "@/ui/layout/PageHeader";
@@ -18,10 +18,8 @@ import { EventsPanel } from "./_components/EventsPanel";
 import { FunnelPanel } from "./_components/FunnelPanel";
 import { IdentityPanel } from "./_components/IdentityPanel";
 import { JourneysPanel } from "./_components/JourneysPanel";
-import { LeakPanel } from "./_components/LeakPanel";
-import { RetentionPanel } from "./_components/RetentionPanel";
 import { SubscribersPanel } from "./_components/SubscribersPanel";
-import { TalkToPanel } from "./_components/TalkToPanel";
+import { PeoplePanel } from "./_components/PeoplePanel";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Analytics" };
@@ -47,9 +45,6 @@ const TABS: UrlTab[] = [
   { value: "debug", label: "Debug" },
 ];
 
-// Four widgets carry the first tab: are we growing, where do we leak, do they
-// stick, who do I talk to. Everything that answers none of those moved to Debug
-// rather than competing for the same attention.
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -63,13 +58,24 @@ export default async function AnalyticsPage({
   const population: ProductAnalyticsPopulation =
     rawPopulation && isProductAnalyticsPopulation(rawPopulation) ? rawPopulation : "production";
 
-  const data = await productAnalyticsApi.overview(period, population);
+  const rawOffset = Number(firstSearchParam(sp.offset));
+  const offset = Number.isSafeInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
+  const rawSort = firstSearchParam(sp.sort);
+  const sort: CrmPeopleSort =
+    rawSort === "first_known" || rawSort === "clicks" || rawSort === "at_risk" ? rawSort : "recent";
+  const q = firstSearchParam(sp.q);
+  const from = firstSearchParam(sp.from);
+  const to = firstSearchParam(sp.to);
+  const [data, people] = await Promise.all([
+    productAnalyticsApi.overview(period, population),
+    productAnalyticsApi.people({ period, q, sort, offset, from, to }),
+  ]);
 
   return (
     <UrlTabs tabs={TABS}>
       <PageHeader
         title="Analytics"
-        hint="first-party journey ledger · no telegram ids stored"
+        hint="CRM facts · behaviour and acquisition live in PostHog"
         actions={
           <>
             <UrlSegments
@@ -93,12 +99,7 @@ export default async function AnalyticsPage({
 
       <PageBody>
         <UrlTabPanel value="now">
-          <div className="grid gap-3 lg:grid-cols-2">
-            <GrowthPanel growth={data.growth} />
-            <LeakPanel funnel={data.funnel} />
-            <RetentionPanel retention={data.retention} />
-            <TalkToPanel subscribers={data.subscriberActivity} />
-          </div>
+          <PeoplePanel people={people} period={period} q={q} sort={sort} from={from} to={to} />
         </UrlTabPanel>
 
         <UrlTabPanel value="events">

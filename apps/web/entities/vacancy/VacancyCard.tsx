@@ -21,22 +21,12 @@ import type { VacancyDto } from "@/lib/api/vacancies";
 
 import { ApplyLink } from "./ApplyLink";
 
-// `match` (warm lens only) colours the card's own skill chips by what the
-// candidate has; cold passes nothing → the card renders exactly as before.
-// `feedbackSlot` is an app-injected node (e.g. the warm-lens vote) rendered in
-// the footer flags row — the entity stays dumb and never imports the feature.
 type Props = {
   vacancy: VacancyDto;
   match?: VacancyMatch;
   feedbackSlot?: React.ReactNode;
 };
 
-// Variant B: one reflowing card, ranked by what a candidate scans. Eight
-// meaning-groups, grouped by space, never by Label:Value. The role is the one
-// focal point (won by quieting competitors, not enlarging); colour budget is
-// green=salary, accent=seniority+required skills+years, all else neutral.
-// Top = main column (groups 1–5) + a narrow provenance rail (6); a full-width
-// footer carries flags (7, left) and posted/apply (8, right).
 export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
   const role = v.role?.name ?? "untitled role";
   const company = v.company?.name ?? null;
@@ -51,7 +41,6 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
   });
   const loc = formatLocations(v.locations);
 
-  // Group 1 — eyebrow: logistics only (format · employment · location).
   const eyebrow: React.ReactNode[] = [];
   if (v.workFormat) eyebrow.push(<span key="format">{WORK_FORMAT_LABELS[v.workFormat]}</span>);
   if (v.employmentType)
@@ -66,10 +55,8 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
 
   return (
     <article className="flex w-full flex-col gap-3 border border-border bg-bg-card p-4 transition-colors hover:border-accent">
-      {/* TOP — main column (1–5) + provenance rail (6) */}
       <div className="flex flex-col gap-3 md:flex-row md:gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          {/* 1 — eyebrow */}
           {eyebrow.length > 0 ? (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-2xs uppercase tracking-wider text-text-muted">
               {eyebrow.map((item, i) => (
@@ -107,7 +94,6 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
             </h3>
           </div>
 
-          {/* 3 — requirements: years (accent, no border) + english (plain) */}
           {experience || english ? (
             <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
               {experience ? (
@@ -117,16 +103,13 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
             </div>
           ) : null}
 
-          {/* 4 — salary: the one green fact */}
           {salary ? (
             <span className="font-mono text-base font-bold text-success">{salary}</span>
           ) : null}
 
-          {/* 5 — skills: colour is the label (required = accent, optional = muted) */}
           <VacancySkills required={v.skills.required} optional={v.skills.optional} match={match} />
         </div>
 
-        {/* 6 — provenance rail: company · domain (source moved to apply) */}
         {company || domain ? (
           <aside className="flex min-w-0 flex-col gap-3 md:w-[132px] md:flex-shrink-0 md:border-l md:border-border md:pl-4">
             {company ? (
@@ -151,7 +134,6 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
         ) : null}
       </div>
 
-      {/* FOOTER — flags (left) · posted + apply (right) */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {v.hasTestAssignment === true ? (

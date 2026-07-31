@@ -11,6 +11,7 @@ export type LinkResult = "linked" | "already_active" | "duplicate" | "not_found"
 // From Telegram's `from` field on the /start update. username is optional and
 // mutable; firstName is the more durable human-readable identifier.
 export interface TelegramLinkIdentity {
+  userId?: string;
   username?: string | null;
   firstName?: string | null;
 }

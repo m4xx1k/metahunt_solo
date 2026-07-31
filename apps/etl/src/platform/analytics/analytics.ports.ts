@@ -8,6 +8,8 @@ export type AnalyticsExecutor = Pick<DrizzleDB, "insert">;
 
 export interface ProductEventWrite {
   journeyId: string;
+  personId?: string;
+  isTest?: boolean;
   subscriptionId?: string;
   name: string;
   source: ProductEventSource;
@@ -19,6 +21,7 @@ export interface ProductEventWrite {
 export interface ProductEventWriter {
   record(event: ProductEventWrite): Promise<void>;
   journeyForSubscription(subscriptionId: string): Promise<string | null>;
+  personForJourney(journeyId: string): Promise<string | null>;
 }
 
 export interface AnalyticsOutboxWriter {
@@ -28,4 +31,5 @@ export interface AnalyticsOutboxWriter {
 
 export interface AnalyticsSink {
   capture(distinctId: string, event: string, properties: Record<string, unknown>): void;
+  alias(distinctId: string, alias: string): void;
 }

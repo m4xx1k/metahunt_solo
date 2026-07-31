@@ -7,8 +7,6 @@ import { MatchStage } from "./MatchStage";
 import { StageCard, Connector } from "./StageCard";
 import { UploadCta } from "./UploadCta";
 
-// The animated 3-stage explainer (Collect → Parse → Match); each card deep-links
-// to /how-it-works. `matchCta` (bare index only) adds the upload-CV button.
 export function HowItWorks({
   aggregates,
   matchCta,

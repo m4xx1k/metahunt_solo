@@ -21,10 +21,6 @@ export class UpdateAnalyticsJourneyDto {
   cohortId?: string | null;
 }
 
-// Anonymous-journey acquisition chain only. Diagnostics/system/known-user
-// steps (handoff, activation, digest send/click) moved off the funnel to
-// Subscribers/Delivery — the events themselves keep firing, just not as rows
-// here. See `.private/analysis/2026-07-25-analytics-simplification-plan.md`.
 export const PRODUCT_FUNNEL_STEPS = [
   ANALYTICS_EVENTS.landingView,
   ANALYTICS_EVENTS.landingCtaClicked,
@@ -34,8 +30,6 @@ export const PRODUCT_FUNNEL_STEPS = [
 
 export type ProductFunnelStep = (typeof PRODUCT_FUNNEL_STEPS)[number];
 
-// Both are chat-level and anchored at the first link, so the console's two
-// headline questions ("growing?" / "sticking?") divide the same population.
 export const GROWTH_WINDOW_WEEKS = 8;
 export const RETENTION_WINDOW_WEEKS = 6;
 
@@ -45,8 +39,6 @@ export interface ProductGrowthWeek {
   cumulative: number;
 }
 
-// The north-star series: newly linked chats per ISO week. `current`/`previous`
-// are the last two complete-or-current weeks — the week-over-week rate.
 export interface ProductGrowth {
   weeks: ProductGrowthWeek[];
   current: number;
@@ -99,6 +91,29 @@ export interface ProductAnalyticsOverview {
   feedEngagement: ProductFeedEngagement;
   subscriberStates: ProductSubscriberStates;
   delivery: ProductDeliveryHealth;
+}
+
+export const CRM_PEOPLE_SORTS = ["recent", "first_known", "clicks", "at_risk"] as const;
+export type CrmPeopleSort = (typeof CRM_PEOPLE_SORTS)[number];
+
+export interface CrmPerson {
+  id: string;
+  hasAccount: boolean;
+  hasTelegram: boolean;
+  firstKnownAt: Date;
+  lastProductActionAt: Date | null;
+  subscriptions: number;
+  feedClicks: number;
+  telegramClicks: number;
+  state: "active" | "at_risk" | "no_subscription";
+}
+
+export interface CrmPeoplePage {
+  metrics: { knownPeople: number; telegramConnected: number; jobClickers: number; atRisk: number };
+  rows: CrmPerson[];
+  total: number;
+  offset: number;
+  limit: number;
 }
 
 // Distinct journeys (and raw event count) that clicked a feed vacancy

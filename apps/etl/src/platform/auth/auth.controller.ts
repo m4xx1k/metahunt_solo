@@ -23,7 +23,9 @@ import { Throttle } from "@nestjs/throttler";
 import { ApiErrorResponseDto, OkResponseDto } from "../swagger/api-error.dto";
 
 import type {
+  AccountMergeStartResponse,
   AuthUser,
+  ConfirmAccountMergeRequest,
   GoogleLoginRequest,
   TelegramLoginPollRequest,
   TelegramLoginPollResponse,
@@ -32,7 +34,9 @@ import type {
 } from "./auth.contract";
 import { AuthService } from "./auth.service";
 import {
+  AccountMergeStartResponseDto,
   AuthUserDto,
+  ConfirmAccountMergeRequestDto,
   GoogleLoginRequestDto,
   TelegramLoginPollRequestDto,
   TelegramLoginPollResponseDto,
@@ -46,6 +50,7 @@ import { TelegramLoginService } from "./telegram-login.service";
 
 const TELEGRAM_LOGIN_THROTTLE = { default: { limit: 10, ttl: 60_000 } };
 const TELEGRAM_POLL_THROTTLE = { default: { limit: 600, ttl: 60_000 } };
+const ACCOUNT_MERGE_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 
 @Controller("auth")
 @ApiTags("auth")
@@ -113,6 +118,35 @@ export class AuthController {
       throw new BadRequestException("credential is required");
     }
     await this.auth.linkGoogleTo(user.userId, body.credential);
+    return this.requireMe(user.userId);
+  }
+
+  @Post("merge/start")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Create a one-time code for a two-session account merge" })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: AccountMergeStartResponseDto })
+  @Throttle(ACCOUNT_MERGE_THROTTLE)
+  async startAccountMerge(@CurrentUser() user: JwtUser): Promise<AccountMergeStartResponse> {
+    const result = await this.auth.startAccountMerge(user.userId);
+    return { code: result.code, expiresAt: result.expiresAt.toISOString() };
+  }
+
+  @Post("merge/confirm")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: "Merge the account that created a one-time code into the current account",
+  })
+  @ApiBearerAuth()
+  @ApiBody({ type: ConfirmAccountMergeRequestDto })
+  @ApiOkResponse({ type: AuthUserDto })
+  @Throttle(ACCOUNT_MERGE_THROTTLE)
+  async confirmAccountMerge(
+    @CurrentUser() user: JwtUser,
+    @Body() body: Partial<ConfirmAccountMergeRequest>,
+  ): Promise<AuthUser> {
+    if (typeof body?.code !== "string") throw new BadRequestException("code is required");
+    await this.auth.confirmAccountMerge(user.userId, body.code);
     return this.requireMe(user.userId);
   }
 

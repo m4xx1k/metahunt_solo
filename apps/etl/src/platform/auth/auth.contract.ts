@@ -25,6 +25,15 @@ export interface GoogleLoginRequest {
   credential: string;
 }
 
+export interface ConfirmAccountMergeRequest {
+  code: string;
+}
+
+export interface AccountMergeStartResponse {
+  code: string;
+  expiresAt: string;
+}
+
 export interface TelegramLoginResponse {
   token: string;
   user: AuthUser;

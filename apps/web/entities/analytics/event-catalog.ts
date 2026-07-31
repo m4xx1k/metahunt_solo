@@ -25,6 +25,13 @@ export function countsAsLastAction(event: AnalyticsEventDoc): boolean {
 
 export const EVENT_CATALOG: AnalyticsEventDoc[] = [
   {
+    name: "page_viewed",
+    label: "page view",
+    actor: "user",
+    sink: "posthog-only",
+    means: "opened a classified route; PostHog owns path analysis",
+  },
+  {
     name: "landing_view",
     label: "landing view",
     actor: "user",
@@ -86,6 +93,13 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     sink: "ledger",
     means: "tapped a job in the web feed",
+  },
+  {
+    name: "vacancy_outbound_clicked",
+    label: "vacancy outbound click",
+    actor: "user",
+    sink: "posthog-only",
+    means: "opened a vacancy from the feed or a Telegram digest",
   },
   {
     name: "subscription_reactivated",

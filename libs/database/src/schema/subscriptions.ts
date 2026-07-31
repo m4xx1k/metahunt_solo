@@ -30,6 +30,7 @@ export const subscriptions = pgTable(
     tgFirstName: text("tg_first_name"),
     candidateId: text("candidate_id"),
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    personId: uuid("person_id").notNull().defaultRandom(),
     journeyId: uuid("journey_id").references(() => analyticsJourneys.id, {
       onDelete: "set null",
     }),
@@ -47,6 +48,7 @@ export const subscriptions = pgTable(
   (t) => [
     index("subscriptions_chat_id_idx").on(t.chatId),
     index("subscriptions_user_id_idx").on(t.userId),
+    index("subscriptions_person_id_idx").on(t.personId),
     index("subscriptions_journey_id_idx").on(t.journeyId),
     index("subscriptions_created_at_idx").on(t.createdAt),
   ],

@@ -104,7 +104,8 @@ afterEach(async () => {
 describe("first-party product analytics ledger", () => {
   it("keeps browser, API, Telegram, and worker events on one journey", async () => {
     const capture = jest.fn();
-    const sink: AnalyticsSink = { capture };
+    const alias = jest.fn();
+    const sink: AnalyticsSink = { capture, alias };
     const outbox = new AnalyticsOutboxStore(db);
     const analytics = new AnalyticsService(new ProductEventStore(db), outbox, sink);
     const subscriptionsService = new SubscriptionsService(
@@ -136,6 +137,12 @@ describe("first-party product analytics ledger", () => {
       occurredAt: new Date(),
       properties: { landing_variant: "backend-radar" },
     });
+    await expect(
+      db
+        .select({ personId: analyticsJourneys.personId })
+        .from(analyticsJourneys)
+        .where(eq(analyticsJourneys.id, journeyId)),
+    ).resolves.toEqual([{ personId: journeyId }]);
 
     const subscriptionId = await subscriptionsService.create(
       { seniority: "MIDDLE" },
@@ -163,7 +170,7 @@ describe("first-party product analytics ledger", () => {
     await outbox.drain(100);
 
     const [journey] = await db
-      .select()
+      .select({ origin: analyticsJourneys.origin, personId: analyticsJourneys.personId })
       .from(analyticsJourneys)
       .where(eq(analyticsJourneys.id, journeyId));
     const [subscription] = await db
@@ -177,6 +184,7 @@ describe("first-party product analytics ledger", () => {
     const overview = await dashboard.overview("all");
 
     expect(journey.origin).toBe("browser");
+    expect(journey.personId).toBe(user.id);
     expect(subscription.journeyId).toBe(journeyId);
     expect(subscription.userId).toBe(user.id);
     expect(events).toHaveLength(6);

@@ -6,7 +6,6 @@ import {
   PaperPlaneTiltIcon,
 } from "@phosphor-icons/react/dist/ssr";
 
-// linktree — "built by" socials.
 const SOCIALS = [
   { label: "GitHub", href: "https://github.com/m4xx1k", Icon: GithubLogoIcon },
   { label: "Telegram", href: "https://t.me/m4xx1k", Icon: PaperPlaneTiltIcon },

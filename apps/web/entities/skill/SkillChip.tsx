@@ -1,10 +1,5 @@
 import { cn } from "@/lib/utils";
 
-// The one skill chip. Tones map to what the skill means in context:
-// required/optional on vacancy cards, have/missing/bonus on the reverse-ATS
-// diff lines. `compact` is the dense diff-line size; `hash` opts into a `#`
-// prefix (off by default — it reads oddly for multi-word skills like
-// "machine learning").
 const TONES = {
   required: "border-accent text-accent",
   optional: "border-border-strong text-text-secondary",
@@ -15,7 +10,6 @@ const TONES = {
 
 export type SkillTone = keyof typeof TONES;
 
-// A ✓/✗ mark pairs with the have/missing colour so it is never the only signal.
 const GLYPHS: Partial<Record<SkillTone, string>> = { have: "✓", missing: "✗" };
 
 export function SkillChip({

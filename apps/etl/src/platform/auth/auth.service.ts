@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from "node:crypto";
+
 import {
   BadRequestException,
   ConflictException,
@@ -11,16 +13,28 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
+
+import { AnalyticsService } from "../analytics/analytics.service";
 
 import type { AuthProvider, AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
 import { verifyGoogleIdToken } from "./google-verify";
 
-const { users, authIdentities, subscriptions } = schema;
+const {
+  accountMergeRequests,
+  analyticsJourneys,
+  authIdentities,
+  subscriptions,
+  telegramLoginRequests,
+  userCvs,
+  users,
+} = schema;
+const targetUserCvs = alias(userCvs, "target_user_cvs");
 
 // Waitlist rows are stored lowercased (users.service.ts), and Postgres eq() is
 // case-sensitive — without this the adoption lookup silently never matches.
@@ -29,8 +43,23 @@ function normalizeEmail(email: string | null | undefined): string | null {
   return trimmed && trimmed.length > 0 ? trimmed : null;
 }
 
+function formatMergeCode(raw: string): string {
+  return raw
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase()
+    .match(new RegExp(`.{1,${MERGE_CODE_GROUP}}`, "g"))!
+    .join("-");
+}
+
+function hashMergeCode(code: string): string {
+  return createHash("sha256").update(code).digest("hex");
+}
+
 const TELEGRAM = "telegram";
 const GOOGLE = "google";
+const MERGE_CODE_BYTES = 8;
+const MERGE_CODE_TTL_MS = 10 * 60 * 1000;
+const MERGE_CODE_GROUP = 4;
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -40,6 +69,7 @@ export class AuthService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly analytics?: AnalyticsService,
   ) {
     this.adminIds = new Set(
       (this.config.get<string>("ADMIN_TELEGRAM_IDS") ?? "")
@@ -112,6 +142,50 @@ export class AuthService {
       firstName: profile.firstName,
       email: profile.email,
     });
+  }
+
+  async startAccountMerge(userId: string): Promise<{ code: string; expiresAt: Date }> {
+    const code = formatMergeCode(randomBytes(MERGE_CODE_BYTES).toString("hex"));
+    const expiresAt = new Date(Date.now() + MERGE_CODE_TTL_MS);
+    await this.db.transaction(async (tx) => {
+      await tx.delete(accountMergeRequests).where(eq(accountMergeRequests.sourceUserId, userId));
+      await tx.insert(accountMergeRequests).values({
+        sourceUserId: userId,
+        codeHash: hashMergeCode(code),
+        expiresAt,
+      });
+    });
+    return { code, expiresAt };
+  }
+
+  async confirmAccountMerge(targetUserId: string, code: string): Promise<void> {
+    const normalizedCode = code.trim().toUpperCase();
+    if (!/^[A-Z0-9-]{12,32}$/.test(normalizedCode)) {
+      throw new BadRequestException("Invalid merge code");
+    }
+    let sourceUserId: string | null = null;
+    await this.db.transaction(async (tx) => {
+      const [request] = await tx
+        .select({ id: accountMergeRequests.id, sourceUserId: accountMergeRequests.sourceUserId })
+        .from(accountMergeRequests)
+        .where(
+          and(
+            eq(accountMergeRequests.codeHash, hashMergeCode(normalizedCode)),
+            isNull(accountMergeRequests.consumedAt),
+            gt(accountMergeRequests.expiresAt, new Date()),
+          ),
+        )
+        .for("update");
+      if (!request) throw new BadRequestException("Merge code is expired or invalid");
+      if (request.sourceUserId === targetUserId) {
+        throw new BadRequestException("Choose a different account to merge into");
+      }
+      await this.mergeUserInto(targetUserId, request.sourceUserId, tx);
+      // Deleting the source account cascades to this one-time request, which
+      // makes the code permanently unusable without retaining its hash.
+      sourceUserId = request.sourceUserId;
+    });
+    if (sourceUserId) this.analytics?.aliasPerson(sourceUserId, targetUserId);
   }
 
   async linkTrustedTelegramUser(
@@ -355,6 +429,78 @@ export class AuthService {
     return created.id;
   }
 
+  private async mergeUserInto(
+    targetUserId: string,
+    sourceUserId: string,
+    db: DrizzleExecutor,
+  ): Promise<void> {
+    const accounts = await db
+      .select({ id: users.id, roles: users.roles })
+      .from(users)
+      .where(inArray(users.id, [targetUserId, sourceUserId]))
+      .for("update");
+    const target = accounts.find((account) => account.id === targetUserId);
+    const source = accounts.find((account) => account.id === sourceUserId);
+    if (!target || !source) throw new ConflictException("Account no longer exists");
+    if (target.roles.includes("admin") || source.roles.includes("admin")) {
+      throw new ConflictException("Administrator accounts cannot be merged");
+    }
+
+    const identities = await db
+      .select({ userId: authIdentities.userId, provider: authIdentities.provider })
+      .from(authIdentities)
+      .where(inArray(authIdentities.userId, [targetUserId, sourceUserId]));
+    const targetProviders = new Set(
+      identities
+        .filter((identity) => identity.userId === targetUserId)
+        .map((identity) => identity.provider),
+    );
+    if (
+      identities.some(
+        (identity) => identity.userId === sourceUserId && targetProviders.has(identity.provider),
+      )
+    ) {
+      throw new ConflictException("Both accounts have the same sign-in provider");
+    }
+
+    const [cvConflict] = await db
+      .select({ id: userCvs.id })
+      .from(userCvs)
+      .innerJoin(
+        targetUserCvs,
+        and(
+          eq(userCvs.candidateId, targetUserCvs.candidateId),
+          eq(targetUserCvs.userId, targetUserId),
+        ),
+      )
+      .where(eq(userCvs.userId, sourceUserId));
+    if (cvConflict) throw new ConflictException("Both accounts own the same CV");
+
+    await db
+      .update(analyticsJourneys)
+      .set({ personId: targetUserId })
+      .where(eq(analyticsJourneys.personId, sourceUserId));
+    await db
+      .update(subscriptions)
+      .set({ userId: targetUserId, personId: targetUserId })
+      .where(eq(subscriptions.userId, sourceUserId));
+    await db.update(userCvs).set({ userId: targetUserId }).where(eq(userCvs.userId, sourceUserId));
+    await db
+      .update(telegramLoginRequests)
+      .set({ userId: targetUserId })
+      .where(eq(telegramLoginRequests.userId, sourceUserId));
+    await db
+      .update(telegramLoginRequests)
+      .set({ linkUserId: targetUserId })
+      .where(eq(telegramLoginRequests.linkUserId, sourceUserId));
+    await db
+      .update(authIdentities)
+      .set({ userId: targetUserId })
+      .where(eq(authIdentities.userId, sourceUserId));
+    await db.delete(users).where(eq(users.id, sourceUserId));
+    await this.syncRoles(targetUserId, db);
+  }
+
   private async insertIdentity(
     userId: string,
     identity: { provider: string; providerUserId: string },
@@ -403,12 +549,24 @@ export class AuthService {
   ): Promise<void> {
     await db
       .update(subscriptions)
-      .set({ userId })
+      .set({ userId, personId: userId })
       .where(
         and(
           eq(subscriptions.chatId, telegramId),
           isNull(subscriptions.userId),
           isNull(subscriptions.candidateId),
+        ),
+      );
+    await db
+      .update(analyticsJourneys)
+      .set({ personId: userId })
+      .where(
+        inArray(
+          analyticsJourneys.id,
+          db
+            .select({ journeyId: subscriptions.journeyId })
+            .from(subscriptions)
+            .where(and(eq(subscriptions.userId, userId), isNull(subscriptions.candidateId))),
         ),
       );
   }
