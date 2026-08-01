@@ -5,6 +5,7 @@ import type {
   WorkFormat,
 } from "../../platform/shared/contract";
 import type { VacancyDto } from "../feed/feed.contract";
+import type { ScoreBreakdown } from "../score/score.contract";
 
 // reverse-ATS matcher contract — see md/journal/migrations/reverse-ats.md (§2).
 // A ranked card = the full feed VacancyDto + a personalized match overlay:
@@ -26,6 +27,7 @@ export interface ResolveResult {
 
 export interface FitInfo {
   tier: FitTier;
+  percent: number; // 0..100 — the user-facing "Fit %", the tier's own source number
   matchedRequired: number;
   requiredTotal: number;
 }
@@ -41,6 +43,7 @@ export interface RankedVacancy {
   relevance: number; // Σ weight over overlap — the sort key
   onStack: boolean; // vacancy's required core tech is in the candidate's stack-set (ADR-0010 / v2 demote)
   fit: FitInfo;
+  breakdown: ScoreBreakdown; // what the Fit % is made of (one signal today)
   diff: SkillDiff;
 }
 

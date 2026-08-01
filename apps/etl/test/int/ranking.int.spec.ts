@@ -171,7 +171,11 @@ describe("RankingService.match (integration)", () => {
       matchedRequired: 1,
       requiredTotal: 2,
       tier: "GOOD", // 1/2 coverage
+      percent: 50, // the tier's own source number, now on the wire
     });
+    expect(res.items[0].breakdown.signals).toEqual([
+      { kind: "skill-overlap", raw: 0.5, weight: 1, contribution: 0.5 },
+    ]);
     expect(res.items[0].diff.have.map((s) => s.name)).toEqual(["Go"]);
     expect(res.items[0].diff.missing.map((s) => s.name)).toEqual(["Kubernetes"]);
   });

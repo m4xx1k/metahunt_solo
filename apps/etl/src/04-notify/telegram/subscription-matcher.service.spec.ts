@@ -4,6 +4,7 @@ import { CandidateMatchService } from "../../03-discovery/cv/candidate-match.ser
 import type { FeedResponse, VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { FeedService } from "../../03-discovery/feed/feed.service";
 import type { MatchResponse } from "../../03-discovery/ranking/ranking.contract";
+import { buildScoreBreakdown } from "../../03-discovery/score/score.contract";
 
 import { SentNotificationsService } from "./sent-notifications.service";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
@@ -55,7 +56,8 @@ function matchResponse(items: VacancyDto[], total = items.length): MatchResponse
       vacancy,
       relevance: 1,
       onStack: true,
-      fit: { tier: "STRONG", matchedRequired: 1, requiredTotal: 1 },
+      fit: { tier: "STRONG", percent: 100, matchedRequired: 1, requiredTotal: 1 },
+      breakdown: buildScoreBreakdown(1),
       diff: { have: [], missing: [], bonus: [] },
     })),
     page: 1,

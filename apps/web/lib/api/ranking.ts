@@ -13,11 +13,28 @@ export interface SkillRef {
 export const FIT_TIER_VALUES = ["STRONG", "GOOD", "STRETCH"] as const;
 export type FitTier = (typeof FIT_TIER_VALUES)[number];
 
+// What the Fit % is made of. One signal today (skill-overlap); the tooltip
+// renders the array, so a future signal needs no UI change.
+export type ScoreSignalKind = "skill-overlap";
+
+export interface ScoreSignal {
+  kind: ScoreSignalKind;
+  raw: number;
+  weight: number;
+  contribution: number;
+}
+
+export interface ScoreBreakdown {
+  total: number; // 0..1 — `fit.percent` is its display form
+  signals: ScoreSignal[];
+}
+
 export interface RankedVacancy {
   vacancy: VacancyDto;
   relevance: number;
   onStack: boolean; // false = off-stack, ranked below in-stack matches
-  fit: { tier: FitTier; matchedRequired: number; requiredTotal: number };
+  fit: { tier: FitTier; percent: number; matchedRequired: number; requiredTotal: number };
+  breakdown: ScoreBreakdown;
   diff: { have: SkillRef[]; missing: SkillRef[]; bonus: SkillRef[] };
 }
 

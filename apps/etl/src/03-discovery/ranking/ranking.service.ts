@@ -9,6 +9,7 @@ import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
+import { buildScoreBreakdown, fitPercent } from "../score/score.contract";
 import { rankedCte, scoringCtes } from "../score/score.sql";
 
 import {
@@ -181,6 +182,7 @@ export class RankingService {
     const ranked = await this.db.execute<{
       id: string;
       relevance: number;
+      coverage: number;
       on_stack: boolean;
       tier_bucket: number;
       total: number;
@@ -191,7 +193,7 @@ export class RankingService {
       -- slots on the ranked page. Ungrouped rows partition on their own id
       -- (rn = 1 trivially). Partition order mirrors the final ORDER BY.
       collapsed AS (
-        SELECT v.id::text AS id, rk.relevance, rk.on_stack, rk.tier_bucket,
+        SELECT v.id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
                row_number() OVER (
                  PARTITION BY coalesce(v.unique_vacancy_id, v.id)
                  ORDER BY rk.on_stack DESC, rk.tier_bucket DESC,
@@ -201,7 +203,7 @@ export class RankingService {
         JOIN vacancies v ON v.id = rk.id
         WHERE ${where}${tierCond}
       )
-      SELECT id, relevance, on_stack, tier_bucket, (count(*) OVER ())::int AS total
+      SELECT id, relevance, coverage, on_stack, tier_bucket, (count(*) OVER ())::int AS total
       FROM collapsed
       WHERE rn = 1
       -- round so exact-IDF ties break by id (raw float-sum order is plan noise).
@@ -319,7 +321,13 @@ export class RankingService {
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: { id: string; relevance: number; on_stack: boolean; tier_bucket: number }[],
+    rows: {
+      id: string;
+      relevance: number;
+      coverage: number;
+      on_stack: boolean;
+      tier_bucket: number;
+    }[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
@@ -374,15 +382,18 @@ export class RankingService {
         }
       }
       const bonus = candidate.filter((c) => !vacancyNodeIds.has(c.id));
+      const breakdown = buildScoreBreakdown(row.coverage);
       items.push({
         vacancy,
         relevance: row.relevance,
         onStack: row.on_stack,
         fit: {
           tier: TIER_BY_BUCKET[row.tier_bucket],
+          percent: fitPercent(breakdown.total),
           matchedRequired,
           requiredTotal,
         },
+        breakdown,
         diff: {
           have: have.sort(byWeight),
           missing: missing.sort(byWeight),
