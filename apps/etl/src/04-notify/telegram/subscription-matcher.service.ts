@@ -148,5 +148,11 @@ function paramsToCandidateCriteria(params: SubscriptionParams): CandidateMatchCr
     minFitTier: asString(params.minFitTier) as FitTier | undefined,
     sourceId: asString(params.sourceId),
     postedWithinDays: asNumber(params.postedWithinDays),
+    // Pre-MET-120, on_stack was an ORDER BY demote, never a filter — every
+    // subscriber's digest included off-stack matches. Keep that: no stored
+    // subscription has an opinion on this new field, so default it to the
+    // old behavior instead of the new UI default. MET-122 will let a
+    // subscriber actually choose this.
+    includeOffStack: true,
   };
 }
