@@ -38,6 +38,7 @@ const ANALYTICS_EVENTS = {
   baitClick: "bait_click",
   matchFlowStarted: "match_flow_started",
   matchFlowCompleted: "match_flow_completed",
+  feedScoreLocked: "feed_score_locked",
 } as const;
 
 export type Lens = "cold" | "warm";
@@ -208,6 +209,13 @@ export function useAnalytics() {
       // /match onboarding funnel: started = the visitor committed to a path.
       matchFlowStarted(entry: "cv" | "manual") {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.matchFlowStarted, { entry });
+      },
+
+      // A cold visitor tapped the locked Fit slot on a /feed card. The whole
+      // point of showing a locked score is to find out whether the number is
+      // what people actually want — this is that measurement.
+      feedScoreLocked(vacancyId: string) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.feedScoreLocked, { vacancy_id: vacancyId });
       },
 
       matchFlowCompleted(props: {
