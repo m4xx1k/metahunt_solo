@@ -280,10 +280,11 @@ export class ProductAnalyticsService {
       ),
       roster AS (
         SELECT
-          p.id, COALESCE(MAX(p.display_name), 'Unknown person') AS display_name,
-          bool_or(p.has_account) AS has_account,
-          bool_or(p.has_telegram) AS has_telegram,
-          MIN(p.first_known_at) AS first_known_at,
+          p.id,
+          COALESCE(p.display_name, 'Unknown person') AS display_name,
+          p.has_account,
+          p.has_telegram,
+          p.first_known_at,
           a.last_product_action_at,
           COALESCE(s.subscriptions, 0)::int AS subscriptions,
           COALESCE(a.feed_clicks, 0)::int AS feed_clicks,

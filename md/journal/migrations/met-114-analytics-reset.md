@@ -12,10 +12,10 @@ Postgres until the parity gate is met._
 
 ## Subtasks
 
-- [x] T0 — Canonical person identity — _done when:_ browser, Telegram, and account activity use one opaque PostHog person id; an account merge is authenticated and transactional.
+- [ ] T0 — Canonical person identity — _blocked by audit:_ browser, Telegram, and account activity use one opaque PostHog person id; account merge is authenticated and transactional. Migration `0037` backfills journey/subscription rows but does not consolidate repeated Telegram-only `chat_id` records, so full parity is not proven.
 - [x] T1 — Event taxonomy — _done when:_ new events use `entity_action`, page views have `page_type`, and old PostHog views remain queryable during the transition.
 - [ ] T2 — Founder PostHog workspace — _done when:_ PROD and LOCAL / DEV are named, Kyiv timezone and saved dashboard/funnels are configured and reproducible from the runbook. Automation exists via `pnpm posthog:founder` and seeds the dashboard, transition Action, and nine saved HogQL insights; actual apply/verify requires a PostHog personal API key and project IDs.
-- [x] T3 — Compact CRM dashboard — _done when:_ people, not ledger journeys, are paginated/searchable server-side with the four agreed operator metrics.
+- [ ] T3 — Compact CRM dashboard — _blocked by identity audit:_ people, not duplicated ledger journeys, are paginated/searchable server-side with the four agreed operator metrics.
 - [x] T4 — Ledger narrowing gate — _done when:_ the inventory, parity queries, and rollback condition are documented before any event table is removed.
 - [x] T5 — Verification and cleanup — _done when:_ unit/integration/build checks pass and nonessential comments are removed.
 
