@@ -188,12 +188,13 @@ export class RankingService {
 
     // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
     // date-sorted page, because the Fit number is on every card either way.
-    // The dedup partition order mirrors the page order, so the representative
-    // kept per group is the one the page would have shown.
+    // The dedup partition order mirrors the page order below it, but on_stack
+    // leads: the off-stack filter runs after the collapse, so an off-stack
+    // representative would take its whole group down with it.
     const byDate = filters.sort === "date";
     const groupOrder = byDate
-      ? sql`coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
-      : sql`rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
+      ? sql`rk.on_stack DESC, coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
+      : sql`rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
     // round so exact-IDF ties break by id (raw float-sum order is plan noise).
     const pageOrder = byDate
       ? sql`posted_at DESC, id DESC`

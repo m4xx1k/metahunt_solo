@@ -266,6 +266,59 @@ describe("RankingService.match (integration)", () => {
     expect(shown.offStackHidden).toBe(0);
   });
 
+  // The off-stack filter runs after the dedup collapse, so a group whose best
+  // score sits on its off-stack duplicate must still fall back to the on-stack
+  // one — otherwise the whole posting disappears from the page.
+  it("keeps a dedup group's on-stack duplicate when the better-scoring one is off-stack", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const node = await seedNode("SKILL", "Node.js");
+    const python = await seedNode("SKILL", "Python");
+    const docker = await seedNode("SKILL", "Docker");
+    const k8s = await seedNode("SKILL", "Kubernetes");
+    const terraform = await seedNode("SKILL", "Terraform");
+    const ansible = await seedNode("SKILL", "Ansible");
+    await seedTechMeta(node, { category: "LANGUAGE", stack: "node", isCore: true });
+    await seedTechMeta(python, { category: "LANGUAGE", stack: "python", isCore: true });
+    await seedTechMeta(docker, { category: "TOOL", stack: null, isCore: false });
+
+    // Same posting twice: in-stack but a weak fit (1 of 4), off-stack with the
+    // better one (1 of 2) — so the off-stack copy wins a score-only partition.
+    const inStack = await seedVacancy(sourceId, ingestId, role, "In stack");
+    const offStack = await seedVacancy(sourceId, ingestId, role, "Off stack");
+    await linkSkill(inStack, node);
+    await linkSkill(inStack, k8s);
+    await linkSkill(inStack, terraform);
+    await linkSkill(inStack, ansible);
+    await linkSkill(offStack, docker);
+    await linkSkill(offStack, python);
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([node, docker]);
+
+    const [group] = await db
+      .insert(schema.uniqueVacancies)
+      .values({
+        canonicalVacancyId: inStack,
+        sourceCount: 1,
+        vacancyCount: 2,
+        firstSeenAt: new Date(),
+        lastSeenAt: new Date(),
+      })
+      .returning({ id: schema.uniqueVacancies.id });
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: group.id })
+      .where(inArray(schema.vacancies.id, [inStack, offStack]));
+
+    const res = await candidateMatch.match(candidateId, {}, 1, 20);
+
+    expect(res.items.map((i) => i.vacancy.id)).toEqual([inStack]);
+    expect(res.total).toBe(1);
+  });
+
   it("collapses a dedup group to a single ranked card", async () => {
     const { sourceId, ingestId } = await seedSource();
     const role = await seedNode("ROLE", "Backend Developer");
