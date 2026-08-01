@@ -33,6 +33,8 @@ export function subscriptionCriteriaToFilters(params: CvMatchParams): FilterStat
   };
 }
 
+// includeOffStack is deliberately NOT persisted yet: giving subscribers real
+// control over it is MET-122; until then every digest includes off-stack.
 export function filtersToSubscriptionCriteria(
   filters: FilterState,
   current: CvMatchParams,
@@ -77,6 +79,9 @@ export function areFiltersEqual(left: FilterState, right: FilterState): boolean 
     left.freshness === right.freshness &&
     left.test === right.test &&
     left.reservation === right.reservation &&
-    left.minFitTier === right.minFitTier
+    left.minFitTier === right.minFitTier &&
+    // Digests always include off-stack matches, so "no preference" means
+    // included on both sides of the comparison.
+    (left.includeOffStack ?? true) === (right.includeOffStack ?? true)
   );
 }
