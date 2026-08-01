@@ -262,6 +262,13 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     sink: "posthog-only",
     means: "finished /match onboarding",
   },
+  {
+    name: "feed_score_locked",
+    label: "score locked",
+    actor: "user",
+    sink: "posthog-only",
+    means: "tapped the locked Fit slot on a cold /feed card",
+  },
 ];
 
 const BY_NAME = new Map(EVENT_CATALOG.map((event) => [event.name, event]));
