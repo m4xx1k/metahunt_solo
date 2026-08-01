@@ -49,6 +49,8 @@ export interface MatchResponse {
   page: number;
   pageSize: number;
   total: number;
+  /** Off-stack rows the filter removed — drives the "show them" toggle. */
+  offStackHidden: number;
 }
 
 export interface MatchBody {
@@ -63,6 +65,7 @@ export interface MatchBody {
   hasTestAssignment?: boolean; // false keeps unknowns; true strict
   hasReservation?: boolean;
   minFitTier?: FitTier; // hide below this coverage tier
+  includeOffStack?: boolean; // default false — off-stack rows are filtered out, not demoted
   sort?: MatchSort; // ORDER BY only — same result set either way
   postedWithinDays?: number; // freshness
   page?: number;

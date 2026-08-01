@@ -263,6 +263,15 @@ export class CandidateMatchParamsDto extends FilterParamsDto {
   minFitTier?: FitTier;
 
   @ApiPropertyOptional({
+    default: false,
+    description: "Include vacancies whose required core tech is outside the candidate's stack.",
+  })
+  @IsOptional()
+  @toBool()
+  @IsBoolean()
+  includeOffStack?: boolean;
+
+  @ApiPropertyOptional({
     enum: MATCH_SORT_VALUES,
     default: "score",
     description: "Page order: Fit score (default) or posting date.",

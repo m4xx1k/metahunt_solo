@@ -44,6 +44,8 @@ export interface CvMatchQuery {
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   minFitTier?: FitTier;
+  /** Include vacancies outside the candidate's stack (default false). */
+  includeOffStack?: boolean;
   /** Page order: Fit score (default) or posting date. */
   sort?: MatchSort;
   postedWithinDays?: number;

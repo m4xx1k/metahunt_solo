@@ -68,6 +68,13 @@ async function seedVacancy(
   return vac.id;
 }
 
+async function seedTechMeta(
+  nodeId: string,
+  meta: { category: "LANGUAGE" | "TOOL"; stack: string | null; isCore: boolean },
+) {
+  await db.insert(schema.nodeTechMeta).values({ nodeId, ...meta });
+}
+
 async function linkSkill(vacancyId: string, nodeId: string, isRequired = true) {
   await db.insert(schema.vacancyNodes).values({ vacancyId, nodeId, isRequired });
 }
@@ -214,6 +221,49 @@ describe("RankingService.match (integration)", () => {
     expect(new Map(byDate.items.map((i) => [i.vacancy.id, i.fit.percent]))).toEqual(
       new Map(byScore.items.map((i) => [i.vacancy.id, i.fit.percent])),
     );
+  });
+
+  // The bug this filter replaces: on_stack led the ORDER BY, so a weak in-stack
+  // card outranked a strong off-stack one and the order contradicted the Fit %.
+  it("hides off-stack vacancies by default and reports how many it hid", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const node = await seedNode("SKILL", "Node.js");
+    const python = await seedNode("SKILL", "Python");
+    const docker = await seedNode("SKILL", "Docker");
+    const k8s = await seedNode("SKILL", "Kubernetes");
+    const terraform = await seedNode("SKILL", "Terraform");
+    const ansible = await seedNode("SKILL", "Ansible");
+    await seedTechMeta(node, { category: "LANGUAGE", stack: "node", isCore: true });
+    await seedTechMeta(python, { category: "LANGUAGE", stack: "python", isCore: true });
+    await seedTechMeta(docker, { category: "TOOL", stack: null, isCore: false });
+
+    // In-stack but a weak fit (1 of 4 required); off-stack but a better one
+    // (1 of 2) — the exact shape the old on_stack-first ORDER BY got wrong.
+    const inStack = await seedVacancy(sourceId, ingestId, role, "In stack");
+    const offStack = await seedVacancy(sourceId, ingestId, role, "Off stack");
+    await linkSkill(inStack, node);
+    await linkSkill(inStack, k8s);
+    await linkSkill(inStack, terraform);
+    await linkSkill(inStack, ansible);
+    await linkSkill(offStack, docker);
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
+    await linkSkill(offStack, python);
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([node, docker]);
+
+    const hidden = await candidateMatch.match(candidateId, {}, 1, 20);
+    const shown = await candidateMatch.match(candidateId, { includeOffStack: true }, 1, 20);
+
+    expect(hidden.items.map((i) => i.vacancy.id)).toEqual([inStack]);
+    expect(hidden.total).toBe(1);
+    expect(hidden.offStackHidden).toBe(1);
+    // Unhidden, the better fit leads — on_stack no longer sits in the ORDER BY.
+    expect(shown.items.map((i) => i.vacancy.id)).toEqual([offStack, inStack]);
+    expect(shown.items[0].fit.percent).toBeGreaterThan(shown.items[1].fit.percent);
+    expect(shown.offStackHidden).toBe(0);
   });
 
   it("collapses a dedup group to a single ranked card", async () => {

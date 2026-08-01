@@ -63,6 +63,7 @@ function matchResponse(items: VacancyDto[], total = items.length): MatchResponse
     page: 1,
     pageSize: 50,
     total,
+    offStackHidden: 0,
   };
 }
 

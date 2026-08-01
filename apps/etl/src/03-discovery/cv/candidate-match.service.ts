@@ -24,6 +24,7 @@ export interface CandidateMatchCriteria {
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   minFitTier?: FitTier;
+  includeOffStack?: boolean;
   sort?: MatchSort;
   sourceId?: string;
   postedWithinDays?: number;
@@ -66,6 +67,7 @@ export class CandidateMatchService {
         hasTestAssignment: criteria.hasTestAssignment,
         hasReservation: criteria.hasReservation,
         minFitTier: criteria.minFitTier,
+        includeOffStack: criteria.includeOffStack,
         sort: criteria.sort,
         sourceId: criteria.sourceId,
         postedWithinDays: criteria.postedWithinDays,

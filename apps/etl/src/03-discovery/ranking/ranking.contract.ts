@@ -65,6 +65,7 @@ export interface MatchFilters {
   hasTestAssignment?: boolean; // false also keeps unknowns (no confirmed test); true is strict
   hasReservation?: boolean; // UA military deferment ("бронь")
   minFitTier?: FitTier; // hide vacancies below this coverage tier (STRONG > GOOD > STRETCH)
+  includeOffStack?: boolean; // default false — off-stack is a filter now, never a sort demote
   sourceId?: string;
   excludedSkillNodeIds?: string[]; // hard exclusion when a vacancy requires any listed skill
   postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
@@ -78,6 +79,7 @@ export interface MatchResponse {
   page: number;
   pageSize: number;
   total: number;
+  offStackHidden: number; // off-stack rows the filter removed — 0 when they are included
 }
 
 // Fit-coverage thresholds. v1 expert guesses (no ground truth yet) — the SINGLE

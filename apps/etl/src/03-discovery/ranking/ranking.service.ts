@@ -159,7 +159,7 @@ export class RankingService {
   ): Promise<MatchResponse> {
     const nodeIds = resolved.matched.map((m) => m.id);
     if (nodeIds.length === 0) {
-      return { resolved, items: [], page, pageSize, total: 0 };
+      return { resolved, items: [], page, pageSize, total: 0, offStackHidden: 0 };
     }
 
     // `cand` is a VALUES row list `(uuid), (uuid)`; `candIds` is a flat
@@ -179,32 +179,32 @@ export class RankingService {
     const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
     const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
 
+    // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
+    // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page
+    // order contradicted the number printed on it. Hidden by default; the count
+    // of what's hidden rides the page query so the UI can offer to unhide.
+    const includeOffStack = filters.includeOffStack === true;
+    const keep = includeOffStack ? sql`true` : sql`on_stack`;
+
     // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
     // date-sorted page, because the Fit number is on every card either way.
     // The dedup partition order mirrors the page order, so the representative
     // kept per group is the one the page would have shown.
     const byDate = filters.sort === "date";
     const groupOrder = byDate
-      ? sql`rk.on_stack DESC, coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
-      : sql`rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
+      ? sql`coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
+      : sql`rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
     // round so exact-IDF ties break by id (raw float-sum order is plan noise).
     const pageOrder = byDate
-      ? sql`on_stack DESC, posted_at DESC, id DESC`
-      : sql`on_stack DESC, tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
+      ? sql`posted_at DESC, id DESC`
+      : sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
 
-    const ranked = await this.db.execute<{
-      id: string;
-      relevance: number;
-      coverage: number;
-      on_stack: boolean;
-      tier_bucket: number;
-      total: number;
-    }>(sql`
-      WITH ${scoreCte},
-      -- Collapse dedup groups: keep one representative per group — its
-      -- best-ranked member — so duplicate postings never occupy adjacent
-      -- slots on the ranked page. Ungrouped rows partition on their own id
-      -- (rn = 1 trivially). Partition order mirrors the final ORDER BY.
+    // Collapse dedup groups: keep one representative per group — its
+    // best-ranked member — so duplicate postings never occupy adjacent slots on
+    // the ranked page. Ungrouped rows partition on their own id (rn = 1
+    // trivially). Partition order mirrors the final ORDER BY. Off-stack rows
+    // stay in here so they can still be counted after being filtered out.
+    const collapsedCte = sql`
       collapsed AS (
         SELECT v.id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
                coalesce(v.published_at, v.loaded_at) AS posted_at,
@@ -215,27 +215,48 @@ export class RankingService {
         FROM ranked rk
         JOIN vacancies v ON v.id = rk.id
         WHERE ${where}${tierCond}
+      )`;
+
+    const ranked = await this.db.execute<{
+      id: string;
+      relevance: number;
+      coverage: number;
+      on_stack: boolean;
+      tier_bucket: number;
+      total: number;
+      off_stack_hidden: number;
+    }>(sql`
+      WITH ${scoreCte}, ${collapsedCte},
+      -- Both counts come off the same window pass, before the off-stack rows
+      -- are filtered away (a window function can't see what WHERE removed).
+      counted AS (
+        SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
+               (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
+               (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
+        FROM collapsed
+        WHERE rn = 1
       )
-      SELECT id, relevance, coverage, on_stack, tier_bucket, (count(*) OVER ())::int AS total
-      FROM collapsed
-      WHERE rn = 1
+      SELECT * FROM counted
+      WHERE ${keep}
       ORDER BY ${pageOrder}
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
-    // count(*) OVER () rides the page query — no second pass in the common case.
-    // An empty page (all filtered out, or OFFSET past the end) returns no row
-    // and thus no count, so fall back to a dedicated count there.
+    // The counts ride the page query — no second pass in the common case. An
+    // empty page (all filtered out, or OFFSET past the end) returns no row and
+    // thus no counts, so fall back to a dedicated count there.
     let total = ranked.rows[0]?.total ?? 0;
+    let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
     if (ranked.rows.length === 0) {
-      const totalRes = await this.db.execute<{ count: number }>(sql`
-        WITH ${scoreCte}
-        SELECT count(DISTINCT coalesce(v.unique_vacancy_id, v.id))::int AS count
-        FROM ranked rk
-        JOIN vacancies v ON v.id = rk.id
-        WHERE ${where}${tierCond}
+      const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
+        WITH ${scoreCte}, ${collapsedCte}
+        SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
+               (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
+        FROM collapsed
+        WHERE rn = 1
       `);
       total = totalRes.rows[0]?.count ?? 0;
+      offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
     }
 
     // Calibration raw data (design §8): sampled to first pages — every fresh
@@ -243,7 +264,14 @@ export class RankingService {
     if (page === 1) void this.emitMatchScored(scoreCte, where, nodeIds.length);
 
     const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
-    return { resolved, items, page, pageSize, total };
+    return {
+      resolved,
+      items,
+      page,
+      pageSize,
+      total,
+      offStackHidden: includeOffStack ? 0 : offStackHidden,
+    };
   }
 
   // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
