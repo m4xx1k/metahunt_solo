@@ -1,5 +1,6 @@
 import { asEnums, FRESHNESS_DAYS, DEFAULT_FRESHNESS } from "@/features/vacancy-filters/types";
 import type { FilterState } from "@/features/vacancy-filters/types";
+import { MATCH_PAGE_SIZE } from "@/features/vacancy-filters/warm-query";
 import type {
   EmploymentType,
   EnglishLevel,
@@ -8,7 +9,9 @@ import type {
   WorkFormat,
 } from "@/lib/api/vacancies";
 
-export const LAB_PAGE_SIZE = 20;
+// Same page size as the warm fetch — the shell computes offsets from this while
+// fetchMatch requests MATCH_PAGE_SIZE, so they cannot be allowed to drift.
+export const LAB_PAGE_SIZE = MATCH_PAGE_SIZE;
 
 // FilterState → the cold list query. The lab route has no track presets, so this
 // is a straight projection (unlike the home feed, where a track seeds the axes).
