@@ -237,7 +237,8 @@ export class RankingService {
         FROM collapsed
         WHERE rn = 1
       )
-      SELECT * FROM counted
+      SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
+      FROM counted
       WHERE ${keep}
       ORDER BY ${pageOrder}
       LIMIT ${pageSize} OFFSET ${offset}
@@ -276,8 +277,9 @@ export class RankingService {
   }
 
   // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
-  // the filtered result set, pre-collapse. Fire-and-forget — a telemetry
-  // failure must never affect the match response.
+  // the filtered result set, pre-collapse and deliberately pre-off-stack — this
+  // measures how the scorer behaves, not what the page chose to show.
+  // Fire-and-forget — a telemetry failure must never affect the match response.
   private async emitMatchScored(scoreCte: SQL, where: SQL, skillsCount: number): Promise<void> {
     try {
       const res = await this.db.execute<{ bucket: number; n: number }>(sql`
