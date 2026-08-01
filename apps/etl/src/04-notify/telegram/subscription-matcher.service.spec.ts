@@ -161,6 +161,9 @@ describe("SubscriptionMatcherService", () => {
       expect(filters.minFitTier).toBe("GOOD");
       expect(filters.loadedAfter).toBe(sub.createdAt);
       expect(filters.excludeIds).toEqual(["x"]);
+      // MET-120: off-stack became opt-in on the web UI, but a digest has no
+      // toggle to unhide them — it must keep sending every match it finds.
+      expect(filters.includeOffStack).toBe(true);
     });
 
     it("respects a subscription's own minFitTier override", async () => {
