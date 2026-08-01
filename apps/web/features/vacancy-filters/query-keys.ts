@@ -13,4 +13,5 @@ export const warmKey = (
   candidateId: string,
   filters: FilterState,
   page: number,
-) => ["match", candidateId, warmFilterKey(filters), page] as const;
+  defaultIncludeOffStack: boolean,
+) => ["match", candidateId, warmFilterKey(filters, defaultIncludeOffStack), page] as const;

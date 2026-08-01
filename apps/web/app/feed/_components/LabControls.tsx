@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { FiltersApi } from "@/features/vacancy-filters/types";
+import { LAB_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 
 // Sort + the off-stack escape hatch. The toggle only exists when something is
 // actually hidden: an unhide control next to "0 hidden" is noise.
@@ -15,7 +16,8 @@ export function LabControls({
   disabled?: boolean;
 }) {
   const byDate = api.filters.sort === "date";
-  const showOffStackToggle = offStackHidden > 0 || api.filters.includeOffStack;
+  const includeOffStack = api.filters.includeOffStack ?? LAB_INCLUDE_OFF_STACK;
+  const showOffStackToggle = offStackHidden > 0 || includeOffStack;
 
   return (
     <div
@@ -38,7 +40,7 @@ export function LabControls({
         <label className="flex cursor-pointer items-center gap-2 text-text-secondary">
           <input
             type="checkbox"
-            checked={api.filters.includeOffStack}
+            checked={includeOffStack}
             onChange={(e) => api.setIncludeOffStack(e.target.checked)}
             className="h-3 w-3 accent-[var(--color-accent)]"
           />

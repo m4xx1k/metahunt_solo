@@ -68,8 +68,8 @@ export interface FilterState {
   minFitTier: string | null;
   /** Warm-only page order: null = the Fit score default, "date" = freshness. */
   sort: string | null;
-  /** Warm-only: show vacancies outside the candidate's stack (hidden by default). */
-  includeOffStack: boolean;
+  /** Warm-only: undefined = no stated preference, so the route's own default wins. */
+  includeOffStack: boolean | undefined;
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -88,7 +88,7 @@ export const EMPTY_FILTERS: FilterState = {
   reservation: null,
   minFitTier: null,
   sort: null,
-  includeOffStack: false,
+  includeOffStack: undefined,
 };
 
 export function countActiveFilters(filters: FilterState): number {
@@ -107,8 +107,9 @@ export function countActiveFilters(filters: FilterState): number {
     (filters.test !== null ? 1 : 0) +
     (filters.reservation !== null ? 1 : 0) +
     (filters.minFitTier ? 1 : 0) +
-    // Sort is an ordering, not a filter — only off-stack changes the result set.
-    (filters.includeOffStack ? 1 : 0)
+    // Sort is an ordering, not a filter — only off-stack changes the result set,
+    // and only once the user states a preference (undefined = the route default).
+    (filters.includeOffStack === true ? 1 : 0)
   );
 }
 

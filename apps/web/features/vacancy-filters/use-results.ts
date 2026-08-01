@@ -39,6 +39,8 @@ interface WarmOpts {
   isSample: boolean;
   filters: FilterState;
   page: number;
+  /** The route's off-stack default, used when the filter states no preference. */
+  defaultIncludeOffStack: boolean;
   enabled?: boolean;
 }
 
@@ -53,8 +55,15 @@ export function useResults(opts: ColdOpts | WarmOpts): UseQueryResult<AnyResults
           enabled: opts.enabled ?? true,
         }
       : {
-          queryKey: warmKey(opts.candidateId, opts.filters, opts.page),
-          queryFn: () => fetchMatch(opts.candidateId, opts.filters, opts.page, opts.isSample),
+          queryKey: warmKey(opts.candidateId, opts.filters, opts.page, opts.defaultIncludeOffStack),
+          queryFn: () =>
+            fetchMatch(
+              opts.candidateId,
+              opts.filters,
+              opts.page,
+              opts.isSample,
+              opts.defaultIncludeOffStack,
+            ),
           enabled: opts.enabled ?? true,
         };
 

@@ -17,7 +17,7 @@ import { vacanciesApi } from "@/lib/api/vacancies";
 import { cvApi } from "@/lib/api/cv";
 import { readerFrom, readFilterState } from "@/features/vacancy-filters/url-params";
 import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
-import { fetchMatch } from "@/features/vacancy-filters/warm-query";
+import { fetchMatch, HOME_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
 import { TrackIntro } from "@/app/(feed)/_components/market/TrackIntro";
 import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
@@ -160,7 +160,10 @@ export default async function FeedPage({
     const filters = readFilterState(readerFrom(sp));
     const isSample = samples.some((sample) => sample.candidateId === cv);
     try {
-      queryClient.setQueryData(warmKey(cv, filters, 1), await fetchMatch(cv, filters, 1, isSample));
+      queryClient.setQueryData(
+        warmKey(cv, filters, 1, HOME_INCLUDE_OFF_STACK),
+        await fetchMatch(cv, filters, 1, isSample, HOME_INCLUDE_OFF_STACK),
+      );
     } catch {
       /* no seed */
     }

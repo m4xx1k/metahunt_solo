@@ -7,7 +7,7 @@ import { Header } from "@/app/_components/Header";
 import { HeaderAuth } from "@/features/auth/header-auth";
 import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
 import { readerFrom, readFilterState } from "@/features/vacancy-filters/url-params";
-import { fetchMatch } from "@/features/vacancy-filters/warm-query";
+import { fetchMatch, LAB_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 import { cvApi } from "@/lib/api/cv";
 import { facetsApi } from "@/lib/api/facets";
 import { vacanciesApi } from "@/lib/api/vacancies";
@@ -51,7 +51,10 @@ export default async function FeedLabPage({
   try {
     if (cv) {
       const isSample = samples.some((s) => s.candidateId === cv);
-      queryClient.setQueryData(warmKey(cv, filters, 1), await fetchMatch(cv, filters, 1, isSample));
+      queryClient.setQueryData(
+        warmKey(cv, filters, 1, LAB_INCLUDE_OFF_STACK),
+        await fetchMatch(cv, filters, 1, isSample, LAB_INCLUDE_OFF_STACK),
+      );
     } else {
       const query = toLabColdQuery(filters, 1);
       queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
