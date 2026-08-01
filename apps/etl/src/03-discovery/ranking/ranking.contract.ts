@@ -47,7 +47,14 @@ export interface RankedVacancy {
   diff: SkillDiff;
 }
 
+// What the ranked page is ordered by. "score" is the Fit order (the default,
+// what /match has always done); "date" is the cold feed's freshness order with
+// the score still shown on every card.
+export const MATCH_SORT_VALUES = ["score", "date"] as const;
+export type MatchSort = (typeof MATCH_SORT_VALUES)[number];
+
 export interface MatchFilters {
+  sort?: MatchSort; // ORDER BY only — the result SET is identical either way
   seniorities?: Seniority[]; // OR — keep vacancies at ANY listed level (e.g. middle ∪ senior)
   workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID …
   englishLevels?: EnglishLevel[]; // OR — the level the job requires

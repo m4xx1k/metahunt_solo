@@ -7,7 +7,7 @@ import type {
   Seniority,
   WorkFormat,
 } from "../../platform/shared/contract";
-import type { FitTier, MatchResponse } from "../ranking/ranking.contract";
+import type { FitTier, MatchResponse, MatchSort } from "../ranking/ranking.contract";
 import { RankingService } from "../ranking/ranking.service";
 
 import { CandidateLoaderService } from "./candidate-loader.service";
@@ -24,6 +24,7 @@ export interface CandidateMatchCriteria {
   hasTestAssignment?: boolean;
   hasReservation?: boolean;
   minFitTier?: FitTier;
+  sort?: MatchSort;
   sourceId?: string;
   postedWithinDays?: number;
   loadedAfter?: Date;
@@ -65,6 +66,7 @@ export class CandidateMatchService {
         hasTestAssignment: criteria.hasTestAssignment,
         hasReservation: criteria.hasReservation,
         minFitTier: criteria.minFitTier,
+        sort: criteria.sort,
         sourceId: criteria.sourceId,
         postedWithinDays: criteria.postedWithinDays,
         loadedAfter: criteria.loadedAfter,

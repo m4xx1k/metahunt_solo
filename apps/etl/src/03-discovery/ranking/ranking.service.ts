@@ -179,6 +179,19 @@ export class RankingService {
     const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
     const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
 
+    // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
+    // date-sorted page, because the Fit number is on every card either way.
+    // The dedup partition order mirrors the page order, so the representative
+    // kept per group is the one the page would have shown.
+    const byDate = filters.sort === "date";
+    const groupOrder = byDate
+      ? sql`rk.on_stack DESC, coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
+      : sql`rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
+    // round so exact-IDF ties break by id (raw float-sum order is plan noise).
+    const pageOrder = byDate
+      ? sql`on_stack DESC, posted_at DESC, id DESC`
+      : sql`on_stack DESC, tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
+
     const ranked = await this.db.execute<{
       id: string;
       relevance: number;
@@ -194,10 +207,10 @@ export class RankingService {
       -- (rn = 1 trivially). Partition order mirrors the final ORDER BY.
       collapsed AS (
         SELECT v.id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
+               coalesce(v.published_at, v.loaded_at) AS posted_at,
                row_number() OVER (
                  PARTITION BY coalesce(v.unique_vacancy_id, v.id)
-                 ORDER BY rk.on_stack DESC, rk.tier_bucket DESC,
-                          round(rk.relevance::numeric, 9) DESC, v.id
+                 ORDER BY ${groupOrder}
                ) AS rn
         FROM ranked rk
         JOIN vacancies v ON v.id = rk.id
@@ -206,8 +219,7 @@ export class RankingService {
       SELECT id, relevance, coverage, on_stack, tier_bucket, (count(*) OVER ())::int AS total
       FROM collapsed
       WHERE rn = 1
-      -- round so exact-IDF ties break by id (raw float-sum order is plan noise).
-      ORDER BY on_stack DESC, tier_bucket DESC, round(relevance::numeric, 9) DESC, id
+      ORDER BY ${pageOrder}
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 

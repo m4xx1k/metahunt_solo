@@ -1,4 +1,4 @@
-import { inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -178,6 +178,42 @@ describe("RankingService.match (integration)", () => {
     ]);
     expect(res.items[0].diff.have.map((s) => s.name)).toEqual(["Go"]);
     expect(res.items[0].diff.missing.map((s) => s.name)).toEqual(["Kubernetes"]);
+  });
+
+  it("sorts by posting date without changing the result set or the scores", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const rare = await seedNode("SKILL", "Ariadne");
+    const common = await seedNode("SKILL", "Python");
+    // Best fit is the OLDEST posting, so score order and date order disagree.
+    const vacRare = await seedVacancy(sourceId, ingestId, role, "Rare");
+    const vacCommon = await seedVacancy(sourceId, ingestId, role, "Common");
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
+    await linkSkill(vacRare, rare);
+    await linkSkill(vacRare, common);
+    await linkSkill(vacCommon, common);
+    await db
+      .update(schema.vacancies)
+      .set({ publishedAt: new Date("2020-01-01") })
+      .where(eq(schema.vacancies.id, vacRare));
+    await db
+      .update(schema.vacancies)
+      .set({ publishedAt: new Date("2024-01-01") })
+      .where(eq(schema.vacancies.id, vacCommon));
+    await refreshNodeStats();
+
+    const byScore = await ranking.match(["Ariadne", "Python"], { sort: "score" }, 1, 20);
+    const byDate = await ranking.match(["Ariadne", "Python"], { sort: "date" }, 1, 20);
+
+    expect(byScore.items.map((i) => i.vacancy.id)).toEqual([vacRare, vacCommon]);
+    expect(byDate.items.map((i) => i.vacancy.id)).toEqual([vacCommon, vacRare]);
+    expect(byDate.total).toBe(byScore.total);
+    // Same scores on both pages — only the order moved.
+    expect(new Map(byDate.items.map((i) => [i.vacancy.id, i.fit.percent]))).toEqual(
+      new Map(byScore.items.map((i) => [i.vacancy.id, i.fit.percent])),
+    );
   });
 
   it("collapses a dedup group to a single ranked card", async () => {

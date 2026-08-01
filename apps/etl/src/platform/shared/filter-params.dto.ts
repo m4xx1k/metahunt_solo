@@ -13,7 +13,12 @@ import {
   Min,
 } from "class-validator";
 
-import { FIT_TIER_VALUES, type FitTier } from "../../03-discovery/ranking/ranking.contract";
+import {
+  FIT_TIER_VALUES,
+  MATCH_SORT_VALUES,
+  type FitTier,
+  type MatchSort,
+} from "../../03-discovery/ranking/ranking.contract";
 
 import {
   EMPLOYMENT_TYPE_VALUES,
@@ -256,6 +261,16 @@ export class CandidateMatchParamsDto extends FilterParamsDto {
   @trimmed()
   @IsIn([...FIT_TIER_VALUES])
   minFitTier?: FitTier;
+
+  @ApiPropertyOptional({
+    enum: MATCH_SORT_VALUES,
+    default: "score",
+    description: "Page order: Fit score (default) or posting date.",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsIn([...MATCH_SORT_VALUES])
+  sort?: MatchSort;
 
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
