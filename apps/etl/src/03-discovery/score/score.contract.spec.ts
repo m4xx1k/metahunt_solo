@@ -1,3 +1,5 @@
+import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
+
 import { buildScoreBreakdown, fitPercent } from "./score.contract";
 
 // The breakdown is the wire shape the Fit % tooltip renders from, so the
@@ -31,5 +33,11 @@ describe("fitPercent", () => {
     expect(fitPercent(0.873)).toBe(87);
     expect(fitPercent(0)).toBe(0);
     expect(fitPercent(1)).toBe(100);
+  });
+
+  // Rounding up would print "50% · stretch" beside a real "50% · good".
+  it("never rounds up past a tier threshold", () => {
+    expect(fitPercent(FIT_GOOD_MIN - 0.005)).toBe(49);
+    expect(fitPercent(FIT_STRONG_MIN - 0.001)).toBe(79);
   });
 });

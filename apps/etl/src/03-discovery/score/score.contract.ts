@@ -24,8 +24,10 @@ export const SKILL_OVERLAP_WEIGHT = 1;
 
 const clamp01 = (n: number): number => (n > 1 ? 1 : n > 0 ? n : 0);
 
-// The user-facing "Fit %": a whole number, so a card never shows 87.3%.
-export const fitPercent = (total: number): number => Math.round(clamp01(total) * 100);
+// The user-facing "Fit %": a whole number, so a card never shows 87.3%. Floor,
+// not round — the tiers compare the raw coverage, and a rounded-up 49.5% next
+// to a "stretch" badge reads as a bug.
+export const fitPercent = (total: number): number => Math.floor(clamp01(total) * 100);
 
 // IDF-weighted required coverage (the `coverage` column of the scoring CTE) is
 // the whole score today, so total === coverage.
