@@ -17,6 +17,7 @@ import { TracksModule } from "./03-discovery/tracks/tracks.module";
 import { TelegramModule } from "./04-notify/telegram/telegram.module";
 import { UsersModule } from "./04-notify/users/users.module";
 import { AccountModule } from "./account/account.module";
+import { AnalyticsPageModule } from "./admin/analytics-page/analytics-page.module";
 import { MonitoringModule } from "./admin/monitoring/monitoring.module";
 import { ProductAnalyticsModule } from "./admin/product-analytics/product-analytics.module";
 import { TaxonomyModule } from "./admin/taxonomy/taxonomy.module";
@@ -50,6 +51,7 @@ import { TemporalInfraModule } from "./platform/temporal/temporal.module";
     TaxonomyModule,
     MonitoringModule,
     ProductAnalyticsModule,
+    AnalyticsPageModule,
     FeedModule,
     TracksModule,
     MarketModule,
