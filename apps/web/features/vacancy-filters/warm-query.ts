@@ -4,7 +4,7 @@
 // client results hook and the SSR seed fetch through the SAME mapping.
 
 import { cvApi } from "@/lib/api/cv";
-import type { FitTier, MatchResponse } from "@/lib/api/ranking";
+import type { FitTier, MatchResponse, MatchSort } from "@/lib/api/ranking";
 import { toCsv } from "@/lib/utils";
 
 import { DEFAULT_FRESHNESS, FRESHNESS_DAYS, type FilterState } from "./types";
@@ -28,6 +28,8 @@ export function warmFilterKey(f: FilterState) {
     test: f.test,
     reservation: f.reservation,
     minFitTier: f.minFitTier,
+    sort: f.sort,
+    includeOffStack: f.includeOffStack,
     freshness: f.freshness,
   };
 }
@@ -52,6 +54,8 @@ export function fetchMatch(
     hasTestAssignment: f.test ?? undefined,
     hasReservation: f.reservation ?? undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
+    sort: (f.sort as MatchSort | null) ?? undefined,
+    includeOffStack: f.includeOffStack || undefined,
     postedWithinDays: FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
   };
   return isSample ? cvApi.sampleMatches(candidateId, query) : cvApi.matches(candidateId, query);

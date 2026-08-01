@@ -66,6 +66,10 @@ export interface FilterState {
   reservation: boolean | null;
   /** Warm-only: minimum coverage tier; needs a ranked (CV) result. */
   minFitTier: string | null;
+  /** Warm-only page order: null = the Fit score default, "date" = freshness. */
+  sort: string | null;
+  /** Warm-only: show vacancies outside the candidate's stack (hidden by default). */
+  includeOffStack: boolean;
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -83,6 +87,8 @@ export const EMPTY_FILTERS: FilterState = {
   test: null,
   reservation: null,
   minFitTier: null,
+  sort: null,
+  includeOffStack: false,
 };
 
 export function countActiveFilters(filters: FilterState): number {
@@ -100,7 +106,9 @@ export function countActiveFilters(filters: FilterState): number {
     (filters.freshness !== DEFAULT_FRESHNESS ? 1 : 0) +
     (filters.test !== null ? 1 : 0) +
     (filters.reservation !== null ? 1 : 0) +
-    (filters.minFitTier ? 1 : 0)
+    (filters.minFitTier ? 1 : 0) +
+    // Sort is an ordering, not a filter — only off-stack changes the result set.
+    (filters.includeOffStack ? 1 : 0)
   );
 }
 
@@ -131,6 +139,10 @@ export interface FiltersApi {
   setReservation: (v: boolean | null) => void;
   /** Warm-only coverage gate; a no-op source on the cold feed. */
   setMinFitTier: (v: string | null) => void;
+  /** Warm-only page order ("date"; null = the Fit score default). */
+  setSort: (v: string | null) => void;
+  /** Warm-only: unhide vacancies outside the candidate's stack. */
+  setIncludeOffStack: (v: boolean) => void;
   clear: () => void;
   activeCount: number;
 }
