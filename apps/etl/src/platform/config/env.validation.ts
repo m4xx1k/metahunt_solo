@@ -146,6 +146,18 @@ export function validateEnv(config: RawEnv): RawEnv {
   const posthogHost = asString(config.POSTHOG_HOST) ?? "https://eu.i.posthog.com";
   assertUrl("POSTHOG_HOST", posthogHost);
 
+  // Optional: the analytics-page endpoints (apps/etl/src/admin/analytics-page)
+  // read these at runtime to run HogQL queries against PostHog's private query
+  // API. Empty keeps PostHogQueryClient.isAvailable() false — the endpoints
+  // return `{ available: false }` rather than throwing, same dormant shape as
+  // the vars above. Never throw here: this app must still boot with them unset.
+  const posthogPersonalApiKey = asString(config.POSTHOG_PERSONAL_API_KEY) ?? "";
+  const posthogPrivateHost = asString(config.POSTHOG_PRIVATE_HOST) ?? "";
+  const posthogProdProjectId = asString(config.POSTHOG_PROD_PROJECT_ID) ?? "";
+  if (posthogPrivateHost.length > 0) {
+    assertUrl("POSTHOG_PRIVATE_HOST", posthogPrivateHost);
+  }
+
   // Session JWT signing secret. Required in production; a fixed insecure default
   // keeps local/test/CI booting without ceremony (tokens never leave the machine).
   const rawJwtSecret = asString(config.JWT_SECRET) ?? "";
@@ -185,6 +197,9 @@ export function validateEnv(config: RawEnv): RawEnv {
     WEB_BASE_URL: webBaseUrl,
     POSTHOG_API_KEY: posthogApiKey,
     POSTHOG_HOST: posthogHost,
+    POSTHOG_PERSONAL_API_KEY: posthogPersonalApiKey,
+    POSTHOG_PRIVATE_HOST: posthogPrivateHost,
+    POSTHOG_PROD_PROJECT_ID: posthogProdProjectId,
     JWT_SECRET: jwtSecret,
     ADMIN_TELEGRAM_IDS: adminTelegramIds,
     GOOGLE_CLIENT_ID: googleClientId,
