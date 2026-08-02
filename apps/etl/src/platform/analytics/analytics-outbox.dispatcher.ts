@@ -12,6 +12,7 @@ import {
   type AnalyticsOutboxWriter,
   type AnalyticsSink,
 } from "./analytics.ports";
+import { posthogEventName } from "./events";
 
 const DISPATCH_INTERVAL_MS = 5_000;
 const DISPATCH_BATCH_SIZE = 100;
@@ -45,7 +46,10 @@ export class AnalyticsOutboxDispatcher implements OnApplicationBootstrap, OnModu
       do {
         events = await this.outbox.drain(DISPATCH_BATCH_SIZE);
         for (const event of events) {
-          this.sink.capture(event.journeyId, event.name, event.properties);
+          this.sink.capture(event.personId ?? event.journeyId, posthogEventName(event.name), {
+            ...event.properties,
+            is_test: event.isTest ?? false,
+          });
         }
       } while (events.length === DISPATCH_BATCH_SIZE);
     } catch (error) {

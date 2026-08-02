@@ -16,6 +16,7 @@ export type { AcquisitionAttribution } from "@/lib/analytics/attribution";
 // Single source of truth for client-side event names (mirrors the backend
 // events.ts) — no event-name string literals in components.
 const ANALYTICS_EVENTS = {
+  pageViewed: "page_viewed",
   landingView: "landing_view",
   landingCtaClicked: "landing_cta_clicked",
   subscriptionCreateStarted: "subscription_create_started",
@@ -47,6 +48,7 @@ export type LoginProvider = "telegram" | "google";
 export type SubscriptionProfile = "feed" | "cv";
 
 type AnalyticsProperty = string | number | boolean | undefined;
+const IS_TEST_TRAFFIC = process.env.NEXT_PUBLIC_ANALYTICS_TEST_TRAFFIC === "true";
 
 function identifyJourney(posthog: PostHog | undefined): void {
   posthog?.identify(getOrCreateJourneyId());
@@ -58,7 +60,9 @@ function captureBrowserEvent(
   properties: Record<string, string | number | boolean>,
 ): void {
   identifyJourney(posthog);
-  void analyticsApi.captureBrowserEvent({ name, properties }).catch(() => undefined);
+  void analyticsApi
+    .captureBrowserEvent({ name, properties: { ...properties, is_test: IS_TEST_TRAFFIC } })
+    .catch(() => undefined);
 }
 
 function capturePostHogEvent(
@@ -67,19 +71,28 @@ function capturePostHogEvent(
   properties?: Record<string, AnalyticsProperty>,
 ): void {
   identifyJourney(posthog);
-  posthog?.capture(name, properties);
+  posthog?.capture(name, { ...properties, is_test: IS_TEST_TRAFFIC });
 }
 
-// The single client-side analytics seam — domain methods only, so components
-// never touch raw event names or the PostHog client (mirrors the backend
-// AnalyticsService). No-ops when PostHog is dormant (no NEXT_PUBLIC_POSTHOG_KEY).
-// Memoised on the stable client so the returned object is referentially stable
-// across renders (safe to list in a useCallback/useEffect dependency array).
 export function useAnalytics() {
   const posthog = usePostHog();
 
   return useMemo(
     () => ({
+      identifyPerson(personId: string) {
+        const journeyId = getOrCreateJourneyId();
+        posthog?.alias(personId, journeyId);
+        posthog?.identify(personId);
+      },
+
+      pageViewed(pageType: string, attribution: AcquisitionAttribution) {
+        capturePostHogEvent(posthog, ANALYTICS_EVENTS.pageViewed, {
+          path: window.location.pathname,
+          page_type: pageType,
+          ...resolveAttribution({ ...attribution, ...currentReferrerDomain() }),
+        });
+      },
+
       // Attribution falls back to the stored first touch when the current URL
       // carries no tags — internal navigation drops the query string.
       landingViewed(variant: string, attribution: AcquisitionAttribution) {
@@ -120,12 +133,10 @@ export function useAnalytics() {
         });
       },
 
-      // The visitor toggled the feed/CV lens. `to` is the lens now shown.
       lensSwitched(from: Lens, to: Lens) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.lensSwitch, { from, to });
       },
 
-      // A CV was uploaded and resolved to a candidate (the warm-lens entry).
       // The candidateId is a shareable bearer capability, so it is deliberately
       // NOT sent as a property.
       cvUploadStarted() {
@@ -170,8 +181,6 @@ export function useAnalytics() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityUnlinked, { provider });
       },
 
-      // The 409 is the measurable form of "one person, two accounts" — the only
-      // evidence that would justify building a merge flow (MET-82).
       identityLinkConflict(provider: LoginProvider) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityLinkConflict, { provider });
       },
@@ -188,8 +197,6 @@ export function useAnalytics() {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.signup, { method: provider });
       },
 
-      // Up/down vote on a vacancy card (demand signal, gated by the
-      // feedback-buttons flag). Fired once per real sentiment change.
       vacancyFeedback(vacancyId: string, sentiment: "up" | "down") {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.vacancyFeedback, {
           vacancy_id: vacancyId,
@@ -197,8 +204,6 @@ export function useAnalytics() {
         });
       },
 
-      // Tapped a not-yet-built AI helper (cover letter / CV tuning) — measures
-      // demand before we build it. vacancyId is absent for the CV-level bait.
       baitClick(feature: "cover_letter" | "tune_cv", vacancyId?: string) {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.baitClick, {
           feature,
@@ -206,7 +211,6 @@ export function useAnalytics() {
         });
       },
 
-      // /match onboarding funnel: started = the visitor committed to a path.
       matchFlowStarted(entry: "cv" | "manual") {
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.matchFlowStarted, { entry });
       },

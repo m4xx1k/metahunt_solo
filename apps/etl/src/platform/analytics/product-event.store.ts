@@ -13,18 +13,26 @@ const { analyticsJourneys, productEvents, subscriptions } = schema;
 export class ProductEventStore implements ProductEventWriter {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async ensureJourney(journeyId: string, origin: AnalyticsJourneyOrigin): Promise<void> {
+  async ensureJourney(
+    journeyId: string,
+    origin: AnalyticsJourneyOrigin,
+    isTest = false,
+  ): Promise<void> {
     await this.db
       .insert(analyticsJourneys)
-      .values({ id: journeyId, origin })
+      .values({ id: journeyId, personId: journeyId, origin, isTest })
       .onConflictDoUpdate({
         target: analyticsJourneys.id,
-        set: { lastSeenAt: sql`now()` },
+        set: { isTest: sql`${analyticsJourneys.isTest} OR ${isTest}`, lastSeenAt: sql`now()` },
       });
   }
 
   async record(event: ProductEventWrite): Promise<void> {
-    await this.ensureJourney(event.journeyId, event.source === "browser" ? "browser" : "server");
+    await this.ensureJourney(
+      event.journeyId,
+      event.source === "browser" ? "browser" : "server",
+      event.isTest,
+    );
     await this.db
       .insert(productEvents)
       .values({
@@ -55,5 +63,13 @@ export class ProductEventStore implements ProductEventWriter {
         .where(eq(subscriptions.id, subscriptionId));
     }
     return journeyId;
+  }
+
+  async personForJourney(journeyId: string): Promise<string | null> {
+    const [journey] = await this.db
+      .select({ personId: analyticsJourneys.personId })
+      .from(analyticsJourneys)
+      .where(eq(analyticsJourneys.id, journeyId));
+    return journey?.personId ?? null;
   }
 }

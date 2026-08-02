@@ -33,6 +33,16 @@ export class PostHogSink implements OnModuleDestroy {
     }
   }
 
+  alias(distinctId: string, alias: string): void {
+    try {
+      this.client?.alias({ distinctId, alias });
+    } catch (error) {
+      this.logger.warn(
+        `analytics sink alias failed: error=${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
   async onModuleDestroy(): Promise<void> {
     await this.client?.shutdown();
   }

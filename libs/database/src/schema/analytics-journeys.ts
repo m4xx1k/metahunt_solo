@@ -9,13 +9,17 @@ export const analyticsJourneys = pgTable(
   "analytics_journeys",
   {
     id: uuid("id").primaryKey(),
+    personId: uuid("person_id").notNull().defaultRandom(),
     origin: text("origin").notNull().default("browser").$type<AnalyticsJourneyOrigin>(),
     isTest: boolean("is_test").notNull().default(false),
     cohortId: text("cohort_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("analytics_journeys_created_at_idx").on(t.createdAt)],
+  (t) => [
+    index("analytics_journeys_created_at_idx").on(t.createdAt),
+    index("analytics_journeys_person_id_idx").on(t.personId),
+  ],
 );
 
 export type AnalyticsJourney = typeof analyticsJourneys.$inferSelect;

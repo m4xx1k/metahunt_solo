@@ -4,8 +4,6 @@ import type { IngestListItem } from "@/lib/api/monitoring";
 import { formatCount, formatRelative } from "@/lib/format";
 import { StatusBadge } from "./StatusBadge";
 
-// One ingest run as a list row — shared by the overview widget and the Runs
-// screen, so both stay in sync on what a run looks like.
 export function RunRow({ run }: { run: IngestListItem }) {
   const source = run.sourceCode ?? run.sourceDisplayName ?? "source";
   return (

@@ -5,6 +5,19 @@ export class GoogleLoginRequestDto {
   credential!: string;
 }
 
+export class ConfirmAccountMergeRequestDto {
+  @ApiProperty({ example: "A7C9-5F2B-9D8E-1C4A" })
+  code!: string;
+}
+
+export class AccountMergeStartResponseDto {
+  @ApiProperty({ example: "A7C9-5F2B-9D8E-1C4A" })
+  code!: string;
+
+  @ApiProperty({ format: "date-time" })
+  expiresAt!: string;
+}
+
 export class AuthIdentityDto {
   @ApiProperty({ enum: ["telegram", "google"] })
   provider!: "telegram" | "google";

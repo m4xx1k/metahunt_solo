@@ -70,6 +70,8 @@ function sanitizeProperties(
   properties: Record<string, BrowserEventProperty>,
 ): Record<string, BrowserEventProperty> {
   return Object.fromEntries(
-    Object.entries(properties).filter(([key]) => ALLOWED_PROPERTIES[name].has(key)),
+    Object.entries(properties).filter(
+      ([key]) => key === "is_test" || ALLOWED_PROPERTIES[name].has(key),
+    ),
   );
 }

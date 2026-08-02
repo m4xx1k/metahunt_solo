@@ -15,6 +15,8 @@ import {
   PRODUCT_FUNNEL_STEPS,
   RETENTION_WINDOW_WEEKS,
   type AnalyticsJourneyClassification,
+  type CrmPeoplePage,
+  type CrmPeopleSort,
   type ProductAnalyticsOverview,
   type ProductAnalyticsPeriod,
   type ProductAnalyticsPopulation,
@@ -35,6 +37,7 @@ import {
 } from "./product-analytics.contract";
 
 const { analyticsJourneys, nodes, productEvents, sentNotifications, subscriptions } = schema;
+const CRM_PEOPLE_LIMIT = 50;
 const RECENT_JOURNEY_LIMIT = 30;
 const SUBSCRIBER_ACTIVITY_LIMIT = 50;
 const UNLABELED_TRACK = "усі ролі";
@@ -163,6 +166,193 @@ export class ProductAnalyticsService {
         cohortId: analyticsJourneys.cohortId,
       });
     return updated ?? null;
+  }
+
+  async people(
+    period: ProductAnalyticsPeriod,
+    input: {
+      q?: string;
+      sort: CrmPeopleSort;
+      offset: number;
+      limit?: number;
+      from?: Date;
+      to?: Date;
+    },
+  ): Promise<CrmPeoplePage> {
+    const since = input.from ?? reportingPeriodSince(period);
+    const until = input.to ?? null;
+    const limit = Math.min(input.limit ?? CRM_PEOPLE_LIMIT, CRM_PEOPLE_LIMIT);
+    const offset = Math.max(input.offset, 0);
+    const query = input.q?.trim().toLowerCase().slice(0, 64) ?? "";
+    const orderBy =
+      input.sort === "first_known"
+        ? sql`first_known_at ASC, id ASC`
+        : input.sort === "clicks"
+          ? sql`(feed_clicks + telegram_clicks) DESC, id ASC`
+          : input.sort === "at_risk"
+            ? sql`(state = 'at_risk') DESC, last_product_action_at DESC NULLS LAST, id ASC`
+            : sql`last_product_action_at DESC NULLS LAST, id ASC`;
+    const userActions = sql.join(
+      USER_ACTION_EVENTS.map((name) => sql`${name}`),
+      sql`, `,
+    );
+    const result = await this.db.execute<{
+      id: string | null;
+      display_name: string | null;
+      has_account: boolean;
+      has_telegram: boolean;
+      first_known_at: Date | string;
+      last_product_action_at: Date | string | null;
+      subscriptions: number;
+      feed_clicks: number;
+      telegram_clicks: number;
+      state: "active" | "at_risk" | "no_subscription";
+      total: number;
+      known_people: number;
+      telegram_connected: number;
+      job_clickers: number;
+      at_risk: number;
+    }>(sql`
+      WITH people_raw AS (
+        SELECT
+          u.id,
+          true AS has_account,
+          false AS has_telegram,
+          u.created_at AS first_known_at,
+          COALESCE(
+            ip.display_name,
+            NULLIF(u.email, '')
+          ) AS display_name
+        FROM users u
+        LEFT JOIN (
+          SELECT
+            user_id,
+            MAX(NULLIF(trim(concat_ws(' ', first_name, username)), '')) AS display_name
+          FROM auth_identities
+          GROUP BY user_id
+        ) ip ON ip.user_id = u.id
+        UNION ALL
+        SELECT
+          s.person_id AS id,
+          false AS has_account,
+          bool_or(s.chat_id IS NOT NULL) AS has_telegram,
+          MIN(s.created_at) AS first_known_at,
+          COALESCE(
+            MAX(NULLIF(trim(s.tg_first_name), '')),
+            MAX(NULLIF(trim(s.tg_username), '')),
+            MAX(NULLIF(trim(s.name), ''))
+          ) AS display_name
+        FROM subscriptions s
+        GROUP BY s.person_id
+      ),
+      people AS (
+        SELECT
+          id,
+          bool_or(has_account) AS has_account,
+          bool_or(has_telegram) AS has_telegram,
+          MIN(first_known_at) AS first_known_at,
+          MAX(display_name) AS display_name
+        FROM people_raw
+        GROUP BY id
+      ),
+      activity AS (
+        SELECT
+          j.person_id AS id,
+          MAX(e.occurred_at) FILTER (WHERE e.name IN (${userActions})) AS last_product_action_at,
+          COUNT(*) FILTER (
+            WHERE e.name = ${ANALYTICS_EVENTS.applyClicked}
+              AND e.occurred_at >= COALESCE(${since}, '-infinity'::timestamptz)
+              AND e.occurred_at < COALESCE(${until}, 'infinity'::timestamptz)
+          )::int AS feed_clicks,
+          COUNT(*) FILTER (
+            WHERE e.name = ${ANALYTICS_EVENTS.digestLinkClicked}
+              AND e.occurred_at >= COALESCE(${since}, '-infinity'::timestamptz)
+              AND e.occurred_at < COALESCE(${until}, 'infinity'::timestamptz)
+          )::int AS telegram_clicks
+        FROM analytics_journeys j
+        LEFT JOIN product_events e ON e.journey_id = j.id
+        GROUP BY j.person_id
+      ),
+      subscriptions_by_person AS (
+        SELECT person_id AS id, COUNT(*)::int AS subscriptions, bool_or(is_active) AS has_active_subscription
+        FROM subscriptions
+        GROUP BY person_id
+      ),
+      roster AS (
+        SELECT
+          p.id,
+          COALESCE(p.display_name, 'Unknown person') AS display_name,
+          p.has_account,
+          p.has_telegram,
+          p.first_known_at,
+          a.last_product_action_at,
+          COALESCE(s.subscriptions, 0)::int AS subscriptions,
+          COALESCE(a.feed_clicks, 0)::int AS feed_clicks,
+          COALESCE(a.telegram_clicks, 0)::int AS telegram_clicks,
+          CASE
+            WHEN COALESCE(s.subscriptions, 0) = 0 THEN 'no_subscription'
+            WHEN NOT COALESCE(s.has_active_subscription, false)
+              OR a.last_product_action_at IS NULL
+              OR (${since}::timestamptz IS NOT NULL AND a.last_product_action_at < ${since}) THEN 'at_risk'
+            ELSE 'active'
+          END AS state
+        FROM people p
+        LEFT JOIN activity a ON a.id = p.id
+        LEFT JOIN subscriptions_by_person s ON s.id = p.id
+      ),
+      filtered AS (
+        SELECT * FROM roster
+        WHERE ${query} = ''
+          OR id::text ILIKE ${`%${query}%`}
+          OR display_name ILIKE ${`%${query}%`}
+      ),
+      metrics AS (
+        SELECT
+          COUNT(*)::int AS known_people,
+          COUNT(*) FILTER (WHERE has_telegram)::int AS telegram_connected,
+          COUNT(*) FILTER (WHERE feed_clicks + telegram_clicks > 0)::int AS job_clickers,
+          COUNT(*) FILTER (WHERE state = 'at_risk')::int AS at_risk
+        FROM roster
+      ),
+      page AS (
+        SELECT filtered.*, COUNT(*) OVER()::int AS total
+        FROM filtered
+        ORDER BY ${orderBy}
+        LIMIT ${limit} OFFSET ${offset}
+      )
+      SELECT page.*, metrics.*
+      FROM metrics
+      LEFT JOIN page ON true
+      ORDER BY ${orderBy}
+    `);
+    const first = result.rows[0];
+    return {
+      metrics: {
+        knownPeople: Number(first?.known_people ?? 0),
+        telegramConnected: Number(first?.telegram_connected ?? 0),
+        jobClickers: Number(first?.job_clickers ?? 0),
+        atRisk: Number(first?.at_risk ?? 0),
+      },
+      rows: result.rows
+        .filter((row): row is typeof row & { id: string } => row.id !== null)
+        .map((row) => ({
+          id: row.id,
+          displayName: row.display_name ?? "Unknown person",
+          hasAccount: row.has_account,
+          hasTelegram: row.has_telegram,
+          firstKnownAt: new Date(row.first_known_at),
+          lastProductActionAt: row.last_product_action_at
+            ? new Date(row.last_product_action_at)
+            : null,
+          subscriptions: Number(row.subscriptions),
+          feedClicks: Number(row.feed_clicks),
+          telegramClicks: Number(row.telegram_clicks),
+          state: row.state,
+        })),
+      total: Number(first?.total ?? 0),
+      offset,
+      limit,
+    };
   }
 
   // Ordered chain anchored at landing_view: a journey counts at step N only if

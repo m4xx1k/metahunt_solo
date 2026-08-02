@@ -20,6 +20,7 @@ describe("parseBrowserEventInput", () => {
       properties: {
         landing_variant: "backend-radar",
         utm_source: "telegram",
+        is_test: true,
         chat_id: "must-not-pass",
       },
     });
@@ -28,6 +29,7 @@ describe("parseBrowserEventInput", () => {
     expect(event.properties).toEqual({
       landing_variant: "backend-radar",
       utm_source: "telegram",
+      is_test: true,
     });
   });
 

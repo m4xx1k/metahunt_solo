@@ -141,9 +141,12 @@ same one-time deep-link handshake as login; the browser polls the result and
 receives a freshly minted session for the now-linked account.
 
 - An identity already owned by a _different_ account → conflict (**409** for
-  Google; `{"status":"conflict"}` from the Telegram poll). Merging two accounts
-  is destructive and irreversible; it needs a real merge flow, not a silent
-  reassignment. The insert leans on the unique constraint rather than a
+  Google; `{"status":"conflict"}` from the Telegram poll). It can be merged only
+  through `POST /auth/merge/start` in the source session and `POST
+  /auth/merge/confirm` in the target session. The random code is stored only as
+  a hash, expires after 10 minutes, is single-use, and proves control over both
+  accounts; administrators, duplicate providers, and duplicate CV ownership
+  refuse to merge. The insert leans on the unique constraint rather than a
   check-then-insert, so two concurrent links resolve to one conflict and not a 500.
 - Relinking what you already have is a no-op, not an error.
 - Unlinking your **last** identity → **400**, counted by _survivors_ under a row
@@ -157,14 +160,14 @@ receives a freshly minted session for the now-linked account.
 **What the user is told.** `/me` → _sign-in_ spells out the consequence, because
 it is not guessable: both methods sign in to one account, connecting there is
 what joins them, and signing in with a method that is not listed creates a
-_separate_ account that is not merged automatically. That last clause is the
-one people need before they act, not after.
+_separate_ account. The account screen supplies the two-session, one-time-code
+merge procedure when both are under the person's control.
 
 **How often it happens is measured, not assumed.** The 409 is emitted as
 `identity_link_conflict` (with `identity_linked` / `identity_unlinked`
 alongside), so "one person ended up with two accounts" is a number rather than
-a hunch. MET-82 (a merge flow) is deliberately gated on that number: at 5 users
-the honest answer is to merge by hand in SQL and see whether it repeats.
+a hunch. A merge is explicit rather than automatic, so the conflict metric
+remains useful without turning an identity collision into a takeover path.
 
 Telegram linking uses the deep-link request's `link_user_id`: the guarded start
 request binds the attempt to the current account, then the private-chat bot

@@ -18,13 +18,16 @@ describe("AnalyticsOutboxDispatcher", () => {
       .mockResolvedValueOnce([]);
     const outbox = { drain, enqueue: jest.fn() } as AnalyticsOutboxWriter;
     const capture = jest.fn();
-    const sink: AnalyticsSink = { capture };
+    const sink: AnalyticsSink = { capture, alias: jest.fn() };
     const dispatcher = new AnalyticsOutboxDispatcher(outbox, sink);
 
     await expect(dispatcher.dispatch()).resolves.toBeUndefined();
     expect(capture).not.toHaveBeenCalled();
 
     await expect(dispatcher.dispatch()).resolves.toBeUndefined();
-    expect(capture).toHaveBeenCalledWith(EVENT.journeyId, EVENT.name, EVENT.properties);
+    expect(capture).toHaveBeenCalledWith(EVENT.journeyId, EVENT.name, {
+      ...EVENT.properties,
+      is_test: false,
+    });
   });
 });

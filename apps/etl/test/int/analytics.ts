@@ -8,5 +8,6 @@ import { ProductEventStore } from "../../src/platform/analytics/product-event.st
 export function noopAnalytics(db: DrizzleDB): AnalyticsService {
   return new AnalyticsService(new ProductEventStore(db), new AnalyticsOutboxStore(db), {
     capture: () => undefined,
+    alias: () => undefined,
   });
 }

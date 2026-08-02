@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { type ChangeEvent, useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/ui";
@@ -22,10 +22,48 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
   const { setUser, user: sessionUser } = useSession();
   const analytics = useAnalytics();
   const [busy, setBusy] = useState<AuthProvider | null>(null);
+  const [mergeCode, setMergeCode] = useState("");
+  const [issuedMergeCode, setIssuedMergeCode] = useState<string | null>(null);
   const account = sessionUser ?? user;
 
   const linked = new Map(account.identities.map((i) => [i.provider, i]));
   const canUnlink = account.identities.length > 1;
+
+  const handleStartMerge = useCallback(async () => {
+    try {
+      const result = await authApi.startAccountMerge();
+      setIssuedMergeCode(result.code);
+      toast.success("Код створено на 10 хвилин");
+    } catch {
+      toast.error("Не вдалося створити код");
+    }
+  }, []);
+
+  const handleConfirmMerge = useCallback(async () => {
+    try {
+      setUser(await authApi.confirmAccountMerge(mergeCode));
+      setMergeCode("");
+      toast.success("Акаунти об’єднано");
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 409
+          ? "Ці акаунти не можна об’єднати"
+          : "Недійсний або прострочений код",
+      );
+    }
+  }, [mergeCode, setUser]);
+
+  const handleMergeCodeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setMergeCode(event.target.value.toUpperCase());
+  }, []);
+
+  const handleStartMergeClick = useCallback(() => {
+    void handleStartMerge();
+  }, [handleStartMerge]);
+
+  const handleConfirmMergeClick = useCallback(() => {
+    void handleConfirmMerge();
+  }, [handleConfirmMerge]);
 
   const apply = useCallback(
     async (provider: AuthProvider, run: () => Promise<AuthUser>, ok: string) => {
@@ -130,8 +168,42 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
       ) : null}
 
       <p className="font-mono text-2xs leading-relaxed text-text-muted">
-        Уже підключений профіль не переноситься автоматично
+        Уже підключений профіль не переноситься автоматично.
       </p>
+
+      <div className="border-t border-border pt-4">
+        <p className="font-mono text-2xs leading-relaxed text-text-muted">
+          Якщо Telegram і Google створили різні акаунти: увійди в той, який треба перенести, створи
+          код, потім увійди сюди й підтвердь його. Дані source account перейдуть у цей.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={handleStartMergeClick}>
+            створити код злиття
+          </Button>
+          {issuedMergeCode ? (
+            <code className="border border-border bg-bg px-2 py-1 font-mono text-xs text-accent">
+              {issuedMergeCode}
+            </code>
+          ) : null}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <input
+            value={mergeCode}
+            onChange={handleMergeCodeChange}
+            placeholder="код іншого акаунта"
+            aria-label="код злиття"
+            className="border border-border bg-bg px-2 py-1.5 font-mono text-xs text-text-primary outline-none focus:border-accent"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={mergeCode.trim().length === 0}
+            onClick={handleConfirmMergeClick}
+          >
+            об’єднати сюди
+          </Button>
+        </div>
+      </div>
     </Panel>
   );
 }

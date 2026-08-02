@@ -60,8 +60,6 @@ export function RssRecordCard({
   );
 }
 
-// ─── meta row ────────────────────────────────────────────────────────────
-
 function MetaTags({ record, ex }: { record: RecordListItem; ex: ExtractedVacancy | null }) {
   const items: string[] = [];
   if (ex?.workFormat) items.push(`[${WORK_FORMAT_LABELS[ex.workFormat]}]`);
@@ -83,8 +81,6 @@ function MetaTags({ record, ex }: { record: RecordListItem; ex: ExtractedVacancy
     </div>
   );
 }
-
-// ─── title ───────────────────────────────────────────────────────────────
 
 function Title({ record, ex }: { record: RecordListItem; ex: ExtractedVacancy | null }) {
   const title = displayTitle(record);
@@ -123,8 +119,6 @@ function Title({ record, ex }: { record: RecordListItem; ex: ExtractedVacancy | 
   );
 }
 
-// ─── facts grid (salary / english / experience) ──────────────────────────
-
 function KeyFacts({ ex }: { ex: ExtractedVacancy }) {
   const salary = formatSalary(ex.salary);
   const english = ex.englishLevel ? ENGLISH_LABELS[ex.englishLevel] : null;
@@ -140,8 +134,6 @@ function KeyFacts({ ex }: { ex: ExtractedVacancy }) {
     </div>
   );
 }
-
-// ─── skills ──────────────────────────────────────────────────────────────
 
 function SkillsList({ skills }: { skills: ExtractedVacancy["skills"] }) {
   const required = skills?.required ?? [];
@@ -183,8 +175,6 @@ function SkillsRow({
   );
 }
 
-// ─── description ─────────────────────────────────────────────────────────
-
 function DescriptionDetails({ text }: { text: string }) {
   return (
     <details className="group flex flex-col gap-2 border-l-2 border-border pl-3 hover:border-accent">
@@ -198,8 +188,6 @@ function DescriptionDetails({ text }: { text: string }) {
     </details>
   );
 }
-
-// ─── sidebar (extraction status + actions) ───────────────────────────────
 
 function Sidebar({ record, ex }: { record: RecordListItem; ex: ExtractedVacancy | null }) {
   return (
@@ -251,8 +239,6 @@ function Sidebar({ record, ex }: { record: RecordListItem; ex: ExtractedVacancy 
     </div>
   );
 }
-
-// ─── footer ──────────────────────────────────────────────────────────────
 
 function Footer({ record }: { record: RecordListItem }) {
   return (

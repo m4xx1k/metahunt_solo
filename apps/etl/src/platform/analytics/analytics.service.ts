@@ -22,7 +22,7 @@ import type {
   SubscriptionProductEvent,
   UnsubscribedEvent,
 } from "./analytics.types";
-import { ANALYTICS_EVENTS } from "./events";
+import { ANALYTICS_EVENTS, posthogEventName } from "./events";
 import {
   botBlockedEvent,
   digestSentEvent,
@@ -46,12 +46,21 @@ export class AnalyticsService {
   async browserEvent(event: BrowserProductEvent): Promise<void> {
     await this.record({
       journeyId: event.journeyId,
+      isTest: event.properties.is_test === true,
       name: event.name,
       source: "browser",
       dedupeKey: `browser:${event.eventId}`,
       occurredAt: event.occurredAt,
       properties: event.properties,
     });
+  }
+
+  aliasJourneyToPerson(journeyId: string, personId: string): void {
+    this.posthog.alias(personId, journeyId);
+  }
+
+  aliasPerson(sourcePersonId: string, targetPersonId: string): void {
+    this.posthog.alias(targetPersonId, sourcePersonId);
   }
 
   async subscriptionCreated(
@@ -166,7 +175,7 @@ export class AnalyticsService {
         name: ANALYTICS_EVENTS.digestLinkClicked,
         source: "api",
         dedupeKey: `digest_link_clicked:${clickId}`,
-        properties: { vacancyId },
+        properties: { vacancy_id: vacancyId, surface: "telegram_digest" },
       });
       return;
     }
@@ -180,7 +189,7 @@ export class AnalyticsService {
           name: ANALYTICS_EVENTS.applyClicked,
           source: "browser",
           dedupeKey: `apply_clicked:${randomUUID()}`,
-          properties: { vacancyId },
+          properties: { vacancy_id: vacancyId, surface: "web_feed" },
         });
       } catch {
         // Already logged by record(); swallow so the redirect (already sent
@@ -188,8 +197,9 @@ export class AnalyticsService {
       }
       return;
     }
-    this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.applyClicked, {
-      vacancyId,
+    this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundClicked, {
+      vacancy_id: vacancyId,
+      surface: "web_feed",
       $process_person_profile: false,
     });
   }
@@ -275,7 +285,11 @@ export class AnalyticsService {
       this.logPersistenceFailure(event.name, event.journeyId, error);
       throw error;
     }
-    this.posthog.capture(event.journeyId, event.name, durableEvent.properties);
+    const personId = await this.events.personForJourney(event.journeyId);
+    this.posthog.capture(personId ?? event.journeyId, posthogEventName(event.name), {
+      ...durableEvent.properties,
+      is_test: durableEvent.isTest ?? false,
+    });
   }
 
   private logPersistenceFailure(eventName: string, correlationId: string, error: unknown): void {
