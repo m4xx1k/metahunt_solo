@@ -68,6 +68,8 @@ export class RankingController {
         hasTestAssignment: dto.hasTestAssignment,
         hasReservation: dto.hasReservation,
         minFitTier: dto.minFitTier,
+        includeOffStack: dto.includeOffStack,
+        sort: dto.sort,
         sourceId: dto.sourceId,
         postedWithinDays: dto.postedWithinDays,
       },

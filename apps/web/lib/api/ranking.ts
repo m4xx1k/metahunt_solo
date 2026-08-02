@@ -13,11 +13,33 @@ export interface SkillRef {
 export const FIT_TIER_VALUES = ["STRONG", "GOOD", "STRETCH"] as const;
 export type FitTier = (typeof FIT_TIER_VALUES)[number];
 
+// Page order. "score" (default) is Fit order; "date" is the cold feed's
+// freshness order with the score still on every card.
+export const MATCH_SORT_VALUES = ["score", "date"] as const;
+export type MatchSort = (typeof MATCH_SORT_VALUES)[number];
+
+// What the Fit % is made of. One signal today (skill-overlap); the tooltip
+// renders the array, so a future signal needs no UI change.
+export type ScoreSignalKind = "skill-overlap";
+
+export interface ScoreSignal {
+  kind: ScoreSignalKind;
+  raw: number;
+  weight: number;
+  contribution: number;
+}
+
+export interface ScoreBreakdown {
+  total: number; // 0..1 — `fit.percent` is its display form
+  signals: ScoreSignal[];
+}
+
 export interface RankedVacancy {
   vacancy: VacancyDto;
   relevance: number;
   onStack: boolean; // false = off-stack, ranked below in-stack matches
-  fit: { tier: FitTier; matchedRequired: number; requiredTotal: number };
+  fit: { tier: FitTier; percent: number; matchedRequired: number; requiredTotal: number };
+  breakdown: ScoreBreakdown;
   diff: { have: SkillRef[]; missing: SkillRef[]; bonus: SkillRef[] };
 }
 
@@ -27,6 +49,8 @@ export interface MatchResponse {
   page: number;
   pageSize: number;
   total: number;
+  /** Off-stack rows the filter removed — drives the "show them" toggle. */
+  offStackHidden: number;
 }
 
 export interface MatchBody {
@@ -41,6 +65,8 @@ export interface MatchBody {
   hasTestAssignment?: boolean; // false keeps unknowns; true strict
   hasReservation?: boolean;
   minFitTier?: FitTier; // hide below this coverage tier
+  includeOffStack?: boolean; // default false — off-stack rows are filtered out, not demoted
+  sort?: MatchSort; // ORDER BY only — same result set either way
   postedWithinDays?: number; // freshness
   page?: number;
   pageSize?: number;

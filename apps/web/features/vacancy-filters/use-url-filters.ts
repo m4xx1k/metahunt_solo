@@ -81,6 +81,8 @@ export function useUrlFilters(): FiltersApi {
           "test",
           "reservation",
           "minFitTier",
+          "sort",
+          "offStack",
         ]) {
           n.delete(key);
         }
@@ -109,6 +111,11 @@ export function useUrlFilters(): FiltersApi {
       [setTristate],
     ),
     setMinFitTier: useCallback((v: string | null) => setValue("minFitTier", v), [setValue]),
+    setSort: useCallback((v: string | null) => setValue("sort", v), [setValue]),
+    setIncludeOffStack: useCallback(
+      (v: boolean) => commit((n) => (v ? n.set("offStack", "true") : n.delete("offStack"))),
+      [commit],
+    ),
     clear,
     activeCount,
   };

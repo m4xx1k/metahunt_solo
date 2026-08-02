@@ -146,6 +146,8 @@ export class CvController {
         hasTestAssignment: query.hasTestAssignment,
         hasReservation: query.hasReservation,
         minFitTier: query.minFitTier,
+        includeOffStack: query.includeOffStack,
+        sort: query.sort,
         sourceId: query.sourceId,
         postedWithinDays: query.postedWithinDays,
       },

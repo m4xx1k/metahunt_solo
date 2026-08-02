@@ -9,10 +9,11 @@ import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
+import { buildScoreBreakdown, fitPercent } from "../score/score.contract";
+import { rankedCte, scoringCtes } from "../score/score.sql";
 
 import {
   FIT_GOOD_MIN,
-  FIT_STRONG_MIN,
   ROLE_SUGGEST_WINDOW_DAYS,
   type FitTier,
   type MatchFilters,
@@ -158,7 +159,7 @@ export class RankingService {
   ): Promise<MatchResponse> {
     const nodeIds = resolved.matched.map((m) => m.id);
     if (nodeIds.length === 0) {
-      return { resolved, items: [], page, pageSize, total: 0 };
+      return { resolved, items: [], page, pageSize, total: 0, offStackHidden: 0 };
     }
 
     // `cand` is a VALUES row list `(uuid), (uuid)`; `candIds` is a flat
@@ -171,92 +172,118 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    // Per-vacancy relevance + coverage + tier_bucket (mirrors fitTierWeighted:
-    // STRONG=2/GOOD=1/STRETCH=0). Shared by page + count + match_scored query.
-    const rankedCte = sql`
-      ${this.coverageCtes(cand)},
-      ranked AS (
-        SELECT id, relevance, coverage,
-               CASE
-                 WHEN coverage >= ${FIT_STRONG_MIN} THEN 2
-                 WHEN coverage >= ${FIT_GOOD_MIN} THEN 1
-                 ELSE 0
-               END AS tier_bucket,
-               -- off-stack only when the vacancy positively belongs to another
-               -- stack (concrete-stack required core, none in css); else on-stack.
-               CASE
-                 WHEN NOT EXISTS (SELECT 1 FROM css) THEN true
-                 WHEN COALESCE(has_concrete_core, false)
-                      AND NOT COALESCE(has_instack_core, false) THEN false
-                 ELSE true
-               END AS on_stack
-        FROM scored
-      )`;
+    // Per-vacancy relevance + coverage + tier_bucket + on_stack, owned by the
+    // score module. Shared by page + count + match_scored query.
+    const scoreCte = rankedCte(cand);
 
     const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
     const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
 
-    const ranked = await this.db.execute<{
-      id: string;
-      relevance: number;
-      on_stack: boolean;
-      tier_bucket: number;
-      total: number;
-    }>(sql`
-      WITH ${rankedCte},
-      -- Collapse dedup groups: keep one representative per group — its
-      -- best-ranked member — so duplicate postings never occupy adjacent
-      -- slots on the ranked page. Ungrouped rows partition on their own id
-      -- (rn = 1 trivially). Partition order mirrors the final ORDER BY.
+    // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
+    // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page
+    // order contradicted the number printed on it. Hidden by default; the count
+    // of what's hidden rides the page query so the UI can offer to unhide.
+    const includeOffStack = filters.includeOffStack === true;
+    const keep = includeOffStack ? sql`true` : sql`on_stack`;
+
+    // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
+    // date-sorted page, because the Fit number is on every card either way.
+    // The dedup partition order mirrors the page order below it, but on_stack
+    // leads: the off-stack filter runs after the collapse, so an off-stack
+    // representative would take its whole group down with it.
+    const byDate = filters.sort === "date";
+    const groupOrder = byDate
+      ? sql`rk.on_stack DESC, coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
+      : sql`rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
+    // round so exact-IDF ties break by id (raw float-sum order is plan noise).
+    const pageOrder = byDate
+      ? sql`posted_at DESC, id DESC`
+      : sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
+
+    // Collapse dedup groups: keep one representative per group — its
+    // best-ranked member — so duplicate postings never occupy adjacent slots on
+    // the ranked page. Ungrouped rows partition on their own id (rn = 1
+    // trivially). Partition order mirrors the final ORDER BY. Off-stack rows
+    // stay in here so they can still be counted after being filtered out.
+    const collapsedCte = sql`
       collapsed AS (
-        SELECT v.id::text AS id, rk.relevance, rk.on_stack, rk.tier_bucket,
+        SELECT v.id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
+               coalesce(v.published_at, v.loaded_at) AS posted_at,
                row_number() OVER (
                  PARTITION BY coalesce(v.unique_vacancy_id, v.id)
-                 ORDER BY rk.on_stack DESC, rk.tier_bucket DESC,
-                          round(rk.relevance::numeric, 9) DESC, v.id
+                 ORDER BY ${groupOrder}
                ) AS rn
         FROM ranked rk
         JOIN vacancies v ON v.id = rk.id
         WHERE ${where}${tierCond}
+      )`;
+
+    const ranked = await this.db.execute<{
+      id: string;
+      relevance: number;
+      coverage: number;
+      on_stack: boolean;
+      tier_bucket: number;
+      total: number;
+      off_stack_hidden: number;
+    }>(sql`
+      WITH ${scoreCte}, ${collapsedCte},
+      -- Both counts come off the same window pass, before the off-stack rows
+      -- are filtered away (a window function can't see what WHERE removed).
+      counted AS (
+        SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
+               (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
+               (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
+        FROM collapsed
+        WHERE rn = 1
       )
-      SELECT id, relevance, on_stack, tier_bucket, (count(*) OVER ())::int AS total
-      FROM collapsed
-      WHERE rn = 1
-      -- round so exact-IDF ties break by id (raw float-sum order is plan noise).
-      ORDER BY on_stack DESC, tier_bucket DESC, round(relevance::numeric, 9) DESC, id
+      SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
+      FROM counted
+      WHERE ${keep}
+      ORDER BY ${pageOrder}
       LIMIT ${pageSize} OFFSET ${offset}
     `);
 
-    // count(*) OVER () rides the page query — no second pass in the common case.
-    // An empty page (all filtered out, or OFFSET past the end) returns no row
-    // and thus no count, so fall back to a dedicated count there.
+    // The counts ride the page query — no second pass in the common case. An
+    // empty page (all filtered out, or OFFSET past the end) returns no row and
+    // thus no counts, so fall back to a dedicated count there.
     let total = ranked.rows[0]?.total ?? 0;
+    let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
     if (ranked.rows.length === 0) {
-      const totalRes = await this.db.execute<{ count: number }>(sql`
-        WITH ${rankedCte}
-        SELECT count(DISTINCT coalesce(v.unique_vacancy_id, v.id))::int AS count
-        FROM ranked rk
-        JOIN vacancies v ON v.id = rk.id
-        WHERE ${where}${tierCond}
+      const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
+        WITH ${scoreCte}, ${collapsedCte}
+        SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
+               (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
+        FROM collapsed
+        WHERE rn = 1
       `);
       total = totalRes.rows[0]?.count ?? 0;
+      offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
     }
 
     // Calibration raw data (design §8): sampled to first pages — every fresh
     // match starts at page 1, so this sees each scoring context once.
-    if (page === 1) void this.emitMatchScored(rankedCte, where, nodeIds.length);
+    if (page === 1) void this.emitMatchScored(scoreCte, where, nodeIds.length);
 
     const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
-    return { resolved, items, page, pageSize, total };
+    return {
+      resolved,
+      items,
+      page,
+      pageSize,
+      total,
+      offStackHidden: includeOffStack ? 0 : offStackHidden,
+    };
   }
 
   // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
-  // the filtered result set, pre-collapse. Fire-and-forget — a telemetry
-  // failure must never affect the match response.
-  private async emitMatchScored(rankedCte: SQL, where: SQL, skillsCount: number): Promise<void> {
+  // the filtered result set, pre-collapse and deliberately pre-off-stack — this
+  // measures how the scorer behaves, not what the page chose to show.
+  // Fire-and-forget — a telemetry failure must never affect the match response.
+  private async emitMatchScored(scoreCte: SQL, where: SQL, skillsCount: number): Promise<void> {
     try {
       const res = await this.db.execute<{ bucket: number; n: number }>(sql`
-        WITH ${rankedCte}
+        WITH ${scoreCte}
         SELECT least(floor(rk.coverage * 10), 9)::int AS bucket, count(*)::int AS n
         FROM ranked rk
         JOIN vacancies v ON v.id = rk.id
@@ -277,55 +304,6 @@ export class RankingService {
     } catch {
       // swallow: calibration telemetry only
     }
-  }
-
-  // The shared aggregation pipeline: candidate VALUES → stack-set → overlap
-  // probe → one weighted pass per scored vacancy → coverage (fitTierWeighted's
-  // SQL twin). Consumed by rankByRefs (ranked/tier_bucket) and suggestRoles.
-  private coverageCtes(cand: SQL): SQL {
-    return sql`
-      cand(node_id) AS (VALUES ${cand}),
-      -- candidate stack-set; empty => on_stack uniformly true (no-op). ADR-0010.
-      css AS (
-        SELECT DISTINCT m.stack FROM cand c
-        JOIN node_tech_meta m ON m.node_id = c.node_id
-        WHERE m.is_core AND m.stack IS NOT NULL
-      ),
-      -- vacancies worth scoring: overlap probe (vacancy_nodes.node_id index).
-      ov AS (
-        SELECT DISTINCT vn.vacancy_id AS id
-        FROM vacancy_nodes vn
-        JOIN cand c ON c.node_id = vn.node_id
-      ),
-      -- one pass per scored vacancy: relevance + weighted denominators + stack
-      -- flags. node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
-      agg AS (
-        SELECT vn.vacancy_id AS id,
-               SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
-               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND vn.is_required), 0)::float8 AS matched_required_w,
-               count(*) FILTER (WHERE vn.is_required) AS required_total,
-               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS required_total_w,
-               COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
-               bool_or(tm.is_core AND vn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
-               bool_or(tm.is_core AND vn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
-        FROM ov
-        JOIN vacancy_nodes vn ON vn.vacancy_id = ov.id
-        JOIN node_stats ns ON ns.node_id = vn.node_id
-        LEFT JOIN cand c ON c.node_id = vn.node_id
-        LEFT JOIN node_tech_meta tm ON tm.node_id = vn.node_id
-        GROUP BY vn.vacancy_id
-      ),
-      -- weighted required coverage; all-skills share when nothing is required.
-      scored AS (
-        SELECT agg.*,
-               CASE
-                 WHEN required_total = 0 THEN
-                   CASE WHEN all_w > 0 THEN COALESCE(relevance, 0) / all_w ELSE 0 END
-                 ELSE
-                   CASE WHEN required_total_w > 0 THEN matched_required_w / required_total_w ELSE 0 END
-               END AS coverage
-        FROM agg
-      )`;
   }
 
   // Score each ROLE node by how well the candidate's skill set covers its
@@ -352,7 +330,7 @@ export class RankingService {
       good: number;
       avg_coverage: number;
     }>(sql`
-      WITH ${this.coverageCtes(cand)},
+      WITH ${scoringCtes(cand)},
       per_vacancy AS (
         SELECT v.role_node_id AS role_id, COALESCE(s.coverage, 0) AS coverage
         FROM vacancies v
@@ -386,7 +364,13 @@ export class RankingService {
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: { id: string; relevance: number; on_stack: boolean; tier_bucket: number }[],
+    rows: {
+      id: string;
+      relevance: number;
+      coverage: number;
+      on_stack: boolean;
+      tier_bucket: number;
+    }[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
@@ -441,15 +425,18 @@ export class RankingService {
         }
       }
       const bonus = candidate.filter((c) => !vacancyNodeIds.has(c.id));
+      const breakdown = buildScoreBreakdown(row.coverage);
       items.push({
         vacancy,
         relevance: row.relevance,
         onStack: row.on_stack,
         fit: {
           tier: TIER_BY_BUCKET[row.tier_bucket],
+          percent: fitPercent(breakdown.total),
           matchedRequired,
           requiredTotal,
         },
+        breakdown,
         diff: {
           have: have.sort(byWeight),
           missing: missing.sort(byWeight),

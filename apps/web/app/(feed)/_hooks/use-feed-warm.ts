@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { cvApi } from "@/lib/api/cv";
 import { useResults } from "@/features/vacancy-filters/use-results";
-import { MATCH_PAGE_SIZE } from "@/features/vacancy-filters/warm-query";
+import { HOME_INCLUDE_OFF_STACK, MATCH_PAGE_SIZE } from "@/features/vacancy-filters/warm-query";
 import type { FilterState } from "@/features/vacancy-filters/types";
 
 // Warm-lens data for the feed: the candidate comes from ?cv (not internal state),
@@ -32,6 +32,7 @@ export function useFeedWarm(
     isSample,
     filters,
     page,
+    defaultIncludeOffStack: HOME_INCLUDE_OFF_STACK,
     enabled: candidateId != null,
   });
 

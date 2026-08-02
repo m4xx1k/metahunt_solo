@@ -99,6 +99,11 @@ export function useLocalFilters(initial: FilterState): LocalFiltersApi {
     (minFitTier: string | null) => setFilters((current) => ({ ...current, minFitTier })),
     [],
   );
+  const setSort = useCallback((sort: string | null) => setFilters((c) => ({ ...c, sort })), []);
+  const setIncludeOffStack = useCallback(
+    (includeOffStack: boolean) => setFilters((c) => ({ ...c, includeOffStack })),
+    [],
+  );
   const activeCount = useMemo(() => countActiveFilters(filters), [filters]);
 
   return {
@@ -119,6 +124,8 @@ export function useLocalFilters(initial: FilterState): LocalFiltersApi {
     setTest,
     setReservation,
     setMinFitTier,
+    setSort,
+    setIncludeOffStack,
     activeCount,
   };
 }

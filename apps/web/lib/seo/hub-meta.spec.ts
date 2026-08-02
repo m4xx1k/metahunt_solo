@@ -18,6 +18,7 @@ const ROLES = [
   "QA Engineer",
   "Embedded Software Engineer",
   "Data Analyst",
+  "CTO / Chief Technology Officer",
 ];
 const COMPANIES = ["N-iX", "Ajax Systems", "Sigma Software", "ЛУН", "OTP Bank Україна"];
 

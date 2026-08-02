@@ -10,8 +10,11 @@ export function vacancyCountPhrase(count: number): string {
   return `${formatCountUa(count)} ${pluralizeUa(count, "вакансія", "вакансії", "вакансій")}`;
 }
 
+/** 60 minus " · metahunt", minus " — вакансії в Україні". */
+const ROLE_NAME_IN_TITLE = 28;
+
 export function roleHubTitle(roleName: string): string {
-  return `${roleName} — вакансії в Україні`;
+  return `${clip(roleName, ROLE_NAME_IN_TITLE)} — вакансії в Україні`;
 }
 
 export function roleHubDescription(roleName: string, count: number): string {

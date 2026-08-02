@@ -1,4 +1,4 @@
-import { inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -66,6 +66,13 @@ async function seedVacancy(
     .values({ sourceId, externalId, lastRssRecordId: rec.id, title, roleNodeId })
     .returning({ id: schema.vacancies.id });
   return vac.id;
+}
+
+async function seedTechMeta(
+  nodeId: string,
+  meta: { category: "LANGUAGE" | "TOOL"; stack: string | null; isCore: boolean },
+) {
+  await db.insert(schema.nodeTechMeta).values({ nodeId, ...meta });
 }
 
 async function linkSkill(vacancyId: string, nodeId: string, isRequired = true) {
@@ -171,9 +178,145 @@ describe("RankingService.match (integration)", () => {
       matchedRequired: 1,
       requiredTotal: 2,
       tier: "GOOD", // 1/2 coverage
+      percent: 50, // the tier's own source number, now on the wire
     });
+    expect(res.items[0].breakdown.signals).toEqual([
+      { kind: "skill-overlap", raw: 0.5, weight: 1, contribution: 0.5 },
+    ]);
     expect(res.items[0].diff.have.map((s) => s.name)).toEqual(["Go"]);
     expect(res.items[0].diff.missing.map((s) => s.name)).toEqual(["Kubernetes"]);
+  });
+
+  it("sorts by posting date without changing the result set or the scores", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const rare = await seedNode("SKILL", "Ariadne");
+    const common = await seedNode("SKILL", "Python");
+    // Best fit is the OLDEST posting, so score order and date order disagree.
+    const vacRare = await seedVacancy(sourceId, ingestId, role, "Rare");
+    const vacCommon = await seedVacancy(sourceId, ingestId, role, "Common");
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
+    await linkSkill(vacRare, rare);
+    await linkSkill(vacRare, common);
+    await linkSkill(vacCommon, common);
+    await db
+      .update(schema.vacancies)
+      .set({ publishedAt: new Date("2020-01-01") })
+      .where(eq(schema.vacancies.id, vacRare));
+    await db
+      .update(schema.vacancies)
+      .set({ publishedAt: new Date("2024-01-01") })
+      .where(eq(schema.vacancies.id, vacCommon));
+    await refreshNodeStats();
+
+    const byScore = await ranking.match(["Ariadne", "Python"], { sort: "score" }, 1, 20);
+    const byDate = await ranking.match(["Ariadne", "Python"], { sort: "date" }, 1, 20);
+
+    expect(byScore.items.map((i) => i.vacancy.id)).toEqual([vacRare, vacCommon]);
+    expect(byDate.items.map((i) => i.vacancy.id)).toEqual([vacCommon, vacRare]);
+    expect(byDate.total).toBe(byScore.total);
+    // Same scores on both pages — only the order moved.
+    expect(new Map(byDate.items.map((i) => [i.vacancy.id, i.fit.percent]))).toEqual(
+      new Map(byScore.items.map((i) => [i.vacancy.id, i.fit.percent])),
+    );
+  });
+
+  // The bug this filter replaces: on_stack led the ORDER BY, so a weak in-stack
+  // card outranked a strong off-stack one and the order contradicted the Fit %.
+  it("hides off-stack vacancies by default and reports how many it hid", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const node = await seedNode("SKILL", "Node.js");
+    const python = await seedNode("SKILL", "Python");
+    const docker = await seedNode("SKILL", "Docker");
+    const k8s = await seedNode("SKILL", "Kubernetes");
+    const terraform = await seedNode("SKILL", "Terraform");
+    const ansible = await seedNode("SKILL", "Ansible");
+    await seedTechMeta(node, { category: "LANGUAGE", stack: "node", isCore: true });
+    await seedTechMeta(python, { category: "LANGUAGE", stack: "python", isCore: true });
+    await seedTechMeta(docker, { category: "TOOL", stack: null, isCore: false });
+
+    // In-stack but a weak fit (1 of 4 required); off-stack but a better one
+    // (1 of 2) — the exact shape the old on_stack-first ORDER BY got wrong.
+    const inStack = await seedVacancy(sourceId, ingestId, role, "In stack");
+    const offStack = await seedVacancy(sourceId, ingestId, role, "Off stack");
+    await linkSkill(inStack, node);
+    await linkSkill(inStack, k8s);
+    await linkSkill(inStack, terraform);
+    await linkSkill(inStack, ansible);
+    await linkSkill(offStack, docker);
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
+    await linkSkill(offStack, python);
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([node, docker]);
+
+    const hidden = await candidateMatch.match(candidateId, {}, 1, 20);
+    const shown = await candidateMatch.match(candidateId, { includeOffStack: true }, 1, 20);
+
+    expect(hidden.items.map((i) => i.vacancy.id)).toEqual([inStack]);
+    expect(hidden.total).toBe(1);
+    expect(hidden.offStackHidden).toBe(1);
+    // Unhidden, the better fit leads — on_stack no longer sits in the ORDER BY.
+    expect(shown.items.map((i) => i.vacancy.id)).toEqual([offStack, inStack]);
+    expect(shown.items[0].fit.percent).toBeGreaterThan(shown.items[1].fit.percent);
+    expect(shown.offStackHidden).toBe(0);
+  });
+
+  // The off-stack filter runs after the dedup collapse, so a group whose best
+  // score sits on its off-stack duplicate must still fall back to the on-stack
+  // one — otherwise the whole posting disappears from the page.
+  it("keeps a dedup group's on-stack duplicate when the better-scoring one is off-stack", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const node = await seedNode("SKILL", "Node.js");
+    const python = await seedNode("SKILL", "Python");
+    const docker = await seedNode("SKILL", "Docker");
+    const k8s = await seedNode("SKILL", "Kubernetes");
+    const terraform = await seedNode("SKILL", "Terraform");
+    const ansible = await seedNode("SKILL", "Ansible");
+    await seedTechMeta(node, { category: "LANGUAGE", stack: "node", isCore: true });
+    await seedTechMeta(python, { category: "LANGUAGE", stack: "python", isCore: true });
+    await seedTechMeta(docker, { category: "TOOL", stack: null, isCore: false });
+
+    // Same posting twice: in-stack but a weak fit (1 of 4), off-stack with the
+    // better one (1 of 2) — so the off-stack copy wins a score-only partition.
+    const inStack = await seedVacancy(sourceId, ingestId, role, "In stack");
+    const offStack = await seedVacancy(sourceId, ingestId, role, "Off stack");
+    await linkSkill(inStack, node);
+    await linkSkill(inStack, k8s);
+    await linkSkill(inStack, terraform);
+    await linkSkill(inStack, ansible);
+    await linkSkill(offStack, docker);
+    await linkSkill(offStack, python);
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+    }
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([node, docker]);
+
+    const [group] = await db
+      .insert(schema.uniqueVacancies)
+      .values({
+        canonicalVacancyId: inStack,
+        sourceCount: 1,
+        vacancyCount: 2,
+        firstSeenAt: new Date(),
+        lastSeenAt: new Date(),
+      })
+      .returning({ id: schema.uniqueVacancies.id });
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: group.id })
+      .where(inArray(schema.vacancies.id, [inStack, offStack]));
+
+    const res = await candidateMatch.match(candidateId, {}, 1, 20);
+
+    expect(res.items.map((i) => i.vacancy.id)).toEqual([inStack]);
+    expect(res.total).toBe(1);
   });
 
   it("collapses a dedup group to a single ranked card", async () => {

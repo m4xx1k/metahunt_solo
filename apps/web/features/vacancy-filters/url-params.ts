@@ -46,6 +46,8 @@ export function readFilterState(p: ParamReader): FilterState {
     test: readBool(p.get("test")),
     reservation: readBool(p.get("reservation")),
     minFitTier: p.get("minFitTier"),
+    sort: p.get("sort") === "date" ? "date" : null,
+    includeOffStack: readBool(p.get("offStack")) ?? undefined,
   };
 }
 

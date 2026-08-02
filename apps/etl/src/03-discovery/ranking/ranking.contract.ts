@@ -5,6 +5,7 @@ import type {
   WorkFormat,
 } from "../../platform/shared/contract";
 import type { VacancyDto } from "../feed/feed.contract";
+import type { ScoreBreakdown } from "../score/score.contract";
 
 // reverse-ATS matcher contract — see md/journal/migrations/reverse-ats.md (§2).
 // A ranked card = the full feed VacancyDto + a personalized match overlay:
@@ -26,6 +27,7 @@ export interface ResolveResult {
 
 export interface FitInfo {
   tier: FitTier;
+  percent: number; // 0..100 — the user-facing "Fit %", the tier's own source number
   matchedRequired: number;
   requiredTotal: number;
 }
@@ -41,10 +43,18 @@ export interface RankedVacancy {
   relevance: number; // Σ weight over overlap — the sort key
   onStack: boolean; // vacancy's required core tech is in the candidate's stack-set (ADR-0010 / v2 demote)
   fit: FitInfo;
+  breakdown: ScoreBreakdown; // what the Fit % is made of (one signal today)
   diff: SkillDiff;
 }
 
+// What the ranked page is ordered by. "score" is the Fit order (the default,
+// what /match has always done); "date" is the cold feed's freshness order with
+// the score still shown on every card.
+export const MATCH_SORT_VALUES = ["score", "date"] as const;
+export type MatchSort = (typeof MATCH_SORT_VALUES)[number];
+
 export interface MatchFilters {
+  sort?: MatchSort; // ORDER BY only — the result SET is identical either way
   seniorities?: Seniority[]; // OR — keep vacancies at ANY listed level (e.g. middle ∪ senior)
   workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID …
   englishLevels?: EnglishLevel[]; // OR — the level the job requires
@@ -55,6 +65,7 @@ export interface MatchFilters {
   hasTestAssignment?: boolean; // false also keeps unknowns (no confirmed test); true is strict
   hasReservation?: boolean; // UA military deferment ("бронь")
   minFitTier?: FitTier; // hide vacancies below this coverage tier (STRONG > GOOD > STRETCH)
+  includeOffStack?: boolean; // default false — off-stack is a filter now, never a sort demote
   sourceId?: string;
   excludedSkillNodeIds?: string[]; // hard exclusion when a vacancy requires any listed skill
   postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
@@ -68,6 +79,7 @@ export interface MatchResponse {
   page: number;
   pageSize: number;
   total: number;
+  offStackHidden: number; // off-stack rows the filter removed — 0 when they are included
 }
 
 // Fit-coverage thresholds. v1 expert guesses (no ground truth yet) — the SINGLE
