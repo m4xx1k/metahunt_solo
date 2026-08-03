@@ -205,6 +205,7 @@ export class TelegramLoginService {
     // concurrent polls resolve to one session rather than two.
     if (!(await this.consume(nonce))) return { status: "expired" };
 
+    this.auth.captureAuthV2(row.userId, "telegram", row.isNewUser);
     const session = await this.auth.issueSession(row.userId, row.isNewUser);
     return { status: "ready", ...session };
   }

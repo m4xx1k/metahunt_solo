@@ -20,7 +20,8 @@ export function PostHogProvider({ children }: PropsWithChildren) {
     // Runs on every page's first load, independent of the PostHog key: the
     // first-touch store also feeds the first-party ledger's attribution.
     persistFirstTouch(window.location.search);
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+    const v2 = process.env.NEXT_PUBLIC_ANALYTICS_V2 === "true";
+    const key = v2 ? process.env.NEXT_PUBLIC_POSTHOG_V2_KEY : process.env.NEXT_PUBLIC_POSTHOG_KEY;
     if (!key) return;
     posthog.init(key, {
       // Same-origin path proxied to PostHog EU by next.config rewrites — keeps

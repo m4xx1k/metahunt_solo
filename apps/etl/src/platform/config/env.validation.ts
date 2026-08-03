@@ -146,6 +146,10 @@ export function validateEnv(config: RawEnv): RawEnv {
   if (analyticsV2 !== "true" && analyticsV2 !== "false") {
     throw new Error(`ANALYTICS_V2 must be true or false, got "${analyticsV2}"`);
   }
+  const analyticsTestTraffic = asString(config.ANALYTICS_TEST_TRAFFIC) ?? "false";
+  if (analyticsTestTraffic !== "true" && analyticsTestTraffic !== "false") {
+    throw new Error(`ANALYTICS_TEST_TRAFFIC must be true or false, got "${analyticsTestTraffic}"`);
+  }
   const posthogApiKey = asString(config.POSTHOG_API_KEY) ?? "";
   const posthogHost = asString(config.POSTHOG_HOST) ?? "https://eu.i.posthog.com";
   assertUrl("POSTHOG_HOST", posthogHost);
@@ -207,6 +211,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     PUBLIC_BASE_URL: publicBaseUrl,
     WEB_BASE_URL: webBaseUrl,
     ANALYTICS_V2: analyticsV2,
+    ANALYTICS_TEST_TRAFFIC: analyticsTestTraffic,
     POSTHOG_API_KEY: posthogApiKey,
     POSTHOG_HOST: posthogHost,
     POSTHOG_PERSONAL_API_KEY: posthogPersonalApiKey,

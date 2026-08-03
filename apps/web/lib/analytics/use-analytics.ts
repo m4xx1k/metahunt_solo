@@ -16,7 +16,7 @@ export type { AcquisitionAttribution } from "@/lib/analytics/attribution";
 // Single source of truth for client-side event names (mirrors the backend
 // events.ts) — no event-name string literals in components.
 const ANALYTICS_EVENTS = {
-  pageViewed: "page_viewed",
+  pageViewed: "$pageview",
   landingView: "landing_view",
   landingCtaClicked: "landing_cta_clicked",
   subscriptionCreateStarted: "subscription_create_started",
@@ -33,8 +33,8 @@ const ANALYTICS_EVENTS = {
   identityLinked: "identity_linked",
   identityUnlinked: "identity_unlinked",
   identityLinkConflict: "identity_link_conflict",
-  loggedIn: "logged_in",
-  signup: "signup",
+  loggedIn: "signed_in",
+  signup: "account_created",
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
   matchFlowStarted: "match_flow_started",
@@ -49,6 +49,8 @@ export type SubscriptionProfile = "feed" | "cv";
 
 type AnalyticsProperty = string | number | boolean | undefined;
 const IS_TEST_TRAFFIC = process.env.NEXT_PUBLIC_ANALYTICS_TEST_TRAFFIC === "true";
+const ANALYTICS_V2 = process.env.NEXT_PUBLIC_ANALYTICS_V2 === "true";
+const V2_BROWSER_EVENTS = new Set(["$pageview", "signed_in", "account_created"]);
 
 function identifyJourney(posthog: PostHog | undefined): void {
   posthog?.identify(getOrCreateJourneyId());
@@ -59,6 +61,7 @@ function captureBrowserEvent(
   name: BrowserAnalyticsEventName,
   properties: Record<string, string | number | boolean>,
 ): void {
+  if (ANALYTICS_V2) return;
   identifyJourney(posthog);
   void analyticsApi
     .captureBrowserEvent({ name, properties: { ...properties, is_test: IS_TEST_TRAFFIC } })
@@ -70,7 +73,11 @@ function capturePostHogEvent(
   name: string,
   properties?: Record<string, AnalyticsProperty>,
 ): void {
-  identifyJourney(posthog);
+  // V2 deliberately has a frozen, product-decision-driven schema. Legacy
+  // instrumentation keeps running only while its archive configuration is
+  // selected; a v2 browser never leaks its exploratory event names forward.
+  if (ANALYTICS_V2 && !V2_BROWSER_EVENTS.has(name)) return;
+  if (!ANALYTICS_V2) identifyJourney(posthog);
   posthog?.capture(name, { ...properties, is_test: IS_TEST_TRAFFIC });
 }
 
@@ -81,11 +88,14 @@ export function useAnalytics() {
     () => ({
       identifyPerson(personId: string) {
         const journeyId = getOrCreateJourneyId();
-        posthog?.alias(personId, journeyId);
+        if (!ANALYTICS_V2) posthog?.alias(personId, journeyId);
         posthog?.identify(personId);
       },
 
       pageViewed(pageType: string, attribution: AcquisitionAttribution) {
+        // V2 DAU is authenticated users.id only. Do not turn an anonymous
+        // landing into a human pageview before identify() has completed.
+        if (ANALYTICS_V2 && !posthog?.get_property("$user_id")) return;
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.pageViewed, {
           path: window.location.pathname,
           page_type: pageType,

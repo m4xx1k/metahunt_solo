@@ -54,6 +54,15 @@ describe("validateEnv", () => {
       expect(result.POSTHOG_API_KEY).toBe("");
     });
 
+    it("validates the explicit local test-traffic switch", () => {
+      expect(() => validateEnv({ ...requiredEnv, ANALYTICS_TEST_TRAFFIC: "sometimes" })).toThrow(
+        'ANALYTICS_TEST_TRAFFIC must be true or false, got "sometimes"',
+      );
+      expect(
+        validateEnv({ ...requiredEnv, ANALYTICS_TEST_TRAFFIC: "true" }).ANALYTICS_TEST_TRAFFIC,
+      ).toBe("true");
+    });
+
     it("accepts all three when present", () => {
       const result = validateEnv({
         ...requiredEnv,

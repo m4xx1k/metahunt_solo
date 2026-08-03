@@ -7,6 +7,7 @@ import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { AnalyticsV2Service } from "../../platform/analytics/analytics-v2.service";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { SubscriptionCriteriaService } from "../../platform/subscriptions/subscription-criteria.service";
@@ -40,6 +41,7 @@ export class SubscriptionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
+    private readonly analyticsV2: AnalyticsV2Service,
     private readonly criteria: SubscriptionCriteriaService,
   ) {}
 
@@ -89,6 +91,9 @@ export class SubscriptionsService {
     this.logger.log(
       `create sub ${created.id}: candidateId=${options.candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
     );
+    // DB transaction is complete at this point. V2 capture is explicitly
+    // best-effort and cannot turn a successful subscription into a failure.
+    this.analyticsV2.subscriptionCreated(options.userId, options.candidateId ? "cv" : "feed");
 
     return created.id;
   }
@@ -292,12 +297,16 @@ export class SubscriptionsService {
 
   /** `/stop` — deactivate every subscription for a chat. Returns how many were active. */
   async deactivateByChat(chatId: string): Promise<number> {
-    return this.db.transaction(async (tx) => {
+    const stopped = await this.db.transaction(async (tx) => {
       const stopped = await tx
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "user" })
         .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
-        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+        .returning({
+          id: subscriptions.id,
+          journeyId: subscriptions.journeyId,
+          userId: subscriptions.userId,
+        });
 
       for (const stoppedSubscription of stopped) {
         if (stoppedSubscription.journeyId) {
@@ -315,8 +324,13 @@ export class SubscriptionsService {
           });
         }
       }
-      return stopped.length;
+      return stopped;
     });
+    for (const subscription of stopped) {
+      if (subscription.userId)
+        this.analyticsV2.subscriptionDeactivated(subscription.userId, "user");
+    }
+    return stopped.length;
   }
 
   /**
@@ -326,7 +340,7 @@ export class SubscriptionsService {
   async deactivateById(id: string, chatId: string): Promise<boolean> {
     if (!isUuid(id)) return false;
 
-    return this.db.transaction(async (tx) => {
+    const stopped = await this.db.transaction(async (tx) => {
       const [stopped] = await tx
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "user" })
@@ -337,9 +351,13 @@ export class SubscriptionsService {
             eq(subscriptions.isActive, true),
           ),
         )
-        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+        .returning({
+          id: subscriptions.id,
+          journeyId: subscriptions.journeyId,
+          userId: subscriptions.userId,
+        });
 
-      if (!stopped) return false;
+      if (!stopped) return null;
       if (stopped.journeyId) {
         await this.analytics.enqueueUnsubscribed(tx, {
           method: "button",
@@ -349,8 +367,10 @@ export class SubscriptionsService {
       } else {
         void this.analytics.unsubscribed({ method: "button", subscriptionId: stopped.id });
       }
-      return true;
+      return stopped;
     });
+    if (stopped?.userId) this.analyticsV2.subscriptionDeactivated(stopped.userId, "user");
+    return stopped !== null;
   }
 
   /**

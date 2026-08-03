@@ -2,6 +2,7 @@ import { Global, Module } from "@nestjs/common";
 
 import { AnalyticsOutboxDispatcher } from "./analytics-outbox.dispatcher";
 import { AnalyticsOutboxStore } from "./analytics-outbox.store";
+import { AnalyticsV2Service } from "./analytics-v2.service";
 import { AnalyticsController } from "./analytics.controller";
 import { ANALYTICS_OUTBOX_WRITER, ANALYTICS_SINK, PRODUCT_EVENT_WRITER } from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
@@ -16,6 +17,7 @@ import { ProductEventStore } from "./product-event.store";
   controllers: [AnalyticsController],
   providers: [
     AnalyticsService,
+    AnalyticsV2Service,
     AnalyticsOutboxDispatcher,
     AnalyticsOutboxStore,
     ProductEventStore,
@@ -24,6 +26,6 @@ import { ProductEventStore } from "./product-event.store";
     { provide: PRODUCT_EVENT_WRITER, useExisting: ProductEventStore },
     { provide: ANALYTICS_SINK, useExisting: PostHogSink },
   ],
-  exports: [AnalyticsService, PRODUCT_EVENT_WRITER],
+  exports: [AnalyticsService, AnalyticsV2Service, PRODUCT_EVENT_WRITER],
 })
 export class AnalyticsModule {}

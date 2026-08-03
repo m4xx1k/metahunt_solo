@@ -19,6 +19,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
 
+import { AnalyticsV2Service } from "../analytics/analytics-v2.service";
 import { AnalyticsService } from "../analytics/analytics.service";
 
 import type { AuthProvider, AuthUser, TelegramLoginResponse } from "./auth.contract";
@@ -70,6 +71,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly analytics?: AnalyticsService,
+    private readonly analyticsV2?: AnalyticsV2Service,
   ) {
     this.adminIds = new Set(
       (this.config.get<string>("ADMIN_TELEGRAM_IDS") ?? "")
@@ -132,6 +134,7 @@ export class AuthService {
       await this.syncRoles(result.userId, tx);
       return result;
     });
+    this.captureAuthV2(userId, GOOGLE, created);
     return this.issueSession(userId, created);
   }
 
@@ -320,6 +323,14 @@ export class AuthService {
     } satisfies JwtPayload);
     this.logger.log(`login user ${user.id} roles=[${user.roles.join(",")}] new=${isNewUser}`);
     return { token, user, isNewUser };
+  }
+
+  // Called after the identity write has committed. The Telegram path reaches
+  // issueSession through TelegramLoginService, while Google calls this before
+  // issuing its session; both producers have explicit account identity.
+  captureAuthV2(userId: string, provider: AuthProvider, isNewUser: boolean): void {
+    if (isNewUser) this.analyticsV2?.accountCreated(userId, provider);
+    this.analyticsV2?.signedIn(userId, provider);
   }
 
   // The guard calls this on every authenticated request, so the identity list

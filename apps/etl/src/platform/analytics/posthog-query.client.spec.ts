@@ -109,6 +109,24 @@ describe("PostHogQueryClient", () => {
       );
     });
 
+    it("uses the isolated v2 project when ANALYTICS_V2 is enabled", async () => {
+      global.fetch = jest.fn().mockResolvedValue(jsonResponse({ columns: [], results: [] }));
+      const client = new PostHogQueryClient(
+        new ConfigService({
+          ...CONFIGURED_ENV,
+          ANALYTICS_V2: "true",
+          POSTHOG_V2_PROJECT_ID: "202602",
+        }),
+      );
+
+      await client.query("SELECT 1");
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        "https://eu.posthog.com/api/projects/202602/query/",
+        expect.anything(),
+      );
+    });
+
     it("returns null on a non-2xx response and does not throw", async () => {
       global.fetch = jest.fn().mockResolvedValue(jsonResponse({ error: "nope" }, 500));
       const client = new PostHogQueryClient(new ConfigService(CONFIGURED_ENV));
