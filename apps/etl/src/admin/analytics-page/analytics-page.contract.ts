@@ -27,6 +27,7 @@ export interface AnalyticsPageMetrics {
   // malformed) — every other field is a zeroed default in that case, never
   // an error.
   available: boolean;
+  behaviorStatus: "unconfigured" | "denied" | "unavailable" | "empty" | "ready";
   activeUsers: AnalyticsPageActiveUsers;
   funnel: AnalyticsPageFunnelStep[];
   // landing_cta_clicked people — shown beside the funnel, not inside it (see

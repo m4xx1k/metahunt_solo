@@ -5,6 +5,11 @@ const QUERY_TIMEOUT_MS = 10_000;
 const CACHE_TTL_MS = 60_000;
 
 export type PostHogQueryRow = Record<string, unknown>;
+export type PostHogQueryStatus = "unconfigured" | "denied" | "unavailable" | "empty" | "ready";
+export interface PostHogQueryResult {
+  status: PostHogQueryStatus;
+  rows: PostHogQueryRow[];
+}
 
 interface PostHogQueryResponse {
   results?: unknown[][];
@@ -82,12 +87,12 @@ export class PostHogQueryClient {
     return this.configured;
   }
 
-  async query(hogql: string): Promise<PostHogQueryRow[] | null> {
-    if (!this.configured) return null;
+  async queryWithStatus(hogql: string): Promise<PostHogQueryResult> {
+    if (!this.configured) return { status: "unconfigured", rows: [] };
 
     const cached = this.cache.get(hogql);
     if (cached && cached.expiresAt > this.clock()) {
-      return cached.rows;
+      return { status: cached.rows.length === 0 ? "empty" : "ready", rows: cached.rows };
     }
 
     let response: Response;
@@ -107,13 +112,15 @@ export class PostHogQueryClient {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      return null;
+      return { status: "unavailable", rows: [] };
     }
 
     if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      this.logger.warn(`PostHog query returned ${response.status}: ${body.slice(0, 500)}`);
-      return null;
+      this.logger.warn(`PostHog query returned ${response.status}`);
+      return {
+        status: response.status === 401 || response.status === 403 ? "denied" : "unavailable",
+        rows: [],
+      };
     }
 
     let json: PostHogQueryResponse;
@@ -125,11 +132,16 @@ export class PostHogQueryClient {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      return null;
+      return { status: "unavailable", rows: [] };
     }
 
     const rows = mapPostHogRows(json);
     this.cache.set(hogql, { rows, expiresAt: this.clock() + CACHE_TTL_MS });
-    return rows;
+    return { status: rows.length === 0 ? "empty" : "ready", rows };
+  }
+
+  async query(hogql: string): Promise<PostHogQueryRow[] | null> {
+    const result = await this.queryWithStatus(hogql);
+    return result.status === "ready" || result.status === "empty" ? result.rows : null;
   }
 }

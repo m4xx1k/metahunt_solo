@@ -47,6 +47,7 @@ export interface AnalyticsPageMetrics {
   // false when POSTHOG_PERSONAL_API_KEY (or the other two PostHog query vars)
   // is unset on the ETL — render the explanatory empty state, never an error.
   available: boolean;
+  behaviorStatus: "unconfigured" | "denied" | "unavailable" | "empty" | "ready";
   activeUsers: AnalyticsPageActiveUsers;
   funnel: AnalyticsPageFunnelStep[];
   // landing_cta_clicked people — deliberately outside `funnel`: fewer people

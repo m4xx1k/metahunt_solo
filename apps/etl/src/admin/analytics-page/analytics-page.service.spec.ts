@@ -14,10 +14,22 @@ function emptyDbMock(): DbMock {
   return { execute: jest.fn().mockResolvedValue({ rows: [] }) };
 }
 
-type PostHogMock = { isAvailable: jest.Mock; query: jest.Mock };
+type PostHogMock = { isAvailable: jest.Mock; query: jest.Mock; queryWithStatus: jest.Mock };
 
 function postHogMock(available: boolean): PostHogMock {
-  return { isAvailable: jest.fn().mockReturnValue(available), query: jest.fn() };
+  const query = jest.fn();
+  return {
+    isAvailable: jest.fn().mockReturnValue(available),
+    query,
+    queryWithStatus: jest.fn(async (...args: [string]) => {
+      const rows = await query(...args);
+      if (rows === null) return { status: "unavailable", rows: [] };
+      return {
+        status: Array.isArray(rows) && rows.length === 0 ? "empty" : "ready",
+        rows: rows ?? [],
+      };
+    }),
+  };
 }
 
 async function bootstrap(db: DbMock, postHog: PostHogMock): Promise<AnalyticsPageService> {
@@ -42,6 +54,7 @@ describe("AnalyticsPageService", () => {
 
       expect(result).toEqual({
         available: false,
+        behaviorStatus: "unconfigured",
         activeUsers: { dau: 0, wau: 0, mau: 0 },
         funnel: [
           { step: "visited", label: "Visited", people: 0, conversionFromPrev: null },
@@ -160,6 +173,7 @@ describe("AnalyticsPageService", () => {
 
       expect(result).toEqual({
         available: false,
+        behaviorStatus: "unavailable",
         activeUsers: { dau: 0, wau: 0, mau: 0 },
         funnel: [
           { step: "visited", label: "Visited", people: 0, conversionFromPrev: null },
@@ -172,7 +186,7 @@ describe("AnalyticsPageService", () => {
       });
     });
 
-    it("stays available:true when only some PostHog queries fail", async () => {
+    it("reports unavailable rather than presenting partial metrics as complete", async () => {
       const db = emptyDbMock();
       const postHog = postHogMock(true);
       postHog.query.mockImplementation((hogql: string) =>
@@ -184,7 +198,8 @@ describe("AnalyticsPageService", () => {
 
       const result = await svc.metrics("30d");
 
-      expect(result.available).toBe(true);
+      expect(result.available).toBe(false);
+      expect(result.behaviorStatus).toBe("unavailable");
       expect(result.activeUsers).toEqual({ dau: 0, wau: 0, mau: 0 });
     });
   });

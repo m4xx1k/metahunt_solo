@@ -101,6 +101,7 @@ export class AnalyticsPageService {
   async metrics(period: AnalyticsPagePeriod, source?: string): Promise<AnalyticsPageMetrics> {
     const empty: AnalyticsPageMetrics = {
       available: false,
+      behaviorStatus: this.posthogQueryClient.isAvailable() ? "unavailable" : "unconfigured",
       activeUsers: { dau: 0, wau: 0, mau: 0 },
       funnel: FUNNEL_STEP_META.map((meta) => ({ ...meta, people: 0, conversionFromPrev: null })),
       ctaClicks: 0,
@@ -113,17 +114,29 @@ export class AnalyticsPageService {
       ? ` AND properties.$referring_domain = '${escapeHogql(source)}'`
       : "";
 
-    const [activeUsersRows, funnelRows, sourceRows] = await Promise.all([
-      this.posthogQueryClient.query(this.activeUsersQuery(periodDays, sourceFilter)),
-      this.posthogQueryClient.query(this.funnelQuery(periodDays, sourceFilter)),
-      this.posthogQueryClient.query(this.sourcesQuery(periodDays)),
+    const [activeUsersResult, funnelResult, sourceResult] = await Promise.all([
+      this.posthogQueryClient.queryWithStatus(this.activeUsersQuery(periodDays, sourceFilter)),
+      this.posthogQueryClient.queryWithStatus(this.funnelQuery(periodDays, sourceFilter)),
+      this.posthogQueryClient.queryWithStatus(this.sourcesQuery(periodDays)),
     ]);
+    const activeUsersRows = activeUsersResult.rows;
+    const funnelRows = funnelResult.rows;
+    const sourceRows = sourceResult.rows;
 
     // All three null means every query failed (outage/timeout/rate-limit),
     // not a genuinely empty window — report unavailable rather than zeroes.
-    if (activeUsersRows === null && funnelRows === null && sourceRows === null) {
+    const statuses = [activeUsersResult.status, funnelResult.status, sourceResult.status];
+    if (statuses.every((status) => status === "denied"))
+      return { ...empty, behaviorStatus: "denied" };
+    if (statuses.every((status) => status === "unavailable")) {
       return empty;
     }
+    if (statuses.every((status) => status === "empty")) {
+      return { ...empty, available: true, behaviorStatus: "empty" };
+    }
+    if (statuses.some((status) => status === "denied"))
+      return { ...empty, behaviorStatus: "denied" };
+    if (statuses.some((status) => status === "unavailable")) return empty;
 
     const activeUsersRow = activeUsersRows?.[0];
     const activeUsers: AnalyticsPageActiveUsers = {
@@ -163,7 +176,14 @@ export class AnalyticsPageService {
       people: toNumber(row.people),
     }));
 
-    return { available: true, activeUsers, funnel, ctaClicks: cta, sources };
+    return {
+      available: true,
+      behaviorStatus: "ready",
+      activeUsers,
+      funnel,
+      ctaClicks: cta,
+      sources,
+    };
   }
 
   async people(query: AnalyticsPagePeopleQuery): Promise<AnalyticsPagePeoplePage> {

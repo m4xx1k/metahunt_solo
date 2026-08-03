@@ -22,6 +22,26 @@ export const metadata: Metadata = { title: "Analytics" };
 
 const PEOPLE_PAGE_LIMIT = 50;
 
+const POSTHOG_STATUS_COPY = {
+  unconfigured: {
+    title: "PostHog v2 is not configured",
+    hint: "Metrics and Contacts activity need POSTHOG_PERSONAL_API_KEY, POSTHOG_PRIVATE_HOST, and the selected v2 project ID on the ETL.",
+  },
+  denied: {
+    title: "PostHog access denied",
+    hint: "The query key was rejected (401/403). Verify its scope and that it belongs to the configured v2 project.",
+  },
+  unavailable: {
+    title: "PostHog is temporarily unavailable",
+    hint: "The query timed out, failed, or returned an unexpected response. Product data remains available; retry after service recovery.",
+  },
+  empty: {
+    title: "No behavioural activity in this period",
+    hint: "PostHog answered successfully, but there are no qualifying human events. This is not a connectivity failure.",
+  },
+  ready: { title: "", hint: "" },
+} as const;
+
 const PERIOD_OPTIONS: Array<{ value: AnalyticsPagePeriod; label: string }> = [
   { value: "24h", label: "24h" },
   { value: "7d", label: "7d" },
@@ -78,10 +98,10 @@ export default async function AnalyticsPage({
       />
 
       <PageBody>
-        {!metrics.available ? (
+        {!metrics.available || metrics.behaviorStatus === "empty" ? (
           <EmptyState
-            title="PostHog personal API key not configured"
-            hint="Metrics, funnel, and traffic sources need POSTHOG_PERSONAL_API_KEY on the ETL. The people table below still shows Postgres identity — subscriptions, registration, Telegram link — without PostHog activity."
+            title={POSTHOG_STATUS_COPY[metrics.behaviorStatus].title}
+            hint={`${POSTHOG_STATUS_COPY[metrics.behaviorStatus].hint} The Contacts table below still shows Postgres identity and subscription facts.`}
           />
         ) : (
           <>
