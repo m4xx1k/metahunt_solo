@@ -113,7 +113,8 @@ export class PostHogQueryClient {
     }
 
     if (!response.ok) {
-      this.logger.warn(`PostHog query returned ${response.status}`);
+      const detail = (await response.text()).replace(/\s+/g, " ").slice(0, 300);
+      this.logger.warn(`PostHog query returned ${response.status}${detail ? `: ${detail}` : ""}`);
       return {
         status: response.status === 401 || response.status === 403 ? "denied" : "unavailable",
         rows: [],
