@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import posthog from "posthog-js";
 
 import { authApi, type AuthUser, type TelegramLoginResponse } from "@/lib/api/auth";
 import { clearToken, getToken, setToken } from "@/lib/api/auth-token";
@@ -59,6 +60,9 @@ export function useSession() {
       /* best effort — token is dropped regardless */
     }
     clearToken();
+    // Ensure a later login on this browser starts with a fresh anonymous id,
+    // rather than attributing pre-login activity to the prior account.
+    posthog.reset();
     void fetch("/api/session", { method: "DELETE" });
     qc.setQueryData(SESSION_KEY, null);
     // Drop any user-scoped cached data (/me lists) so nothing leaks post-logout.

@@ -21,6 +21,8 @@ import {
 import { clampedMinutesBetween } from "./analytics-page.derive";
 
 const PEOPLE_PAGE_MAX = 100;
+const HUMAN_TRAFFIC =
+  "ifNull(properties.is_test, false) = false AND ifNull(properties.$is_bot, false) = false";
 
 const PERIOD_DAYS: Record<AnalyticsPagePeriod, number> = {
   "24h": 1,
@@ -37,9 +39,8 @@ const FUNNEL_STEP_META: Array<{ step: string; label: string }> = [
 ];
 
 interface RosterRow {
-  personId: string;
+  userId: string;
   displayName: string;
-  hasAccount: boolean;
   providers: string[];
   registeredAt: string | null;
   subscriptions: number;
@@ -171,12 +172,12 @@ export class AnalyticsPageService {
     const { total, rows } = await this.roster(query, limit, offset);
     if (rows.length === 0) return { total, rows: [] };
 
-    const postHogByPersonId = this.posthogQueryClient.isAvailable()
-      ? await this.fetchPostHogPeopleSide(rows.map((row) => row.personId))
+    const postHogByUserId = this.posthogQueryClient.isAvailable()
+      ? await this.fetchPostHogPeopleSide(rows.map((row) => row.userId))
       : new Map<string, PostHogPersonSide>();
 
     const merged: AnalyticsPagePerson[] = rows.map((row) => {
-      const postHog = postHogByPersonId.get(row.personId) ?? null;
+      const postHog = postHogByUserId.get(row.userId) ?? null;
       return {
         ...row,
         firstEventAt: postHog?.firstEventAt ?? null,
@@ -207,25 +208,27 @@ export class AnalyticsPageService {
     const mauWindow = periodDays;
     return `
       SELECT
-          uniqIf(person_id, timestamp >= now() - INTERVAL ${dauWindow} DAY) AS dau,
-          uniqIf(person_id, timestamp >= now() - INTERVAL ${wauWindow} DAY) AS wau,
-          uniqIf(person_id, timestamp >= now() - INTERVAL ${mauWindow} DAY) AS mau
+          uniqIf(distinct_id, timestamp >= now() - INTERVAL ${dauWindow} DAY) AS dau,
+          uniqIf(distinct_id, timestamp >= now() - INTERVAL ${wauWindow} DAY) AS wau,
+          uniqIf(distinct_id, timestamp >= now() - INTERVAL ${mauWindow} DAY) AS mau
       FROM events
       WHERE timestamp >= now() - INTERVAL ${mauWindow} DAY
-        AND event = '$pageview'${sourceFilter}
+        AND event = '$pageview'
+        AND ${HUMAN_TRAFFIC}${sourceFilter}
     `.trim();
   }
 
   private funnelQuery(periodDays: number, sourceFilter: string): string {
     return `
       SELECT
-          uniqIf(person_id, event = '$pageview') AS visited,
-          uniqIf(person_id, event = 'subscription_create_started') AS started,
-          uniqIf(person_id, event = 'subscription_handoff_opened') AS handoff,
-          uniqIf(person_id, event = 'telegram_linked') AS linked,
-          uniqIf(person_id, event = 'landing_cta_clicked') AS cta
+          uniqIf(distinct_id, event = '$pageview') AS visited,
+          uniqIf(distinct_id, event = 'subscription_create_started') AS started,
+          uniqIf(distinct_id, event = 'subscription_handoff_opened') AS handoff,
+          uniqIf(distinct_id, event = 'telegram_linked') AS linked,
+          uniqIf(distinct_id, event = 'landing_cta_clicked') AS cta
       FROM events
-      WHERE timestamp >= now() - INTERVAL ${periodDays} DAY${sourceFilter}
+      WHERE timestamp >= now() - INTERVAL ${periodDays} DAY
+        AND ${HUMAN_TRAFFIC}${sourceFilter}
     `.trim();
   }
 
@@ -233,44 +236,44 @@ export class AnalyticsPageService {
     return `
       SELECT
           coalesce(nullIf(properties.$referring_domain, ''), 'direct') AS source,
-          uniq(person_id) AS people
+          uniq(distinct_id) AS people
       FROM events
       WHERE timestamp >= now() - INTERVAL ${periodDays} DAY
         AND event = '$pageview'
+        AND ${HUMAN_TRAFFIC}
       GROUP BY source
       ORDER BY people DESC
       LIMIT 20
     `.trim();
   }
 
-  private peopleSideQuery(personIds: string[]): string {
-    const idList = personIds.map((id) => `'${escapeHogql(id)}'`).join(", ");
+  private peopleSideQuery(userIds: string[]): string {
+    const idList = userIds.map((id) => `'${escapeHogql(id)}'`).join(", ");
     return `
       SELECT
-          person_id,
+          distinct_id AS user_id,
           min(timestamp) AS first_event_at,
           max(timestamp) AS last_event_at,
           countIf(event = '$pageview') AS pageviews,
-          countIf(event = 'apply_clicked') AS feed_clicks,
-          countIf(event = 'digest_link_clicked') AS digest_clicks
+          countIf(event = 'vacancy_outbound_clicked' AND properties.surface = 'web_feed') AS feed_clicks,
+          countIf(event = 'vacancy_outbound_clicked' AND properties.surface = 'telegram_digest') AS digest_clicks
       FROM events
       WHERE timestamp >= now() - INTERVAL 180 DAY
-        AND person_id IN (${idList})
-      GROUP BY person_id
+        AND distinct_id IN (${idList})
+        AND ${HUMAN_TRAFFIC}
+      GROUP BY distinct_id
     `.trim();
   }
 
-  private async fetchPostHogPeopleSide(
-    personIds: string[],
-  ): Promise<Map<string, PostHogPersonSide>> {
+  private async fetchPostHogPeopleSide(userIds: string[]): Promise<Map<string, PostHogPersonSide>> {
     const map = new Map<string, PostHogPersonSide>();
-    if (personIds.length === 0) return map;
+    if (userIds.length === 0) return map;
 
-    const rows = await this.posthogQueryClient.query(this.peopleSideQuery(personIds));
+    const rows = await this.posthogQueryClient.query(this.peopleSideQuery(userIds));
     for (const row of rows ?? []) {
-      const personId = toStringOrEmpty(row.person_id);
-      if (!personId) continue;
-      map.set(personId, {
+      const userId = toStringOrEmpty(row.user_id);
+      if (!userId || !userIds.includes(userId)) continue;
+      map.set(userId, {
         firstEventAt: toIsoOrNull(row.first_event_at),
         lastEventAt: toIsoOrNull(row.last_event_at),
         pageviews: toNumber(row.pageviews),
@@ -292,9 +295,8 @@ export class AnalyticsPageService {
     const orderDir = query.dir === "asc" ? sql`ASC NULLS LAST` : sql`DESC NULLS LAST`;
 
     const result = await this.db.execute<{
-      id: string | null;
+      user_id: string | null;
       display_name: string;
-      has_account: boolean;
       providers: string[] | null;
       registered_at: string | null;
       subscriptions: number;
@@ -303,81 +305,50 @@ export class AnalyticsPageService {
       telegram_linked: boolean;
       total: number;
     }>(sql`
-      WITH people_raw AS (
-        SELECT
-          u.id,
-          true AS has_account,
-          u.created_at AS registered_at,
-          COALESCE(ip.display_name, NULLIF(u.email, '')) AS display_name
-        FROM users u
-        LEFT JOIN (
-          SELECT
-            user_id,
-            MAX(NULLIF(trim(concat_ws(' ', first_name, username)), '')) AS display_name
-          FROM auth_identities
-          GROUP BY user_id
-        ) ip ON ip.user_id = u.id
-        UNION ALL
-        SELECT
-          s.person_id AS id,
-          false AS has_account,
-          NULL::timestamptz AS registered_at,
-          COALESCE(
-            MAX(NULLIF(trim(s.tg_first_name), '')),
-            MAX(NULLIF(trim(s.tg_username), '')),
-            MAX(NULLIF(trim(s.name), ''))
-          ) AS display_name
-        FROM subscriptions s
-        GROUP BY s.person_id
-      ),
-      people AS (
-        SELECT
-          id,
-          bool_or(has_account) AS has_account,
-          MIN(registered_at) AS registered_at,
-          MAX(display_name) AS display_name
-        FROM people_raw
-        GROUP BY id
-      ),
       providers_by_user AS (
         SELECT user_id AS id, array_agg(DISTINCT provider ORDER BY provider) AS providers
         FROM auth_identities
         GROUP BY user_id
       ),
-      subs_by_person AS (
+      subs_by_user AS (
         SELECT
-          person_id AS id,
+          user_id,
           COUNT(*)::int AS subscriptions,
           COUNT(*) FILTER (WHERE is_active)::int AS active_subscriptions,
           MIN(created_at) AS first_subscription_at,
           bool_or(chat_id IS NOT NULL) AS telegram_linked
         FROM subscriptions
-        GROUP BY person_id
+        WHERE user_id IS NOT NULL
+        GROUP BY user_id
       ),
       roster AS (
         SELECT
-          p.id,
-          COALESCE(p.display_name, 'Unknown person') AS display_name,
-          p.has_account,
+          u.id AS user_id,
+          COALESCE(ip.display_name, 'Account') AS display_name,
           COALESCE(pu.providers, ARRAY[]::text[]) AS providers,
-          p.registered_at,
-          COALESCE(sp.subscriptions, 0)::int AS subscriptions,
-          COALESCE(sp.active_subscriptions, 0)::int AS active_subscriptions,
-          sp.first_subscription_at,
-          COALESCE(sp.telegram_linked, false) AS telegram_linked
-        FROM people p
-        LEFT JOIN providers_by_user pu ON pu.id = p.id
-        LEFT JOIN subs_by_person sp ON sp.id = p.id
+          u.created_at AS registered_at,
+          COALESCE(su.subscriptions, 0)::int AS subscriptions,
+          COALESCE(su.active_subscriptions, 0)::int AS active_subscriptions,
+          su.first_subscription_at,
+          COALESCE(su.telegram_linked, false) AS telegram_linked
+        FROM users u
+        LEFT JOIN (
+          SELECT user_id, MAX(NULLIF(trim(concat_ws(' ', first_name, username)), '')) AS display_name
+          FROM auth_identities
+          GROUP BY user_id
+        ) ip ON ip.user_id = u.id
+        LEFT JOIN providers_by_user pu ON pu.id = u.id
+        LEFT JOIN subs_by_user su ON su.user_id = u.id
       ),
       filtered AS (
         SELECT * FROM roster
         WHERE ${search} = ''
-          OR id::text ILIKE ${`%${search}%`}
+          OR user_id::text ILIKE ${`%${search}%`}
           OR display_name ILIKE ${`%${search}%`}
       ),
       page AS (
         SELECT * FROM filtered
-        ORDER BY ${orderColumn} ${orderDir}, id ASC
+        ORDER BY ${orderColumn} ${orderDir}, user_id ASC
         LIMIT ${limit} OFFSET ${offset}
       ),
       total AS (
@@ -389,12 +360,11 @@ export class AnalyticsPageService {
     `);
 
     const rows: RosterRow[] = result.rows.flatMap((row) => {
-      if (row.id === null) return [];
+      if (row.user_id === null) return [];
       return [
         {
-          personId: row.id,
+          userId: row.user_id,
           displayName: row.display_name,
-          hasAccount: row.has_account,
           providers: row.providers ?? [],
           registeredAt: toIsoOrNull(row.registered_at),
           subscriptions: Number(row.subscriptions),

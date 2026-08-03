@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 
 import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 
@@ -45,10 +45,12 @@ export class SubscriptionsService {
 
   // Pending (inactive, unlinked) until `/start <id>`. Persists only whitelisted
   // keys. Returns the id, which doubles as the deep-link token.
-  async create(
-    rawParams: SubscriptionParams,
-    options: CreateSubscriptionOptions = {},
-  ): Promise<string> {
+  async create(rawParams: SubscriptionParams, options: CreateSubscriptionOptions): Promise<string> {
+    if (!isUuid(options.userId)) {
+      throw new BadRequestException(
+        "An authenticated account is required to create a subscription",
+      );
+    }
     const params = await this.criteria.normalize(rawParams);
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
       throw new Error(`invalid candidateId: ${options.candidateId}`);
@@ -61,12 +63,12 @@ export class SubscriptionsService {
         .insert(analyticsJourneys)
         .values({
           id: journeyId,
-          personId: options.userId ?? journeyId,
+          personId: options.userId,
           origin: options.journeyId ? "browser" : "server",
         })
         .onConflictDoUpdate({
           target: analyticsJourneys.id,
-          set: { personId: options.userId ?? journeyId, lastSeenAt: sql`now()` },
+          set: { personId: options.userId, lastSeenAt: sql`now()` },
         });
       const [subscription] = await tx
         .insert(subscriptions)
@@ -75,8 +77,8 @@ export class SubscriptionsService {
           name: createSubscriptionName(subscriptionId),
           params,
           candidateId: options.candidateId ?? null,
-          userId: options.userId ?? null,
-          personId: options.userId ?? journeyId,
+          userId: options.userId,
+          personId: options.userId,
           journeyId,
         })
         .returning({ id: subscriptions.id });
@@ -127,8 +129,12 @@ export class SubscriptionsService {
     ) {
       return "not_found";
     }
-    const linkedUserId =
-      pending.userId ?? telegramUser?.userId ?? (await this.findUserIdForChat(chatId));
+    const linkedUserId = telegramUser?.userId ?? (await this.findUserIdForChat(chatId));
+
+    // New subscription rows are always account-owned. Do not let a Telegram
+    // chat claim a legacy unowned row or a row created for another account.
+    const ownerId = pending.userId;
+    if (!ownerId || !linkedUserId || ownerId !== linkedUserId) return "not_found";
 
     // Already activated: re-tapping the same link from the same chat is a
     // no-op; a token already claimed by another chat is treated as unusable.
@@ -155,12 +161,6 @@ export class SubscriptionsService {
           ),
         );
       if (duplicate) {
-        if (linkedUserId) {
-          await tx
-            .update(subscriptions)
-            .set({ userId: sql`coalesce(${subscriptions.userId}, ${linkedUserId})` })
-            .where(eq(subscriptions.id, duplicate.id));
-        }
         const [deleted] = await tx
           .delete(subscriptions)
           .where(
@@ -179,8 +179,8 @@ export class SubscriptionsService {
         .set({
           chatId,
           isActive: true,
-          userId: linkedUserId,
-          personId: linkedUserId ?? pending.journeyId ?? token,
+          userId: ownerId,
+          personId: ownerId,
           linkedAt: sql`now()`,
           deactivatedAt: null,
           tgUsername: telegramUser?.username ?? null,

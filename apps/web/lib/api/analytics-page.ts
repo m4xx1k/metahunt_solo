@@ -56,9 +56,8 @@ export interface AnalyticsPageMetrics {
 }
 
 export interface AnalyticsPagePerson {
-  personId: string;
+  userId: string;
   displayName: string;
-  hasAccount: boolean;
   providers: string[];
   registeredAt: string | null;
   subscriptions: number;

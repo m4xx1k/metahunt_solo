@@ -35,6 +35,25 @@ describe("validateEnv", () => {
       expect(result.POSTHOG_PROD_PROJECT_ID).toBe("");
     });
 
+    it("fails closed when v2 is enabled without its separate ingestion/project configuration", () => {
+      expect(() => validateEnv({ ...requiredEnv, ANALYTICS_V2: "true" })).toThrow(
+        "POSTHOG_V2_API_KEY and POSTHOG_V2_PROJECT_ID are required when ANALYTICS_V2=true",
+      );
+    });
+
+    it("accepts a fully configured v2 project without changing archive keys", () => {
+      const result = validateEnv({
+        ...requiredEnv,
+        ANALYTICS_V2: "true",
+        POSTHOG_V2_API_KEY: "phc_v2",
+        POSTHOG_V2_PROJECT_ID: "202602",
+      });
+
+      expect(result.ANALYTICS_V2).toBe("true");
+      expect(result.POSTHOG_V2_API_KEY).toBe("phc_v2");
+      expect(result.POSTHOG_API_KEY).toBe("");
+    });
+
     it("accepts all three when present", () => {
       const result = validateEnv({
         ...requiredEnv,

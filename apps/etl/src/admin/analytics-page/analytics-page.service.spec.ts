@@ -59,7 +59,7 @@ describe("AnalyticsPageService", () => {
       const db = emptyDbMock();
       const postHog = postHogMock(true);
       postHog.query.mockImplementation((hogql: string) => {
-        if (hogql.includes("uniqIf(person_id, timestamp")) {
+        if (hogql.includes("uniqIf(distinct_id, timestamp")) {
           return Promise.resolve([{ dau: 10, wau: 40, mau: 478 }]);
         }
         if (hogql.includes("subscription_create_started")) {
@@ -176,7 +176,9 @@ describe("AnalyticsPageService", () => {
       const db = emptyDbMock();
       const postHog = postHogMock(true);
       postHog.query.mockImplementation((hogql: string) =>
-        hogql.includes("uniqIf(person_id, timestamp") ? Promise.resolve(null) : Promise.resolve([]),
+        hogql.includes("uniqIf(distinct_id, timestamp")
+          ? Promise.resolve(null)
+          : Promise.resolve([]),
       );
       const svc = await bootstrap(db, postHog);
 
@@ -187,13 +189,27 @@ describe("AnalyticsPageService", () => {
     });
   });
 
+  it("uses users.id-compatible distinct_id and excludes test/bot traffic from every KPI query", async () => {
+    const db = emptyDbMock();
+    const postHog = postHogMock(true);
+    postHog.query.mockResolvedValue([]);
+    const svc = await bootstrap(db, postHog);
+
+    await svc.metrics("30d");
+
+    for (const [hogql] of postHog.query.mock.calls as Array<[string]>) {
+      expect(hogql).toContain("ifNull(properties.is_test, false) = false");
+      expect(hogql).toContain("ifNull(properties.$is_bot, false) = false");
+      expect(hogql).not.toContain("person_id");
+    }
+  });
+
   describe("people", () => {
     it("returns Postgres-only rows with null PostHog fields when unavailable", async () => {
       const rows: Row[] = [
         {
-          id: "11111111-1111-1111-1111-111111111111",
+          user_id: "11111111-1111-1111-1111-111111111111",
           display_name: "Ada",
-          has_account: true,
           providers: ["google"],
           registered_at: "2026-07-01T00:00:00.000Z",
           subscriptions: 2,
@@ -218,9 +234,8 @@ describe("AnalyticsPageService", () => {
       expect(result.total).toBe(1);
       expect(result.rows).toEqual([
         {
-          personId: "11111111-1111-1111-1111-111111111111",
+          userId: "11111111-1111-1111-1111-111111111111",
           displayName: "Ada",
-          hasAccount: true,
           providers: ["google"],
           registeredAt: "2026-07-01T00:00:00.000Z",
           subscriptions: 2,
@@ -239,12 +254,11 @@ describe("AnalyticsPageService", () => {
       expect(postHog.query).not.toHaveBeenCalled();
     });
 
-    it("merges PostHog rows onto the roster by person_id, not by position", async () => {
+    it("merges PostHog rows onto the account roster by distinct_id, not by position", async () => {
       const rows: Row[] = [
         {
-          id: "aaaaaaaa-1111-1111-1111-111111111111",
+          user_id: "aaaaaaaa-1111-1111-1111-111111111111",
           display_name: "First",
-          has_account: false,
           providers: [],
           registered_at: null,
           subscriptions: 1,
@@ -254,9 +268,8 @@ describe("AnalyticsPageService", () => {
           total: 2,
         },
         {
-          id: "bbbbbbbb-2222-2222-2222-222222222222",
+          user_id: "bbbbbbbb-2222-2222-2222-222222222222",
           display_name: "Second",
-          has_account: false,
           providers: [],
           registered_at: null,
           subscriptions: 1,
@@ -271,7 +284,7 @@ describe("AnalyticsPageService", () => {
       // Returned in the OPPOSITE order of the roster rows above.
       postHog.query.mockResolvedValue([
         {
-          person_id: "bbbbbbbb-2222-2222-2222-222222222222",
+          user_id: "bbbbbbbb-2222-2222-2222-222222222222",
           first_event_at: "2026-07-01T00:00:00.000Z",
           last_event_at: "2026-07-04T00:00:00.000Z",
           pageviews: 3,
@@ -279,7 +292,7 @@ describe("AnalyticsPageService", () => {
           digest_clicks: 0,
         },
         {
-          person_id: "aaaaaaaa-1111-1111-1111-111111111111",
+          user_id: "aaaaaaaa-1111-1111-1111-111111111111",
           first_event_at: "2026-07-08T00:00:00.000Z",
           last_event_at: "2026-07-09T00:00:00.000Z",
           pageviews: 5,
@@ -297,8 +310,8 @@ describe("AnalyticsPageService", () => {
         dir: "desc",
       });
 
-      const first = result.rows.find((r) => r.personId === "aaaaaaaa-1111-1111-1111-111111111111");
-      const second = result.rows.find((r) => r.personId === "bbbbbbbb-2222-2222-2222-222222222222");
+      const first = result.rows.find((r) => r.userId === "aaaaaaaa-1111-1111-1111-111111111111");
+      const second = result.rows.find((r) => r.userId === "bbbbbbbb-2222-2222-2222-222222222222");
 
       expect(first?.pageviews).toBe(5);
       expect(first?.minutesToSubscription).toBe(
@@ -327,7 +340,7 @@ describe("AnalyticsPageService", () => {
 
     it("keeps the total when the requested offset has no rows", async () => {
       const db = {
-        execute: jest.fn().mockResolvedValue({ rows: [{ id: null, total: 2 }] }),
+        execute: jest.fn().mockResolvedValue({ rows: [{ user_id: null, total: 2 }] }),
       };
       const postHog = postHogMock(false);
       const svc = await bootstrap(db, postHog);

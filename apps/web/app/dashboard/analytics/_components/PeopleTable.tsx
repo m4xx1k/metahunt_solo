@@ -32,8 +32,7 @@ function personCell(row: AnalyticsPagePerson) {
       <p className="font-medium text-text-primary">{row.displayName}</p>
       <div className="mt-1 flex flex-wrap gap-1">
         {row.telegramLinked ? <Badge>telegram</Badge> : null}
-        {row.hasAccount ? <Badge variant="dark">account</Badge> : null}
-        {!row.telegramLinked && !row.hasAccount ? <Badge variant="dark">anonymous</Badge> : null}
+        <Badge variant="dark">account</Badge>
         {row.providers.map((provider) => (
           <Badge key={provider} variant="dark">
             {provider}
@@ -169,18 +168,9 @@ export function PeopleTable({
   }
 
   return (
-    <Panel
-      title="People"
-      meta="one row = one person"
-      footer={
-        <span className="text-text-muted">
-          A Telegram-only subscriber who never opened the web app may show as more than one row
-          (person ids aren&apos;t merged yet — MET-115).
-        </span>
-      }
-    >
+    <Panel title="Contacts" meta="one row = one account">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
-        <UrlSearch placeholder="name, email, or ID…" />
+        <UrlSearch placeholder="name or account ID…" />
         {!available ? (
           <span className="font-mono text-2xs text-text-muted">
             PostHog columns hidden — personal API key not configured
@@ -190,7 +180,7 @@ export function PeopleTable({
       <DataTable
         minWidth={available ? 1180 : 760}
         rows={people.rows}
-        rowKey={(row) => row.personId}
+        rowKey={(row) => row.userId}
         columns={columns}
       />
       <div className="mt-4">

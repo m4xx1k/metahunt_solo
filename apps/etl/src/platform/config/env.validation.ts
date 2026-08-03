@@ -142,6 +142,10 @@ export function validateEnv(config: RawEnv): RawEnv {
   // no-ops every event) so local/test/CI never ship data to PostHog — same
   // shape as the dormant Telegram bot above. Host defaults to PostHog EU since
   // the product is EU-facing (Kyiv); override for self-host or US.
+  const analyticsV2 = asString(config.ANALYTICS_V2) ?? "false";
+  if (analyticsV2 !== "true" && analyticsV2 !== "false") {
+    throw new Error(`ANALYTICS_V2 must be true or false, got "${analyticsV2}"`);
+  }
   const posthogApiKey = asString(config.POSTHOG_API_KEY) ?? "";
   const posthogHost = asString(config.POSTHOG_HOST) ?? "https://eu.i.posthog.com";
   assertUrl("POSTHOG_HOST", posthogHost);
@@ -154,6 +158,13 @@ export function validateEnv(config: RawEnv): RawEnv {
   const posthogPersonalApiKey = asString(config.POSTHOG_PERSONAL_API_KEY) ?? "";
   const posthogPrivateHost = asString(config.POSTHOG_PRIVATE_HOST) ?? "";
   const posthogProdProjectId = asString(config.POSTHOG_PROD_PROJECT_ID) ?? "";
+  const posthogV2ApiKey = asString(config.POSTHOG_V2_API_KEY) ?? "";
+  const posthogV2ProjectId = asString(config.POSTHOG_V2_PROJECT_ID) ?? "";
+  if (analyticsV2 === "true" && (posthogV2ApiKey.length === 0 || posthogV2ProjectId.length === 0)) {
+    throw new Error(
+      "POSTHOG_V2_API_KEY and POSTHOG_V2_PROJECT_ID are required when ANALYTICS_V2=true",
+    );
+  }
   if (posthogPrivateHost.length > 0) {
     assertUrl("POSTHOG_PRIVATE_HOST", posthogPrivateHost);
   }
@@ -195,11 +206,14 @@ export function validateEnv(config: RawEnv): RawEnv {
     TELEGRAM_BOT_TOKEN: telegramBotToken,
     PUBLIC_BASE_URL: publicBaseUrl,
     WEB_BASE_URL: webBaseUrl,
+    ANALYTICS_V2: analyticsV2,
     POSTHOG_API_KEY: posthogApiKey,
     POSTHOG_HOST: posthogHost,
     POSTHOG_PERSONAL_API_KEY: posthogPersonalApiKey,
     POSTHOG_PRIVATE_HOST: posthogPrivateHost,
     POSTHOG_PROD_PROJECT_ID: posthogProdProjectId,
+    POSTHOG_V2_API_KEY: posthogV2ApiKey,
+    POSTHOG_V2_PROJECT_ID: posthogV2ProjectId,
     JWT_SECRET: jwtSecret,
     ADMIN_TELEGRAM_IDS: adminTelegramIds,
     GOOGLE_CLIENT_ID: googleClientId,

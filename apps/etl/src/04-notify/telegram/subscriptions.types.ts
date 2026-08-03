@@ -2,7 +2,9 @@ import type { SubscriptionParams } from "./subscriptions.contract";
 
 export interface CreateSubscriptionOptions {
   candidateId?: string;
-  userId?: string;
+  // A subscription is product state for an account. The public API supplies
+  // this from its JWT; internal callers must do the same explicitly.
+  userId: string;
   journeyId?: string;
 }
 

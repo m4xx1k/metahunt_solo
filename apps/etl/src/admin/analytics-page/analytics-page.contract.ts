@@ -48,9 +48,10 @@ export const ANALYTICS_PAGE_PEOPLE_DIRECTIONS = ["asc", "desc"] as const;
 export type AnalyticsPagePeopleDirection = (typeof ANALYTICS_PAGE_PEOPLE_DIRECTIONS)[number];
 
 export interface AnalyticsPagePerson {
-  personId: string;
+  // Contacts is an account roster. This is always users.id, never a PostHog
+  // person_id or an anonymous browser/journey id.
+  userId: string;
   displayName: string;
-  hasAccount: boolean;
   providers: string[];
   registeredAt: string | null;
   subscriptions: number;

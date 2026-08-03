@@ -12,7 +12,6 @@ import { CandidateLoaderService } from "../../03-discovery/cv/candidate-loader.s
 import type { JwtUser } from "../../platform/auth/auth.types";
 import { CurrentUser } from "../../platform/auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
-import { parseUuid } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import {
@@ -33,13 +32,16 @@ export class SubscriptionsController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "Create a pending Telegram subscription deep link" })
+  @ApiBearerAuth()
   @ApiCreatedResponse({ description: "Pending subscription UUID and Telegram deep link." })
   @ApiBadRequestResponse({
     description: "Invalid subscription parameters or Telegram is unavailable.",
     type: ApiErrorResponseDto,
   })
   async create(
+    @CurrentUser() user: JwtUser,
     @Body() body: Partial<CreateSubscriptionRequest>,
   ): Promise<CreateSubscriptionResponse> {
     const params = body?.params;
@@ -61,8 +63,7 @@ export class SubscriptionsController {
       );
     }
 
-    const journeyId = parseUuid("journeyId", body?.journeyId);
-    const id = await this.subscriptions.create(params, { journeyId });
+    const id = await this.subscriptions.create(params, { userId: user.userId });
     return createSubscriptionResponse(username, id);
   }
 
@@ -98,11 +99,9 @@ export class SubscriptionsController {
       throw new BadRequestException("Telegram bot is not available — check TELEGRAM_BOT_TOKEN");
     }
     await this.candidates.assertAccessibleCandidate(user.userId, candidateId);
-    const journeyId = parseUuid("journeyId", body?.journeyId);
     const id = await this.subscriptions.create(params, {
       candidateId,
       userId: user.userId,
-      journeyId,
     });
     return createSubscriptionResponse(username, id);
   }
