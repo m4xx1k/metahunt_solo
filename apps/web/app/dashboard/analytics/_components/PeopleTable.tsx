@@ -113,6 +113,26 @@ function PersonDetails({ row, available }: { row: AnalyticsPagePerson; available
             label="active / total subscriptions"
             value={`${row.activeSubscriptions} / ${row.subscriptions}`}
           />
+          {row.subscriptionDetails.map((subscription) => (
+            <div key={subscription.id} className="border-b border-border/60 py-2 last:border-0">
+              <p className="text-text-primary">
+                {subscription.name ?? "Untitled subscription"} ·{" "}
+                {subscription.isActive ? "active" : "inactive"}
+              </p>
+              <p className="mt-1 text-2xs text-text-muted">
+                {Object.entries(subscription.params)
+                  .slice(0, 4)
+                  .map(
+                    ([key, value]) =>
+                      `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`,
+                  )
+                  .join(" · ") || "no filters"}
+              </p>
+              <p className="mt-1 text-2xs text-text-muted">
+                created {formatDateTime(subscription.createdAt)}
+              </p>
+            </div>
+          ))}
           {available ? (
             <>
               <Detail label="first seen" value={formatDateTime(row.firstEventAt)} />

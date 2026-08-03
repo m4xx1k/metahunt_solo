@@ -49,6 +49,13 @@ interface RosterRow {
   activeSubscriptions: number;
   firstSubscriptionAt: string | null;
   telegramLinked: boolean;
+  subscriptionDetails: Array<{
+    id: string;
+    name: string | null;
+    params: Record<string, unknown>;
+    isActive: boolean;
+    createdAt: string | null;
+  }>;
 }
 
 interface PostHogPersonSide {
@@ -331,6 +338,7 @@ export class AnalyticsPageService {
       active_subscriptions: number;
       first_subscription_at: string | null;
       telegram_linked: boolean;
+      subscription_details: RosterRow["subscriptionDetails"] | null;
       total: number;
     }>(sql`
       WITH identity_by_user AS (
@@ -349,7 +357,8 @@ export class AnalyticsPageService {
           COUNT(*)::int AS subscriptions,
           COUNT(*) FILTER (WHERE is_active)::int AS active_subscriptions,
           MIN(created_at) AS first_subscription_at,
-          bool_or(chat_id IS NOT NULL) AS telegram_linked
+          bool_or(chat_id IS NOT NULL) AS telegram_linked,
+          json_agg(json_build_object('id', id, 'name', name, 'params', params, 'isActive', is_active, 'createdAt', created_at) ORDER BY created_at DESC) AS subscription_details
         FROM subscriptions
         WHERE user_id IS NOT NULL
         GROUP BY user_id
@@ -366,6 +375,7 @@ export class AnalyticsPageService {
           COALESCE(su.active_subscriptions, 0)::int AS active_subscriptions,
           su.first_subscription_at,
           COALESCE(su.telegram_linked, false) AS telegram_linked
+          , COALESCE(su.subscription_details, '[]'::json) AS subscription_details
         FROM users u
         LEFT JOIN identity_by_user ip ON ip.id = u.id
         LEFT JOIN subs_by_user su ON su.user_id = u.id
@@ -403,6 +413,7 @@ export class AnalyticsPageService {
           activeSubscriptions: Number(row.active_subscriptions),
           firstSubscriptionAt: toIsoOrNull(row.first_subscription_at),
           telegramLinked: row.telegram_linked,
+          subscriptionDetails: row.subscription_details ?? [],
         },
       ];
     });

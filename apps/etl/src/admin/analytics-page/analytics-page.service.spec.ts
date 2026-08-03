@@ -259,6 +259,7 @@ describe("AnalyticsPageService", () => {
           activeSubscriptions: 1,
           firstSubscriptionAt: "2026-07-02T00:00:00.000Z",
           telegramLinked: true,
+          subscriptionDetails: [],
           firstEventAt: null,
           lastEventAt: null,
           pageviews: null,

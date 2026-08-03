@@ -67,6 +67,13 @@ export interface AnalyticsPagePerson {
   activeSubscriptions: number;
   firstSubscriptionAt: string | null;
   telegramLinked: boolean;
+  subscriptionDetails: Array<{
+    id: string;
+    name: string | null;
+    params: Record<string, unknown>;
+    isActive: boolean;
+    createdAt: string | null;
+  }>;
   // PostHog side — null when the personal API key is unavailable.
   firstEventAt: string | null;
   lastEventAt: string | null;
