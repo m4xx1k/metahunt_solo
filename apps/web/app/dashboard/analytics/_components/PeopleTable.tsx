@@ -1,5 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  Eye,
+  MousePointerClick,
+  MoreHorizontal,
+} from "lucide-react";
 
 import type {
   AnalyticsPagePeoplePage,
@@ -9,10 +18,10 @@ import type {
 import { formatCount, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/ui/badges/Badge";
-import { DataTable, type Column } from "@/ui/data/DataTable";
 import { UrlSearch } from "@/ui/inputs/UrlSearch";
 import { Panel } from "@/ui/layout/Panel";
 import { Pagination } from "@/ui/navigation/Pagination";
+import { Popover, PopoverContent, PopoverTrigger } from "@/ui/overlay/Popover";
 
 type SortableKey = "displayName" | "registeredAt" | "subscriptions" | "firstSubscriptionAt";
 
@@ -26,13 +35,12 @@ function formatMinutes(value: number | null): string {
   return `${minutes}m`;
 }
 
-function personCell(row: AnalyticsPagePerson) {
+function PersonIdentity({ row }: { row: AnalyticsPagePerson }) {
   return (
-    <div>
-      <p className="font-medium text-text-primary">{row.displayName}</p>
-      <div className="mt-1 flex flex-wrap gap-1">
+    <div className="min-w-0">
+      <p className="truncate font-medium text-text-primary">{row.displayName}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1">
         {row.telegramLinked ? <Badge>telegram</Badge> : null}
-        <Badge variant="dark">account</Badge>
         {row.providers.map((provider) => (
           <Badge key={provider} variant="dark">
             {provider}
@@ -40,6 +48,67 @@ function personCell(row: AnalyticsPagePerson) {
         ))}
       </div>
     </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 border-b border-border/60 py-2 last:border-0">
+      <dt className="text-text-muted">{label}</dt>
+      <dd className="text-right text-text-primary">{value}</dd>
+    </div>
+  );
+}
+
+function PersonDetails({ row, available }: { row: AnalyticsPagePerson; available: boolean }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Open details for ${row.displayName}`}
+          className="inline-flex size-8 items-center justify-center border border-border bg-bg text-text-secondary transition hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <MoreHorizontal className="size-4" aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[min(23rem,calc(100vw-2rem))] p-0">
+        <div className="border-b border-border bg-bg px-4 py-3">
+          <p className="truncate font-display text-sm font-semibold text-text-primary">
+            {row.displayName}
+          </p>
+          <p className="mt-1 break-all text-2xs text-text-muted">{row.userId}</p>
+        </div>
+        <dl className="px-4 py-2">
+          <Detail label="registered" value={formatDateTime(row.registeredAt)} />
+          <Detail label="first subscription" value={formatDateTime(row.firstSubscriptionAt)} />
+          <Detail
+            label="active / total subscriptions"
+            value={`${row.activeSubscriptions} / ${row.subscriptions}`}
+          />
+          {available ? (
+            <>
+              <Detail label="first seen" value={formatDateTime(row.firstEventAt)} />
+              <Detail label="last seen" value={formatDateTime(row.lastEventAt)} />
+              <Detail
+                label="pageviews"
+                value={row.pageviews == null ? "—" : formatCount(row.pageviews)}
+              />
+              <Detail
+                label="feed clicks"
+                value={row.feedClicks == null ? "—" : formatCount(row.feedClicks)}
+              />
+              <Detail
+                label="digest clicks"
+                value={row.digestClicks == null ? "—" : formatCount(row.digestClicks)}
+              />
+              <Detail label="seen → registered" value={formatMinutes(row.minutesToRegistration)} />
+              <Detail label="seen → subscribed" value={formatMinutes(row.minutesToSubscription)} />
+            </>
+          ) : null}
+        </dl>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -75,114 +144,144 @@ export function PeopleTable({
   function sortHref(key: SortableKey) {
     const nextDir: "asc" | "desc" = sort === key && dir === "asc" ? "desc" : "asc";
     const params = new URLSearchParams();
-    for (const [k, v] of Object.entries({ ...baseParams, sort: key, dir: nextDir })) {
-      if (v) params.set(k, v);
+    for (const [param, value] of Object.entries({ ...baseParams, sort: key, dir: nextDir })) {
+      if (value) params.set(param, value);
     }
     return `/dashboard/analytics?${params.toString()}`;
   }
 
-  function sortableHeader(key: SortableKey, label: string) {
-    const active = sort === key;
+  function sortLink(sortKey: SortableKey, label: string) {
+    const active = sort === sortKey;
     return (
       <Link
-        href={sortHref(key)}
+        href={sortHref(sortKey)}
         className={cn(
-          "inline-flex items-center gap-1 hover:text-accent",
-          active && "text-text-primary",
+          "inline-flex items-center gap-1 whitespace-nowrap transition hover:text-accent",
+          active ? "text-text-primary" : "text-text-muted",
         )}
       >
         {label}
         {active ? (
           dir === "asc" ? (
-            <ArrowUp aria-hidden="true" className="size-3" />
+            <ArrowUp className="size-3" />
           ) : (
-            <ArrowDown aria-hidden="true" className="size-3" />
+            <ArrowDown className="size-3" />
           )
         ) : null}
       </Link>
     );
   }
 
-  const columns: Array<Column<AnalyticsPagePerson>> = [
-    { key: "person", header: sortableHeader("displayName", "person"), render: personCell },
-    {
-      key: "registeredAt",
-      header: sortableHeader("registeredAt", "registered"),
-      render: (row) => formatDateTime(row.registeredAt),
-    },
-    {
-      key: "subscriptions",
-      header: sortableHeader("subscriptions", "subs"),
-      align: "right",
-      render: (row) => `${row.activeSubscriptions}/${row.subscriptions}`,
-    },
-    {
-      key: "firstSubscriptionAt",
-      header: sortableHeader("firstSubscriptionAt", "first sub"),
-      render: (row) => formatDateTime(row.firstSubscriptionAt),
-    },
-  ];
-
-  if (available) {
-    columns.push(
-      {
-        key: "firstEventAt",
-        header: "first seen",
-        render: (row) => formatDateTime(row.firstEventAt),
-      },
-      {
-        key: "lastEventAt",
-        header: "last seen",
-        render: (row) => formatDateTime(row.lastEventAt),
-      },
-      {
-        key: "pageviews",
-        header: "pageviews",
-        align: "right",
-        render: (row) => (row.pageviews == null ? "—" : formatCount(row.pageviews)),
-      },
-      {
-        key: "clicks",
-        header: "clicks",
-        align: "right",
-        render: (row) => (
-          <div className="flex justify-end gap-1.5">
-            <Badge variant="dark">feed {row.feedClicks ?? "—"}</Badge>
-            <Badge>digest {row.digestClicks ?? "—"}</Badge>
-          </div>
-        ),
-      },
-      {
-        key: "minutesToRegistration",
-        header: "→ registered",
-        align: "right",
-        render: (row) => formatMinutes(row.minutesToRegistration),
-      },
-      {
-        key: "minutesToSubscription",
-        header: "→ subscribed",
-        align: "right",
-        render: (row) => formatMinutes(row.minutesToSubscription),
-      },
-    );
-  }
-
   return (
-    <Panel title="Contacts" meta="one row = one account">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
+    <Panel title="Contacts" meta={`${people.total} accounts · one row = one account`}>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <UrlSearch placeholder="name or account ID…" />
         {!available ? (
           <span className="font-mono text-2xs text-text-muted">
-            PostHog columns hidden — personal API key not configured
+            Activity details stay hidden until PostHog is available
           </span>
         ) : null}
       </div>
-      <DataTable
-        minWidth={available ? 1180 : 760}
-        rows={people.rows}
-        rowKey={(row) => row.userId}
-        columns={columns}
-      />
+
+      {people.rows.length === 0 ? (
+        <p className="font-mono text-xs text-text-muted">no accounts found</p>
+      ) : null}
+
+      <div className="hidden overflow-hidden border border-border md:block">
+        <table className="w-full table-fixed border-collapse text-left font-mono text-xs">
+          <thead className="bg-bg text-2xs uppercase tracking-[0.12em] text-text-muted">
+            <tr className="border-b border-border">
+              <th className="w-[31%] px-4 py-3 font-normal">{sortLink("displayName", "person")}</th>
+              <th className="w-[19%] px-4 py-3 font-normal">
+                {sortLink("registeredAt", "registered")}
+              </th>
+              <th className="w-[15%] px-4 py-3 text-right font-normal">
+                {sortLink("subscriptions", "subs")}
+              </th>
+              <th className="w-[23%] px-4 py-3 font-normal">
+                {sortLink("firstSubscriptionAt", "first sub")}
+              </th>
+              <th className="w-14 px-3 py-3" aria-label="Details" />
+            </tr>
+          </thead>
+          <tbody>
+            {people.rows.map((row) => (
+              <tr
+                key={row.userId}
+                className="border-b border-border/60 last:border-0 hover:bg-accent/[0.035]"
+              >
+                <td className="px-4 py-3">
+                  <PersonIdentity row={row} />
+                </td>
+                <td className="px-4 py-3 text-text-secondary">
+                  {formatDateTime(row.registeredAt)}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-text-primary">
+                  <span className="font-medium">{row.activeSubscriptions}</span>
+                  <span className="text-text-muted"> / {row.subscriptions}</span>
+                </td>
+                <td className="px-4 py-3 text-text-secondary">
+                  {formatDateTime(row.firstSubscriptionAt)}
+                </td>
+                <td className="px-3 py-3 text-right">
+                  <PersonDetails row={row} available={available} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="space-y-2 md:hidden">
+        <div className="flex gap-3 overflow-x-auto pb-1 font-mono text-2xs uppercase tracking-[0.12em]">
+          {sortLink("displayName", "name")}
+          {sortLink("registeredAt", "newest")}
+          {sortLink("subscriptions", "subs")}
+        </div>
+        {people.rows.map((row) => (
+          <article key={row.userId} className="border border-border bg-bg-card p-3 shadow-brut-2xs">
+            <div className="flex items-start justify-between gap-3">
+              <PersonIdentity row={row} />
+              <PersonDetails row={row} available={available} />
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-px bg-border text-2xs">
+              <div className="bg-bg p-2">
+                <span className="flex items-center gap-1 text-text-muted">
+                  <CalendarDays className="size-3" /> registered
+                </span>
+                <p className="mt-1 text-text-primary">{formatDateTime(row.registeredAt)}</p>
+              </div>
+              <div className="bg-bg p-2">
+                <span className="text-text-muted">active subs</span>
+                <p className="mt-1 font-semibold tabular-nums text-text-primary">
+                  {row.activeSubscriptions} / {row.subscriptions}
+                </p>
+              </div>
+              {available ? (
+                <>
+                  <div className="bg-bg p-2">
+                    <span className="flex items-center gap-1 text-text-muted">
+                      <Eye className="size-3" /> views
+                    </span>
+                    <p className="mt-1 font-semibold tabular-nums text-text-primary">
+                      {row.pageviews == null ? "—" : formatCount(row.pageviews)}
+                    </p>
+                  </div>
+                  <div className="bg-bg p-2">
+                    <span className="flex items-center gap-1 text-text-muted">
+                      <MousePointerClick className="size-3" /> clicks
+                    </span>
+                    <p className="mt-1 font-semibold tabular-nums text-text-primary">
+                      {formatCount((row.feedClicks ?? 0) + (row.digestClicks ?? 0))}
+                    </p>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </article>
+        ))}
+      </div>
+
       <div className="mt-4">
         <Pagination
           total={people.total}
