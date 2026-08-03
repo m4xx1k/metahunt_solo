@@ -26,10 +26,12 @@ type AnalyticsV2Event = (typeof ANALYTICS_V2_EVENTS)[number];
 export class AnalyticsV2Service implements OnModuleDestroy {
   private readonly logger = new Logger(AnalyticsV2Service.name);
   private readonly client?: PostHog;
+  private readonly enabled: boolean;
   private readonly isTest: boolean;
 
   constructor(config: ConfigService) {
     const enabled = config.get<string>("ANALYTICS_V2") === "true";
+    this.enabled = enabled;
     const key = config.get<string>("POSTHOG_V2_API_KEY") ?? "";
     this.isTest = config.get<string>("ANALYTICS_TEST_TRAFFIC") === "true";
     if (!enabled) return;
@@ -44,6 +46,10 @@ export class AnalyticsV2Service implements OnModuleDestroy {
       flushAt: 1,
       flushInterval: 0,
     });
+  }
+
+  isEnabled(): boolean {
+    return this.enabled && this.client !== undefined;
   }
 
   accountCreated(userId: string, provider: Provider): void {

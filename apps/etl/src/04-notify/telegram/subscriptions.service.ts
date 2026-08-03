@@ -57,21 +57,24 @@ export class SubscriptionsService {
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
       throw new Error(`invalid candidateId: ${options.candidateId}`);
     }
-    const journeyId = options.journeyId ?? randomUUID();
+    const v2 = this.analyticsV2.isEnabled();
+    const journeyId = v2 ? null : (options.journeyId ?? randomUUID());
     const subscriptionId = randomUUID();
 
     const created = await this.db.transaction(async (tx) => {
-      await tx
-        .insert(analyticsJourneys)
-        .values({
-          id: journeyId,
-          personId: options.userId,
-          origin: options.journeyId ? "browser" : "server",
-        })
-        .onConflictDoUpdate({
-          target: analyticsJourneys.id,
-          set: { personId: options.userId, lastSeenAt: sql`now()` },
-        });
+      if (journeyId) {
+        await tx
+          .insert(analyticsJourneys)
+          .values({
+            id: journeyId,
+            personId: options.userId,
+            origin: options.journeyId ? "browser" : "server",
+          })
+          .onConflictDoUpdate({
+            target: analyticsJourneys.id,
+            set: { personId: options.userId, lastSeenAt: sql`now()` },
+          });
+      }
       const [subscription] = await tx
         .insert(subscriptions)
         .values({
@@ -80,11 +83,11 @@ export class SubscriptionsService {
           params,
           candidateId: options.candidateId ?? null,
           userId: options.userId,
-          personId: options.userId,
-          journeyId,
+          ...(v2 ? {} : { personId: options.userId, journeyId }),
         })
         .returning({ id: subscriptions.id });
-      await this.analytics.enqueueSubscriptionCreated(tx, subscription.id, journeyId, params);
+      if (journeyId)
+        await this.analytics.enqueueSubscriptionCreated(tx, subscription.id, journeyId, params);
       return subscription;
     });
 
@@ -199,13 +202,13 @@ export class SubscriptionsService {
           ),
         )
         .returning({ id: subscriptions.id });
-      if (activated && pending.journeyId && linkedUserId) {
+      if (!this.analyticsV2.isEnabled() && activated && pending.journeyId && linkedUserId) {
         await tx
           .update(analyticsJourneys)
           .set({ personId: linkedUserId, lastSeenAt: sql`now()` })
           .where(eq(analyticsJourneys.id, pending.journeyId));
       }
-      if (activated && pending.journeyId) {
+      if (!this.analyticsV2.isEnabled() && activated && pending.journeyId) {
         await this.analytics.enqueueTelegramLinked(tx, activated.id, pending.journeyId, "linked");
       }
       return activated ? { type: "linked" as const } : null;
@@ -224,11 +227,12 @@ export class SubscriptionsService {
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
 
-    if (pending.journeyId && linkedUserId) {
+    if (!this.analyticsV2.isEnabled() && pending.journeyId && linkedUserId) {
       this.analytics.aliasJourneyToPerson(pending.journeyId, linkedUserId);
     }
 
-    if (!pending.journeyId) void this.analytics.telegramLinked(token, "linked");
+    if (!this.analyticsV2.isEnabled() && !pending.journeyId)
+      void this.analytics.telegramLinked(token, "linked");
     return "linked";
   }
 
