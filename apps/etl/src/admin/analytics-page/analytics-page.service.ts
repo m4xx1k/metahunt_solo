@@ -22,7 +22,7 @@ import { clampedMinutesBetween } from "./analytics-page.derive";
 
 const PEOPLE_PAGE_MAX = 100;
 const HUMAN_TRAFFIC =
-  "ifNull(properties.is_test, false) = false AND ifNull(properties.$is_bot, false) = false";
+  "lower(ifNull(toString(properties.is_test), 'false')) != 'true' AND lower(ifNull(toString(properties.$is_bot), 'false')) != 'true'";
 
 const PERIOD_DAYS: Record<AnalyticsPagePeriod, number> = {
   "24h": 1,

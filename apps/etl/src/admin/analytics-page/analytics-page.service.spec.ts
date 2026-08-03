@@ -213,8 +213,8 @@ describe("AnalyticsPageService", () => {
     await svc.metrics("30d");
 
     for (const [hogql] of postHog.query.mock.calls as Array<[string]>) {
-      expect(hogql).toContain("ifNull(properties.is_test, false) = false");
-      expect(hogql).toContain("ifNull(properties.$is_bot, false) = false");
+      expect(hogql).toContain("lower(ifNull(toString(properties.is_test), 'false')) != 'true'");
+      expect(hogql).toContain("lower(ifNull(toString(properties.$is_bot), 'false')) != 'true'");
       expect(hogql).not.toContain("person_id");
     }
   });
