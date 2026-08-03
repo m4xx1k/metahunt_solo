@@ -7,8 +7,8 @@ import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { AnalyticsV2Service } from "../../platform/analytics/analytics-v2.service";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import { ProductAnalyticsService } from "../../platform/analytics/product-analytics.service";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { SubscriptionCriteriaService } from "../../platform/subscriptions/subscription-criteria.service";
 import { createSubscriptionName } from "../../platform/subscriptions/subscription-name";
@@ -41,7 +41,7 @@ export class SubscriptionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
-    private readonly analyticsV2: AnalyticsV2Service,
+    private readonly productAnalytics: ProductAnalyticsService,
     private readonly criteria: SubscriptionCriteriaService,
   ) {}
 
@@ -57,8 +57,8 @@ export class SubscriptionsService {
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
       throw new Error(`invalid candidateId: ${options.candidateId}`);
     }
-    const v2 = this.analyticsV2.isEnabled();
-    const journeyId = v2 ? null : (options.journeyId ?? randomUUID());
+    const cleanAnalytics = this.productAnalytics.isEnabled();
+    const journeyId = cleanAnalytics ? null : (options.journeyId ?? randomUUID());
     const subscriptionId = randomUUID();
 
     const created = await this.db.transaction(async (tx) => {
@@ -83,7 +83,7 @@ export class SubscriptionsService {
           params,
           candidateId: options.candidateId ?? null,
           userId: options.userId,
-          ...(v2 ? {} : { personId: options.userId, journeyId }),
+          ...(cleanAnalytics ? {} : { personId: options.userId, journeyId }),
         })
         .returning({ id: subscriptions.id });
       if (journeyId)
@@ -96,7 +96,7 @@ export class SubscriptionsService {
     );
     // DB transaction is complete at this point. V2 capture is explicitly
     // best-effort and cannot turn a successful subscription into a failure.
-    this.analyticsV2.subscriptionCreated(options.userId, options.candidateId ? "cv" : "feed");
+    this.productAnalytics.subscriptionCreated(options.userId, options.candidateId ? "cv" : "feed");
 
     return created.id;
   }
@@ -202,13 +202,13 @@ export class SubscriptionsService {
           ),
         )
         .returning({ id: subscriptions.id });
-      if (!this.analyticsV2.isEnabled() && activated && pending.journeyId && linkedUserId) {
+      if (!this.productAnalytics.isEnabled() && activated && pending.journeyId && linkedUserId) {
         await tx
           .update(analyticsJourneys)
           .set({ personId: linkedUserId, lastSeenAt: sql`now()` })
           .where(eq(analyticsJourneys.id, pending.journeyId));
       }
-      if (!this.analyticsV2.isEnabled() && activated && pending.journeyId) {
+      if (!this.productAnalytics.isEnabled() && activated && pending.journeyId) {
         await this.analytics.enqueueTelegramLinked(tx, activated.id, pending.journeyId, "linked");
       }
       return activated ? { type: "linked" as const } : null;
@@ -227,11 +227,11 @@ export class SubscriptionsService {
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
 
-    if (!this.analyticsV2.isEnabled() && pending.journeyId && linkedUserId) {
+    if (!this.productAnalytics.isEnabled() && pending.journeyId && linkedUserId) {
       this.analytics.aliasJourneyToPerson(pending.journeyId, linkedUserId);
     }
 
-    if (!this.analyticsV2.isEnabled() && !pending.journeyId)
+    if (!this.productAnalytics.isEnabled() && !pending.journeyId)
       void this.analytics.telegramLinked(token, "linked");
     return "linked";
   }
@@ -332,7 +332,7 @@ export class SubscriptionsService {
     });
     for (const subscription of stopped) {
       if (subscription.userId)
-        this.analyticsV2.subscriptionDeactivated(subscription.userId, "user");
+        this.productAnalytics.subscriptionDeactivated(subscription.userId, "user");
     }
     return stopped.length;
   }
@@ -373,7 +373,7 @@ export class SubscriptionsService {
       }
       return stopped;
     });
-    if (stopped?.userId) this.analyticsV2.subscriptionDeactivated(stopped.userId, "user");
+    if (stopped?.userId) this.productAnalytics.subscriptionDeactivated(stopped.userId, "user");
     return stopped !== null;
   }
 

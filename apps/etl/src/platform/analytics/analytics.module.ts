@@ -2,11 +2,11 @@ import { Global, Module } from "@nestjs/common";
 
 import { AnalyticsOutboxDispatcher } from "./analytics-outbox.dispatcher";
 import { AnalyticsOutboxStore } from "./analytics-outbox.store";
-import { AnalyticsV2Service } from "./analytics-v2.service";
 import { AnalyticsController } from "./analytics.controller";
 import { ANALYTICS_OUTBOX_WRITER, ANALYTICS_SINK, PRODUCT_EVENT_WRITER } from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
 import { PostHogSink } from "./posthog.sink";
+import { ProductAnalyticsService } from "./product-analytics.service";
 import { ProductEventStore } from "./product-event.store";
 
 // Global so any feature service can inject AnalyticsService without re-importing
@@ -17,7 +17,7 @@ import { ProductEventStore } from "./product-event.store";
   controllers: [AnalyticsController],
   providers: [
     AnalyticsService,
-    AnalyticsV2Service,
+    ProductAnalyticsService,
     AnalyticsOutboxDispatcher,
     AnalyticsOutboxStore,
     ProductEventStore,
@@ -26,6 +26,6 @@ import { ProductEventStore } from "./product-event.store";
     { provide: PRODUCT_EVENT_WRITER, useExisting: ProductEventStore },
     { provide: ANALYTICS_SINK, useExisting: PostHogSink },
   ],
-  exports: [AnalyticsService, AnalyticsV2Service, PRODUCT_EVENT_WRITER],
+  exports: [AnalyticsService, ProductAnalyticsService, PRODUCT_EVENT_WRITER],
 })
 export class AnalyticsModule {}

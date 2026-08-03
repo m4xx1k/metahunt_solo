@@ -5,7 +5,7 @@ import { mapPostHogRows, PostHogQueryClient } from "./posthog-query.client";
 const CONFIGURED_ENV = {
   POSTHOG_PERSONAL_API_KEY: "phx_test_key",
   POSTHOG_PRIVATE_HOST: "https://eu.posthog.com",
-  POSTHOG_PROD_PROJECT_ID: "194218",
+  POSTHOG_PROJECT_ID: "project-under-test",
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -95,7 +95,7 @@ describe("PostHogQueryClient", () => {
 
       expect(result).toEqual([{ dau: 42 }]);
       expect(global.fetch).toHaveBeenCalledWith(
-        "https://eu.posthog.com/api/projects/194218/query/",
+        `https://eu.posthog.com/api/projects/${CONFIGURED_ENV.POSTHOG_PROJECT_ID}/query/`,
         expect.objectContaining({
           method: "POST",
           headers: expect.objectContaining({
@@ -106,24 +106,6 @@ describe("PostHogQueryClient", () => {
             query: { kind: "HogQLQuery", query: "SELECT dau FROM events" },
           }),
         }),
-      );
-    });
-
-    it("uses the isolated v2 project when ANALYTICS_V2 is enabled", async () => {
-      global.fetch = jest.fn().mockResolvedValue(jsonResponse({ columns: [], results: [] }));
-      const client = new PostHogQueryClient(
-        new ConfigService({
-          ...CONFIGURED_ENV,
-          ANALYTICS_V2: "true",
-          POSTHOG_V2_PROJECT_ID: "202602",
-        }),
-      );
-
-      await client.query("SELECT 1");
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        "https://eu.posthog.com/api/projects/202602/query/",
-        expect.anything(),
       );
     });
 

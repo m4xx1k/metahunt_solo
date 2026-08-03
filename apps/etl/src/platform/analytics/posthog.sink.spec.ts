@@ -22,7 +22,10 @@ describe("PostHogSink", () => {
 
   it("forwards privacy-safe events", () => {
     const sink = new PostHogSink(
-      new ConfigService({ POSTHOG_API_KEY: "test-key", POSTHOG_HOST: "https://example.test" }),
+      new ConfigService({
+        POSTHOG_ARCHIVE_API_KEY: "test-key",
+        POSTHOG_HOST: "https://example.test",
+      }),
     );
 
     sink.capture("journey-1", "subscription_created", { filterCount: 2 });
@@ -35,7 +38,7 @@ describe("PostHogSink", () => {
   });
 
   it("contains provider failures", () => {
-    const sink = new PostHogSink(new ConfigService({ POSTHOG_API_KEY: "test-key" }));
+    const sink = new PostHogSink(new ConfigService({ POSTHOG_ARCHIVE_API_KEY: "test-key" }));
     mockCapture.mockImplementationOnce(() => {
       throw new Error("provider unavailable");
     });
@@ -44,7 +47,7 @@ describe("PostHogSink", () => {
   });
 
   it("aliases an anonymous journey only to an opaque person id", () => {
-    const sink = new PostHogSink(new ConfigService({ POSTHOG_API_KEY: "test-key" }));
+    const sink = new PostHogSink(new ConfigService({ POSTHOG_ARCHIVE_API_KEY: "test-key" }));
 
     sink.alias("11111111-1111-1111-1111-111111111111", "journey-1");
 

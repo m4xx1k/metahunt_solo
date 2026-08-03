@@ -69,27 +69,26 @@ vacancy_outbound_clicked. Retention — частка activated accounts з на�
 value action у наступному тижні; churn — `subscription_deactivated` або
 відсутність active subscription за обраним правилом.
 
-У v2 проекті створити три dashboards: **Founder weekly/value delivered**
+У чистому PostHog project створити три dashboards: **Founder weekly/value delivered**
 (active users, digests, outbound clicks), **Acquisition → activation funnel**
 та **Retention/churn**. Додати test/internal cohort і виключити її з кожного
 human insight/dashboard.
 
 ## Конфігурація
 
-Archive variables не перейменовуються: `POSTHOG_API_KEY`, `POSTHOG_HOST`,
-`POSTHOG_PROD_PROJECT_ID`, `POSTHOG_LOCAL_PROJECT_ID`. V2 variables:
+Runtime має один product contract:
 
-- `ANALYTICS_V2=true|false` — fail-closed v2 gate;
-- `POSTHOG_V2_API_KEY` — окремий ingestion key;
-- `POSTHOG_V2_PROJECT_ID` — v2 project ID;
+- `POSTHOG_API_KEY` — project ingestion key;
+- `POSTHOG_PROJECT_ID` — numeric project ID для HogQL;
 - `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PRIVATE_HOST` — scoped query key/host;
-- `NEXT_PUBLIC_POSTHOG_V2_KEY` — browser ingestion key, якщо browser capture
-  увімкнений;
-- `ANALYTICS_TEST_TRAFFIC=true` і `NEXT_PUBLIC_ANALYTICS_TEST_TRAFFIC=true` —
-  локальні події позначені `is_test=true`.
+- `NEXT_PUBLIC_POSTHOG_KEY` — той самий public project key у frontend host;
+- `ANALYTICS_TEST_TRAFFIC` і `NEXT_PUBLIC_ANALYTICS_TEST_TRAFFIC` — лише
+  локальні/test deployments позначають події `is_test=true`.
 
-Створення v2 project/keys робить лише owner: у PostHog створити окремий
-`MetaHunt — PROD v2`, project API key для ingestion, personal/query key з
+`POSTHOG_ARCHIVE_API_KEY` необовʼязковий і за замовчуванням порожній: archive
+code не надсилає подій у новий product project. Створення project/keys робить
+лише owner: у PostHog створити окремий `MetaHunt`, project API key для
+ingestion, personal/query key з
 мінімальним read scope, test cohort, а потім три dashboards вище. Перевірити
 project ID harmless HogQL query перед rollout. Ніколи не вставляти keys у git.
 
@@ -103,9 +102,9 @@ npx ts-node --project tsconfig.json scripts/temporal-schedules.ts list
 npx ts-node --project tsconfig.json scripts/temporal-schedules.ts pause "local restored-db verification"
 ```
 
-У локальному `.env` встановити `ANALYTICS_V2=true`,
-`ANALYTICS_TEST_TRAFFIC=true`, пустий `TELEGRAM_BOT_TOKEN` (або disposable
-test bot), порожній production PostHog key і лише disposable v2 test project.
+У локальному `.env` встановити `ANALYTICS_TEST_TRAFFIC=true`, пустий
+`TELEGRAM_BOT_TOKEN` (або disposable test bot), порожній production PostHog
+key і лише disposable test project.
 Після цього перебудувати саме поточну гілку та підняти stack:
 
 ```bash
@@ -128,5 +127,6 @@ before/after counts. Лише після письмового схвалення
 окрему `0039_subscriptions_user_id_not_null_after_approved_cleanup.sql`.
 Вона не видаляє legacy rows і не вигадує owner. Rollback — вимкнути
 `ANALYTICS_V2`, повернути application config та, за потреби, restore перевіреного
-backup; не робити PostHog identity merge/rewrites. Після observation window
+backup; очистити `POSTHOG_API_KEY` для emergency analytics rollback, не робити
+PostHog identity merge/rewrites. Після observation window
 виконати окремий staged retirement plan, не в тому ж deployment.

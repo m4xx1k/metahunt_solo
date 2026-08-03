@@ -7,8 +7,6 @@ import {
   resolveAttribution,
   type AcquisitionAttribution,
 } from "@/lib/analytics/attribution";
-import { getOrCreateJourneyId } from "@/lib/analytics/journey";
-import { analyticsApi, type BrowserAnalyticsEventName } from "@/lib/api/analytics";
 import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
 
 export type { AcquisitionAttribution } from "@/lib/analytics/attribution";
@@ -49,23 +47,19 @@ export type SubscriptionProfile = "feed" | "cv";
 
 type AnalyticsProperty = string | number | boolean | undefined;
 const IS_TEST_TRAFFIC = process.env.NEXT_PUBLIC_ANALYTICS_TEST_TRAFFIC === "true";
-const ANALYTICS_V2 = process.env.NEXT_PUBLIC_ANALYTICS_V2 === "true";
-const V2_BROWSER_EVENTS = new Set(["$pageview", "signed_in", "account_created"]);
-
-function identifyJourney(posthog: PostHog | undefined): void {
-  posthog?.identify(getOrCreateJourneyId());
-}
+const PRODUCT_BROWSER_EVENTS = new Set(["$pageview"]);
 
 function captureBrowserEvent(
   posthog: PostHog | undefined,
-  name: BrowserAnalyticsEventName,
+  name: string,
   properties: Record<string, string | number | boolean>,
 ): void {
-  if (ANALYTICS_V2) return;
-  identifyJourney(posthog);
-  void analyticsApi
-    .captureBrowserEvent({ name, properties: { ...properties, is_test: IS_TEST_TRAFFIC } })
-    .catch(() => undefined);
+  // Archive-only browser events intentionally have no clean-project mapping.
+  // Keep old event names out of the new project rather than inventing aliases.
+  void posthog;
+  void name;
+  void properties;
+  return;
 }
 
 function capturePostHogEvent(
@@ -73,11 +67,9 @@ function capturePostHogEvent(
   name: string,
   properties?: Record<string, AnalyticsProperty>,
 ): void {
-  // V2 deliberately has a frozen, product-decision-driven schema. Legacy
-  // instrumentation keeps running only while its archive configuration is
-  // selected; a v2 browser never leaks its exploratory event names forward.
-  if (ANALYTICS_V2 && !V2_BROWSER_EVENTS.has(name)) return;
-  if (!ANALYTICS_V2) identifyJourney(posthog);
+  // Browser ownership is deliberately narrow: account lifecycle events come
+  // from the committed server mutation, so one login cannot create duplicates.
+  if (!PRODUCT_BROWSER_EVENTS.has(name)) return;
   posthog?.capture(name, { ...properties, is_test: IS_TEST_TRAFFIC });
 }
 
@@ -86,16 +78,14 @@ export function useAnalytics() {
 
   return useMemo(
     () => ({
-      identifyPerson(personId: string) {
-        const journeyId = getOrCreateJourneyId();
-        if (!ANALYTICS_V2) posthog?.alias(personId, journeyId);
-        posthog?.identify(personId);
+      identifyAccount(userId: string) {
+        posthog?.identify(userId);
       },
 
       pageViewed(pageType: string, attribution: AcquisitionAttribution) {
-        // V2 DAU is authenticated users.id only. Do not turn an anonymous
+        // DAU is authenticated users.id only. Do not turn an anonymous
         // landing into a human pageview before identify() has completed.
-        if (ANALYTICS_V2 && !posthog?.get_property("$user_id")) return;
+        if (!posthog?.get_property("$user_id")) return;
         capturePostHogEvent(posthog, ANALYTICS_EVENTS.pageViewed, {
           path: window.location.pathname,
           page_type: pageType,

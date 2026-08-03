@@ -122,7 +122,7 @@ export function GoogleLoginButton({
         } else {
           const res = await authApi.loginGoogle(credential);
           doLogin(res);
-          track.identifyPerson(res.user.id);
+          track.identifyAccount(res.user.id);
           if (res.isNewUser) track.signedUp("google");
           track.loggedIn("google");
           toast.success(`logged in as ${res.user.firstName ?? res.user.email ?? "you"}`);

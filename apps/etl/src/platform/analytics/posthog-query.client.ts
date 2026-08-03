@@ -50,10 +50,7 @@ export class PostHogQueryClient {
   constructor(config: ConfigService) {
     this.personalApiKey = config.get<string>("POSTHOG_PERSONAL_API_KEY") ?? "";
     this.privateHost = config.get<string>("POSTHOG_PRIVATE_HOST") ?? "";
-    this.projectId =
-      config.get<string>("ANALYTICS_V2") === "true"
-        ? (config.get<string>("POSTHOG_V2_PROJECT_ID") ?? "")
-        : (config.get<string>("POSTHOG_PROD_PROJECT_ID") ?? "");
+    this.projectId = config.get<string>("POSTHOG_PROJECT_ID") ?? "";
     this.configured = this.validateConfig();
   }
 

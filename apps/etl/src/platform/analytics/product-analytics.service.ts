@@ -10,7 +10,7 @@ type DeactivationReason = "user" | "blocked" | "unreachable";
 
 // This is the v2 contract. Keep it intentionally small: payload construction
 // is not exposed to product features, which prevents accidental PII fields.
-export const ANALYTICS_V2_EVENTS = [
+export const PRODUCT_ANALYTICS_EVENTS = [
   "$pageview",
   "account_created",
   "signed_in",
@@ -20,25 +20,21 @@ export const ANALYTICS_V2_EVENTS = [
   "subscription_deactivated",
 ] as const;
 
-type AnalyticsV2Event = (typeof ANALYTICS_V2_EVENTS)[number];
+type ProductAnalyticsEvent = (typeof PRODUCT_ANALYTICS_EVENTS)[number];
 
 @Injectable()
-export class AnalyticsV2Service implements OnModuleDestroy {
-  private readonly logger = new Logger(AnalyticsV2Service.name);
+export class ProductAnalyticsService implements OnModuleDestroy {
+  private readonly logger = new Logger(ProductAnalyticsService.name);
   private readonly client?: PostHog;
-  private readonly enabled: boolean;
   private readonly isTest: boolean;
 
   constructor(config: ConfigService) {
-    const enabled = config.get<string>("ANALYTICS_V2") === "true";
-    this.enabled = enabled;
-    const key = config.get<string>("POSTHOG_V2_API_KEY") ?? "";
+    const key = config.get<string>("POSTHOG_API_KEY") ?? "";
     this.isTest = config.get<string>("ANALYTICS_TEST_TRAFFIC") === "true";
-    if (!enabled) return;
     if (!key) {
       // Env validation normally catches this. Keep the runtime boundary
       // fail-closed as well, so a partial ConfigService stub never ships data.
-      this.logger.warn("Analytics v2 is enabled without an ingestion key; v2 capture is dormant.");
+      this.logger.warn("POSTHOG_API_KEY is not set; product analytics capture is dormant.");
       return;
     }
     this.client = new PostHog(key, {
@@ -49,7 +45,10 @@ export class AnalyticsV2Service implements OnModuleDestroy {
   }
 
   isEnabled(): boolean {
-    return this.enabled && this.client !== undefined;
+    // Product identity must never fall back to legacy journeys just because
+    // analytics is unconfigured. Capture may be dormant; the clean product
+    // path remains the only path.
+    return true;
   }
 
   accountCreated(userId: string, provider: Provider): void {
@@ -78,7 +77,7 @@ export class AnalyticsV2Service implements OnModuleDestroy {
 
   private capture(
     userId: string,
-    event: AnalyticsV2Event,
+    event: ProductAnalyticsEvent,
     properties: Record<string, string>,
   ): void {
     if (!this.client || !isUuid(userId)) return;

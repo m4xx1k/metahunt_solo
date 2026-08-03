@@ -9,9 +9,9 @@ export class PostHogSink implements OnModuleDestroy {
   private readonly client?: PostHog;
 
   constructor(config: ConfigService) {
-    const key = config.get<string>("POSTHOG_API_KEY") ?? "";
+    const key = config.get<string>("POSTHOG_ARCHIVE_API_KEY") ?? "";
     if (key.length === 0) {
-      this.logger.warn("POSTHOG_API_KEY not set — analytics provider dormant.");
+      this.logger.warn("POSTHOG_ARCHIVE_API_KEY not set — archive analytics provider dormant.");
       return;
     }
     this.client = new PostHog(key, {

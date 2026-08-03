@@ -134,7 +134,7 @@ export function TelegramLoginButton({
       // and the token already minted, so dropping it would burn a real session.
       stopped = true;
       login(result);
-      analytics.identifyPerson(result.user.id);
+      analytics.identifyAccount(result.user.id);
       if (flow === "link") {
         analytics.identityLinked("telegram");
       } else {
