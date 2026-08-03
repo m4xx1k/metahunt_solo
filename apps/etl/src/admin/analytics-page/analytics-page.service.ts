@@ -41,6 +41,8 @@ const FUNNEL_STEP_META: Array<{ step: string; label: string }> = [
 interface RosterRow {
   userId: string;
   displayName: string;
+  email: string | null;
+  telegramUsername: string | null;
   providers: string[];
   registeredAt: string | null;
   subscriptions: number;
@@ -55,6 +57,7 @@ interface PostHogPersonSide {
   pageviews: number;
   feedClicks: number;
   digestClicks: number;
+  lastAction: string | null;
 }
 
 function toNumber(value: unknown): number {
@@ -205,6 +208,7 @@ export class AnalyticsPageService {
         pageviews: postHog?.pageviews ?? null,
         feedClicks: postHog?.feedClicks ?? null,
         digestClicks: postHog?.digestClicks ?? null,
+        lastAction: postHog?.lastAction ?? null,
         minutesToRegistration: clampedMinutesBetween(
           postHog?.firstEventAt ?? null,
           row.registeredAt,
@@ -276,7 +280,8 @@ export class AnalyticsPageService {
           max(timestamp) AS last_event_at,
           countIf(event = '$pageview') AS pageviews,
           countIf(event = 'vacancy_outbound_clicked' AND properties.surface = 'web_feed') AS feed_clicks,
-          countIf(event = 'vacancy_outbound_clicked' AND properties.surface = 'telegram_digest') AS digest_clicks
+          countIf(event = 'vacancy_outbound_clicked' AND properties.surface = 'telegram_digest') AS digest_clicks,
+          argMax(event, timestamp) AS last_action
       FROM events
       WHERE timestamp >= now() - INTERVAL 180 DAY
         AND distinct_id IN (${idList})
@@ -299,6 +304,7 @@ export class AnalyticsPageService {
         pageviews: toNumber(row.pageviews),
         feedClicks: toNumber(row.feed_clicks),
         digestClicks: toNumber(row.digest_clicks),
+        lastAction: toStringOrEmpty(row.last_action) || null,
       });
     }
     return map;
@@ -317,6 +323,8 @@ export class AnalyticsPageService {
     const result = await this.db.execute<{
       user_id: string | null;
       display_name: string;
+      email: string | null;
+      telegram_username: string | null;
       providers: string[] | null;
       registered_at: string | null;
       subscriptions: number;
@@ -325,8 +333,13 @@ export class AnalyticsPageService {
       telegram_linked: boolean;
       total: number;
     }>(sql`
-      WITH providers_by_user AS (
-        SELECT user_id AS id, array_agg(DISTINCT provider ORDER BY provider) AS providers
+      WITH identity_by_user AS (
+        SELECT
+          user_id AS id,
+          array_agg(DISTINCT provider ORDER BY provider) AS providers,
+          MAX(NULLIF(username, '')) FILTER (WHERE provider = 'telegram') AS telegram_username,
+          MAX(NULLIF(first_name, '')) AS first_name,
+          MAX(NULLIF(email, '')) AS identity_email
         FROM auth_identities
         GROUP BY user_id
       ),
@@ -344,20 +357,17 @@ export class AnalyticsPageService {
       roster AS (
         SELECT
           u.id AS user_id,
-          COALESCE(ip.display_name, 'Account') AS display_name,
-          COALESCE(pu.providers, ARRAY[]::text[]) AS providers,
+          COALESCE(NULLIF(trim(concat_ws(' ', ip.first_name, ip.telegram_username)), ''), ip.identity_email, u.email, 'Account') AS display_name,
+          COALESCE(ip.identity_email, u.email) AS email,
+          ip.telegram_username,
+          COALESCE(ip.providers, ARRAY[]::text[]) AS providers,
           u.created_at AS registered_at,
           COALESCE(su.subscriptions, 0)::int AS subscriptions,
           COALESCE(su.active_subscriptions, 0)::int AS active_subscriptions,
           su.first_subscription_at,
           COALESCE(su.telegram_linked, false) AS telegram_linked
         FROM users u
-        LEFT JOIN (
-          SELECT user_id, MAX(NULLIF(trim(concat_ws(' ', first_name, username)), '')) AS display_name
-          FROM auth_identities
-          GROUP BY user_id
-        ) ip ON ip.user_id = u.id
-        LEFT JOIN providers_by_user pu ON pu.id = u.id
+        LEFT JOIN identity_by_user ip ON ip.id = u.id
         LEFT JOIN subs_by_user su ON su.user_id = u.id
       ),
       filtered AS (
@@ -385,6 +395,8 @@ export class AnalyticsPageService {
         {
           userId: row.user_id,
           displayName: row.display_name,
+          email: row.email ?? null,
+          telegramUsername: row.telegram_username ?? null,
           providers: row.providers ?? [],
           registeredAt: toIsoOrNull(row.registered_at),
           subscriptions: Number(row.subscriptions),

@@ -59,6 +59,8 @@ export interface AnalyticsPageMetrics {
 export interface AnalyticsPagePerson {
   userId: string;
   displayName: string;
+  email: string | null;
+  telegramUsername: string | null;
   providers: string[];
   registeredAt: string | null;
   subscriptions: number;
@@ -71,6 +73,7 @@ export interface AnalyticsPagePerson {
   pageviews: number | null;
   feedClicks: number | null;
   digestClicks: number | null;
+  lastAction: string | null;
   // Derived; null when either side is missing, and always >= 0 (a negative
   // value would mean the person id was reassigned by a merge).
   minutesToRegistration: number | null;

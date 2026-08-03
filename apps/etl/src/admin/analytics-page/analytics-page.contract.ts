@@ -53,6 +53,8 @@ export interface AnalyticsPagePerson {
   // person_id or an anonymous browser/journey id.
   userId: string;
   displayName: string;
+  email: string | null;
+  telegramUsername: string | null;
   providers: string[];
   registeredAt: string | null;
   subscriptions: number;
@@ -65,6 +67,7 @@ export interface AnalyticsPagePerson {
   pageviews: number | null;
   feedClicks: number | null;
   digestClicks: number | null;
+  lastAction: string | null;
   // Derived, null when either side is missing OR the computed value would be
   // negative (a merged/reassigned person id) — never rendered as negative.
   minutesToRegistration: number | null;

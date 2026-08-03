@@ -251,6 +251,8 @@ describe("AnalyticsPageService", () => {
         {
           userId: "11111111-1111-1111-1111-111111111111",
           displayName: "Ada",
+          email: null,
+          telegramUsername: null,
           providers: ["google"],
           registeredAt: "2026-07-01T00:00:00.000Z",
           subscriptions: 2,
@@ -262,6 +264,7 @@ describe("AnalyticsPageService", () => {
           pageviews: null,
           feedClicks: null,
           digestClicks: null,
+          lastAction: null,
           minutesToRegistration: null,
           minutesToSubscription: null,
         },
@@ -361,7 +364,7 @@ describe("AnalyticsPageService", () => {
       await svc.people({ period: "30d", limit: 50, offset: 0, sort: "registeredAt", dir: "desc" });
 
       const [sqlQuery] = db.execute.mock.calls[0] as [{ queryChunks: Array<{ value: string[] }> }];
-      expect(sqlQuery.queryChunks[0].value[0]).toContain("WITH providers_by_user AS");
+      expect(sqlQuery.queryChunks[0].value[0]).toContain("WITH identity_by_user AS");
     });
 
     it("keeps the total when the requested offset has no rows", async () => {

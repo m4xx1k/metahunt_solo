@@ -17,7 +17,6 @@ import type {
 } from "@/lib/api/analytics-page";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/ui/badges/Badge";
 import { UrlSearch } from "@/ui/inputs/UrlSearch";
 import { Panel } from "@/ui/layout/Panel";
 import { Pagination } from "@/ui/navigation/Pagination";
@@ -36,16 +35,31 @@ function formatMinutes(value: number | null): string {
 }
 
 function PersonIdentity({ row }: { row: AnalyticsPagePerson }) {
+  const telegramLogin = row.providers.includes("telegram");
+  const googleLogin = row.providers.includes("google");
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 w-[18rem] max-w-full">
       <p className="truncate font-medium text-text-primary">{row.displayName}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1">
-        {row.telegramLinked ? <Badge>telegram</Badge> : null}
-        {row.providers.map((provider) => (
-          <Badge key={provider} variant="dark">
-            {provider}
-          </Badge>
-        ))}
+      <div className="mt-1 flex items-center gap-2 overflow-hidden text-2xs">
+        {row.telegramUsername ? (
+          <a
+            className="truncate text-accent underline underline-offset-2"
+            href={`https://t.me/${row.telegramUsername}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            @{row.telegramUsername}
+          </a>
+        ) : row.email ? (
+          <span className="truncate text-text-muted">{row.email}</span>
+        ) : (
+          <span className="text-text-muted">no contact profile</span>
+        )}
+        <span className="shrink-0 text-text-muted">
+          {telegramLogin ? "TG" : ""}
+          {telegramLogin && googleLogin ? " + " : ""}
+          {googleLogin ? "Google" : ""}
+        </span>
       </div>
     </div>
   );
@@ -81,6 +95,19 @@ function PersonDetails({ row, available }: { row: AnalyticsPagePerson; available
         </div>
         <dl className="px-4 py-2">
           <Detail label="registered" value={formatDateTime(row.registeredAt)} />
+          <Detail label="email" value={row.email ?? "—"} />
+          <Detail
+            label="Telegram"
+            value={row.telegramUsername ? `@${row.telegramUsername}` : "not linked"}
+          />
+          <Detail
+            label="login methods"
+            value={row.providers.length ? row.providers.join(" + ") : "—"}
+          />
+          <Detail
+            label="Telegram delivery"
+            value={row.telegramLinked ? "active subscription chat" : "not connected"}
+          />
           <Detail label="first subscription" value={formatDateTime(row.firstSubscriptionAt)} />
           <Detail
             label="active / total subscriptions"
@@ -93,6 +120,10 @@ function PersonDetails({ row, available }: { row: AnalyticsPagePerson; available
               <Detail
                 label="pageviews"
                 value={row.pageviews == null ? "—" : formatCount(row.pageviews)}
+              />
+              <Detail
+                label="last product action"
+                value={row.lastAction?.replaceAll("_", " ") ?? "—"}
               />
               <Detail
                 label="feed clicks"
