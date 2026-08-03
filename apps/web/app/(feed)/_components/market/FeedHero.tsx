@@ -29,13 +29,12 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta, headin
           <h1 className="font-display text-4xl font-bold leading-tight tracking-tight text-text-primary md:text-5xl">
             {heading?.title ?? (
               <>
-                Українські IT-вакансії — <span className="text-accent">в одному списку</span>.
+                Пошук роботи в IT — <span className="text-accent">в одному місці</span>.
               </>
             )}
           </h1>
           <p className="max-w-[560px] font-body text-base leading-[1.55] text-text-secondary md:text-lg">
-            {heading?.subtitle ??
-              "Збираємо з усіх джерел, структуруємо через AI і підбираємо під твоє резюме."}
+            {heading?.subtitle ?? "Нові вакансії з DOU і Djinni, зібрані без повторів."}
           </p>
           <Link
             href="/how-it-works"
