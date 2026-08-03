@@ -34,11 +34,26 @@ function formatMinutes(value: number | null): string {
   return `${minutes}m`;
 }
 
+function formatShortDate(value: string | null): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" })
+    .format(new Date(value))
+    .toUpperCase();
+}
+
+function formatAgo(value: string | null): string {
+  if (!value) return "—";
+  const hours = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 3_600_000));
+  if (hours < 1) return "NOW";
+  if (hours < 24) return `${hours}H AGO`;
+  return `${Math.floor(hours / 24)}D AGO`;
+}
+
 function PersonIdentity({ row }: { row: AnalyticsPagePerson }) {
   const telegramLogin = row.providers.includes("telegram");
   const googleLogin = row.providers.includes("google");
   return (
-    <div className="min-w-0 w-[18rem] max-w-full">
+    <div className="min-w-0 w-[17rem] max-w-full">
       <p className="truncate font-medium text-text-primary">{row.displayName}</p>
       <div className="mt-1 flex items-center gap-2 overflow-hidden text-2xs">
         {row.telegramUsername ? (
@@ -55,7 +70,7 @@ function PersonIdentity({ row }: { row: AnalyticsPagePerson }) {
         ) : (
           <span className="text-text-muted">no contact profile</span>
         )}
-        <span className="shrink-0 text-text-muted">
+        <span className="shrink-0 font-bold text-accent">
           {telegramLogin ? "TG" : ""}
           {telegramLogin && googleLogin ? " + " : ""}
           {googleLogin ? "Google" : ""}
@@ -238,20 +253,17 @@ export function PeopleTable({
         <p className="font-mono text-xs text-text-muted">no accounts found</p>
       ) : null}
 
-      <div className="hidden overflow-hidden border border-border md:block">
-        <table className="w-full table-fixed border-collapse text-left font-mono text-xs">
+      <div className="hidden overflow-x-auto border border-border md:block">
+        <table className="min-w-[1050px] w-full table-fixed border-collapse text-left font-mono text-xs">
           <thead className="bg-bg text-2xs uppercase tracking-[0.12em] text-text-muted">
             <tr className="border-b border-border">
-              <th className="w-[31%] px-4 py-3 font-normal">{sortLink("displayName", "person")}</th>
-              <th className="w-[19%] px-4 py-3 font-normal">
-                {sortLink("registeredAt", "registered")}
+              <th className="w-[290px] px-4 py-3 font-normal">
+                {sortLink("displayName", "person")}
               </th>
-              <th className="w-[15%] px-4 py-3 text-right font-normal">
-                {sortLink("subscriptions", "subs")}
-              </th>
-              <th className="w-[23%] px-4 py-3 font-normal">
-                {sortLink("firstSubscriptionAt", "first sub")}
-              </th>
+              <th className="w-[245px] px-4 py-3 font-normal">contact</th>
+              <th className="w-[175px] px-4 py-3 font-normal">connected</th>
+              <th className="w-[110px] px-4 py-3 font-normal">first visit</th>
+              <th className="w-[120px] px-4 py-3 text-right font-normal">outbound ↕</th>
               <th className="w-14 px-3 py-3" aria-label="Details" />
             </tr>
           </thead>
@@ -265,14 +277,56 @@ export function PeopleTable({
                   <PersonIdentity row={row} />
                 </td>
                 <td className="px-4 py-3 text-text-secondary">
-                  {formatDateTime(row.registeredAt)}
+                  <p className="truncate text-text-primary">
+                    {row.telegramUsername ? `@${row.telegramUsername}` : (row.email ?? "—")}
+                  </p>
+                  <p className="mt-1 text-2xs text-text-muted">
+                    {row.email && row.telegramUsername
+                      ? row.email
+                      : `${row.activeSubscriptions} active subs`}
+                  </p>
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-text-primary">
-                  <span className="font-medium">{row.activeSubscriptions}</span>
-                  <span className="text-text-muted"> / {row.subscriptions}</span>
+                <td className="px-4 py-3">
+                  <span
+                    className={cn(
+                      "inline-flex border px-2 py-1 text-2xs font-bold",
+                      row.providers.includes("telegram")
+                        ? "border-accent bg-accent text-bg"
+                        : "border-border text-text-muted",
+                    )}
+                  >
+                    TG
+                  </span>
+                  <span className="ml-1 inline-flex border border-border px-2 py-1 text-2xs font-bold text-text-primary">
+                    {row.providers.includes("google") ? "G" : "—"}
+                  </span>
+                  <p
+                    className={cn(
+                      "mt-1 text-2xs",
+                      row.telegramLinked ? "text-accent" : "text-text-muted",
+                    )}
+                  >
+                    {row.telegramLinked ? "● delivery on" : "delivery off"}
+                  </p>
                 </td>
                 <td className="px-4 py-3 text-text-secondary">
-                  {formatDateTime(row.firstSubscriptionAt)}
+                  <span
+                    title={formatDateTime(row.firstEventAt)}
+                    className="cursor-help border-b border-dashed border-text-muted"
+                  >
+                    {formatShortDate(row.firstEventAt)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums">
+                  <p className="font-display text-lg font-semibold text-accent">
+                    {formatCount((row.feedClicks ?? 0) + (row.digestClicks ?? 0))}
+                  </p>
+                  <p
+                    title={formatDateTime(row.lastEventAt)}
+                    className="cursor-help text-2xs text-text-muted"
+                  >
+                    {formatAgo(row.lastEventAt)}
+                  </p>
                 </td>
                 <td className="px-3 py-3 text-right">
                   <PersonDetails row={row} available={available} />
