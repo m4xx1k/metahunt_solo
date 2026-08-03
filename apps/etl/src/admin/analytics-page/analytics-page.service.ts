@@ -325,7 +325,7 @@ export class AnalyticsPageService {
       telegram_linked: boolean;
       total: number;
     }>(sql`
-      providers_by_user AS (
+      WITH providers_by_user AS (
         SELECT user_id AS id, array_agg(DISTINCT provider ORDER BY provider) AS providers
         FROM auth_identities
         GROUP BY user_id

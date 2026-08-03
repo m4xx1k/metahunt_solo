@@ -353,6 +353,17 @@ describe("AnalyticsPageService", () => {
       expect(sqlQuery.queryChunks).not.toContain(500);
     });
 
+    it("builds the account roster as a valid CTE query", async () => {
+      const db = { execute: jest.fn().mockResolvedValue({ rows: [] }) };
+      const postHog = postHogMock(false);
+      const svc = await bootstrap(db, postHog);
+
+      await svc.people({ period: "30d", limit: 50, offset: 0, sort: "registeredAt", dir: "desc" });
+
+      const [sqlQuery] = db.execute.mock.calls[0] as [{ queryChunks: Array<{ value: string[] }> }];
+      expect(sqlQuery.queryChunks[0].value[0]).toContain("WITH providers_by_user AS");
+    });
+
     it("keeps the total when the requested offset has no rows", async () => {
       const db = {
         execute: jest.fn().mockResolvedValue({ rows: [{ user_id: null, total: 2 }] }),
