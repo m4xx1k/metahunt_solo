@@ -30,7 +30,7 @@ export function trackIntro(track: TrackCopy): string {
   return `${trackVacancyPhrase(track.count, track.label)} зібрані з DOU і Djinni в один список. Повторні публікації однієї вакансії згорнуті в одну картку, тому ти не переглядаєш те саме двічі. Фільтруй за грейдом, стеком, англійською та форматом роботи — або завантаж резюме, щоб побачити тільки те, що підходить під твій досвід.`;
 }
 
-export const FEED_INDEX_TITLE = "Вакансії в IT: DOU і Djinni в одному списку · metahunt";
+export const FEED_INDEX_TITLE = "[metahunt] — пошук роботи в IT без зайвого шуму";
 export const FEED_INDEX_DESCRIPTION =
-  "Українські IT-вакансії з DOU і Djinni в одному структурованому списку: без дублів, з фільтрами за грейдом і стеком, та підбором під резюме.";
-export const FEED_INDEX_HEADING = "Українські IT-вакансії";
+  "Твій job search OS для українського IT: вакансії з DOU і Djinni в одному місці, без дублів, з радаром нових ролей і добірками в Telegram.";
+export const FEED_INDEX_HEADING = "Пошук роботи в IT — в одному місці";
