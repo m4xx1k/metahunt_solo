@@ -1,5 +1,7 @@
 import type { DrizzleDB, ProductEventSource } from "@metahunt/database";
 
+import type { SubscriptionKind } from "./analytics.types";
+
 export const PRODUCT_EVENT_WRITER = Symbol("PRODUCT_EVENT_WRITER");
 export const ANALYTICS_OUTBOX_WRITER = Symbol("ANALYTICS_OUTBOX_WRITER");
 export const ANALYTICS_SINK = Symbol("ANALYTICS_SINK");
@@ -18,10 +20,19 @@ export interface ProductEventWrite {
   properties: Record<string, unknown>;
 }
 
+// The v2 identity of a subscriber: `users.id` or nothing. A subscription with
+// no linked user is not yet a person and must never be given a stand-in id.
+export interface SubscriberIdentity {
+  userId: string;
+  subscriptionKind: SubscriptionKind;
+}
+
 export interface ProductEventWriter {
   record(event: ProductEventWrite): Promise<void>;
   journeyForSubscription(subscriptionId: string): Promise<string | null>;
   personForJourney(journeyId: string): Promise<string | null>;
+  subscriberForSubscription(subscriptionId: string): Promise<SubscriberIdentity | null>;
+  subscriberForJourney(journeyId: string): Promise<SubscriberIdentity | null>;
 }
 
 export interface AnalyticsOutboxWriter {

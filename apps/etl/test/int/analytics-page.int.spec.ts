@@ -10,7 +10,7 @@ import { makeTestDb } from "./db";
 
 const { subscriptions, users } = schema;
 const ACCOUNT_ID = "11111111-1111-1111-1111-111111111111";
-const TELEGRAM_PERSON_ID = "22222222-2222-2222-2222-222222222222";
+const UNLINKED_PERSON_ID = "22222222-2222-2222-2222-222222222222";
 
 let db: DrizzleDB;
 let pool: Pool;
@@ -38,12 +38,14 @@ beforeEach(async () => {
   );
 });
 
-it("pages the real account and Telegram-only roster while retaining total beyond its final page", async () => {
+// The roster is `FROM users u` — an account is the only thing that is a person.
+// A chat-only subscription is not yet one and must not manufacture a row.
+it("rosters accounts only, and retains total beyond its final page", async () => {
   await db
     .insert(users)
     .values({ id: ACCOUNT_ID, email: "owner@example.test", source: "google-login" });
   await db.insert(subscriptions).values({
-    personId: TELEGRAM_PERSON_ID,
+    personId: UNLINKED_PERSON_ID,
     chatId: "private-chat",
     params: {},
     isActive: true,
@@ -52,18 +54,11 @@ it("pages the real account and Telegram-only roster while retaining total beyond
   await expect(
     service.people({ period: "30d", limit: 50, offset: 0, sort: "displayName", dir: "asc" }),
   ).resolves.toMatchObject({
-    total: 2,
-    rows: expect.arrayContaining([
-      expect.objectContaining({ personId: ACCOUNT_ID, hasAccount: true }),
-      expect.objectContaining({
-        personId: TELEGRAM_PERSON_ID,
-        hasAccount: false,
-        telegramLinked: true,
-      }),
-    ]),
+    total: 1,
+    rows: [expect.objectContaining({ userId: ACCOUNT_ID, email: "owner@example.test" })],
   });
 
   await expect(
     service.people({ period: "30d", limit: 50, offset: 50, sort: "displayName", dir: "asc" }),
-  ).resolves.toEqual({ total: 2, rows: [] });
+  ).resolves.toMatchObject({ total: 1, rows: [] });
 });

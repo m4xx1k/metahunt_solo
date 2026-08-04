@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { AnalyticsJourneyOrigin, DrizzleDB } from "@metahunt/database";
 
-import type { ProductEventWrite, ProductEventWriter } from "./analytics.ports";
+import type { ProductEventWrite, ProductEventWriter, SubscriberIdentity } from "./analytics.ports";
 
 const { analyticsJourneys, productEvents, subscriptions } = schema;
 
@@ -72,4 +72,31 @@ export class ProductEventStore implements ProductEventWriter {
       .where(eq(analyticsJourneys.id, journeyId));
     return journey?.personId ?? null;
   }
+
+  async subscriberForSubscription(subscriptionId: string): Promise<SubscriberIdentity | null> {
+    const [subscription] = await this.db
+      .select({ userId: subscriptions.userId, candidateId: subscriptions.candidateId })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    return toSubscriber(subscription);
+  }
+
+  async subscriberForJourney(journeyId: string): Promise<SubscriberIdentity | null> {
+    // A journey can carry zero or many subscriptions; only an unambiguous one
+    // names a person, so two rows resolve to nobody rather than to a guess.
+    const rows = await this.db
+      .select({ userId: subscriptions.userId, candidateId: subscriptions.candidateId })
+      .from(subscriptions)
+      .where(eq(subscriptions.journeyId, journeyId))
+      .limit(2);
+    return rows.length === 1 ? toSubscriber(rows[0]) : null;
+  }
+}
+
+function toSubscriber(row?: {
+  userId: string | null;
+  candidateId: string | null;
+}): SubscriberIdentity | null {
+  if (!row?.userId) return null;
+  return { userId: row.userId, subscriptionKind: row.candidateId ? "cv" : "feed" };
 }

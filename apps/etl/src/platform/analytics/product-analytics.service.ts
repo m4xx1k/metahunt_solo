@@ -3,9 +3,9 @@ import { ConfigService } from "@nestjs/config";
 
 import { PostHog } from "posthog-node";
 
+import type { OutboundSurface, SubscriptionKind } from "./analytics.types";
+
 type Provider = "telegram" | "google";
-type SubscriptionKind = "feed" | "cv";
-type Surface = "web_feed" | "telegram_digest";
 type DeactivationReason = "user" | "blocked" | "unreachable";
 
 // This is the v2 contract. Keep it intentionally small: payload construction
@@ -67,7 +67,7 @@ export class ProductAnalyticsService implements OnModuleDestroy {
     this.capture(userId, "digest_sent", { subscription_kind: subscriptionKind });
   }
 
-  vacancyOutboundClicked(userId: string, surface: Surface): void {
+  vacancyOutboundClicked(userId: string, surface: OutboundSurface): void {
     this.capture(userId, "vacancy_outbound_clicked", { surface });
   }
 

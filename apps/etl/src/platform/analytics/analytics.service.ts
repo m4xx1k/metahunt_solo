@@ -11,6 +11,7 @@ import {
   type AnalyticsSink,
   type ProductEventWrite,
   type ProductEventWriter,
+  type SubscriberIdentity,
 } from "./analytics.ports";
 import type {
   BotBlockedEvent,
@@ -18,11 +19,13 @@ import type {
   DigestDeliveryFailedEvent,
   DigestEvaluatedEvent,
   DigestSentEvent,
+  OutboundSurface,
   ReactivationMethod,
   SubscriptionProductEvent,
   UnsubscribedEvent,
 } from "./analytics.types";
 import { ANALYTICS_EVENTS, posthogEventName } from "./events";
+import { ProductAnalyticsService } from "./product-analytics.service";
 import {
   botBlockedEvent,
   digestSentEvent,
@@ -41,6 +44,7 @@ export class AnalyticsService {
     @Inject(PRODUCT_EVENT_WRITER) private readonly events: ProductEventWriter,
     @Inject(ANALYTICS_OUTBOX_WRITER) private readonly outbox: AnalyticsOutboxWriter,
     @Inject(ANALYTICS_SINK) private readonly posthog: AnalyticsSink,
+    private readonly productAnalytics: ProductAnalyticsService,
   ) {}
 
   async browserEvent(event: BrowserProductEvent): Promise<void> {
@@ -177,6 +181,10 @@ export class AnalyticsService {
         dedupeKey: `digest_link_clicked:${clickId}`,
         properties: { vacancy_id: vacancyId, surface: "telegram_digest" },
       });
+      await this.captureOutboundClick(
+        () => this.events.subscriberForSubscription(subscriptionId),
+        "telegram_digest",
+      );
       return;
     }
     if (journeyId) {
@@ -195,6 +203,10 @@ export class AnalyticsService {
         // Already logged by record(); swallow so the redirect (already sent
         // by the caller) is never affected by an analytics-write failure.
       }
+      await this.captureOutboundClick(
+        () => this.events.subscriberForJourney(journeyId),
+        "web_feed",
+      );
       return;
     }
     this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundClicked, {
@@ -258,6 +270,25 @@ export class AnalyticsService {
       withInsertId({ ...botBlockedEvent(props), journeyId: props.journeyId }),
       executor,
     );
+  }
+
+  // The v2 half of an outbound click. Silence is the correct output for an
+  // unlinked subscription or an ambiguous journey: a stand-in id is what turned
+  // every click into its own person in the old project.
+  private async captureOutboundClick(
+    resolve: () => Promise<SubscriberIdentity | null>,
+    surface: OutboundSurface,
+  ): Promise<void> {
+    try {
+      const subscriber = await resolve();
+      if (subscriber) this.productAnalytics.vacancyOutboundClicked(subscriber.userId, surface);
+    } catch (error) {
+      this.logger.warn(
+        `outbound click identity lookup failed: surface=${surface} error=${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   private async enqueueSubscriptionEvent(event: SubscriptionProductEvent): Promise<void> {
