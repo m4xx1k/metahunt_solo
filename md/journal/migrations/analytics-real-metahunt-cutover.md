@@ -1,6 +1,6 @@
 # Migration — analytics cutover to `real-metahunt`
 
-**Status:** in progress (blocked at step 2)
+**Status:** in progress (step 2 coded — awaiting the live two-tap verification)
 **Started:** 2026-08-02 · **Owner:** repo owner
 **Goal:** one PostHog project, one identity, five events, two numbers. Then stop.
 
@@ -337,7 +337,7 @@ Traced on branch `fix/analytics-v2-call-sites` (worktree `/home/maxxik/solo/mh-a
 The first branch is the one that matters: it is the Telegram traffic, and it is
 the branch that returns before any v2 capture can happen.
 
-### Blocker found
+### Blocker found — resolved, see "Shipped" below
 
 `AnalyticsService` has **no way to resolve `users.id` from a `subscriptionId`** —
 no store is injected and no such lookup exists anywhere in
@@ -370,6 +370,45 @@ from `product_events` and must keep working.
 `digest_sent`, `account_created`, `signed_in` — all have `ProductAnalyticsService`
 methods already written and simply are not called. These are straightforward once
 the pattern from the redirect path exists.
+
+### Shipped (2026-08-04, branch `fix/analytics-v2-call-sites`)
+
+Correction to the state table above: `account_created` and `signed_in` were
+**already wired** before this branch — `AuthService.captureAuthV2` is called from
+both the Google path (`auth.service.ts`) and the Telegram path
+(`telegram-login.service.ts`). Only the two click/digest events were missing.
+
+Additive, as planned — no ledger write was removed, so the admin dashboard still
+reads `product_events`.
+
+| Change | Where |
+|---|---|
+| `subscriberForSubscription` / `subscriberForJourney` — resolve `users.id` (+ feed/cv kind) from a subscription or an unambiguous journey | `analytics.ports.ts`, `product-event.store.ts` |
+| `ProductAnalyticsService` injected into `AnalyticsService`; both `applyClicked` branches now also call `vacancyOutboundClicked` | `analytics.service.ts` |
+| `digest_sent` captured after the delivery transaction commits | `sent-notifications.service.ts` |
+
+Rules honoured, and worth not re-deriving:
+
+- A subscription with no `user_id` emits nothing. So does a journey that resolves
+  to zero or to two-plus subscriptions — `subscriberForJourney` reads `limit(2)`
+  and returns null unless exactly one row comes back.
+- The digest capture sits **after** `db.transaction` resolves. Inside it, a
+  rolled-back delivery would still have reported a digest that never sent
+  (`flushAt: 1` means the event leaves immediately).
+- The identity lookup is wrapped: a failed lookup logs and drops the capture. The
+  redirect is already sent by then and must never be affected.
+- The third `applyClicked` branch (no subscription, no journey — anonymous web tap)
+  still uses `randomUUID()` on the **legacy** sink with
+  `$process_person_profile: false`. There is no user to resolve there, so it
+  creates no person; it dies with the sink in step 5.
+- `matchScored` untouched, per the note above.
+
+Checks: `tsc --noEmit` clean on `apps/etl/src`; 493 unit tests pass (4 new ones
+cover attributed / unlinked / ambiguous-journey / lookup-failure). Int-test
+constructors updated where the new DI arg reached them. The 10 remaining
+type errors under `test/int/` are pre-existing on `main` (they are one fewer than
+before this branch) — unrelated stale constructor calls in
+`digest-fixture`, `subscription-link-race`, and `product-analytics-ledger`.
 
 ### Verification is unchanged
 

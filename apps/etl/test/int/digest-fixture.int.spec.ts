@@ -14,6 +14,7 @@ import {
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
+import { dormantProductAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 
 const {
@@ -187,7 +188,11 @@ describe("digest fixture flow", () => {
   it("delivers once and records the ledger so a repeat sends no duplicate", async () => {
     const subscription = await seedActiveSubscription();
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
+    const sent = new SentNotificationsService(
+      db,
+      { enqueueDigestSent: jest.fn() } as never,
+      dormantProductAnalytics(),
+    );
     const service = makeDigest(
       new SubscriptionsService(
         db,
@@ -219,7 +224,11 @@ describe("digest fixture flow", () => {
     const subA = await seedActiveSubscription("shared-chat");
     const subB = await seedActiveSubscription("shared-chat");
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
+    const sent = new SentNotificationsService(
+      db,
+      { enqueueDigestSent: jest.fn() } as never,
+      dormantProductAnalytics(),
+    );
     const telegram = new FixtureTelegram();
     const service = makeDigest(
       new SubscriptionsService(
@@ -242,7 +251,11 @@ describe("digest fixture flow", () => {
   it("does not record a vacancy when delivery fails, then sends it on retry", async () => {
     const subscription = await seedActiveSubscription();
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
+    const sent = new SentNotificationsService(
+      db,
+      { enqueueDigestSent: jest.fn() } as never,
+      dormantProductAnalytics(),
+    );
     const telegram = new FixtureTelegram();
     telegram.failNext = true;
     const service = makeDigest(
@@ -277,7 +290,11 @@ describe("digest fixture flow", () => {
   it("does nothing after a subscription is paused", async () => {
     const subscription = await seedActiveSubscription();
     const vacancyId = await seedVacancy();
-    const sent = new SentNotificationsService(db, { enqueueDigestSent: jest.fn() } as never);
+    const sent = new SentNotificationsService(
+      db,
+      { enqueueDigestSent: jest.fn() } as never,
+      dormantProductAnalytics(),
+    );
     const telegram = new FixtureTelegram();
     const service = makeDigest(
       new SubscriptionsService(

@@ -19,6 +19,7 @@ import { ProductEventStore } from "../../src/platform/analytics/product-event.st
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
+import { dormantProductAnalytics } from "./analytics";
 import { makeTestDb } from "./db";
 
 const { analyticsJourneys, authIdentities, productEvents, subscriptions, users } = schema;
@@ -107,10 +108,16 @@ describe("first-party product analytics ledger", () => {
     const alias = jest.fn();
     const sink: AnalyticsSink = { capture, alias };
     const outbox = new AnalyticsOutboxStore(db);
-    const analytics = new AnalyticsService(new ProductEventStore(db), outbox, sink);
+    const analytics = new AnalyticsService(
+      new ProductEventStore(db),
+      outbox,
+      sink,
+      dormantProductAnalytics(),
+    );
     const subscriptionsService = new SubscriptionsService(
       db,
       analytics,
+      dormantProductAnalytics(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
     const dashboard = new ProductAnalyticsService(db);

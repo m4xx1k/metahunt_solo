@@ -3,9 +3,12 @@ import type {
   AnalyticsSink,
   ProductEventWrite,
   ProductEventWriter,
+  SubscriberIdentity,
 } from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
+import type { OutboundSurface } from "./analytics.types";
 import { ANALYTICS_EVENTS } from "./events";
+import type { ProductAnalyticsService } from "./product-analytics.service";
 
 describe("AnalyticsService", () => {
   const record = jest.fn<Promise<void>, [ProductEventWrite]>();
@@ -13,14 +16,24 @@ describe("AnalyticsService", () => {
   const drain = jest.fn<Promise<ProductEventWrite[]>, [number]>();
   const journeyForSubscription = jest.fn<Promise<string | null>, [string]>();
   const personForJourney = jest.fn<Promise<string | null>, [string]>();
+  const subscriberForSubscription = jest.fn<Promise<SubscriberIdentity | null>, [string]>();
+  const subscriberForJourney = jest.fn<Promise<SubscriberIdentity | null>, [string]>();
   const capture = jest.fn<void, [string, string, Record<string, unknown>]>();
   const alias = jest.fn<void, [string, string]>();
+  const vacancyOutboundClicked = jest.fn<void, [string, OutboundSurface]>();
 
   function makeService(): AnalyticsService {
-    const events: ProductEventWriter = { record, journeyForSubscription, personForJourney };
+    const events: ProductEventWriter = {
+      record,
+      journeyForSubscription,
+      personForJourney,
+      subscriberForSubscription,
+      subscriberForJourney,
+    };
     const outbox: AnalyticsOutboxWriter = { enqueue, drain };
     const sink: AnalyticsSink = { capture, alias };
-    return new AnalyticsService(events, outbox, sink);
+    const productAnalytics = { vacancyOutboundClicked } as unknown as ProductAnalyticsService;
+    return new AnalyticsService(events, outbox, sink, productAnalytics);
   }
 
   beforeEach(() => {
@@ -29,6 +42,8 @@ describe("AnalyticsService", () => {
     enqueue.mockResolvedValue();
     journeyForSubscription.mockResolvedValue("journey-1");
     personForJourney.mockResolvedValue("person-1");
+    subscriberForSubscription.mockResolvedValue(null);
+    subscriberForJourney.mockResolvedValue(null);
   });
 
   it("summarizes subscription filters without sending their values", async () => {
@@ -202,6 +217,54 @@ describe("AnalyticsService", () => {
         $process_person_profile: false,
       }),
     );
+  });
+
+  it("attributes a digest tap to the subscription's user", async () => {
+    const service = makeService();
+    subscriberForSubscription.mockResolvedValue({
+      userId: "33333333-3333-4333-8333-333333333333",
+      subscriptionKind: "feed",
+    });
+
+    await service.applyClicked("vacancy-1", "subscription-1");
+
+    expect(vacancyOutboundClicked).toHaveBeenCalledWith(
+      "33333333-3333-4333-8333-333333333333",
+      "telegram_digest",
+    );
+  });
+
+  it("emits nothing for a digest tap on a subscription with no linked user", async () => {
+    const service = makeService();
+
+    await service.applyClicked("vacancy-1", "subscription-1");
+
+    expect(enqueue).toHaveBeenCalled();
+    expect(vacancyOutboundClicked).not.toHaveBeenCalled();
+  });
+
+  it("attributes a feed tap when the journey resolves to a single subscriber", async () => {
+    const service = makeService();
+    subscriberForJourney.mockResolvedValue({
+      userId: "44444444-4444-4444-8444-444444444444",
+      subscriptionKind: "cv",
+    });
+
+    await service.applyClicked("vacancy-1", undefined, "journey-2");
+
+    expect(subscriberForJourney).toHaveBeenCalledWith("journey-2");
+    expect(vacancyOutboundClicked).toHaveBeenCalledWith(
+      "44444444-4444-4444-8444-444444444444",
+      "web_feed",
+    );
+  });
+
+  it("keeps the outbound click alive when the identity lookup fails", async () => {
+    const service = makeService();
+    subscriberForSubscription.mockRejectedValueOnce(new Error("database unavailable"));
+
+    await expect(service.applyClicked("vacancy-1", "subscription-1")).resolves.toBeUndefined();
+    expect(vacancyOutboundClicked).not.toHaveBeenCalled();
   });
 
   it("keeps the redirect's fire-and-forget call safe when the journey ledger write fails", async () => {

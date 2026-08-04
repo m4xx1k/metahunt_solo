@@ -5,7 +5,9 @@ import { and, asc, eq, gt, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DigestDelivery, DigestProfileType, DrizzleDB } from "@metahunt/database";
 
+import type { SubscriberIdentity } from "../../platform/analytics/analytics.ports";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
+import { ProductAnalyticsService } from "../../platform/analytics/product-analytics.service";
 
 const { digestDeliveries, sentNotifications, subscriptions, vacancies } = schema;
 
@@ -30,6 +32,7 @@ export class SentNotificationsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
+    private readonly productAnalytics: ProductAnalyticsService,
   ) {}
 
   /**
@@ -140,15 +143,19 @@ export class SentNotificationsService {
     completesDelivery = false,
   ): Promise<void> {
     if (vacancyIds.length === 0) return;
-    await this.db.transaction(async (tx) => {
+    const subscriber = await this.db.transaction(async (tx) => {
       const inserted = await tx
         .insert(sentNotifications)
         .values(vacancyIds.map((vacancyId) => ({ subscriptionId, vacancyId })))
         .onConflictDoNothing()
         .returning({ vacancyId: sentNotifications.vacancyId });
-      if (!delivery || inserted.length === 0) return;
+      if (!delivery || inserted.length === 0) return null;
       const [subscription] = await tx
-        .select({ journeyId: subscriptions.journeyId })
+        .select({
+          journeyId: subscriptions.journeyId,
+          userId: subscriptions.userId,
+          candidateId: subscriptions.candidateId,
+        })
         .from(subscriptions)
         .where(eq(subscriptions.id, subscriptionId));
       if (subscription?.journeyId) {
@@ -172,6 +179,15 @@ export class SentNotificationsService {
           ...(completesDelivery ? { status: "completed" as const, completedAt: sql`now()` } : {}),
         })
         .where(eq(digestDeliveries.id, delivery.id));
+      if (!completesDelivery || !subscription?.userId) return null;
+      return {
+        userId: subscription.userId,
+        subscriptionKind: subscription.candidateId ? "cv" : "feed",
+      } satisfies SubscriberIdentity;
     });
+    // Captured after commit: a rolled-back delivery must not report a digest
+    // that was never sent. An unlinked subscription emits nothing.
+    if (subscriber)
+      this.productAnalytics.digestSent(subscriber.userId, subscriber.subscriptionKind);
   }
 }
