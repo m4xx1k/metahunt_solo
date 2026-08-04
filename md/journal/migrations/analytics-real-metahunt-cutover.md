@@ -423,3 +423,27 @@ the current code prevents from ever happening.
 
 Until this ships, DAU is authenticated-only by construction and any landing-page
 funnel will read as zero regardless of real traffic.
+
+### Still zero while signed in — the cookie reset
+
+An authenticated browsing session after the key change still produced no events,
+including no `$identify`. Leading explanation:
+
+The `pageViewed` gate reads `posthog.get_property("$user_id")`, which lives in the
+PostHog cookie. **Changing the project key changes the cookie namespace**, so every
+piece of identify state from the old project is gone. A restored login session
+does not call `identify()` again — only an actual login does. The gate therefore
+stays closed permanently for already-signed-in users, and nothing is ever emitted.
+
+**Test that distinguishes it:** sign out, sign back in. That forces
+`identify(users.id)`. Expect `$identify` plus the login event in Activity.
+
+If even a fresh login emits nothing, the cause is instead the capture allow-list —
+`capturePostHogEvent` drops any event not in `PRODUCT_BROWSER_EVENTS`
+(`use-analytics.ts:72`), and the sibling browser-capture helper at
+`use-analytics.ts:55-63` is currently a no-op stub (`void name; void properties;
+return;`). Both need reading before changing anything.
+
+Either way the conclusion is the same: the browser layer accumulated three
+independent gates on top of each other, and the fix is to remove them rather than
+add a fourth path around them.
