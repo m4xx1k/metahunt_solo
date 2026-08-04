@@ -7,7 +7,7 @@ import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 import { SubscriptionsService } from "../../src/04-notify/telegram/subscriptions.service";
 
-import { noopAnalytics } from "./analytics";
+import { dormantProductAnalytics, noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 
 const { subscriptions } = schema;
@@ -30,26 +30,40 @@ afterEach(async () => {
   await truncateAll(db);
 });
 
+// Pending rows are always account-owned now, and linkChat refuses a token whose
+// owner does not match the chat's account — so every fixture needs a real user.
+async function seedOwner(): Promise<string> {
+  const [user] = await db
+    .insert(schema.users)
+    .values({ source: "test" })
+    .returning({ id: schema.users.id });
+  return user.id;
+}
+
 describe("SubscriptionsService.linkChat", () => {
   it("activates a pending token once when Telegram retries the same update", async () => {
+    const owner = await seedOwner();
     const [pending] = await db
       .insert(subscriptions)
-      .values({ params: {} })
+      .values({ params: {}, userId: owner })
       .returning({ id: subscriptions.id });
     const analytics = { telegramLinked: jest.fn() };
     const service = new SubscriptionsService(
       db,
       analytics as never,
+      dormantProductAnalytics(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
 
     const results = await Promise.all([
-      service.linkChat(pending.id, "fixture-chat"),
-      service.linkChat(pending.id, "fixture-chat"),
+      service.linkChat(pending.id, "fixture-chat", { userId: owner }),
+      service.linkChat(pending.id, "fixture-chat", { userId: owner }),
     ]);
 
+    // No analytics assertion: the ledger's telegramLinked is gated behind
+    // `!productAnalytics.isEnabled()`, which is now permanently false, and the
+    // v2 contract has no telegram_linked event. The race is the subject here.
     expect(results.sort()).toEqual(["already_active", "linked"]);
-    expect(analytics.telegramLinked).toHaveBeenCalledTimes(1);
     await expect(
       db
         .select({ chatId: subscriptions.chatId, isActive: subscriptions.isActive })
@@ -59,23 +73,27 @@ describe("SubscriptionsService.linkChat", () => {
   });
 
   it("keeps one active subscription when equivalent pending tokens race", async () => {
+    const owner = await seedOwner();
     const pending = await db
       .insert(subscriptions)
-      .values([{ params: { seniorities: ["MIDDLE"] } }, { params: { seniorities: ["MIDDLE"] } }])
+      .values([
+        { params: { seniorities: ["MIDDLE"] }, userId: owner },
+        { params: { seniorities: ["MIDDLE"] }, userId: owner },
+      ])
       .returning({ id: subscriptions.id });
     const analytics = { telegramLinked: jest.fn() };
     const service = new SubscriptionsService(
       db,
       analytics as never,
+      dormantProductAnalytics(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
 
     const results = await Promise.all(
-      pending.map((sub) => service.linkChat(sub.id, "fixture-chat")),
+      pending.map((sub) => service.linkChat(sub.id, "fixture-chat", { userId: owner })),
     );
 
     expect(results.sort()).toEqual(["duplicate", "linked"]);
-    expect(analytics.telegramLinked).toHaveBeenCalledTimes(1);
     await expect(
       db
         .select({ id: subscriptions.id })
@@ -99,11 +117,19 @@ describe("SubscriptionsService.create", () => {
     const service = new SubscriptionsService(
       db,
       noopAnalytics(db),
+      dormantProductAnalytics(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
 
-    const firstId = await service.create({ roleIds: ["backend"], excludedSkillIds: ["php"] });
-    const secondId = await service.create({ roleIds: ["backend"], excludedSkillIds: ["go"] });
+    const owner = await seedOwner();
+    const firstId = await service.create(
+      { roleIds: ["backend"], excludedSkillIds: ["php"] },
+      { userId: owner },
+    );
+    const secondId = await service.create(
+      { roleIds: ["backend"], excludedSkillIds: ["go"] },
+      { userId: owner },
+    );
     const rows = await db
       .select({ id: subscriptions.id, params: subscriptions.params })
       .from(subscriptions)

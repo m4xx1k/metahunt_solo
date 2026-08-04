@@ -25,13 +25,6 @@ export function countsAsLastAction(event: AnalyticsEventDoc): boolean {
 
 export const EVENT_CATALOG: AnalyticsEventDoc[] = [
   {
-    name: "page_viewed",
-    label: "page view",
-    actor: "user",
-    sink: "posthog-only",
-    means: "opened a classified route; PostHog owns path analysis",
-  },
-  {
     name: "landing_view",
     label: "landing view",
     actor: "user",
@@ -235,15 +228,15 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     means: "that provider already belongs to another account",
   },
   {
-    name: "logged_in",
-    label: "logged in",
+    name: "signed_in",
+    label: "signed in",
     actor: "user",
     sink: "posthog-only",
     means: "signed in with any provider",
   },
   {
-    name: "signup",
-    label: "signup",
+    name: "account_created",
+    label: "account created",
     actor: "user",
     sink: "posthog-only",
     means: "first-ever sign-in for this account",

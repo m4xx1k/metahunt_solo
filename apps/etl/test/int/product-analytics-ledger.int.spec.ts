@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { asc, eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -10,19 +10,11 @@ import {
   PRODUCT_FUNNEL_STEPS,
   type ProductFunnelStep,
 } from "../../src/admin/product-analytics/product-analytics.contract";
-import { SubscriptionsService } from "../../src/04-notify/telegram/subscriptions.service";
-import type { AnalyticsSink } from "../../src/platform/analytics/analytics.ports";
-import { AnalyticsOutboxStore } from "../../src/platform/analytics/analytics-outbox.store";
-import { AnalyticsService } from "../../src/platform/analytics/analytics.service";
 import { ANALYTICS_EVENTS } from "../../src/platform/analytics/events";
-import { ProductEventStore } from "../../src/platform/analytics/product-event.store";
-import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
-import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
-import { dormantProductAnalytics } from "./analytics";
 import { makeTestDb } from "./db";
 
-const { analyticsJourneys, authIdentities, productEvents, subscriptions, users } = schema;
+const { analyticsJourneys, productEvents, subscriptions } = schema;
 
 let db: DrizzleDB;
 let pool: Pool;
@@ -103,115 +95,14 @@ afterEach(async () => {
 });
 
 describe("first-party product analytics ledger", () => {
-  it("keeps browser, API, Telegram, and worker events on one journey", async () => {
-    const capture = jest.fn();
-    const alias = jest.fn();
-    const sink: AnalyticsSink = { capture, alias };
-    const outbox = new AnalyticsOutboxStore(db);
-    const analytics = new AnalyticsService(
-      new ProductEventStore(db),
-      outbox,
-      sink,
-      dormantProductAnalytics(),
-    );
-    const subscriptionsService = new SubscriptionsService(
-      db,
-      analytics,
-      dormantProductAnalytics(),
-      new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
-    );
-    const dashboard = new ProductAnalyticsService(db);
-    const journeyId = randomUUID();
-    const browserEventId = randomUUID();
-    const [user] = await db.insert(users).values({ source: "test" }).returning({ id: users.id });
-    await db.insert(authIdentities).values({
-      userId: user.id,
-      provider: "telegram",
-      providerUserId: "fixture-chat",
-    });
-
-    await analytics.browserEvent({
-      journeyId,
-      eventId: browserEventId,
-      name: ANALYTICS_EVENTS.landingView,
-      occurredAt: new Date(),
-      properties: { landing_variant: "backend-radar" },
-    });
-    await analytics.browserEvent({
-      journeyId,
-      eventId: browserEventId,
-      name: ANALYTICS_EVENTS.landingView,
-      occurredAt: new Date(),
-      properties: { landing_variant: "backend-radar" },
-    });
-    await expect(
-      db
-        .select({ personId: analyticsJourneys.personId })
-        .from(analyticsJourneys)
-        .where(eq(analyticsJourneys.id, journeyId)),
-    ).resolves.toEqual([{ personId: journeyId }]);
-
-    const subscriptionId = await subscriptionsService.create(
-      { seniority: "MIDDLE" },
-      { journeyId },
-    );
-    await expect(subscriptionsService.linkChat(subscriptionId, "fixture-chat")).resolves.toBe(
-      "linked",
-    );
-    await analytics.activationValueShown(subscriptionId, 3, 3);
-    await analytics.digestEvaluated({
-      subscriptionId,
-      matches: 3,
-      isFirstDigest: true,
-      profileType: "feed",
-      evaluationId: `digest_evaluated:${randomUUID()}`,
-    });
-    await analytics.digestSent({
-      subscriptionId,
-      vacancies: 3,
-      pages: 1,
-      deliveryId: `digest_sent:${randomUUID()}`,
-      isFirstDigest: true,
-      profileType: "feed",
-    });
-    await outbox.drain(100);
-
-    const [journey] = await db
-      .select({ origin: analyticsJourneys.origin, personId: analyticsJourneys.personId })
-      .from(analyticsJourneys)
-      .where(eq(analyticsJourneys.id, journeyId));
-    const [subscription] = await db
-      .select({ journeyId: subscriptions.journeyId, userId: subscriptions.userId })
-      .from(subscriptions)
-      .where(eq(subscriptions.id, subscriptionId));
-    const events = await db
-      .select({ name: productEvents.name, journeyId: productEvents.journeyId })
-      .from(productEvents)
-      .orderBy(asc(productEvents.occurredAt));
-    const overview = await dashboard.overview("all");
-
-    expect(journey.origin).toBe("browser");
-    expect(journey.personId).toBe(user.id);
-    expect(subscription.journeyId).toBe(journeyId);
-    expect(subscription.userId).toBe(user.id);
-    expect(events).toHaveLength(6);
-    expect(new Set(events.map((event) => event.journeyId))).toEqual(new Set([journeyId]));
-    expect(events.map((event) => event.name)).toEqual(
-      expect.arrayContaining([
-        ANALYTICS_EVENTS.landingView,
-        ANALYTICS_EVENTS.subscriptionCreated,
-        ANALYTICS_EVENTS.telegramLinked,
-        ANALYTICS_EVENTS.activationValueShown,
-        ANALYTICS_EVENTS.digestEvaluated,
-        ANALYTICS_EVENTS.digestSent,
-      ]),
-    );
-    expect(overview.identity.subscriptionsWithoutJourney).toBe(0);
-    expect(overview.identity.trackedLinkedWithoutEvent).toBe(0);
-    expect(overview.identity.trackedDeliveryWithoutEvent).toBe(0);
-    expect(overview.identity.accountLinkedJourneys).toBe(1);
-    expect(overview.recentJourneys[0]?.id).toBe(journeyId);
-  });
+  // Removed: the live create -> journey -> ledger path this asserted is
+  // deliberately dead. SubscriptionsService.create computes
+  // `journeyId = isEnabled() ? null : ...`, and isEnabled() is hardcoded true,
+  // so no journey row, no subscriptions.journey_id, and no subscription_created
+  // ledger write happens for a new subscription. Same gate silences
+  // telegram_linked and the journey->person stitch in linkChat. The remaining
+  // tests here seed the ledger directly and still describe real dashboard
+  // behaviour. See md/journal/migrations/analytics-real-metahunt-cutover.md.
 
   it("counts each step independently for the selected journey cohort", async () => {
     const dashboard = new ProductAnalyticsService(db);

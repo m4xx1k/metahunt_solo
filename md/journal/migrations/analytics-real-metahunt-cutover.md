@@ -410,6 +410,34 @@ type errors under `test/int/` are pre-existing on `main` (they are one fewer tha
 before this branch) — unrelated stale constructor calls in
 `digest-fixture`, `subscription-link-race`, and `product-analytics-ledger`.
 
+### Found while going green: the ledger is already off for new subscriptions
+
+Not caused by this branch — it is the state of `main`, and it corrects the
+"additive, the admin dashboard keeps working" assumption above.
+
+`ProductAnalyticsService.isEnabled()` returns a hardcoded `true`. Every legacy
+branch in `subscriptions.service.ts` is guarded by `!isEnabled()`, so all of them
+are dead code:
+
+- `create()` computes `journeyId = isEnabled() ? null : …` → **no** journey row,
+  `subscriptions.journey_id` stays null, and no `subscription_created` reaches
+  `product_events`.
+- `linkChat()` writes no `telegram_linked` and never stitches
+  `analytics_journeys.person_id` to `users.id`.
+
+Two consequences worth knowing before step 3:
+
+1. The admin funnel is already starved for anything created after that change —
+   it reads `product_events`, which new subscriptions no longer feed. Deleting it
+   in step 3 removes a screen that is largely empty anyway.
+2. `subscriberForJourney` (the web_feed half of step 2) will rarely resolve,
+   because new rows have a null `journey_id`. The telegram_digest half is
+   unaffected — it goes through `subscriptions.id` directly, which is the branch
+   that carries the traffic.
+
+The `!isEnabled()` branches should be deleted outright in step 5 rather than left
+looking live.
+
 ### Verification is unchanged
 
 Two taps on your own digest link → two `vacancy_outbound_clicked` in Activity →

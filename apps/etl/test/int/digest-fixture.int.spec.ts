@@ -197,6 +197,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
+        dormantProductAnalytics(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
@@ -234,6 +235,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
+        dormantProductAnalytics(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
@@ -262,6 +264,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
+        dormantProductAnalytics(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
@@ -300,6 +303,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
+        dormantProductAnalytics(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
