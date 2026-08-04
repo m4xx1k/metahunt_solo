@@ -25,8 +25,10 @@ export function PostHogProvider({ children }: PropsWithChildren) {
       ui_host: "https://eu.posthog.com",
       person_profiles: "identified_only",
       capture_pageview: false,
-      // No noisy DOM-click firehose; the frozen product contract is intentionally small.
-      autocapture: false,
+      // Anonymous outbound clicks have no users.id, so the server cannot name
+      // them. Autocapture gives them an anonymous distinct_id that identify()
+      // merges into the person on login — the one path that reaches them.
+      autocapture: true,
       // The shareable ?cv=<uuid> is a bearer capability — redact it from
       // auto-captured URL properties so it never lands in analytics.
       sanitize_properties: (props) => {

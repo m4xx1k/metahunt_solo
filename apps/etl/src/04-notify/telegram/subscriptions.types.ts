@@ -5,7 +5,6 @@ export interface CreateSubscriptionOptions {
   // A subscription is product state for an account. The public API supplies
   // this from its JWT; internal callers must do the same explicitly.
   userId: string;
-  journeyId?: string;
 }
 
 export type LinkResult = "linked" | "already_active" | "duplicate" | "not_found";
