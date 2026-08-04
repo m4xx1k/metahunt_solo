@@ -375,3 +375,51 @@ the pattern from the redirect path exists.
 
 Two taps on your own digest link → two `vacancy_outbound_clicked` in Activity →
 identical `distinct_id` equal to your `users.id` → one row in Persons.
+
+---
+
+## Why no `$pageview` arrived after the web cutover (2026-08-04)
+
+**The cutover is fine.** Vercel shipped a Production build 20 minutes before the
+test and reported Ready, so the new key is live. Nothing arrived because the web
+SDK is configured never to record an anonymous visit.
+
+Two independent gates, both deliberate:
+
+| Location | Code | Effect |
+|---|---|---|
+| `apps/web/lib/analytics/posthog-provider.tsx:27` | `capture_pageview: false` | PostHog's automatic pageview is off |
+| `apps/web/lib/analytics/use-analytics.ts:88` | `if (!posthog?.get_property("$user_id")) return;` | the manual `page_viewed` is dropped unless the visitor is already identified |
+
+Together: **a logged-out visitor emits zero events.** Opening the site while
+signed out is not a valid smoke test and never was.
+
+### Working smoke test
+
+Sign in first, then open a page, then watch **Activity**. An authenticated visit
+produces `page_viewed`; an anonymous one produces nothing by design.
+
+### Why this is a product problem, not just a testing inconvenience
+
+The stated reason for gate 2 is "DAU is authenticated `users.id` only". The cost
+is that the entire top of the funnel is invisible: arrivals, bounces, and every
+visitor who reads the landing page and leaves. That is precisely the segment
+behind the current ~0.2% click-through problem — it cannot be measured while this
+gate exists.
+
+PostHog is built for this: anonymous visitors get an anonymous distinct id, and
+`identify(users.id)` on login merges that history into the person retroactively.
+Nothing is lost by capturing anonymous pageviews, and the merge is exactly what
+the current code prevents from ever happening.
+
+**Recommended, in the taxonomy PR:**
+
+1. Delete the `$user_id` guard in `pageViewed`.
+2. Set `capture_pageview: true` and delete the bespoke `page_viewed` /
+   `landing_view` events — automatic `$pageview` carries the path already, which
+   is what makes path-filtered funnels work without deploys.
+3. Keep `identify(users.id)` on login exactly as it is. It already does the right
+   thing and is the mechanism that stitches the anonymous history to the person.
+
+Until this ships, DAU is authenticated-only by construction and any landing-page
+funnel will read as zero regardless of real traffic.
