@@ -70,9 +70,9 @@ export const copy = {
     header: (count: number, window: string, filter: string, pager: string): string =>
       `⌖ <b>${count}</b> нових${window}${filter}${pager}`,
     window: (days: number): string => ` за ${days} дн`,
-    reservation: "🪖 <b>бронь</b>",
-    noTest: "🧪 <b>без тесту</b>",
-    hasTest: "🧪 <b>тестове</b>",
+    reservation: "<b>бронь</b>",
+    noTest: "<b>без тесту</b>",
+    hasTest: "<b>тестове</b>",
   },
   describe: {
     byCv: "за резюме",

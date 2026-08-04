@@ -4,6 +4,25 @@
 **Status:** in-progress
 **Started:** 2026-06-03 · **Closed:** —
 
+## Update — 2026-08-04
+
+Everything below T6/T7 has since shipped and is live in prod (scheduled auto-send via
+`NotifySchedulerService` + `notifySubscribersWorkflow`, `MAX_VACANCY_MESSAGES_PER_DIGEST` cap) —
+this tracker just wasn't kept current. Continuing here on branch `fix/tg-digest-one-per-message`:
+
+- **Pagination changed: one vacancy per Telegram message**, not packed ~8/message under a
+  char budget. Supersedes the "Digest paging (T5/T6)" decision below. Per-chat send is now
+  throttled at 1.2s (`SEND_PER_CHAT_INTERVAL_MS` in `telegram.service.ts`), first message in a
+  batch notifies, follow-ups are silent (`disable_notification`).
+- Card format reworked: absolute Kyiv timestamps instead of relative "X тому", compact
+  `co/ctx/req/sig/time` line prefixes instead of emoji, `/vacancy/:slug` web link alongside the
+  apply link. See `digest.renderer.ts` for the current shape — this doc's "Digest rendering (T5)"
+  section below is the *original* shipped version, not current.
+- Added `DigestService.debugSend(chatId, count)` + `POST /digest/debug-send` (admin-only,
+  `OperatorApi`) — samples random real vacancies via `FeedService.search`, renders them through
+  the same `paginateDigest` path, sends straight to `chatId`. No `sent_notifications` write, no
+  subscription needed — a repeatable format probe for local testing.
+
 ## Status snapshot — 2026-06-03
 
 **Shipped & working on `feat/tg-notifications` (8 commits, not merged):** subscribe → link →

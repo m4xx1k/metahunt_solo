@@ -1,5 +1,18 @@
-import { Controller, Get, NotFoundException, Param, Post } from "@nestjs/common";
-import { ApiNotFoundResponse, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+} from "@nestjs/common";
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from "@nestjs/swagger";
 
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
@@ -39,5 +52,19 @@ export class DigestController {
   @ApiOkResponse({ description: "Delivery count." })
   async runOne(@Param("subscriptionId") subscriptionId: string): Promise<{ sent: number }> {
     return { sent: await this.digest.deliver(subscriptionId) };
+  }
+
+  /**
+   * Send random real vacancies straight to `chatId` in the live digest format —
+   * no subscription, no `sent_notifications` write. Format-probe for local/manual
+   * testing; `count` defaults to 3, capped at 10. `{ sent }` = messages sent.
+   */
+  @Post("debug-send")
+  @ApiOperation({ summary: "Send randomly-sampled vacancies to a chat, bypassing subscriptions" })
+  @ApiOkResponse({ description: "Messages sent." })
+  @ApiBadRequestResponse({ description: "chatId missing.", type: ApiErrorResponseDto })
+  async debugSend(@Body() body: { chatId?: string; count?: number }): Promise<{ sent: number }> {
+    if (!body?.chatId) throw new BadRequestException("chatId is required");
+    return { sent: await this.digest.debugSend(body.chatId, body.count) };
   }
 }

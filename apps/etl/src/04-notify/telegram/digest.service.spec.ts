@@ -2,6 +2,7 @@ import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
+import { FeedService } from "../../03-discovery/feed/feed.service";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 
 import { DigestService } from "./digest.service";
@@ -72,6 +73,7 @@ describe("DigestService", () => {
   const digestDeliveryFailed = jest.fn();
   const recordUnreachableDelivery = jest.fn();
   const clearUnreachable = jest.fn();
+  const search = jest.fn();
   let service: DigestService;
 
   beforeEach(async () => {
@@ -88,16 +90,20 @@ describe("DigestService", () => {
       completedAt: null,
     }));
     record.mockReset().mockResolvedValue(undefined);
-    sendMessage.mockReset().mockResolvedValue(undefined);
+    sendMessage.mockReset().mockResolvedValue(1);
     digestEvaluated.mockReset();
     digestDeliveryFailed.mockReset();
     recordUnreachableDelivery.mockReset().mockResolvedValue(undefined);
     clearUnreachable.mockReset().mockResolvedValue(undefined);
+    search.mockReset().mockResolvedValue({ items: [], page: 1, pageSize: 50, total: 0 });
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         DigestService,
-        { provide: ConfigService, useValue: { get: () => BASE } },
+        {
+          provide: ConfigService,
+          useValue: { get: (key: string) => (key === "PUBLIC_BASE_URL" ? BASE : undefined) },
+        },
         { provide: SubscriptionMatcherService, useValue: { matchNew } },
         {
           provide: SubscriptionsService,
@@ -112,6 +118,7 @@ describe("DigestService", () => {
           provide: AnalyticsService,
           useValue: { digestEvaluated, digestDeliveryFailed },
         },
+        { provide: FeedService, useValue: { search } },
       ],
     }).compile();
     service = moduleRef.get(DigestService);
@@ -151,7 +158,9 @@ describe("DigestService", () => {
 
       expect(matchNew).toHaveBeenCalledWith(expect.objectContaining({ id: "sub-1" }), "chat-1");
       expect(sendMessage).toHaveBeenCalledTimes(1);
-      expect(sendMessage).toHaveBeenCalledWith("chat-1", expect.any(String));
+      expect(sendMessage).toHaveBeenCalledWith("chat-1", expect.any(String), {
+        disableNotification: false,
+      });
       expect(record).toHaveBeenCalledWith(
         "sub-1",
         ["v1"],
@@ -171,14 +180,18 @@ describe("DigestService", () => {
       );
     });
 
-    it("splits a large match into multiple sent pages", async () => {
+    it("sends one vacancy per message and silences follow-up messages", async () => {
       getActiveById.mockResolvedValue(activeSub());
       const items = Array.from({ length: 11 }, (_, i) => createVacancy({ id: `v${i}` }));
       matchNew.mockResolvedValue(digestMatch(items, 11));
 
-      await expect(service.deliver("sub-1")).resolves.toBe(11);
-      expect(sendMessage).toHaveBeenCalledTimes(2);
-      expect(record).toHaveBeenCalledTimes(2);
+      await expect(service.deliver("sub-1")).resolves.toBe(6);
+      expect(sendMessage).toHaveBeenCalledTimes(6);
+      expect(record).toHaveBeenCalledTimes(6);
+      expect(sendMessage.mock.calls[0][2]).toEqual({ disableNotification: false });
+      expect(sendMessage.mock.calls.slice(1).every((call) => call[2].disableNotification)).toBe(
+        true,
+      );
     });
 
     it("completes against the capped delivery items when total matches are higher", async () => {
@@ -188,15 +201,15 @@ describe("DigestService", () => {
       );
       matchNew.mockResolvedValue(digestMatch(items, 100));
 
-      await expect(service.deliver("sub-1")).resolves.toBe(50);
+      await expect(service.deliver("sub-1")).resolves.toBe(6);
 
       expect(createDelivery).toHaveBeenCalledWith(
-        expect.objectContaining({ vacancies: 50, matchedVacancies: 100 }),
+        expect.objectContaining({ vacancies: 6, matchedVacancies: 100, pages: 6 }),
       );
       expect(record).toHaveBeenLastCalledWith(
         "sub-1",
         expect.any(Array),
-        expect.objectContaining({ vacancies: 50, matchedVacancies: 100 }),
+        expect.objectContaining({ vacancies: 6, matchedVacancies: 100 }),
         true,
       );
     });
@@ -283,10 +296,10 @@ describe("DigestService", () => {
       matchNew.mockResolvedValue(
         digestMatch(items.slice(sentOnFirstPage), items.length - sentOnFirstPage),
       );
-      sendMessage.mockReset().mockResolvedValue(undefined);
+      sendMessage.mockReset().mockResolvedValue(1);
       record.mockClear();
 
-      await expect(service.deliver("sub-1")).resolves.toBe(items.length - sentOnFirstPage);
+      await expect(service.deliver("sub-1")).resolves.toBe(5);
 
       expect(hasCompletedDelivery).toHaveBeenCalledTimes(1);
       expect(createDelivery).toHaveBeenCalledTimes(1);
@@ -295,8 +308,8 @@ describe("DigestService", () => {
         expect.any(Array),
         expect.objectContaining({
           id: original.id,
-          vacancies: 11,
-          pages: 2,
+          vacancies: 6,
+          pages: 6,
           isFirstDigest: true,
         }),
         true,
@@ -304,12 +317,51 @@ describe("DigestService", () => {
       expect(digestDeliveryFailed).toHaveBeenCalledWith(
         expect.objectContaining({
           deliveryId: original.id,
-          vacancies: 11,
-          pages: 2,
+          vacancies: 6,
+          pages: 6,
           failedPage: 2,
           isFirstDigest: true,
         }),
       );
+    });
+  });
+
+  describe("debugSend", () => {
+    it("returns 0 and sends nothing when the pool is empty", async () => {
+      search.mockResolvedValue({ items: [], page: 1, pageSize: 50, total: 0 });
+
+      await expect(service.debugSend("chat-1")).resolves.toBe(0);
+      expect(sendMessage).not.toHaveBeenCalled();
+    });
+
+    it("sends one message per sampled vacancy, bypassing subscriptions entirely", async () => {
+      const items = Array.from({ length: 5 }, (_, i) => createVacancy({ id: `v${i}` }));
+      search.mockResolvedValue({ items, page: 1, pageSize: 50, total: 5 });
+
+      await expect(service.debugSend("chat-1", 3)).resolves.toBe(3);
+
+      expect(sendMessage).toHaveBeenCalledTimes(3);
+      expect(sendMessage.mock.calls.every(([chatId]) => chatId === "chat-1")).toBe(true);
+      expect(getActiveById).not.toHaveBeenCalled();
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it("caps count at DEBUG_SEND_MAX_COUNT and floors it at 1", async () => {
+      const items = Array.from({ length: 20 }, (_, i) => createVacancy({ id: `v${i}` }));
+      search.mockResolvedValue({ items, page: 1, pageSize: 50, total: 20 });
+
+      await expect(service.debugSend("chat-1", 999)).resolves.toBe(10);
+      sendMessage.mockClear();
+
+      await expect(service.debugSend("chat-1", 0)).resolves.toBe(1);
+    });
+
+    it("never sends more messages than vacancies available in the pool", async () => {
+      const items = [createVacancy({ id: "v1" }), createVacancy({ id: "v2" })];
+      search.mockResolvedValue({ items, page: 1, pageSize: 50, total: 2 });
+
+      await expect(service.debugSend("chat-1", 10)).resolves.toBe(2);
+      expect(sendMessage).toHaveBeenCalledTimes(2);
     });
   });
 });
