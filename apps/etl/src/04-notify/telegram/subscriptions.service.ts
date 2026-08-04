@@ -29,7 +29,7 @@ export type {
   TelegramLinkIdentity,
 } from "./subscriptions.types";
 
-const { analyticsJourneys, subscriptions, authIdentities, userCvs } = schema;
+const { subscriptions, authIdentities, userCvs } = schema;
 const TELEGRAM_PROVIDER = "telegram";
 
 // Consecutive bounced digest sends before a chat is treated as gone.
@@ -57,39 +57,18 @@ export class SubscriptionsService {
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
       throw new Error(`invalid candidateId: ${options.candidateId}`);
     }
-    const cleanAnalytics = this.productAnalytics.isEnabled();
-    const journeyId = cleanAnalytics ? null : (options.journeyId ?? randomUUID());
     const subscriptionId = randomUUID();
 
-    const created = await this.db.transaction(async (tx) => {
-      if (journeyId) {
-        await tx
-          .insert(analyticsJourneys)
-          .values({
-            id: journeyId,
-            personId: options.userId,
-            origin: options.journeyId ? "browser" : "server",
-          })
-          .onConflictDoUpdate({
-            target: analyticsJourneys.id,
-            set: { personId: options.userId, lastSeenAt: sql`now()` },
-          });
-      }
-      const [subscription] = await tx
-        .insert(subscriptions)
-        .values({
-          id: subscriptionId,
-          name: createSubscriptionName(subscriptionId),
-          params,
-          candidateId: options.candidateId ?? null,
-          userId: options.userId,
-          ...(cleanAnalytics ? {} : { personId: options.userId, journeyId }),
-        })
-        .returning({ id: subscriptions.id });
-      if (journeyId)
-        await this.analytics.enqueueSubscriptionCreated(tx, subscription.id, journeyId, params);
-      return subscription;
-    });
+    const [created] = await this.db
+      .insert(subscriptions)
+      .values({
+        id: subscriptionId,
+        name: createSubscriptionName(subscriptionId),
+        params,
+        candidateId: options.candidateId ?? null,
+        userId: options.userId,
+      })
+      .returning({ id: subscriptions.id });
 
     this.logger.log(
       `create sub ${created.id}: candidateId=${options.candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
@@ -122,7 +101,6 @@ export class SubscriptionsService {
         isActive: subscriptions.isActive,
         candidateId: subscriptions.candidateId,
         userId: subscriptions.userId,
-        journeyId: subscriptions.journeyId,
         params: subscriptions.params,
       })
       .from(subscriptions)
@@ -202,15 +180,6 @@ export class SubscriptionsService {
           ),
         )
         .returning({ id: subscriptions.id });
-      if (!this.productAnalytics.isEnabled() && activated && pending.journeyId && linkedUserId) {
-        await tx
-          .update(analyticsJourneys)
-          .set({ personId: linkedUserId, lastSeenAt: sql`now()` })
-          .where(eq(analyticsJourneys.id, pending.journeyId));
-      }
-      if (!this.productAnalytics.isEnabled() && activated && pending.journeyId) {
-        await this.analytics.enqueueTelegramLinked(tx, activated.id, pending.journeyId, "linked");
-      }
       return activated ? { type: "linked" as const } : null;
     });
     if (result?.type === "duplicate") {
@@ -227,12 +196,6 @@ export class SubscriptionsService {
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
 
-    if (!this.productAnalytics.isEnabled() && pending.journeyId && linkedUserId) {
-      this.analytics.aliasJourneyToPerson(pending.journeyId, linkedUserId);
-    }
-
-    if (!this.productAnalytics.isEnabled() && !pending.journeyId)
-      void this.analytics.telegramLinked(token, "linked");
     return "linked";
   }
 

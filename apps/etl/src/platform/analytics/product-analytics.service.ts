@@ -44,13 +44,6 @@ export class ProductAnalyticsService implements OnModuleDestroy {
     });
   }
 
-  isEnabled(): boolean {
-    // Product identity must never fall back to legacy journeys just because
-    // analytics is unconfigured. Capture may be dormant; the clean product
-    // path remains the only path.
-    return true;
-  }
-
   accountCreated(userId: string, provider: Provider): void {
     this.capture(userId, "account_created", { provider });
   }
