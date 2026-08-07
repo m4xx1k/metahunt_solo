@@ -8,17 +8,61 @@
       "why": "Four of these mint merge targets that do not exist yet, so nothing else can run first. Status-neutral and slug-stable, so zero user-visible risk.",
       "ops": [
         { "op": "rename", "type": "ROLE", "from": "Backend Developer", "to": "Backend Engineer" },
-        { "op": "rename", "type": "ROLE", "from": "Full Stack Developer", "to": "Full Stack Engineer" },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "Full Stack Developer",
+          "to": "Full Stack Engineer"
+        },
         { "op": "rename", "type": "ROLE", "from": "Frontend Developer", "to": "Frontend Engineer" },
-        { "op": "rename", "type": "ROLE", "from": "Embedded Software Engineer", "to": "Embedded Engineer" },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "Embedded Software Engineer",
+          "to": "Embedded Engineer"
+        },
         { "op": "rename", "type": "ROLE", "from": "Game Developer", "to": "Game Engineer" },
         { "op": "rename", "type": "ROLE", "from": "Mobile Developer (iOS)", "to": "iOS Engineer" },
-        { "op": "rename", "type": "ROLE", "from": "Mobile Developer (Android)", "to": "Android Engineer" },
-        { "op": "rename", "type": "ROLE", "from": "Mobile Developer (Cross-platform)", "to": "Cross-platform Mobile Engineer" },
-        { "op": "rename", "type": "ROLE", "from": "WordPress Developer", "to": "Web / CMS Engineer", "why": "mints the target for Web Developer; larger side renamed so the smaller node is the one deleted" },
-        { "op": "rename", "type": "ROLE", "from": "ERP Developer (SAP/ABAP/Odoo)", "to": "ERP / CRM Engineer", "why": "mints the target for CRM Developer" },
-        { "op": "rename", "type": "ROLE", "from": "Technical Support Engineer", "to": "IT Support Engineer", "why": "mints the target for IT Support Specialist" },
-        { "op": "rename", "type": "ROLE", "from": "Database Administrator", "to": "Database Engineer", "why": "pure rename, no second node involved" }
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "Mobile Developer (Android)",
+          "to": "Android Engineer"
+        },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "Mobile Developer (Cross-platform)",
+          "to": "Cross-platform Mobile Engineer"
+        },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "WordPress Developer",
+          "to": "Web / CMS Engineer",
+          "why": "mints the target for Web Developer; larger side renamed so the smaller node is the one deleted"
+        },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "ERP Developer (SAP/ABAP/Odoo)",
+          "to": "ERP / CRM Engineer",
+          "why": "mints the target for CRM Developer"
+        },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "Technical Support Engineer",
+          "to": "IT Support Engineer",
+          "why": "mints the target for IT Support Specialist"
+        },
+        {
+          "op": "rename",
+          "type": "ROLE",
+          "from": "Database Administrator",
+          "to": "Database Engineer",
+          "why": "pure rename, no second node involved"
+        }
       ]
     },
     {
@@ -26,18 +70,43 @@
       "title": "role merges",
       "why": "Every pair below failed the 85% skill-profile separability test. Three targets only exist after phase 1.",
       "ops": [
-        { "op": "merge", "type": "ROLE", "from": "Site Reliability Engineer", "into": "DevOps Engineer" },
+        {
+          "op": "merge",
+          "type": "ROLE",
+          "from": "Site Reliability Engineer",
+          "into": "DevOps Engineer"
+        },
         { "op": "merge", "type": "ROLE", "from": "Platform Engineer", "into": "DevOps Engineer" },
         { "op": "merge", "type": "ROLE", "from": "Cloud Engineer", "into": "DevOps Engineer" },
         { "op": "merge", "type": "ROLE", "from": "Cloud Architect", "into": "DevOps Engineer" },
-        { "op": "merge", "type": "ROLE", "from": "Information Security Analyst", "into": "Security Engineer" },
-        { "op": "merge", "type": "ROLE", "from": "Penetration Tester", "into": "Security Engineer" },
+        {
+          "op": "merge",
+          "type": "ROLE",
+          "from": "Information Security Analyst",
+          "into": "Security Engineer"
+        },
+        {
+          "op": "merge",
+          "type": "ROLE",
+          "from": "Penetration Tester",
+          "into": "Security Engineer"
+        },
         { "op": "merge", "type": "ROLE", "from": "IAM Specialist", "into": "Security Engineer" },
-        { "op": "merge", "type": "ROLE", "from": "Security Architect", "into": "Security Engineer" },
+        {
+          "op": "merge",
+          "type": "ROLE",
+          "from": "Security Architect",
+          "into": "Security Engineer"
+        },
         { "op": "merge", "type": "ROLE", "from": "SDET", "into": "Automation QA Engineer" },
         { "op": "merge", "type": "ROLE", "from": "Web Developer", "into": "Web / CMS Engineer" },
         { "op": "merge", "type": "ROLE", "from": "CRM Developer", "into": "ERP / CRM Engineer" },
-        { "op": "merge", "type": "ROLE", "from": "IT Support Specialist", "into": "IT Support Engineer" },
+        {
+          "op": "merge",
+          "type": "ROLE",
+          "from": "IT Support Specialist",
+          "into": "IT Support Engineer"
+        },
         { "op": "merge", "type": "ROLE", "from": "Data Architect", "into": "Data Engineer" },
         { "op": "merge", "type": "ROLE", "from": "Systems Analyst", "into": "Business Analyst" }
       ]
