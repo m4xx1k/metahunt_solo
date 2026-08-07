@@ -124,7 +124,9 @@ Contacts має один row на account, Telegram display перший; test e
 До production: backup + checksum + isolated restore proof; read-only inventory
 unowned subscriptions з `product-analytics-v2-release-gates.md`; reviewer та
 before/after counts. Лише після письмового схвалення cleanup дозволено запуск
-окрему `0039_subscriptions_user_id_not_null_after_approved_cleanup.sql`.
+окрему `0039_subscriptions_user_id_not_null_after_approved_cleanup.sql` —
+станом на 2026-08-07 вона винесена в `libs/database/gated/` і не виконується
+ніде (див. `product-analytics-v2-release-gates.md`, інвентаризація).
 Вона не видаляє legacy rows і не вигадує owner. Rollback — вимкнути
 `ANALYTICS_V2`, повернути application config та, за потреби, restore перевіреного
 backup; очистити `POSTHOG_API_KEY` для emergency analytics rollback, не робити

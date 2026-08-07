@@ -88,6 +88,9 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      # First: a .sql that never made it into the journal would otherwise ship
+      # unnoticed and never run in any environment.
+      - run: pnpm db:check
       - run: pnpm --filter @metahunt/database build
       - run: pnpm --filter @metahunt/etl lint
       # Runs before the tests: an undocumented event name is a five-second fix,
