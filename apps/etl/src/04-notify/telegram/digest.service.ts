@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
+import { FeedService } from "../../03-discovery/feed/feed.service";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 
 import { paginateDigest } from "./digest.renderer";
@@ -12,6 +13,24 @@ import { SubscriptionMatcherService } from "./subscription-matcher.service";
 import { SubscriptionsService } from "./subscriptions.service";
 import { TelegramService } from "./telegram.service";
 
+const DEFAULT_WEB_BASE_URL = "https://www.metahunt.app";
+const MAX_VACANCY_MESSAGES_PER_DIGEST = 6;
+
+// debugSend() pool: sampled from the freshest page, not the whole table — an
+// admin poking the format doesn't need a full-table ORDER BY random() scan.
+const DEBUG_SEND_POOL_SIZE = 50;
+const DEBUG_SEND_DEFAULT_COUNT = 8;
+const DEBUG_SEND_MAX_COUNT = 20;
+
+function shuffled<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 // Delivers a subscription's digest: match (via SubscriptionMatcherService) →
 // page → send → record. Transport and persistence stay in their own services;
 // this is the orchestration. Temporal-agnostic — the activity wraps it.
@@ -19,6 +38,7 @@ import { TelegramService } from "./telegram.service";
 export class DigestService {
   private readonly logger = new Logger(DigestService.name);
   private readonly applyBaseUrl: string;
+  private readonly webBaseUrl: string;
 
   constructor(
     private readonly config: ConfigService,
@@ -27,8 +47,10 @@ export class DigestService {
     private readonly sentNotifications: SentNotificationsService,
     private readonly telegram: TelegramService,
     private readonly analytics: AnalyticsService,
+    private readonly feed: FeedService,
   ) {
     this.applyBaseUrl = this.config.get<string>("PUBLIC_BASE_URL")!;
+    this.webBaseUrl = this.config.get<string>("WEB_BASE_URL") ?? DEFAULT_WEB_BASE_URL;
   }
 
   // Match without sending — read-only debug hook, works on any (even unlinked) row.
@@ -69,12 +91,16 @@ export class DigestService {
     const remainingVacancies = pendingDelivery
       ? Math.max(pendingDelivery.vacancies - pendingDelivery.sentVacancies, 0)
       : items.length;
-    const deliveryItems = items.slice(0, remainingVacancies);
+    const deliveryItems = items.slice(
+      0,
+      Math.min(remainingVacancies, MAX_VACANCY_MESSAGES_PER_DIGEST),
+    );
     if (deliveryItems.length === 0) return 0;
 
     const pages = paginateDigest(deliveryItems, {
       totalNew: pendingDelivery?.vacancies ?? total,
       applyBaseUrl: this.applyBaseUrl,
+      webBaseUrl: this.webBaseUrl,
       label,
       // `?s=<id>` lets the `/go/:id` redirect attribute clicks to this sub.
       subscriptionId: sub.id,
@@ -96,7 +122,10 @@ export class DigestService {
     let sentThisAttempt = 0;
     for (const [pageIndex, page] of pages.entries()) {
       try {
-        await this.telegram.sendMessage(sub.chatId, page.html);
+        const isFollowUpMessage = delivery.sentPages + pageIndex > 0;
+        await this.telegram.sendMessage(sub.chatId, page.html, {
+          disableNotification: isFollowUpMessage,
+        });
         // Record after the send so a retried page never resends earlier ones.
         const completesDelivery =
           delivery.sentVacancies + sentThisAttempt + page.vacancyIds.length >= delivery.vacancies;
@@ -148,6 +177,30 @@ export class DigestService {
       }
     }
     return { subscriptions: ids.length, sent };
+  }
+
+  /**
+   * Admin-only format probe: sends real, randomly-sampled vacancies straight to
+   * `chatId` through the same `paginateDigest` path the scheduled digest uses —
+   * no subscription, no `sent_notifications` write, no anti-join. Safe to call
+   * repeatedly while iterating on the card/pagination format.
+   */
+  async debugSend(chatId: string, count: number = DEBUG_SEND_DEFAULT_COUNT): Promise<number> {
+    const capped = Math.min(Math.max(count, 1), DEBUG_SEND_MAX_COUNT);
+    const pool = await this.feed.search({ page: 1, pageSize: DEBUG_SEND_POOL_SIZE });
+    if (pool.items.length === 0) return 0;
+
+    const items = shuffled(pool.items).slice(0, capped);
+    const pages = paginateDigest(items, {
+      totalNew: items.length,
+      applyBaseUrl: this.applyBaseUrl,
+      webBaseUrl: this.webBaseUrl,
+    });
+    for (const page of pages) {
+      await this.telegram.sendMessage(chatId, page.html);
+    }
+    this.logger.log(`digest debug-send → chat ${chatId}: ${pages.length} message(s)`);
+    return pages.length;
   }
 }
 

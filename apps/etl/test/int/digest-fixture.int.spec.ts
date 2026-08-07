@@ -34,15 +34,20 @@ let pool: Pool;
 let sequence = 0;
 
 class FixtureTelegram {
-  readonly messages: { chatId: string; html: string }[] = [];
+  readonly messages: { chatId: string; html: string; disableNotification?: boolean }[] = [];
   failNext = false;
 
-  async sendMessage(chatId: string, html: string): Promise<void> {
+  async sendMessage(
+    chatId: string,
+    html: string,
+    opts: { disableNotification?: boolean } = {},
+  ): Promise<number> {
     if (this.failNext) {
       this.failNext = false;
       throw new Error("fixture telegram outage");
     }
-    this.messages.push({ chatId, html });
+    this.messages.push({ chatId, html, disableNotification: opts.disableNotification });
+    return this.messages.length;
   }
 }
 
@@ -93,6 +98,7 @@ async function seedActiveSubscription(chatId = "fixture-chat"): Promise<ActiveSu
       candidateId: subscriptions.candidateId,
       params: subscriptions.params,
       createdAt: subscriptions.createdAt,
+      name: subscriptions.name,
     });
   if (!row.chatId) throw new Error("fixture subscription needs chat id");
   return { ...row, chatId: row.chatId };
@@ -168,6 +174,7 @@ function makeDigest(
       digestSent: jest.fn(),
       digestDeliveryFailed: jest.fn(),
     } as never,
+    { search: jest.fn() } as never,
   );
 }
 

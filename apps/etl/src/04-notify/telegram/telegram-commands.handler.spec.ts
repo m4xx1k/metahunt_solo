@@ -14,7 +14,7 @@ import { copy } from "./telegram-copy";
 
 const WEB_URL = "https://metahunt.test";
 
-function vacancy(): VacancyDto {
+function vacancy(overrides: Partial<VacancyDto> = {}): VacancyDto {
   const now = new Date().toISOString();
   return {
     id: "11111111-1111-1111-1111-111111111111",
@@ -44,6 +44,7 @@ function vacancy(): VacancyDto {
     uniqueVacancyId: null,
     duplicateCount: null,
     duplicateSourceCount: null,
+    ...overrides,
   };
 }
 
@@ -207,7 +208,7 @@ describe("TelegramCommandsHandler", () => {
       expect(getActiveById).toHaveBeenCalledWith("the-token");
       expect(sample).toHaveBeenCalledWith(sub, 14);
       expect(ctx.reply).toHaveBeenCalledTimes(2);
-      expect(ctx.reply.mock.calls[1][0]).toContain("<b>1</b>");
+      expect(ctx.reply.mock.calls[1][0]).toContain("Backend");
       expect(ctx.reply.mock.calls[1][0]).toContain("?s=the-token");
       expect(ctx.reply.mock.calls[1][1]).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
       expect(activationValueShown).toHaveBeenCalledWith("the-token", 1, 1);
@@ -251,7 +252,7 @@ describe("TelegramCommandsHandler", () => {
 
       await commands.get("list")!(ctx);
 
-      expect(describe_).toHaveBeenCalledWith({}, null);
+      expect(describe_).toHaveBeenCalledWith({});
       expect(ctx.reply).toHaveBeenCalledWith(
         copy.list.item("Backend"),
         expect.objectContaining({ reply_markup: expect.anything() }),
@@ -438,6 +439,29 @@ describe("TelegramCommandsHandler", () => {
       expect(ctx.reply).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ parse_mode: "HTML" }),
+      );
+    });
+
+    it("sends one message per vacancy, silencing every message after the first", async () => {
+      listActiveByChat.mockResolvedValue([{ id: "sub-1", params: { q: "go" }, candidateId: null }]);
+      sample.mockResolvedValue({
+        items: [vacancy({ id: "v1" }), vacancy({ id: "v2" }), vacancy({ id: "v3" })],
+        total: 3,
+        label: "go",
+      });
+      const ctx = commandCtx("");
+
+      await commands.get("preview")!(ctx);
+
+      expect(ctx.reply).toHaveBeenCalledTimes(3);
+      expect(ctx.reply.mock.calls[0][1]).toEqual(
+        expect.objectContaining({ disable_notification: false }),
+      );
+      expect(ctx.reply.mock.calls[1][1]).toEqual(
+        expect.objectContaining({ disable_notification: true }),
+      );
+      expect(ctx.reply.mock.calls[2][1]).toEqual(
+        expect.objectContaining({ disable_notification: true }),
       );
     });
   });

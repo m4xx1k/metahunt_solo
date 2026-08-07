@@ -103,7 +103,7 @@ export class MeService {
       rows.map(async (r) => {
         const storedParams = r.params as SubscriptionParams;
         const [label, params] = await Promise.all([
-          this.criteria.describe(storedParams, r.candidateId),
+          this.criteria.describe(storedParams),
           this.criteria.toPublic(storedParams),
         ]);
         const base = {

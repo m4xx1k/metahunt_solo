@@ -9,6 +9,8 @@ import { BOT_COMMANDS } from "./telegram-copy";
 
 // Telegram caps outbound at ~30 msg/s globally; stay comfortably under it.
 const SEND_INTERVAL_MS = 50; // ≈20 msg/s
+// Telegram also flood-limits a single chat; keep personal digest bursts gentle.
+const SEND_PER_CHAT_INTERVAL_MS = 1200;
 // A burst to one chat can still trip a per-chat 429 — honor its retry_after
 // rather than burning the activity's Temporal attempts on a transient limit.
 const SEND_MAX_RETRIES = 2;
@@ -28,6 +30,7 @@ const SEND_NETWORK_RETRY_DELAY_MS = 750;
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
   private readonly limiter = new RateLimiter(SEND_INTERVAL_MS);
+  private readonly chatLimiters = new Map<string, RateLimiter>();
   private bot?: Bot;
   private stopping = false;
 
@@ -109,21 +112,35 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     return this.bot?.botInfo.username;
   }
 
+  private limiterForChat(chatId: string): RateLimiter {
+    let limiter = this.chatLimiters.get(chatId);
+    if (!limiter) {
+      limiter = new RateLimiter(SEND_PER_CHAT_INTERVAL_MS);
+      this.chatLimiters.set(chatId, limiter);
+    }
+    return limiter;
+  }
+
   /**
    * Stateless outbound send — used by the scheduled digest delivery. Throttled
-   * to stay under Telegram's global limit, and resilient to a 429 (waits the
-   * advised retry_after, then retries).
+   * globally and per chat, resilient to 429, and returns Telegram's message id
+   * so delivery ledgers can store it once they need to.
    */
-  async sendMessage(chatId: string, html: string): Promise<void> {
+  async sendMessage(
+    chatId: string,
+    html: string,
+    opts: { disableNotification?: boolean } = {},
+  ): Promise<number> {
     const bot = this.bot;
     if (!bot) throw new Error("Telegram bot is not initialized");
-    await this.limiter.acquire();
-    await withRetryAfter(
+    await Promise.all([this.limiter.acquire(), this.limiterForChat(chatId).acquire()]);
+    const message = await withRetryAfter(
       () =>
         bot.api.sendMessage(chatId, html, {
           parse_mode: "HTML",
           // Digest cards carry apply links; a preview card would bloat the message.
           link_preview_options: { is_disabled: true },
+          disable_notification: opts.disableNotification,
         }),
       {
         maxRetries: SEND_MAX_RETRIES,
@@ -131,5 +148,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         networkRetryDelayMs: SEND_NETWORK_RETRY_DELAY_MS,
       },
     );
+    return message.message_id;
   }
 }

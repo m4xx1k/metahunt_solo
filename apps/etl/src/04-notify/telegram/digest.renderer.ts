@@ -10,10 +10,13 @@ import { copy } from "./telegram-copy";
 
 // Rich-card digest rendering for Telegram HTML (`parse_mode: "HTML"`).
 // Principles (see md/journal/migrations/tg-notifications.md#decisions):
-// graceful degradation (render a field only when present), headline = seniority
-// then clean role (the noisy scraped title is dropped), english as CEFR with a
-// flag, reservation accented (a real draw in the UA market), skills capped. All
-// dynamic text is HTML-escaped.
+// graceful degradation, one vacancy per scheduled message, sectioned card
+// (fused seniority+role title, itself the metahunt link → salary/company/
+// domain → "Деталі:" block, one plain-language sentence per condition
+// (skills, English, experience, format, location, reservation, test) →
+// "знайдено на <source>"). All dynamic text escaped; no publish date, no
+// quoted description (source text arrives as unsanitized HTML — not safe to
+// echo into a Telegram HTML message yet).
 
 const MAX_SKILLS = 5;
 
@@ -27,35 +30,11 @@ const SENIORITY_LABEL: Record<Seniority, string> = {
   C_LEVEL: "C-Level",
 };
 
-const WORK_FORMAT_LABEL: Record<WorkFormat, string> = {
-  REMOTE: "Remote",
-  OFFICE: "Office",
-  HYBRID: "Hybrid",
+const WORK_FORMAT_SENTENCE: Record<WorkFormat, string> = {
+  REMOTE: "Віддалена робота",
+  OFFICE: "Робота в офісі",
+  HYBRID: "Гібридний формат",
 };
-
-// Relative "X тому" via the platform Intl — no bespoke pluraliser.
-// `numeric: "auto"` yields idiomatic forms ("учора", "минулого тижня").
-const RELATIVE_TIME = new Intl.RelativeTimeFormat("uk", { numeric: "auto" });
-const TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 31_536_000_000],
-  ["month", 2_592_000_000],
-  ["week", 604_800_000],
-  ["day", 86_400_000],
-  ["hour", 3_600_000],
-  ["minute", 60_000],
-];
-
-function relativeTime(iso: string): string | null {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return null;
-  const diffMs = then - Date.now(); // negative → past
-  for (const [unit, unitMs] of TIME_UNITS) {
-    if (Math.abs(diffMs) >= unitMs) {
-      return RELATIVE_TIME.format(Math.round(diffMs / unitMs), unit);
-    }
-  }
-  return RELATIVE_TIME.format(0, "minute"); // < 1 min → "цієї хвилини"
-}
 
 const ENGLISH_CEFR: Record<EnglishLevel, string> = {
   BEGINNER: "A1",
@@ -80,8 +59,8 @@ function formatSalary(salary: VacancyDto["salary"]): string | null {
   if (min == null && max == null) return null;
   const sym = currency ? CURRENCY_SYMBOL[currency] : "";
   if (min != null && max != null) return `${sym}${min}–${max}`;
-  if (min != null) return `from ${sym}${min}`;
-  return `up to ${sym}${max}`;
+  if (min != null) return `від ${sym}${min}`;
+  return `до ${sym}${max}`;
 }
 
 function joinChips(parts: (string | null | undefined)[]): string | null {
@@ -133,94 +112,103 @@ function applyUrl(applyBaseUrl: string, vacancyId: string, subscriptionId?: stri
   return subscriptionId ? `${base}?s=${subscriptionId}` : base;
 }
 
-function renderCard(v: VacancyDto, applyBaseUrl: string, subscriptionId?: string): string {
-  // The ◆ headline stays flush-left; everything else is a 2-space-indented body
-  // so each card reads as a titled block. Skills are [bracket] tags and perks
-  // are {brace} tags — a light CLI-ish structure over the old dot-joined prose.
-  const body: string[] = [];
-
-  // One meta line — content self-labels. The company domain leads it (bold, as a
-  // light anchor), then format/location/salary/english. Accents kept light:
-  // salary bold (rare but a strong draw), a flag on the English level so it reads
-  // at a glance. (Freshness lives in the footer, next to the apply link.)
-  const salary = formatSalary(v.salary);
-  const meta = joinChips([
-    v.domain ? `<b>${escapeHtml(v.domain.name)}</b>` : null,
-    v.workFormat ? WORK_FORMAT_LABEL[v.workFormat] : null,
-    locationChip(v.locations.map(escapeHtml)),
-    salary ? `<b>${salary}</b>` : null,
-    v.englishLevel ? `🇬🇧 ${ENGLISH_CEFR[v.englishLevel]}` : null,
-  ]);
-  if (meta) body.push(meta);
-
-  if (v.skills.required.length > 0) {
-    const names = v.skills.required.slice(0, MAX_SKILLS).map((s) => s.name);
-    const extra = v.skills.required.length - names.length;
-    const tail = extra > 0 ? ` +${extra}` : "";
-    const tags = names.map((n) => `[${escapeHtml(n)}]`).join(" ");
-    body.push(`${tags}${tail}`);
-  }
-
-  // Perks line, framed the way candidates read them: reservation is a draw
-  // (🪖 — deferment from mobilization), and "без тесту" is a plus, so the absence
-  // of a test task is surfaced too, not just its presence. Both are bolded to
-  // read as perks, dot-joined so they don't blur into the meta line above.
-  const perks = joinChips([
-    v.hasReservation === true ? copy.digest.reservation : null,
-    v.hasTestAssignment === false
-      ? copy.digest.noTest
-      : v.hasTestAssignment === true
-        ? copy.digest.hasTest
-        : null,
-  ]);
-  if (perks) body.push(perks);
-
-  // Footer: apply link + freshness, muted at the end. The link routes through
-  // our `/go/:id` redirect (not straight to source) so the tap passes through
-  // metahunt and can be tracked later.
-  const posted = v.publishedAt ?? v.loadedAt;
-  const age = posted ? relativeTime(posted) : null;
-  const footer = joinChips([
-    v.link
-      ? `→ <a href="${escapeHtml(applyUrl(applyBaseUrl, v.id, subscriptionId))}">${escapeHtml(v.source.displayName)}</a>`
-      : null,
-    age ? `<i>${age}</i>` : null,
-  ]);
-  if (footer) body.push(footer);
-
-  // Headline = seniority then the clean taxonomy role (the raw scraped title is
-  // noisy, so it's dropped). The diamond is the only card marker — monochrome,
-  // CLI-ish. Seniority leads since canonical role names never carry a level.
-  const role = v.role?.name ?? v.title;
-  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
-  const head = `◆ ${seniority ? `${seniority} · ` : ""}<b>${escapeHtml(role)}</b>`;
-
-  if (body.length === 0) return head;
-  return `${head}\n${body.map((line) => `  ${line}`).join("\n")}`;
+function slugifyForUrl(input: string): string {
+  return (
+    input
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "vacancy"
+  );
 }
 
-// A dotted rule between cards (the ◆ headline alone read as too cramped in a
-// long digest). The header is set off from the first card by a plain blank line.
+function vacancyUrl(webBaseUrl: string, v: VacancyDto): string {
+  const role = v.role?.name ?? v.title;
+  return `${webBaseUrl}/vacancy/${slugifyForUrl(role)}-${v.id}`;
+}
+
+function renderSkills(skills: VacancyDto["skills"]["required"]): string | null {
+  if (skills.length === 0) return null;
+  const names = skills.slice(0, MAX_SKILLS).map((s) => s.name);
+  const extra = skills.length - names.length;
+  const tail = extra > 0 ? ` +${extra}` : "";
+  const tags = names.map((n) => `[${escapeHtml(n)}]`).join(" ");
+  return `${tags}${tail}`;
+}
+
+// Every condition as its own plain-language line under "Деталі:" instead of
+// terse chips on a shared row — reads like someone telling you about the job,
+// not a spec sheet. Order: what you'd need to bring, then what the job is.
+function renderDetails(v: VacancyDto): string[] {
+  const lines: string[] = [];
+
+  const skillsLine = renderSkills(v.skills.required);
+  if (skillsLine) lines.push(`Навички: ${skillsLine}`);
+  if (v.englishLevel) lines.push(`Англійська — ${ENGLISH_CEFR[v.englishLevel]}`);
+  if (v.experienceYears != null) lines.push(`Від ${v.experienceYears} років досвіду`);
+  if (v.workFormat) lines.push(WORK_FORMAT_SENTENCE[v.workFormat]);
+  const location = locationChip(v.locations.map(escapeHtml));
+  if (location) lines.push(`Локація: ${location}`);
+  if (v.hasReservation === true) lines.push(copy.digest.reservation);
+  if (v.hasTestAssignment === true) lines.push(copy.digest.hasTest);
+  if (v.hasTestAssignment === false) lines.push(copy.digest.noTest);
+
+  return lines;
+}
+
+function renderCard(v: VacancyDto, meta: DigestMeta): string {
+  const body: string[] = [];
+
+  const salary = formatSalary(v.salary);
+  const headline = joinChips([
+    salary ? `<b>${salary}</b>` : null,
+    // Underlined, not bold — a named-entity cue that doesn't compete with the
+    // salary/role bold accents already carrying the eye.
+    v.company?.name ? `<u>${escapeHtml(v.company.name)}</u>` : null,
+    v.domain ? escapeHtml(v.domain.name) : null,
+  ]);
+  if (headline) body.push(headline);
+
+  const details = renderDetails(v);
+  if (details.length > 0) {
+    body.push("", "Деталі:", ...details);
+  }
+
+  if (v.link) {
+    body.push(
+      "",
+      `знайдено на <a href="${escapeHtml(applyUrl(meta.applyBaseUrl, v.id, meta.subscriptionId))}">${escapeHtml(v.source.displayName)}</a>`,
+    );
+  }
+
+  const webBaseUrl = meta.webBaseUrl ?? meta.applyBaseUrl;
+  const role = v.role?.name ?? v.title;
+  const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
+  const titleText = `${seniority ? `${escapeHtml(seniority)} ` : ""}${escapeHtml(role)}`;
+  const head = `◆ <a href="${escapeHtml(vacancyUrl(webBaseUrl, v))}"><b>${titleText}</b></a>`;
+
+  if (body.length === 0) return head;
+  return `${head}\n${body.map((line) => (line ? `  ${line}` : "")).join("\n")}`;
+}
+
+// A dotted rule between cards for `/preview`, which is still one sample message.
 const CARD_DIVIDER = "┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈";
 const CARD_SEPARATOR = `\n${CARD_DIVIDER}\n`;
 const HEADER_GAP = "\n\n";
-
-// Paging budget for the scheduled digest. Cap by card count AND a char budget
-// well under Telegram's 4096 (the header + separators ride in the remainder).
-const MAX_CARDS_PER_MESSAGE = 8;
-const MAX_MESSAGE_CHARS = 3500;
 
 export interface DigestMeta {
   /** Total matching vacancies (the "N new" headline count). */
   totalNew: number;
   /** Public origin for building `/go/:id` apply-redirect links. */
   applyBaseUrl: string;
+  /** Public web origin for canonical `/vacancy/...` detail links. */
+  webBaseUrl?: string;
   /**
    * Rolling window in days. Present → "за N дн" framing (the `/preview` sample);
    * omit for scheduled digests, which carry only genuinely-new vacancies.
    */
   windowDays?: number;
-  /** Per-subscription filter label for the header (e.g. "React, Node · 3 скіл."). */
+  /** Header label for the single-message `renderDigest` sample (e.g. `/preview`'s filter description). */
   label?: string;
   /** Referring subscription — stamps apply links with `?s=<id>` for click
    * attribution. Omitted for the `/preview` sample (no subscription). */
@@ -242,9 +230,7 @@ function renderHeader(
 export function renderDigest(vacancies: VacancyDto[], meta: DigestMeta): string {
   const header = renderHeader(meta.totalNew, meta);
   if (vacancies.length === 0) return header;
-  const cards = vacancies
-    .map((v) => renderCard(v, meta.applyBaseUrl, meta.subscriptionId))
-    .join(CARD_SEPARATOR);
+  const cards = vacancies.map((v) => renderCard(v, meta)).join(CARD_SEPARATOR);
   return `${header}${HEADER_GAP}${cards}`;
 }
 
@@ -255,44 +241,13 @@ export interface DigestPage {
 }
 
 /**
- * Split a digest across Telegram messages, each under the count + char budget,
- * with a per-page header (and `(i/n)` once it spans more than one). Pure: the
- * scheduled engine sends each page and records its `vacancyIds`.
+ * Scheduled delivery sends one vacancy per message. The first message is allowed
+ * to notify; follow-ups in the same batch are sent silently by DigestService.
  */
 export function paginateDigest(vacancies: VacancyDto[], meta: DigestMeta): DigestPage[] {
   if (vacancies.length === 0) return [];
-
-  const cards = vacancies.map((v) => ({
-    id: v.id,
-    text: renderCard(v, meta.applyBaseUrl, meta.subscriptionId),
+  return vacancies.map((vacancy) => ({
+    html: renderCard(vacancy, meta),
+    vacancyIds: [vacancy.id],
   }));
-
-  // Greedy pack: start a new page when the next card would breach either cap.
-  const groups: (typeof cards)[] = [];
-  let current: typeof cards = [];
-  let chars = 0;
-  for (const card of cards) {
-    const projected = chars + card.text.length + CARD_SEPARATOR.length;
-    const wouldOverflow = current.length >= MAX_CARDS_PER_MESSAGE || projected > MAX_MESSAGE_CHARS;
-    if (current.length > 0 && wouldOverflow) {
-      groups.push(current);
-      current = [];
-      chars = 0;
-    }
-    current.push(card);
-    chars += card.text.length + CARD_SEPARATOR.length;
-  }
-  if (current.length > 0) groups.push(current);
-
-  return groups.map((group, index) => {
-    const header = renderHeader(meta.totalNew, meta, {
-      index: index + 1,
-      count: groups.length,
-    });
-    const body = group.map((c) => c.text).join(CARD_SEPARATOR);
-    return {
-      html: `${header}${HEADER_GAP}${body}`,
-      vacancyIds: group.map((c) => c.id),
-    };
-  });
 }

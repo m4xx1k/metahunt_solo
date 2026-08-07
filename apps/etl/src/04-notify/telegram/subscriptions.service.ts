@@ -207,6 +207,7 @@ export class SubscriptionsService {
         params: subscriptions.params,
         candidateId: subscriptions.candidateId,
         createdAt: subscriptions.createdAt,
+        name: subscriptions.name,
       })
       .from(subscriptions)
       .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)));
@@ -234,6 +235,7 @@ export class SubscriptionsService {
         userId: subscriptions.userId,
         params: subscriptions.params,
         createdAt: subscriptions.createdAt,
+        name: subscriptions.name,
       })
       .from(subscriptions)
       .where(and(eq(subscriptions.id, id), eq(subscriptions.isActive, true)));
@@ -256,6 +258,7 @@ export class SubscriptionsService {
         candidateId: subscriptions.candidateId,
         params: subscriptions.params,
         createdAt: subscriptions.createdAt,
+        name: subscriptions.name,
       })
       .from(subscriptions)
       .where(eq(subscriptions.id, id));
@@ -488,10 +491,12 @@ export class SubscriptionsService {
     return owners.length === 1 && owners[0].userId === userId;
   }
 
-  // Human label distinguishing one sub from another: CV marker, roles/skills,
-  // then the headline filters (seniority, format, бронь, fit gate).
-  async describe(params: SubscriptionParams, candidateId?: string | null): Promise<string> {
-    return this.criteria.describe(params, candidateId);
+  // Human label distinguishing one sub from another: roles/skills, then the
+  // headline filters (seniority, format, бронь, fit gate). Purely technical —
+  // `/list` only; the digest itself uses the subscriber's own name instead
+  // (see `subscriptionLabel` in subscription-matcher.service.ts).
+  async describe(params: SubscriptionParams): Promise<string> {
+    return this.criteria.describe(params);
   }
 
   private async findUserIdForChat(chatId: string): Promise<string | null> {

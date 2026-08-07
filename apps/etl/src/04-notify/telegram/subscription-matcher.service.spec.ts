@@ -8,7 +8,7 @@ import { buildScoreBreakdown } from "../../03-discovery/score/score.contract";
 
 import { SentNotificationsService } from "./sent-notifications.service";
 import { SubscriptionMatcherService } from "./subscription-matcher.service";
-import { SubscriptionsService, type SubscriptionMatchTarget } from "./subscriptions.service";
+import type { SubscriptionMatchTarget } from "./subscriptions.service";
 
 const DAY_MS = 86_400_000;
 const SCAN_WINDOW_DAYS = 14;
@@ -73,6 +73,7 @@ function target(overrides: Partial<SubscriptionMatchTarget> = {}): SubscriptionM
     candidateId: null,
     params: { roleIds: ["r1"] },
     createdAt: new Date(Date.now() - DAY_MS),
+    name: null,
     ...overrides,
   };
 }
@@ -82,7 +83,6 @@ describe("SubscriptionMatcherService", () => {
   const matchCandidate = jest.fn();
   const sentVacancyIds = jest.fn();
   const sentVacancyIdsForChat = jest.fn();
-  const describe_ = jest.fn();
   let service: SubscriptionMatcherService;
 
   beforeEach(async () => {
@@ -90,14 +90,12 @@ describe("SubscriptionMatcherService", () => {
     matchCandidate.mockReset().mockResolvedValue(matchResponse([]));
     sentVacancyIds.mockReset().mockResolvedValue([]);
     sentVacancyIdsForChat.mockReset().mockResolvedValue([]);
-    describe_.mockReset().mockResolvedValue("Backend");
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         SubscriptionMatcherService,
         { provide: FeedService, useValue: { search } },
         { provide: CandidateMatchService, useValue: { match: matchCandidate } },
-        { provide: SubscriptionsService, useValue: { describe: describe_ } },
         { provide: SentNotificationsService, useValue: { sentVacancyIds, sentVacancyIdsForChat } },
       ],
     }).compile();
@@ -189,6 +187,27 @@ describe("SubscriptionMatcherService", () => {
       expect(filters.roleRefs).toEqual(["role-backend"]);
       expect(filters.excludedSkillRefs).toEqual(["skill-php"]);
       expect(filters.experienceYears).toEqual(["3", "6+"]);
+    });
+  });
+
+  describe("label", () => {
+    it("uses the subscriber's own name when set", async () => {
+      const res = await service.matchNew(target({ name: "Cosmic Badger #A1B2C3" }));
+      expect(res.label).toBe("Cosmic Badger #A1B2C3");
+    });
+
+    it("falls back to a name deterministically generated from the id when unnamed", async () => {
+      const first = await service.matchNew(target({ id: "sub-a", name: null }));
+      const second = await service.matchNew(target({ id: "sub-a", name: null }));
+      expect(first.label).toBe(second.label);
+      expect(first.label).not.toBe("");
+    });
+
+    it("also names a CV subscription's label, not the technical filter breakdown", async () => {
+      const res = await service.matchNew(
+        target({ candidateId: "cand-1", name: "Cosmic Badger #A1B2C3" }),
+      );
+      expect(res.label).toBe("Cosmic Badger #A1B2C3");
     });
   });
 

@@ -4,6 +4,35 @@
 **Status:** in-progress
 **Started:** 2026-06-03 · **Closed:** —
 
+## Update — 2026-08-04
+
+Everything below T6/T7 has since shipped and is live in prod (scheduled auto-send via
+`NotifySchedulerService` + `notifySubscribersWorkflow`) — this tracker just wasn't kept current.
+Continuing here on branch `fix/tg-digest-one-per-message`:
+
+- **Pagination changed: one vacancy per Telegram message**, not packed ~8/message under a
+  char budget. Supersedes the "Digest paging (T5/T6)" decision below. Per-chat send is now
+  throttled at 1.2s (`SEND_PER_CHAT_INTERVAL_MS` in `telegram.service.ts`); within one delivery
+  run the first message notifies, follow-ups are silent (`disable_notification`).
+  `MAX_VACANCY_MESSAGES_PER_DIGEST = 6` caps messages **per run**, not runs per day — MET-6
+  ("cap digest frequency 1–2/day") is a separate, still-open ask: the schedule fires hourly
+  09:30–21:30 Kyiv, so a subscriber can get an audible notification once per hour, not once/day.
+  Decided (2026-08-04) to leave the hourly schedule as-is for this fix and revisit MET-6 on its
+  own; likewise, letting a user choose per-vacancy vs. batched digest is deferred to MET-122
+  (self-service subscription controls), not bolted onto this change.
+- `/preview` and the post-activation sample (`sendActivationPreview`) now go through the same
+  one-message-per-vacancy path (`sendDigestSample` in `telegram-commands.handler.ts`) — caught
+  live: they were still rendering the old single-message multi-card format via `renderDigest`,
+  which meant they previewed a shape the real digest no longer sends.
+- Card format reworked: absolute Kyiv timestamps instead of relative "X тому", compact
+  `co/ctx/req/sig/time` line prefixes instead of emoji, `/vacancy/:slug` web link alongside the
+  apply link. See `digest.renderer.ts` for the current shape — this doc's "Digest rendering (T5)"
+  section below is the *original* shipped version, not current.
+- Added `DigestService.debugSend(chatId, count)` + `POST /digest/debug-send` (admin-only,
+  `OperatorApi`) — samples random real vacancies via `FeedService.search`, renders them through
+  the same `paginateDigest` path, sends straight to `chatId`. No `sent_notifications` write, no
+  subscription needed — a repeatable format probe for local testing.
+
 ## Status snapshot — 2026-06-03
 
 **Shipped & working on `feat/tg-notifications` (8 commits, not merged):** subscribe → link →
