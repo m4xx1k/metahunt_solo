@@ -79,7 +79,7 @@ describe("digest.renderer", () => {
       const detailsBlock = out.slice(out.indexOf("Деталі:"), out.indexOf("знайдено на"));
       const expectedLines = [
         "Деталі:",
-        "Навички: [Python]",
+        "[Python]",
         "Англійська — B2",
         "Від 5 років досвіду",
         "Віддалена робота",
@@ -114,7 +114,7 @@ describe("digest.renderer", () => {
 
     it("omits the skills line when there are no required skills", () => {
       const out = renderDigest([createVacancy({ skills: { required: [], optional: [] } })], META);
-      expect(out).not.toContain("Навички:");
+      expect(out).not.toContain("[Python]");
     });
 
     it("omits the English line when the level is unknown", () => {
@@ -125,6 +125,12 @@ describe("digest.renderer", () => {
     it("omits the experience line when years are unknown", () => {
       const out = renderDigest([createVacancy({ experienceYears: null })], META);
       expect(out).not.toContain("років досвіду");
+    });
+
+    it("writes 'Без досвіду' for zero years, not 'Від 0 років досвіду'", () => {
+      const out = renderDigest([createVacancy({ experienceYears: 0 })], META);
+      expect(out).toContain("Без досвіду");
+      expect(out).not.toContain("Від 0");
     });
 
     it("omits the format line when work format is unknown", () => {
