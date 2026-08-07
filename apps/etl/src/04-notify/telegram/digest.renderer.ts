@@ -143,9 +143,10 @@ function renderDetails(v: VacancyDto): string[] {
   const lines: string[] = [];
 
   const skillsLine = renderSkills(v.skills.required);
-  if (skillsLine) lines.push(`Навички: ${skillsLine}`);
+  if (skillsLine) lines.push(skillsLine);
   if (v.englishLevel) lines.push(`Англійська — ${ENGLISH_CEFR[v.englishLevel]}`);
-  if (v.experienceYears != null) lines.push(`Від ${v.experienceYears} років досвіду`);
+  if (v.experienceYears === 0) lines.push("Без досвіду");
+  else if (v.experienceYears != null) lines.push(`Від ${v.experienceYears} років досвіду`);
   if (v.workFormat) lines.push(WORK_FORMAT_SENTENCE[v.workFormat]);
   const location = locationChip(v.locations.map(escapeHtml));
   if (location) lines.push(`Локація: ${location}`);
