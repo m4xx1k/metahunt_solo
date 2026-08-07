@@ -1,0 +1,143 @@
+{
+  "batch": 0,
+  "labeller": "arbiter",
+  "labels": [
+    {
+      "id": "ae3cb4b6-ef09-4b66-8b12-6668c8c298cd",
+      "values": {
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
+        },
+        "domain": "Utilities"
+      },
+      "notes": {
+        "skills": "With the 5-entry optional cap, Feathers.js is a directly named nice-to-have framework skill while Elasticsearch appears only as one of three example third-party integrations (and 'ElasticSearch' is not the canonical spelling), so b's set wins.",
+        "domain": "The posting explicitly states 'an international project in the Utilities domain' / 'utilities industry' — a stated 1-2 word business domain, not a tech stack or generic term, so null is wrong."
+      }
+    },
+    {
+      "id": "8b163199-c077-4791-aece-d4717764fb8c",
+      "values": {
+        "skills": {
+          "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
+          "optional": ["React", "Next.js", "Temporal", "Qdrant", "LiteLLM"]
+        }
+      },
+      "notes": {
+        "skills": "The posting offers 'Qdrant або pgvector' as alternatives, so Qdrant already represents that slot; under the 5-entry optional cap the remaining slot goes to LiteLLM, a distinct named tool, rather than a second interchangeable vector store."
+      }
+    },
+    {
+      "id": "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e",
+      "values": {
+        "skills": {
+          "required": [
+            "Python",
+            "Go",
+            "Java",
+            "Node.js",
+            ".NET",
+            "React",
+            "Angular",
+            "Vue.js",
+            "PostgreSQL",
+            "LLM"
+          ],
+          "optional": ["RAG", "LangChain", "LlamaIndex", "Haystack"]
+        }
+      },
+      "notes": {
+        "skills": "Neither labeller is fully right: at the 10-entry required cap, .NET (an explicitly listed backend language, a concrete hard skill) outranks CI/CD process tooling; in optional, Haystack is explicitly named ('LangChain, LlamaIndex, Haystack') and 'Vector Databases' is dropped as a generic category, which the spec excludes just like 'relational databases'."
+      }
+    },
+    {
+      "id": "a06e6d98-332c-4605-92eb-8992f8fd147a",
+      "values": {
+        "domain": "Customer Support"
+      },
+      "notes": {
+        "domain": "EverHelp's stated business is 'developing outsourcing support services' — a concrete 1-2 word business domain per the spec, not a tech stack, generic term, or role-as-domain, so null is wrong."
+      }
+    },
+    {
+      "id": "ff9765ef-de34-4382-aeb4-ca26c0a219eb",
+      "values": {
+        "experienceYears": null,
+        "salary": {
+          "min": 200,
+          "max": 500,
+          "currency": "EUR"
+        }
+      },
+      "notes": {
+        "experienceYears": "The posting never states a required number of years nor literally says 'no experience required', and the spec says null when not explicitly mentioned — Trainee/Junior framing must not be converted to 0 by inference.",
+        "salary": "The posting states two monthly figures ('стажування ... 200 EU на міс', 'EU 500/міс після стажування'), so the stated compensation range for the position is min 200 / max 500 EUR, both inside the 100..50000 guardrail."
+      }
+    },
+    {
+      "id": "00345013-b591-4336-b1f2-335fb414c716",
+      "values": {
+        "skills": {
+          "required": [
+            "AWS",
+            "Kubernetes",
+            "Terraform",
+            "Helm",
+            "GitHub Actions",
+            "ArgoCD",
+            "Prometheus",
+            "Grafana",
+            "Redis",
+            "Python"
+          ],
+          "optional": ["Kafka", "Linux", "Cloudflare"]
+        }
+      },
+      "notes": {
+        "skills": "Cloudflare is a concrete named tool that appears both in the tech stack and in the 'It will be a plus' section ('advanced caching strategies (Redis, Cloudflare, S3 tiering)'), so it belongs in optional within the 5-entry cap; omitting it drops stated information."
+      }
+    },
+    {
+      "id": "46c98bf9-179d-4015-8430-4401c8d9494b",
+      "values": {
+        "role": "Embedded Software Engineer"
+      },
+      "notes": {
+        "role": "The posting is squarely embedded (embedded Linux, C/C++, UAV/flight controllers, low-level/real-time), and 'Embedded Software Engineer' is the umbrella canonical role for that market segment — plain 'Software Engineer' discards the defining signal without being any more canonical."
+      }
+    },
+    {
+      "id": "13a0fd86-dfac-44bb-9845-4242a139d405",
+      "values": {
+        "skills": {
+          "required": [
+            "Windows Server",
+            "Active Directory",
+            "Microsoft Entra ID",
+            "Microsoft 365",
+            "Azure",
+            "Linux",
+            "TCP/IP",
+            "Jira"
+          ],
+          "optional": ["Microsoft Purview", "Microsoft Intune", "Splunk", "PowerShell", "Python"]
+        },
+        "domain": "Insurance"
+      },
+      "notes": {
+        "skills": "Entra ID is explicitly named in the mandatory requirements ('Практичний досвід з Microsoft 365 / Azure / Entra ID'), so it must appear in required — b's set reflects the posting's must-have section correctly and its optional picks are all explicitly named plus-skills.",
+        "domain": "The employer is 'Страхова компанія UNIVERSALNA', an insurance company — the stated business domain is Insurance; Fintech is a different domain the posting never claims."
+      }
+    },
+    {
+      "id": "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2",
+      "values": {
+        "role": "QA Engineer"
+      },
+      "notes": {
+        "role": "The spec prefers umbrella canonical roles and lists 'QA Engineer' as an example — 'Automation QA Engineer' is a hyper-specific variant of the kind the spec tells us to collapse."
+      }
+    }
+  ]
+}

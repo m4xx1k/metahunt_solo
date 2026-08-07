@@ -1,0 +1,944 @@
+{
+  "generatedAt": "2026-07-28T01:04:04.156Z",
+  "decisions": {
+    "00060c1e-3eb9-4c5c-a26e-f336321feb0e": {
+      "approved": true,
+      "overrides": {
+        "role": "ERP Developer (SAP/ABAP/Odoo)",
+        "isTech": true,
+        "skills": {
+          "required": ["AL", "C/AL", "Microsoft Dynamics 365", ".NET", "C#", "SQL"],
+          "optional": ["Azure DevOps"]
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "ERP Developer (SAP/ABAP/Odoo)",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["AL", "C/AL", "Microsoft Dynamics 365", ".NET", "C#", "SQL"],
+          "optional": ["Azure DevOps"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Kharkiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": null,
+        "engagementType": "OUTSOURCE",
+        "companyName": "UKAD",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:03:42.920Z"
+    },
+    "994281fe-0891-4474-b8c6-aff5760a72f6": {
+      "approved": true,
+      "overrides": {
+        "salary": null,
+        "skills": {
+          "optional": [],
+          "required": ["SQL", "Tableau"]
+        },
+        "employmentType": null
+      },
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "SENIOR",
+        "skills": {
+          "optional": [],
+          "required": ["SQL", "Tableau"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Warsaw",
+            "country": "Poland"
+          }
+        ],
+        "domain": "HealthTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Kiss My Apps",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-07-28T01:03:57.119Z"
+    },
+    "44bb481d-57ac-434f-8541-10004153158e": {
+      "approved": true,
+      "overrides": {
+        "employmentType": null,
+        "engagementType": null
+      },
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": ["Power BI"],
+          "optional": ["Python"]
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": "Repalm",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:03:58.184Z"
+    },
+    "ae3cb4b6-ef09-4b66-8b12-6668c8c298cd": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "ElasticSearch"]
+        },
+        "domain": "Utilities"
+      },
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "ElasticSearch"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Utilities",
+        "engagementType": "OUTSOURCE",
+        "companyName": "Aimprosoft",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-07-28T01:04:03.414Z"
+    },
+    "8b163199-c077-4791-aece-d4717764fb8c": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
+          "optional": ["React", "Next.js", "Temporal", "Qdrant", "LiteLLM"]
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "AI Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
+          "optional": ["React", "Next.js", "Temporal", "Qdrant", "LiteLLM"]
+        },
+        "experienceYears": null,
+        "salary": {
+          "min": 4000,
+          "max": 6000,
+          "currency": "USD"
+        },
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "AI",
+        "engagementType": "STARTUP",
+        "companyName": "Workeron.ai",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:04:03.752Z"
+    },
+    "127749e3-9277-4842-bb5c-d32583e18c43": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["Manual Testing", "Test Automation"],
+          "optional": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:04:04.156Z"
+    },
+    "d2a46405-1db7-43c8-a196-3e1045c1cce2": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": ["SQL", "dbt"],
+          "optional": ["Python"]
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Warsaw",
+            "country": "Poland"
+          },
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "AdTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Zeely AI",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:40:26.183Z"
+    },
+    "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "required": [
+            "Python",
+            "Go",
+            "Java",
+            "Node.js",
+            ".NET",
+            "React",
+            "Angular",
+            "Vue.js",
+            "PostgreSQL",
+            "LLM"
+          ],
+          "optional": ["RAG", "LangChain", "LlamaIndex", "Vector Databases"]
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "AI Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "Python",
+            "Go",
+            "Java",
+            "Node.js",
+            ".NET",
+            "React",
+            "Angular",
+            "Vue.js",
+            "PostgreSQL",
+            "LLM"
+          ],
+          "optional": ["RAG", "LangChain", "LlamaIndex", "Vector Databases"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-07-28T00:41:47.684Z"
+    },
+    "c92417fc-130a-495f-b26c-f6d3f9007a6c": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Embedded Systems",
+            "MAVLink",
+            "ArduPilot",
+            "PX4",
+            "Linux",
+            "Docker",
+            "Python",
+            "SQL",
+            "NoSQL",
+            "Raspberry Pi"
+          ],
+          "optional": ["Embedded Linux", "C", "C++"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Lviv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Warsaw",
+            "country": "Poland"
+          }
+        ],
+        "domain": "Defense",
+        "engagementType": "STARTUP",
+        "companyName": "Swarmer",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-07-28T00:44:14.766Z"
+    },
+    "1c16aa37-74c4-4fe0-b0f3-8ce536b01baa": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": false,
+        "role": null,
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["Prompt Engineering"],
+          "optional": ["Synthesia", "HeyGen"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Warsaw",
+            "country": "Poland"
+          }
+        ],
+        "domain": null,
+        "engagementType": "PRODUCT",
+        "companyName": "Kiss My Apps",
+        "hasTestAssignment": true,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-07-28T00:45:27.187Z"
+    },
+    "654c2490-e2f1-43ab-9890-832e3495117f": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["PHP", "Laravel", "React", "Magento", "Shopware", "WooCommerce"],
+          "optional": []
+        },
+        "experienceYears": 5,
+        "salary": {
+          "min": null,
+          "max": 5000,
+          "currency": "USD"
+        },
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Ecommerce",
+        "engagementType": "PRODUCT",
+        "companyName": "3DVisual Studio",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:45:44.319Z"
+    },
+    "e33ce465-c738-4ca6-8db7-f0e923e64083": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "optional": [
+            "Computer Vision",
+            "Hardware Engineering",
+            "Path Planning",
+            "Aerodynamics",
+            "Statistics"
+          ],
+          "required": [
+            "C/C++",
+            "MATLAB",
+            "Octave",
+            "Sensor Fusion",
+            "Optimal Control",
+            "Systems Modeling"
+          ]
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "optional": [
+            "Computer Vision",
+            "Hardware Engineering",
+            "Path Planning",
+            "Aerodynamics",
+            "Statistics"
+          ],
+          "required": [
+            "C/C++",
+            "MATLAB",
+            "Octave",
+            "Sensor Fusion",
+            "Optimal Control",
+            "Systems Modeling"
+          ]
+        },
+        "experienceYears": null,
+        "salary": {
+          "min": 4000,
+          "max": null,
+          "currency": "USD"
+        },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Warsaw",
+            "country": "Poland"
+          }
+        ],
+        "domain": "Robotics",
+        "engagementType": "STARTUP",
+        "companyName": "A19Lab.com",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:47:23.098Z"
+    },
+    "4f4e000c-089d-4a4e-9165-de6fb698c8e8": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": false,
+        "role": null,
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["Revit", "Navisworks", "Bluebeam", "BIM 360", "ACC"],
+          "optional": []
+        },
+        "experienceYears": 4,
+        "salary": {
+          "min": null,
+          "max": null,
+          "currency": "USD"
+        },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Construction",
+        "engagementType": "OUTSOURCE",
+        "companyName": "Eracore",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-07-28T00:48:49.702Z"
+    },
+    "a06e6d98-332c-4605-92eb-8992f8fd147a": {
+      "approved": true,
+      "overrides": {
+        "domain": "SaaS"
+      },
+      "values": {
+        "isTech": true,
+        "role": "Data Engineer",
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": ["SQL", "Python", "Google Cloud", "BigQuery", "Airflow", "dbt", "ETL"],
+          "optional": []
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          {
+            "city": "Lviv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "SaaS",
+        "engagementType": "OUTSOURCE",
+        "companyName": "EverHelp",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:50:16.408Z"
+    },
+    "ff9765ef-de34-4382-aeb4-ca26c0a219eb": {
+      "approved": true,
+      "overrides": {
+        "experienceYears": 0,
+        "salary": {
+          "min": 200,
+          "max": 500,
+          "currency": "EUR"
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "Game Developer",
+        "seniority": "INTERN",
+        "skills": {
+          "required": ["Adobe Photoshop", "Spine"],
+          "optional": []
+        },
+        "experienceYears": 0,
+        "salary": {
+          "min": 200,
+          "max": 500,
+          "currency": "EUR"
+        },
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "HYBRID",
+        "locations": [
+          {
+            "city": "London",
+            "country": "United Kingdom"
+          }
+        ],
+        "domain": "iGaming",
+        "engagementType": "OUTSOURCE",
+        "companyName": "LeaSoft",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:51:57.789Z"
+    },
+    "3e3cd609-3b14-4c83-90fa-af7e3eaff8a6": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "optional": [],
+          "required": []
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "CTO (Chief Technology Officer)",
+        "seniority": "C_LEVEL",
+        "skills": {
+          "optional": [],
+          "required": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "iGaming",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:52:16.879Z"
+    },
+    "00d54c50-e14a-4a10-abea-dffbee2bcbf0": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": true,
+        "role": "Software Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["C++", "Qt", "Make", "Conan", "MSVC", "CEF"],
+          "optional": []
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "HealthTech",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:53:44.894Z"
+    },
+    "0cbdf1dc-08e3-4c03-a720-636cc41143ef": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "optional": ["Schematic Design"],
+          "required": ["Electronics", "Hardware Testing", "Test Cases", "Test Plans"]
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "optional": ["Schematic Design"],
+          "required": ["Electronics", "Hardware Testing", "Test Cases", "Test Plans"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "Hardware",
+        "engagementType": "PRODUCT",
+        "companyName": "Svarock",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:54:24.224Z"
+    },
+    "00345013-b591-4336-b1f2-335fb414c716": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "required": [
+            "AWS",
+            "Kubernetes",
+            "Terraform",
+            "Helm",
+            "GitHub Actions",
+            "ArgoCD",
+            "Prometheus",
+            "Grafana",
+            "Redis",
+            "Python"
+          ],
+          "optional": ["Kafka", "Linux", "Cloudflare"]
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "DevOps Engineer",
+        "seniority": "LEAD",
+        "skills": {
+          "required": [
+            "AWS",
+            "Kubernetes",
+            "Terraform",
+            "Helm",
+            "GitHub Actions",
+            "ArgoCD",
+            "Prometheus",
+            "Grafana",
+            "Redis",
+            "Python"
+          ],
+          "optional": ["Kafka", "Linux", "Cloudflare"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "iGaming",
+        "engagementType": "PRODUCT",
+        "companyName": "NuxGame",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:57:37.813Z"
+    },
+    "46c98bf9-179d-4015-8430-4401c8d9494b": {
+      "approved": true,
+      "overrides": {
+        "role": "Embedded Software Engineer"
+      },
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": ["C", "C++", "Python", "Linux", "CI/CD"],
+          "optional": ["PX4", "ArduPilot", "Betaflight", "Computer Vision"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": "LIRA",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:59:15.529Z"
+    },
+    "00d60864-b357-4d22-9aa6-c4674ffb970c": {
+      "approved": true,
+      "overrides": {},
+      "values": {
+        "isTech": true,
+        "role": "CRM Developer",
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["GoHighLevel"],
+          "optional": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "PropTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Real Estate Bees",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T00:59:40.440Z"
+    },
+    "13a0fd86-dfac-44bb-9845-4242a139d405": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "required": [
+            "Windows Server",
+            "Active Directory",
+            "Linux",
+            "TCP/IP",
+            "Azure",
+            "Microsoft 365",
+            "Jira"
+          ],
+          "optional": ["PowerShell", "Python", "Ansible", "Splunk", "Elastic Stack"]
+        },
+        "domain": "Fintech"
+      },
+      "values": {
+        "isTech": true,
+        "role": "Security Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Windows Server",
+            "Active Directory",
+            "Linux",
+            "TCP/IP",
+            "Azure",
+            "Microsoft 365",
+            "Jira"
+          ],
+          "optional": ["PowerShell", "Python", "Ansible", "Splunk", "Elastic Stack"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "Fintech",
+        "engagementType": "PRODUCT",
+        "companyName": "UNIVERSALNA",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:00:26.953Z"
+    },
+    "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2": {
+      "approved": true,
+      "overrides": {
+        "role": "Automation QA Engineer"
+      },
+      "values": {
+        "isTech": true,
+        "role": "Automation QA Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "C",
+            "Python",
+            "PyTest",
+            "asyncio",
+            "Embedded Systems",
+            "CI/CD",
+            "CMake",
+            "TestRail",
+            "Hardware Testing"
+          ],
+          "optional": []
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "Hardware",
+        "engagementType": "PRODUCT",
+        "companyName": "Quantum-Systems",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:01:31.192Z"
+    },
+    "5596ee51-a05c-4523-bcb8-384ea7d14653": {
+      "approved": true,
+      "overrides": {
+        "skills": {
+          "optional": [],
+          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"]
+        },
+        "employmentType": null
+      },
+      "values": {
+        "isTech": true,
+        "role": "Solutions Architect",
+        "seniority": "PRINCIPAL",
+        "skills": {
+          "optional": [],
+          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"]
+        },
+        "experienceYears": null,
+        "salary": {
+          "min": 670,
+          "max": 1800,
+          "currency": "USD"
+        },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [
+          {
+            "city": "Kharkiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": "13 бригада оперативного призначення НГУ «Хартія»",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:02:14.945Z"
+    },
+    "0093c6a8-1f44-467a-839a-68e4a0b69294": {
+      "approved": true,
+      "overrides": {
+        "englishLevel": "INTERMEDIATE"
+      },
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "WordPress",
+            "PHP",
+            "HTML/CSS",
+            "JavaScript",
+            "jQuery",
+            "MySQL",
+            "Figma",
+            "SEO",
+            "A/B Testing"
+          ],
+          "optional": ["React", "VWO"]
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-07-28T01:03:00.411Z"
+    }
+  }
+}
