@@ -76,10 +76,10 @@ export class SubscriptionCriteriaService {
     return params;
   }
 
-  async describe(params: SubscriptionParams, candidateId?: string | null): Promise<string> {
+  async describe(params: SubscriptionParams): Promise<string> {
     const roleNames = await this.resolveNames(asStringArray(params.roleIds));
     const domainNames = await this.resolveNames(asStringArray(params.domainIds));
-    const parts: string[] = candidateId ? ["за резюме"] : [];
+    const parts: string[] = [];
     this.pushNames(parts, roleNames);
     this.pushNames(parts, domainNames);
 

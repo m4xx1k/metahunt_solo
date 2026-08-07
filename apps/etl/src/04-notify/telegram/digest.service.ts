@@ -19,8 +19,8 @@ const MAX_VACANCY_MESSAGES_PER_DIGEST = 6;
 // debugSend() pool: sampled from the freshest page, not the whole table — an
 // admin poking the format doesn't need a full-table ORDER BY random() scan.
 const DEBUG_SEND_POOL_SIZE = 50;
-const DEBUG_SEND_DEFAULT_COUNT = 3;
-const DEBUG_SEND_MAX_COUNT = 10;
+const DEBUG_SEND_DEFAULT_COUNT = 8;
+const DEBUG_SEND_MAX_COUNT = 20;
 
 function shuffled<T>(items: T[]): T[] {
   const out = [...items];

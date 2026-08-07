@@ -22,6 +22,8 @@ export interface SubscriptionMatchTarget {
   params: SubscriptionParams;
   candidateId: string | null;
   createdAt: Date;
+  /** User-set (or generated) friendly name — the digest label; null → generate from id. */
+  name: string | null;
 }
 
 export interface ActiveSubscription extends SubscriptionMatchTarget {

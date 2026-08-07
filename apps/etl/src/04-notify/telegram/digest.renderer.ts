@@ -10,8 +10,13 @@ import { copy } from "./telegram-copy";
 
 // Rich-card digest rendering for Telegram HTML (`parse_mode: "HTML"`).
 // Principles (see md/journal/migrations/tg-notifications.md#decisions):
-// graceful degradation, one vacancy per scheduled message, compact field codes,
-// explicit source dates and tracked + direct links. All dynamic text is escaped.
+// graceful degradation, one vacancy per scheduled message, sectioned card
+// (fused seniority+role title, itself the metahunt link → salary/company/
+// domain → "Деталі:" block, one plain-language sentence per condition
+// (skills, English, experience, format, location, reservation, test) →
+// "знайдено на <source>"). All dynamic text escaped; no publish date, no
+// quoted description (source text arrives as unsanitized HTML — not safe to
+// echo into a Telegram HTML message yet).
 
 const MAX_SKILLS = 5;
 
@@ -25,10 +30,10 @@ const SENIORITY_LABEL: Record<Seniority, string> = {
   C_LEVEL: "C-Level",
 };
 
-const WORK_FORMAT_LABEL: Record<WorkFormat, string> = {
-  REMOTE: "Remote",
-  OFFICE: "Office",
-  HYBRID: "Hybrid",
+const WORK_FORMAT_SENTENCE: Record<WorkFormat, string> = {
+  REMOTE: "Віддалена робота",
+  OFFICE: "Робота в офісі",
+  HYBRID: "Гібридний формат",
 };
 
 const ENGLISH_CEFR: Record<EnglishLevel, string> = {
@@ -44,16 +49,6 @@ const CURRENCY_SYMBOL: Record<Currency, string> = {
   EUR: "€",
   UAH: "₴",
 };
-
-const KYIV_DATE_TIME = new Intl.DateTimeFormat("uk-UA", {
-  timeZone: "Europe/Kyiv",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -132,78 +127,68 @@ function vacancyUrl(webBaseUrl: string, v: VacancyDto): string {
   return `${webBaseUrl}/vacancy/${slugifyForUrl(role)}-${v.id}`;
 }
 
-function formatKyivDate(iso: string): string | null {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return `${KYIV_DATE_TIME.format(date)} Kyiv`;
+function renderSkills(skills: VacancyDto["skills"]["required"]): string | null {
+  if (skills.length === 0) return null;
+  const names = skills.slice(0, MAX_SKILLS).map((s) => s.name);
+  const extra = skills.length - names.length;
+  const tail = extra > 0 ? ` +${extra}` : "";
+  const tags = names.map((n) => `[${escapeHtml(n)}]`).join(" ");
+  return `${tags}${tail}`;
 }
 
-function publishedLine(v: VacancyDto): string | null {
-  const iso = v.publishedAt ?? v.loadedAt;
-  const date = formatKyivDate(iso);
-  if (!date) return null;
-  return `${v.publishedAt ? "опубл." : "знайдено"} ${date}`;
+// Every condition as its own plain-language line under "Деталі:" instead of
+// terse chips on a shared row — reads like someone telling you about the job,
+// not a spec sheet. Order: what you'd need to bring, then what the job is.
+function renderDetails(v: VacancyDto): string[] {
+  const lines: string[] = [];
+
+  const skillsLine = renderSkills(v.skills.required);
+  if (skillsLine) lines.push(`Навички: ${skillsLine}`);
+  if (v.englishLevel) lines.push(`Англійська — ${ENGLISH_CEFR[v.englishLevel]}`);
+  if (v.experienceYears != null) lines.push(`Від ${v.experienceYears} років досвіду`);
+  if (v.workFormat) lines.push(WORK_FORMAT_SENTENCE[v.workFormat]);
+  const location = locationChip(v.locations.map(escapeHtml));
+  if (location) lines.push(`Локація: ${location}`);
+  if (v.hasReservation === true) lines.push(copy.digest.reservation);
+  if (v.hasTestAssignment === true) lines.push(copy.digest.hasTest);
+  if (v.hasTestAssignment === false) lines.push(copy.digest.noTest);
+
+  return lines;
 }
 
-function renderCard(
-  v: VacancyDto,
-  applyBaseUrl: string,
-  webBaseUrl: string,
-  subscriptionId?: string,
-): string {
+function renderCard(v: VacancyDto, meta: DigestMeta): string {
   const body: string[] = [];
 
-  if (v.company?.name) {
-    body.push(`co   ${escapeHtml(v.company.name)}`);
-  }
-
   const salary = formatSalary(v.salary);
-  const context = joinChips([
-    v.domain ? `<b>${escapeHtml(v.domain.name)}</b>` : null,
-    v.workFormat ? WORK_FORMAT_LABEL[v.workFormat] : null,
-    locationChip(v.locations.map(escapeHtml)),
+  const headline = joinChips([
     salary ? `<b>${salary}</b>` : null,
-    v.englishLevel ? `EN ${ENGLISH_CEFR[v.englishLevel]}` : null,
-    v.experienceYears != null ? `${v.experienceYears}+y` : null,
+    // Underlined, not bold — a named-entity cue that doesn't compete with the
+    // salary/role bold accents already carrying the eye.
+    v.company?.name ? `<u>${escapeHtml(v.company.name)}</u>` : null,
+    v.domain ? escapeHtml(v.domain.name) : null,
   ]);
-  if (context) body.push(`ctx  ${context}`);
+  if (headline) body.push(headline);
 
-  if (v.skills.required.length > 0) {
-    const names = v.skills.required.slice(0, MAX_SKILLS).map((s) => s.name);
-    const extra = v.skills.required.length - names.length;
-    const tail = extra > 0 ? ` +${extra}` : "";
-    const tags = names.map((n) => `[${escapeHtml(n)}]`).join(" ");
-    body.push(`req  ${tags}${tail}`);
+  const details = renderDetails(v);
+  if (details.length > 0) {
+    body.push("", "Деталі:", ...details);
   }
 
-  const perks = joinChips([
-    v.hasReservation === true ? copy.digest.reservation : null,
-    v.hasTestAssignment === false
-      ? copy.digest.noTest
-      : v.hasTestAssignment === true
-        ? copy.digest.hasTest
-        : null,
-  ]);
-  if (perks) body.push(`sig  ${perks}`);
+  if (v.link) {
+    body.push(
+      "",
+      `знайдено на <a href="${escapeHtml(applyUrl(meta.applyBaseUrl, v.id, meta.subscriptionId))}">${escapeHtml(v.source.displayName)}</a>`,
+    );
+  }
 
-  const date = publishedLine(v);
-  if (date) body.push(`time ${date}`);
-
-  const links = joinChips([
-    `<a href="${escapeHtml(vacancyUrl(webBaseUrl, v))}">metahunt</a>`,
-    v.link
-      ? `<a href="${escapeHtml(applyUrl(applyBaseUrl, v.id, subscriptionId))}">${escapeHtml(v.source.displayName)}</a>`
-      : null,
-    v.link ? `<a href="${escapeHtml(v.link)}">direct</a>` : null,
-  ]);
-  body.push(`-&gt;  ${links}`);
-
+  const webBaseUrl = meta.webBaseUrl ?? meta.applyBaseUrl;
   const role = v.role?.name ?? v.title;
   const seniority = v.seniority ? SENIORITY_LABEL[v.seniority] : null;
-  const head = `◆ ${seniority ? `${seniority} · ` : ""}<b>${escapeHtml(role)}</b>`;
+  const titleText = `${seniority ? `${escapeHtml(seniority)} ` : ""}${escapeHtml(role)}`;
+  const head = `◆ <a href="${escapeHtml(vacancyUrl(webBaseUrl, v))}"><b>${titleText}</b></a>`;
 
   if (body.length === 0) return head;
-  return `${head}\n${body.map((line) => `  ${line}`).join("\n")}`;
+  return `${head}\n${body.map((line) => (line ? `  ${line}` : "")).join("\n")}`;
 }
 
 // A dotted rule between cards for `/preview`, which is still one sample message.
@@ -223,7 +208,7 @@ export interface DigestMeta {
    * omit for scheduled digests, which carry only genuinely-new vacancies.
    */
   windowDays?: number;
-  /** Per-subscription filter label for the header (e.g. "React, Node · 3 скіл."). */
+  /** Header label for the single-message `renderDigest` sample (e.g. `/preview`'s filter description). */
   label?: string;
   /** Referring subscription — stamps apply links with `?s=<id>` for click
    * attribution. Omitted for the `/preview` sample (no subscription). */
@@ -245,10 +230,7 @@ function renderHeader(
 export function renderDigest(vacancies: VacancyDto[], meta: DigestMeta): string {
   const header = renderHeader(meta.totalNew, meta);
   if (vacancies.length === 0) return header;
-  const webBaseUrl = meta.webBaseUrl ?? meta.applyBaseUrl;
-  const cards = vacancies
-    .map((v) => renderCard(v, meta.applyBaseUrl, webBaseUrl, meta.subscriptionId))
-    .join(CARD_SEPARATOR);
+  const cards = vacancies.map((v) => renderCard(v, meta)).join(CARD_SEPARATOR);
   return `${header}${HEADER_GAP}${cards}`;
 }
 
@@ -264,20 +246,8 @@ export interface DigestPage {
  */
 export function paginateDigest(vacancies: VacancyDto[], meta: DigestMeta): DigestPage[] {
   if (vacancies.length === 0) return [];
-  const webBaseUrl = meta.webBaseUrl ?? meta.applyBaseUrl;
-  return vacancies.map((vacancy, index) => {
-    const header = renderHeader(meta.totalNew, meta, {
-      index: index + 1,
-      count: vacancies.length,
-    });
-    return {
-      html: `${header}${HEADER_GAP}${renderCard(
-        vacancy,
-        meta.applyBaseUrl,
-        webBaseUrl,
-        meta.subscriptionId,
-      )}`,
-      vacancyIds: [vacancy.id],
-    };
-  });
+  return vacancies.map((vacancy) => ({
+    html: renderCard(vacancy, meta),
+    vacancyIds: [vacancy.id],
+  }));
 }

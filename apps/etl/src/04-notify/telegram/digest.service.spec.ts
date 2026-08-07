@@ -57,6 +57,7 @@ function activeSub(overrides: Partial<ActiveSubscription> = {}): ActiveSubscript
     candidateId: null,
     params: { roleIds: ["r1"] },
     createdAt: new Date(),
+    name: null,
     ...overrides,
   };
 }
@@ -350,7 +351,7 @@ describe("DigestService", () => {
       const items = Array.from({ length: 20 }, (_, i) => createVacancy({ id: `v${i}` }));
       search.mockResolvedValue({ items, page: 1, pageSize: 50, total: 20 });
 
-      await expect(service.debugSend("chat-1", 999)).resolves.toBe(10);
+      await expect(service.debugSend("chat-1", 999)).resolves.toBe(20);
       sendMessage.mockClear();
 
       await expect(service.debugSend("chat-1", 0)).resolves.toBe(1);

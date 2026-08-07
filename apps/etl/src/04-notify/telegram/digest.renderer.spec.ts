@@ -5,6 +5,7 @@ import { paginateDigest, renderDigest } from "./digest.renderer";
 const BASE = "https://api.metahunt.io";
 const WEB = "https://www.metahunt.app";
 const PUBLISHED_AT = "2026-08-01T10:30:00.000Z";
+const METAHUNT_URL = `${WEB}/vacancy/full-stack-developer-11111111-1111-1111-1111-111111111111`;
 
 function createVacancy(overrides: Partial<VacancyDto> = {}): VacancyDto {
   return {
@@ -43,50 +44,132 @@ const META = { totalNew: 1, applyBaseUrl: BASE, webBaseUrl: WEB };
 
 describe("digest.renderer", () => {
   describe("renderDigest — card", () => {
-    it("leads the headline with seniority then the bold role", () => {
+    it("fuses seniority and role into one solid bold phrase that is itself the metahunt link", () => {
       const out = renderDigest([createVacancy()], META);
-      expect(out).toContain("◆ Senior · <b>Full Stack Developer</b>");
+      expect(out).toContain(`◆ <a href="${METAHUNT_URL}"><b>Senior Full Stack Developer</b></a>`);
+      expect(out).not.toContain("Senior · <b>");
     });
 
-    it("drops the raw scraped title but keeps company as a labeled field", () => {
+    it("drops the raw scraped title but shows salary, an underlined company and domain on one line", () => {
       const out = renderDigest([createVacancy()], META);
       expect(out).not.toContain("Senior Full Stack Engineer");
-      expect(out).toContain("co   DataRobot");
+      expect(out).toContain("<b>$4000–6000</b> · <u>DataRobot</u> · Fintech");
     });
 
-    it("renders the English level without emoji noise", () => {
+    it("renders required skills as [bracket] tags, not code blocks", () => {
       const out = renderDigest([createVacancy()], META);
-      expect(out).toContain("EN B2");
+      expect(out).toContain("[Python]");
+      expect(out).not.toContain("<code>");
     });
 
-    it("bolds reservation and a present test task as perks", () => {
-      const out = renderDigest([createVacancy()], META);
-      expect(out).toContain("sig  <b>бронь</b> · <b>тестове</b>");
-    });
-
-    it("surfaces the absence of a test task as a 'без тесту' plus", () => {
+    it("caps skills at 5 and tags the overflow count", () => {
+      const skills = Array.from({ length: 7 }, (_, i) => ({ id: `k${i}`, name: `Skill${i}` }));
       const out = renderDigest(
-        [createVacancy({ hasReservation: false, hasTestAssignment: false })],
+        [createVacancy({ skills: { required: skills, optional: [] } })],
         META,
       );
-      expect(out).toContain("sig  <b>без тесту</b>");
-      expect(out).not.toContain("бронь");
+      expect(out).toContain("[Skill0] [Skill1] [Skill2] [Skill3] [Skill4] +2");
+      expect(out).not.toContain("[Skill5]");
+    });
+  });
+
+  describe("renderDigest — Деталі: block", () => {
+    it("labels the section and writes every condition as its own plain-language line, in order", () => {
+      const out = renderDigest([createVacancy({ experienceYears: 5 })], META);
+      const detailsBlock = out.slice(out.indexOf("Деталі:"), out.indexOf("знайдено на"));
+      const expectedLines = [
+        "Деталі:",
+        "Навички: [Python]",
+        "Англійська — B2",
+        "Від 5 років досвіду",
+        "Віддалена робота",
+        "Локація: Kyiv",
+        "Надають бронювання",
+        "Є тестове завдання",
+      ];
+      const actualLines = detailsBlock
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      expect(actualLines).toEqual(expectedLines);
     });
 
-    it("omits the perks line when both flags are unknown", () => {
+    it("writes 'Без тестового завдання' when a test task is explicitly absent (a plus, not a gap)", () => {
+      const out = renderDigest([createVacancy({ hasTestAssignment: false })], META);
+      expect(out).toContain("Без тестового завдання");
+      expect(out).not.toContain("Є тестове завдання");
+    });
+
+    it("omits the test-assignment line entirely when unknown (null), not a false negative", () => {
+      const out = renderDigest([createVacancy({ hasTestAssignment: null })], META);
+      expect(out).not.toContain("тестове завдання");
+    });
+
+    it("omits the reservation line when false or unknown — only a confirmed offer is worth a line", () => {
+      const falseCase = renderDigest([createVacancy({ hasReservation: false })], META);
+      const nullCase = renderDigest([createVacancy({ hasReservation: null })], META);
+      expect(falseCase).not.toContain("бронювання");
+      expect(nullCase).not.toContain("бронювання");
+    });
+
+    it("omits the skills line when there are no required skills", () => {
+      const out = renderDigest([createVacancy({ skills: { required: [], optional: [] } })], META);
+      expect(out).not.toContain("Навички:");
+    });
+
+    it("omits the English line when the level is unknown", () => {
+      const out = renderDigest([createVacancy({ englishLevel: null })], META);
+      expect(out).not.toContain("Англійська");
+    });
+
+    it("omits the experience line when years are unknown", () => {
+      const out = renderDigest([createVacancy({ experienceYears: null })], META);
+      expect(out).not.toContain("років досвіду");
+    });
+
+    it("omits the format line when work format is unknown", () => {
+      const out = renderDigest([createVacancy({ workFormat: null })], META);
+      expect(out).not.toContain("робота");
+      expect(out).not.toContain("Гібридний");
+    });
+
+    it("writes each work format as its own plain-language sentence", () => {
+      expect(renderDigest([createVacancy({ workFormat: "REMOTE" })], META)).toContain(
+        "Віддалена робота",
+      );
+      expect(renderDigest([createVacancy({ workFormat: "OFFICE" })], META)).toContain(
+        "Робота в офісі",
+      );
+      expect(renderDigest([createVacancy({ workFormat: "HYBRID" })], META)).toContain(
+        "Гібридний формат",
+      );
+    });
+
+    it("omits the location line when there are no locations", () => {
+      const out = renderDigest([createVacancy({ locations: [] })], META);
+      expect(out).not.toContain("Локація:");
+    });
+
+    it("drops the Деталі: header entirely when every condition is unknown — no empty section", () => {
       const out = renderDigest(
-        [createVacancy({ hasReservation: null, hasTestAssignment: null })],
+        [
+          createVacancy({
+            skills: { required: [], optional: [] },
+            englishLevel: null,
+            experienceYears: null,
+            workFormat: null,
+            locations: [],
+            hasReservation: null,
+            hasTestAssignment: null,
+          }),
+        ],
         META,
       );
-      expect(out).not.toContain("бронь");
-      expect(out).not.toContain("тесту");
+      expect(out).not.toContain("Деталі:");
     });
+  });
 
-    it("renders required skills as [bracket] tags", () => {
-      const out = renderDigest([createVacancy()], META);
-      expect(out).toContain("req  [Python]");
-    });
-
+  describe("renderDigest — misc", () => {
     it("separates consecutive cards with a dotted divider", () => {
       const out = renderDigest([createVacancy({ id: "a" }), createVacancy({ id: "b" })], {
         ...META,
@@ -95,20 +178,28 @@ describe("digest.renderer", () => {
       expect(out).toContain("┈┈┈┈");
     });
 
-    it("renders metahunt, tracked source, direct source links and an absolute Kyiv date", () => {
+    it("labels the tracked source link 'знайдено на <source>', with no separate metahunt link line", () => {
       const out = renderDigest([createVacancy()], META);
       expect(out).toContain(
-        `<a href="${WEB}/vacancy/full-stack-developer-11111111-1111-1111-1111-111111111111">metahunt</a>`,
+        `знайдено на <a href="${BASE}/go/11111111-1111-1111-1111-111111111111">Djinni</a>`,
       );
-      expect(out).toContain(`<a href="${BASE}/go/11111111-1111-1111-1111-111111111111">Djinni</a>`);
-      expect(out).toContain(`<a href="https://djinni.co/jobs/1">direct</a>`);
-      expect(out).toContain("time опубл.");
-      expect(out).toContain("Kyiv");
+      expect(out).not.toContain("Відкрити на metahunt");
+      expect(out).not.toContain(`<a href="https://djinni.co/jobs/1">`);
     });
 
-    it("labels loadedAt as found when source publishedAt is missing", () => {
-      const out = renderDigest([createVacancy({ publishedAt: null })], META);
-      expect(out).toContain("time знайдено");
+    it("omits the source line entirely when there's no source link", () => {
+      const out = renderDigest([createVacancy({ link: null })], META);
+      expect(out).not.toContain("знайдено на");
+    });
+
+    it("never renders a publish date or a quoted description", () => {
+      const out = renderDigest(
+        [createVacancy({ description: "We build fintech tools, join the team." })],
+        META,
+      );
+      expect(out).not.toContain("опубл.");
+      expect(out).not.toContain("blockquote");
+      expect(out).not.toContain("fintech tools");
     });
 
     it("stamps the apply link with ?s=<subscriptionId> for click attribution", () => {
@@ -161,14 +252,14 @@ describe("digest.renderer", () => {
       expect(paginateDigest([], META)).toEqual([]);
     });
 
-    it("renders one vacancy per scheduled message", () => {
+    it("renders one vacancy per scheduled message, with no repeated header", () => {
       const items = Array.from({ length: 3 }, (_, i) => createVacancy({ id: `id-${i}` }));
       const pages = paginateDigest(items, { ...META, totalNew: 3 });
 
       expect(pages).toHaveLength(3);
       expect(pages.map((p) => p.vacancyIds)).toEqual([["id-0"], ["id-1"], ["id-2"]]);
-      expect(pages[0].html).toContain("(1/3)");
-      expect(pages[2].html).toContain("(3/3)");
+      expect(pages[0].html).not.toContain("⌖");
+      expect(pages[0].html).not.toContain("нових");
     });
 
     it("does not pack multiple vacancies into one Telegram message", () => {
@@ -177,8 +268,6 @@ describe("digest.renderer", () => {
 
       expect(pages).toHaveLength(11);
       expect(pages.every((p) => p.vacancyIds.length === 1)).toBe(true);
-      expect(pages[0].html).toContain("(1/11)");
-      expect(pages[10].html).toContain("(11/11)");
     });
 
     it("covers every vacancy exactly once across pages", () => {
@@ -188,6 +277,13 @@ describe("digest.renderer", () => {
 
       expect(covered).toHaveLength(20);
       expect(new Set(covered).size).toBe(20);
+    });
+
+    it("never appends a subscription-name footer (dropped — auto-generated names read as garbage)", () => {
+      const pages = paginateDigest([createVacancy()], { ...META, label: "Cosmic Badger" });
+      expect(pages[0].html).not.toContain("Cosmic Badger");
+      expect(pages[0].html).not.toContain("/list");
+      expect(pages[0].html).not.toContain("<i>");
     });
   });
 });

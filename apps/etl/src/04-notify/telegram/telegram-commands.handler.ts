@@ -114,7 +114,7 @@ export class TelegramCommandsHandler {
       }
 
       for (const sub of subs) {
-        const label = await this.subscriptions.describe(sub.params, sub.candidateId);
+        const label = await this.subscriptions.describe(sub.params);
         await ctx.reply(copy.list.item(label), {
           reply_markup: new InlineKeyboard().text(copy.list.unsubButton, `unsub:${sub.id}`),
         });

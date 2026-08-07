@@ -98,6 +98,7 @@ async function seedActiveSubscription(chatId = "fixture-chat"): Promise<ActiveSu
       candidateId: subscriptions.candidateId,
       params: subscriptions.params,
       createdAt: subscriptions.createdAt,
+      name: subscriptions.name,
     });
   if (!row.chatId) throw new Error("fixture subscription needs chat id");
   return { ...row, chatId: row.chatId };
@@ -173,6 +174,7 @@ function makeDigest(
       digestSent: jest.fn(),
       digestDeliveryFailed: jest.fn(),
     } as never,
+    { search: jest.fn() } as never,
   );
 }
 

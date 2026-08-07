@@ -14,10 +14,11 @@ import type {
   Seniority,
   WorkFormat,
 } from "../../platform/shared/contract";
+import { createSubscriptionName } from "../../platform/subscriptions/subscription-name";
 
 import { SentNotificationsService } from "./sent-notifications.service";
 import type { SubscriptionParams } from "./subscriptions.contract";
-import { SubscriptionsService, type SubscriptionMatchTarget } from "./subscriptions.service";
+import type { SubscriptionMatchTarget } from "./subscriptions.service";
 
 const DAY_MS = 86_400_000;
 
@@ -47,7 +48,6 @@ export class SubscriptionMatcherService {
   constructor(
     private readonly feed: FeedService,
     private readonly candidateMatch: CandidateMatchService,
-    private readonly subscriptions: SubscriptionsService,
     private readonly sentNotifications: SentNotificationsService,
   ) {}
 
@@ -87,17 +87,14 @@ export class SubscriptionMatcherService {
     loadedAfter: Date,
     excludeIds: string[],
   ): Promise<DigestMatch> {
-    const [page, label] = await Promise.all([
-      this.feed.search({
-        ...(sub.params as Partial<FeedSearchParams>),
-        page: 1,
-        pageSize: MAX_VACANCIES_PER_RUN,
-        loadedAfter,
-        excludeIds,
-      }),
-      this.subscriptions.describe(sub.params),
-    ]);
-    return { items: page.items, total: page.total, label };
+    const page = await this.feed.search({
+      ...(sub.params as Partial<FeedSearchParams>),
+      page: 1,
+      pageSize: MAX_VACANCIES_PER_RUN,
+      loadedAfter,
+      excludeIds,
+    });
+    return { items: page.items, total: page.total, label: subscriptionLabel(sub) };
   }
 
   private async matchByCv(
@@ -107,22 +104,32 @@ export class SubscriptionMatcherService {
     excludeIds: string[],
   ): Promise<DigestMatch> {
     const criteria = paramsToCandidateCriteria(sub.params);
-    const [res, label] = await Promise.all([
-      this.candidateMatch.match(
-        candidateId,
-        {
-          ...criteria,
-          minFitTier: criteria.minFitTier ?? DEFAULT_CV_MIN_FIT,
-          loadedAfter,
-          excludeIds,
-        },
-        1,
-        MAX_VACANCIES_PER_RUN,
-      ),
-      this.subscriptions.describe(sub.params, candidateId),
-    ]);
-    return { items: res.items.map((i) => i.vacancy), total: res.total, label };
+    const res = await this.candidateMatch.match(
+      candidateId,
+      {
+        ...criteria,
+        minFitTier: criteria.minFitTier ?? DEFAULT_CV_MIN_FIT,
+        loadedAfter,
+        excludeIds,
+      },
+      1,
+      MAX_VACANCIES_PER_RUN,
+    );
+    return {
+      items: res.items.map((i) => i.vacancy),
+      total: res.total,
+      label: subscriptionLabel(sub),
+    };
   }
+}
+
+// The digest label: the subscriber's own name for this alert (set via web
+// account settings), falling back to the same deterministic "Cosmic Badger"
+// generator the account UI shows for unnamed subscriptions. Not
+// `SubscriptionsService.describe()` — that's the technical filter breakdown
+// for `/list`, too noisy to repeat on every single-vacancy digest message.
+function subscriptionLabel(sub: SubscriptionMatchTarget): string {
+  return sub.name ?? createSubscriptionName(sub.id);
 }
 
 // Floor = later of the sub's createdAt and the window start — never notify

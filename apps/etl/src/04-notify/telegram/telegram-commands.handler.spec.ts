@@ -208,7 +208,7 @@ describe("TelegramCommandsHandler", () => {
       expect(getActiveById).toHaveBeenCalledWith("the-token");
       expect(sample).toHaveBeenCalledWith(sub, 14);
       expect(ctx.reply).toHaveBeenCalledTimes(2);
-      expect(ctx.reply.mock.calls[1][0]).toContain("<b>1</b>");
+      expect(ctx.reply.mock.calls[1][0]).toContain("Backend");
       expect(ctx.reply.mock.calls[1][0]).toContain("?s=the-token");
       expect(ctx.reply.mock.calls[1][1]).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
       expect(activationValueShown).toHaveBeenCalledWith("the-token", 1, 1);
@@ -252,7 +252,7 @@ describe("TelegramCommandsHandler", () => {
 
       await commands.get("list")!(ctx);
 
-      expect(describe_).toHaveBeenCalledWith({}, null);
+      expect(describe_).toHaveBeenCalledWith({});
       expect(ctx.reply).toHaveBeenCalledWith(
         copy.list.item("Backend"),
         expect.objectContaining({ reply_markup: expect.anything() }),
