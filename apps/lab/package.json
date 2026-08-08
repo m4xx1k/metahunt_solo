@@ -7,7 +7,8 @@
     "lab": "vite",
     "lab:build": "tsc -b && vite build",
     "lab:check": "oxlint",
-    "lab:data": "bash pipeline/build.sh"
+    "lab:data": "bash pipeline/build.sh",
+    "lab:relations": "node pipeline/relations-check.mjs"
   },
   "dependencies": {
     "@react-sigma/core": "^5.0.6",
