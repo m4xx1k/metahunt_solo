@@ -145,6 +145,7 @@ export const REC_MIN_COHORT = 20; // below this the cohort is too small for a st
 // ~0.22 — drop the not-held one) vs complements above it (Selenium/Appium
 // ~0.36 — keep). Tuned on vacancy-tag co-occurrence; see skill-weighting-research §3.E.
 export const SUBSTITUTE_NPMI_MIN = 0.3;
+export const SUBSTITUTE_PAIR_SUPPORT_MIN = 25;
 
 export interface RecommendItem {
   nodeId: string;

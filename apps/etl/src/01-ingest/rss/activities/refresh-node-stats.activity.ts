@@ -23,10 +23,7 @@ export class RefreshNodeStatsActivity {
   @ActivityMethod()
   async refreshNodeStats(): Promise<void> {
     await this.db.execute(sql`REFRESH MATERIALIZED VIEW CONCURRENTLY node_stats`);
-    // node_skill_cooc rides the same cadence — it derives from vacancy_nodes too
-    // and feeds the recommendation substitute-gate. Plain REFRESH (no unique
-    // index); a brief read-lock here is fine at ingest-tail frequency.
-    await this.db.execute(sql`REFRESH MATERIALIZED VIEW node_skill_cooc`);
+    await this.db.execute(sql`REFRESH MATERIALIZED VIEW CONCURRENTLY node_skill_cooc`);
     this.logger.log("Refreshed node_stats + node_skill_cooc materialized views");
   }
 }

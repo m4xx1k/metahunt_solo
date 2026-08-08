@@ -14,6 +14,7 @@ import {
   REC_GENERIC_DF_SHARE,
   REC_MIN_COHORT,
   REC_TOP_N,
+  SUBSTITUTE_PAIR_SUPPORT_MIN,
   SUBSTITUTE_NPMI_MIN,
   type RecommendItem,
   type RecommendResponse,
@@ -182,8 +183,8 @@ export class RecommendationService {
         -- a core language in a stack the candidate already has one for is known (TS => JS).
         AND NOT (m.category = 'LANGUAGE' AND COALESCE(m.is_core, false)
                  AND m.stack IN (SELECT stack FROM lang_stacks))
-        -- Substitute gate: drop a same-stack core FRAMEWORK unless it co-occurs
-        -- (npmi >= SUBSTITUTE_NPMI_MIN) with a held same-stack core framework.
+        -- Substitute gate: retain a same-stack core framework only when the
+        -- association has both strength and at least 25 position observations.
         -- Drops Angular/Vue for a React dev; keeps Appium for a Selenium QA.
         AND NOT (m.category = 'FRAMEWORK' AND COALESCE(m.is_core, false)
                  AND m.stack IN (SELECT stack FROM fw_stacks)
@@ -191,8 +192,10 @@ export class RecommendationService {
                    SELECT 1 FROM cand h
                    JOIN node_tech_meta hm ON hm.node_id = h.node_id
                      AND hm.category = 'FRAMEWORK' AND hm.is_core AND hm.stack = m.stack
-                   JOIN node_skill_cooc xc ON xc.a_id = a.node_id AND xc.b_id = h.node_id
-                   WHERE xc.npmi >= ${SUBSTITUTE_NPMI_MIN}))
+                   JOIN node_skill_cooc xc ON (xc.a_id = a.node_id AND xc.b_id = h.node_id)
+                                             OR (xc.b_id = a.node_id AND xc.a_id = h.node_id)
+                   WHERE xc.npmi >= ${SUBSTITUTE_NPMI_MIN}
+                     AND xc.pair_positions >= ${SUBSTITUTE_PAIR_SUPPORT_MIN}))
       ORDER BY a.unlocks DESC, ns.weight DESC
       LIMIT ${REC_TOP_N}
     `);

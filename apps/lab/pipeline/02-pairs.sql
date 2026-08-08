@@ -16,6 +16,7 @@
 -- have members whose extractions disagree, and collapsing that silently would
 -- hide an extraction-quality signal inside a market number.
 
+DROP VIEW IF EXISTS metalab_edge;
 DROP TABLE IF EXISTS metalab_position_skill;
 CREATE TABLE metalab_position_skill (
   rule        text   NOT NULL,
