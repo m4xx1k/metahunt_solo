@@ -11,6 +11,7 @@ import {
 import { TracksRepository } from "../../src/03-discovery/tracks/tracks.repository";
 
 import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup } from "./vacancy-fixture";
 
 // The headline invariant of the browse tree: a track's displayed count (from
 // the track_counts view) must equal exactly what clicking it returns (the feed
@@ -67,20 +68,17 @@ async function makeVacancy(
       title: externalId,
     })
     .returning({ id: schema.rssRecords.id });
-  const [vacancy] = await db
-    .insert(schema.vacancies)
-    .values({
-      sourceId: src.sourceId,
-      externalId,
-      lastRssRecordId: record.id,
-      title: externalId,
-      roleNodeId,
-    })
-    .returning({ id: schema.vacancies.id });
+  const vacancyId = await insertVacancyWithGroup(db, {
+    sourceId: src.sourceId,
+    externalId,
+    lastRssRecordId: record.id,
+    title: externalId,
+    roleNodeId,
+  });
   if (skillIds.length > 0) {
     await db.insert(schema.vacancyNodes).values(
       skillIds.map((nodeId) => ({
-        vacancyId: vacancy.id,
+        vacancyId,
         nodeId,
         isRequired: true,
       })),

@@ -146,7 +146,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const [group] = await db
       .select()
       .from(schema.uniqueVacancies)
-      .where(eq(schema.uniqueVacancies.id, vac.uniqueVacancyId!));
+      .where(eq(schema.uniqueVacancies.id, vac.uniqueVacancyId));
     expect(group).toMatchObject({
       canonicalVacancyId: vacancyId,
       representativeVacancyId: vacancyId,

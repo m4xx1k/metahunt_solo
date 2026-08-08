@@ -7,6 +7,7 @@ import { DedupService } from "../../src/02-enrich/dedup/dedup.service";
 import { OpenAIEmbeddingsClient } from "../../src/02-enrich/dedup/openai-embeddings.client";
 
 import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup } from "./vacancy-fixture";
 
 let db: DrizzleDB;
 let pool: Pool;
@@ -63,39 +64,15 @@ async function seedVacancy(opts: {
       publishedAt: opts.publishedAt,
     })
     .returning({ id: schema.rssRecords.id });
-  const [vac] = await db
-    .insert(schema.vacancies)
-    .values({
-      sourceId: opts.sourceId,
-      externalId,
-      lastRssRecordId: rec.id,
-      title: "Backend Engineer",
-      publishedAt: opts.publishedAt,
-      embedding: opts.embedding,
-      embeddingModel: "text-embedding-3-small",
-    })
-    .returning({ id: schema.vacancies.id });
-  const [loaded] = await db
-    .select({ loadedAt: schema.vacancies.loadedAt })
-    .from(schema.vacancies)
-    .where(sql`${schema.vacancies.id} = ${vac.id}`);
-  const [group] = await db
-    .insert(schema.uniqueVacancies)
-    .values({
-      canonicalVacancyId: vac.id,
-      representativeVacancyId: vac.id,
-      sourceCount: 1,
-      vacancyCount: 1,
-      firstSeenAt: opts.publishedAt,
-      lastSeenAt: opts.publishedAt,
-      firstLoadedAt: loaded.loadedAt,
-    })
-    .returning({ id: schema.uniqueVacancies.id });
-  await db
-    .update(schema.vacancies)
-    .set({ uniqueVacancyId: group.id })
-    .where(sql`${schema.vacancies.id} = ${vac.id}`);
-  return vac.id;
+  return insertVacancyWithGroup(db, {
+    sourceId: opts.sourceId,
+    externalId,
+    lastRssRecordId: rec.id,
+    title: "Backend Engineer",
+    publishedAt: opts.publishedAt,
+    embedding: opts.embedding,
+    embeddingModel: "text-embedding-3-small",
+  });
 }
 
 async function groupCount(): Promise<number> {
