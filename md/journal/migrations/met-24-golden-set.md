@@ -24,7 +24,8 @@ does not authorize a production taxonomy migration, re-extraction, or an LLM cal
   model, or pipeline commit are unknown.
 - ⏳ Review the legacy 25-row overrides and add evidence/rationales; intentionally do not invent
   them. **Done when:** `pnpm golden:release-check` passes before a new run is accepted.
-- ⏳ Accept the field policies below, then add targeted boundary cases before expanding to 100.
+- ⏳ Accept [policy v1](../decisions/0015-golden-evaluation-policy-v1.md), then add targeted
+  boundary cases before expanding to 100.
 
 ## Proposed annotation contract
 
