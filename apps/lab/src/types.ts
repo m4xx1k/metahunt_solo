@@ -71,6 +71,26 @@ export type Graph = {
   roles: Role[];
 };
 
+export type Relation = "SUBSTITUTE" | "COMPLEMENT" | "IMPLIES" | "CONTESTED";
+
+/** Shape of src/data/pair-relations.json — the hand-curated layer. Keyed by
+ *  canonical skill name, not node index: indices move on every lab:data run. */
+export type PairRelations = {
+  version: number;
+  labelledAt: string;
+  method: string;
+  pairs: { pair: [string, string]; relation: Relation; note?: string }[];
+};
+
+/** A labelled pair joined against the edge it describes. `edge` is absent when
+ *  the pair no longer clears the support floor — the label outlives the edge. */
+export type LabelledPair = {
+  pair: [string, string];
+  relation: Relation;
+  note?: string;
+  edge?: Edge;
+};
+
 /** A neighbour of a selected skill, resolved for display. */
 export type Neighbour = {
   node: SkillNode;
