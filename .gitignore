@@ -2,6 +2,7 @@ node_modules
 dist
 .pnpm-store
 .env
+.dev-admin.jwt
 .DS_Store
 .codex
 .scratch

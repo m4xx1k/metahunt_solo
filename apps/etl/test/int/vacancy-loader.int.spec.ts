@@ -1,4 +1,4 @@
-import { count, eq } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -140,6 +140,22 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     expect(vac.roleNodeId).not.toBeNull();
     expect(vac.domainNodeId).not.toBeNull();
     expect(vac.publishedAt?.toISOString()).toBe(PUBLISHED_AT.toISOString());
+    expect(vac.uniqueVacancyId).not.toBeNull();
+    expect(vac.deduplicatedAt).toBeNull();
+
+    const [group] = await db
+      .select()
+      .from(schema.uniqueVacancies)
+      .where(eq(schema.uniqueVacancies.id, vac.uniqueVacancyId!));
+    expect(group).toMatchObject({
+      canonicalVacancyId: vacancyId,
+      representativeVacancyId: vacancyId,
+      vacancyCount: 1,
+      sourceCount: 1,
+      firstSeenAt: PUBLISHED_AT,
+      lastSeenAt: PUBLISHED_AT,
+      firstLoadedAt: vac.loadedAt,
+    });
 
     // role + domain + 3 skills = 5 nodes; company resolved once.
     expect(await rowCount(schema.companies)).toBe(1);
@@ -230,7 +246,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     expect(linkedSkills.map(({ name }) => name)).toEqual(["Rust"]);
   });
 
-  it("invalidates semantic derivatives and removes an emptied cluster on a newer version", async () => {
+  it("re-opens a changed listing without orphaning it from its position", async () => {
     const { sourceId, ingestId } = await seedSource();
     const first = await seedRecord(sourceId, ingestId, fullExtracted, {
       createdAt: new Date("2026-04-24T10:00:00.000Z"),
@@ -248,19 +264,13 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       })
       .where(eq(schema.vacancies.id, vacancyId));
     const [cluster] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: vacancyId,
-        centroidEmbedding: embedding,
-        sourceCount: 1,
-        vacancyCount: 1,
-        firstSeenAt: PUBLISHED_AT,
-        lastSeenAt: PUBLISHED_AT,
-      })
-      .returning({ id: schema.uniqueVacancies.id });
+      .select({ id: schema.uniqueVacancies.id })
+      .from(schema.uniqueVacancies)
+      .innerJoin(schema.vacancies, eq(schema.vacancies.uniqueVacancyId, schema.uniqueVacancies.id))
+      .where(eq(schema.vacancies.id, vacancyId));
     await db
       .update(schema.vacancies)
-      .set({ uniqueVacancyId: cluster.id, dedupReason: { method: "test" } })
+      .set({ dedupReason: { method: "test" } })
       .where(eq(schema.vacancies.id, vacancyId));
 
     const second = await seedRecord(
@@ -284,10 +294,11 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       embedding: null,
       embeddingModel: null,
       embeddingSourceHash: null,
-      uniqueVacancyId: null,
+      uniqueVacancyId: cluster.id,
+      deduplicatedAt: null,
       dedupReason: null,
     });
-    expect(await rowCount(schema.uniqueVacancies)).toBe(0);
+    expect(await rowCount(schema.uniqueVacancies)).toBe(1);
   });
 
   it("repairs a non-empty cluster when its canonical listing receives a newer version", async () => {
@@ -315,17 +326,19 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       .update(schema.vacancies)
       .set({ embedding, embeddingModel: "test-model", embeddingSourceHash: "content-hash" });
     const [cluster] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: firstVacancyId,
-        centroidEmbedding: embedding,
-        sourceCount: 1,
-        vacancyCount: 2,
-        firstSeenAt: firstPublishedAt,
-        lastSeenAt: secondPublishedAt,
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db.update(schema.vacancies).set({ uniqueVacancyId: cluster.id });
+      .select({ id: schema.uniqueVacancies.id })
+      .from(schema.uniqueVacancies)
+      .innerJoin(schema.vacancies, eq(schema.vacancies.uniqueVacancyId, schema.uniqueVacancies.id))
+      .where(eq(schema.vacancies.id, firstVacancyId));
+    await db
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: cluster.id })
+      .where(eq(schema.vacancies.id, secondVacancyId));
+    await db.execute(sql`
+      DELETE FROM unique_vacancies u
+      WHERE u.id != ${cluster.id}
+        AND NOT EXISTS (SELECT 1 FROM vacancies v WHERE v.unique_vacancy_id = u.id)
+    `);
 
     const replacementRecord = await seedRecord(sourceId, ingestId, fullExtracted, {
       externalId: "100001",
@@ -340,18 +353,20 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       .from(schema.uniqueVacancies)
       .where(eq(schema.uniqueVacancies.id, cluster.id));
     expect(repaired).toMatchObject({
-      canonicalVacancyId: secondVacancyId,
+      canonicalVacancyId: firstVacancyId,
       sourceCount: 1,
-      vacancyCount: 1,
+      vacancyCount: 2,
     });
     expect(repaired.firstSeenAt.toISOString()).toBe(secondPublishedAt.toISOString());
-    expect(repaired.lastSeenAt.toISOString()).toBe(secondPublishedAt.toISOString());
+    expect(repaired.lastSeenAt.toISOString()).toBe(
+      new Date("2026-04-26T10:00:00.000Z").toISOString(),
+    );
 
     const [updatedFirst] = await db
       .select()
       .from(schema.vacancies)
       .where(eq(schema.vacancies.id, firstVacancyId));
-    expect(updatedFirst.uniqueVacancyId).toBeNull();
+    expect(updatedFirst.uniqueVacancyId).toBe(cluster.id);
     expect(updatedFirst.embedding).toBeNull();
   });
 

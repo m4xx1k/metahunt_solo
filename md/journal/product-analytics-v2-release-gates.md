@@ -12,6 +12,16 @@
 
 ## Required production gate before the database constraint
 
+> **Status 2026-08-07 — gate held, inventory run.** The required read-only query was executed against
+> production: 33 of 50 subscriptions are unowned (66%), 22 active, **24 delivered to in the last 14
+> days**, against 9 owned active. **0** are backfillable — none has a matching Telegram auth identity,
+> because the `?start=<id>` deep link creates a subscription with no web account. Cleanup would cascade
+> 3 574 notifications and 1 080 deliveries. The constraint therefore encodes a product decision ("every
+> subscriber must register first") that the current product contradicts. The migration was moved to
+> [`libs/database/gated/`](../../libs/database/gated/README.md) and runs nowhere. Reopen via the product
+> question, not the file. Full reasoning:
+> [`migrations/canonical-vacancy-grain.md`](migrations/canonical-vacancy-grain.md).
+
 Do not apply `subscriptions.user_id NOT NULL` or delete legacy rows until a
 fresh, restorable production backup has been reviewed and the release owner
 approves the exact output of this read-only query:
