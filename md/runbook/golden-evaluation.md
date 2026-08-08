@@ -29,34 +29,36 @@ Failures and missing outputs score zero and are reported separately.
 Run from the repository root. None of the commands below invokes an LLM unless a
 future runner explicitly does so.
 
-| Command                                   | Reads / writes                        | Purpose                                                          |
-| ----------------------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
-| `pnpm golden sample`                      | read-only DB → corpus, manifest       | deterministic 25-row (or configured) sample and diversity report |
-| `pnpm golden snapshot`                    | read-only DB → snapshot               | pin corpus hash, prompt, taxonomy and aliases                    |
-| `pnpm golden batch`                       | corpus, manifest → batches            | prompt-ready blind labelling batches                             |
-| `pnpm golden merge`                       | labels, `runs/prod.json` → candidates | triage: agreement, production difference, contention             |
-| `pnpm golden arbitrate`                   | candidates → arbiter template         | create only contested-field work                                 |
-| `pnpm golden review`                      | candidates/corpus ↔ decisions/dataset | localhost review; records a human decision                       |
-| `pnpm golden validate`                    | artifacts only                        | structural consistency; legacy artifacts may pass                |
-| `pnpm golden score --run NAME`            | dataset, snapshot, run                | offline report; calls no provider                                |
-| `pnpm golden:release-check -- --run NAME` | all release artifacts                 | strict gate for a comparable release                             |
+| Command                                             | Reads / writes                           | Purpose                                                          |
+| --------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm golden sample`                                | read-only DB → corpus, manifest          | deterministic 25-row (or configured) sample and diversity report |
+| `pnpm golden snapshot`                              | read-only DB → snapshot                  | pin corpus hash, prompt, taxonomy and aliases                    |
+| `pnpm golden batch`                                 | corpus, manifest → batches               | prompt-ready blind labelling batches                             |
+| `pnpm golden merge`                                 | labels, `runs/prod.json` → candidates    | triage: agreement, production difference, contention             |
+| `pnpm golden arbitrate`                             | candidates → arbiter template            | create only contested-field work                                 |
+| `pnpm golden review`                                | candidates/corpus ↔ decisions/dataset    | localhost review; records a human decision                       |
+| `pnpm golden validate`                              | artifacts only                           | structural consistency; legacy artifacts may pass                |
+| `pnpm golden score --run NAME`                      | dataset, snapshot, run                   | offline report; calls no provider                                |
+| `pnpm golden:release-check -- --run NAME`           | all release artifacts                    | strict gate for a comparable release                             |
+| `pnpm golden:archive -- --id <slug> --policy ADR-N` | reviewed working set → `releases/<slug>` | append-only immutable copy before a new experiment               |
 
 `golden review` binds only to `127.0.0.1`; it serves decoded posting text and
 must never be exposed on a LAN. The corpus encoding is obfuscation, not security.
 
 ## Artifact contract
 
-| File                         | Owner            | Rule                                                  |
-| ---------------------------- | ---------------- | ----------------------------------------------------- |
-| `golden/corpus.enc.json`     | sampler          | source text, obfuscated and never silently replaced   |
-| `golden/manifest.json`       | sampler          | selected IDs and coverage cells                       |
-| `golden/snapshot.json`       | snapshot command | corpus/prompt/taxonomy/alias identity                 |
-| `golden/labels/*.json`       | labellers        | independent proposals, never ground truth             |
-| `golden/candidates.json`     | merge            | triage view, retains A/B/prod/arbiter values          |
-| `golden/decisions.json`      | reviewer         | approved values, overrides, rationales and exclusions |
-| `golden/dataset.json`        | review server    | frozen score inputs copied from approved decisions    |
-| `golden/runs/NAME.json`      | runner           | extraction output only                                |
-| `golden/runs/NAME.meta.json` | runner           | provider/model/commit and snapshot binding            |
+| File                         | Owner            | Rule                                                      |
+| ---------------------------- | ---------------- | --------------------------------------------------------- |
+| `golden/corpus.enc.json`     | sampler          | source text, obfuscated and never silently replaced       |
+| `golden/manifest.json`       | sampler          | selected IDs and coverage cells                           |
+| `golden/snapshot.json`       | snapshot command | corpus/prompt/taxonomy/alias identity                     |
+| `golden/labels/*.json`       | labellers        | independent proposals, never ground truth                 |
+| `golden/candidates.json`     | merge            | triage view, retains A/B/prod/arbiter values              |
+| `golden/decisions.json`      | reviewer         | approved values, overrides, rationales and exclusions     |
+| `golden/dataset.json`        | review server    | frozen score inputs copied from approved decisions        |
+| `golden/runs/NAME.json`      | runner           | extraction output only                                    |
+| `golden/runs/NAME.meta.json` | runner           | provider/model/commit and snapshot binding                |
+| `golden/releases/<slug>/`    | archive command  | immutable, checksum-listed copy of a reviewed working set |
 
 The historical `runs/prod.json` has no `.meta.json`; it is inspectable but not a
 comparable benchmark. Do not invent its provenance after the fact.

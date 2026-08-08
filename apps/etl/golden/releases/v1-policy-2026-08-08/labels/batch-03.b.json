@@ -1,0 +1,181 @@
+{
+  "batch": 3,
+  "labeller": "b",
+  "labels": [
+    {
+      "id": "654c2490-e2f1-43ab-9890-832e3495117f",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["PHP", "Laravel", "React", "Magento", "Shopware", "WooCommerce"],
+          "optional": []
+        },
+        "experienceYears": 5,
+        "salary": { "min": null, "max": 5000, "currency": "USD" },
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Ecommerce",
+        "engagementType": "PRODUCT",
+        "companyName": "3DVisual Studio",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "Title contains 'Tech Lead' and title wins over the body's 'Senior Full Stack Developer' framing; Lead -> LEAD.",
+        "skills": "Magento / Shopware / WooCommerce are stated as alternatives ('at least 2 years' with one of them) but all three are named required experience, so all included. 'APIs, performance, security', 'system architecture', 'legacy code' excluded as generic categories.",
+        "experienceYears": "Multiple year requirements (5+ PHP, 3+ React, 2+ Lead); overall minimum commercial experience implied by the posting is 5.",
+        "salary": "'up to 5000$' gives max only; min not specified -> null.",
+        "employmentType": "'Cooperation via FOP' — spec preamble maps FOP to contractor (sole-proprietor) employment -> CONTRACT; 'full-time cooperation' describes the schedule, not a named employment type.",
+        "domain": "Posting names both e-commerce and SaaS products; Magento/Shopware/WooCommerce requirements make Ecommerce the dominant domain (canonical spelling 'Ecommerce').",
+        "locations": "'candidates located in Ukraine or Europe' names countries/regions only, no office city -> []."
+      }
+    },
+    {
+      "id": "e33ce465-c738-4ca6-8db7-f0e923e64083",
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "C",
+            "C++",
+            "MATLAB",
+            "Systems Modeling",
+            "Optimal Control",
+            "Sensor Fusion"
+          ],
+          "optional": ["Computer Vision", "Path Planning"]
+        },
+        "experienceYears": null,
+        "salary": { "min": 4000, "max": null, "currency": "USD" },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": "Robotics",
+        "engagementType": "STARTUP",
+        "companyName": "A19Lab.com",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "'Control Engineer — Drones and Robotics' has no canonical entry; work is designing/implementing software flight controllers in C/C++ — closest umbrella is Embedded Software Engineer.",
+        "skills": "'Strong math and physics' excluded as generic knowledge; 'MatLab/Octave or similar' -> MATLAB (market-standard spelling, Octave is an alternative); systems modeling / optimal control / sensor fusion kept as concrete control-engineering hard skills. Optional: aerodynamics and math statistics excluded as domain/generic knowledge, 'hardware engineering' excluded as a generic category.",
+        "workFormat": "Title lists 'віддалено' alongside Kyiv and Warsaw — remote is explicitly offered -> REMOTE; cities still recorded as hubs per locations rule.",
+        "domain": "Drones / autonomous navigation; no canonical domain fits, 'Robotics' used as a clear 1-2 word business domain.",
+        "engagementType": "'Зараз ми створюємо новий цікавий проект' after investor's exit — early-stage new venture -> STARTUP."
+      }
+    },
+    {
+      "id": "4f4e000c-089d-4a4e-9165-de6fb698c8e8",
+      "values": {
+        "isTech": false,
+        "role": null,
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["Revit", "Navisworks", "BIM 360", "ACC", "Bluebeam"],
+          "optional": []
+        },
+        "experienceYears": 4,
+        "salary": { "min": null, "max": null, "currency": "USD" },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Construction",
+        "engagementType": "OUTSOURCE",
+        "companyName": "Eracore",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "isTech": "Electrical BIM/VDC modelling (Revit, Navisworks) is construction engineering, not software dev / QA / DevOps / data / security / embedded — outside the spec's TRUE list, so FALSE despite being 'engineering'.",
+        "role": "Not a software/tech job at all per spec -> null.",
+        "seniority": "Title contains 'Team Lead' -> LEAD.",
+        "salary": "$15-20/hr is hourly; spec defines only a yearly->monthly conversion, and 15/20 as monthly values fall outside the 100..50000 guardrail -> both min and max null; currency kept since salary info is present.",
+        "locations": "'Expanding in Ukraine' names a country, not a city; work is fully remote -> [].",
+        "engagementType": "Service company delivering BIM models for U.S. client projects -> OUTSOURCE.",
+        "hasReservation": "'Military Reservation Opportunity' listed as a benefit -> true."
+      }
+    },
+    {
+      "id": "a06e6d98-332c-4605-92eb-8992f8fd147a",
+      "values": {
+        "isTech": true,
+        "role": "Data Engineer",
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": ["SQL", "Python", "Google Cloud", "BigQuery", "Airflow", "dbt", "ETL"],
+          "optional": []
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          { "city": "Lviv", "country": "Ukraine" },
+          { "city": "Kyiv", "country": "Ukraine" }
+        ],
+        "domain": null,
+        "engagementType": "OUTSOURCE",
+        "companyName": "EverHelp",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "No level in title or body; inferred from '1–2+ years of hands-on experience' — lower bound 1 year reads as JUNIOR.",
+        "skills": "'Apache Airflow' deduped to canonical 'Airflow'; GCP -> canonical 'Google Cloud'; ETL kept (it is a canonical taxonomy skill); 'data warehousing' excluded as a generic category; nice-to-haves are all experience/soft items -> optional [].",
+        "experienceYears": "'1–2+ years' range -> lower bound 1.",
+        "workFormat": "'Work from Lviv & Kyiv offices ... or fully remotely' — flexible office/remote policy -> HYBRID per the spec's Flexible mapping.",
+        "domain": "EverHelp is a customer-support outsourcing (BPO) business; no canonical domain fits and 'Customer Support' would be a role dressed as a domain -> null.",
+        "engagementType": "'Developing outsourcing support services for plenty of products' — service/outsourcing model -> OUTSOURCE (Genesis is the parent ecosystem, but the employer's own model is outsourced services).",
+        "companyName": "Employer is EverHelp (a Genesis ecosystem company); EverHelp used as the posted company.",
+        "hasTestAssignment": "Hiring process lists a 'Questionnaire' but no technical test task or take-home -> null."
+      }
+    },
+    {
+      "id": "ff9765ef-de34-4382-aeb4-ca26c0a219eb",
+      "values": {
+        "isTech": true,
+        "role": "Game Developer",
+        "seniority": "INTERN",
+        "skills": {
+          "required": ["Adobe Photoshop", "Spine"],
+          "optional": []
+        },
+        "experienceYears": null,
+        "salary": { "min": 200, "max": 500, "currency": "EUR" },
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "HYBRID",
+        "locations": [{ "city": "London", "country": "United Kingdom" }],
+        "domain": "iGaming",
+        "engagementType": "OUTSOURCE",
+        "companyName": "LeaSoft",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "isTech": "Borderline tech-art / no-code assembly role, but requires basic coding knowledge, Spine rigging, game-build pipelines, grows into Game Developer / Tech Artist — spec says prefer TRUE when torn.",
+        "role": "'Assembler / No-code AI Developer' has no canonical entry; game-assembly work with stated growth into Game Developer -> umbrella 'Game Developer'.",
+        "seniority": "Title says 'Trainee/Junior'; the position starts with a mandatory paid internship (стажування), so the lower bound INTERN is used.",
+        "skills": "Internal No-code AI tool and 'Frontend Framework' excluded (unnamed/generic); '2D graphics principles' excluded as a generic category; Photoshop -> canonical 'Adobe Photoshop'.",
+        "experienceYears": "No years stated and no explicit 'no experience required' phrase — 'базові знання або перший досвід' implies entry-level but is not explicit -> null per spec.",
+        "salary": "200 EUR/month during the internship, 500 EUR/month after -> range 200-500 EUR monthly.",
+        "employmentType": "Posting explicitly says 'стажування full time' -> FULL_TIME (explicitly named, not defaulted).",
+        "workFormat": "'Віддалена робота: кілька днів на тиждень' with full remote as a possibility — base policy is a mix -> HYBRID.",
+        "locations": "London is explicitly named as a team hub (Game Designers, Artists, Back-end); Ukraine team is mentioned only at country level, no city -> London only.",
+        "engagementType": "'LeaSoft — сервісна компанія' working as a technical partner on a client's (NASDAQ-listed partner) project -> OUTSOURCE."
+      }
+    }
+  ]
+}

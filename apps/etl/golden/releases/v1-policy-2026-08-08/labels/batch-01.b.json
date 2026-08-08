@@ -1,0 +1,162 @@
+{
+  "batch": 1,
+  "labeller": "b",
+  "labels": [
+    {
+      "id": "00060c1e-3eb9-4c5c-a26e-f336321feb0e",
+      "values": {
+        "isTech": true,
+        "role": "ERP Developer (SAP/ABAP/Odoo)",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Microsoft Dynamics 365", "AL", "C/AL", ".NET", "C#", "SQL"],
+          "optional": ["Azure DevOps"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [{ "city": "Kharkiv", "country": "Ukraine" }],
+        "domain": null,
+        "engagementType": "OUTSOURCE",
+        "companyName": "UKAD",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "Dynamics 365 Business Central is an ERP platform; taxonomy's canonical entry is 'ERP Developer (SAP/ABAP/Odoo)' used with exact spelling",
+        "seniority": "no seniority in title; inferred SENIOR from '~5 years of experience' per rule allowing inference from years",
+        "skills": "T-SQL mapped to canonical 'SQL'; Git excluded (universal tool); Azure DevOps kept optional because the requirements say '(Azure DevOps is a plus)' even though a later list repeats it without the plus marker",
+        "employmentType": "posting explicitly says 'Remote work, full-time'",
+        "locations": "remote job, but Kharkiv is mentioned ('one of the leading employers in Kharkiv') — one entry per mentioned city per spec",
+        "domain": "UKAD is an outsourcing tech partner; no client business domain stated; ERP is a tech stack, not a domain"
+      }
+    },
+    {
+      "id": "994281fe-0891-4474-b8c6-aff5760a72f6",
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["SQL", "Tableau"],
+          "optional": []
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": "HealthTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Kiss My Apps",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "seniority": "title says 'Senior/Lead'; team-building is framed as a future prospect ('зможете побудувати власну команду'), so lower bound SENIOR taken; body's '2+ роки' loses to the title per spec",
+        "skills": "CAC/LTV/ROAS metrics, cohort analysis and LTV modelling are domain knowledge, excluded; only SQL and Tableau are hard-skill requirements",
+        "englishLevel": "English speaking clubs are a benefit, not a stated requirement",
+        "workFormat": "fully remote by default; office access in Kyiv/Warsaw is optional ('за бажанням') so REMOTE, not HYBRID",
+        "domain": "wellbeing & health&fitness product (Chillio); closest canonical domain is HealthTech",
+        "hasReservation": "explicit 'опція бронювання для військовозобов'язаних після випробувального терміну'"
+      }
+    },
+    {
+      "id": "44bb481d-57ac-434f-8541-10004153158e",
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": ["Power BI"],
+          "optional": ["Python"]
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": "Repalm",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "no level in title; inferred JUNIOR from '1+ рік досвіду' — the only signal available",
+        "skills": "Keitaro/Google Search Console/Tableau appear in the tasks list ('за потреби'), not the requirements section, so omitted; 'сирі дані/маппінг' is generic",
+        "employmentType": "'без фрилансу чи паралельних проєктів' implies full commitment but never names an employment type, so null per spec",
+        "domain": "Keitaro and offer-conversion hints suggest affiliate/AdTech but the domain is never stated — null per spec",
+        "engagementType": "no company description beyond the name; unclear",
+        "hasTestAssignment": "selection stages explicitly include 'Тестове завдання'"
+      }
+    },
+    {
+      "id": "ae3cb4b6-ef09-4b66-8b12-6668c8c298cd",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Utilities",
+        "engagementType": "OUTSOURCE",
+        "companyName": "Aimprosoft",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "skills": "'REST APIs' excluded as REST-as-a-concept; Git excluded; AWS sub-services (Lambda, ECS, API Gateway) collapsed into canonical 'AWS'; nice-to-haves capped at 5 — kept TypeScript, Docker, Terraform, Feathers.js, Playwright; dropped CloudFormation, Selenium, Stripe, Elasticsearch, Spring Boot",
+        "employmentType": "explicitly 'on a contract basis (≈ 6-12 months)'",
+        "locations": "remote; the UK is the client's team location, not an office for the hire",
+        "domain": "explicitly stated 'Utilities domain'; no canonical taxonomy entry fits, so a clear stated name is used",
+        "engagementType": "Aimprosoft staffs an international client project — outsourcing model",
+        "hasReservation": "explicit benefit 'Official military deferment (reservation)'"
+      }
+    },
+    {
+      "id": "8b163199-c077-4791-aece-d4717764fb8c",
+      "values": {
+        "isTech": true,
+        "role": "AI Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Python", "FastAPI", "PostgreSQL", "LangGraph", "LLM"],
+          "optional": ["React", "Next.js", "Temporal", "Qdrant", "pgvector"]
+        },
+        "experienceYears": null,
+        "salary": { "min": 4000, "max": 6000, "currency": "USD" },
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "AI",
+        "engagementType": "STARTUP",
+        "companyName": "Workeron.ai",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "title 'AI/LLM Python developer' building AI agents/agentic systems — canonical 'AI Engineer' fits better than the narrower 'Python Developer' or umbrella 'Backend Developer'",
+        "skills": "required from Requirements section; 'LLM' kept as canonical for 'досвід створення AI/LLM продуктів'; nice-to-haves capped at 5 in posting order — dropped LiteLLM, Traceloop, Ragas; 'product thinking' and 'startup experience' are soft, excluded",
+        "experienceYears": "'Senior-level experience' stated but no number of years anywhere — null",
+        "engagementType": "self-described 'AI startup'"
+      }
+    }
+  ]
+}

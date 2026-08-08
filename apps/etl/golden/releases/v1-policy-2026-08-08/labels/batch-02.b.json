@@ -1,0 +1,186 @@
+{
+  "batch": 2,
+  "labeller": "b",
+  "labels": [
+    {
+      "id": "127749e3-9277-4842-bb5c-d32583e18c43",
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": null,
+        "skills": { "required": ["Manual Testing", "Test Automation"], "optional": [] },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "notes": {
+        "skills": "posting names no concrete tools; 'AI-інструменти' is a generic category (excluded per spec's 'ai tools' rule); mobile manual testing and test automation kept because both are canonical taxonomy skills, not generic categories",
+        "role": "mix of manual and automation duties with no clear lead; umbrella 'QA Engineer' over Manual/Automation QA",
+        "seniority": "no seniority in title, no years of experience stated → null per rule 4"
+      }
+    },
+    {
+      "id": "d2a46405-1db7-43c8-a196-3e1045c1cce2",
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "MIDDLE",
+        "skills": { "required": ["SQL", "dbt"], "optional": ["Python"] },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Warsaw", "country": "Poland" },
+          { "city": "Kyiv", "country": "Ukraine" }
+        ],
+        "domain": "AdTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Zeely AI",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "notes": {
+        "isTech": "Data Analyst is a data role, which the spec lists as technical (not finance/marketing despite the payments subject matter)",
+        "seniority": "no seniority in title; inferred MIDDLE from '3–4+ роки досвіду' per rule 4 (years-based inference allowed)",
+        "experienceYears": "'3–4+ роки' range → lower bound 3",
+        "skills": "visualization/reporting/statistical analysis are generic categories with no named tool → excluded; dbt is an explicit must-have, Python explicitly 'буде перевагою'",
+        "workFormat": "'віддалено' / remote-first with offices optional → REMOTE, not HYBRID; offices still listed in locations",
+        "domain": "Zeely is an AI marketing platform for ad creatives and Meta/TikTok campaigns → AdTech (canonical) fits better than 'AI'"
+      }
+    },
+    {
+      "id": "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e",
+      "values": {
+        "isTech": true,
+        "role": "AI Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "Python",
+            "Go",
+            "Java",
+            "Node.js",
+            "React",
+            "Angular",
+            "Vue.js",
+            "PostgreSQL",
+            "LLM",
+            "CI/CD"
+          ],
+          "optional": ["RAG", "Vector Databases", "LangChain", "LlamaIndex", "Haystack"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [{ "city": "Kyiv", "country": "Ukraine" }],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "role": "title 'Full Stack AI Engineer'; picked canonical 'AI Engineer' because LLM/RAG product engineering is the role's core mission; 'Full Stack Developer' was the alternative",
+        "seniority": "no seniority in title; inferred MIDDLE from '2+ роки' commercial experience per rule 4",
+        "skills": "backend (Python/Go/Java/Node.js/.NET) and frontend (React/Next.js/Angular/Vue) are 'or' alternatives; 13 candidates exceeded MAX 10 — dropped .NET, Next.js, gRPC as least central; REST excluded as concept; authN/authZ, queues/workers, code review, tests excluded as generic/process; optional capped at 5 — dropped OCR and OWASP",
+        "domain": "posting is for active servicemembers with military service terms in Kyiv → Defense organization",
+        "employmentType": "'Офіційне працевлаштування' states official employment, not an employment-type enum value → null",
+        "companyName": "employer not named (military unit anonymized)",
+        "hasReservation": "'Можливе бронювання' for civilian hires → true"
+      }
+    },
+    {
+      "id": "c92417fc-130a-495f-b26c-f6d3f9007a6c",
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Embedded Systems",
+            "MAVLink",
+            "ArduPilot",
+            "PX4",
+            "Linux",
+            "Docker",
+            "Python",
+            "SQL",
+            "NoSQL",
+            "Raspberry Pi"
+          ],
+          "optional": ["Embedded Linux", "C", "C++"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Lviv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": "Defense",
+        "engagementType": "STARTUP",
+        "companyName": "Swarmer",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "role": "'Integration Engineer (Hardware/Embedded)' — embedded development experience is the essential requirement, so canonical 'Embedded Software Engineer' over 'Hardware Engineer'",
+        "seniority": "no seniority in title and no years stated ('strong technical expertise' is not inferable) → null",
+        "skills": "Networking and Shell scripting excluded per spec's generic-category rule (networking, scripting) even though named in requirements; SQL/NoSQL kept as canonical taxonomy entries; C/C++ and Embedded Linux explicitly 'a plus'/'advantage' → optional; RF engineering and IoT protocols excluded as generic",
+        "workFormat": "'Flexible remote work options' but 'possibility to commute to the office if needed is essential' → mix of remote and office → HYBRID",
+        "engagementType": "self-described 'Ukrainian defense startup' (Series A, own product) → STARTUP",
+        "hasTestAssignment": "hiring process lists interviews and security check only, no test task → null",
+        "hasReservation": "'Benefits of the defense sector (reservation and related benefits)' → true"
+      }
+    },
+    {
+      "id": "1c16aa37-74c4-4fe0-b0f3-8ce536b01baa",
+      "values": {
+        "isTech": false,
+        "role": null,
+        "seniority": "LEAD",
+        "skills": { "required": ["Prompt Engineering"], "optional": ["Synthesia", "HeyGen"] },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": null,
+        "engagementType": "PRODUCT",
+        "companyName": "Kiss My Apps",
+        "hasTestAssignment": true,
+        "hasReservation": true
+      },
+      "notes": {
+        "isTech": "Head of Learning & Development is an HR/training leadership role, not engineering — false even at a product company",
+        "role": "not a software/tech job → null per spec",
+        "seniority": "'Head of' → C_LEVEL or LEAD depending on context; posting itself equates the role with 'L&D Lead' (functional department lead, not company C-level) → LEAD",
+        "skills": "'впевнений prompt engineer' → Prompt Engineering; knowledge base / competency models / learning paths are domain knowledge, AI/digital tools generic → excluded; Synthesia and HeyGen are named nice-to-have tools",
+        "experienceYears": "'2+ роки у L&D на рівні керівника' → 2",
+        "workFormat": "'fully remote з будь-якої точки' with offices optional → REMOTE; Kyiv/Warsaw offices still listed in locations",
+        "domain": "company products span utilities, lifestyle, health&fitness — no single canonical domain fits → null",
+        "hasReservation": "'є опція бронювання для військовозобов'язаних після випробувального терміну' → true",
+        "englishLevel": "English speaking clubs are a benefit, not a stated requirement → null"
+      }
+    }
+  ]
+}

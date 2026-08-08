@@ -146,3 +146,12 @@ export type RunProvenance = {
     aliasesSha256: string;
   };
 };
+
+/** Immutable copy of one reviewed dataset, made before the working directory changes. */
+export type GoldenArchive = {
+  id: string;
+  policyVersion: string;
+  createdAt: string;
+  rows: number;
+  files: Record<string, { sha256: string; bytes: number }>;
+};

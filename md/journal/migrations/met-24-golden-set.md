@@ -26,6 +26,8 @@ does not authorize a production taxonomy migration, re-extraction, or an LLM cal
   legacy overrides that changed the merged candidate: 3 evidence-backed rulings, 6 explicit
   exclusions, and 2 key-order-only false conflicts removed. **Done when:** `pnpm golden
 release-check` passes for the dataset (it does).
+- ✅ Archived the accepted working set as `v1-policy-2026-08-08` (25 rows, ADR-0015, 18 hashed
+  artifacts) before a new sample can overwrite it. The archive command refuses replacement.
 - ⏳ Add targeted boundary cases before expanding to 100. **Done when:** salary, location,
   boolean, non-tech, and seniority policy edges each have documented coverage.
 

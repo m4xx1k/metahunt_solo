@@ -1,5 +1,6 @@
 // Golden-set eval harness for vacancy extraction (MET-24). See md/runbook/.
 import { arbitrate } from "./commands/arbitrate";
+import { archive } from "./commands/archive";
 import { batch } from "./commands/batch";
 import { merge } from "./commands/merge";
 import { releaseCheck } from "./commands/release-check";
@@ -15,6 +16,7 @@ const COMMANDS: Record<string, (argv: string[]) => Promise<void>> = {
   batch,
   merge,
   arbitrate,
+  archive,
   review,
   score,
   validate,

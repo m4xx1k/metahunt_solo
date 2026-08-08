@@ -1,0 +1,178 @@
+{
+  "batch": 3,
+  "labeller": "a",
+  "labels": [
+    {
+      "id": "654c2490-e2f1-43ab-9890-832e3495117f",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["PHP", "Laravel", "React", "Magento", "Shopware", "WooCommerce"],
+          "optional": []
+        },
+        "experienceYears": 5,
+        "salary": { "min": null, "max": 5000, "currency": "USD" },
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Ecommerce",
+        "engagementType": "PRODUCT",
+        "companyName": "3DVisual Studio",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "title says 'Tech Lead' -> LEAD; title wins over body's 'Senior Full Stack Developer'",
+        "skills": "Magento / Shopware / WooCommerce listed as alternatives but all three are explicitly named required platforms, so all included",
+        "experienceYears": "several bars listed (5+ PHP, 3+ React, 2+ lead); the highest explicit minimum for the role is 5+ years PHP -> 5",
+        "employmentType": "'Cooperation via FOP' -> contractor per spec's UA-market note (FOP = sole-proprietor contract); 'full-time cooperation' describes schedule, not the legal employment type",
+        "salary": "'up to 5000$' -> max only, min null",
+        "domain": "posting spans e-commerce and SaaS; the stack (Magento/Shopware/WooCommerce) and 'E-commerce solutions' make Ecommerce the primary business domain (canonical spelling)"
+      }
+    },
+    {
+      "id": "e33ce465-c738-4ca6-8db7-f0e923e64083",
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "Systems Modeling",
+            "Optimal Control",
+            "Sensor Fusion",
+            "C",
+            "C++",
+            "MATLAB"
+          ],
+          "optional": ["Computer Vision", "Path Planning"]
+        },
+        "experienceYears": null,
+        "salary": { "min": 4000, "max": null, "currency": "USD" },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": "Robotics",
+        "engagementType": "STARTUP",
+        "companyName": "A19Lab.com",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "Control Engineer for software flight controllers in C/C++ — closest umbrella is Embedded Software Engineer (canonical); no better fit in knownRoles",
+        "skills": "systems modeling / optimal control / sensor fusion kept: specific hard engineering disciplines, not generic categories; 'MatLab/Octave or similar' deduped to MATLAB; excluded 'strong math and physics', 'math statistics' (generic), 'aerodynamics' and 'hardware engineering' (domain knowledge / generic category)",
+        "workFormat": "title offers 'віддалено' alongside Kyiv/Warsaw locations -> REMOTE (remote explicitly available), cities still recorded as hubs",
+        "domain": "drones/autonomous navigation; no canonical domain fits (not stated as Defense), so free-form 'Robotics'",
+        "engagementType": "investor sold previous company, 'зараз ми створюємо новий цікавий проект' -> early-stage new project = STARTUP",
+        "experienceYears": "no years figure anywhere -> null despite Senior title"
+      }
+    },
+    {
+      "id": "4f4e000c-089d-4a4e-9165-de6fb698c8e8",
+      "values": {
+        "isTech": false,
+        "role": null,
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["Revit", "Navisworks", "Bluebeam", "BIM 360", "ACC"],
+          "optional": []
+        },
+        "experienceYears": 4,
+        "salary": { "min": null, "max": null, "currency": "USD" },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Construction",
+        "engagementType": "OUTSOURCE",
+        "companyName": "Eracore",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "isTech": "Electrical BIM modelling (Revit/Navisworks CAD work) is construction engineering, not software/QA/DevOps/data/security/embedded — not genuinely torn, so FALSE; role null per 'not a software/tech job'",
+        "salary": "$15-20/hr is hourly; spec defines only a yearly->monthly conversion and the field is monthly — 15..20 falls outside the 100..50000 monthly guardrail, so min and max both null; currency USD kept since salary info exists",
+        "locations": "'expanding in Ukraine' names no city; fully remote -> []",
+        "engagementType": "service company delivering BIM models for U.S. construction clients -> OUTSOURCE",
+        "hasReservation": "'Military Reservation Opportunity' listed as a benefit -> true"
+      }
+    },
+    {
+      "id": "a06e6d98-332c-4605-92eb-8992f8fd147a",
+      "values": {
+        "isTech": true,
+        "role": "Data Engineer",
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": ["SQL", "Python", "Google Cloud", "BigQuery", "Airflow", "dbt", "ETL"],
+          "optional": []
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          { "city": "Lviv", "country": "Ukraine" },
+          { "city": "Kyiv", "country": "Ukraine" }
+        ],
+        "domain": "Customer Support",
+        "engagementType": "OUTSOURCE",
+        "companyName": "EverHelp",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "title has no level; inferred from '1–2+ years' using the range lower bound (1 year) -> JUNIOR",
+        "skills": "'Apache Airflow' -> canonical 'Airflow'; GCP -> canonical 'Google Cloud'; ETL kept because it is on the canonical skills list and is the core stated competency; nice-to-haves are all non-technical -> optional []",
+        "experienceYears": "'1–2+ years' range -> lower bound 1",
+        "workFormat": "'work from Lviv & Kyiv offices ... or fully remotely' = flexible mix -> HYBRID per spec mapping",
+        "domain": "EverHelp builds outsourced customer-support services; no canonical domain fits -> free-form 'Customer Support'",
+        "engagementType": "EverHelp explicitly 'developing outsourcing support services' — service/outsourcing business model -> OUTSOURCE (parent Genesis is product, but the hiring company is EverHelp)",
+        "companyName": "hiring entity is EverHelp (Genesis ecosystem company)",
+        "hasTestAssignment": "hiring process lists a Questionnaire but no technical test task -> null"
+      }
+    },
+    {
+      "id": "ff9765ef-de34-4382-aeb4-ca26c0a219eb",
+      "values": {
+        "isTech": true,
+        "role": "Game Developer",
+        "seniority": "INTERN",
+        "skills": {
+          "required": ["Adobe Photoshop", "Spine"],
+          "optional": []
+        },
+        "experienceYears": 0,
+        "salary": { "min": 500, "max": 500, "currency": "EUR" },
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "HYBRID",
+        "locations": [{ "city": "London", "country": "United Kingdom" }],
+        "domain": "iGaming",
+        "engagementType": "OUTSOURCE",
+        "companyName": "LeaSoft",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "isTech": "game assembly / tech-art pipeline work with basic coding knowledge required, growth path to Game Developer / Tech Artist — torn between tech and design, spec says prefer TRUE",
+        "role": "'Assembler / No-code AI Developer' in GameDev -> umbrella canonical 'Game Developer'",
+        "seniority": "title says 'Trainee/Junior'; position starts with a mandatory paid 1-month internship (стажування, 200 EUR/mo) -> lower bound INTERN",
+        "skills": "Photoshop -> canonical 'Adobe Photoshop'; Spine is a named animation tool (not on list, market-standard name); excluded generic '2D graphics', unnamed 'Frontend Framework', and the internal no-code tool",
+        "experienceYears": "trainee position explicitly aimed at course graduates with 'базові знання або перший досвід' -> no experience required -> 0",
+        "salary": "budget 500 EUR/mo after internship (single figure -> min=max=500); the 200 EUR internship stipend is a temporary training rate, not the position's salary; paid in UAH pegged to EUR -> EUR",
+        "employmentType": "'стажування full time' explicitly names full-time -> FULL_TIME",
+        "workFormat": "'віддалена робота: кілька днів на тиждень, можливість повного ремоуту' — mix of office and remote -> HYBRID",
+        "locations": "London is the only named team hub city; Ukrainian team city never named, so only London recorded"
+      }
+    }
+  ]
+}
