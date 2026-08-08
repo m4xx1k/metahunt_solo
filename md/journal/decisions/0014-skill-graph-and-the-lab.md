@@ -69,6 +69,15 @@ called `dev`/`build`/`lint`/`test`, so `pnpm dev`, `pnpm lint` and `pnpm
 build:all` skip it with no exclusions to keep in sync. **Renaming a lab script to
 a standard name silently undoes this.**
 
+Script naming isolates *commands*, not *dependency resolution* — a distinction CI
+taught us within ten minutes. The lab's scaffold pinned TypeScript 6 while the
+repo runs 5.x; root `ts-node` declared no typescript of its own, so it resolved
+the highest version in the workspace and two unrelated scripts
+(`analytics:catalog`, `seo:audit`) failed on promoted deprecation errors. The
+root now pins its own `typescript`, so shared tooling no longer depends on what
+any app happens to add. Adding a package to this workspace can still shift
+versions for everyone; only an explicit root pin prevents it.
+
 The app reads one committed JSON and never queries a database at runtime.
 Regeneration is explicit, against a local restore of a prod dump; the pipeline
 wrapper refuses any `DATABASE_URL` that is not the lab one. Committing the
