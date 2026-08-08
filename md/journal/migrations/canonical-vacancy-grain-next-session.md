@@ -19,6 +19,41 @@ design: the public grain is **position** (`unique_vacancies`), while
   the other deployment succeeded, the migration ledger is correct (41 rows),
   and the live healthcheck is green. Do not repair the ledger manually.
 
+## Backup, rollback, and tomorrow's verification
+
+Known fresh production dump: `backups/Postgres-1786137672124.sql.gz` (created
+2026-08-07 21:22 local, 260,671,747 bytes). Before any destructive recovery,
+verify the file and restore it only into the local Docker database:
+
+```bash
+gzip -t backups/Postgres-1786137672124.sql.gz
+./scripts/db-restore.sh backups/Postgres-1786137672124.sql.gz
+```
+
+`db-restore.sh` drops its *local* target database after an interactive prompt;
+never point it at Railway. No production connection URL belongs in this file.
+
+Rollback by phase:
+
+- 1a/0040: schema/data are additive and reconciled; do not hand-edit the
+  migration ledger. If the app regresses, redeploy the previous app version.
+- 1b/1c.0: revert the application deploy; `deduplicated_at` and deferred FKs
+  remain compatible with the prior code.
+- 1c.1 (not yet made): `DROP NOT NULL` is the immediate rollback. Do not run
+  it until an observed real ingest proves 1c.0.
+
+Tomorrow after #167 Railway deployment is successful, trigger one normal
+`rss-ingest-hourly` run, then wait for `dedup-sweep`. Record its start time and
+query rows with `loaded_at` after that time. A real new/changed posting must:
+
+1. have `unique_vacancy_id` immediately;
+2. point to a singleton or merged real group;
+3. receive `deduplicated_at` after the sweep;
+4. leave group reconciliation and orphan/ungrouped counts at zero.
+
+If the RSS run finds no new or changed posting, record that fact and wait for
+normal source churn. Do not seed a fake production vacancy or force reset.
+
 ## Current PR
 
 PR #167, `feat/deferred-position-fks`, is green but still draft:
