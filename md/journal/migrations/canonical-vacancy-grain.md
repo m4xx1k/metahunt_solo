@@ -248,6 +248,19 @@ as well as new rows.
 
 ### Phase 1c — contract
 
+This is two deploys because `vacancies` and `unique_vacancies` have an
+intentional creation cycle:
+
+1. **1c.0 — deferred FKs + atomic loader.** Make the cyclic FKs `DEFERRABLE
+   INITIALLY DEFERRED` and deploy a loader that preallocates both UUIDs and
+   inserts the singleton pair in one transaction. This is backwards
+   compatible with the nullable column and gives the old container a safe
+   overlap window.
+2. **1c.1 — NOT NULL.** Only after a full production ingest through 1c.0,
+   change the vacancy FK to `NOT NULL` (and replace its `SET NULL` delete
+   action). At that point both the old and new containers create the pair
+   atomically, so Railway's pre-deploy migration cannot strand a new posting.
+
 ```sql
 ALTER TABLE vacancies ALTER COLUMN unique_vacancy_id SET NOT NULL;
 ```
