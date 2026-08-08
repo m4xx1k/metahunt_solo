@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -11,6 +11,7 @@ import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 
 import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup, mergeIntoGroup } from "./vacancy-fixture";
 
 let db: DrizzleDB;
 let pool: Pool;
@@ -61,11 +62,13 @@ async function seedVacancy(
       publishedAt: new Date(),
     })
     .returning({ id: schema.rssRecords.id });
-  const [vac] = await db
-    .insert(schema.vacancies)
-    .values({ sourceId, externalId, lastRssRecordId: rec.id, title, roleNodeId })
-    .returning({ id: schema.vacancies.id });
-  return vac.id;
+  return insertVacancyWithGroup(db, {
+    sourceId,
+    externalId,
+    lastRssRecordId: rec.id,
+    title,
+    roleNodeId,
+  });
 }
 
 async function seedTechMeta(
@@ -298,20 +301,7 @@ describe("RankingService.match (integration)", () => {
     await refreshNodeStats();
     const candidateId = await seedCandidate([node, docker]);
 
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: inStack,
-        sourceCount: 1,
-        vacancyCount: 2,
-        firstSeenAt: new Date(),
-        lastSeenAt: new Date(),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [inStack, offStack]));
+    await mergeIntoGroup(db, [inStack, offStack]);
 
     const res = await candidateMatch.match(candidateId, {}, 1, 20);
 
@@ -329,20 +319,7 @@ describe("RankingService.match (integration)", () => {
     await linkSkill(repost, skill);
     await refreshNodeStats();
     // Put both postings in one dedup group — the matcher must surface only one.
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: original,
-        sourceCount: 1,
-        vacancyCount: 2,
-        firstSeenAt: new Date(),
-        lastSeenAt: new Date(),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [original, repost]));
+    await mergeIntoGroup(db, [original, repost]);
 
     const res = await ranking.match(["Python"], {}, 1, 20);
 

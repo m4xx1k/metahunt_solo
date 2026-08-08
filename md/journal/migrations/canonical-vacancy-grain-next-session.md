@@ -45,7 +45,22 @@ dedup sweep stamps `deduplicated_at`. Do not force an RSS ingest or a dedup
 reset without explicit owner approval: each can create external cost/data
 churn.
 
-## Phase 1c.1 — only after that observed ingest
+## Phase 1c.1 — DONE (`0042_require_position_group`)
+
+The observed ingest happened: an RSS cycle created a posting through the 1c.0
+loader and the five-minute dedup sweep stamped it. Prod was then re-checked
+read-only — 15,090 postings, 0 ungrouped, 0 pending, 0 canonical-not-a-member,
+0 stale counters — and 1c.1 shipped as its own deploy.
+
+The column is now `NOT NULL` with a deferred `NO ACTION` FK, so
+`VacancyUpsertValues` no longer accepts `id` or `uniqueVacancyId`: the
+repository mints the pair. Integration fixtures go through
+`apps/etl/test/int/vacancy-fixture.ts` (`insertVacancyWithGroup`,
+`mergeIntoGroup`) instead of hand-rolling group rows.
+
+**Next up is Phase 2**, described below and in the main tracker.
+
+### Original plan, kept for context
 
 The original one-step `NOT NULL` plan was incomplete because vacancy and group
 form a creation cycle. The safe order is now:

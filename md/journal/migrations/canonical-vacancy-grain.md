@@ -269,8 +269,15 @@ Ships only after 1b has run in production for at least one full ingest cycle and
 above reports 0. Separate migration, separate deploy — this is the irreversible-ish step.
 
 **DoD 1c**
-- [ ] Invariant verified on prod **before** the migration runs, not after.
-- [ ] Ingest survives a forced content-change replay (the path that used to write null).
+- [x] Invariant verified on prod **before** the migration runs, not after.
+- [x] Ingest survives a forced content-change replay (the path that used to write null).
+
+1c.1 shipped in `0042_require_position_group`. Prod was re-checked read-only
+immediately before the merge (15,090 postings, 0 ungrouped, 0 pending, 0
+canonical-not-a-member, 0 stale counters), and test fixtures now build the
+posting/position pair atomically through `test/int/vacancy-fixture.ts` — the
+same preallocated-UUID shape the loader uses, so a fixture can no longer prove
+something the production path cannot do.
 
 ### Phase 2 — read path
 

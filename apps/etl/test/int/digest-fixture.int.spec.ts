@@ -16,16 +16,10 @@ import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/su
 
 import { dormantProductAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup } from "./vacancy-fixture";
 
-const {
-  digestDeliveries,
-  sentNotifications,
-  sources,
-  rssIngests,
-  rssRecords,
-  subscriptions,
-  vacancies,
-} = schema;
+const { digestDeliveries, sentNotifications, sources, rssIngests, rssRecords, subscriptions } =
+  schema;
 const WINDOW_START = new Date("2026-01-01T00:00:00.000Z");
 const VACANCY_LOADED_AT = new Date("2026-01-02T00:00:00.000Z");
 
@@ -126,18 +120,14 @@ async function seedVacancy(): Promise<string> {
       publishedAt: VACANCY_LOADED_AT,
     })
     .returning({ id: rssRecords.id });
-  const [vacancy] = await db
-    .insert(vacancies)
-    .values({
-      sourceId: source.id,
-      externalId: `fixture-${suffix}`,
-      lastRssRecordId: record.id,
-      title: "Fixture Backend Engineer",
-      loadedAt: VACANCY_LOADED_AT,
-      updatedAt: VACANCY_LOADED_AT,
-    })
-    .returning({ id: vacancies.id });
-  return vacancy.id;
+  return insertVacancyWithGroup(db, {
+    sourceId: source.id,
+    externalId: `fixture-${suffix}`,
+    lastRssRecordId: record.id,
+    title: "Fixture Backend Engineer",
+    loadedAt: VACANCY_LOADED_AT,
+    updatedAt: VACANCY_LOADED_AT,
+  });
 }
 
 // Mirrors DigestService.deliver's real call: chat-scoped anti-join when a

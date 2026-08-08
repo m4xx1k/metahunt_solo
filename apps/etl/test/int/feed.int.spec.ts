@@ -1,4 +1,3 @@
-import { inArray } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
@@ -7,6 +6,7 @@ import { FacetsService } from "../../src/03-discovery/feed/facets.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 
 import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup, mergeIntoGroup } from "./vacancy-fixture";
 
 let db: DrizzleDB;
 let pool: Pool;
@@ -61,19 +61,15 @@ async function seedVacancy(opts: {
       link: `https://dou.ua/${externalId}`,
     })
     .returning({ id: schema.rssRecords.id });
-  const [vac] = await db
-    .insert(schema.vacancies)
-    .values({
-      sourceId: opts.sourceId,
-      externalId,
-      lastRssRecordId: rec.id,
-      title: "Backend Engineer",
-      roleNodeId: opts.roleNodeId,
-      companyId: opts.companyId,
-      publishedAt: opts.publishedAt,
-    })
-    .returning({ id: schema.vacancies.id });
-  return vac.id;
+  return insertVacancyWithGroup(db, {
+    sourceId: opts.sourceId,
+    externalId,
+    lastRssRecordId: rec.id,
+    title: "Backend Engineer",
+    roleNodeId: opts.roleNodeId,
+    companyId: opts.companyId,
+    publishedAt: opts.publishedAt,
+  });
 }
 
 beforeAll(() => {
@@ -115,20 +111,7 @@ describe("FeedService.search — dedup collapse (integration)", () => {
       roleNodeId: role,
       publishedAt: new Date(base.getTime() + 2 * DAY),
     });
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: older,
-        sourceCount: 2,
-        vacancyCount: 2,
-        firstSeenAt: base,
-        lastSeenAt: new Date(base.getTime() + DAY),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [older, newer]));
+    await mergeIntoGroup(db, [older, newer]);
 
     const res = await feed.search({ page: 1, pageSize: 50 });
 
@@ -163,20 +146,7 @@ describe("FeedService.search — dedup collapse (integration)", () => {
       roleNodeId: role,
       publishedAt: new Date(base.getTime() + DAY),
     });
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: older,
-        sourceCount: 2,
-        vacancyCount: 2,
-        firstSeenAt: base,
-        lastSeenAt: new Date(base.getTime() + DAY),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [older, newer]));
+    await mergeIntoGroup(db, [older, newer]);
 
     // Filter to the OLDER member's source; the freshest member (newer, on s2)
     // is filtered out. The collapse must fall back to the older member, not
@@ -210,20 +180,7 @@ describe("FeedService.search — dedup collapse (integration)", () => {
       roleNodeId: role,
       publishedAt: new Date(base.getTime() + 2 * DAY),
     });
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: older,
-        sourceCount: 2,
-        vacancyCount: 2,
-        firstSeenAt: base,
-        lastSeenAt: new Date(base.getTime() + DAY),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [older, newer]));
+    await mergeIntoGroup(db, [older, newer]);
 
     const res = await feed.search({ page: 1, pageSize: 50, hasDuplicates: true });
 
@@ -250,20 +207,7 @@ describe("FeedService.listForSitemap (integration)", () => {
       roleNodeId: role,
       publishedAt: new Date(base.getTime() + DAY / 2),
     });
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: older,
-        sourceCount: 2,
-        vacancyCount: 2,
-        firstSeenAt: base,
-        lastSeenAt: new Date(base.getTime() + DAY / 2),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [older, newer]));
+    await mergeIntoGroup(db, [older, newer]);
 
     const items = await feed.listForSitemap(30);
 
@@ -358,20 +302,7 @@ describe("company facet + filter (integration)", () => {
       publishedAt: new Date(base.getTime() + DAY / 2),
       companyId: acme,
     });
-    const [group] = await db
-      .insert(schema.uniqueVacancies)
-      .values({
-        canonicalVacancyId: older,
-        sourceCount: 2,
-        vacancyCount: 2,
-        firstSeenAt: base,
-        lastSeenAt: new Date(base.getTime() + DAY / 2),
-      })
-      .returning({ id: schema.uniqueVacancies.id });
-    await db
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: group.id })
-      .where(inArray(schema.vacancies.id, [older, newer]));
+    await mergeIntoGroup(db, [older, newer]);
 
     const { companies } = await facets.getCompanyFacets();
 

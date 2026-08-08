@@ -10,6 +10,7 @@ import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
 import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup } from "./vacancy-fixture";
 
 const {
   authIdentities,
@@ -22,7 +23,6 @@ const {
   rssIngests,
   rssRecords,
   subscriptions,
-  vacancies,
 } = schema;
 
 let db: DrizzleDB;
@@ -113,16 +113,12 @@ async function seedVacancy(): Promise<string> {
       publishedAt: new Date(),
     })
     .returning({ id: rssRecords.id });
-  const [vacancy] = await db
-    .insert(vacancies)
-    .values({
-      sourceId: source.id,
-      externalId: code,
-      lastRssRecordId: record.id,
-      title: "Backend Engineer",
-    })
-    .returning({ id: vacancies.id });
-  return vacancy.id;
+  return insertVacancyWithGroup(db, {
+    sourceId: source.id,
+    externalId: code,
+    lastRssRecordId: record.id,
+    title: "Backend Engineer",
+  });
 }
 
 beforeAll(() => {

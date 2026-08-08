@@ -15,7 +15,12 @@ import type { Executor } from "./executor";
 export type SkillLink = { nodeId: string; isRequired: boolean };
 
 type RssRecordRow = typeof schema.rssRecords.$inferSelect;
-export type VacancyUpsertValues = typeof schema.vacancies.$inferInsert;
+// The repository mints the vacancy/group id pair itself (deferred FKs, 0041),
+// so neither half may be supplied by a caller.
+export type VacancyUpsertValues = Omit<
+  typeof schema.vacancies.$inferInsert,
+  "id" | "uniqueVacancyId"
+>;
 
 type LockedListing = {
   id: string;
