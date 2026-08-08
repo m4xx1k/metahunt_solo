@@ -17,6 +17,7 @@ import type {
 } from "./dedup.contract";
 import { buildEmbeddingText, type EmbeddingTextInput } from "./embedding-text.builder";
 import { EMBEDDING_DIMENSIONS, OpenAIEmbeddingsClient } from "./openai-embeddings.client";
+import { repairUniqueVacancy } from "./unique-vacancy-rollup";
 
 // ──────────────────────── Tunables ────────────────────────
 // Surfaced as constants instead of env vars for now — values come from
@@ -257,7 +258,7 @@ export class DedupService {
   }
 
   // ═════════════════════════════════════════════════════════════
-  // Resolve phase — assigns vacancies to UniqueVacancy groups.
+  // Resolve phase — resolves vacancies already assigned to a position group.
   // Iterates strictly in published_at ASC order so each decision
   // operates on the already-resolved history below. Skipping the
   // already-resolved keeps the loop idempotent on re-runs.
@@ -267,7 +268,7 @@ export class DedupService {
       SELECT id
       FROM vacancies
       WHERE embedding IS NOT NULL
-        AND unique_vacancy_id IS NULL
+        AND deduplicated_at IS NULL
         AND published_at IS NOT NULL
       ORDER BY published_at ASC, id ASC
     `);
@@ -293,7 +294,9 @@ export class DedupService {
   ): Promise<{ action: "joined" | "new_group"; uniqueVacancyId: string } | null> {
     const v = await this.loadVacancyForResolve(vacancyId);
     if (!v) return null;
-    if (v.uniqueVacancyId) return null;
+    if (!v.uniqueVacancyId) {
+      throw new Error(`Pending vacancy ${v.id} has no position group`);
+    }
 
     const windowStart = new Date(v.publishedAt.getTime() - PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
     const windowEnd = new Date(v.publishedAt.getTime() + PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
@@ -377,10 +380,6 @@ export class DedupService {
       centroidSimilarity: r.centroid_similarity !== null ? Number(r.centroid_similarity) : null,
     }));
 
-    // We can only "join" candidates that are already in a group —
-    // resolveAll walks chronologically, so earlier vacancies are
-    // already resolved when later ones reach back to them.
-    //
     // Join gate is BOTH pairwise AND centroid similarity ≥ HARD.
     // Either alone leaks: pairwise-only snowballs via boilerplate
     // chains, centroid-only drifts when an established group's
@@ -410,9 +409,9 @@ export class DedupService {
       : undefined;
 
     if (!best) {
-      const groupId = await this.createGroup(v);
-      if (!groupId) return null;
-      return { action: "new_group", uniqueVacancyId: groupId };
+      const resolved = await this.resolveInOwnGroup(v);
+      if (!resolved) return null;
+      return { action: "new_group", uniqueVacancyId: v.uniqueVacancyId };
     }
 
     const groupId = best.uniqueVacancyId!;
@@ -510,26 +509,15 @@ export class DedupService {
     };
   }
 
-  private async createGroup(v: VacancyForResolve): Promise<string | null> {
+  private async resolveInOwnGroup(v: VacancyForResolve): Promise<boolean> {
     return this.db.transaction(async (tx) => {
-      if (!(await this.lockCurrentResolveVersion(v, tx))) return null;
-
-      const [group] = await tx
-        .insert(schema.uniqueVacancies)
-        .values({
-          canonicalVacancyId: v.id,
-          centroidEmbedding: v.embedding,
-          sourceCount: 1,
-          vacancyCount: 1,
-          firstSeenAt: v.publishedAt,
-          lastSeenAt: v.publishedAt,
-        })
-        .returning({ id: schema.uniqueVacancies.id });
+      if (!(await this.lockCurrentResolveVersion(v, tx))) return false;
       await tx
         .update(schema.vacancies)
-        .set({ uniqueVacancyId: group.id, dedupReason: null })
+        .set({ deduplicatedAt: sql`now()`, dedupReason: null })
         .where(eq(schema.vacancies.id, v.id));
-      return group.id;
+      await repairUniqueVacancy(v.uniqueVacancyId!, tx);
+      return true;
     });
   }
 
@@ -541,41 +529,35 @@ export class DedupService {
     return this.db.transaction(async (tx) => {
       if (!(await this.lockCurrentResolveVersion(v, tx))) return false;
 
-      const group = await tx.execute<{ id: string }>(sql`
-        SELECT id FROM unique_vacancies WHERE id = ${groupId} FOR UPDATE
+      const groups = await tx.execute<{ id: string }>(sql`
+        SELECT id
+        FROM unique_vacancies
+        WHERE id IN (${v.uniqueVacancyId}, ${groupId})
+        ORDER BY id
+        FOR UPDATE
       `);
-      if (!group.rows[0]) return false;
+      if (groups.rows.length !== (v.uniqueVacancyId === groupId ? 1 : 2)) return false;
 
       await tx
         .update(schema.vacancies)
         .set({
-          uniqueVacancyId: groupId,
           dedupReason: reason,
+          deduplicatedAt: sql`now()`,
         })
         .where(eq(schema.vacancies.id, v.id));
 
-      // Recompute group-level aggregates from scratch over current
-      // members — keeps the column honest without race-prone deltas.
-      await tx.execute(sql`
-        UPDATE unique_vacancies u
-        SET
-          centroid_embedding = sub.centroid,
-          source_count = sub.source_count,
-          vacancy_count = sub.vacancy_count,
-          last_seen_at = sub.last_seen_at,
-          updated_at = now()
-        FROM (
-          SELECT
-            AVG(v.embedding)                         AS centroid,
-            COUNT(DISTINCT v.source_id)::int         AS source_count,
-            COUNT(*)::int                            AS vacancy_count,
-            MAX(v.published_at)                      AS last_seen_at
-          FROM vacancies v
-          WHERE v.unique_vacancy_id = ${groupId}
-            AND v.embedding IS NOT NULL
-        ) sub
-        WHERE u.id = ${groupId}
-      `);
+      // A posting always retains its group. If the newly resolved content
+      // matches another position, merge the two groups rather than moving one
+      // member out and leaving a semantically split cluster behind.
+      if (v.uniqueVacancyId !== groupId) {
+        await tx.execute(sql`
+          UPDATE vacancies
+          SET unique_vacancy_id = ${groupId}
+          WHERE unique_vacancy_id = ${v.uniqueVacancyId}
+        `);
+        await tx.execute(sql`DELETE FROM unique_vacancies WHERE id = ${v.uniqueVacancyId}`);
+      }
+      await repairUniqueVacancy(groupId, tx);
       return true;
     });
   }
@@ -592,24 +574,53 @@ export class DedupService {
         AND embedding IS NOT NULL
         AND embedding_model IS NOT DISTINCT FROM ${vacancy.storedEmbeddingModel}
         AND embedding_source_hash IS NOT DISTINCT FROM ${vacancy.embeddingSourceHash}
-        AND unique_vacancy_id IS NULL
+        AND deduplicated_at IS NULL
       FOR UPDATE
     `);
     return result.rows.length > 0;
   }
 
   // ═════════════════════════════════════════════════════════════
-  // Reset — drop all groupings (and the groups themselves). Used
+  // Reset — restore singleton groups, rather than nulling the position FK. Used
   // by `dedup:reset` for deterministic re-runs while we calibrate.
   // ═════════════════════════════════════════════════════════════
   async resetAll(): Promise<void> {
     await this.db.transaction(async (tx) => {
       await tx.execute(sql`
-        UPDATE vacancies
-        SET unique_vacancy_id = NULL,
+        WITH singleton_groups AS (
+          INSERT INTO unique_vacancies (
+            canonical_vacancy_id,
+            representative_vacancy_id,
+            source_count,
+            vacancy_count,
+            first_seen_at,
+            last_seen_at,
+            first_loaded_at
+          )
+          SELECT
+            v.id,
+            v.id,
+            1,
+            1,
+            COALESCE(v.published_at, v.loaded_at),
+            COALESCE(v.published_at, v.loaded_at),
+            v.loaded_at
+          FROM vacancies v
+          RETURNING id, canonical_vacancy_id
+        )
+        UPDATE vacancies v
+        SET unique_vacancy_id = g.id,
+            deduplicated_at = NULL,
             dedup_reason = NULL
+        FROM singleton_groups g
+        WHERE g.canonical_vacancy_id = v.id
       `);
-      await tx.execute(sql`DELETE FROM unique_vacancies`);
+      await tx.execute(sql`
+        DELETE FROM unique_vacancies u
+        WHERE NOT EXISTS (
+          SELECT 1 FROM vacancies v WHERE v.unique_vacancy_id = u.id
+        )
+      `);
     });
   }
 

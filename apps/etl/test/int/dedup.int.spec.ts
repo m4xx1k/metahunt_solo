@@ -75,6 +75,26 @@ async function seedVacancy(opts: {
       embeddingModel: "text-embedding-3-small",
     })
     .returning({ id: schema.vacancies.id });
+  const [loaded] = await db
+    .select({ loadedAt: schema.vacancies.loadedAt })
+    .from(schema.vacancies)
+    .where(sql`${schema.vacancies.id} = ${vac.id}`);
+  const [group] = await db
+    .insert(schema.uniqueVacancies)
+    .values({
+      canonicalVacancyId: vac.id,
+      representativeVacancyId: vac.id,
+      sourceCount: 1,
+      vacancyCount: 1,
+      firstSeenAt: opts.publishedAt,
+      lastSeenAt: opts.publishedAt,
+      firstLoadedAt: loaded.loadedAt,
+    })
+    .returning({ id: schema.uniqueVacancies.id });
+  await db
+    .update(schema.vacancies)
+    .set({ uniqueVacancyId: group.id })
+    .where(sql`${schema.vacancies.id} = ${vac.id}`);
   return vac.id;
 }
 
@@ -118,7 +138,24 @@ describe("DedupService.resolveAll — mechanics (integration)", () => {
     await dedup.resolveAll();
 
     expect(await groupCount()).toBe(1);
-    expect(await groupIdOf(a)).toBe(await groupIdOf(b));
+    const groupId = await groupIdOf(a);
+    expect(groupId).toBe(await groupIdOf(b));
+    const [group] = await db
+      .select()
+      .from(schema.uniqueVacancies)
+      .where(sql`${schema.uniqueVacancies.id} = ${groupId}`);
+    expect(group).toMatchObject({
+      vacancyCount: 2,
+      sourceCount: 1,
+      representativeVacancyId: b,
+    });
+    const resolved = await db
+      .select({ deduplicatedAt: schema.vacancies.deduplicatedAt })
+      .from(schema.vacancies);
+    expect(resolved.every((row) => row.deduplicatedAt !== null)).toBe(true);
+
+    expect(await dedup.resolveAll()).toEqual({ processed: 0, assigned: 0 });
+    expect(await groupCount()).toBe(1);
   });
 
   it("merges a cross-source pair 40 days apart (inside the 45d window)", async () => {

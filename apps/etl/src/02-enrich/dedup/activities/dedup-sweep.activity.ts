@@ -6,7 +6,7 @@ import { DedupService } from "../dedup.service";
 
 // One activity == the whole CLI sweep, run sequentially: embed the new
 // vacancies, then resolve them. Both halves are idempotent (embed by source
-// hash, resolve by `unique_vacancy_id IS NULL`), so a retry or an overlapping
+// hash, resolve by `deduplicated_at IS NULL`), so a retry or an overlapping
 // schedule fire is harmless — and resolveAll walks chronologically in a single
 // pass, which is exactly what keeps near-duplicate siblings in one group.
 @Injectable()

@@ -6,6 +6,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { omitKeys } from "../../../platform/shared/omit-keys";
+import { repairUniqueVacancy } from "../../dedup/unique-vacancy-rollup";
 
 import type { Executor } from "./executor";
 
@@ -67,6 +68,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
         .returning({ id: schema.vacancies.id });
 
       if (inserted) {
+        await this.createSingletonGroup(inserted.id, executor);
         await this.replaceSkills(inserted.id, skillLinks, executor);
         return inserted.id;
       }
@@ -105,7 +107,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
         embedding: null,
         embeddingModel: null,
         embeddingSourceHash: null,
-        uniqueVacancyId: null,
+        deduplicatedAt: null,
         dedupReason: null,
         updatedAt: sql`now()`,
       })
@@ -113,7 +115,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
 
     await this.replaceSkills(existing.id, skillLinks, executor);
 
-    if (oldClusterId) await this.repairCluster(oldClusterId, executor);
+    if (oldClusterId) await repairUniqueVacancy(oldClusterId, executor);
 
     return existing.id;
   }
@@ -157,51 +159,35 @@ export class DrizzleVacancyRepository extends VacancyRepository {
     }
   }
 
-  private async repairCluster(clusterId: string, executor: Executor): Promise<void> {
-    // Remove an empty cluster first. ON DELETE SET NULL makes this safe even
-    // though the cluster retains a canonical-vacancy reference.
-    await executor.execute(sql`
-      DELETE FROM unique_vacancies u
-      WHERE u.id = ${clusterId}
-        AND NOT EXISTS (
-          SELECT 1 FROM vacancies v WHERE v.unique_vacancy_id = u.id
-        )
+  private async createSingletonGroup(vacancyId: string, executor: Executor): Promise<void> {
+    const result = await executor.execute<{ id: string }>(sql`
+      INSERT INTO unique_vacancies (
+        canonical_vacancy_id,
+        representative_vacancy_id,
+        source_count,
+        vacancy_count,
+        first_seen_at,
+        last_seen_at,
+        first_loaded_at
+      )
+      SELECT
+        v.id,
+        v.id,
+        1,
+        1,
+        COALESCE(v.published_at, v.loaded_at),
+        COALESCE(v.published_at, v.loaded_at),
+        v.loaded_at
+      FROM vacancies v
+      WHERE v.id = ${vacancyId}
+      RETURNING id
     `);
+    const groupId = result.rows[0]?.id;
+    if (!groupId) throw new Error(`Could not create singleton group for vacancy ${vacancyId}`);
 
-    // If members remain, repair canonical membership and all denormalized
-    // aggregates in the same transaction as the listing invalidation.
-    await executor.execute(sql`
-      UPDATE unique_vacancies u
-      SET
-        canonical_vacancy_id = CASE
-          WHEN EXISTS (
-            SELECT 1
-            FROM vacancies member
-            WHERE member.unique_vacancy_id = u.id
-              AND member.id = u.canonical_vacancy_id
-          ) THEN u.canonical_vacancy_id
-          ELSE sub.first_vacancy_id
-        END,
-        centroid_embedding = sub.centroid,
-        source_count = sub.source_count,
-        vacancy_count = sub.vacancy_count,
-        first_seen_at = sub.first_seen_at,
-        last_seen_at = sub.last_seen_at,
-        updated_at = now()
-      FROM (
-        SELECT
-          (array_agg(v.id ORDER BY v.published_at ASC NULLS LAST, v.id))[1]
-            AS first_vacancy_id,
-          AVG(v.embedding) AS centroid,
-          COUNT(DISTINCT v.source_id)::int AS source_count,
-          COUNT(*)::int AS vacancy_count,
-          COALESCE(MIN(v.published_at), MIN(v.loaded_at)) AS first_seen_at,
-          COALESCE(MAX(v.published_at), MAX(v.loaded_at)) AS last_seen_at
-        FROM vacancies v
-        WHERE v.unique_vacancy_id = ${clusterId}
-      ) sub
-      WHERE u.id = ${clusterId}
-        AND sub.vacancy_count > 0
-    `);
+    await executor
+      .update(schema.vacancies)
+      .set({ uniqueVacancyId: groupId })
+      .where(eq(schema.vacancies.id, vacancyId));
   }
 }
