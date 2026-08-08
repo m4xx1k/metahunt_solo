@@ -1,0 +1,632 @@
+{
+  "note": "CURATED BY HAND — never regenerated. `lab:data` rebuilds src/data/graph.json; this file is the human judgement layer over it and must survive that rebuild. Keyed by canonical skill name, not node index: indices shift on every rebuild.",
+  "version": 1,
+  "labelledAt": "2026-08-08",
+  "method": "assistant pre-label over the top 150 edges by NPMI, reviewed by the owner",
+  "relations": {
+    "SUBSTITUTE": "one is enough — the posting means 'or'",
+    "COMPLEMENT": "both are genuinely needed",
+    "IMPLIES": "pair[0] implies pair[1] — directional, written antecedent first",
+    "CONTESTED": "depends on the vacancy; no single answer is honest"
+  },
+  "pairs": [
+    {
+      "pair": ["Active Directory", "Windows Server"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Alembic", "SQLAlchemy"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Altium Designer", "KiCad"],
+      "relation": "SUBSTITUTE",
+      "note": "competing EDA suites"
+    },
+    {
+      "pair": ["Altium Designer", "PCB Layout"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Analog Circuit Design", "Digital Circuit Design"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Analog Electronics", "Digital Electronics"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Analog Electronics", "Power Electronics"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Android SDK", "iOS SDK"],
+      "relation": "CONTESTED",
+      "note": "cross-platform needs both, native needs one"
+    },
+    {
+      "pair": ["Android Studio", "Xcode"],
+      "relation": "CONTESTED",
+      "note": "both for cross-platform, one for native"
+    },
+    {
+      "pair": ["Antenna Design", "RF Design"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Antenna Design", "RF Engineering"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Antenna Design", "Spectrum Analyzer"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Antenna Design", "VNA"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Apache", "Nginx"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Apex", "Salesforce"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["API Gateway", "AWS Lambda"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["ArduPilot", "Betaflight"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["ArduPilot", "MAVLink"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["ArduPilot", "PX4"],
+      "relation": "SUBSTITUTE",
+      "note": "competing autopilot firmwares"
+    },
+    {
+      "pair": ["ArgoCD", "Helm"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["AWS Lambda", "AWS S3"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["BGP", "Cisco"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Bloc", "Flutter"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["BPMN", "UML"],
+      "relation": "CONTESTED",
+      "note": "overlapping notations; BA roles list both, projects use one"
+    },
+    {
+      "pair": ["Buildroot", "Linux kernel"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Buildroot", "Yocto"],
+      "relation": "SUBSTITUTE",
+      "note": "competing embedded-Linux build systems"
+    },
+    {
+      "pair": ["C#", ".NET"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["CAN", "I2C"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["CAN", "SPI"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["CAN", "UART"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Celery", "Django REST Framework"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Charles Proxy", "Fiddler"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Charles Proxy", "Proxyman"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Circuit Design", "Electronics"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Cisco", "IPsec"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Cisco", "MikroTik"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Claude API", "OpenAI"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Claude Code", "Codex"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Claude Code", "Cursor"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Codex", "Cursor"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Combine", "Swift"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Confluence", "Jira"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Coroutines", "Jetpack Compose"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["CrewAI", "LangGraph"],
+      "relation": "SUBSTITUTE",
+      "note": "competing agent frameworks"
+    },
+    {
+      "pair": ["Cursor", "GitHub Copilot"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Cybersecurity", "Information Security"],
+      "relation": "SUBSTITUTE",
+      "note": "near-synonyms — taxonomy duplicate candidate"
+    },
+    {
+      "pair": ["DAST", "SAST"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Data Warehousing", "ETL"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["DAX", "Power BI"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["DAX", "Power Query"],
+      "relation": "COMPLEMENT",
+      "note": "both are the Power BI modelling stack"
+    },
+    {
+      "pair": ["Debian", "Ubuntu"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["DHCP", "DNS"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["DHCP", "VLAN"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Digital Electronics", "Power Electronics"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["DSP", "GNU Radio"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["DSP", "SDR"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["DSP", "Verilog"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["EDR", "MDM"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["EDR", "SIEM"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["ELT", "ETL"],
+      "relation": "SUBSTITUTE",
+      "note": "two names for the same pipeline shape"
+    },
+    {
+      "pair": ["EMC", "Spectrum Analyzer"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["EMC", "VNA"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["ESP32", "STM32"],
+      "relation": "SUBSTITUTE",
+      "note": "different MCU families; postings usually name one"
+    },
+    {
+      "pair": ["Ethernet", "USB"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Expo", "React Native"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Flow", "Coroutines"],
+      "relation": "IMPLIES",
+      "note": "Kotlin Flow is built on coroutines"
+    },
+    {
+      "pair": ["Flow", "Jetpack Compose"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["FPGA", "Verilog"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Functional Testing", "Test Automation"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["GNU Radio", "MATLAB"],
+      "relation": "CONTESTED",
+      "note": "both do signal processing; RF roles often use both"
+    },
+    {
+      "pair": ["GNU Radio", "SDR"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["GNU Radio", "Simulink"],
+      "relation": "CONTESTED"
+    },
+    {
+      "pair": ["Google Sheets", "Microsoft Excel"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Google Workspace", "macOS"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["GPIO", "I2C"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["GPS", "Mission Planner"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Grafana", "Prometheus"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Hibernate", "Spring"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["I2C", "SPI"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["I2C", "STM32"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["I2C", "UART"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["IAM", "VPC"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["IDS/IPS", "SIEM"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["iOS SDK", "Swift"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["IPsec", "NAT"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["IPsec", "OpenVPN"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["IPsec", "WireGuard"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Jetpack Compose", "Kotlin"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Jira Service Management", "Atlassian"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["JWT", "OAuth 2.0"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["KiCad", "PCB Layout"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["LangChain", "LlamaIndex"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["LangGraph", "LangChain"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Laravel", "PHP"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["LightGBM", "XGBoost"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Linux kernel", "Yocto"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Liquid", "Shopify"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Logic Analyzer", "Oscilloscope"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Looker", "Power BI"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Looker", "Tableau"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["macOS", "Windows"],
+      "relation": "CONTESTED",
+      "note": "IT-support roles need both; dev roles name one"
+    },
+    {
+      "pair": ["Make", "Zapier"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["MDM", "SSO"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["MFA", "SSO"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Microsoft 365", "Microsoft Entra ID"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Microsoft 365", "Microsoft Intune"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Microsoft Entra ID", "Microsoft Intune"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Mission Planner", "ArduPilot"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Mission Planner", "QGroundControl"],
+      "relation": "SUBSTITUTE",
+      "note": "competing ground-control stations"
+    },
+    {
+      "pair": ["Mockito", "JUnit"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Multimeter", "Oscilloscope"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["n8n", "Zapier"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["NAT", "VLAN"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["NgRx", "RxJS"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Nuxt.js", "Pinia"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Nuxt.js", "Vue.js"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["OpenID Connect", "OAuth 2.0"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["OpenVPN", "WireGuard"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Oscilloscope", "Spectrum Analyzer"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Pandas", "Scikit-learn"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["pgvector", "Pinecone"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Pinia", "Vue.js"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["PixiJS", "Three.js"],
+      "relation": "CONTESTED",
+      "note": "2D vs 3D; game roles sometimes need both"
+    },
+    {
+      "pair": ["Power Automate", "Power Platform"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Power Automate", "SharePoint"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Power BI", "Tableau"],
+      "relation": "SUBSTITUTE"
+    },
+    {
+      "pair": ["Proxmox", "Zabbix"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["PX4", "MAVLink"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["PyTorch", "Scikit-learn"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["PyTorch", "TensorFlow"],
+      "relation": "SUBSTITUTE",
+      "note": "postings say \"TensorFlow or PyTorch\""
+    },
+    {
+      "pair": ["RAG", "LLM"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["RAG", "Vector Databases"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["REST Assured", "TestNG"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["RF Design", "Spectrum Analyzer"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["RF Design", "VNA"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["RF Engineering", "Spectrum Analyzer"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Routing", "VLAN"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Scikit-learn", "TensorFlow"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Scikit-learn", "XGBoost"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Selenide", "TestNG"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["SharePoint", "Microsoft 365"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Simulink", "MATLAB"],
+      "relation": "IMPLIES",
+      "note": "Simulink runs on MATLAB"
+    },
+    {
+      "pair": ["SolidWorks", "CAD"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["Spectrum Analyzer", "VNA"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["SPI", "STM32"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["SPI", "UART"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Spring", "Java"],
+      "relation": "IMPLIES"
+    },
+    {
+      "pair": ["STM32", "UART"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["TCP", "UDP"],
+      "relation": "COMPLEMENT"
+    },
+    {
+      "pair": ["Yocto", "Embedded Linux"],
+      "relation": "IMPLIES"
+    }
+  ]
+}
