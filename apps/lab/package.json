@@ -1,0 +1,33 @@
+{
+  "name": "@metahunt/lab",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "lab": "vite",
+    "lab:build": "tsc -b && vite build",
+    "lab:check": "oxlint",
+    "lab:data": "bash pipeline/build.sh"
+  },
+  "dependencies": {
+    "@react-sigma/core": "^5.0.6",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
+    "graphology-layout-forceatlas2": "^0.10.1",
+    "graphology-metrics": "^2.4.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "sigma": "^3.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "oxlint": "^1.75.0",
+    "tailwindcss": "^4.2.4",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0"
+  }
+}
