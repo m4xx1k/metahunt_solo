@@ -1,0 +1,102 @@
+SET
+psql:analytics/experiments/003-confounders/query.sql:11: NOTICE:  table "metalab_position_meta" does not exist, skipping
+DROP TABLE
+SELECT 12763
+ALTER TABLE
+CREATE INDEX
+=== 1. Role segments large enough to condition on (>= 300 positions) ===
+       role_name        | positions 
+------------------------+-----------
+ Backend Engineer       |     14640
+ Full Stack Engineer    |      9592
+ DevOps Engineer        |      7712
+ Embedded Engineer      |      4826
+ QA Engineer            |      4416
+ Software Engineer      |      3272
+ Frontend Engineer      |      3206
+ AI Engineer            |      2964
+ Data Engineer          |      2946
+ Manual QA Engineer     |      2511
+ Automation QA Engineer |      1827
+(11 rows)
+
+=== 2. Role-conditioned check on the strongest global edges ===
+       a_name        |       b_name       | global_pairs | global_lift |   dominant_role   | pairs_in_role | role_positions | lift_within_role | pct_of_edge_from_role 
+---------------------+--------------------+--------------+-------------+-------------------+---------------+----------------+------------------+-----------------------
+ I2C                 | SPI                |          249 |        43.1 | Embedded Engineer |           187 |            668 |              3.1 |                    75
+ DAST                | SAST               |           31 |       315.1 | DevOps Engineer   |             2 |            925 |            308.3 |                     6
+ SPI                 | UART               |          254 |        40.6 | Embedded Engineer |           191 |            668 |              3.0 |                    75
+ I2C                 | UART               |          251 |        40.3 | Embedded Engineer |           192 |            668 |              3.0 |                    76
+ Digital Electronics | Analog Electronics |           33 |       273.1 | Embedded Engineer |             2 |            668 |            133.6 |                     6
+ Power Query         | DAX                |           31 |       245.8 | Data Engineer     |             1 |            455 |            455.0 |                     3
+ LightGBM            | XGBoost            |           29 |       258.2 | AI Engineer       |             2 |            405 |            202.5 |                     7
+ Mission Planner     | QGroundControl     |           26 |       281.7 | Embedded Engineer |            19 |            668 |             27.6 |                    73
+ TensorFlow          | PyTorch            |          163 |        43.5 | AI Engineer       |            37 |            405 |              6.6 |                    23
+ DHCP                | DNS                |          101 |        64.7 | DevOps Engineer   |            10 |            925 |             23.7 |                    10
+ MATLAB              | Simulink           |           37 |       151.5 | Embedded Engineer |            12 |            668 |             30.4 |                    32
+ Liquid              | Shopify            |           32 |       166.9 | Frontend Engineer |            19 |            561 |             22.0 |                    59
+ Prometheus          | Grafana            |          283 |        24.3 | DevOps Engineer   |           209 |            925 |              2.9 |                    74
+ .NET                | C#                 |          550 |        13.2 | Backend Engineer  |           256 |           2233 |              6.9 |                    47
+ CAN                 | UART               |          149 |        38.1 | Embedded Engineer |           110 |            668 |              3.0 |                    74
+(15 rows)
+
+=== 3. Source holdout — is an edge carried by one board? ===
+       a_name        |       b_name       | pair_positions | djinni_pairs | dou_pairs | pct_djinni | p_b_a_djinni | p_b_a_dou 
+---------------------+--------------------+----------------+--------------+-----------+------------+--------------+-----------
+ .NET                | C#                 |            550 |          300 |       250 |         55 |         0.77 |      0.76
+ Prometheus          | Grafana            |            283 |          148 |       135 |         52 |         0.79 |      0.85
+ SPI                 | UART               |            254 |          119 |       135 |         47 |         0.93 |      0.97
+ I2C                 | UART               |            251 |          119 |       132 |         47 |         0.92 |      0.96
+ I2C                 | SPI                |            249 |          120 |       129 |         48 |         0.93 |      0.94
+ TensorFlow          | PyTorch            |            163 |           80 |        83 |         49 |         0.98 |      0.97
+ CAN                 | UART               |            149 |           65 |        84 |         44 |         0.93 |      0.87
+ DHCP                | DNS                |            101 |           52 |        49 |         51 |         0.95 |      0.91
+ MATLAB              | Simulink           |             37 |           16 |        21 |         43 |         0.44 |      0.49
+ Digital Electronics | Analog Electronics |             33 |           16 |        17 |         48 |         1.00 |      1.00
+ Liquid              | Shopify            |             32 |           23 |         9 |         72 |         0.85 |      0.82
+ DAST                | SAST               |             31 |           15 |        16 |         48 |         1.00 |      1.00
+ Power Query         | DAX                |             31 |           16 |        15 |         52 |         1.00 |      1.00
+ LightGBM            | XGBoost            |             29 |           20 |         9 |         69 |         0.95 |      1.00
+ Mission Planner     | QGroundControl     |             26 |            9 |        17 |         35 |         0.53 |      0.68
+(15 rows)
+
+=== 4. The popularity trap — highest pair counts vs their lift ===
+   a_name   |   b_name   | pair_positions | a_support | b_support | p_b_a | lift | npmi  
+------------+------------+----------------+-----------+-----------+-------+------+-------
+ TypeScript | React      |            964 |      1992 |      1440 | 0.484 | 4.13 | 0.557
+ SQL        | Python     |            850 |      2465 |      3319 | 0.345 | 1.28 | 0.091
+ Docker     | PostgreSQL |            824 |      2050 |      2141 | 0.402 | 2.31 | 0.309
+ Docker     | Kubernetes |            812 |      2050 |      1339 | 0.396 | 3.63 | 0.475
+ Node.js    | TypeScript |            811 |      1211 |      1992 | 0.670 | 4.13 | 0.522
+ TypeScript | JavaScript |            810 |      1992 |      1563 | 0.407 | 3.20 | 0.427
+ Docker     | Python     |            809 |      2050 |      3319 | 0.395 | 1.46 | 0.139
+ AWS        | Python     |            784 |      1933 |      3319 | 0.406 | 1.50 | 0.148
+ AWS        | Docker     |            707 |      1933 |      2050 | 0.366 | 2.19 | 0.275
+ PostgreSQL | Python     |            662 |      2141 |      3319 | 0.309 | 1.14 | 0.046
+ TypeScript | PostgreSQL |            639 |      1992 |      2141 | 0.321 | 1.84 | 0.206
+ AWS        | Kubernetes |            636 |      1933 |      1339 | 0.329 | 3.02 | 0.373
+ Linux      | Python     |            590 |      1519 |      3319 | 0.388 | 1.44 | 0.120
+ AWS        | PostgreSQL |            569 |      1933 |      2141 | 0.294 | 1.69 | 0.171
+ Redis      | PostgreSQL |            557 |       797 |      2141 | 0.699 | 4.01 | 0.449
+(15 rows)
+
+=== 5. The sparse-tail trap — highest lift at low support ===
+      a_name       |     b_name     | pair_positions | a_support | b_support | lift  | npmi  
+-------------------+----------------+----------------+-----------+-----------+-------+-------
+ Debian            | OpenVPN        |              7 |        27 |        27 | 118.0 | 0.639
+ Alembic           | Pydantic       |              9 |        25 |        38 | 116.4 | 0.659
+ RS-485            | PWM            |              7 |        25 |        30 | 114.7 | 0.635
+ RF Engineering    | VNA            |              9 |        34 |        29 | 112.2 | 0.654
+ QGroundControl    | PID            |              7 |        27 |        29 | 109.9 | 0.629
+ GPS               | QGroundControl |              6 |        25 |        27 | 109.2 | 0.616
+ QGroundControl    | LoRa           |              8 |        27 |        35 | 104.0 | 0.633
+ Hadoop            | AWS Glue       |              7 |        28 |        30 | 102.4 | 0.620
+ Ubuntu            | OpenVPN        |              9 |        40 |        27 | 102.4 | 0.641
+ NAT               | WireGuard      |              7 |        29 |        29 | 102.3 | 0.619
+ Apex              | Flow           |              9 |        30 |        37 |  99.6 | 0.637
+ IDS/IPS           | WAF            |              9 |        34 |        34 |  95.7 | 0.632
+ Incident Response | Cybersecurity  |              7 |        30 |        31 |  92.5 | 0.606
+ Zephyr            | Xray           |              6 |        32 |        25 |  92.2 | 0.593
+ Proxyman          | Fiddler        |              6 |        29 |        28 |  90.8 | 0.591
+(15 rows)
+

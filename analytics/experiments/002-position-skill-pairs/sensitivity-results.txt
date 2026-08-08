@@ -1,0 +1,91 @@
+SET
+=== 1. Corpus and link mass by rule ===
+ rule  | n_positions | skill_links | pct_of_rep 
+-------+-------------+-------------+------------
+ rep   |       12288 |       78429 |     100.00
+ union |       12317 |       81516 |     103.94
+(2 rows)
+
+=== 2. How many positions actually gain a skill under union ===
+ positions | gained | pct_gained | rep_only_empty | mean_delta | max_delta 
+-----------+--------+------------+----------------+------------+-----------
+     12317 |    977 |       7.93 |             29 |      0.251 |        34
+(1 row)
+
+=== 3. Top-30 skills by support — rank stability across rules ===
+ rep_rank | canonical_name | rep_support | union_support | union_rank | rank_shift 
+----------+----------------+-------------+---------------+------------+------------
+        1 | Python         |        3319 |          3384 |          1 |          0
+        2 | SQL            |        2465 |          2525 |          2 |          0
+        3 | PostgreSQL     |        2141 |          2178 |          3 |          0
+        4 | Docker         |        2050 |          2093 |          4 |          0
+        5 | TypeScript     |        1992 |          2021 |          5 |          0
+        6 | AWS            |        1933 |          1984 |          6 |          0
+        7 | JavaScript     |        1563 |          1590 |          7 |          0
+        8 | Linux          |        1519 |          1552 |          8 |          0
+        9 | React          |        1440 |          1451 |          9 |          0
+       10 | Kubernetes     |        1339 |          1374 |         11 |          1
+       11 | CI/CD          |        1327 |          1407 |         10 |         -1
+       12 | REST-API       |        1245 |          1334 |         12 |          0
+       13 | Node.js        |        1211 |          1224 |         13 |          0
+       14 | Git            |        1128 |          1210 |         14 |          0
+       15 | Java           |         953 |           974 |         15 |          0
+       16 | C++            |         886 |           899 |         16 |          0
+       17 | MySQL          |         858 |           882 |         17 |          0
+       18 | Redis          |         797 |           822 |         18 |          0
+       19 | Azure          |         776 |           806 |         19 |          0
+       20 | Terraform      |         732 |           749 |         20 |          0
+       21 | C#             |         716 |           731 |         22 |          1
+       22 | .NET           |         715 |           731 |         21 |         -1
+       23 | HTML/CSS       |         712 |           724 |         23 |          0
+       24 | Postman        |         635 |           646 |         25 |          1
+       25 | MongoDB        |         626 |           647 |         24 |         -1
+       26 | PHP            |         615 |           617 |         26 |          0
+       27 | Jira           |         597 |           616 |         27 |          0
+       28 | Google Cloud   |         565 |           591 |         28 |          0
+       29 | Kafka          |         529 |           541 |         29 |          0
+       30 | Manual Testing |         477 |           518 |         30 |          0
+(30 rows)
+
+=== 4. Top-25 edges by NPMI (rep), with the union values beside them ===
+        a_name         |         b_name         | pair_positions | p_b_a |  lift  | npmi  | npmi_union | npmi_delta 
+-----------------------+------------------------+----------------+-------+--------+-------+------------+------------
+ I2C                   | SPI                    |            249 | 0.936 |  43.08 | 0.965 |      0.964 |     -0.001
+ DAST                  | SAST                   |             31 | 1.000 | 315.08 | 0.962 |      0.959 |     -0.002
+ SPI                   | UART                   |            254 | 0.951 |  40.59 | 0.955 |      0.956 |      0.001
+ I2C                   | UART                   |            251 | 0.944 |  40.26 | 0.950 |      0.949 |      0.000
+ Digital Electronics   | Analog Electronics     |             33 | 1.000 | 273.07 | 0.948 |      0.954 |      0.007
+ Analog Circuit Design | Digital Circuit Design |             24 | 0.774 | 365.90 | 0.946 |      0.940 |     -0.006
+ Power Query           | DAX                    |             31 | 1.000 | 245.76 | 0.920 |      0.922 |      0.002
+ LightGBM              | XGBoost                |             29 | 0.967 | 258.23 | 0.918 |      0.915 |     -0.004
+ Mission Planner       | QGroundControl         |             26 | 0.619 | 281.74 | 0.916 |      0.920 |      0.004
+ WireGuard             | OpenVPN                |             19 | 0.655 | 298.18 | 0.880 |      0.880 |      0.000
+ TensorFlow            | PyTorch                |            163 | 0.970 |  43.51 | 0.873 |      0.871 |     -0.002
+ DHCP                  | DNS                    |            101 | 0.927 |  64.69 | 0.868 |      0.869 |      0.001
+ MATLAB                | Simulink               |             37 | 0.468 | 151.45 | 0.865 |      0.871 |      0.006
+ Liquid                | Shopify                |             32 | 0.842 | 166.90 | 0.860 |      0.860 |      0.000
+ Buildroot             | Yocto                  |             24 | 0.828 | 211.86 | 0.859 |      0.866 |      0.008
+ Prometheus            | Grafana                |            283 | 0.820 |  24.35 | 0.847 |      0.847 |      0.001
+ Android Studio        | Xcode                  |             24 | 0.686 | 191.50 | 0.842 |      0.838 |     -0.004
+ Flow                  | Coroutines             |             21 | 0.568 | 211.34 | 0.840 |      0.831 |     -0.009
+ VNA                   | Spectrum Analyzer      |             24 | 0.828 | 181.60 | 0.834 |      0.835 |      0.001
+ .NET                  | C#                     |            550 | 0.769 |  13.20 | 0.831 |      0.831 |      0.000
+ CAN                   | UART                   |            149 | 0.892 |  38.07 | 0.825 |      0.824 |     -0.001
+ Apex                  | Salesforce             |             27 | 0.900 | 153.60 | 0.823 |      0.820 |     -0.002
+ Jetpack Compose       | Coroutines             |             25 | 0.439 | 163.32 | 0.822 |      0.822 |     -0.001
+ LangGraph             | LangChain              |            113 | 0.764 |  46.68 | 0.820 |      0.813 |     -0.007
+ Flutter               | Bloc                   |             38 | 0.352 | 113.78 | 0.819 |      0.818 |     -0.002
+(25 rows)
+
+=== 5. Rank correlation of NPMI between rules (pairs present in both) ===
+ pairs_compared | spearman_rho | mean_abs_rank_shift | max_rank_shift 
+----------------+--------------+---------------------+----------------
+           4140 |       0.9984 |                47.6 |            422
+(1 row)
+
+=== 6. Edges that exist under one rule only (at pair support >= 10) ===
+ rep_only | union_only | rep_total 
+----------+------------+-----------
+        0 |        570 |      4140
+(1 row)
+

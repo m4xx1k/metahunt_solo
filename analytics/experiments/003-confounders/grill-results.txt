@@ -1,0 +1,49 @@
+SET
+psql:analytics/experiments/003-confounders/grill.sql:8: NOTICE:  view "metalab_grill" does not exist, skipping
+DROP VIEW
+CREATE VIEW
+=== GRILL: evidence per edge ===
+   a_name   |   b_name   | pair_positions | a_support | b_support | p_b_a |  lift  | npmi  | npmi_union 
+------------+------------+----------------+-----------+-----------+-------+--------+-------+------------
+ I2C        | SPI        |            249 |       266 |       267 | 0.936 |  43.08 | 0.965 |      0.964
+ DAST       | SAST       |             31 |        31 |        39 | 1.000 | 315.08 | 0.962 |      0.959
+ TensorFlow | PyTorch    |            163 |       168 |       274 | 0.970 |  43.51 | 0.873 |      0.871
+ Prometheus | Grafana    |            283 |       345 |       414 | 0.820 |  24.35 | 0.847 |      0.847
+ .NET       | C#         |            550 |       715 |       716 | 0.769 |  13.20 | 0.831 |      0.831
+ CAN        | UART       |            149 |       167 |       288 | 0.892 |  38.07 | 0.825 |      0.824
+ TypeScript | React      |            964 |      1992 |      1440 | 0.484 |   4.13 | 0.557 |      0.558
+ Docker     | Kubernetes |            812 |      2050 |      1339 | 0.396 |   3.63 | 0.475 |      0.480
+ Redis      | PostgreSQL |            557 |       797 |      2141 | 0.699 |   4.01 | 0.449 |      0.452
+ SQL        | Python     |            850 |      2465 |      3319 | 0.345 |   1.28 | 0.091 |      0.093
+(10 rows)
+
+=== GRILL: role confounding (only where in-role pairs >= 10) ===
+   a_name   |   b_name   | global_lift |    dominant_role    | pairs_in_role | lift_in_role | pct_from_role 
+------------+------------+-------------+---------------------+---------------+--------------+---------------
+ DAST       | SAST       |      315.08 |                     |               |              |              
+ TensorFlow | PyTorch    |       43.51 | AI Engineer         |            37 |         6.62 |            23
+ I2C        | SPI        |       43.08 | Embedded Engineer   |           187 |         3.14 |            75
+ CAN        | UART       |       38.07 | Embedded Engineer   |           110 |         2.96 |            74
+ Prometheus | Grafana    |       24.35 | DevOps Engineer     |           209 |         2.94 |            74
+ .NET       | C#         |       13.20 | Backend Engineer    |           256 |         6.86 |            47
+ TypeScript | React      |        4.13 | Full Stack Engineer |           593 |         1.19 |            62
+ Redis      | PostgreSQL |        4.01 | Backend Engineer    |           335 |         1.67 |            60
+ Docker     | Kubernetes |        3.63 | DevOps Engineer     |           304 |         1.19 |            37
+ SQL        | Python     |        1.28 | Data Engineer       |           259 |         1.05 |            30
+(10 rows)
+
+=== GRILL: source holdout ===
+   a_name   |   b_name   | djinni_both | dou_both | p_b_a_djinni | p_b_a_dou | gap  
+------------+------------+-------------+----------+--------------+-----------+------
+ CAN        | UART       |          65 |       84 |         0.93 |      0.87 | 0.06
+ Prometheus | Grafana    |         148 |      135 |         0.79 |      0.85 | 0.06
+ SQL        | Python     |         511 |      339 |         0.36 |      0.32 | 0.04
+ Redis      | PostgreSQL |         319 |      238 |         0.71 |      0.69 | 0.02
+ Docker     | Kubernetes |         445 |      367 |         0.39 |      0.41 | 0.02
+ TypeScript | React      |         557 |      407 |         0.49 |      0.47 | 0.02
+ I2C        | SPI        |         120 |      129 |         0.93 |      0.94 | 0.01
+ .NET       | C#         |         300 |      250 |         0.77 |      0.76 | 0.01
+ TensorFlow | PyTorch    |          80 |       83 |         0.98 |      0.97 | 0.01
+ DAST       | SAST       |          15 |       16 |         1.00 |      1.00 | 0.00
+(10 rows)
+

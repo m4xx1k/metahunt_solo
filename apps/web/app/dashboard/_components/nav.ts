@@ -3,6 +3,7 @@ import {
   FileText,
   Gauge,
   Layers,
+  Network,
   LineChart,
   Receipt,
   Rss,
@@ -46,6 +47,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/dedupe", label: "Dedupe", icon: Layers },
       { href: "/dashboard/taxonomy", label: "Taxonomy", icon: Tags },
     ],
+  },
+  {
+    label: "Research",
+    items: [{ href: "/dashboard/metalab", label: "Metalab", icon: Network }],
   },
 ];
 
