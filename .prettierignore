@@ -10,3 +10,6 @@ backups
 .omc
 apps/etl/baml_client
 **/*.min.js
+
+# Generated pipeline artifact — reformatting it only inflates the diff
+apps/lab/src/data/graph.json

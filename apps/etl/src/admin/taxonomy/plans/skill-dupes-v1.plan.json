@@ -1,0 +1,41 @@
+{
+  "name": "skill-dupes-v1",
+  "description": "Collapse three genuine skill duplicates found by MET-129's own graph. Scope is deliberately tiny: only pairs where two VERIFIED nodes name the same concept. Subsumption pairs (SQLAlchemy→Python, Expo→React Native, Pinia→Vue.js and ~110 others) are NOT touched — those are real hierarchy, and merging them would destroy information the taxonomy simply cannot express yet.",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "electronics duplicates",
+      "why": "Four VERIFIED nodes for two concepts. Both pairs were flagged at P(a|b) >= 0.92 with 24-33 shared positions: postings that say one almost always say the other, because they are the same thing worded differently. Smaller node merged into larger so the surviving slug is the one more links already point at.",
+      "ops": [
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Analog Circuit Design",
+          "into": "Analog Electronics",
+          "why": "45 links into 52; P=0.92 both directions on 24 shared positions"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Digital Circuit Design",
+          "into": "Digital Electronics",
+          "why": "30 links into 41; same pattern as the analog pair"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "Entity Framework",
+      "why": "OWNER DECISION REQUIRED — the one debatable op in this plan. EF and EF Core are technically different products (legacy .NET Framework vs modern .NET), so this merge asserts that every 'Entity Framework' mention in the corpus means EF Core. That holds for most current postings but not for legacy outsourcing work. Run phase 1 alone if you would rather not make that claim; nothing in phase 1 depends on this.",
+      "ops": [
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Entity Framework",
+          "into": "Entity Framework Core",
+          "why": "110 links into 122; both imply .NET at P=1.00, and neither appears without it"
+        }
+      ]
+    }
+  ]
+}
