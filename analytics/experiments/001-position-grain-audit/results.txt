@@ -1,0 +1,124 @@
+SET
+=== 1. Grain invariants ===
+ postings | positions | ungrouped_postings | canonical_not_a_member | stale_vacancy_count 
+----------+-----------+--------------------+------------------------+---------------------
+    15089 |     12763 |                  0 |                      0 |                   0
+(1 row)
+
+=== 2. Member-count distribution (denominator = all positions) ===
+ members | positions | pct_of_positions | cum_postings 
+---------+-----------+------------------+--------------
+       1 |     11227 |            87.97 |        11227
+       2 |      1179 |             9.24 |        13585
+       3 |       199 |             1.56 |        14182
+       4 |        62 |             0.49 |        14430
+       5 |        41 |             0.32 |        14635
+       6 |        15 |             0.12 |        14725
+       7 |        20 |             0.16 |        14865
+       8 |         7 |             0.05 |        14921
+       9 |         1 |             0.01 |        14930
+      10 |         3 |             0.02 |        14960
+      11 |         2 |             0.02 |        14982
+      12 |         2 |             0.02 |        15006
+      14 |         2 |             0.02 |        15034
+      17 |         1 |             0.01 |        15051
+      18 |         1 |             0.01 |        15069
+      20 |         1 |             0.01 |        15089
+(16 rows)
+
+=== 3. Source composition — postings vs positions (dedup credit) ===
+  code  | postings | positions_owned | pct_of_positions 
+--------+----------+-----------------+------------------
+ djinni |     8908 |            7265 |            56.92
+ dou    |     6181 |            5498 |            43.08
+(2 rows)
+
+=== 4. Skill-link mass by node status and requirement layer (postings grain, raw links) ===
+  status  | is_required | links | pct_of_links | distinct_skills 
+----------+-------------+-------+--------------+-----------------
+ VERIFIED | t           | 93690 |        61.54 |            1184
+ VERIFIED | f           | 40587 |        26.66 |            1181
+ NEW      | f           |  7147 |         4.69 |            4343
+ NEW      | t           |  6741 |         4.43 |            3776
+ HIDDEN   | t           |  2550 |         1.68 |             167
+ HIDDEN   | f           |  1516 |         1.00 |             158
+(6 rows)
+
+=== 5. Position coverage by eligibility rule (denominator = 12,763 positions) ===
+              rule              | positions |  pct  
+--------------------------------+-----------+-------
+ any skill, any status          |     12525 | 98.14
+ required, any status           |     12366 | 96.89
+ required, not HIDDEN           |     12357 | 96.82
+ required, VERIFIED only        |     12288 | 96.28
+ required, VERIFIED, >=2 skills |     11925 | 93.43
+(5 rows)
+
+=== 6. Skills per position, representative-only, required, by status filter ===
+   filter   | positions_with_any | mean | median | max 
+------------+--------------------+------+--------+-----
+ not HIDDEN |              12357 | 6.83 |      7 |  44
+ VERIFIED   |              12288 | 6.38 |      6 |  35
+(2 rows)
+
+=== 7. Role and seniority coverage at position grain (representative) ===
+ positions | with_role | pct_role | with_seniority | pct_seniority 
+-----------+-----------+----------+----------------+---------------
+     12763 |     12731 |    99.75 |          10433 |         81.74
+(1 row)
+
+=== 8. Top roles at position grain (candidate segments for confounding check) ===
+              role              | positions |  pct  
+--------------------------------+-----------+-------
+ Backend Engineer               |      2241 | 17.56
+ Full Stack Engineer            |      1337 | 10.48
+ DevOps Engineer                |       928 |  7.27
+ QA Engineer                    |       832 |  6.52
+ Embedded Engineer              |       696 |  5.45
+ Software Engineer              |       633 |  4.96
+ Manual QA Engineer             |       609 |  4.77
+ Frontend Engineer              |       562 |  4.40
+ Data Engineer                  |       459 |  3.60
+ AI Engineer                    |       418 |  3.28
+ Hardware Engineer              |       317 |  2.48
+ Automation QA Engineer         |       301 |  2.36
+ Data Analyst                   |       295 |  2.31
+ Security Engineer              |       287 |  2.25
+ Systems Administrator          |       259 |  2.03
+ Machine Learning Engineer      |       202 |  1.58
+ Cross-platform Mobile Engineer |       141 |  1.10
+ Data Scientist                 |       133 |  1.04
+ IT Support Engineer            |       133 |  1.04
+ Team Lead                      |       130 |  1.02
+(20 rows)
+
+=== 9. Corpus time span (loaded_at = observation, the only honest axis) ===
+    week    | positions 
+------------+-----------
+ 2026-05-04 |      1345
+ 2026-05-11 |      1528
+ 2026-05-18 |       979
+ 2026-05-25 |      1088
+ 2026-06-01 |      1035
+ 2026-06-08 |       872
+ 2026-06-15 |       783
+ 2026-06-22 |       881
+ 2026-06-29 |       665
+ 2026-07-06 |       809
+ 2026-07-13 |       646
+ 2026-07-20 |       675
+ 2026-07-27 |       743
+ 2026-08-03 |       714
+(14 rows)
+
+=== 10. Support distribution of eligible skills (sets the min-support threshold) ===
+     bucket     | skills | link_mass 
+----------------+--------+-----------
+ skills total   |   1180 |     78429
+ support >= 5   |    995 |     77905
+ support >= 10  |    744 |     76208
+ support >= 25  |    420 |     71046
+ support >= 50  |    232 |     64504
+ support >= 100 |    141 |     58333
+(6 rows)
+
