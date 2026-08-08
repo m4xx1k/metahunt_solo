@@ -42,6 +42,34 @@ mistake.
 Committing the artifact rather than querying at runtime means the UI can only
 ever show numbers that were reviewed, and the app runs with no infrastructure.
 
+## The curated layer
+
+`src/data/pair-relations.json` is the one file here that is **written by hand and
+never regenerated**. It records what a strong edge actually means:
+
+| relation | meaning |
+|---|---|
+| `SUBSTITUTE` | one is enough — the posting meant "or" |
+| `COMPLEMENT` | both are genuinely needed |
+| `IMPLIES` | `pair[0]` implies `pair[1]` — directional |
+| `CONTESTED` | depends on the vacancy; no single answer is honest |
+
+Co-occurrence cannot tell these apart. A substitute pair and a complement pair
+produce identical counts — the distinguishing word ("or" vs "and") is discarded
+at extraction — so no NPMI threshold recovers it. Measured on the top 150 edges:
+neither symmetry nor `node_tech_meta` category separates them. I2C/SPI are
+complements at symmetry 1.00; WireGuard/OpenVPN are substitutes at 0.93.
+
+Labels are keyed by **canonical skill name**, because node indices shift on every
+rebuild. That makes them vulnerable to a taxonomy rename instead, so:
+
+```bash
+pnpm --filter @metahunt/lab lab:relations   # coverage + drift; exits 1 on drift
+```
+
+Run it after any taxonomy migration. An orphaned label is worse than a missing
+one — the graph silently goes back to reading substitutes as complements.
+
 ## What the numbers mean
 
 Every figure is an **observed association** in this corpus — two job boards over
