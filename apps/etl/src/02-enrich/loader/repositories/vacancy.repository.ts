@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { Injectable, Inject } from "@nestjs/common";
 
 import { eq, sql } from "drizzle-orm";
@@ -61,14 +63,19 @@ export class DrizzleVacancyRepository extends VacancyRepository {
     let existing = await this.lockExistingListing(values, executor);
 
     if (!existing) {
+      // The two rows deliberately reference each other. Their FKs are
+      // DEFERRABLE INITIALLY DEFERRED (0041), so the pair is valid when this
+      // transaction commits without ever exposing an ungrouped posting.
+      const vacancyId = randomUUID();
+      const groupId = randomUUID();
       const [inserted] = await executor
         .insert(schema.vacancies)
-        .values(values)
+        .values({ ...values, id: vacancyId, uniqueVacancyId: groupId })
         .onConflictDoNothing()
         .returning({ id: schema.vacancies.id });
 
       if (inserted) {
-        await this.createSingletonGroup(inserted.id, executor);
+        await this.createSingletonGroup(inserted.id, groupId, executor);
         await this.replaceSkills(inserted.id, skillLinks, executor);
         return inserted.id;
       }
@@ -159,9 +166,14 @@ export class DrizzleVacancyRepository extends VacancyRepository {
     }
   }
 
-  private async createSingletonGroup(vacancyId: string, executor: Executor): Promise<void> {
+  private async createSingletonGroup(
+    vacancyId: string,
+    groupId: string,
+    executor: Executor,
+  ): Promise<void> {
     const result = await executor.execute<{ id: string }>(sql`
       INSERT INTO unique_vacancies (
+        id,
         canonical_vacancy_id,
         representative_vacancy_id,
         source_count,
@@ -171,6 +183,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
         first_loaded_at
       )
       SELECT
+        ${groupId}::uuid,
         v.id,
         v.id,
         1,
@@ -182,12 +195,8 @@ export class DrizzleVacancyRepository extends VacancyRepository {
       WHERE v.id = ${vacancyId}
       RETURNING id
     `);
-    const groupId = result.rows[0]?.id;
-    if (!groupId) throw new Error(`Could not create singleton group for vacancy ${vacancyId}`);
-
-    await executor
-      .update(schema.vacancies)
-      .set({ uniqueVacancyId: groupId })
-      .where(eq(schema.vacancies.id, vacancyId));
+    const insertedGroupId = result.rows[0]?.id;
+    if (!insertedGroupId)
+      throw new Error(`Could not create singleton group for vacancy ${vacancyId}`);
   }
 }

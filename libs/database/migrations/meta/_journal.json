@@ -288,6 +288,13 @@
       "when": 1786148137952,
       "tag": "0040_reconcile_position_rollups",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786148590314,
+      "tag": "0041_defer_position_foreign_keys",
+      "breakpoints": true
     }
   ]
 }
