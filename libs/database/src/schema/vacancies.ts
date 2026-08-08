@@ -108,12 +108,12 @@ export const vacancies = pgTable(
     // OpenAI on no-op updates.
     embeddingSourceHash: text("embedding_source_hash"),
 
-    // Current group membership. Null = unresolved (not yet processed) OR
-    // explicitly unlinked by operator. SET NULL on group delete so cleanup
-    // doesn't cascade-delete real vacancies.
-    uniqueVacancyId: uuid("unique_vacancy_id").references((): AnyPgColumn => uniqueVacancies.id, {
-      onDelete: "set null",
-    }),
+    // Mandatory group membership: every posting is an observation of exactly
+    // one position from insert onward (0042). The FK is deferred, so the
+    // vacancy/group creation cycle resolves at commit.
+    uniqueVacancyId: uuid("unique_vacancy_id")
+      .notNull()
+      .references((): AnyPgColumn => uniqueVacancies.id),
     // Pipeline state, kept OUT of the group FK (ADR-0012). Null = not resolved
     // yet (new, or re-opened by a content change); a timestamp = resolved, and
     // when. A time answers strictly more than a status and cannot rot.
