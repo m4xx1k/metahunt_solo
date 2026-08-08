@@ -13,6 +13,19 @@ does not authorize a production taxonomy migration, re-extraction, or an LLM cal
 3. A scored run must record its prompt, taxonomy, alias, pipeline, and model provenance. A live
    database alias table is not a reproducible scoring dependency.
 
+## Contract hardening (2026-08-08)
+
+- ✅ Rebased `feat/MET-24-golden-set` on current `main`; no production data or labels changed.
+- ✅ Added decision-level rationale and per-field `notScorable` representation, plus a strict
+  `golden release-check` gate. **Done when:** a new reviewed release can distinguish a policy or
+  schema limitation from an extraction miss.
+- ✅ Added optional `runs/<name>.meta.json` provenance bound to the immutable snapshot. **Done
+  when:** a new scored run cannot be compared when corpus, prompt, taxonomy, aliases, provider,
+  model, or pipeline commit are unknown.
+- ⏳ Review the legacy 25-row overrides and add evidence/rationales; intentionally do not invent
+  them. **Done when:** `pnpm golden:release-check` passes before a new run is accepted.
+- ⏳ Accept the field policies below, then add targeted boundary cases before expanding to 100.
+
 ## Proposed annotation contract
 
 These defaults are deliberately conservative. They become normative only after owner acceptance,

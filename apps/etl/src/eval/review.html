@@ -6,66 +6,239 @@
     <title>golden set review</title>
     <style>
       :root {
-        --bg: #0e1116; --panel: #161b22; --line: #262d38; --text: #e6edf3;
-        --dim: #8b949e; --ok: #3fb950; --warn: #d29922; --hot: #f85149; --accent: #58a6ff;
+        --bg: #0e1116;
+        --panel: #161b22;
+        --line: #262d38;
+        --text: #e6edf3;
+        --dim: #8b949e;
+        --ok: #3fb950;
+        --warn: #d29922;
+        --hot: #f85149;
+        --accent: #58a6ff;
       }
       @media (prefers-color-scheme: light) {
         :root {
-          --bg: #ffffff; --panel: #f6f8fa; --line: #d0d7de; --text: #1f2328;
-          --dim: #656d76; --ok: #1a7f37; --warn: #9a6700; --hot: #cf222e; --accent: #0969da;
+          --bg: #ffffff;
+          --panel: #f6f8fa;
+          --line: #d0d7de;
+          --text: #1f2328;
+          --dim: #656d76;
+          --ok: #1a7f37;
+          --warn: #9a6700;
+          --hot: #cf222e;
+          --accent: #0969da;
         }
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
-        margin: 0; background: var(--bg); color: var(--text);
-        font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          sans-serif;
       }
       header {
-        position: sticky; top: 0; z-index: 5; background: var(--bg);
-        border-bottom: 1px solid var(--line); padding: 10px 16px;
-        display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        padding: 10px 16px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
       }
-      .bar { flex: 1; min-width: 160px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
-      .bar > i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .2s; }
-      .keys { color: var(--dim); font-size: 13px; }
+      .bar {
+        flex: 1;
+        min-width: 160px;
+        height: 8px;
+        background: var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        background: var(--ok);
+        width: 0;
+        transition: width 0.2s;
+      }
+      .keys {
+        color: var(--dim);
+        font-size: 13px;
+      }
       kbd {
-        background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px;
-        border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 12px;
+        font-family: ui-monospace, monospace;
       }
-      main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 16px; align-items: start; }
-      @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
-      .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
-      #posting { padding: 14px 16px; max-height: 78vh; overflow: auto; }
-      #posting h2 { margin: 0 0 4px; font-size: 17px; line-height: 1.3; }
-      #posting .meta { color: var(--dim); font-size: 13px; margin-bottom: 12px; }
-      #posting pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font: 13px/1.6 ui-monospace, monospace; color: var(--text); }
-      #fields { padding: 8px; max-height: 78vh; overflow: auto; }
-      .row { border-bottom: 1px solid var(--line); padding: 9px 8px; }
-      .row:last-child { border-bottom: 0; }
-      .row.done { opacity: .5; }
-      .row.pending { box-shadow: inset 3px 0 0 var(--hot); }
-      .fname { font-weight: 600; font-size: 13px; font-family: ui-monospace, monospace; }
-      .tag { font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: 1px; }
-      .t-contested { background: color-mix(in srgb, var(--hot) 22%, transparent); color: var(--hot); }
-      .t-prod { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
-      .t-agreed { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
-      .val { font: 13px/1.5 ui-monospace, monospace; word-break: break-word; }
-      .choices { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      #posting {
+        padding: 14px 16px;
+        max-height: 78vh;
+        overflow: auto;
+      }
+      #posting h2 {
+        margin: 0 0 4px;
+        font-size: 17px;
+        line-height: 1.3;
+      }
+      #posting .meta {
+        color: var(--dim);
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+      #posting pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin: 0;
+        font:
+          13px/1.6 ui-monospace,
+          monospace;
+        color: var(--text);
+      }
+      #fields {
+        padding: 8px;
+        max-height: 78vh;
+        overflow: auto;
+      }
+      .row {
+        border-bottom: 1px solid var(--line);
+        padding: 9px 8px;
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .row.done {
+        opacity: 0.5;
+      }
+      .row.pending {
+        box-shadow: inset 3px 0 0 var(--hot);
+      }
+      .fname {
+        font-weight: 600;
+        font-size: 13px;
+        font-family: ui-monospace, monospace;
+      }
+      .tag {
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin-left: 6px;
+        vertical-align: 1px;
+      }
+      .t-contested {
+        background: color-mix(in srgb, var(--hot) 22%, transparent);
+        color: var(--hot);
+      }
+      .t-prod {
+        background: color-mix(in srgb, var(--warn) 22%, transparent);
+        color: var(--warn);
+      }
+      .t-agreed {
+        background: color-mix(in srgb, var(--ok) 18%, transparent);
+        color: var(--ok);
+      }
+      .val {
+        font:
+          13px/1.5 ui-monospace,
+          monospace;
+        word-break: break-word;
+      }
+      .choices {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 7px;
+      }
       button {
-        font: inherit; font-size: 13px; cursor: pointer; color: var(--text);
-        background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 5px 10px;
       }
-      button:hover { border-color: var(--accent); }
-      button.pick { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
-      button.big { padding: 9px 18px; font-weight: 600; }
-      button.primary { background: var(--ok); border-color: var(--ok); color: #fff; }
-      .lbl { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-      textarea { width: 100%; margin-top: 6px; background: var(--bg); color: var(--text);
-        border: 1px solid var(--line); border-radius: 7px; padding: 7px; font: 13px ui-monospace, monospace; }
-      footer { padding: 0 16px 28px; display: flex; gap: 10px; align-items: center; }
-      .grow { flex: 1; }
-      .hint { color: var(--dim); font-size: 13px; }
-      .empty { padding: 22px; text-align: center; color: var(--dim); }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.pick {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 18%, transparent);
+      }
+      button.big {
+        padding: 9px 18px;
+        font-weight: 600;
+      }
+      button.primary {
+        background: var(--ok);
+        border-color: var(--ok);
+        color: #fff;
+      }
+      .lbl {
+        color: var(--dim);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      textarea {
+        width: 100%;
+        margin-top: 6px;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 7px;
+        font:
+          13px ui-monospace,
+          monospace;
+      }
+      footer {
+        padding: 0 16px 28px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .grow {
+        flex: 1;
+      }
+      .hint {
+        color: var(--dim);
+        font-size: 13px;
+      }
+      .empty {
+        padding: 22px;
+        text-align: center;
+        color: var(--dim);
+      }
     </style>
   </head>
   <body>
@@ -91,7 +264,15 @@
     </footer>
 
     <script>
-      const state = { i: 0, data: null, overrides: {}, showAll: false, busy: false };
+      const state = {
+        i: 0,
+        data: null,
+        overrides: {},
+        rationales: {},
+        exclusions: {},
+        showAll: false,
+        busy: false,
+      };
 
       const fmt = (v) => {
         if (v === null || v === undefined) return "—";
@@ -99,7 +280,9 @@
         if (typeof v === "boolean" || typeof v === "number") return String(v);
         if (Array.isArray(v)) {
           if (v.length === 0) return "[]";
-          return v.map((x) => (x && x.city ? `${x.city}, ${x.country ?? ""}`.trim() : JSON.stringify(x))).join(" · ");
+          return v
+            .map((x) => (x && x.city ? `${x.city}, ${x.country ?? ""}`.trim() : JSON.stringify(x)))
+            .join(" · ");
         }
         if (v.required || v.optional) {
           const req = (v.required ?? []).join(", ") || "—";
@@ -116,9 +299,14 @@
       // the labellers emit {required,optional}, and raw stringify calls those different.
       const canon = (v) => {
         if (v === null || v === undefined) return null;
-        if (Array.isArray(v)) return v.map(canon).sort((x, y) => (JSON.stringify(x) < JSON.stringify(y) ? -1 : 1));
+        if (Array.isArray(v))
+          return v.map(canon).sort((x, y) => (JSON.stringify(x) < JSON.stringify(y) ? -1 : 1));
         if (typeof v !== "object") return v;
-        return Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])]));
+        return Object.fromEntries(
+          Object.keys(v)
+            .sort()
+            .map((k) => [k, canon(v[k])]),
+        );
       };
       const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
       const cur = () => state.data.candidates[state.i];
@@ -132,8 +320,13 @@
       // write that null in as ground truth, so the human has to pick first.
       function undecided(c) {
         const ov = state.overrides[c.id] ?? {};
+        const exclusions = state.exclusions[c.id] ?? {};
         return state.data.fields.filter(
-          (f) => c.fields[f].verdict === "contested" && c.fields[f].arbiter === undefined && !(f in ov),
+          (f) =>
+            c.fields[f].verdict === "contested" &&
+            c.fields[f].arbiter === undefined &&
+            !(f in ov) &&
+            !(f in exclusions),
         );
       }
 
@@ -145,6 +338,46 @@
       function setValue(id, field, value) {
         state.overrides[id] = state.overrides[id] || {};
         state.overrides[id][field] = value;
+        render();
+      }
+
+      function setRationale(id, field) {
+        const old = state.rationales[id]?.[field] ?? {};
+        const disposition = prompt(
+          "Decision: adopted-arbiter, superseded-arbiter, or manual-ruling",
+          old.disposition ?? "manual-ruling",
+        );
+        if (disposition === null) return;
+        if (!["adopted-arbiter", "superseded-arbiter", "manual-ruling"].includes(disposition)) {
+          alert("Use adopted-arbiter, superseded-arbiter, or manual-ruling.");
+          return;
+        }
+        const evidence = prompt("Short source evidence or policy reference", old.evidence ?? "");
+        if (evidence === null) return;
+        state.rationales[id] = state.rationales[id] || {};
+        state.rationales[id][field] = { disposition, evidence };
+        render();
+      }
+
+      function setExclusion(id, field) {
+        const old = state.exclusions[id]?.[field] ?? {};
+        const reason = prompt(
+          "Not scorable: schema-limitation, policy-pending, taxonomy-gap, or source-ambiguous",
+          old.reason ?? "policy-pending",
+        );
+        if (reason === null) return;
+        if (
+          !["schema-limitation", "policy-pending", "taxonomy-gap", "source-ambiguous"].includes(
+            reason,
+          )
+        ) {
+          alert("Choose one of the listed exclusion reasons.");
+          return;
+        }
+        const evidence = prompt("What in the source makes this unscorable?", old.evidence ?? "");
+        if (evidence === null) return;
+        state.exclusions[id] = state.exclusions[id] || {};
+        state.exclusions[id][field] = { reason, evidence };
         render();
       }
 
@@ -162,7 +395,10 @@
           : "";
 
       const escapeHtml = (s) =>
-        String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
 
       function renderFields() {
         const c = cur();
@@ -180,10 +416,13 @@
           const cell = c.fields[field];
           const row = document.createElement("div");
           const isUndecided = pending.includes(field);
-          row.className = "row" + (cell.verdict === "agreed" ? " done" : "") + (isUndecided ? " pending" : "");
+          row.className =
+            "row" + (cell.verdict === "agreed" ? " done" : "") + (isUndecided ? " pending" : "");
 
-          const tag =
-            cell.verdict === "contested"
+          const exclusion = state.exclusions[c.id]?.[field];
+          const tag = exclusion
+            ? `<span class="tag t-prod">not scorable: ${escapeHtml(exclusion.reason)}</span>`
+            : cell.verdict === "contested"
               ? '<span class="tag t-contested">labellers split</span>'
               : cell.verdict === "prod-differs"
                 ? '<span class="tag t-prod">prod differs</span>'
@@ -199,7 +438,11 @@
           if (cell.verdict === "contested") {
             choices.append(choiceButton("A", cell.a, c.id, field, cell));
             if (!same(cell.a, cell.b)) choices.append(choiceButton("B", cell.b, c.id, field, cell));
-            if (cell.arbiter !== undefined && !same(cell.arbiter, cell.a) && !same(cell.arbiter, cell.b)) {
+            if (
+              cell.arbiter !== undefined &&
+              !same(cell.arbiter, cell.a) &&
+              !same(cell.arbiter, cell.b)
+            ) {
               choices.append(choiceButton("arbiter", cell.arbiter, c.id, field, cell));
             }
             if (!same(cell.prod, cell.a) && !same(cell.prod, cell.b)) {
@@ -228,6 +471,14 @@
             ta.focus();
           };
           choices.append(edit);
+          const rationale = document.createElement("button");
+          rationale.textContent = state.rationales[c.id]?.[field] ? "why ✓" : "why";
+          rationale.onclick = () => setRationale(c.id, field);
+          choices.append(rationale);
+          const exclusionButton = document.createElement("button");
+          exclusionButton.textContent = exclusion ? "not scorable ✓" : "not scorable";
+          exclusionButton.onclick = () => setExclusion(c.id, field);
+          choices.append(exclusionButton);
           row.append(choices);
           box.append(row);
         }
@@ -236,14 +487,16 @@
       function render() {
         const c = cur();
         const d = decisionFor(c.id);
-        document.getElementById("pos").textContent = `${state.i + 1} / ${state.data.candidates.length}`;
+        document.getElementById("pos").textContent =
+          `${state.i + 1} / ${state.data.candidates.length}`;
         document.getElementById("posting").innerHTML =
           `<h2>${escapeHtml(c.title)}</h2>` +
           `<div class="meta">${escapeHtml(c.source)}${safeLink(c.link)}${d?.approved ? " · <b>approved</b>" : ""}</div>` +
           `<pre>${escapeHtml(state.data.texts[c.id])}</pre>`;
         renderFields();
         const approved = Object.values(state.data.decisions).filter((x) => x.approved).length;
-        document.getElementById("prog").style.width = `${(100 * approved) / state.data.candidates.length}%`;
+        document.getElementById("prog").style.width =
+          `${(100 * approved) / state.data.candidates.length}%`;
         document.getElementById("count").textContent = `${approved} approved`;
       }
 
@@ -263,15 +516,30 @@
           const res = await fetch("/api/decision", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ id: c.id, approved: true, overrides: state.overrides[c.id] ?? {} }),
+            body: JSON.stringify({
+              id: c.id,
+              approved: true,
+              overrides: state.overrides[c.id] ?? {},
+              rationales: state.rationales[c.id] ?? {},
+              exclusions: state.exclusions[c.id] ?? {},
+            }),
           });
           const out = await res.json();
           if (!res.ok) {
-            document.getElementById("saved").innerHTML = `<b style="color:var(--hot)">${escapeHtml(out.error)}</b>`;
+            document.getElementById("saved").innerHTML =
+              `<b style="color:var(--hot)">${escapeHtml(out.error)}</b>`;
             return;
           }
-          state.data.decisions[c.id] = { approved: true, overrides: state.overrides[c.id] ?? {}, values: {}, reviewedAt: "" };
-          document.getElementById("saved").textContent = `saved · dataset.json has ${out.approved} rows`;
+          state.data.decisions[c.id] = {
+            approved: true,
+            overrides: state.overrides[c.id] ?? {},
+            rationales: state.rationales[c.id] ?? {},
+            exclusions: state.exclusions[c.id] ?? {},
+            values: {},
+            reviewedAt: "",
+          };
+          document.getElementById("saved").textContent =
+            `saved · dataset.json has ${out.approved} rows`;
           move(1);
         } finally {
           state.busy = false;
@@ -310,7 +578,11 @@
         .then((r) => r.json())
         .then((data) => {
           state.data = data;
-          for (const [id, d] of Object.entries(data.decisions)) state.overrides[id] = { ...d.overrides };
+          for (const [id, d] of Object.entries(data.decisions)) {
+            state.overrides[id] = { ...d.overrides };
+            state.rationales[id] = { ...(d.rationales ?? {}) };
+            state.exclusions[id] = { ...(d.exclusions ?? {}) };
+          }
           render();
         });
     </script>

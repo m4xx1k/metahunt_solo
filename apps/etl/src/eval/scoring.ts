@@ -1,4 +1,4 @@
-import { CORE_FIELDS, FIELDS, type Extraction, type Field } from "./types";
+import { CORE_FIELDS, FIELDS, type Extraction, type Field, type FieldExclusions } from "./types";
 
 export type Aliases = Record<string, string>;
 
@@ -122,15 +122,22 @@ export type ScoreReport = {
   failureRate: number;
   core: number;
   all: number;
-  byField: { field: Field; score: number }[];
-  perPosting: { id: string; core: number; all: number; scores: Record<string, number> }[];
+  excluded: number;
+  byField: { field: Field; score: number; scored: number; excluded: number }[];
+  perPosting: {
+    id: string;
+    core: number;
+    all: number;
+    scores: Partial<Record<Field, number>>;
+    excluded: Field[];
+  }[];
 };
 
 const mean = (values: number[]) =>
   values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length;
 
 export function scoreRun(
-  golden: { id: string; values: Extraction }[],
+  golden: { id: string; values: Extraction; exclusions?: FieldExclusions }[],
   run: Record<string, Extraction>,
   aliases: Aliases,
 ): ScoreReport {
@@ -139,15 +146,18 @@ export function scoreRun(
     // absent golden fields and look like partial successes.
     const actual = run[row.id];
     const unavailable = !actual || actual._error !== undefined;
-    const scores: Record<string, number> = {};
+    const scores: Partial<Record<Field, number>> = {};
     for (const field of FIELDS) {
-      scores[field] = unavailable ? 0 : scoreField(field, row.values, actual, aliases);
+      if (!row.exclusions?.[field]) {
+        scores[field] = unavailable ? 0 : scoreField(field, row.values, actual, aliases);
+      }
     }
     return {
       id: row.id,
-      core: mean(CORE_FIELDS.map((f) => scores[f])),
-      all: mean(FIELDS.map((f) => scores[f])),
+      core: mean(CORE_FIELDS.flatMap((f) => (scores[f] === undefined ? [] : [scores[f]]))),
+      all: mean(FIELDS.flatMap((f) => (scores[f] === undefined ? [] : [scores[f]]))),
       scores,
+      excluded: FIELDS.filter((field) => row.exclusions?.[field] !== undefined),
     };
   });
   const failures = golden.filter((row) => run[row.id]?._error !== undefined).length;
@@ -157,11 +167,16 @@ export function scoreRun(
     missing: golden.filter((row) => !run[row.id]).length,
     failures,
     failureRate: golden.length === 0 ? 0 : failures / golden.length,
+    excluded: golden.reduce((count, row) => count + Object.keys(row.exclusions ?? {}).length, 0),
     core: mean(perPosting.map((p) => p.core)),
     all: mean(perPosting.map((p) => p.all)),
     byField: FIELDS.map((field) => ({
       field,
-      score: mean(perPosting.map((p) => p.scores[field])),
+      score: mean(
+        perPosting.flatMap((p) => (p.scores[field] === undefined ? [] : [p.scores[field]])),
+      ),
+      scored: perPosting.filter((p) => p.scores[field] !== undefined).length,
+      excluded: perPosting.filter((p) => p.scores[field] === undefined).length,
     })),
     perPosting,
   };

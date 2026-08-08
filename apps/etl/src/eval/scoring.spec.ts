@@ -210,4 +210,25 @@ describe("scoreRun", () => {
     expect(report.byField.find((f) => f.field === "seniority")!.score).toBe(0.5);
     expect(report.byField.find((f) => f.field === "role")!.score).toBe(1);
   });
+
+  it("excludes an explicitly unscorable field instead of converting it into a model miss", () => {
+    const withExclusion = [
+      {
+        ...golden[0],
+        exclusions: {
+          salary: { reason: "schema-limitation" as const, evidence: "Annual gross salary" },
+        },
+      },
+      golden[1],
+    ];
+    const report = scoreRun(
+      withExclusion,
+      { one: golden[0].values, two: golden[1].values },
+      aliases,
+    );
+    const salary = report.byField.find((field) => field.field === "salary")!;
+    expect(report.excluded).toBe(1);
+    expect(salary.scored).toBe(1);
+    expect(salary.excluded).toBe(1);
+  });
 });

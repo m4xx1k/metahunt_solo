@@ -1,5 +1,14 @@
-import type { CandidatesFile, DatasetFile, DecisionsFile, Extraction, LabelFile } from "./types";
-import { validateGolden } from "./validation";
+import type {
+  CandidatesFile,
+  DatasetFile,
+  DecisionsFile,
+  EvaluationSnapshot,
+  Extraction,
+  LabelFile,
+  RunProvenance,
+} from "./types";
+import { sha256 } from "./snapshot";
+import { validateGolden, validateRelease, validateRunProvenance } from "./validation";
 
 const values: Extraction = {
   isTech: true,
@@ -83,6 +92,67 @@ describe("validateGolden", () => {
     invalid.dataset.rows[0].values = { ...values, role: "Frontend Developer" };
     expect(validateGolden(invalid)).toContain(
       "one: dataset values differ from approved decision snapshot",
+    );
+  });
+
+  it("requires a rationale when a human supersedes the merged candidate", () => {
+    const valid = input();
+    valid.candidates.candidates[0].fields.skills.arbiter = values.skills;
+    valid.candidates.candidates[0].fields.skills.value = { required: [], optional: [] };
+    valid.decisions.decisions.one.overrides.skills = values.skills;
+    expect(validateRelease(valid)).toContain("one: skills override needs review rationale");
+
+    valid.decisions.decisions.one.rationales = {
+      skills: { disposition: "manual-ruling", evidence: "Requirements section names TypeScript." },
+    };
+    expect(validateRelease(valid)).toEqual([]);
+  });
+
+  it("requires an allowed exclusion reason and source evidence", () => {
+    const valid = input();
+    valid.candidates.candidates[0].fields.skills.arbiter = values.skills;
+    valid.decisions.decisions.one.exclusions = {
+      salary: {
+        reason: "schema-limitation",
+        evidence: "Posting states annual gross compensation.",
+      },
+    };
+    valid.dataset.rows[0].exclusions = valid.decisions.decisions.one.exclusions;
+    expect(validateGolden(valid)).toEqual([]);
+
+    const salaryExclusion = valid.decisions.decisions.one.exclusions?.salary;
+    if (!salaryExclusion) throw new Error("test fixture must contain a salary exclusion");
+    salaryExclusion.evidence = "";
+    expect(validateGolden(valid)).toContain("one: salary exclusion needs source evidence");
+  });
+
+  it("binds a scored run to the immutable evaluation snapshot", () => {
+    const snapshot: EvaluationSnapshot = {
+      generatedAt: "now",
+      corpusSha256: "corpus",
+      prompt: { version: 3, sourceSha256: "prompt" },
+      taxonomy: { roles: "roles", domains: "domains", skills: "skills" },
+      aliases: { "SKILL:ts": "TypeScript" },
+    };
+    const provenance: RunProvenance = {
+      run: "candidate-v4",
+      createdAt: "2026-08-08T00:00:00.000Z",
+      runner: "baml",
+      provider: "openai",
+      model: "gpt-5.4-mini",
+      pipelineCommit: "abc123",
+      snapshot: {
+        corpusSha256: snapshot.corpusSha256,
+        promptVersion: snapshot.prompt.version,
+        promptSourceSha256: snapshot.prompt.sourceSha256,
+        taxonomySha256: sha256(JSON.stringify(snapshot.taxonomy)),
+        aliasesSha256: sha256(JSON.stringify(snapshot.aliases)),
+      },
+    };
+    expect(validateRunProvenance("candidate-v4", provenance, snapshot)).toEqual([]);
+    provenance.snapshot.promptSourceSha256 = "different";
+    expect(validateRunProvenance("candidate-v4", provenance, snapshot)).toContain(
+      "run provenance promptSourceSha256 does not match evaluation snapshot",
     );
   });
 });

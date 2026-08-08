@@ -18,6 +18,7 @@ export const paths = {
   labels: (n: number, labeller: string) =>
     resolve(GOLDEN_DIR, "labels", `batch-${String(n).padStart(2, "0")}.${labeller}.json`),
   run: (name: string) => resolve(GOLDEN_DIR, "runs", `${name}.json`),
+  runMeta: (name: string) => resolve(GOLDEN_DIR, "runs", `${name}.meta.json`),
 };
 
 export function readJson<T>(file: string): T {

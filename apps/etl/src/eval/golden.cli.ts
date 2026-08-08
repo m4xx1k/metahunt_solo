@@ -2,6 +2,7 @@
 import { arbitrate } from "./commands/arbitrate";
 import { batch } from "./commands/batch";
 import { merge } from "./commands/merge";
+import { releaseCheck } from "./commands/release-check";
 import { review } from "./commands/review";
 import { sample } from "./commands/sample";
 import { score } from "./commands/score";
@@ -17,6 +18,7 @@ const COMMANDS: Record<string, (argv: string[]) => Promise<void>> = {
   review,
   score,
   validate,
+  "release-check": releaseCheck,
 };
 
 async function main(): Promise<void> {

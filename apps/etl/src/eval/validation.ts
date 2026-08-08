@@ -1,10 +1,15 @@
+import { sha256 } from "./snapshot";
 import {
   FIELDS,
+  NOT_SCORABLE_REASONS,
   type CandidatesFile,
   type DatasetFile,
   type DecisionsFile,
+  type EvaluationSnapshot,
   type Extraction,
+  type Field,
   type LabelFile,
+  type RunProvenance,
 } from "./types";
 
 type ValidationInput = {
@@ -15,6 +20,8 @@ type ValidationInput = {
 };
 
 const CURRENCIES = new Set(["USD", "EUR", "UAH"]);
+const FIELD_SET = new Set<string>(FIELDS);
+const EXCLUSION_REASONS = new Set<string>(NOT_SCORABLE_REASONS);
 
 function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -83,6 +90,21 @@ export function validateGolden(input: ValidationInput): string[] {
     } else if (!same(row.values, decision.values)) {
       errors.push(`${row.id}: dataset values differ from approved decision snapshot`);
     }
+    if (!same(row.exclusions ?? {}, decision?.exclusions ?? {})) {
+      errors.push(`${row.id}: dataset exclusions differ from approved decision snapshot`);
+    }
+    for (const [field, exclusion] of Object.entries(decision?.exclusions ?? {})) {
+      if (!FIELD_SET.has(field)) {
+        errors.push(`${row.id}: exclusion references unknown field ${field}`);
+        continue;
+      }
+      if (!exclusion || !EXCLUSION_REASONS.has(exclusion.reason)) {
+        errors.push(`${row.id}: ${field} exclusion has an invalid reason`);
+      }
+      if (!exclusion?.evidence?.trim()) {
+        errors.push(`${row.id}: ${field} exclusion needs source evidence`);
+      }
+    }
   }
 
   if (input.arbiter) {
@@ -104,5 +126,72 @@ export function validateGolden(input: ValidationInput): string[] {
     }
   }
 
+  return errors;
+}
+
+/**
+ * A structural artifact can be inspected while it is still legacy. This stricter
+ * gate is the one a new release must pass before its score can be compared.
+ */
+export function validateRelease(input: ValidationInput): string[] {
+  const errors = validateGolden(input);
+  const candidates = new Map(
+    input.candidates.candidates.map((candidate) => [candidate.id, candidate]),
+  );
+
+  for (const row of input.dataset.rows) {
+    const candidate = candidates.get(row.id);
+    const decision = input.decisions.decisions[row.id];
+    if (!candidate || !decision?.approved) continue;
+
+    for (const [field, value] of Object.entries(decision.overrides)) {
+      if (!FIELD_SET.has(field)) {
+        errors.push(`${row.id}: override references unknown field ${field}`);
+        continue;
+      }
+      const knownField = field as Field;
+      const candidateValue = candidate.fields[field]?.value;
+      if (same(value, candidateValue) || decision.exclusions?.[knownField]) continue;
+      const rationale = decision.rationales?.[knownField];
+      if (!rationale?.evidence?.trim()) {
+        errors.push(`${row.id}: ${field} override needs review rationale`);
+        continue;
+      }
+      if (
+        !["adopted-arbiter", "superseded-arbiter", "manual-ruling"].includes(rationale.disposition)
+      ) {
+        errors.push(`${row.id}: ${field} rationale has an invalid disposition`);
+      }
+    }
+  }
+  return errors;
+}
+
+export function validateRunProvenance(
+  name: string,
+  provenance: RunProvenance,
+  snapshot: EvaluationSnapshot,
+): string[] {
+  const errors: string[] = [];
+  if (provenance.run !== name)
+    errors.push(`run provenance names ${provenance.run}, expected ${name}`);
+  for (const field of ["createdAt", "provider", "model", "pipelineCommit"] as const) {
+    if (!provenance[field]?.trim()) errors.push(`run provenance is missing ${field}`);
+  }
+  if (provenance.runner !== "agent" && provenance.runner !== "baml") {
+    errors.push("run provenance runner must be agent or baml");
+  }
+  const expected = {
+    corpusSha256: snapshot.corpusSha256,
+    promptVersion: snapshot.prompt.version,
+    promptSourceSha256: snapshot.prompt.sourceSha256,
+    taxonomySha256: sha256(JSON.stringify(snapshot.taxonomy)),
+    aliasesSha256: sha256(JSON.stringify(snapshot.aliases)),
+  };
+  for (const [field, value] of Object.entries(expected)) {
+    if (provenance.snapshot[field as keyof typeof expected] !== value) {
+      errors.push(`run provenance ${field} does not match evaluation snapshot`);
+    }
+  }
   return errors;
 }

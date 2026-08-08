@@ -11,8 +11,10 @@ import {
   type Decision,
   type DecisionsFile,
   type Extraction,
+  type FieldExclusions,
   type GoldenRow,
   type LabelCandidate,
+  type ReviewRationales,
 } from "../types";
 
 const PORT = 5055;
@@ -63,6 +65,7 @@ function writeDataset(candidates: LabelCandidate[], decisions: Record<string, De
       link: candidate.link,
       source: candidate.source,
       values: decision.values,
+      exclusions: decision.exclusions,
       approvedAt: decision.reviewedAt,
     });
   }
@@ -82,19 +85,43 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-type DecisionRequest = { id: string; approved: boolean; overrides: Record<string, unknown> };
+type DecisionRequest = {
+  id: string;
+  approved: boolean;
+  overrides: Record<string, unknown>;
+  rationales: ReviewRationales;
+  exclusions: FieldExclusions;
+};
 
 function parseDecision(body: string, known: Set<string>): DecisionRequest {
   const raw: unknown = JSON.parse(body);
   if (typeof raw !== "object" || raw === null) throw new Error("body must be an object");
-  const { id, approved, overrides } = raw as Record<string, unknown>;
+  const {
+    id,
+    approved,
+    overrides,
+    rationales = {},
+    exclusions = {},
+  } = raw as Record<string, unknown>;
   if (typeof id !== "string" || !known.has(id))
     throw new Error(`unknown posting id: ${String(id)}`);
   if (typeof approved !== "boolean") throw new Error("approved must be a boolean");
   if (typeof overrides !== "object" || overrides === null || Array.isArray(overrides)) {
     throw new Error("overrides must be an object");
   }
-  return { id, approved, overrides: overrides as Record<string, unknown> };
+  if (typeof rationales !== "object" || rationales === null || Array.isArray(rationales)) {
+    throw new Error("rationales must be an object");
+  }
+  if (typeof exclusions !== "object" || exclusions === null || Array.isArray(exclusions)) {
+    throw new Error("exclusions must be an object");
+  }
+  return {
+    id,
+    approved,
+    overrides: overrides as Record<string, unknown>,
+    rationales,
+    exclusions,
+  };
 }
 
 function json(res: ServerResponse, status: number, value: unknown): void {
@@ -144,6 +171,8 @@ export async function review(): Promise<void> {
       decisions[body.id] = {
         approved: body.approved,
         overrides: body.overrides,
+        rationales: body.rationales,
+        exclusions: body.exclusions,
         values: resolveValues(candidate, body.overrides),
         reviewedAt: new Date().toISOString(),
       };
