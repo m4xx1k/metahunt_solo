@@ -108,6 +108,13 @@ describe("validateGolden", () => {
     expect(validateRelease(valid)).toEqual([]);
   });
 
+  it("does not demand a rationale for an object whose key or set order only changed", () => {
+    const valid = input();
+    valid.candidates.candidates[0].fields.skills.arbiter = values.skills;
+    valid.decisions.decisions.one.overrides.skills = { optional: [], required: ["TypeScript"] };
+    expect(validateRelease(valid)).toEqual([]);
+  });
+
   it("requires an allowed exclusion reason and source evidence", () => {
     const valid = input();
     valid.candidates.candidates[0].fields.skills.arbiter = values.skills;

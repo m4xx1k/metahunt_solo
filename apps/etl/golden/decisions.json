@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T01:04:04.156Z",
+  "generatedAt": "2026-08-08T22:36:56.197Z",
   "decisions": {
     "00060c1e-3eb9-4c5c-a26e-f336321feb0e": {
       "approved": true,
@@ -109,12 +109,13 @@
     },
     "ae3cb4b6-ef09-4b66-8b12-6668c8c298cd": {
       "approved": true,
-      "overrides": {
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {
         "skills": {
-          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
-          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "ElasticSearch"]
-        },
-        "domain": "Utilities"
+          "reason": "schema-limitation",
+          "evidence": "The Nice to have section names more than five optional hard skills; the five-item optional list cannot preserve the stated set without an arbitrary cutoff."
+        }
       },
       "values": {
         "isTech": true,
@@ -122,7 +123,7 @@
         "seniority": "SENIOR",
         "skills": {
           "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
-          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "ElasticSearch"]
+          "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
         },
         "experienceYears": 5,
         "salary": null,
@@ -136,7 +137,7 @@
         "hasTestAssignment": null,
         "hasReservation": true
       },
-      "reviewedAt": "2026-07-28T01:04:03.414Z"
+      "reviewedAt": "2026-08-08T22:36:56.163Z"
     },
     "8b163199-c077-4791-aece-d4717764fb8c": {
       "approved": true,
@@ -233,21 +234,12 @@
     },
     "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e": {
       "approved": true,
-      "overrides": {
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {
         "skills": {
-          "required": [
-            "Python",
-            "Go",
-            "Java",
-            "Node.js",
-            ".NET",
-            "React",
-            "Angular",
-            "Vue.js",
-            "PostgreSQL",
-            "LLM"
-          ],
-          "optional": ["RAG", "LangChain", "LlamaIndex", "Vector Databases"]
+          "reason": "schema-limitation",
+          "evidence": "The required stack is written as alternative groups (Python/Go/Java/Node.js/.NET and React/Next.js/Angular/Vue); required and optional sets cannot represent choose-one requirements."
         }
       },
       "values": {
@@ -267,7 +259,7 @@
             "PostgreSQL",
             "LLM"
           ],
-          "optional": ["RAG", "LangChain", "LlamaIndex", "Vector Databases"]
+          "optional": ["RAG", "LangChain", "LlamaIndex", "Haystack"]
         },
         "experienceYears": 2,
         "salary": null,
@@ -286,7 +278,7 @@
         "hasTestAssignment": null,
         "hasReservation": true
       },
-      "reviewedAt": "2026-07-28T00:41:47.684Z"
+      "reviewedAt": "2026-08-08T22:36:56.173Z"
     },
     "c92417fc-130a-495f-b26c-f6d3f9007a6c": {
       "approved": true,
@@ -404,42 +396,49 @@
       "approved": true,
       "overrides": {
         "skills": {
+          "required": [
+            "Systems Modeling",
+            "Optimal Control",
+            "Sensor Fusion",
+            "C",
+            "C++",
+            "MATLAB"
+          ],
           "optional": [
+            "Aerodynamics",
             "Computer Vision",
             "Hardware Engineering",
             "Path Planning",
-            "Aerodynamics",
             "Statistics"
-          ],
-          "required": [
-            "C/C++",
-            "MATLAB",
-            "Octave",
-            "Sensor Fusion",
-            "Optimal Control",
-            "Systems Modeling"
           ]
         }
       },
+      "rationales": {
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Must have lists systems modeling, optimal control, sensor fusion, C/C++, and MATLAB/Octave; plus lists aerodynamics, computer vision, math statistics, hardware engineering, and path planning. The slash and or wording is not expanded into C/C++ or Octave."
+        }
+      },
+      "exclusions": {},
       "values": {
         "isTech": true,
         "role": "Embedded Software Engineer",
         "seniority": "SENIOR",
         "skills": {
+          "required": [
+            "Systems Modeling",
+            "Optimal Control",
+            "Sensor Fusion",
+            "C",
+            "C++",
+            "MATLAB"
+          ],
           "optional": [
+            "Aerodynamics",
             "Computer Vision",
             "Hardware Engineering",
             "Path Planning",
-            "Aerodynamics",
             "Statistics"
-          ],
-          "required": [
-            "C/C++",
-            "MATLAB",
-            "Octave",
-            "Sensor Fusion",
-            "Optimal Control",
-            "Systems Modeling"
           ]
         },
         "experienceYears": null,
@@ -467,7 +466,7 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T00:47:23.098Z"
+      "reviewedAt": "2026-08-08T22:36:56.176Z"
     },
     "4f4e000c-089d-4a4e-9165-de6fb698c8e8": {
       "approved": true,
@@ -500,8 +499,13 @@
     },
     "a06e6d98-332c-4605-92eb-8992f8fd147a": {
       "approved": true,
-      "overrides": {
-        "domain": "SaaS"
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {
+        "domain": {
+          "reason": "taxonomy-gap",
+          "evidence": "The source calls EverHelp an outsourcing support-services company. Customer Support is not in the frozen VERIFIED domain taxonomy, while SaaS is not stated."
+        }
       },
       "values": {
         "isTech": true,
@@ -526,24 +530,19 @@
             "country": "Ukraine"
           }
         ],
-        "domain": "SaaS",
+        "domain": "Customer Support",
         "engagementType": "OUTSOURCE",
         "companyName": "EverHelp",
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T00:50:16.408Z"
+      "reviewedAt": "2026-08-08T22:36:56.179Z"
     },
     "ff9765ef-de34-4382-aeb4-ca26c0a219eb": {
       "approved": true,
-      "overrides": {
-        "experienceYears": 0,
-        "salary": {
-          "min": 200,
-          "max": 500,
-          "currency": "EUR"
-        }
-      },
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {},
       "values": {
         "isTech": true,
         "role": "Game Developer",
@@ -552,7 +551,7 @@
           "required": ["Adobe Photoshop", "Spine"],
           "optional": []
         },
-        "experienceYears": 0,
+        "experienceYears": null,
         "salary": {
           "min": 200,
           "max": 500,
@@ -573,7 +572,7 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T00:51:57.789Z"
+      "reviewedAt": "2026-08-08T22:36:56.183Z"
     },
     "3e3cd609-3b14-4c83-90fa-af7e3eaff8a6": {
       "approved": true,
@@ -632,19 +631,16 @@
     },
     "0cbdf1dc-08e3-4c03-a720-636cc41143ef": {
       "approved": true,
-      "overrides": {
-        "skills": {
-          "optional": ["Schematic Design"],
-          "required": ["Electronics", "Hardware Testing", "Test Cases", "Test Plans"]
-        }
-      },
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {},
       "values": {
         "isTech": true,
         "role": "QA Engineer",
         "seniority": "MIDDLE",
         "skills": {
-          "optional": ["Schematic Design"],
-          "required": ["Electronics", "Hardware Testing", "Test Cases", "Test Plans"]
+          "required": ["Electronics"],
+          "optional": []
         },
         "experienceYears": 2,
         "salary": null,
@@ -663,7 +659,7 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T00:54:24.224Z"
+      "reviewedAt": "2026-08-08T22:36:56.186Z"
     },
     "00345013-b591-4336-b1f2-335fb414c716": {
       "approved": true,
@@ -776,20 +772,17 @@
     },
     "13a0fd86-dfac-44bb-9845-4242a139d405": {
       "approved": true,
-      "overrides": {
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {
         "skills": {
-          "required": [
-            "Windows Server",
-            "Active Directory",
-            "Linux",
-            "TCP/IP",
-            "Azure",
-            "Microsoft 365",
-            "Jira"
-          ],
-          "optional": ["PowerShell", "Python", "Ansible", "Splunk", "Elastic Stack"]
+          "reason": "schema-limitation",
+          "evidence": "The mandatory and plus sections name more than the 10 required and 5 optional slots; selecting a subset would hide stated hard skills."
         },
-        "domain": "Fintech"
+        "domain": {
+          "reason": "taxonomy-gap",
+          "evidence": "The source explicitly identifies an insurance company. Insurance is absent from the frozen VERIFIED domain taxonomy, and Fintech is not stated."
+        }
       },
       "values": {
         "isTech": true,
@@ -799,13 +792,14 @@
           "required": [
             "Windows Server",
             "Active Directory",
+            "Microsoft Entra ID",
+            "Microsoft 365",
+            "Azure",
             "Linux",
             "TCP/IP",
-            "Azure",
-            "Microsoft 365",
             "Jira"
           ],
-          "optional": ["PowerShell", "Python", "Ansible", "Splunk", "Elastic Stack"]
+          "optional": ["Microsoft Purview", "Microsoft Intune", "Splunk", "PowerShell", "Python"]
         },
         "experienceYears": null,
         "salary": null,
@@ -813,19 +807,26 @@
         "employmentType": null,
         "workFormat": null,
         "locations": [],
-        "domain": "Fintech",
+        "domain": "Insurance",
         "engagementType": "PRODUCT",
         "companyName": "UNIVERSALNA",
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T01:00:26.953Z"
+      "reviewedAt": "2026-08-08T22:36:56.189Z"
     },
     "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2": {
       "approved": true,
       "overrides": {
         "role": "Automation QA Engineer"
       },
+      "rationales": {
+        "role": {
+          "disposition": "superseded-arbiter",
+          "evidence": "The source requires designing and implementing automated firmware tests, HIL regression, and regression pipelines; Automation QA Engineer is the matching frozen canonical role."
+        }
+      },
+      "exclusions": {},
       "values": {
         "isTech": true,
         "role": "Automation QA Engineer",
@@ -861,24 +862,30 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T01:01:31.192Z"
+      "reviewedAt": "2026-08-08T22:36:56.192Z"
     },
     "5596ee51-a05c-4523-bcb8-384ea7d14653": {
       "approved": true,
       "overrides": {
         "skills": {
-          "optional": [],
-          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"]
-        },
-        "employmentType": null
+          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"],
+          "optional": []
+        }
       },
+      "rationales": {
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "The requirements explicitly name distributed systems, event-driven architecture, and cloud/Kubernetes; leadership and code review are excluded as non-skill process responsibilities."
+        }
+      },
+      "exclusions": {},
       "values": {
         "isTech": true,
         "role": "Solutions Architect",
         "seniority": "PRINCIPAL",
         "skills": {
-          "optional": [],
-          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"]
+          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"],
+          "optional": []
         },
         "experienceYears": null,
         "salary": {
@@ -901,12 +908,17 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T01:02:14.945Z"
+      "reviewedAt": "2026-08-08T22:36:56.194Z"
     },
     "0093c6a8-1f44-467a-839a-68e4a0b69294": {
       "approved": true,
-      "overrides": {
-        "englishLevel": "INTERMEDIATE"
+      "overrides": {},
+      "rationales": {},
+      "exclusions": {
+        "englishLevel": {
+          "reason": "source-ambiguous",
+          "evidence": "The source says Proficient in English and Ukrainian but gives no CEFR level or mapping evidence for Intermediate versus Advanced."
+        }
       },
       "values": {
         "isTech": true,
@@ -928,7 +940,7 @@
         },
         "experienceYears": 4,
         "salary": null,
-        "englishLevel": "INTERMEDIATE",
+        "englishLevel": "ADVANCED",
         "employmentType": null,
         "workFormat": "REMOTE",
         "locations": [],
@@ -938,7 +950,7 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "reviewedAt": "2026-07-28T01:03:00.411Z"
+      "reviewedAt": "2026-08-08T22:36:56.197Z"
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T01:04:04.157Z",
+  "generatedAt": "2026-08-08T22:36:56.197Z",
   "rows": [
     {
       "id": "00060c1e-3eb9-4c5c-a26e-f336321feb0e",
@@ -107,7 +107,7 @@
         "seniority": "SENIOR",
         "skills": {
           "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS", "CI/CD"],
-          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "ElasticSearch"]
+          "optional": ["TypeScript", "Docker", "Terraform", "Feathers.js", "Playwright"]
         },
         "experienceYears": 5,
         "salary": null,
@@ -121,7 +121,13 @@
         "hasTestAssignment": null,
         "hasReservation": true
       },
-      "approvedAt": "2026-07-28T01:04:03.414Z"
+      "exclusions": {
+        "skills": {
+          "reason": "schema-limitation",
+          "evidence": "The Nice to have section names more than five optional hard skills; the five-item optional list cannot preserve the stated set without an arbitrary cutoff."
+        }
+      },
+      "approvedAt": "2026-08-08T22:36:56.163Z"
     },
     {
       "id": "8b163199-c077-4791-aece-d4717764fb8c",
@@ -239,7 +245,7 @@
             "PostgreSQL",
             "LLM"
           ],
-          "optional": ["RAG", "LangChain", "LlamaIndex", "Vector Databases"]
+          "optional": ["RAG", "LangChain", "LlamaIndex", "Haystack"]
         },
         "experienceYears": 2,
         "salary": null,
@@ -258,7 +264,13 @@
         "hasTestAssignment": null,
         "hasReservation": true
       },
-      "approvedAt": "2026-07-28T00:41:47.684Z"
+      "exclusions": {
+        "skills": {
+          "reason": "schema-limitation",
+          "evidence": "The required stack is written as alternative groups (Python/Go/Java/Node.js/.NET and React/Next.js/Angular/Vue); required and optional sets cannot represent choose-one requirements."
+        }
+      },
+      "approvedAt": "2026-08-08T22:36:56.173Z"
     },
     {
       "id": "c92417fc-130a-495f-b26c-f6d3f9007a6c",
@@ -388,20 +400,20 @@
         "role": "Embedded Software Engineer",
         "seniority": "SENIOR",
         "skills": {
+          "required": [
+            "Systems Modeling",
+            "Optimal Control",
+            "Sensor Fusion",
+            "C",
+            "C++",
+            "MATLAB"
+          ],
           "optional": [
+            "Aerodynamics",
             "Computer Vision",
             "Hardware Engineering",
             "Path Planning",
-            "Aerodynamics",
             "Statistics"
-          ],
-          "required": [
-            "C/C++",
-            "MATLAB",
-            "Octave",
-            "Sensor Fusion",
-            "Optimal Control",
-            "Systems Modeling"
           ]
         },
         "experienceYears": null,
@@ -429,7 +441,8 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T00:47:23.098Z"
+      "exclusions": {},
+      "approvedAt": "2026-08-08T22:36:56.176Z"
     },
     {
       "id": "4f4e000c-089d-4a4e-9165-de6fb698c8e8",
@@ -490,13 +503,19 @@
             "country": "Ukraine"
           }
         ],
-        "domain": "SaaS",
+        "domain": "Customer Support",
         "engagementType": "OUTSOURCE",
         "companyName": "EverHelp",
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T00:50:16.408Z"
+      "exclusions": {
+        "domain": {
+          "reason": "taxonomy-gap",
+          "evidence": "The source calls EverHelp an outsourcing support-services company. Customer Support is not in the frozen VERIFIED domain taxonomy, while SaaS is not stated."
+        }
+      },
+      "approvedAt": "2026-08-08T22:36:56.179Z"
     },
     {
       "id": "ff9765ef-de34-4382-aeb4-ca26c0a219eb",
@@ -511,7 +530,7 @@
           "required": ["Adobe Photoshop", "Spine"],
           "optional": []
         },
-        "experienceYears": 0,
+        "experienceYears": null,
         "salary": {
           "min": 200,
           "max": 500,
@@ -532,7 +551,8 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T00:51:57.789Z"
+      "exclusions": {},
+      "approvedAt": "2026-08-08T22:36:56.183Z"
     },
     {
       "id": "3e3cd609-3b14-4c83-90fa-af7e3eaff8a6",
@@ -598,8 +618,8 @@
         "role": "QA Engineer",
         "seniority": "MIDDLE",
         "skills": {
-          "optional": ["Schematic Design"],
-          "required": ["Electronics", "Hardware Testing", "Test Cases", "Test Plans"]
+          "required": ["Electronics"],
+          "optional": []
         },
         "experienceYears": 2,
         "salary": null,
@@ -618,7 +638,8 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T00:54:24.224Z"
+      "exclusions": {},
+      "approvedAt": "2026-08-08T22:36:56.186Z"
     },
     {
       "id": "00345013-b591-4336-b1f2-335fb414c716",
@@ -730,13 +751,14 @@
           "required": [
             "Windows Server",
             "Active Directory",
+            "Microsoft Entra ID",
+            "Microsoft 365",
+            "Azure",
             "Linux",
             "TCP/IP",
-            "Azure",
-            "Microsoft 365",
             "Jira"
           ],
-          "optional": ["PowerShell", "Python", "Ansible", "Splunk", "Elastic Stack"]
+          "optional": ["Microsoft Purview", "Microsoft Intune", "Splunk", "PowerShell", "Python"]
         },
         "experienceYears": null,
         "salary": null,
@@ -744,13 +766,23 @@
         "employmentType": null,
         "workFormat": null,
         "locations": [],
-        "domain": "Fintech",
+        "domain": "Insurance",
         "engagementType": "PRODUCT",
         "companyName": "UNIVERSALNA",
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T01:00:26.953Z"
+      "exclusions": {
+        "skills": {
+          "reason": "schema-limitation",
+          "evidence": "The mandatory and plus sections name more than the 10 required and 5 optional slots; selecting a subset would hide stated hard skills."
+        },
+        "domain": {
+          "reason": "taxonomy-gap",
+          "evidence": "The source explicitly identifies an insurance company. Insurance is absent from the frozen VERIFIED domain taxonomy, and Fintech is not stated."
+        }
+      },
+      "approvedAt": "2026-08-08T22:36:56.189Z"
     },
     {
       "id": "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2",
@@ -792,7 +824,8 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T01:01:31.192Z"
+      "exclusions": {},
+      "approvedAt": "2026-08-08T22:36:56.192Z"
     },
     {
       "id": "5596ee51-a05c-4523-bcb8-384ea7d14653",
@@ -804,8 +837,8 @@
         "role": "Solutions Architect",
         "seniority": "PRINCIPAL",
         "skills": {
-          "optional": [],
-          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"]
+          "required": ["Distributed Systems", "Event-driven Architecture", "Kubernetes", "Cloud"],
+          "optional": []
         },
         "experienceYears": null,
         "salary": {
@@ -828,7 +861,8 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T01:02:14.945Z"
+      "exclusions": {},
+      "approvedAt": "2026-08-08T22:36:56.194Z"
     },
     {
       "id": "0093c6a8-1f44-467a-839a-68e4a0b69294",
@@ -855,7 +889,7 @@
         },
         "experienceYears": 4,
         "salary": null,
-        "englishLevel": "INTERMEDIATE",
+        "englishLevel": "ADVANCED",
         "employmentType": null,
         "workFormat": "REMOTE",
         "locations": [],
@@ -865,7 +899,13 @@
         "hasTestAssignment": null,
         "hasReservation": null
       },
-      "approvedAt": "2026-07-28T01:03:00.411Z"
+      "exclusions": {
+        "englishLevel": {
+          "reason": "source-ambiguous",
+          "evidence": "The source says Proficient in English and Ukrainian but gives no CEFR level or mapping evidence for Intermediate versus Advanced."
+        }
+      },
+      "approvedAt": "2026-08-08T22:36:56.197Z"
     }
   ]
 }

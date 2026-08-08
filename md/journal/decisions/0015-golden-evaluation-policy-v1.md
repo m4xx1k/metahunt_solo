@@ -1,6 +1,6 @@
 # ADR-0015 — Golden evaluation policy v1
 
-**Status:** proposed
+**Status:** accepted
 **Date:** 2026-08-08
 **Context (in time):** MET-24 extraction-quality release gate
 

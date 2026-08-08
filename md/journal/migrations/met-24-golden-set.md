@@ -22,10 +22,12 @@ does not authorize a production taxonomy migration, re-extraction, or an LLM cal
 - ✅ Added optional `runs/<name>.meta.json` provenance bound to the immutable snapshot. **Done
   when:** a new scored run cannot be compared when corpus, prompt, taxonomy, aliases, provider,
   model, or pipeline commit are unknown.
-- ⏳ Review the legacy 25-row overrides and add evidence/rationales; intentionally do not invent
-  them. **Done when:** `pnpm golden:release-check` passes before a new run is accepted.
-- ⏳ Accept [policy v1](../decisions/0015-golden-evaluation-policy-v1.md), then add targeted
-  boundary cases before expanding to 100.
+- ✅ Accepted [policy v1](../decisions/0015-golden-evaluation-policy-v1.md) and reviewed all
+  legacy overrides that changed the merged candidate: 3 evidence-backed rulings, 6 explicit
+  exclusions, and 2 key-order-only false conflicts removed. **Done when:** `pnpm golden
+release-check` passes for the dataset (it does).
+- ⏳ Add targeted boundary cases before expanding to 100. **Done when:** salary, location,
+  boolean, non-tech, and seniority policy edges each have documented coverage.
 
 ## Proposed annotation contract
 
