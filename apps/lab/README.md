@@ -27,9 +27,21 @@ pnpm --filter @metahunt/lab lab:data
 ```
 
 That runs `pipeline/` against the **lab database** — a full local restore of a
-prod dump, safe to mutate. `pipeline/psql.sh` refuses any `DATABASE_URL` whose
-database is not `metahunt_lab`, so production is unreachable from here even by
-mistake.
+prod dump, safe to mutate. Point it there with `LAB_DATABASE_URL`, in the
+environment or in `apps/lab/.env` (gitignored — see `.env.example`):
+
+```bash
+LAB_DATABASE_URL=postgres://user:pass@localhost:5432/metahunt_lab
+```
+
+`pipeline/psql.sh` refuses any URL whose database is not `metahunt_lab`, so
+production is unreachable from here even by mistake.
+
+The name is not `DATABASE_URL` on purpose. Every other command in this repo
+resolves its database from whichever `.env` is in the working directory, so a
+lab `.env` using that name silently retargets them all — which is exactly how a
+taxonomy migration once ran against this restore while reporting success
+(MET-133). The lab owns its own handle and touches nobody else's.
 
 ```
 02-pairs.sql        position-grain skill and pair tables (both aggregation rules)
