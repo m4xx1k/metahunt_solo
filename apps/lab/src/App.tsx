@@ -1,18 +1,22 @@
 import { useMemo, useState } from "react";
 import raw from "./data/graph.json";
-import type { Graph } from "./types";
+import curatedRaw from "./data/pair-relations.json";
+import type { Graph, PairRelations } from "./types";
 import { buildAdjacency, fmt } from "./lib/graph";
 import { MapView } from "./views/Map";
+import { RelationsView } from "./views/Relations";
 import { Roles } from "./views/Roles";
 import { Skills } from "./views/Skills";
 import { tab } from "./ui";
 
 const graph = raw as unknown as Graph;
+const curated = curatedRaw as unknown as PairRelations;
 
 const TABS = [
   { key: "skills", text: "Skill neighbourhood" },
   { key: "roles", text: "Roles" },
   { key: "map", text: "Map" },
+  { key: "relations", text: "Relations" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -73,6 +77,9 @@ export default function App() {
       ) : null}
       {view === "roles" ? <Roles graph={graph} onSelectSkill={openSkill} /> : null}
       {view === "map" ? <MapView graph={graph} onSelectSkill={openSkill} /> : null}
+      {view === "relations" ? (
+        <RelationsView graph={graph} curated={curated} onSelectSkill={openSkill} />
+      ) : null}
 
       <Methodology />
     </div>
