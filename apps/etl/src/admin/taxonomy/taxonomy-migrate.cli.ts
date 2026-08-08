@@ -4,12 +4,15 @@
  * maintains. See md/journal/migrations/taxonomy-role-v2.md for the plan's
  * reasoning and the run sheet.
  *
- * Dry-run is the DEFAULT — nothing mutates without `--apply`.
+ * Dry-run is the DEFAULT — nothing mutates without `--apply`. The resolved
+ * database is printed first in every mode, and `--apply` against anything that
+ * is not a local database additionally requires `--yes-prod` (MET-133).
  *
  * Usage (wrapped by the `taxonomy:migrate` npm script at repo root):
  *   pnpm taxonomy:migrate --plan apps/etl/src/admin/taxonomy/plans/role-v2.plan.json
  *   pnpm taxonomy:migrate --plan <path> --phase 1
  *   pnpm taxonomy:migrate --plan <path> --apply
+ *   DATABASE_URL=$(scripts/prod-db-url.sh) pnpm taxonomy:migrate --plan <path> --apply --yes-prod
  *
  * Exit codes: 0 clean · 1 warnings present · 2 refusals present (nothing applied).
  */
@@ -28,6 +31,11 @@ import { sql } from "drizzle-orm";
 import { DRIZZLE, DatabaseModule } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import {
+  DbTargetRefusal,
+  assertWritableDbTarget,
+  describeDbTarget,
+} from "../../platform/config/db-target";
 import { validateEnv } from "../../platform/config/env.validation";
 
 import { TaxonomyService } from "./taxonomy.service";
@@ -91,6 +99,12 @@ async function main(): Promise<void> {
   const planPath = argFor(argv, "--plan");
   const onlyPhase = argFor(argv, "--phase");
   if (!planPath) throw new Error("--plan <path-to-plan.json> is required");
+
+  // Before Nest, before the plan: the operator sees the database, and a write to
+  // a non-local one stops here rather than after the first merge.
+  const target = describeDbTarget(process.env.DATABASE_URL);
+  process.stdout.write(`target: ${target.label}${target.isLocal ? " (local)" : ""}\n`);
+  assertWritableDbTarget(target, { write: apply, acknowledged: argv.includes("--yes-prod") });
 
   const logger = new Logger("taxonomy:migrate");
   const plan = JSON.parse(readFileSync(planPath, "utf8")) as Plan;
@@ -618,6 +632,12 @@ const flatten = (r: Resolved) => {
 };
 
 void main().catch((err) => {
+  // A wrong target is a refusal like any other in this CLI, and refusals exit 2.
+  // No stack: the message is the whole point and a trace only buries it.
+  if (err instanceof DbTargetRefusal) {
+    console.error(`\ntaxonomy:migrate — ${err.message}`);
+    process.exit(2);
+  }
   console.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
   process.exit(1);
 });
