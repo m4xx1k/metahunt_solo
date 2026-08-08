@@ -9,11 +9,13 @@ design: the public grain is **position** (`unique_vacancies`), while
 
 ## Live production state — 2026-08-08
 
-- PR #165 is merged/deployed: 0039 + Phase 1b pipeline.
-- PR #166 is merged/deployed: 0040 reconciled historical rollups.
+- PRs #165, #166 and #167 are merged/deployed: 0039/0040/0041 + Phase 1b/1c.0.
 - Prod invariants after 0040: 0 ungrouped postings; 0 pending rows; 0 stale
   vacancy/source counters; 0 stale first/last publication rollups; 0 missing
   representative / first-loaded fields.
+- A real `rss-ingest-hourly` run created one new posting with a group immediately;
+  the following `dedup-sweep` resolved it. The post-run checks found 0 new
+  ungrouped, pending, missing-group, or bad-rollup rows.
 - `dedup-sweep` Temporal schedule runs every five minutes.
 - One duplicate Railway deploy failed because two pre-deploy migrations raced;
   the other deployment succeeded, the migration ledger is correct (41 rows),
@@ -39,33 +41,15 @@ Rollback by phase:
   migration ledger. If the app regresses, redeploy the previous app version.
 - 1b/1c.0: revert the application deploy; `deduplicated_at` and deferred FKs
   remain compatible with the prior code.
-- 1c.1 (not yet made): `DROP NOT NULL` is the immediate rollback. Do not run
-  it until an observed real ingest proves 1c.0.
+- 1c.1 (work in progress): `DROP NOT NULL` is the immediate rollback. The real
+  production ingest has already proved 1c.0.
 
-Tomorrow after #167 Railway deployment is successful, trigger one normal
-`rss-ingest-hourly` run, then wait for `dedup-sweep`. Record its start time and
-query rows with `loaded_at` after that time. A real new/changed posting must:
+The required #167 production proof is complete: one real new posting had a
+group at insert time, received `deduplicated_at` after the next sweep, and
+left reconciliation/orphan/ungrouped counts at zero. Do not re-run it unless
+investigating a regression.
 
-1. have `unique_vacancy_id` immediately;
-2. point to a singleton or merged real group;
-3. receive `deduplicated_at` after the sweep;
-4. leave group reconciliation and orphan/ungrouped counts at zero.
-
-If the RSS run finds no new or changed posting, record that fact and wait for
-normal source churn. Do not seed a fake production vacancy or force reset.
-
-## Current PR
-
-PR #167, `feat/deferred-position-fks`, is green but still draft:
-
-- generated custom migration 0041 makes the cyclic vacancy/group FKs
-  `DEFERRABLE INITIALLY DEFERRED`;
-- loader preallocates vacancy + singleton-group UUIDs and inserts both in its
-  existing transaction;
-- integration tests are green: 16 suites / 107 tests.
-
-Merge/deploy #167, then verify one real production ingest that creates or
-updates a posting. Query production through:
+The query pattern for a future production check is:
 
 ```bash
 prod_db_url="$(scripts/prod-db-url.sh)"
@@ -75,25 +59,27 @@ psql "$prod_db_url" -X -P pager=off -c '
   FROM vacancies;'
 ```
 
-Also verify the new posting has a group at insert time, and that the next
-dedup sweep stamps `deduplicated_at`. Do not force an RSS ingest or a dedup
-reset without explicit owner approval: each can create external cost/data
-churn.
-
-## Phase 1c.1 — only after that observed ingest
+## Start tomorrow: MET-128 / Phase 1c.1
 
 The original one-step `NOT NULL` plan was incomplete because vacancy and group
 form a creation cycle. The safe order is now:
 
-1. 1c.0 = PR #167 (deferred FKs + atomic UUID pair).
-2. Observe real production ingest + dedup cycle.
-3. 1c.1 = a separate migration/deploy:
-   - `ALTER TABLE vacancies ALTER COLUMN unique_vacancy_id SET NOT NULL`;
-   - change its FK delete action from `SET NULL` to `RESTRICT`/`NO ACTION`;
-   - update schema `.notNull()` and test fixtures that insert raw vacancies.
+Worktree: `/tmp/metahunt-position-fk-contract`, branch
+`feat/position-fk-contract`. It contains an uncommitted generated custom
+`0042_require_position_group.sql` that makes `unique_vacancy_id NOT NULL` and
+changes the FK to deferred `NO ACTION`.
 
-Before merging 1c.1, test a new insert, content-change replay, merge, reset,
-and the reconciliation query. Never put 1c.1 in the same deployment as 1c.0.
+The suite currently fails only at TypeScript compile time. Complete it:
+
+1. Change `VacancyUpsertValues` to omit `id` and `uniqueVacancyId`; the
+   repository creates the atomic UUID pair.
+2. Repair raw ETL fixtures so every vacancy and singleton `unique_vacancies`
+   group are inserted in one transaction with preallocated UUIDs.
+3. Run `pnpm test:etl:int`, `pnpm --filter @metahunt/etl lint`, and
+   `pnpm db:check`; commit, PR, merge, deploy, then run the invariant query.
+
+Never combine 1c.1 with product-read changes. Linear:
+[MET-128](https://linear.app/metahunt/issue/MET-128/enforce-mandatory-position-group-phase-1c1).
 
 ## Phase 2 — product read paths
 
@@ -110,7 +96,7 @@ After 1c.1, remove `coalesce(v.unique_vacancy_id, v.id)` throughout:
 The `first_seen_at` → `first_published_at` rename is cosmetic and must remain
 its own compatibility-sensitive deploy.
 
-## Data lab / metalab
+## Data lab / Metalab
 
 Do **not** start market analytics before Phase 2. Otherwise every denominator
 measures reposting volume. Once Phase 2 is live, update
@@ -124,3 +110,6 @@ measures reposting volume. Once Phase 2 is live, update
 
 Keep IDF/node_stats/node_skill_cooc on posting grain until a separate ADR-0014
 with before/after CV-match evidence. Digest de-dup by position is Phase 3.
+The discovery/doc task is
+[MET-129](https://linear.app/metahunt/issue/MET-129/metalab-define-position-grain-market-analysis),
+blocked by MET-128 and Phase 2.
