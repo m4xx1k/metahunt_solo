@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   pgEnum,
@@ -113,6 +114,11 @@ export const vacancies = pgTable(
     uniqueVacancyId: uuid("unique_vacancy_id").references((): AnyPgColumn => uniqueVacancies.id, {
       onDelete: "set null",
     }),
+    // Pipeline state, kept OUT of the group FK (ADR-0012). Null = not resolved
+    // yet (new, or re-opened by a content change); a timestamp = resolved, and
+    // when. A time answers strictly more than a status and cannot rot.
+    deduplicatedAt: timestamp("deduplicated_at", { withTimezone: true }),
+
     // Why this vacancy ended up in this group. Same shape as the
     // `DedupReason` interface in apps/etl/src/dedup/dedup.contract.ts —
     // intentionally no DB-side mapping, the JSON is served verbatim.
@@ -129,6 +135,11 @@ export const vacancies = pgTable(
     index("vacancies_loaded_at_idx").on(t.loadedAt.desc()),
     index("vacancies_source_published_idx").on(t.sourceId, t.publishedAt),
     index("vacancies_unique_vacancy_id_idx").on(t.uniqueVacancyId),
+    // The dedup work queue. Partial: the pending set is a handful of rows
+    // against the whole table, so the index stays tiny and cheap to maintain.
+    index("vacancies_pending_dedup_idx")
+      .on(t.id)
+      .where(sql`${t.deduplicatedAt} IS NULL`),
     // HNSW on cosine distance — drives the second-stage ANN ranking.
     // Defaults (m=16, ef_construction=64) are pgvector's recommended
     // starting point and work well at our 3-4k row scale.

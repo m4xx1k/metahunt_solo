@@ -36,8 +36,22 @@ export const uniqueVacancies = pgTable(
     sourceCount: integer("source_count").notNull().default(1),
     vacancyCount: integer("vacancy_count").notNull().default(1),
 
+    // MISNOMER, rename pending (see the tracker): both hold the SOURCE's
+    // publication claim (MIN/MAX of `published_at`), not when we saw anything.
+    // 24% of postings get `published_at` bumped on refresh, so these track
+    // liveness; `firstLoadedAt` below is the bump-proof first-appearance.
     firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+
+    // MIN(loaded_at) over members — the only time axis a cohort or trend may
+    // use. Nullable only during the backfill window.
+    firstLoadedAt: timestamp("first_loaded_at", { withTimezone: true }),
+
+    // The member shown as the group's card. Denormalized so counting queries
+    // never have to re-derive the winner with a window function.
+    representativeVacancyId: uuid("representative_vacancy_id").references(
+      (): AnyPgColumn => vacancies.id,
+    ),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -45,6 +59,8 @@ export const uniqueVacancies = pgTable(
   (t) => [
     index("unique_vacancies_canonical_idx").on(t.canonicalVacancyId),
     index("unique_vacancies_source_count_idx").on(t.sourceCount.desc()),
+    // Serves both the freshness predicate (ADR-0013) and date sorting.
+    index("unique_vacancies_last_seen_idx").on(t.lastSeenAt.desc()),
   ],
 );
 
