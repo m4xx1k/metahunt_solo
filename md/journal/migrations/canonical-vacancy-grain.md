@@ -235,6 +235,17 @@ reconciliation query below becomes a scheduled check and not just a test asserti
 - [ ] `vacancy_count` / `source_count` match reality for every group (reconciliation query, see below).
 - [ ] Re-running the sweep twice changes nothing (idempotency).
 
+### Phase 1b.1 — reconcile pre-existing rollup drift
+
+The shared 1b writer prevents new divergence but does not revisit a group that
+does not receive another content update. Production pre-flight found 863 such
+groups with a stale `last_seen_at` (and 853 with a stale `first_seen_at`) from
+the two former writers. `0040_reconcile_position_rollups.sql` is a generated
+custom migration that recomputes every denormalized group field once from all
+members, using the same definition as the shared writer. It must land before
+the 1c contract migration, so the invariant is true for the historical corpus
+as well as new rows.
+
 ### Phase 1c — contract
 
 ```sql
