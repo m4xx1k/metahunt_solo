@@ -20,6 +20,7 @@ import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
 import { fetchMatch, HOME_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
 import { TrackIntro } from "@/app/(feed)/_components/market/TrackIntro";
+import { HowItWorks } from "@/app/(feed)/_components/how/HowItWorks";
 import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
 import {
   FEED_INDEX_DESCRIPTION,
@@ -182,8 +183,9 @@ export default async function FeedPage({
       <main className="page-dot-grid flex min-h-screen flex-col bg-bg">
         <FeedHero
           aggregates={aggregates}
-          showPipeline={!trackSlug}
-          matchCta={{ label: "Завантажити резюме", event: "feed:upload-cv" }}
+          showTrackPicker={!trackSlug}
+          tracks={tracks}
+          activeTrackSlug={trackSlug ?? null}
           heading={
             track
               ? {
@@ -211,6 +213,19 @@ export default async function FeedPage({
             />
           </HydrationBoundary>
         </div>
+        {!track ? (
+          <section className="border-t border-border px-6 py-16 md:px-12 md:py-20">
+            <div className="mx-auto flex w-full max-w-[1536px] flex-col gap-6">
+              <p className="font-mono text-2xs uppercase tracking-[0.18em] text-text-muted">
+                &gt; як це працює
+              </p>
+              <HowItWorks
+                aggregates={aggregates}
+                matchCta={{ label: "Завантажити резюме", event: "feed:upload-cv" }}
+              />
+            </div>
+          </section>
+        ) : null}
       </main>
       <Footer />
     </>
