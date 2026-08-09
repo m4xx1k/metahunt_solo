@@ -1,27 +1,32 @@
 import Link from "next/link";
 
 import type { VacancyAggregates } from "@/lib/api/aggregates";
-import { Tag, Divider } from "@/ui";
+import type { TrackDto } from "@/lib/api/tracks";
+import { Divider } from "@/ui";
 import { TotalCounter } from "./TotalCounter";
-import { HowItWorks } from "../how/HowItWorks";
+import { TrackPicker } from "./TrackPicker";
 
 // Intro / hero for the feed. One cohesive block (no separate background band):
 // the headline + live counter say *what this is*, and the 3-stage pipeline
-// below says *how it works* (Collect → Parse → Match). The pipeline only shows
-// on the bare index (`showPipeline`), not on track pages. The old stat widgets
-// (TopSkills / SeniorityBars / …) were deleted as unrendered dead code — git
-// history has them if a stats band ever comes back.
+// below lets a visitor pick a market before entering the feed. Track pages keep
+// their focused heading and omit the picker.
 
 type Props = {
   aggregates: VacancyAggregates;
-  showPipeline?: boolean;
-  /** Overrides the pipeline's Match CTA (merged: open the CV picker). */
-  matchCta?: { label: string; event: string };
+  showTrackPicker?: boolean;
+  tracks?: TrackDto[];
+  activeTrackSlug?: string | null;
   /** Track pages replace the index headline so each one has an h1 of its own. */
   heading?: { title: React.ReactNode; subtitle: string };
 };
 
-export function FeedHero({ aggregates: a, showPipeline = false, matchCta, heading }: Props) {
+export function FeedHero({
+  aggregates: a,
+  showTrackPicker = false,
+  tracks = [],
+  activeTrackSlug = null,
+  heading,
+}: Props) {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
@@ -46,14 +51,7 @@ export function FeedHero({ aggregates: a, showPipeline = false, matchCta, headin
         <TotalCounter total={a.total} lastSyncAt={a.lastSyncAt} sources={a.sources} />
       </div>
 
-      {showPipeline && (
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-center">
-            <Tag>{"> як це працює"}</Tag>
-          </div>
-          <HowItWorks aggregates={a} matchCta={matchCta} />
-        </div>
-      )}
+      {showTrackPicker ? <TrackPicker tracks={tracks} activeSlug={activeTrackSlug} /> : null}
 
       <Divider className="mt-2" />
     </section>
