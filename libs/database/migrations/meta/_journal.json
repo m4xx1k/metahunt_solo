@@ -330,6 +330,13 @@
       "when": 1786238164671,
       "tag": "0046_track_counts_position_grain",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1786251689384,
+      "tag": "0047_track_counts_required_skills",
+      "breakpoints": true
     }
   ]
 }
