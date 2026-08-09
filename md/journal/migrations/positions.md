@@ -23,7 +23,8 @@ posting-grain behind explicit exemptions until MET-139.
 - [x] T6 — Move the Lab population to the views — *done when:* `lab:data` rebuilds and `lab:check` passes. **✅ 417 nodes · 4,143 edges · 11 roles; skill-link parity 78,500 = 78,500**
 - [x] T7 — Architecture guard — *done when:* a new raw `vacancies` aggregate under `03-discovery` fails without an exemption. **✅ verified by planting a violation**
 - [x] T8 — Full verification suite + fresh-restore migration replay — *done when:* db:check, builds, lint, unit, int, lab all green on a DB rebuilt from the dump. **✅ replayed all 47 migrations onto a virgin restore (`metahunt_met137_replay`): invariants 12,773 = 12,773, node parity 0/0 both ways, matview indexes recreated, cooc byte-identical to the `0043` definition. db:check · database build · etl lint · 523 unit · 111 int · lab:check · lab:build · `git diff --check` all green**
-- [ ] T9 — Open PR 1, sync Linear MET-138 / MET-137.
+- [x] T9 — Open PR 1, sync Linear MET-138 / MET-137. **✅ [PR #175](https://github.com/m4xx1k/metahunt_solo/pull/175), commit `0b6179d`, all 7 CI checks green; MET-138 → In Review, MET-137 → In Progress**
+- [ ] T10 — Production rollout observation (post-merge) — *done when:* Railway deployed the exact merge commit, pre-deploy migration succeeded, `/healthz` all `ok: true`, prod invariants + feed/market/facet/track totals verified, and one scheduled ingest/refresh observed.
 
 ## Decisions
 
@@ -52,5 +53,5 @@ posting-grain behind explicit exemptions until MET-139.
 - ADRs: [0015](../decisions/0015-position-read-model.md) (this initiative), [0012](../decisions/0012-position-grain-and-dedup-state.md) (grain + dedup state), [0014](../decisions/0014-skill-graph-and-the-lab.md) (Lab)
 - Linear: MET-137 (parent) · MET-138 (PR 1) · MET-139 (scoring cutover) · MET-140 (snapshots)
 - Migrations: `0044_positions_read_model`, `0045_node_skill_cooc_via_position_views`, `0046_track_counts_position_grain`
-- Releases: —
-- PR: —
+- Releases: [2026-08-09](../releases.md)
+- PR: [#175](https://github.com/m4xx1k/metahunt_solo/pull/175)
