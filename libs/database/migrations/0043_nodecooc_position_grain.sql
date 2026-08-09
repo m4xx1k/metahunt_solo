@@ -1,22 +1,5 @@
-import { sql } from "drizzle-orm";
-import { uuid, integer, doublePrecision, pgMaterializedView } from "drizzle-orm/pg-core";
-
-// One row per unordered, verified REQUIRED skill pair over canonical positions.
-// Counts accompany the normalized metrics so every product decision retains its evidence.
-export const nodeSkillCooc = pgMaterializedView("node_skill_cooc", {
-  aId: uuid("a_id"),
-  bId: uuid("b_id"),
-  pairPositions: integer("pair_positions"),
-  aSupport: integer("a_support"),
-  bSupport: integer("b_support"),
-  positionCount: integer("position_count"),
-  support: doublePrecision("support"),
-  pBGivenA: doublePrecision("p_b_given_a"),
-  pAGivenB: doublePrecision("p_a_given_b"),
-  lift: doublePrecision("lift"),
-  npmi: doublePrecision("npmi"),
-}).as(
-  sql`
+DROP MATERIALIZED VIEW "public"."node_skill_cooc";--> statement-breakpoint
+CREATE MATERIALIZED VIEW "public"."node_skill_cooc" AS (
     WITH position_skill AS (
       SELECT DISTINCT uv.id AS position_id, vn.node_id
       FROM unique_vacancies uv
@@ -56,5 +39,7 @@ export const nodeSkillCooc = pgMaterializedView("node_skill_cooc", {
     JOIN skill sa ON sa.node_id = p.a_id
     JOIN skill sb ON sb.node_id = p.b_id
     CROSS JOIN corpus c
-  `,
-);
+  );--> statement-breakpoint
+CREATE UNIQUE INDEX "node_skill_cooc_pair_key" ON "public"."node_skill_cooc" USING btree ("a_id", "b_id");--> statement-breakpoint
+CREATE INDEX "node_skill_cooc_a" ON "public"."node_skill_cooc" USING btree ("a_id");--> statement-breakpoint
+CREATE INDEX "node_skill_cooc_b" ON "public"."node_skill_cooc" USING btree ("b_id");

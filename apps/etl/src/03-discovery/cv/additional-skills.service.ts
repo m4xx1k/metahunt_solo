@@ -7,8 +7,8 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import type { SkillSuggestion } from "./cv.contract";
 
-// Only real associations, not coincidence: NPMI in [-1,1]; a positive floor also
-// drops substitutes (React/Angular co-occur weakly) and negatively-linked pairs.
+// A positive NPMI floor, paired with the view's ten-position floor, keeps
+// suggestions grounded in observed associations rather than one-off coincidences.
 const NPMI_FLOOR = 0.1;
 const MAX_SUGGESTIONS = 12;
 
@@ -42,17 +42,19 @@ export class AdditionalSkillsService {
         WHERE c.id = ${candidateId}::uuid
       ),
       links AS (
-        SELECT xc.b_id AS node_id, nb.canonical_name AS name,
+        SELECT CASE WHEN xc.a_id = h.node_id THEN xc.b_id ELSE xc.a_id END AS node_id,
+               nb.canonical_name AS name,
                ha.canonical_name AS implied_by, xc.npmi
         FROM held h
         JOIN nodes ha ON ha.id = h.node_id
-        JOIN node_skill_cooc xc ON xc.a_id = h.node_id
-        JOIN nodes nb ON nb.id = xc.b_id AND nb.status = 'VERIFIED' AND nb.type = 'SKILL'
-        LEFT JOIN node_tech_meta m ON m.node_id = xc.b_id
+        JOIN node_skill_cooc xc ON xc.a_id = h.node_id OR xc.b_id = h.node_id
+        JOIN nodes nb ON nb.id = CASE WHEN xc.a_id = h.node_id THEN xc.b_id ELSE xc.a_id END
+          AND nb.status = 'VERIFIED' AND nb.type = 'SKILL'
+        LEFT JOIN node_tech_meta m ON m.node_id = CASE WHEN xc.a_id = h.node_id THEN xc.b_id ELSE xc.a_id END
         WHERE xc.npmi >= ${NPMI_FLOOR}
           AND COALESCE(m.generic, false) = false
-          AND xc.b_id NOT IN (SELECT node_id FROM held)
-          AND xc.b_id NOT IN (SELECT node_id FROM rejected)
+          AND (CASE WHEN xc.a_id = h.node_id THEN xc.b_id ELSE xc.a_id END) NOT IN (SELECT node_id FROM held)
+          AND (CASE WHEN xc.a_id = h.node_id THEN xc.b_id ELSE xc.a_id END) NOT IN (SELECT node_id FROM rejected)
       ),
       agg AS (
         SELECT node_id, name, sum(npmi) AS score FROM links GROUP BY node_id, name
