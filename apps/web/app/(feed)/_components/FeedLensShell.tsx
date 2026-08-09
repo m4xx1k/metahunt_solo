@@ -18,7 +18,6 @@ import { useFeedSearch } from "../_hooks/use-feed-search";
 import { ColdRecsTeaser } from "./ColdRecsTeaser";
 import { CvDropzone } from "./CvDropzone";
 import { LensTabs, LENS_PANEL_ID, lensTabId } from "./LensTabs";
-import { TracksBand } from "./TracksBand";
 import { WarmBody } from "./WarmBody";
 
 // The merged route's interactive island. The lens is derived from ?cv: cold =
@@ -51,7 +50,7 @@ export function FeedLensShell({
   samples: SampleCandidate[];
 }) {
   const search = useFeedSearch();
-  const { lens, cv, setCv, setTrack } = search;
+  const { lens, cv, setCv } = search;
   const analytics = useAnalytics();
   const saved = useSaved();
   const { isLoggedIn } = useSession();
@@ -69,8 +68,7 @@ export function FeedLensShell({
   // (scroll-margin clears the header). On mobile the bar is a fixed bottom bar,
   // so bring the content it controls up to the top instead.
   const scrollToControls = useCallback(() => {
-    // Wait for the lens switch to commit — tracks appear/disappear above the bar
-    // and shift the layout — before measuring the scroll target.
+    // Wait for the lens switch to commit before measuring the scroll target.
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         const target = window.matchMedia("(min-width: 640px)").matches
@@ -166,10 +164,6 @@ export function FeedLensShell({
 
   return (
     <div className="flex flex-col gap-4">
-      {lens === "cold" ? (
-        <TracksBand tracks={tracks} activeSlug={activeTrackSlug} onSelect={setTrack} />
-      ) : null}
-
       <div
         ref={barRef}
         onDragOver={(e) => {
