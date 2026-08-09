@@ -28,3 +28,4 @@ export * from "./subscriptions";
 export * from "./sent-notifications";
 export * from "./digest-deliveries";
 export * from "./product-events";
+export * from "./market-snapshots";

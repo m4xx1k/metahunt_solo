@@ -7,6 +7,7 @@ import {
 } from "@temporalio/workflow";
 
 import { settleInBatches } from "../../../workflows/settle-in-batches";
+import type { CaptureMarketSnapshotActivity } from "../activities/capture-market-snapshot.activity";
 import type { RefreshNodeStatsActivity } from "../activities/refresh-node-stats.activity";
 import type { RssListSourcesActivity } from "../activities/rss-list-sources.activity";
 
@@ -18,6 +19,10 @@ const { listRemoteSources } = proxyActivities<typeof RssListSourcesActivity.prot
 });
 
 const { refreshNodeStats } = proxyActivities<typeof RefreshNodeStatsActivity.prototype>({
+  startToCloseTimeout: "5m",
+  retry: { maximumAttempts: 2 },
+});
+const { captureMarketSnapshot } = proxyActivities<typeof CaptureMarketSnapshotActivity.prototype>({
   startToCloseTimeout: "5m",
   retry: { maximumAttempts: 2 },
 });
@@ -59,8 +64,9 @@ export async function rssIngestAllWorkflow(): Promise<{ started: number }> {
   // Stats are eventually consistent and may lag abandoned listing children by one cycle.
   try {
     await refreshNodeStats();
+    await captureMarketSnapshot();
   } catch (err) {
-    log.warn(`node_stats refresh failed; will retry next ingest: ${String(err)}`);
+    log.warn(`market refresh/snapshot failed; will retry next ingest: ${String(err)}`);
   }
 
   return { started: sources.length - failedStarts.length };

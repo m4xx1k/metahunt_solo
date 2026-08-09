@@ -3,6 +3,7 @@ import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
 
+import { CaptureMarketSnapshotActivity } from "../../src/01-ingest/rss/activities/capture-market-snapshot.activity";
 import { makeTestDb, truncateAll } from "./db";
 import { insertVacancyWithGroup, mergeIntoGroup } from "./vacancy-fixture";
 
@@ -171,6 +172,51 @@ describe("Position read model (positions / postings / position_nodes)", () => {
       SELECT df FROM node_stats WHERE node_id = ${skill}::uuid
     `);
     expect(stats.rows[0]?.df).toBe(1);
+  });
+
+  it("captures immutable Position and position-node snapshots", async () => {
+    const role = await seedNode("ROLE", "VERIFIED", "Backend Engineer");
+    const skill = await seedNode("SKILL", "VERIFIED", "TypeScript");
+    const { sourceId, ingestId } = await seedSource();
+    const vacancyId = await seedVacancy({
+      sourceId,
+      ingestId,
+      title: "Original title",
+      publishedAt: new Date("2026-01-01T00:00:00Z"),
+    });
+    await db
+      .update(schema.vacancies)
+      .set({ roleNodeId: role })
+      .where(eq(schema.vacancies.id, vacancyId));
+    await db.insert(schema.vacancyNodes).values({ vacancyId, nodeId: skill, isRequired: true });
+    const capture = new CaptureMarketSnapshotActivity(db);
+
+    const first = await capture.captureMarketSnapshot();
+    expect(first.positions).toBe(1);
+    const firstNodes = await db.execute<{ count: number }>(sql`
+      SELECT count(*)::int AS count
+      FROM market_snapshot_position_nodes
+      WHERE snapshot_id = ${first.snapshotId}::uuid
+    `);
+    expect(firstNodes.rows[0]?.count).toBe(1);
+
+    await db
+      .update(schema.vacancies)
+      .set({ title: "Changed title" })
+      .where(eq(schema.vacancies.id, vacancyId));
+    const second = await capture.captureMarketSnapshot();
+    const titles = await db.execute<{ snapshot_id: string; title: string }>(sql`
+      SELECT snapshot_id::text, position->>'title' AS title
+      FROM market_snapshot_positions
+      WHERE snapshot_id IN (${first.snapshotId}::uuid, ${second.snapshotId}::uuid)
+      ORDER BY snapshot_id
+    `);
+    expect(new Set(titles.rows.map((r) => r.title))).toEqual(
+      new Set(["Original title", "Changed title"]),
+    );
+    await expect(
+      db.execute(sql`DELETE FROM market_snapshots WHERE id = ${first.snapshotId}::uuid`),
+    ).rejects.toMatchObject({ cause: { message: "market snapshots are immutable" } });
   });
 
   it("keeps canonical facts and links stable when the representative changes", async () => {
