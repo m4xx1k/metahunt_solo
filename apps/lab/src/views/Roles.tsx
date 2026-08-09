@@ -2,10 +2,19 @@ import { useMemo, useState } from "react";
 import type { Graph } from "../types";
 import { fmt, pct } from "../lib/graph";
 import { input, label, panel, panelHead, panelNote, panelTitle, td, tdName, th, thLeft } from "../ui";
+import { HowItWorks } from "./HowItWorks";
 
 /** What a role actually asks for, on its own denominator — and which pairs
  *  inside it are more than composition. */
-export function Roles({ graph, onSelectSkill }: { graph: Graph; onSelectSkill: (i: number) => void }) {
+export function Roles({
+  graph,
+  onSelectSkill,
+  onOpenFaq,
+}: {
+  graph: Graph;
+  onSelectSkill: (i: number) => void;
+  onOpenFaq: () => void;
+}) {
   const [roleId, setRoleId] = useState(graph.roles[0]?.id ?? "");
   // A role is a smaller denominator than the corpus, so the global pair floor of
   // 10 lets the sparse tail back in: sorting by lift under it surfaces pairs
@@ -153,11 +162,11 @@ export function Roles({ graph, onSelectSkill }: { graph: Graph; onSelectSkill: (
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-ink-3 max-w-[70ch] leading-relaxed">
-        These lifts are measured within the role, so role composition is already controlled for. A
-        value near 1 means the two skills co-occur no more than their separate popularity inside this
-        role predicts — the pair is common here, but not linked here.
-      </p>
+      <HowItWorks onOpenFaq={onOpenFaq}>
+        Every share and lift here uses this role&apos;s positions as its denominator, so role composition
+        is already controlled for. A lift near 1 means a common pair is no more linked than the
+        role&apos;s separate skill popularity predicts.
+      </HowItWorks>
       {edges.length === 0 ? (
         <p className="mt-2 text-xs text-trap">
           No pair inside {role.name} clears {minShared} shared positions — lower the floor, but read

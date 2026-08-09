@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import raw from "./data/graph.json";
 import curatedRaw from "./data/pair-relations.json";
 import type { Graph, PairRelations } from "./types";
@@ -6,29 +6,38 @@ import { buildAdjacency, fmt } from "./lib/graph";
 import { MapView } from "./views/Map";
 import { RelationsView } from "./views/Relations";
 import { Roles } from "./views/Roles";
-import { Skills } from "./views/Skills";
+import { Faq } from "./views/Faq";
+import { SkillDossier } from "./views/SkillDossier";
+import { Experiments } from "./views/Experiments";
 import { tab } from "./ui";
 
 const graph = raw as unknown as Graph;
 const curated = curatedRaw as unknown as PairRelations;
 
 const TABS = [
-  { key: "skills", text: "Skill neighbourhood" },
-  { key: "roles", text: "Roles" },
   { key: "map", text: "Map" },
+  { key: "skills", text: "Skill dossier" },
+  { key: "roles", text: "Roles" },
   { key: "relations", text: "Relations" },
+  { key: "faq", text: "FAQ" },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+// Reachable at #experiments but deliberately NOT in TABS: unreviewed sandbox
+// output (MET-143) doesn't belong next to the reviewed skill graph in the nav
+// until a cut of it earns that. See src/views/Experiments.tsx.
+const HIDDEN_TABS = [{ key: "experiments", text: "Experiments" }] as const;
 
-const isTab = (v: string): v is TabKey => TABS.some((t) => t.key === v);
+type TabKey = (typeof TABS)[number]["key"] | (typeof HIDDEN_TABS)[number]["key"];
+
+const isTab = (v: string): v is TabKey =>
+  TABS.some((t) => t.key === v) || HIDDEN_TABS.some((t) => t.key === v);
 
 export default function App() {
   // The view lives in the hash so a reload, a bookmark, or a link to someone
   // else lands on the same screen.
   const [view, setViewState] = useState<TabKey>(() => {
     const h = location.hash.slice(1);
-    return isTab(h) ? h : "skills";
+    return isTab(h) ? h : "map";
   });
 
   const setView = (v: TabKey) => {
@@ -36,7 +45,7 @@ export default function App() {
     location.hash = v;
   };
   const [selected, setSelected] = useState(() =>
-    Math.max(0, graph.nodes.findIndex((n) => n.name === "Java")),
+    Math.max(0, graph.nodes.findIndex((n) => n.name === "React")),
   );
 
   const adj = useMemo(() => buildAdjacency(graph.edges), []);
@@ -45,6 +54,15 @@ export default function App() {
     setSelected(index);
     setView("skills");
   };
+
+  useEffect(() => {
+    const syncHash = () => {
+      const next = location.hash.slice(1);
+      if (isTab(next)) setViewState(next);
+    };
+    addEventListener("hashchange", syncHash);
+    return () => removeEventListener("hashchange", syncHash);
+  }, []);
 
   return (
     <div className="mx-auto max-w-[1180px] px-5 pb-24">
@@ -73,13 +91,22 @@ export default function App() {
       </nav>
 
       {view === "skills" ? (
-        <Skills graph={graph} adj={adj} selected={selected} onSelect={setSelected} />
+        <SkillDossier
+          graph={graph}
+          curated={curated}
+          adj={adj}
+          selected={selected}
+          onSelect={setSelected}
+          onOpenFaq={() => setView("faq")}
+        />
       ) : null}
-      {view === "roles" ? <Roles graph={graph} onSelectSkill={openSkill} /> : null}
-      {view === "map" ? <MapView graph={graph} onSelectSkill={openSkill} /> : null}
+      {view === "roles" ? <Roles graph={graph} onSelectSkill={openSkill} onOpenFaq={() => setView("faq")} /> : null}
+      {view === "map" ? <MapView graph={graph} onSelectSkill={openSkill} onOpenFaq={() => setView("faq")} /> : null}
       {view === "relations" ? (
         <RelationsView graph={graph} curated={curated} onSelectSkill={openSkill} />
       ) : null}
+      {view === "faq" ? <Faq /> : null}
+      {view === "experiments" ? <Experiments /> : null}
 
       <Methodology />
     </div>

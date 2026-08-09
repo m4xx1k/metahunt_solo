@@ -6,6 +6,7 @@ import Sigma from "sigma";
 import type { Graph } from "../types";
 import { fmt } from "../lib/graph";
 import { input, label, panel, panelHead, panelNote, panelTitle } from "../ui";
+import { HowItWorks } from "./HowItWorks";
 
 const token = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
@@ -16,11 +17,20 @@ type Cluster = { id: number; members: number[]; label: string };
  *  keep by filtering first and grouping second: an NPMI floor decides what is
  *  drawn, Louvain decides what belongs together, and only one cluster is ever
  *  emphasised at a time. */
-export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill: (i: number) => void }) {
+export function MapView({
+  graph,
+  onSelectSkill,
+  onOpenFaq,
+}: {
+  graph: Graph;
+  onSelectSkill: (i: number) => void;
+  onOpenFaq: () => void;
+}) {
   const host = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
   const [minNpmi, setMinNpmi] = useState(0.3);
   const [focus, setFocus] = useState<number | null>(null);
+  const [showLabels, setShowLabels] = useState(true);
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
 
   /** Layout and community detection are pure functions of the filter, so they
@@ -130,7 +140,7 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
       labelColor: { color: token("--color-ink-2") },
       labelFont: "ui-sans-serif, system-ui, sans-serif",
       labelSize: 11,
-      labelRenderedSizeThreshold: 6,
+      labelRenderedSizeThreshold: showLabels ? 0 : Infinity,
       defaultEdgeColor: rule,
       zIndex: true,
     });
@@ -154,7 +164,7 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
       sigmaRef.current = null;
       setHover(null);
     };
-  }, [model, focus, onSelectSkill]);
+  }, [model, focus, onSelectSkill, showLabels]);
 
   return (
     <>
@@ -196,6 +206,15 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
             ))}
           </select>
         </div>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-2">
+          <input
+            type="checkbox"
+            className="accent-signal"
+            checked={showLabels}
+            onChange={(event) => setShowLabels(event.target.checked)}
+          />
+          Show skill labels
+        </label>
       </div>
 
       <div className={panel}>
@@ -223,13 +242,11 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-ink-3 max-w-[70ch] leading-relaxed">
-        Clusters are found by Louvain on the NPMI-weighted graph — nothing here was defined by hand,
-        and the labels are just each cluster&apos;s three most-demanded skills. Raising the NPMI floor
-        does not zoom in; it changes which links exist, so the clustering is recomputed and may split
-        or merge groups. Position on the canvas carries no meaning beyond &quot;connected things sit
-        together&quot;.
-      </p>
+      <HowItWorks onOpenFaq={onOpenFaq}>
+        The map keeps only links above the NPMI floor, then groups the remaining skills by how tightly
+        they connect. Raising the floor changes the graph and can split or merge clusters; canvas
+        position means only “connected things sit together”.
+      </HowItWorks>
     </>
   );
 }
