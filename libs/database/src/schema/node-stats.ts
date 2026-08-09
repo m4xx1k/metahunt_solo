@@ -4,9 +4,9 @@ import { uuid, integer, doublePrecision, pgMaterializedView } from "drizzle-orm/
 // IDF skill weights for the reverse-ATS matcher. See
 // md/journal/migrations/reverse-ats.md (Engine v1 — "Why IDF").
 //
-// One row per skill node carried by at least one vacancy:
-//   df     = how many vacancies carry the skill (document frequency)
-//   weight = sqrt(ln(N / (df + K))), N = total vacancies (compressed smoothed IDF)
+// One row per skill node carried by at least one Position:
+//   df     = how many canonical Positions carry the skill (document frequency)
+//   weight = sqrt(ln(N / (df + K))), N = total Positions (compressed smoothed IDF)
 // Generic skills (high df) land near 0 and self-cancel; rare skills approach
 // sqrt(ln(N)) — the bull's-eye matches the matcher sorts on. NEW + VERIFIED both
 // count: the long tail (most distinct skills are NEW) is exactly where IDF
@@ -39,12 +39,12 @@ export const nodeStats = pgMaterializedView("node_stats", {
 }).as(
   sql`
     SELECT vn.node_id,
-           count(DISTINCT vn.vacancy_id)::int AS df,
-           sqrt(ln((SELECT count(*) FROM vacancies)::float8
-              / (count(DISTINCT vn.vacancy_id) + 5))) AS weight
-    FROM vacancy_nodes vn
-    JOIN nodes n ON n.id = vn.node_id
+           count(DISTINCT pn.position_id)::int AS df,
+           sqrt(greatest(ln((SELECT count(*) FROM positions)::float8
+              / (count(DISTINCT pn.position_id) + 5)), 0)) AS weight
+    FROM position_nodes pn
+    JOIN nodes n ON n.id = pn.node_id
     WHERE n.status <> 'HIDDEN'
-    GROUP BY vn.node_id
+    GROUP BY pn.node_id
   `,
 );

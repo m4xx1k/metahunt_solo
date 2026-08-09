@@ -269,10 +269,7 @@ describe("RankingService.match (integration)", () => {
     expect(shown.offStackHidden).toBe(0);
   });
 
-  // The off-stack filter runs after the dedup collapse, so a group whose best
-  // score sits on its off-stack duplicate must still fall back to the on-stack
-  // one — otherwise the whole posting disappears from the page.
-  it("keeps a dedup group's on-stack duplicate when the better-scoring one is off-stack", async () => {
+  it("scores one canonical Position even when its representative repost has different skills", async () => {
     const { sourceId, ingestId } = await seedSource();
     const role = await seedNode("ROLE", "Backend Developer");
     const node = await seedNode("SKILL", "Node.js");
@@ -285,8 +282,9 @@ describe("RankingService.match (integration)", () => {
     await seedTechMeta(python, { category: "LANGUAGE", stack: "python", isCore: true });
     await seedTechMeta(docker, { category: "TOOL", stack: null, isCore: false });
 
-    // Same posting twice: in-stack but a weak fit (1 of 4), off-stack with the
-    // better one (1 of 2) — so the off-stack copy wins a score-only partition.
+    // Canonical facts and skills belong to the first member. The fresher repost
+    // has divergent tags, but Position-grain scoring must not turn it into a
+    // separate better off-stack result.
     const inStack = await seedVacancy(sourceId, ingestId, role, "In stack");
     const offStack = await seedVacancy(sourceId, ingestId, role, "Off stack");
     await linkSkill(inStack, node);
@@ -305,8 +303,12 @@ describe("RankingService.match (integration)", () => {
 
     const res = await candidateMatch.match(candidateId, {}, 1, 20);
 
-    expect(res.items.map((i) => i.vacancy.id)).toEqual([inStack]);
+    expect(res.items.map((i) => i.vacancy.id)).toEqual([offStack]);
     expect(res.total).toBe(1);
+    expect(res.offStackHidden).toBe(0);
+    expect(res.items[0].onStack).toBe(true);
+    expect(res.items[0].fit.percent).toBe(25);
+    expect(res.items[0].diff.have.map((s) => s.name)).toEqual(["Node.js"]);
   });
 
   it("collapses a dedup group to a single ranked card", async () => {

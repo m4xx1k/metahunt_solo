@@ -5,11 +5,8 @@ import { sql, type SQL } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-// POSTING-GRAIN-EXEMPT: calibration-sensitive matcher/role-suggestion
-// scoring stays Posting-grain until MET-139 (Position grain scoring
-// cutover, PR 2) — see MET-137 IMPLEMENTATION.md.
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
-import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
+import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
 import { buildScoreBreakdown, fitPercent } from "../score/score.contract";
@@ -175,7 +172,7 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    // Per-vacancy relevance + coverage + tier_bucket + on_stack, owned by the
+    // Per-Position relevance + coverage + tier_bucket + on_stack, owned by the
     // score module. Shared by page + count + match_scored query.
     const scoreCte = rankedCte(cand);
 
@@ -191,33 +188,18 @@ export class RankingService {
 
     // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
     // date-sorted page, because the Fit number is on every card either way.
-    // The dedup partition order mirrors the page order below it, but on_stack
-    // leads: the off-stack filter runs after the collapse, so an off-stack
-    // representative would take its whole group down with it.
     const byDate = filters.sort === "date";
-    const groupOrder = byDate
-      ? sql`rk.on_stack DESC, coalesce(v.published_at, v.loaded_at) DESC, v.id DESC`
-      : sql`rk.on_stack DESC, rk.tier_bucket DESC, round(rk.relevance::numeric, 9) DESC, v.id`;
     // round so exact-IDF ties break by id (raw float-sum order is plan noise).
     const pageOrder = byDate
       ? sql`posted_at DESC, id DESC`
       : sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
 
-    // Collapse dedup groups: keep one representative per group — its
-    // best-ranked member — so duplicate postings never occupy adjacent slots on
-    // the ranked page. Ungrouped rows partition on their own id (rn = 1
-    // trivially). Partition order mirrors the final ORDER BY. Off-stack rows
-    // stay in here so they can still be counted after being filtered out.
-    const collapsedCte = sql`
-      collapsed AS (
-        SELECT v.id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
-               coalesce(v.published_at, v.loaded_at) AS posted_at,
-               row_number() OVER (
-                 PARTITION BY coalesce(v.unique_vacancy_id, v.id)
-                 ORDER BY ${groupOrder}
-               ) AS rn
+    const rankedPositionsCte = sql`
+      ranked_positions AS (
+        SELECT p.position_id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
+               p.last_source_activity_at AS posted_at
         FROM ranked rk
-        JOIN vacancies v ON v.id = rk.id
+        JOIN positions p ON p.position_id = rk.id
         WHERE ${where}${tierCond}
       )`;
 
@@ -230,15 +212,14 @@ export class RankingService {
       total: number;
       off_stack_hidden: number;
     }>(sql`
-      WITH ${scoreCte}, ${collapsedCte},
+      WITH ${scoreCte}, ${rankedPositionsCte},
       -- Both counts come off the same window pass, before the off-stack rows
       -- are filtered away (a window function can't see what WHERE removed).
       counted AS (
         SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
                (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
                (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
-        FROM collapsed
-        WHERE rn = 1
+        FROM ranked_positions
       )
       SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
       FROM counted
@@ -254,11 +235,10 @@ export class RankingService {
     let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
     if (ranked.rows.length === 0) {
       const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
-        WITH ${scoreCte}, ${collapsedCte}
+        WITH ${scoreCte}, ${rankedPositionsCte}
         SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
                (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
-        FROM collapsed
-        WHERE rn = 1
+        FROM ranked_positions
       `);
       total = totalRes.rows[0]?.count ?? 0;
       offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
@@ -280,7 +260,7 @@ export class RankingService {
   }
 
   // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
-  // the filtered result set, pre-collapse and deliberately pre-off-stack — this
+  // the filtered result set, deliberately pre-off-stack — this
   // measures how the scorer behaves, not what the page chose to show.
   // Fire-and-forget — a telemetry failure must never affect the match response.
   private async emitMatchScored(scoreCte: SQL, where: SQL, skillsCount: number): Promise<void> {
@@ -289,7 +269,7 @@ export class RankingService {
         WITH ${scoreCte}
         SELECT least(floor(rk.coverage * 10), 9)::int AS bucket, count(*)::int AS n
         FROM ranked rk
-        JOIN vacancies v ON v.id = rk.id
+        JOIN positions p ON p.position_id = rk.id
         WHERE ${where}
         GROUP BY 1
       `);
@@ -310,7 +290,7 @@ export class RankingService {
   }
 
   // Score each ROLE node by how well the candidate's skill set covers its
-  // last-30d vacancies: total per role, GOOD+ count, and mean coverage (the
+  // last-30d Positions: total per role, GOOD+ count, and mean coverage (the
   // cold-start signal). Selection/smoothing lives in deriveRoleSuggestions.
   async suggestRoles(
     candidate: SkillRef[],
@@ -334,19 +314,19 @@ export class RankingService {
       avg_coverage: number;
     }>(sql`
       WITH ${scoringCtes(cand)},
-      per_vacancy AS (
-        SELECT v.role_node_id AS role_id, COALESCE(s.coverage, 0) AS coverage
-        FROM vacancies v
-        LEFT JOIN scored s ON s.id = v.id
-        WHERE ${ELIGIBLE_VACANCY}
-          AND coalesce(v.published_at, v.loaded_at) >
+      per_position AS (
+        SELECT p.role_node_id AS role_id, COALESCE(s.coverage, 0) AS coverage
+        FROM positions p
+        LEFT JOIN scored s ON s.id = p.position_id
+        WHERE ${ELIGIBLE_POSITION}
+          AND p.last_source_activity_at >
               now() - make_interval(days => ${ROLE_SUGGEST_WINDOW_DAYS})
       )
       SELECT r.id::text AS role_id, r.slug AS slug, r.canonical_name AS name,
              count(*)::int AS total,
              (count(*) FILTER (WHERE pv.coverage >= ${FIT_GOOD_MIN}))::int AS good,
              avg(pv.coverage)::float8 AS avg_coverage
-      FROM per_vacancy pv
+      FROM per_position pv
       JOIN nodes r ON r.id = pv.role_id
       GROUP BY r.id, r.slug, r.canonical_name
     `);
@@ -379,38 +359,38 @@ export class RankingService {
   ): Promise<RankedVacancy[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);
-    const dtos = await this.feed.hydrateByIds(ids);
+    const dtos = await this.feed.hydratePositionsByIds(ids);
 
     const pageIds = uuidList(ids);
     const skillRows = await this.db.execute<{
-      vacancy_id: string;
+      position_id: string;
       node_id: string;
       name: string;
       is_required: boolean;
       weight: number | null;
       in_candidate: boolean;
     }>(sql`
-      SELECT vn.vacancy_id::text AS vacancy_id, vn.node_id::text AS node_id,
-             n.canonical_name AS name, vn.is_required,
+      SELECT pn.position_id::text AS position_id, pn.node_id::text AS node_id,
+             n.canonical_name AS name, pn.is_required,
              ns.weight AS weight,
-             (vn.node_id IN (${candIds})) AS in_candidate
-      FROM vacancy_nodes vn
-      JOIN nodes n ON n.id = vn.node_id AND n.status <> 'HIDDEN'
-      LEFT JOIN node_stats ns ON ns.node_id = vn.node_id
-      WHERE vn.vacancy_id IN (${pageIds})
+             (pn.node_id IN (${candIds})) AS in_candidate
+      FROM position_nodes pn
+      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
+      LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
+      WHERE pn.position_id IN (${pageIds})
     `);
 
-    const byVacancy = new Map<string, typeof skillRows.rows>();
+    const byPosition = new Map<string, typeof skillRows.rows>();
     for (const r of skillRows.rows) {
-      const arr = byVacancy.get(r.vacancy_id) ?? [];
+      const arr = byPosition.get(r.position_id) ?? [];
       arr.push(r);
-      byVacancy.set(r.vacancy_id, arr);
+      byPosition.set(r.position_id, arr);
     }
     const items: RankedVacancy[] = [];
     for (const row of rows) {
       const vacancy = dtos.get(row.id);
-      if (!vacancy) continue; // hydrate can't lose a row, but stay defensive
-      const vskills = byVacancy.get(row.id) ?? [];
+      if (!vacancy) continue;
+      const vskills = byPosition.get(row.id) ?? [];
       const vacancyNodeIds = new Set(vskills.map((s) => s.node_id));
       const have: SkillRef[] = [];
       const missing: SkillRef[] = [];
@@ -450,13 +430,13 @@ export class RankingService {
     return items;
   }
 
-  // ELIGIBLE_VACANCY mirrors the feed (only VERIFIED-role vacancies are
+  // ELIGIBLE_POSITION mirrors the feed (only VERIFIED-role Positions are
   // browsable) so the matcher ranks what the user can actually open. All the
   // enum filters are OR-within / AND-across (any listed seniority AND any
   // listed english …). The Fit-tier filter is NOT here — it reads the computed
   // tier_bucket, so it's applied against the `ranked` CTE in rankByRefs.
   private buildFilters(f: MatchFilters): SQL {
-    const conds: SQL[] = [ELIGIBLE_VACANCY];
+    const conds: SQL[] = [ELIGIBLE_POSITION];
     const inText = (col: SQL, vals: readonly string[]) =>
       conds.push(
         sql`${col}::text IN (${sql.join(
@@ -465,26 +445,26 @@ export class RankingService {
         )})`,
       );
 
-    if (f.seniorities?.length) inText(sql`v.seniority`, f.seniorities);
-    if (f.workFormats?.length) inText(sql`v.work_format`, f.workFormats);
-    if (f.englishLevels?.length) inText(sql`v.english_level`, f.englishLevels);
-    if (f.employmentTypes?.length) inText(sql`v.employment_type`, f.employmentTypes);
+    if (f.seniorities?.length) inText(sql`p.seniority`, f.seniorities);
+    if (f.workFormats?.length) inText(sql`p.work_format`, f.workFormats);
+    if (f.englishLevels?.length) inText(sql`p.english_level`, f.englishLevels);
+    if (f.employmentTypes?.length) inText(sql`p.employment_type`, f.employmentTypes);
 
     // Domain (OR): keep vacancies tagged with any listed DOMAIN node — a vacancy
     // filter, mirroring the feed (the candidate stays the query).
-    if (f.domainIds?.length) inText(sql`v.domain_node_id`, f.domainIds);
+    if (f.domainIds?.length) inText(sql`p.domain_node_id`, f.domainIds);
 
     // Role (OR, hard filter): the user's explicit role choice — unlike the
     // inferred on_stack signal, it filters instead of demoting.
-    if (f.roleNodeIds?.length) inText(sql`v.role_node_id`, f.roleNodeIds);
+    if (f.roleNodeIds?.length) inText(sql`p.role_node_id`, f.roleNodeIds);
 
     // An explicit skill exclusion means "do not show a vacancy that requires
     // this stack". Optional mentions stay visible; they are not a job's ask.
     if (f.excludedSkillNodeIds?.length) {
       conds.push(sql`
         NOT EXISTS (
-          SELECT 1 FROM vacancy_nodes excluded_skill
-          WHERE excluded_skill.vacancy_id = v.id
+          SELECT 1 FROM position_nodes excluded_skill
+          WHERE excluded_skill.position_id = p.position_id
             AND excluded_skill.is_required
             AND excluded_skill.node_id IN (${uuidList(f.excludedSkillNodeIds)})
         )
@@ -497,16 +477,16 @@ export class RankingService {
     if (f.experienceYears?.length) {
       const exact = f.experienceYears.filter((t) => /^\d+$/.test(t)).map(Number);
       const openEnded = f.experienceYears.includes("6+");
-      const arms: SQL[] = [sql`v.experience_years IS NULL`];
+      const arms: SQL[] = [sql`p.experience_years IS NULL`];
       if (exact.length > 0) {
         arms.push(
-          sql`v.experience_years IN (${sql.join(
+          sql`p.experience_years IN (${sql.join(
             exact.map((n) => sql`${n}`),
             sql`, `,
           )})`,
         );
       }
-      if (openEnded) arms.push(sql`v.experience_years >= 6`);
+      if (openEnded) arms.push(sql`p.experience_years >= 6`);
       // No real token → skip, don't collapse results to NULL-only rows.
       if (arms.length > 1) conds.push(sql`(${sql.join(arms, sql` OR `)})`);
     }
@@ -515,27 +495,33 @@ export class RankingService {
     // still counts as no-test, so only a confirmed true is excluded (mirrors
     // the feed). "with" (true) stays strict.
     if (f.hasTestAssignment === true) {
-      conds.push(sql`v.has_test_assignment = true`);
+      conds.push(sql`p.has_test_assignment = true`);
     } else if (f.hasTestAssignment === false) {
-      conds.push(sql`(v.has_test_assignment = false OR v.has_test_assignment IS NULL)`);
+      conds.push(sql`(p.has_test_assignment = false OR p.has_test_assignment IS NULL)`);
     }
     if (f.hasReservation !== undefined) {
-      conds.push(sql`v.has_reservation = ${f.hasReservation}`);
+      conds.push(sql`p.has_reservation = ${f.hasReservation}`);
     }
 
-    if (f.sourceId) conds.push(sql`v.source_id = ${f.sourceId}::uuid`);
+    if (f.sourceId) {
+      conds.push(sql`EXISTS (
+        SELECT 1 FROM postings po
+        WHERE po.position_id = p.position_id AND po.source_id = ${f.sourceId}::uuid
+      )`);
+    }
     if (f.postedWithinDays !== undefined) {
-      // Freshness: published_at when known, else loaded_at (mirrors the feed's
-      // coalesce sort). make_interval keeps the day count a bound parameter.
       conds.push(
-        sql`coalesce(v.published_at, v.loaded_at) > now() - make_interval(days => ${f.postedWithinDays})`,
+        sql`p.last_source_activity_at > now() - make_interval(days => ${f.postedWithinDays})`,
       );
     }
 
     // Digest-only window (page UI never sets these).
-    if (f.loadedAfter) conds.push(sql`v.loaded_at > ${f.loadedAfter}`);
+    if (f.loadedAfter) conds.push(sql`p.first_observed_at > ${f.loadedAfter}`);
     if (f.excludeIds?.length) {
-      conds.push(sql`v.id NOT IN (${uuidList(f.excludeIds)})`);
+      conds.push(sql`p.position_id NOT IN (
+        SELECT po.position_id FROM postings po
+        WHERE po.posting_id IN (${uuidList(f.excludeIds)})
+      )`);
     }
     return sql.join(conds, sql` AND `);
   }
