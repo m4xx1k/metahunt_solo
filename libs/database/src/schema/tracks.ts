@@ -57,16 +57,15 @@ export const trackNodes = pgTable(
   ],
 );
 
-// Per-track eligible-Position count (MET-138), computed so a track's
-// displayed number equals exactly what clicking it returns (per-axis
-// override-else-inherit): effective ROLE/SKILL = the track's OWN nodes of
-// that type, or — if it has none — its parent's (one hop). A track with no
-// effective preset on either axis (pure-grouping parent like "By Language")
-// counts 0; ELIGIBLE_POSITION's VERIFIED-role rule is mirrored inline so the
-// count never overstates a click. Counts are per-track independent (child ⊆
-// parent overlaps) — never sum them to a total. `vacancy_count` keeps its
-// column name (consumers read it positionally); the grain is Positions.
-// Plain VIEW for now; materialize + refresh post-ingest only if it gets slow.
+// Per-track eligible-Position count. Effective ROLE/SKILL is override-else-
+// inherit (own nodes, else the parent's — one hop); a pure-grouping track with
+// neither counts 0. Counts overlap (child ⊆ parent) — never sum them.
+//
+// The skill predicate mirrors the feed's default filter, `is_required` only, so
+// the badge predicts the click (MET-141: counting optional links too made
+// backend-go read 304 against 222 on click). Second, narrower gap left open on
+// purpose: a track matches ANY of its skills, the feed's `skillIds` requires
+// ALL — identical while every track carries at most one skill.
 export const trackCounts = pgView("track_counts", {
   trackId: uuid("track_id"),
   slug: text("slug"),
@@ -100,7 +99,9 @@ export const trackCounts = pgView("track_counts", {
             AND (e.role_ids IS NULL OR p.role_node_id = ANY(e.role_ids))
             AND (e.skill_ids IS NULL OR EXISTS (
                   SELECT 1 FROM position_nodes pn
-                  WHERE pn.position_id = p.position_id AND pn.node_id = ANY(e.skill_ids)))
+                  WHERE pn.position_id = p.position_id
+                    AND pn.node_id = ANY(e.skill_ids)
+                    AND pn.is_required))
         )
       END AS vacancy_count
     FROM eff e
