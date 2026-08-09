@@ -2,17 +2,13 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 
-// The live scoring pass, extracted verbatim from RankingService so every
+// The live scoring pass, extracted from RankingService so every
 // consumer (warm /match, the /feed lab route, role suggestions) scores against
 // ONE definition of Fit. Still live SQL: no materialized score column yet — see
 // MET-120 for the EXPLAIN ANALYZE that a "materialize this" decision needs.
 //
-// POSTING-GRAIN-EXEMPT: calibration-sensitive scoring stays Posting-grain
-// until MET-139 (Position grain scoring cutover, PR 2) measures and retunes
-// thresholds against the new grain — see MET-137 IMPLEMENTATION.md.
-
 // The shared aggregation pipeline: candidate VALUES → stack-set → overlap
-// probe → one weighted pass per scored vacancy → coverage (fitTierWeighted's
+// probe → one weighted pass per scored Position → coverage (fitTierWeighted's
 // SQL twin). `cand` is a VALUES row list `(uuid), (uuid)`.
 export function scoringCtes(cand: SQL): SQL {
   return sql`
@@ -23,29 +19,29 @@ export function scoringCtes(cand: SQL): SQL {
         JOIN node_tech_meta m ON m.node_id = c.node_id
         WHERE m.is_core AND m.stack IS NOT NULL
       ),
-      -- vacancies worth scoring: overlap probe (vacancy_nodes.node_id index).
+      -- Positions worth scoring: overlap probe (position_nodes.node_id index).
       ov AS (
-        SELECT DISTINCT vn.vacancy_id AS id
-        FROM vacancy_nodes vn
-        JOIN cand c ON c.node_id = vn.node_id
+        SELECT DISTINCT pn.position_id AS id
+        FROM position_nodes pn
+        JOIN cand c ON c.node_id = pn.node_id
       ),
-      -- one pass per scored vacancy: relevance + weighted denominators + stack
+      -- one pass per scored Position: relevance + weighted denominators + stack
       -- flags. node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
       agg AS (
-        SELECT vn.vacancy_id AS id,
+        SELECT pn.position_id AS id,
                SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
-               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND vn.is_required), 0)::float8 AS matched_required_w,
-               count(*) FILTER (WHERE vn.is_required) AS required_total,
-               COALESCE(SUM(ns.weight) FILTER (WHERE vn.is_required), 0)::float8 AS required_total_w,
+               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND pn.is_required), 0)::float8 AS matched_required_w,
+               count(*) FILTER (WHERE pn.is_required) AS required_total,
+               COALESCE(SUM(ns.weight) FILTER (WHERE pn.is_required), 0)::float8 AS required_total_w,
                COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
-               bool_or(tm.is_core AND vn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
-               bool_or(tm.is_core AND vn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
+               bool_or(tm.is_core AND pn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
+               bool_or(tm.is_core AND pn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
         FROM ov
-        JOIN vacancy_nodes vn ON vn.vacancy_id = ov.id
-        JOIN node_stats ns ON ns.node_id = vn.node_id
-        LEFT JOIN cand c ON c.node_id = vn.node_id
-        LEFT JOIN node_tech_meta tm ON tm.node_id = vn.node_id
-        GROUP BY vn.vacancy_id
+        JOIN position_nodes pn ON pn.position_id = ov.id
+        JOIN node_stats ns ON ns.node_id = pn.node_id
+        LEFT JOIN cand c ON c.node_id = pn.node_id
+        LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id
+        GROUP BY pn.position_id
       ),
       -- weighted required coverage; all-skills share when nothing is required.
       scored AS (

@@ -144,6 +144,35 @@ describe("Position read model (positions / postings / position_nodes)", () => {
     expect(position.title).toBe("Canonical Title");
   });
 
+  it("counts a reposted skill once in node_stats", async () => {
+    const skill = await seedNode("SKILL", "VERIFIED", "TypeScript");
+    const s1 = await seedSource();
+    const s2 = await seedSource();
+    const canonical = await seedVacancy({
+      sourceId: s1.sourceId,
+      ingestId: s1.ingestId,
+      title: "Canonical",
+      publishedAt: new Date("2026-01-01T00:00:00Z"),
+    });
+    const repost = await seedVacancy({
+      sourceId: s2.sourceId,
+      ingestId: s2.ingestId,
+      title: "Repost",
+      publishedAt: new Date("2026-01-02T00:00:00Z"),
+    });
+    await db.insert(schema.vacancyNodes).values([
+      { vacancyId: canonical, nodeId: skill, isRequired: true },
+      { vacancyId: repost, nodeId: skill, isRequired: true },
+    ]);
+    await mergeIntoGroup(db, [canonical, repost]);
+    await db.execute(sql`REFRESH MATERIALIZED VIEW node_stats`);
+
+    const stats = await db.execute<{ df: number }>(sql`
+      SELECT df FROM node_stats WHERE node_id = ${skill}::uuid
+    `);
+    expect(stats.rows[0]?.df).toBe(1);
+  });
+
   it("keeps canonical facts and links stable when the representative changes", async () => {
     const verifiedRequired = await seedNode("SKILL", "VERIFIED", "TypeScript");
     const verifiedOptional = await seedNode("SKILL", "VERIFIED", "GraphQL");

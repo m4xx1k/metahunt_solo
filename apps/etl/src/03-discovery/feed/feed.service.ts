@@ -1,9 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { and, sql, type SQL } from "drizzle-orm";
 
-import { DRIZZLE, schema } from "@metahunt/database";
+import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
@@ -25,10 +24,6 @@ import type {
 // in features/vacancy-filters/ExperienceSection.tsx.
 const EXPERIENCE_OPEN_TOKEN = "6+";
 const EXPERIENCE_OPEN_MIN = 6;
-
-const { postings, positions, nodes } = schema;
-const postingRoleNode = alias(nodes, "posting_role_node");
-const postingDomainNode = alias(nodes, "posting_domain_node");
 
 export interface FeedSearchParams {
   page: number;
@@ -211,24 +206,15 @@ export class FeedService {
     }));
   }
 
-  // POSTING-GRAIN-EXEMPT: hydrate full vacancy DTOs by EXACT Posting id, one
-  // DTO per requested id with that Posting's OWN literal fields —
-  // feed-identical cards for the reverse-ATS matcher. Deliberately stays
-  // Posting-grain (reads `postings`/`vacancy_nodes`, not `positions`): the
-  // matcher's own dedup-aware SQL already picked a specific winning member
-  // per group (e.g. the on-stack one over a better-scoring off-stack
-  // duplicate), and echoing back its exact id/facts is the contract that
-  // decision relies on. Redirecting through a Position's representative would
-  // silently overturn that pick. Cutting the matcher itself over to Position
-  // grain is MET-139 (PR 2), not this view layer.
-  async hydrateByIds(ids: string[]): Promise<Map<string, VacancyDto>> {
+  // One feed-identical card per canonical Position. The DTO keeps the current
+  // representative Posting id for URLs and source links, while facts and skills
+  // remain the Position's canonical ones.
+  async hydratePositionsByIds(positionIds: string[]): Promise<Map<string, VacancyDto>> {
     const out = new Map<string, VacancyDto>();
-    if (ids.length === 0) return out;
-    const rows = (await this.selectPostings(
-      inArray(postings.postingId, ids),
-    )) as unknown as PositionRow[];
-    const skills = await this.fetchPostingSkills(ids, false);
-    for (const row of rows) out.set(row.id, toDto(row, skills.get(row.id)));
+    if (positionIds.length === 0) return out;
+    const rows = await this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`);
+    const skills = await this.fetchSkills(positionIds, false);
+    for (const row of rows) out.set(row.positionId, toDto(row, skills.get(row.positionId)));
     return out;
   }
 
@@ -444,104 +430,6 @@ export class FeedService {
       if (!bucket) continue;
       const ref: NodeRef = { id: r.node_id, name: r.canonical_name };
       (r.is_required ? bucket.required : bucket.optional).push(ref);
-    }
-    return out;
-  }
-
-  // Posting-grain projection — the exact requested Postings, their own
-  // literal fields, group counts riding along for the duplicate badge. Used
-  // only by `hydrateByIds` (see its doc comment for why this stays Posting-
-  // grain rather than redirecting through `positions`).
-  private selectPostings(where: SQL) {
-    return this.db
-      .select({
-        id: postings.postingId,
-        positionId: postings.positionId,
-        externalId: postings.externalId,
-        title: postings.title,
-        description: postings.description,
-        loadedAt: postings.loadedAt,
-        updatedAt: postings.updatedAt,
-
-        seniority: postings.seniority,
-        workFormat: postings.workFormat,
-        employmentType: postings.employmentType,
-        englishLevel: postings.englishLevel,
-        experienceYears: postings.experienceYears,
-        engagementType: postings.engagementType,
-        hasTestAssignment: postings.hasTestAssignment,
-        hasReservation: postings.hasReservation,
-
-        salaryMin: postings.salaryMin,
-        salaryMax: postings.salaryMax,
-        currency: postings.currency,
-
-        locations: postings.locations,
-
-        sourceId: postings.sourceId,
-        sourceCode: postings.sourceCode,
-        sourceDisplayName: postings.sourceDisplayName,
-
-        companyId: postings.companyId,
-        companyName: postings.companyName,
-        companySlug: postings.companySlug,
-
-        roleNodeId: postingRoleNode.id,
-        roleName: postingRoleNode.canonicalName,
-
-        domainNodeId: postingDomainNode.id,
-        domainName: postingDomainNode.canonicalName,
-
-        link: postings.link,
-        publishedAt: postings.publishedAt,
-        rssRecordId: postings.rssRecordId,
-
-        postingCount: positions.postingCount,
-        sourceCount: positions.sourceCount,
-      })
-      .from(postings)
-      .innerJoin(positions, eq(positions.positionId, postings.positionId))
-      .leftJoin(
-        postingRoleNode,
-        and(eq(postingRoleNode.id, postings.roleNodeId), eq(postingRoleNode.status, "VERIFIED")),
-      )
-      .leftJoin(
-        postingDomainNode,
-        and(
-          eq(postingDomainNode.id, postings.domainNodeId),
-          eq(postingDomainNode.status, "VERIFIED"),
-        ),
-      )
-      .where(where);
-  }
-
-  private async fetchPostingSkills(
-    postingIds: string[],
-    includeAllSkills: boolean,
-  ): Promise<Map<string, { required: NodeRef[]; optional: NodeRef[] }>> {
-    const out = new Map<string, { required: NodeRef[]; optional: NodeRef[] }>();
-    if (postingIds.length === 0) return out;
-
-    const conds: SQL[] = [inArray(schema.vacancyNodes.vacancyId, postingIds)];
-    if (!includeAllSkills) conds.push(eq(nodes.status, "VERIFIED"));
-
-    const rows = await this.db
-      .select({
-        vacancyId: schema.vacancyNodes.vacancyId,
-        nodeId: nodes.id,
-        canonicalName: nodes.canonicalName,
-        isRequired: schema.vacancyNodes.isRequired,
-      })
-      .from(schema.vacancyNodes)
-      .innerJoin(nodes, eq(nodes.id, schema.vacancyNodes.nodeId))
-      .where(and(...conds));
-
-    for (const id of postingIds) out.set(id, { required: [], optional: [] });
-    for (const r of rows) {
-      const bucket = out.get(r.vacancyId);
-      if (!bucket) continue;
-      const ref: NodeRef = { id: r.nodeId, name: r.canonicalName };
-      (r.isRequired ? bucket.required : bucket.optional).push(ref);
     }
     return out;
   }

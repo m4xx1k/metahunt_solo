@@ -1,16 +1,17 @@
 # positions — Position read model
 
 **Branch:** `feat/positions`
-**Status:** in-progress
-**Started:** 2026-08-09 · **Closed:** —
+**Status:** done
+**Started:** 2026-08-09 · **Closed:** 2026-08-09
 
 ## Outcome
 
 PR 1 (MET-138) ships the read boundary: three curated views (`postings`,
 `positions`, `position_nodes`), a shared `ELIGIBLE_POSITION` predicate, and every
 non-calibration public read moved to Position grain. `node_skill_cooc` was rewired
-through the views with byte-identical output. Calibration-sensitive scoring stays
-posting-grain behind explicit exemptions until MET-139.
+through the views with byte-identical output. Production rollout completed on the
+merged PR1 deployment: health checks were green and the scheduled 03:00 UTC ingest
+successfully refreshed `node_stats` and `node_skill_cooc`.
 
 ## Subtasks
 
@@ -24,7 +25,7 @@ posting-grain behind explicit exemptions until MET-139.
 - [x] T7 — Architecture guard — *done when:* a new raw `vacancies` aggregate under `03-discovery` fails without an exemption. **✅ verified by planting a violation**
 - [x] T8 — Full verification suite + fresh-restore migration replay — *done when:* db:check, builds, lint, unit, int, lab all green on a DB rebuilt from the dump. **✅ replayed all 47 migrations onto a virgin restore (`metahunt_met137_replay`): invariants 12,773 = 12,773, node parity 0/0 both ways, matview indexes recreated, cooc byte-identical to the `0043` definition. db:check · database build · etl lint · 523 unit · 111 int · lab:check · lab:build · `git diff --check` all green**
 - [x] T9 — Open PR 1, sync Linear MET-138 / MET-137. **✅ [PR #175](https://github.com/m4xx1k/metahunt_solo/pull/175), commit `0b6179d`, all 7 CI checks green; MET-138 → In Review, MET-137 → In Progress**
-- [ ] T10 — Production rollout observation (post-merge) — *done when:* Railway deployed the exact merge commit, pre-deploy migration succeeded, `/healthz` all `ok: true`, prod invariants + feed/market/facet/track totals verified, and one scheduled ingest/refresh observed.
+- [x] T10 — Production rollout observation (post-merge) — *done when:* Railway deployed the exact merge commit, pre-deploy migration succeeded, `/healthz` all `ok: true`, prod invariants + feed/market/facet/track totals verified, and one scheduled ingest/refresh observed. **✅ Railway deployment `c5de34c5` on merged commit `739e5b1`; 03:00 UTC scheduled ingest listed Djinni + DOU and refreshed both matviews; `/healthz` all ok.**
 
 ## Decisions
 

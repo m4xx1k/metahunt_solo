@@ -5,10 +5,7 @@ import { sql } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-// POSTING-GRAIN-EXEMPT: recommendation cohorts stay Posting-grain until
-// MET-139 (Position grain scoring cutover, PR 2) — see MET-137
-// IMPLEMENTATION.md.
-import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
+import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 
 import {
   FIT_GOOD_MIN,
@@ -56,15 +53,15 @@ export class RecommendationService {
       cohortSeniorities(seniority).map((b) => sql`${b}`),
       sql`, `,
     );
-    const cohortCond = sql`v.role_node_id = ${roleNodeId}::uuid
-      AND (v.seniority::text IN (${bandList}) OR v.seniority IS NULL)
-      AND ${ELIGIBLE_VACANCY}`;
+    const cohortCond = sql`p.role_node_id = ${roleNodeId}::uuid
+      AND (p.seniority::text IN (${bandList}) OR p.seniority IS NULL)
+      AND ${ELIGIBLE_POSITION}`;
 
     // No candidate skills → can't compute a counterfactual; still report the
     // cohort size so the UI can explain the reduced state.
     if (refs.length === 0) {
       const sizeRes = await this.db.execute<{ cohort_size: number }>(sql`
-        SELECT count(*)::int AS cohort_size FROM vacancies v WHERE ${cohortCond}
+        SELECT count(*)::int AS cohort_size FROM positions p WHERE ${cohortCond}
       `);
       return reduced(sizeRes.rows[0]?.cohort_size ?? 0, 0);
     }
@@ -99,22 +96,22 @@ export class RecommendationService {
         WHERE m.is_core AND m.category = 'FRAMEWORK' AND m.stack IS NOT NULL
       ),
       cohort AS (
-        SELECT v.id FROM vacancies v WHERE ${cohortCond}
+        SELECT p.position_id FROM positions p WHERE ${cohortCond}
       ),
       vreq AS (
-        SELECT c.id AS vacancy_id, vn.node_id, n.status AS node_status,
+        SELECT c.position_id, pn.node_id, n.status AS node_status,
                ns.weight::float8 AS weight,
-               (vn.node_id IN (SELECT node_id FROM cand)) AS in_cand
+               (pn.node_id IN (SELECT node_id FROM cand)) AS in_cand
         FROM cohort c
-        JOIN vacancy_nodes vn ON vn.vacancy_id = c.id AND vn.is_required
-        JOIN nodes n ON n.id = vn.node_id AND n.status <> 'HIDDEN'
-        JOIN node_stats ns ON ns.node_id = vn.node_id
+        JOIN position_nodes pn ON pn.position_id = c.position_id AND pn.is_required
+        JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
+        JOIN node_stats ns ON ns.node_id = pn.node_id
       ),
       vcov AS (
-        SELECT vacancy_id,
+        SELECT position_id,
                SUM(weight) AS required_total_w,
                COALESCE(SUM(weight) FILTER (WHERE in_cand), 0) AS matched_required_w
-        FROM vreq GROUP BY vacancy_id
+        FROM vreq GROUP BY position_id
       )`;
 
     const scalars = await this.db.execute<{
@@ -141,16 +138,16 @@ export class RecommendationService {
     }>(sql`
       WITH ${cohortCte},
       nearmiss AS (
-        SELECT vacancy_id, required_total_w, matched_required_w
+        SELECT position_id, required_total_w, matched_required_w
         FROM vcov
         WHERE required_total_w > 0
           AND matched_required_w / required_total_w < ${FIT_GOOD_MIN}
       ),
       unlock AS (
-        SELECT vr.node_id, nm.vacancy_id,
+        SELECT vr.node_id, nm.position_id,
                (nm.matched_required_w + vr.weight) / nm.required_total_w AS new_cov
         FROM nearmiss nm
-        JOIN vreq vr ON vr.vacancy_id = nm.vacancy_id
+        JOIN vreq vr ON vr.position_id = nm.position_id
         WHERE NOT vr.in_cand AND vr.node_status = 'VERIFIED'
       ),
       agg AS (
@@ -160,7 +157,7 @@ export class RecommendationService {
         FROM unlock GROUP BY node_id
       ),
       sdf AS (
-        SELECT node_id, count(DISTINCT vacancy_id) AS cohort_df
+        SELECT node_id, count(DISTINCT position_id) AS cohort_df
         FROM vreq WHERE node_status = 'VERIFIED' GROUP BY node_id
       )
       SELECT a.node_id::text AS node_id, n.canonical_name AS name,
@@ -206,7 +203,7 @@ export class RecommendationService {
     const redundantRows = await this.db.execute<{ name: string }>(sql`
       WITH ${cohortCte},
       cdf AS (
-        SELECT node_id, count(DISTINCT vacancy_id) AS cohort_df
+        SELECT node_id, count(DISTINCT position_id) AS cohort_df
         FROM vreq GROUP BY node_id
       )
       SELECT n.canonical_name AS name
