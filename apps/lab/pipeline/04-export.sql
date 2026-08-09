@@ -136,10 +136,10 @@ sources AS (
 )
 SELECT jsonb_build_object(
   'contract', jsonb_build_object(
-    'grain',            'canonical position (unique_vacancies.id)',
+    'grain',            'canonical Position (positions.position_id, MET-138)',
     'positionSkillRule','representative member only',
     'skillEligibility', 'nodes.type=SKILL AND nodes.status=VERIFIED',
-    'requirementLayer', 'REQUIRED only (vacancy_nodes.is_required)',
+    'requirementLayer', 'REQUIRED only (position_nodes.is_required)',
     'livenessClaim',    'none',
     'minSkillSupport',  (SELECT min_skill_support FROM params),
     'minPairSupport',   (SELECT min_pair_support FROM params),
@@ -147,10 +147,10 @@ SELECT jsonb_build_object(
   ),
   'provenance', jsonb_build_object(
     'snapshot',      'Railway prod pg_dump, 2026-08-07',
-    'corpusStart',   (SELECT min(loaded_at)::date FROM vacancies),
-    'corpusEnd',     (SELECT max(loaded_at)::date FROM vacancies),
-    'postings',      (SELECT count(*) FROM vacancies),
-    'positions',     (SELECT count(*) FROM unique_vacancies),
+    'corpusStart',   (SELECT min(loaded_at)::date FROM postings),
+    'corpusEnd',     (SELECT max(loaded_at)::date FROM postings),
+    'postings',      (SELECT count(*) FROM postings),
+    'positions',     (SELECT count(*) FROM positions),
     'nPositions',    (SELECT n_positions FROM metalab_corpus WHERE rule='rep'),
     'generatedAt',   now(),
     'experiment',    'pipeline/04-export.sql',

@@ -6,6 +6,10 @@ import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 // consumer (warm /match, the /feed lab route, role suggestions) scores against
 // ONE definition of Fit. Still live SQL: no materialized score column yet — see
 // MET-120 for the EXPLAIN ANALYZE that a "materialize this" decision needs.
+//
+// POSTING-GRAIN-EXEMPT: calibration-sensitive scoring stays Posting-grain
+// until MET-139 (Position grain scoring cutover, PR 2) measures and retunes
+// thresholds against the new grain — see MET-137 IMPLEMENTATION.md.
 
 // The shared aggregation pipeline: candidate VALUES → stack-set → overlap
 // probe → one weighted pass per scored vacancy → coverage (fitTierWeighted's

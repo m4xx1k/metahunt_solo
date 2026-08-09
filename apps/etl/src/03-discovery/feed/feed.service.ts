@@ -1,24 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import {
-  and,
-  eq,
-  gt,
-  gte,
-  ilike,
-  inArray,
-  isNotNull,
-  isNull,
-  notInArray,
-  or,
-  sql,
-  type SQL,
-} from "drizzle-orm";
+import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
 
@@ -33,34 +21,36 @@ import type {
   WorkFormat,
 } from "./feed.contract";
 
-const { vacancies, vacancyNodes, nodes, sources, companies, rssRecords, uniqueVacancies } = schema;
-
 // The open-ended experience button: "6+" means ≥6 years. Mirrored client-side
 // in features/vacancy-filters/ExperienceSection.tsx.
 const EXPERIENCE_OPEN_TOKEN = "6+";
 const EXPERIENCE_OPEN_MIN = 6;
 
+const { postings, positions, nodes } = schema;
+const postingRoleNode = alias(nodes, "posting_role_node");
+const postingDomainNode = alias(nodes, "posting_domain_node");
+
 export interface FeedSearchParams {
   page: number;
   pageSize: number;
   q?: string;
-  /** Filter by sources.id (UUID). */
+  /** Match positions with at least one Posting on this source. */
   sourceId?: string;
   /** Filter by companies.id (UUID) — the controller resolves the public slug. */
   companyId?: string;
-  /** Filter by vacancies.roleNodeId (a ROLE node UUID). */
+  /** Filter by the canonical posting's role node (a ROLE node UUID). */
   roleId?: string;
-  /** Match vacancies whose role is ANY of these ROLE node UUIDs (OR). */
+  /** Match positions whose canonical role is ANY of these ROLE node UUIDs (OR). */
   roleIds?: string[];
-  /** Match vacancies whose domain is ANY of these DOMAIN node UUIDs (OR). */
+  /** Match positions whose canonical domain is ANY of these DOMAIN node UUIDs (OR). */
   domainIds?: string[];
-  /** Match vacancies that have ALL listed skill-node UUIDs (AND semantics). */
+  /** Match positions that have ALL listed skill-node UUIDs (AND semantics). */
   skillIds?: string[];
   excludedSkillIds?: string[];
   /**
    * Skill-match scope. Default (false/undefined): a skill counts only when it's
-   * `required` (must-have) on the vacancy. When true, a nice-to-have link also
-   * satisfies the filter — looser, surfaces vacancies where the skill is optional.
+   * `required` (must-have) on the position. When true, a nice-to-have link also
+   * satisfies the filter — looser, surfaces positions where the skill is optional.
    */
   includeOptionalSkills?: boolean;
   /** Match ANY listed seniority (OR). */
@@ -78,18 +68,21 @@ export interface FeedSearchParams {
   hasReservation?: boolean;
   includeRoleless?: boolean;
   includeAllSkills?: boolean;
-  /** When true, return ONLY the representative card of a multi-member dedup group. */
+  /** When true, return ONLY Positions with more than one Posting. */
   hasDuplicates?: boolean;
-  /** Freshness gate: coalesce(published_at, loaded_at) within N days. */
+  /** Freshness gate: last_source_activity_at within N days. */
   postedWithinDays?: number;
-  /** Only vacancies first loaded after this instant (the digest "new since" window). */
+  /** Only Positions first observed after this instant (the digest "new since" window). */
   loadedAfter?: Date;
-  /** Drop these vacancy ids from the result (digest anti-join: already-sent). */
+  /** Drop Positions that any of these Posting ids belongs to (digest anti-join:
+   *  already-sent) — matches on the group, so a repost of an already-sent
+   *  Position under a different Posting id is still excluded. */
   excludeIds?: string[];
 }
 
-interface VacancyRow {
-  id: string;
+interface PositionRow {
+  positionId: string;
+  id: string; // representative_posting_id (or the requested posting id for getById)
   externalId: string;
   title: string;
   description: string | null;
@@ -127,38 +120,22 @@ interface VacancyRow {
 
   link: string | null;
   publishedAt: Date | null;
-
   rssRecordId: string;
 
-  uniqueVacancyId: string | null;
-  duplicateCount: number | null;
-  duplicateSourceCount: number | null;
+  postingCount: number;
+  sourceCount: number;
 }
 
-// Shared FROM + filter for every collapse query. Mirrors selectVacancies'
-// population (inner sources+rss, verified-role + group left joins); buildWhere
-// renders its column refs against these exact aliases.
-function feedFrom(where: SQL | undefined): SQL {
-  return sql`
-      FROM vacancies
-      JOIN sources ON sources.id = vacancies.source_id
-      JOIN rss_records ON rss_records.id = vacancies.last_rss_record_id
-      LEFT JOIN nodes role_node
-        ON role_node.id = vacancies.role_node_id AND role_node.status = 'VERIFIED'
-      LEFT JOIN unique_vacancies ON unique_vacancies.id = vacancies.unique_vacancy_id
-      WHERE ${where ?? sql`true`}`;
+// Every filter/pagination query runs against `positions p` (MET-138): a
+// Position is one deduplicated market entity, so a repost across sources
+// never contributes two rows or two totals. `sourceId`/skill filters reach
+// into `postings`/`position_nodes` only to answer "does this Position have a
+// matching member" — display always renders the Position's canonical facts
+// plus its representative_posting_id's link/freshness, never a filter-
+// dependent recomputation of "which member matched".
+function positionsFrom(where: SQL | undefined): SQL {
+  return sql`FROM positions p WHERE ${where ?? sql`true`}`;
 }
-
-const roleNode = alias(nodes, "role_node");
-const domainNode = alias(nodes, "domain_node");
-
-// VERIFIED-gated role/domain joins, shared by the list, count, and hydrate
-// queries. Module-level so selectVacancies and the count query reuse one defn.
-const roleJoin = and(eq(roleNode.id, vacancies.roleNodeId), eq(roleNode.status, "VERIFIED"));
-const domainJoin = and(
-  eq(domainNode.id, vacancies.domainNodeId),
-  eq(domainNode.status, "VERIFIED"),
-);
 
 @Injectable()
 export class FeedService {
@@ -167,45 +144,32 @@ export class FeedService {
   async search(params: FeedSearchParams): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params);
-    const base = feedFrom(where);
+    const base = positionsFrom(where);
 
-    // Collapse each dedup group to its freshest member (rn = 1) over the
-    // FILTERED set, then paginate. Same idiom as ranking.rankByRefs.
-    const pageRes = await this.db.execute<{ id: string }>(sql`
-      WITH filtered AS (
-        SELECT vacancies.id AS id,
-               coalesce(vacancies.published_at, vacancies.loaded_at) AS freshness,
-               row_number() OVER (
-                 PARTITION BY coalesce(vacancies.unique_vacancy_id, vacancies.id)
-                 ORDER BY coalesce(vacancies.published_at, vacancies.loaded_at) DESC, vacancies.id DESC
-               ) AS rn
-        ${base}
-      )
-      SELECT id FROM filtered WHERE rn = 1
-      ORDER BY freshness DESC, id DESC
+    const pageRes = await this.db.execute<{ position_id: string }>(sql`
+      SELECT p.position_id
+      ${base}
+      ORDER BY p.last_source_activity_at DESC, p.position_id DESC
       LIMIT ${params.pageSize} OFFSET ${offset}
     `);
-    const ids = pageRes.rows.map((r) => r.id);
+    const positionIds = pageRes.rows.map((r) => r.position_id);
 
-    // Total = number of groups (one card each) among the filtered set.
     const totalRes = await this.db.execute<{ count: number }>(sql`
-      SELECT count(DISTINCT coalesce(vacancies.unique_vacancy_id, vacancies.id))::int AS count
-      ${base}
+      SELECT count(*)::int AS count ${base}
     `);
     const total = totalRes.rows[0]?.count ?? 0;
 
-    if (ids.length === 0) {
+    if (positionIds.length === 0) {
       return { items: [], page: params.page, pageSize: params.pageSize, total };
     }
 
-    // Hydrate the page's representative rows, preserving the freshness order.
-    const rows = (await this.selectVacancies(inArray(vacancies.id, ids))) as VacancyRow[];
-    const byId = new Map(rows.map((r) => [r.id, r]));
-    const skills = await this.fetchSkills(ids, params.includeAllSkills === true);
-    const items = ids
-      .map((id) => {
-        const row = byId.get(id);
-        return row ? toDto(row, skills.get(id)) : null;
+    const rows = await this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`);
+    const byPositionId = new Map(rows.map((r) => [r.positionId, r]));
+    const skills = await this.fetchSkills(positionIds, params.includeAllSkills === true);
+    const items = positionIds
+      .map((positionId) => {
+        const row = byPositionId.get(positionId);
+        return row ? toDto(row, skills.get(positionId)) : null;
       })
       .filter((x): x is VacancyDto => x !== null);
 
@@ -213,11 +177,9 @@ export class FeedService {
   }
 
   /**
-   * Every publicly visible vacancy URL, slim, unpaginated — backs the sitemap.
-   * Reuses `buildWhere` + the same dedup collapse as `search`, so the sitemap
-   * can never list a URL the feed hides, nor N members of one dedup group as N
-   * separate pages. `pageSize` caps the browse endpoint at 100, which would
-   * mean ~49 round trips per sitemap regeneration.
+   * Every publicly visible Position URL, slim, unpaginated — backs the sitemap.
+   * Reuses `buildWhere` so the sitemap can never list a URL the feed hides,
+   * nor N members of one Position as N separate pages.
    */
   async listForSitemap(postedWithinDays: number): Promise<SitemapVacancy[]> {
     const where = buildWhere({ page: 1, pageSize: 1, postedWithinDays });
@@ -228,21 +190,17 @@ export class FeedService {
       published_at: Date | null;
       updated_at: Date;
     }>(sql`
-      WITH filtered AS (
-        SELECT vacancies.id AS id,
-               vacancies.title AS title,
-               role_node.canonical_name AS role_name,
-               vacancies.published_at AS published_at,
-               vacancies.updated_at AS updated_at,
-               coalesce(vacancies.published_at, vacancies.loaded_at) AS freshness,
-               row_number() OVER (
-                 PARTITION BY coalesce(vacancies.unique_vacancy_id, vacancies.id)
-                 ORDER BY coalesce(vacancies.published_at, vacancies.loaded_at) DESC, vacancies.id DESC
-               ) AS rn
-        ${feedFrom(where)}
-      )
-      SELECT id, title, role_name, published_at, updated_at FROM filtered WHERE rn = 1
-      ORDER BY freshness DESC, id DESC
+      SELECT
+        po.posting_id AS id,
+        p.title AS title,
+        role_node.canonical_name AS role_name,
+        po.published_at AS published_at,
+        po.updated_at AS updated_at
+      FROM positions p
+      JOIN postings po ON po.posting_id = p.representative_posting_id
+      LEFT JOIN nodes role_node ON role_node.id = p.role_node_id AND role_node.status = 'VERIFIED'
+      WHERE ${where ?? sql`true`}
+      ORDER BY p.last_source_activity_at DESC, p.position_id DESC
     `);
     return res.rows.map((r) => ({
       id: r.id,
@@ -253,142 +211,332 @@ export class FeedService {
     }));
   }
 
-  // Hydrate full vacancy DTOs by id — feed-identical cards for the reverse-ATS
-  // matcher. Verified skills only (the feed default). Returned as a map so the
-  // caller keeps its own ordering (the matcher orders by relevance).
+  // POSTING-GRAIN-EXEMPT: hydrate full vacancy DTOs by EXACT Posting id, one
+  // DTO per requested id with that Posting's OWN literal fields —
+  // feed-identical cards for the reverse-ATS matcher. Deliberately stays
+  // Posting-grain (reads `postings`/`vacancy_nodes`, not `positions`): the
+  // matcher's own dedup-aware SQL already picked a specific winning member
+  // per group (e.g. the on-stack one over a better-scoring off-stack
+  // duplicate), and echoing back its exact id/facts is the contract that
+  // decision relies on. Redirecting through a Position's representative would
+  // silently overturn that pick. Cutting the matcher itself over to Position
+  // grain is MET-139 (PR 2), not this view layer.
   async hydrateByIds(ids: string[]): Promise<Map<string, VacancyDto>> {
     const out = new Map<string, VacancyDto>();
     if (ids.length === 0) return out;
-    const rows = (await this.selectVacancies(inArray(vacancies.id, ids))) as VacancyRow[];
-    const skills = await this.fetchSkills(ids, false);
+    const rows = (await this.selectPostings(
+      inArray(postings.postingId, ids),
+    )) as unknown as PositionRow[];
+    const skills = await this.fetchPostingSkills(ids, false);
     for (const row of rows) out.set(row.id, toDto(row, skills.get(row.id)));
     return out;
   }
 
   /**
-   * Full detail for one vacancy, including the raw `description` body — backs
-   * the public vacancy detail page (`/vacancy/:id`). Unlike `search`/
-   * `hydrateByIds` (which hardcode `description: null` to keep list payloads
-   * lean), this is a single-row fetch so shipping the full text is cheap.
-   * Works for any member of a dedup group, not just the representative row —
-   * `duplicateCount`/`duplicateSourceCount` come from the joined group
-   * regardless of which member's id was requested.
+   * Full detail for one Position, including the raw `description` body —
+   * backs the public vacancy detail page (`/vacancy/:id`). Accepts ANY
+   * member Posting id of the group (old shared/indexed URLs keep resolving),
+   * but always renders the Position's canonical facts and current
+   * representative link, not the specific requested member's own fields.
    */
   async getById(id: string): Promise<VacancyDto | null> {
     if (!isUuid(id)) return null;
-    const rows = (await this.selectVacancies(eq(vacancies.id, id))) as VacancyRow[];
+    const positionByRequestedId = await this.resolvePositionIds([id]);
+    const positionId = positionByRequestedId.get(id);
+    if (!positionId) return null;
+    const rows = await this.selectPositions(sql`p.position_id = ${positionId}::uuid`);
     const row = rows[0];
     if (!row) return null;
-    const skills = await this.fetchSkills([id], false);
-    return { ...toDto(row, skills.get(id)), description: row.description };
-  }
-
-  // Base list projection + joins; order/limit/offset are the caller's to add.
-  private selectVacancies(where: SQL | undefined) {
-    return this.db
-      .select({
-        id: vacancies.id,
-        externalId: vacancies.externalId,
-        title: vacancies.title,
-        description: vacancies.description,
-        loadedAt: vacancies.loadedAt,
-        updatedAt: vacancies.updatedAt,
-
-        seniority: vacancies.seniority,
-        workFormat: vacancies.workFormat,
-        employmentType: vacancies.employmentType,
-        englishLevel: vacancies.englishLevel,
-        experienceYears: vacancies.experienceYears,
-        engagementType: vacancies.engagementType,
-        hasTestAssignment: vacancies.hasTestAssignment,
-        hasReservation: vacancies.hasReservation,
-
-        salaryMin: vacancies.salaryMin,
-        salaryMax: vacancies.salaryMax,
-        currency: vacancies.currency,
-
-        locations: vacancies.locations,
-
-        sourceId: sources.id,
-        sourceCode: sources.code,
-        sourceDisplayName: sources.displayName,
-
-        companyId: companies.id,
-        companyName: companies.name,
-        companySlug: companies.slug,
-
-        roleNodeId: roleNode.id,
-        roleName: roleNode.canonicalName,
-
-        domainNodeId: domainNode.id,
-        domainName: domainNode.canonicalName,
-
-        link: rssRecords.link,
-        publishedAt: rssRecords.publishedAt,
-        rssRecordId: rssRecords.id,
-
-        uniqueVacancyId: vacancies.uniqueVacancyId,
-        // Badge counters — the surviving row of a multi-member group is the
-        // representative (the collapse predicate drops every other member), so
-        // "vacancyCount > 1" is both necessary and sufficient here.
-        duplicateCount: sql<number | null>`CASE
-          WHEN ${uniqueVacancies.vacancyCount} > 1
-          THEN ${uniqueVacancies.vacancyCount} ELSE NULL END`,
-        duplicateSourceCount: sql<number | null>`CASE
-          WHEN ${uniqueVacancies.vacancyCount} > 1
-          THEN ${uniqueVacancies.sourceCount} ELSE NULL END`,
-      })
-      .from(vacancies)
-      .innerJoin(sources, eq(sources.id, vacancies.sourceId))
-      .innerJoin(rssRecords, eq(rssRecords.id, vacancies.lastRssRecordId))
-      .leftJoin(companies, eq(companies.id, vacancies.companyId))
-      .leftJoin(roleNode, roleJoin)
-      .leftJoin(domainNode, domainJoin)
-      .leftJoin(uniqueVacancies, eq(uniqueVacancies.id, vacancies.uniqueVacancyId))
-      .where(where);
+    const skills = await this.fetchSkills([positionId], false);
+    return { ...toDto(row, skills.get(positionId)), description: row.description };
   }
 
   /**
    * Resolve the outbound source URL for one vacancy — backs the `/go/:id`
    * apply redirect so digest taps route through metahunt (the seam where click
-   * tracking will hang). Returns null for a malformed id, a missing vacancy, or
-   * a legacy row with no link.
+   * tracking will hang). This is deliberately Posting-grain (apply/source URLs
+   * are allowlisted): the requested id's OWN link, not the Position's
+   * representative. Returns null for a malformed id, a missing posting, or a
+   * legacy row with no link.
    */
   async getApplyLink(id: string): Promise<string | null> {
     if (!isUuid(id)) return null;
-    const [row] = await this.db
-      .select({ link: rssRecords.link })
-      .from(vacancies)
-      .innerJoin(rssRecords, eq(rssRecords.id, vacancies.lastRssRecordId))
-      .where(eq(vacancies.id, id))
-      .limit(1);
-    return row?.link ?? null;
+    const rows = await this.db.execute<{ link: string | null }>(sql`
+      SELECT link FROM postings WHERE posting_id = ${id}::uuid LIMIT 1
+    `);
+    return rows.rows[0]?.link ?? null;
+  }
+
+  // Map each requested Posting id to its Position id. Silently drops
+  // unknown/malformed ids from the result.
+  private async resolvePositionIds(ids: string[]): Promise<Map<string, string>> {
+    const valid = ids.filter(isUuid);
+    const out = new Map<string, string>();
+    if (valid.length === 0) return out;
+    const rows = await this.db.execute<{ posting_id: string; position_id: string }>(sql`
+      SELECT posting_id, position_id FROM postings WHERE posting_id IN (${uuidList(valid)})
+    `);
+    for (const r of rows.rows) out.set(r.posting_id, r.position_id);
+    return out;
+  }
+
+  // Base Position projection: canonical facts + the representative Posting's
+  // link/freshness/identity, keyed by `p.position_id`.
+  private async selectPositions(where: SQL): Promise<PositionRow[]> {
+    const res = await this.db.execute<{
+      position_id: string;
+      id: string;
+      external_id: string;
+      title: string;
+      description: string | null;
+      loaded_at: Date;
+      updated_at: Date;
+
+      seniority: VacancyDto["seniority"];
+      work_format: VacancyDto["workFormat"];
+      employment_type: VacancyDto["employmentType"];
+      english_level: VacancyDto["englishLevel"];
+      experience_years: number | null;
+      engagement_type: VacancyDto["engagementType"];
+      has_test_assignment: boolean | null;
+      has_reservation: boolean | null;
+
+      salary_min: number | null;
+      salary_max: number | null;
+      currency: VacancyDto["salary"]["currency"];
+
+      locations: unknown;
+
+      source_id: string;
+      source_code: string;
+      source_display_name: string;
+
+      company_id: string | null;
+      company_name: string | null;
+      company_slug: string | null;
+
+      role_node_id: string | null;
+      role_name: string | null;
+
+      domain_node_id: string | null;
+      domain_name: string | null;
+
+      link: string | null;
+      published_at: Date | null;
+      rss_record_id: string;
+
+      posting_count: number;
+      source_count: number;
+    }>(sql`
+      SELECT
+        p.position_id,
+        po.posting_id AS id,
+        po.external_id,
+        p.title,
+        p.description,
+        po.loaded_at,
+        po.updated_at,
+
+        p.seniority,
+        p.work_format,
+        p.employment_type,
+        p.english_level,
+        p.experience_years,
+        p.engagement_type,
+        p.has_test_assignment,
+        p.has_reservation,
+
+        p.salary_min,
+        p.salary_max,
+        p.currency,
+
+        p.locations,
+
+        po.source_id,
+        po.source_code,
+        po.source_display_name,
+
+        p.company_id,
+        p.company_name,
+        p.company_slug,
+
+        role_node.id AS role_node_id,
+        role_node.canonical_name AS role_name,
+
+        domain_node.id AS domain_node_id,
+        domain_node.canonical_name AS domain_name,
+
+        po.link,
+        po.published_at,
+        po.rss_record_id,
+
+        p.posting_count,
+        p.source_count
+      FROM positions p
+      JOIN postings po ON po.posting_id = p.representative_posting_id
+      LEFT JOIN nodes role_node ON role_node.id = p.role_node_id AND role_node.status = 'VERIFIED'
+      LEFT JOIN nodes domain_node ON domain_node.id = p.domain_node_id AND domain_node.status = 'VERIFIED'
+      WHERE ${where}
+    `);
+    return res.rows.map((r) => ({
+      positionId: r.position_id,
+      id: r.id,
+      externalId: r.external_id,
+      title: r.title,
+      description: r.description,
+      // Raw `db.execute` returns driver strings, not Drizzle-mapped Dates —
+      // unlike the typed `.select()` builder, it does no schema-aware parsing.
+      loadedAt: new Date(r.loaded_at),
+      updatedAt: new Date(r.updated_at),
+      seniority: r.seniority,
+      workFormat: r.work_format,
+      employmentType: r.employment_type,
+      englishLevel: r.english_level,
+      experienceYears: r.experience_years,
+      engagementType: r.engagement_type,
+      hasTestAssignment: r.has_test_assignment,
+      hasReservation: r.has_reservation,
+      salaryMin: r.salary_min,
+      salaryMax: r.salary_max,
+      currency: r.currency,
+      locations: r.locations,
+      sourceId: r.source_id,
+      sourceCode: r.source_code,
+      sourceDisplayName: r.source_display_name,
+      companyId: r.company_id,
+      companyName: r.company_name,
+      companySlug: r.company_slug,
+      roleNodeId: r.role_node_id,
+      roleName: r.role_name,
+      domainNodeId: r.domain_node_id,
+      domainName: r.domain_name,
+      link: r.link,
+      publishedAt: r.published_at ? new Date(r.published_at) : null,
+      rssRecordId: r.rss_record_id,
+      postingCount: r.posting_count,
+      sourceCount: r.source_count,
+    }));
   }
 
   private async fetchSkills(
-    vacancyIds: string[],
+    positionIds: string[],
     includeAllSkills: boolean,
   ): Promise<Map<string, { required: NodeRef[]; optional: NodeRef[] }>> {
     const out = new Map<string, { required: NodeRef[]; optional: NodeRef[] }>();
-    if (vacancyIds.length === 0) return out;
+    if (positionIds.length === 0) return out;
 
-    const conds: SQL[] = [inArray(vacancyNodes.vacancyId, vacancyIds)];
+    const statusGate = includeAllSkills ? sql`` : sql`AND n.status = 'VERIFIED'`;
+    const rows = await this.db.execute<{
+      position_id: string;
+      node_id: string;
+      canonical_name: string;
+      is_required: boolean;
+    }>(sql`
+      SELECT pn.position_id, n.id AS node_id, n.canonical_name, pn.is_required
+      FROM position_nodes pn
+      JOIN nodes n ON n.id = pn.node_id ${statusGate}
+      WHERE pn.position_id IN (${uuidList(positionIds)})
+    `);
+
+    for (const id of positionIds) out.set(id, { required: [], optional: [] });
+    for (const r of rows.rows) {
+      const bucket = out.get(r.position_id);
+      if (!bucket) continue;
+      const ref: NodeRef = { id: r.node_id, name: r.canonical_name };
+      (r.is_required ? bucket.required : bucket.optional).push(ref);
+    }
+    return out;
+  }
+
+  // Posting-grain projection — the exact requested Postings, their own
+  // literal fields, group counts riding along for the duplicate badge. Used
+  // only by `hydrateByIds` (see its doc comment for why this stays Posting-
+  // grain rather than redirecting through `positions`).
+  private selectPostings(where: SQL) {
+    return this.db
+      .select({
+        id: postings.postingId,
+        positionId: postings.positionId,
+        externalId: postings.externalId,
+        title: postings.title,
+        description: postings.description,
+        loadedAt: postings.loadedAt,
+        updatedAt: postings.updatedAt,
+
+        seniority: postings.seniority,
+        workFormat: postings.workFormat,
+        employmentType: postings.employmentType,
+        englishLevel: postings.englishLevel,
+        experienceYears: postings.experienceYears,
+        engagementType: postings.engagementType,
+        hasTestAssignment: postings.hasTestAssignment,
+        hasReservation: postings.hasReservation,
+
+        salaryMin: postings.salaryMin,
+        salaryMax: postings.salaryMax,
+        currency: postings.currency,
+
+        locations: postings.locations,
+
+        sourceId: postings.sourceId,
+        sourceCode: postings.sourceCode,
+        sourceDisplayName: postings.sourceDisplayName,
+
+        companyId: postings.companyId,
+        companyName: postings.companyName,
+        companySlug: postings.companySlug,
+
+        roleNodeId: postingRoleNode.id,
+        roleName: postingRoleNode.canonicalName,
+
+        domainNodeId: postingDomainNode.id,
+        domainName: postingDomainNode.canonicalName,
+
+        link: postings.link,
+        publishedAt: postings.publishedAt,
+        rssRecordId: postings.rssRecordId,
+
+        postingCount: positions.postingCount,
+        sourceCount: positions.sourceCount,
+      })
+      .from(postings)
+      .innerJoin(positions, eq(positions.positionId, postings.positionId))
+      .leftJoin(
+        postingRoleNode,
+        and(eq(postingRoleNode.id, postings.roleNodeId), eq(postingRoleNode.status, "VERIFIED")),
+      )
+      .leftJoin(
+        postingDomainNode,
+        and(
+          eq(postingDomainNode.id, postings.domainNodeId),
+          eq(postingDomainNode.status, "VERIFIED"),
+        ),
+      )
+      .where(where);
+  }
+
+  private async fetchPostingSkills(
+    postingIds: string[],
+    includeAllSkills: boolean,
+  ): Promise<Map<string, { required: NodeRef[]; optional: NodeRef[] }>> {
+    const out = new Map<string, { required: NodeRef[]; optional: NodeRef[] }>();
+    if (postingIds.length === 0) return out;
+
+    const conds: SQL[] = [inArray(schema.vacancyNodes.vacancyId, postingIds)];
     if (!includeAllSkills) conds.push(eq(nodes.status, "VERIFIED"));
 
     const rows = await this.db
       .select({
-        vacancyId: vacancyNodes.vacancyId,
+        vacancyId: schema.vacancyNodes.vacancyId,
         nodeId: nodes.id,
         canonicalName: nodes.canonicalName,
-        isRequired: vacancyNodes.isRequired,
+        isRequired: schema.vacancyNodes.isRequired,
       })
-      .from(vacancyNodes)
-      .innerJoin(nodes, eq(nodes.id, vacancyNodes.nodeId))
+      .from(schema.vacancyNodes)
+      .innerJoin(nodes, eq(nodes.id, schema.vacancyNodes.nodeId))
       .where(and(...conds));
 
-    for (const id of vacancyIds) {
-      out.set(id, { required: [], optional: [] });
-    }
+    for (const id of postingIds) out.set(id, { required: [], optional: [] });
     for (const r of rows) {
       const bucket = out.get(r.vacancyId);
       if (!bucket) continue;
@@ -401,37 +549,60 @@ export class FeedService {
 
 function buildWhere(params: FeedSearchParams): SQL | undefined {
   const conds: SQL[] = [];
-  if (params.q) conds.push(ilike(vacancies.title, `%${params.q}%`));
-  if (params.sourceId) conds.push(eq(vacancies.sourceId, params.sourceId));
-  // Filtered on the id, not a companies join: `feedFrom` deliberately doesn't
-  // join companies, so the slug is resolved at the controller boundary.
-  if (params.companyId) conds.push(eq(vacancies.companyId, params.companyId));
-  if (params.roleId) conds.push(eq(vacancies.roleNodeId, params.roleId));
+  if (params.q) conds.push(sql`p.title ILIKE ${`%${params.q}%`}`);
+  if (params.sourceId) {
+    conds.push(sql`EXISTS (
+      SELECT 1 FROM postings po WHERE po.position_id = p.position_id AND po.source_id = ${params.sourceId}::uuid
+    )`);
+  }
+  if (params.companyId) conds.push(sql`p.company_id = ${params.companyId}::uuid`);
+  if (params.roleId) conds.push(sql`p.role_node_id = ${params.roleId}::uuid`);
   // Multi-role filter (OR): match any of the listed roles.
   if (params.roleIds && params.roleIds.length > 0) {
-    conds.push(inArray(vacancies.roleNodeId, params.roleIds));
+    conds.push(sql`p.role_node_id IN (${uuidList(params.roleIds)})`);
   }
   // Multi-domain filter (OR): match any of the listed domains.
   if (params.domainIds && params.domainIds.length > 0) {
-    conds.push(inArray(vacancies.domainNodeId, params.domainIds));
+    conds.push(sql`p.domain_node_id IN (${uuidList(params.domainIds)})`);
   }
   if (params.seniorities?.length) {
-    conds.push(inArray(vacancies.seniority, params.seniorities));
+    conds.push(
+      sql`p.seniority IN (${sql.join(
+        params.seniorities.map((s) => sql`${s}`),
+        sql`, `,
+      )})`,
+    );
   }
   if (params.workFormats?.length) {
-    conds.push(inArray(vacancies.workFormat, params.workFormats));
+    conds.push(
+      sql`p.work_format IN (${sql.join(
+        params.workFormats.map((s) => sql`${s}`),
+        sql`, `,
+      )})`,
+    );
   }
   if (params.englishLevels?.length) {
-    conds.push(inArray(vacancies.englishLevel, params.englishLevels));
+    conds.push(
+      sql`p.english_level IN (${sql.join(
+        params.englishLevels.map((s) => sql`${s}`),
+        sql`, `,
+      )})`,
+    );
   }
   if (params.employmentTypes?.length) {
-    conds.push(inArray(vacancies.employmentType, params.employmentTypes));
+    conds.push(
+      sql`p.employment_type IN (${sql.join(
+        params.employmentTypes.map((s) => sql`${s}`),
+        sql`, `,
+      )})`,
+    );
   }
-  // Freshness gate — coalesce(published, loaded) mirrors the feed's sort; the
-  // day count stays a bound parameter via make_interval.
+  // Freshness gate — Position-grain: the latest source activity across every
+  // member of the group, so a stale canonical posting with a recent repost
+  // still passes.
   if (params.postedWithinDays !== undefined) {
     conds.push(
-      sql`coalesce(${vacancies.publishedAt}, ${vacancies.loadedAt}) > now() - make_interval(days => ${params.postedWithinDays})`,
+      sql`p.last_source_activity_at > now() - make_interval(days => ${params.postedWithinDays})`,
     );
   }
   // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
@@ -439,72 +610,71 @@ function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.experienceYears && params.experienceYears.length > 0) {
     const exact = params.experienceYears.filter((t) => /^\d+$/.test(t)).map(Number);
     const openEnded = params.experienceYears.includes(EXPERIENCE_OPEN_TOKEN);
-    const arms: SQL[] = [isNull(vacancies.experienceYears)];
-    if (exact.length > 0) arms.push(inArray(vacancies.experienceYears, exact));
-    if (openEnded) {
-      arms.push(gte(vacancies.experienceYears, EXPERIENCE_OPEN_MIN));
+    const arms: SQL[] = [sql`p.experience_years IS NULL`];
+    if (exact.length > 0) {
+      arms.push(
+        sql`p.experience_years IN (${sql.join(
+          exact.map((n) => sql`${n}`),
+          sql`, `,
+        )})`,
+      );
     }
-    // No real token → skip, don't collapse the feed to NULL-only rows.
-    if (arms.length > 1) conds.push(or(...arms)!);
+    if (openEnded) arms.push(sql`p.experience_years >= ${EXPERIENCE_OPEN_MIN}`);
+    if (arms.length > 1) conds.push(sql`(${sql.join(arms, sql` OR `)})`);
   }
-  // "Without a test task" (false) includes unknowns: a null (unscored) vacancy
+  // "Without a test task" (false) includes unknowns: a null (unscored) position
   // still counts as "no test", so only a confirmed-true is excluded. Filtering
   // *for* a test task (true) stays strict.
   if (params.hasTestAssignment === true) {
-    conds.push(eq(vacancies.hasTestAssignment, true));
+    conds.push(sql`p.has_test_assignment = true`);
   } else if (params.hasTestAssignment === false) {
-    conds.push(or(eq(vacancies.hasTestAssignment, false), isNull(vacancies.hasTestAssignment))!);
+    conds.push(sql`(p.has_test_assignment = false OR p.has_test_assignment IS NULL)`);
   }
   if (params.hasReservation !== undefined) {
-    conds.push(eq(vacancies.hasReservation, params.hasReservation));
+    conds.push(sql`p.has_reservation = ${params.hasReservation}`);
   }
-  if (params.loadedAfter) conds.push(gt(vacancies.loadedAt, params.loadedAfter));
+  if (params.loadedAfter) conds.push(sql`p.first_observed_at > ${params.loadedAfter}`);
   if (params.excludeIds && params.excludeIds.length > 0) {
-    conds.push(notInArray(vacancies.id, params.excludeIds));
+    conds.push(sql`p.position_id NOT IN (
+      SELECT position_id FROM postings WHERE posting_id IN (${uuidList(params.excludeIds)})
+    )`);
   }
   if (params.skillIds && params.skillIds.length > 0) {
-    // AND semantics: keep only vacancies whose vacancy_nodes set covers
-    // every requested skill. One subquery (not N joins) keeps both the
-    // list and the count query — which share buildWhere — single-pass.
-    // By default a skill must be `required`; the optional-scope toggle drops
-    // that gate so nice-to-have links also satisfy the filter.
+    // AND semantics: keep only positions whose position_nodes set covers
+    // every requested skill. By default a skill must be `required`; the
+    // optional-scope toggle drops that gate so nice-to-have links also
+    // satisfy the filter.
     const ids = params.skillIds;
-    const requiredGate = params.includeOptionalSkills ? sql`` : sql`AND vn.is_required`;
-    conds.push(sql`${vacancies.id} IN (
-      SELECT vn.vacancy_id
-      FROM vacancy_nodes vn
-      WHERE vn.node_id IN (${uuidList(ids)})
+    const requiredGate = params.includeOptionalSkills ? sql`` : sql`AND pn.is_required`;
+    conds.push(sql`p.position_id IN (
+      SELECT pn.position_id
+      FROM position_nodes pn
+      WHERE pn.node_id IN (${uuidList(ids)})
         ${requiredGate}
-      GROUP BY vn.vacancy_id
-      HAVING COUNT(DISTINCT vn.node_id) = ${ids.length}
+      GROUP BY pn.position_id
+      HAVING COUNT(DISTINCT pn.node_id) = ${ids.length}
     )`);
   }
   if (params.excludedSkillIds?.length) {
     conds.push(sql`NOT EXISTS (
       SELECT 1
-      FROM vacancy_nodes excluded_vn
-      WHERE excluded_vn.vacancy_id = ${vacancies.id}
-        AND excluded_vn.node_id IN (${uuidList(params.excludedSkillIds)})
-        AND excluded_vn.is_required
+      FROM position_nodes excluded_pn
+      WHERE excluded_pn.position_id = p.position_id
+        AND excluded_pn.node_id IN (${uuidList(params.excludedSkillIds)})
+        AND excluded_pn.is_required
     )`);
   }
-  // When includeRoleless is off (default), require the verified role-node
-  // join to have matched. The join itself enforces VERIFIED, so this also
-  // excludes vacancies whose role is unverified.
-  if (params.includeRoleless !== true) conds.push(isNotNull(roleNode.id));
-  // "Only duplicates" toggle: restrict to multi-member groups. The collapse
-  // predicate below already keeps just the representative row, so this only
-  // has to drop singletons and ungrouped vacancies.
-  if (params.hasDuplicates === true) {
-    conds.push(and(isNotNull(vacancies.uniqueVacancyId), gt(uniqueVacancies.vacancyCount, 1))!);
-  }
+  // When includeRoleless is off (default), require a VERIFIED canonical role.
+  if (params.includeRoleless !== true) conds.push(ELIGIBLE_POSITION);
+  // "Only duplicates" toggle: restrict to multi-member groups.
+  if (params.hasDuplicates === true) conds.push(sql`p.posting_count > 1`);
   if (conds.length === 0) return undefined;
   if (conds.length === 1) return conds[0];
   return and(...conds);
 }
 
 function toDto(
-  row: VacancyRow,
+  row: PositionRow,
   skills: { required: NodeRef[]; optional: NodeRef[] } | undefined,
 ): VacancyDto {
   return {
@@ -555,9 +725,9 @@ function toDto(
     },
     locations: flattenLocations(row.locations),
 
-    uniqueVacancyId: row.uniqueVacancyId,
-    duplicateCount: row.duplicateCount,
-    duplicateSourceCount: row.duplicateSourceCount,
+    uniqueVacancyId: row.positionId,
+    duplicateCount: row.postingCount > 1 ? row.postingCount : null,
+    duplicateSourceCount: row.postingCount > 1 ? row.sourceCount : null,
   };
 }
 

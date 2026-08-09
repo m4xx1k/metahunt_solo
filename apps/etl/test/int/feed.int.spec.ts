@@ -129,7 +129,7 @@ describe("FeedService.search — dedup collapse (integration)", () => {
     expect(singletonCard.duplicateCount).toBeNull();
   });
 
-  it("keeps a filtered-in older member when the freshest member is filtered out", async () => {
+  it("matches a Position on ANY member's source, but always displays its real representative", async () => {
     const s1 = await seedSource();
     const s2 = await seedSource();
     const role = await seedRole();
@@ -148,12 +148,14 @@ describe("FeedService.search — dedup collapse (integration)", () => {
     });
     await mergeIntoGroup(db, [older, newer]);
 
-    // Filter to the OLDER member's source; the freshest member (newer, on s2)
-    // is filtered out. The collapse must fall back to the older member, not
-    // drop the whole group.
+    // MET-138: `sourceId` asks "does this Position have a Posting on s1?" —
+    // it does, via `older`. The Position still surfaces once, and it still
+    // shows its real (freshest) representative `newer`, never a filter-
+    // scoped recomputation. Representative facts/link hydration are never
+    // filter-dependent (IMPLEMENTATION.md — "Move public consumers").
     const res = await feed.search({ page: 1, pageSize: 50, sourceId: s1.sourceId });
 
-    expect(res.items.map((i) => i.id)).toEqual([older]);
+    expect(res.items.map((i) => i.id)).toEqual([newer]);
     expect(res.total).toBe(1);
   });
 

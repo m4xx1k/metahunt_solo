@@ -57,13 +57,15 @@ export const trackNodes = pgTable(
   ],
 );
 
-// Per-track eligible-vacancy count, computed so a track's displayed number
-// equals exactly what clicking it returns (per-axis override-else-inherit):
-// effective ROLE/SKILL = the track's OWN nodes of that type, or — if it has
-// none — its parent's (one hop). A track with no effective preset on either
-// axis (pure-grouping parent like "By Language") counts 0; the feed's VERIFIED
-// eligibility is mirrored so the count never overstates a click. Counts are
-// per-track independent (child ⊆ parent overlaps) — never sum them to a total.
+// Per-track eligible-Position count (MET-138), computed so a track's
+// displayed number equals exactly what clicking it returns (per-axis
+// override-else-inherit): effective ROLE/SKILL = the track's OWN nodes of
+// that type, or — if it has none — its parent's (one hop). A track with no
+// effective preset on either axis (pure-grouping parent like "By Language")
+// counts 0; ELIGIBLE_POSITION's VERIFIED-role rule is mirrored inline so the
+// count never overstates a click. Counts are per-track independent (child ⊆
+// parent overlaps) — never sum them to a total. `vacancy_count` keeps its
+// column name (consumers read it positionally); the grain is Positions.
 // Plain VIEW for now; materialize + refresh post-ingest only if it gets slow.
 export const trackCounts = pgView("track_counts", {
   trackId: uuid("track_id"),
@@ -92,12 +94,13 @@ export const trackCounts = pgView("track_counts", {
         WHEN e.role_ids IS NULL AND e.skill_ids IS NULL THEN 0
         ELSE (
           SELECT count(*)
-          FROM vacancies v
-          JOIN nodes rn ON rn.id = v.role_node_id AND rn.status = 'VERIFIED'
-          WHERE (e.role_ids IS NULL OR v.role_node_id = ANY(e.role_ids))
+          FROM positions p
+          WHERE p.role_node_id IS NOT NULL
+            AND EXISTS (SELECT 1 FROM nodes rn WHERE rn.id = p.role_node_id AND rn.status = 'VERIFIED')
+            AND (e.role_ids IS NULL OR p.role_node_id = ANY(e.role_ids))
             AND (e.skill_ids IS NULL OR EXISTS (
-                  SELECT 1 FROM vacancy_nodes vn
-                  WHERE vn.vacancy_id = v.id AND vn.node_id = ANY(e.skill_ids)))
+                  SELECT 1 FROM position_nodes pn
+                  WHERE pn.position_id = p.position_id AND pn.node_id = ANY(e.skill_ids)))
         )
       END AS vacancy_count
     FROM eff e
