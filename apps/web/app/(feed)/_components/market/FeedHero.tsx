@@ -1,32 +1,20 @@
 import Link from "next/link";
 
 import type { VacancyAggregates } from "@/lib/api/aggregates";
-import type { TrackDto } from "@/lib/api/tracks";
 import { Divider } from "@/ui";
 import { TotalCounter } from "./TotalCounter";
-import { TrackPicker } from "./TrackPicker";
 
 // Intro / hero for the feed. One cohesive block (no separate background band):
-// the headline + live counter say *what this is*, and the 3-stage pipeline
-// below lets a visitor pick a market before entering the feed. Track pages keep
-// their focused heading and omit the picker.
+// the headline + live counter say *what this is*. The market picker lives
+// between this intro and the feed, where it can update without crowding hero.
 
 type Props = {
   aggregates: VacancyAggregates;
-  showTrackPicker?: boolean;
-  tracks?: TrackDto[];
-  activeTrackSlug?: string | null;
   /** Track pages replace the index headline so each one has an h1 of its own. */
   heading?: { title: React.ReactNode; subtitle: string };
 };
 
-export function FeedHero({
-  aggregates: a,
-  showTrackPicker = false,
-  tracks = [],
-  activeTrackSlug = null,
-  heading,
-}: Props) {
+export function FeedHero({ aggregates: a, heading }: Props) {
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pt-16 pb-10 md:px-12">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr] md:items-stretch">
@@ -50,9 +38,6 @@ export function FeedHero({
         </div>
         <TotalCounter total={a.total} lastSyncAt={a.lastSyncAt} sources={a.sources} />
       </div>
-
-      {showTrackPicker ? <TrackPicker tracks={tracks} activeSlug={activeTrackSlug} /> : null}
-
       <Divider className="mt-2" />
     </section>
   );

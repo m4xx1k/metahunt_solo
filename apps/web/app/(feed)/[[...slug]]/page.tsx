@@ -20,6 +20,7 @@ import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
 import { fetchMatch, HOME_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
 import { TrackIntro } from "@/app/(feed)/_components/market/TrackIntro";
+import { TrackPicker } from "@/app/(feed)/_components/market/TrackPicker";
 import { HowItWorks } from "@/app/(feed)/_components/how/HowItWorks";
 import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
 import {
@@ -183,9 +184,6 @@ export default async function FeedPage({
       <main className="page-dot-grid flex min-h-screen flex-col bg-bg">
         <FeedHero
           aggregates={aggregates}
-          showTrackPicker={!trackSlug}
-          tracks={tracks}
-          activeTrackSlug={trackSlug ?? null}
           heading={
             track
               ? {
@@ -196,6 +194,14 @@ export default async function FeedPage({
           }
         />
         {track ? <TrackIntro track={track} /> : null}
+        {!track ? (
+          <TrackPicker
+            key={trackSlug ?? "all"}
+            tracks={tracks}
+            activeSlug={trackSlug ?? null}
+            lastSyncAt={aggregates.lastSyncAt}
+          />
+        ) : null}
         <div className="mx-auto w-full max-w-[1536px] px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <FeedLensShell
