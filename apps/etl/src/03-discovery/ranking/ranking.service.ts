@@ -5,6 +5,9 @@ import { sql, type SQL } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+// POSTING-GRAIN-EXEMPT: calibration-sensitive matcher/role-suggestion
+// scoring stays Posting-grain until MET-139 (Position grain scoring
+// cutover, PR 2) — see MET-137 IMPLEMENTATION.md.
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";

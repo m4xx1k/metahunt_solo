@@ -25,14 +25,13 @@ CREATE TABLE metalab_position_skill (
   PRIMARY KEY (rule, position_id, node_id)
 );
 
--- Representative-only: one designated member speaks for the position.
--- The snapshot predates representative_vacancy_id, so canonical_vacancy_id is
--- the representative; experiment 001 verified it is a real member everywhere.
+-- Canonical-only: the Position read model's own definition (MET-138) — one
+-- designated member (the canonical posting) speaks for the position.
 INSERT INTO metalab_position_skill (rule, position_id, node_id)
-SELECT DISTINCT 'rep', uv.id, vn.node_id
-FROM unique_vacancies uv
-JOIN vacancy_nodes vn ON vn.vacancy_id = uv.canonical_vacancy_id AND vn.is_required
-JOIN nodes n ON n.id = vn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED';
+SELECT DISTINCT 'rep', pn.position_id, pn.node_id
+FROM position_nodes pn
+JOIN nodes n ON n.id = pn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
+WHERE pn.is_required;
 
 -- Member union: a skill is required for the position if ANY member says so.
 -- Disagreement resolves toward "required" rather than dropping the link,

@@ -8,18 +8,20 @@
 -- Baseline rule throughout: 'rep' (experiment 002b showed union changes nothing
 -- that matters, Spearman rho = 0.9984).
 
+-- Canonical facts via the Position read model (MET-138): source of the
+-- canonical posting specifically (a Position can span multiple sources, but
+-- this confounder check is about the one member that supplies the skills).
 DROP TABLE IF EXISTS metalab_position_meta;
 CREATE TABLE metalab_position_meta AS
-SELECT uv.id AS position_id,
-       v.source_id,
-       s.code       AS source_code,
-       v.role_node_id,
+SELECT p.position_id,
+       po.source_id,
+       po.source_code,
+       p.role_node_id,
        r.canonical_name AS role_name,
-       v.seniority::text AS seniority
-FROM unique_vacancies uv
-JOIN vacancies v ON v.id = uv.canonical_vacancy_id
-JOIN sources s ON s.id = v.source_id
-LEFT JOIN nodes r ON r.id = v.role_node_id;
+       p.seniority
+FROM positions p
+JOIN postings po ON po.posting_id = p.canonical_posting_id
+LEFT JOIN nodes r ON r.id = p.role_node_id;
 ALTER TABLE metalab_position_meta ADD PRIMARY KEY (position_id);
 CREATE INDEX metalab_pm_role_idx ON metalab_position_meta (role_node_id);
 

@@ -16,10 +16,19 @@ export interface AggregateSourceCount {
 }
 
 export interface VacancyAggregatesResponse {
+  /** Count of eligible Positions (MET-138) — never source Postings. */
   total: number;
-  /** ISO-8601. max(loaded_at) over the eligible set. Null if empty. */
+  /** Grain of `total`/`seniorityDist`/`workFormatDist`. */
+  unit: "positions";
+  /** ISO-8601. When this aggregate was computed. */
+  asOf: string;
+  /** No time-bounding is applied to the eligible set yet. */
+  window: "all-time";
+  /** ISO-8601. max(last_source_activity_at) over the eligible set. Null if empty. */
   lastSyncAt: string | null;
   seniorityDist: Record<Seniority, number>;
   workFormatDist: Record<WorkFormat, number>;
+  /** unit: source_postings — per-source posting volume. A reposted Position
+   *  counts once per source here, so never sum this against `total`. */
   sources: AggregateSourceCount[];
 }

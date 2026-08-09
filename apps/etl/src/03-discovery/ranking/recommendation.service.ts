@@ -5,6 +5,9 @@ import { sql } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+// POSTING-GRAIN-EXEMPT: recommendation cohorts stay Posting-grain until
+// MET-139 (Position grain scoring cutover, PR 2) — see MET-137
+// IMPLEMENTATION.md.
 import { ELIGIBLE_VACANCY } from "../../platform/shared/eligible";
 
 import {

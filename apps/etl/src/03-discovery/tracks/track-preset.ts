@@ -4,7 +4,7 @@ import { schema } from "@metahunt/database";
 
 import { uuidList } from "../../platform/shared/sql";
 
-const { vacancies } = schema;
+const { positions } = schema;
 
 // A track's effective node selection — the ROLE and SKILL node ids it filters
 // vacancies by. An empty array on an axis means "no constraint there"; both
@@ -38,21 +38,22 @@ export function presetMatchesNothing(preset: TrackPreset): boolean {
   return preset.roleIds.length === 0 && preset.skillIds.length === 0;
 }
 
-// The vacancy WHERE condition a preset applies, identical for the feed and its
-// count so a track's shown number equals what clicking it returns: the role is
-// ANY of the role ids, and the vacancy carries ANY of the skill ids. An empty
-// axis drops out; an empty preset matches nothing (mirrors the view's 0 count).
+// The Position WHERE condition a preset applies (MET-138 — Position grain,
+// mirroring the track_counts view's own rule): the canonical role is ANY of
+// the role ids, and the Position carries ANY of the skill ids via
+// position_nodes. An empty axis drops out; an empty preset matches nothing
+// (mirrors the view's 0 count).
 export function presetCondition(preset: TrackPreset): SQL {
   if (presetMatchesNothing(preset)) return sql`false`;
   const conds: SQL[] = [];
   if (preset.roleIds.length > 0) {
-    conds.push(inArray(vacancies.roleNodeId, preset.roleIds));
+    conds.push(inArray(positions.roleNodeId, preset.roleIds));
   }
   if (preset.skillIds.length > 0) {
     conds.push(sql`EXISTS (
-      SELECT 1 FROM vacancy_nodes vn
-      WHERE vn.vacancy_id = ${vacancies.id}
-        AND vn.node_id IN (${uuidList(preset.skillIds)})
+      SELECT 1 FROM position_nodes pn
+      WHERE pn.position_id = ${positions.positionId}
+        AND pn.node_id IN (${uuidList(preset.skillIds)})
     )`);
   }
   if (conds.length === 1) return conds[0];

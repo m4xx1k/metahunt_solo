@@ -131,9 +131,10 @@ export class TracksRepository {
     };
   }
 
-  // Skills most common among the vacancies a preset matches, excluding the
-  // preset's own skills (already applied) — the contextual facet suggestions.
-  // Top 12 by distinct-vacancy count. Caller guards the empty-preset case.
+  // Skills most common among the Positions a preset matches (MET-138),
+  // excluding the preset's own skills (already applied) — the contextual
+  // facet suggestions. Top 12 by distinct-Position count. Caller guards the
+  // empty-preset case.
   async findContextualSkills(preset: TrackPreset): Promise<ContextualSkill[]> {
     const excludeOwn =
       preset.skillIds.length > 0 ? sql`AND n.id NOT IN (${uuidList(preset.skillIds)})` : sql``;
@@ -145,17 +146,20 @@ export class TracksRepository {
     }>(sql`
       SELECT COALESCE(n.slug, n.id::text) AS id,
              n.canonical_name AS name,
-             COUNT(DISTINCT vn.vacancy_id)::int AS count
-      FROM vacancy_nodes vn
-      JOIN nodes n ON n.id = vn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
-      WHERE vn.vacancy_id IN (
-        SELECT vacancies.id FROM vacancies
-        JOIN nodes rn ON rn.id = vacancies.role_node_id AND rn.status = 'VERIFIED'
-        WHERE ${presetCondition(preset)}
+             COUNT(DISTINCT pn.position_id)::int AS count
+      FROM position_nodes pn
+      JOIN nodes n ON n.id = pn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
+      WHERE pn.position_id IN (
+        SELECT positions.position_id FROM positions
+        WHERE positions.role_node_id IS NOT NULL
+          AND EXISTS (
+            SELECT 1 FROM nodes rn WHERE rn.id = positions.role_node_id AND rn.status = 'VERIFIED'
+          )
+          AND ${presetCondition(preset)}
       )
       ${excludeOwn}
       GROUP BY n.id, n.canonical_name
-      ORDER BY COUNT(DISTINCT vn.vacancy_id) DESC
+      ORDER BY COUNT(DISTINCT pn.position_id) DESC
       LIMIT 12
     `);
     return rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count }));
