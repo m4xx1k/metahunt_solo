@@ -55,6 +55,9 @@ async function makeVacancy(
   src: { sourceId: string; ingestId: string },
   roleNodeId: string,
   skillIds: string[],
+  // MET-141: the badge counts required links only, so the optional case has to
+  // be reachable from the fixture — hardcoding `true` is what hid the bug.
+  isRequired = true,
 ): Promise<void> {
   const externalId = `vac-${(seq += 1)}`;
   const [record] = await db
@@ -80,7 +83,7 @@ async function makeVacancy(
       skillIds.map((nodeId) => ({
         vacancyId,
         nodeId,
-        isRequired: true,
+        isRequired,
       })),
     );
   }
@@ -182,5 +185,35 @@ describe("track count == click (integration)", () => {
       frontend: 1,
       "by-language": 0,
     });
+  });
+
+  // MET-141: the badge counted any skill link, the feed's default counts only
+  // required ones, so a track whose skill is nice-to-have somewhere promised
+  // more than the click delivered.
+  it("excludes optional skill links, matching the feed's required-only default", async () => {
+    const src = await seedSource();
+    const backendRole = await makeNode("ROLE", "Backend Developer");
+    const go = await makeNode("SKILL", "Go");
+
+    await makeVacancy(src, backendRole, [go]); // Go required — counts
+    await makeVacancy(src, backendRole, [go], false); // Go nice-to-have — must not
+
+    const backend = await makeTrack("backend", "Backend", [backendRole], null, 1);
+    await makeTrack("backend-go", "Go", [go], backend, 1);
+
+    const tree = await repo.findTrackTree();
+    const bySlug = Object.fromEntries(tree.map((t) => [t.slug, t.count]));
+    expect(bySlug).toEqual({ backend: 2, "backend-go": 1 });
+
+    // And the badge still equals the click it promises.
+    const nodeIds = await repo.findTrackNodeIds("backend-go");
+    const preset = resolveTrackPreset(nodeIds!);
+    const clicked = await service.search({
+      page: 1,
+      pageSize: 10,
+      roleIds: preset.roleIds,
+      skillIds: preset.skillIds,
+    });
+    expect(clicked.total).toBe(bySlug["backend-go"]);
   });
 });
