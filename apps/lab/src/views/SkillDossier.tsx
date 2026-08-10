@@ -15,6 +15,7 @@ export function SkillDossier({
   selected,
   onSelect,
   onOpenFaq,
+  variant = "full",
 }: {
   graph: Graph;
   curated: PairRelations;
@@ -22,7 +23,9 @@ export function SkillDossier({
   selected: number;
   onSelect: (index: number) => void;
   onOpenFaq: () => void;
+  variant?: "full" | "sidebar";
 }) {
+  const sidebar = variant === "sidebar";
   const [query, setQuery] = useState("");
   const skill = graph.nodes[selected];
   const byName = useMemo(() => new Map(graph.nodes.map((node, index) => [node.name, index])), [graph.nodes]);
@@ -63,7 +66,7 @@ export function SkillDossier({
 
   return (
     <>
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-5">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-4">
         <div className="flex flex-col gap-1">
           <label className={label} htmlFor="skill-query">
             Skill
@@ -95,7 +98,7 @@ export function SkillDossier({
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className={sidebar ? "grid gap-3" : "grid gap-5 lg:grid-cols-2"}>
         <CompanionCard
           title="Often requested together"
           note="in at least 60% of positions that ask for this skill"
