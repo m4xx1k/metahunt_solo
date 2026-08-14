@@ -100,6 +100,8 @@ export function validateEnv(config: RawEnv): RawEnv {
   const storageAccessKey = asString(config.STORAGE_ACCESS_KEY) ?? "metahunt";
   const storageSecretKey = asString(config.STORAGE_SECRET_KEY) ?? "metahunt123";
   const storageRegion = asString(config.STORAGE_REGION) ?? "us-east-1";
+  const storageBackupBucket = asString(config.STORAGE_BACKUP_BUCKET) ?? "";
+  const alertTelegramChatId = asString(config.ALERT_TELEGRAM_CHAT_ID) ?? "";
   assertUrl("STORAGE_ENDPOINT", storageEndpoint);
 
   const openaiApiKey = asString(config.OPENAI_API_KEY) ?? "";
@@ -190,6 +192,8 @@ export function validateEnv(config: RawEnv): RawEnv {
     TEMPORAL_API_KEY: temporalApiKey,
     RSS_INGEST_INTERVAL_HOURS: rssIngestIntervalHours,
     STORAGE_ENDPOINT: storageEndpoint,
+    STORAGE_BACKUP_BUCKET: storageBackupBucket,
+    ALERT_TELEGRAM_CHAT_ID: alertTelegramChatId,
     STORAGE_BUCKET: storageBucket,
     STORAGE_ACCESS_KEY: storageAccessKey,
     STORAGE_SECRET_KEY: storageSecretKey,

@@ -1,5 +1,6 @@
 import { proxyActivities } from "@temporalio/workflow";
 
+import type { BackupAlertActivity } from "../backup-alert.activity";
 import type { DbBackupActivity } from "../db-backup.activity";
 
 const { backupDatabase } = proxyActivities<typeof DbBackupActivity.prototype>({
@@ -7,8 +8,18 @@ const { backupDatabase } = proxyActivities<typeof DbBackupActivity.prototype>({
   retry: { maximumAttempts: 3 },
 });
 
-// No try/catch on purpose: a swallowed failure here is what let the market
-// snapshots fill the volume unnoticed. Let the workflow fail and stay visible.
-export async function dbBackupWorkflow(): Promise<{ key: string; bytes: number }> {
-  return backupDatabase();
+const { alertBackupFailed } = proxyActivities<typeof BackupAlertActivity.prototype>({
+  startToCloseTimeout: "1m",
+  retry: { maximumAttempts: 3 },
+});
+
+// The catch alerts and rethrows rather than swallowing: a failed backup must
+// both reach a human and leave the workflow red in Temporal.
+export async function dbBackupWorkflow(): Promise<{ key: string; bytes: number; pruned: number }> {
+  try {
+    return await backupDatabase();
+  } catch (err) {
+    await alertBackupFailed(String(err));
+    throw err;
+  }
 }
