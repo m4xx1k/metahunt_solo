@@ -37,6 +37,19 @@ LAB_DATABASE_URL=postgres://user:pass@localhost:5432/metahunt_lab
 `pipeline/psql.sh` refuses any URL whose database is not `metahunt_lab`, so
 production is unreachable from here even by mistake.
 
+To produce the dump that restore comes from, take one by hand when you want a
+fresh slice — there is no scheduled export, and the corpus moves slowly enough
+that an on-demand dump is a fine point-in-time record:
+
+```bash
+pg_dump "$PROD_DATABASE_URL" -Fc --no-owner --no-acl -f metahunt-$(date +%F).dump
+createdb metahunt_lab && pg_restore -d metahunt_lab --no-owner --no-acl metahunt-$(date +%F).dump
+```
+
+`pg_dump` must be at least the server's major version. Keep the dated dumps you
+care about: `positions` is a live view, so a later taxonomy or canonical-posting
+change rewrites what the past looked like, and only the dump preserves it.
+
 The name is not `DATABASE_URL` on purpose. Every other command in this repo
 resolves its database from whichever `.env` is in the working directory, so a
 lab `.env` using that name silently retargets them all — which is exactly how a

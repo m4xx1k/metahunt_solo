@@ -1,6 +1,5 @@
 const mockListRemoteSources = jest.fn();
 const mockRefreshNodeStats = jest.fn();
-const mockCaptureMarketSnapshot = jest.fn();
 const mockStartChild = jest.fn();
 const mockWarn = jest.fn();
 
@@ -10,8 +9,7 @@ jest.mock("@temporalio/workflow", () => ({
   proxyActivities: jest
     .fn()
     .mockReturnValueOnce({ listRemoteSources: mockListRemoteSources })
-    .mockReturnValueOnce({ refreshNodeStats: mockRefreshNodeStats })
-    .mockReturnValueOnce({ captureMarketSnapshot: mockCaptureMarketSnapshot }),
+    .mockReturnValueOnce({ refreshNodeStats: mockRefreshNodeStats }),
   startChild: mockStartChild,
   workflowInfo: () => ({ startTime: new Date("2026-07-21T12:34:56.789Z") }),
 }));
@@ -22,7 +20,6 @@ describe("rssIngestAllWorkflow", () => {
   beforeEach(() => {
     mockListRemoteSources.mockReset();
     mockRefreshNodeStats.mockReset().mockResolvedValue(undefined);
-    mockCaptureMarketSnapshot.mockReset().mockResolvedValue(undefined);
     mockStartChild.mockReset().mockResolvedValue({});
     mockWarn.mockReset();
   });
@@ -34,7 +31,6 @@ describe("rssIngestAllWorkflow", () => {
 
     expect(mockStartChild).not.toHaveBeenCalled();
     expect(mockRefreshNodeStats).not.toHaveBeenCalled();
-    expect(mockCaptureMarketSnapshot).not.toHaveBeenCalled();
   });
 
   it("starts each source with a deterministic workflow id", async () => {
@@ -56,7 +52,6 @@ describe("rssIngestAllWorkflow", () => {
       parentClosePolicy: "ABANDON",
     });
     expect(mockRefreshNodeStats).toHaveBeenCalledTimes(1);
-    expect(mockCaptureMarketSnapshot).toHaveBeenCalledTimes(1);
   });
 
   it("isolates a failed source start and reports the successful count", async () => {
@@ -73,6 +68,5 @@ describe("rssIngestAllWorkflow", () => {
       firstError: "Error: start unavailable",
     });
     expect(mockRefreshNodeStats).toHaveBeenCalledTimes(1);
-    expect(mockCaptureMarketSnapshot).toHaveBeenCalledTimes(1);
   });
 });
