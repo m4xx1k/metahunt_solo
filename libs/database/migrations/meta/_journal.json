@@ -351,6 +351,13 @@
       "when": 1786291270435,
       "tag": "0049_track_counts_required_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1786714608179,
+      "tag": "0050_drop_market_snapshots",
+      "breakpoints": true
     }
   ]
 }
