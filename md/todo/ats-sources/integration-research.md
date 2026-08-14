@@ -3,6 +3,8 @@
 Status: research, 2026-06-12. Companion to [README.md](README.md) (445 validated boards) and [ats-slugs.tsv](ats-slugs.tsv).
 Question: how to ingest Ashby/Greenhouse/Lever/Recruitee/SmartRecruiters job-board APIs alongside the existing RSS pipeline — scheduling, parsing, dedup, lifecycle, cost.
 
+> **MET-54 POC update (local only):** Ashby, Greenhouse, Lever and Hurma adapters plus a budgeted ingest/extract/load CLI are implemented. The standalone `/ats` API/viewer reads loaded ATS source-postings and reports field coverage and weak boards. The CLI now reconciles a successful non-empty board snapshot to close missing postings and reopen returned ones. This is not a Temporal rollout: production scheduling/board policy remains a research decision.
+
 ## TL;DR recommendation
 
 Reuse ~90% of the existing pipeline. ATS ingestion is *easier* than RSS: structured JSON, stable native job IDs, full-board snapshots (→ free closed-job detection), and clean per-company attribution. The work is one new ingest module with a thin per-ATS adapter that normalizes a board payload into the existing `rss_records` shape, plus 3 small schema changes. Phase 1 (UA tier, Ashby+Greenhouse+Lever, ~35 boards) is ~2-3 days of work.

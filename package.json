@@ -33,6 +33,8 @@
     "db:seed:candidates": "ts-node --project tsconfig.json libs/database/seeds/candidates.run.ts",
     "db:seed:node-slugs": "ts-node --project tsconfig.json libs/database/seeds/node-slugs.run.ts",
     "db:studio": "drizzle-kit studio",
+    "ats:poc:demo-seed": "ts-node --project tsconfig.json apps/etl/src/01-ingest/ats/ats-poc-demo-seed.cli.ts",
+    "ats:poc:api": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/01-ingest/ats/ats-poc-server.cli.js",
     "dedup:embed": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/02-enrich/dedup/dedup.cli.js embed",
     "dedup:resolve": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/02-enrich/dedup/dedup.cli.js resolve",
     "dedup:reset": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/02-enrich/dedup/dedup.cli.js reset",

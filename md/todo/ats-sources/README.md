@@ -1,5 +1,35 @@
 # ATS job-board sources — validated slugs
 
+## Local MET-54 viewer (safe POC path)
+
+`/ats` is an operator review surface for source postings, not the public deduplicated feed. It runs through the standalone ATS API (not the regular ETL app), keeps closed postings visible on demand, and reports field/board health.
+
+From `feat/MET-54-ats-poc`, a clean local start is:
+
+```bash
+cp -n .env.poc.example .env              # only creates it in a fresh POC worktree
+cp -n apps/web/ats-poc.env.example apps/web/.env.local
+docker compose -f compose.poc.yaml up -d
+pnpm db:migrate
+pnpm ats:poc:demo-seed                   # optional; no network or LLM spend
+pnpm ats:poc:api                         # terminal 1: http://localhost:3399
+pnpm dev:web                             # terminal 2: http://localhost:4000
+```
+
+Open [http://localhost:4000/ats](http://localhost:4000/ats). `demo-seed` is idempotent and inserts only `ats:demo:local-review`: four postings covering annual salary, remote/hybrid, closed, and missing-field review states. It never calls an ATS API or an LLM. If a local POC dump is already present, skip it — the seed is additive.
+
+Do **not** use `ats-poc-pipeline ingest` or `extract` as a start command: `ingest` touches hundreds of external boards and `extract` consumes the LLM budget. Both remain for verdict/replay and need explicit scope/budget approval. `docker compose -f compose.poc.yaml down` stops the isolated DB; add `-v` only when intentionally deleting POC data.
+
+API: `GET /ats/jobs` (`q`, `status=open|closed|all`, `uaOnly`, `remoteOnly`, `reviewOnly`, `limit`, `offset`) and `GET /ats/overview`. A failed API request is deliberately rendered as an error, never as an empty corpus. On a future approved ingest, a successful non-empty board snapshot closes only postings absent from that snapshot and reopens postings that return; failed or empty snapshots do neither.
+
+## Paused status — 2026-07-28
+
+**Verdict: pause this POC; it is inspectable, not product-ready.** The local UI/API, demo seed, salary-period presentation and snapshot lifecycle code exist in `feat/MET-54-ats-poc`. The corpus currently has 5,263 loaded jobs from 272 non-empty boards (419 configured boards); 148 boards have no imported jobs. Data is broad and noisy rather than deliberately valuable: location and original-URL coverage are high, but work-mode coverage is ~86%, structured salary ~47%, real closed-job history is not yet established, and semantic dedup has not been run.
+
+**Priority on return:** high-quality direct vacancies for **Ukraine first, then Europe/remote-Europe**. Do not resume with a global-board backfill, a “more jobs” target, or paid extraction. Start with a small, manually curated allowlist of top UA/EU product companies; fetch snapshots only, validate live URLs/locations/work mode and closure behaviour, then decide which boards deserve extraction. Keep aggregators excluded.
+
+**Do not forget:** the current `status=closed` UI is proven with safe demo data; actual lifecycle evidence needs two approved snapshots of the same curated boards. The next work should be quality/ranking policy and a board allowlist, not more dashboard polish.
+
 Generated 2026-06-12. 458 validated boards (jobs > 0), ~31k jobs total, ~800 UA-located, ~14k remote.
 Full list: [`ats-slugs.tsv`](ats-slugs.tsv) — columns: `tier, ats, slug, company, jobs, ua_jobs, remote_jobs, flag`.
 

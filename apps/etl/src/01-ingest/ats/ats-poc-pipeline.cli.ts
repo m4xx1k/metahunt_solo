@@ -35,6 +35,7 @@ import { ashbyAdapter } from "./adapters/ashby.adapter";
 import { greenhouseAdapter } from "./adapters/greenhouse.adapter";
 import { hurmaAdapter, hurmaNextPageUrl } from "./adapters/hurma.adapter";
 import { leverAdapter } from "./adapters/lever.adapter";
+import { reconcileAtsBoardSnapshot } from "./ats-lifecycle";
 import { ATS_TYPES, type AtsAdapter, type AtsType, type NormalizedItem } from "./ats.contract";
 
 const ADAPTERS: Record<AtsType, AtsAdapter> = {
@@ -165,7 +166,17 @@ async function ingest(db: DrizzleDB, includeAllTiers: boolean): Promise<void> {
   mkdirSync(join(ARTIFACTS, "raw"), { recursive: true });
   process.stderr.write(`ingesting ${boards.length} boards…\n`);
 
-  const stats = { boards: 0, failed: 0, fetched: 0, relevant: 0, techPassed: 0, inserted: 0 };
+  const stats = {
+    boards: 0,
+    failed: 0,
+    fetched: 0,
+    relevant: 0,
+    techPassed: 0,
+    inserted: 0,
+    closed: 0,
+    reopened: 0,
+    skippedEmptySnapshots: 0,
+  };
 
   await mapWithConcurrency(boards, CONCURRENCY, async (board) => {
     let items: NormalizedItem[];
@@ -177,7 +188,13 @@ async function ingest(db: DrizzleDB, includeAllTiers: boolean): Promise<void> {
       process.stderr.write(`  ✗ ${board.ats}/${board.slug}: ${String(error)}\n`);
       return;
     }
-    if (!items.length) return;
+    if (!items.length) {
+      // A real zero-job board is possible, but one empty response is not
+      // enough evidence to close a whole company. Leave it visible for the
+      // next successful non-empty snapshot/manual review.
+      stats.skippedEmptySnapshots++;
+      return;
+    }
     stats.boards++;
     stats.fetched += items.length;
     writeFileSync(join(ARTIFACTS, "raw", `${board.ats}-${board.slug}.json`), JSON.stringify(raw));
@@ -247,6 +264,18 @@ async function ingest(db: DrizzleDB, includeAllTiers: boolean): Promise<void> {
         .returning({ id: schema.rssRecords.id });
       if (inserted.length) stats.inserted++;
     }
+
+    // `items` is the raw, complete board snapshot rather than the filtered
+    // ingest subset. A non-tech or non-UA posting that still exists upstream
+    // must not close a vacancy merely because this POC chose not to process it.
+    const lifecycle = await reconcileAtsBoardSnapshot(
+      db,
+      source.id,
+      items.map((item) => item.externalId),
+    );
+    stats.closed += lifecycle.closed;
+    stats.reopened += lifecycle.reopened;
+    if (lifecycle.skippedEmptySnapshot) stats.skippedEmptySnapshots++;
   });
 
   process.stdout.write(
@@ -254,7 +283,12 @@ async function ingest(db: DrizzleDB, includeAllTiers: boolean): Promise<void> {
       `jobs fetched     ${stats.fetched}\n` +
       `geo-relevant     ${stats.relevant}\n` +
       `passed tech gate ${stats.techPassed}\n` +
-      `new bronze rows  ${stats.inserted}\n`,
+      `new bronze rows  ${stats.inserted}\n` +
+      `closed / reopened ${stats.closed} / ${stats.reopened}` +
+      (stats.skippedEmptySnapshots
+        ? ` · skipped empty snapshots ${stats.skippedEmptySnapshots}`
+        : "") +
+      "\n",
   );
 }
 

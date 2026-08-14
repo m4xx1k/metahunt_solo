@@ -1,85 +1,144 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
-import { atsApi, type AtsCompaniesResponse } from "@/lib/api/ats";
+import { atsApi, type AtsStatus } from "@/lib/api/ats";
+import { formatCount } from "@/lib/format";
+import {
+  booleanSearchParam,
+  firstSearchParam,
+  flattenSearchParams,
+  nonNegativeIntegerSearchParam,
+} from "@/lib/search-params";
 import { pageMetadata } from "@/lib/seo/metadata";
-import { Tag } from "@/ui";
+import { EmptyState } from "@/ui/feedback/EmptyState";
+import { FilterToggles } from "@/ui/inputs/FilterToggles";
+import { UrlSearch } from "@/ui/inputs/UrlSearch";
+import { PageBody } from "@/ui/layout/PageBody";
+import { PageHeader } from "@/ui/layout/PageHeader";
+import { Pagination } from "@/ui/navigation/Pagination";
+import { UrlSegments } from "@/ui/navigation/UrlSegments";
 
-import { BoardsEmpty, CompanyBoard } from "./_components/CompanyBoard";
+import { AtsJobCard } from "./_components/AtsJobCard";
+import { AtsSummary } from "./_components/AtsSummary";
 
 export const dynamic = "force-dynamic";
-
-const PER_COMPANY = 6;
-
 export const metadata: Metadata = pageMetadata({
-  title: "Вакансії напряму з сайтів компаній",
-  description:
-    "Вакансії, зібрані з власних кар'єрних сторінок компаній, а не з агрегаторів. Згруповані по компаніях.",
+  title: "ATS vacancies · local operator view",
+  description: "Local review surface for direct ATS vacancies and board quality.",
   path: "/ats",
 });
+
+const PAGE_SIZE = 25;
+const STATUS_OPTIONS: Array<{ value: AtsStatus; label: string }> = [
+  { value: "open", label: "open" },
+  { value: "all", label: "all" },
+  { value: "closed", label: "closed" },
+];
+
+function statusFrom(value: string | undefined): AtsStatus {
+  return value === "all" || value === "closed" ? value : "open";
+}
 
 export default async function AtsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ua?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { ua } = await searchParams;
-  const uaOnly = ua === "1";
+  const sp = await searchParams;
+  const offset = nonNegativeIntegerSearchParam(sp.offset);
+  const q = firstSearchParam(sp.q);
+  const status = statusFrom(firstSearchParam(sp.status));
+  const uaOnly = booleanSearchParam(sp.uaOnly);
+  const remoteOnly = booleanSearchParam(sp.remoteOnly);
+  const reviewOnly = booleanSearchParam(sp.reviewOnly);
+  const flatSearchParams = flattenSearchParams(sp);
 
-  const data: AtsCompaniesResponse = await atsApi
-    .companies({ perCompany: PER_COMPANY, uaOnly })
-    .catch(() => ({ companies: [], totals: { companies: 0, vacancies: 0, uaVacancies: 0 } }));
+  let result: Awaited<ReturnType<typeof atsApi.jobs>> | null = null;
+  let overview: Awaited<ReturnType<typeof atsApi.overview>> | null = null;
+  let error: Error | null = null;
+  try {
+    [result, overview] = await Promise.all([
+      atsApi.jobs({ q, status, uaOnly, remoteOnly, reviewOnly, limit: PAGE_SIZE, offset }),
+      atsApi.overview(),
+    ]);
+  } catch (caught) {
+    error = caught instanceof Error ? caught : new Error("ATS API request failed");
+  }
 
   return (
     <>
-      <Header links={[{ label: "усі вакансії", href: "/" }]} cta={null} />
-      <main
-        className="bg-bg"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 50% at 50% 0%, rgba(255,179,128,0.08), transparent 70%), radial-gradient(var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "auto, 22px 22px",
-        }}
-      >
-        <section className="border-b border-border px-6 py-14 md:px-12 md:py-16">
-          <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5">
-            <Tag>&gt; НАПРЯМУ З САЙТІВ КОМПАНІЙ</Tag>
-            <h1 className="text-2xl font-medium md:text-3xl">Вакансії без агрегаторів</h1>
-            <p className="max-w-[62ch] text-sm text-fg-muted">
-              Зібрано з власних кар&apos;єрних сторінок компаній. Тут немає посередників, дублікатів
-              і перепощених оголошень — тільки те, що роботодавець опублікував сам.{" "}
-              <span className="text-fg">✓</span> біля зарплати означає, що суму вказала компанія, а
-              не витягнув наш аналіз тексту.
+      <Header links={[{ label: "all vacancies", href: "/" }]} cta={null} />
+      <PageHeader
+        title="ATS vacancies"
+        hint="local source-posting review · direct company boards"
+        actions={
+          <>
+            <UrlSegments
+              param="status"
+              value={status}
+              defaultValue="open"
+              options={STATUS_OPTIONS}
+              label="vacancy status"
+            />
+            <UrlSearch placeholder="title or company…" />
+          </>
+        }
+      />
+      <PageBody>
+        {error ? (
+          <EmptyState
+            title="ATS API or database is unavailable"
+            hint={`${error.message} Start the ATS POC API and check DATABASE_URL; a failed request is intentionally not shown as an empty corpus.`}
+            tone="danger"
+          />
+        ) : result && overview ? (
+          <>
+            <AtsSummary overview={overview} />
+            <FilterToggles
+              basePath="/ats"
+              searchParams={flatSearchParams}
+              toggles={[
+                { key: "uaOnly", offLabel: "all locations", onLabel: "Ukraine", active: uaOnly },
+                {
+                  key: "remoteOnly",
+                  offLabel: "all work modes",
+                  onLabel: "remote",
+                  active: remoteOnly,
+                },
+                {
+                  key: "reviewOnly",
+                  offLabel: "all quality",
+                  onLabel: "needs review",
+                  active: reviewOnly,
+                },
+              ]}
+            />
+            <p className="font-mono text-xs text-text-muted">
+              {formatCount(result.total)} postings match the current filters.
             </p>
-
-            <div className="flex flex-wrap items-center gap-4 text-[11px] text-fg-muted">
-              <span>{data.totals.companies} компаній</span>
-              <span>{data.totals.vacancies} вакансій</span>
-              <span>{data.totals.uaVacancies} в Україні</span>
-              <Link
-                href={uaOnly ? "/ats" : "/ats?ua=1"}
-                className="rounded border border-border px-2 py-1 transition-colors hover:bg-surface"
-              >
-                {uaOnly ? "показати всі" : "тільки Україна"}
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="px-6 py-10 md:px-12">
-          <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-4">
-            {data.companies.length === 0 ? (
-              <BoardsEmpty />
+            {result.items.length === 0 ? (
+              <EmptyState
+                title="no ATS postings match these filters"
+                hint="The API responded successfully. Clear a filter or switch the status to inspect the loaded corpus."
+              />
             ) : (
-              data.companies.map((company) => (
-                <CompanyBoard key={`${company.atsType}:${company.name}`} company={company} />
-              ))
+              <section className="flex flex-col gap-3" aria-label="ATS vacancy postings">
+                {result.items.map((job) => (
+                  <AtsJobCard key={job.id} job={job} />
+                ))}
+              </section>
             )}
-          </div>
-        </section>
-      </main>
+            <Pagination
+              total={result.total}
+              limit={result.limit}
+              offset={result.offset}
+              basePath="/ats"
+              searchParams={flatSearchParams}
+            />
+          </>
+        ) : null}
+      </PageBody>
       <Footer />
     </>
   );
