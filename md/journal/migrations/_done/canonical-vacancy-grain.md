@@ -1,6 +1,6 @@
 # Migration — position grain and the freshness window
 
-**Status:** planned (nothing implemented, nothing committed)
+**Status:** done — shipped 2026-08-08 as PRs #165 (1a/1b), #166 (rollup reconcile), #167 (1c.0 deferred FKs), #169 (1c.1 `NOT NULL`, MET-128)
 **Started:** 2026-08-07 · **Owner:** repo owner
 **Branch:** `feat/canonical-vacancy-grain` (cut from `main` @ `cee7304`)
 **Decisions:** [ADR-0012](../decisions/0012-position-grain-and-dedup-state.md) ·
