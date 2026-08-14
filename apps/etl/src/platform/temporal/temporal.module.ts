@@ -9,6 +9,7 @@ import { RSS_ACTIVITIES } from "../../01-ingest/rss/activities";
 import { DEDUP_ACTIVITIES } from "../../02-enrich/dedup/activities";
 import { LOADER_ACTIVITIES } from "../../02-enrich/loader/activities";
 import { TELEGRAM_ACTIVITIES } from "../../04-notify/telegram/activities";
+import { BACKUP_ACTIVITIES } from "../backup/activities";
 
 import { appendTsLoaderRule } from "./webpack-workflow.hook";
 
@@ -45,6 +46,7 @@ import { appendTsLoaderRule } from "./webpack-workflow.hook";
               ...LOADER_ACTIVITIES,
               ...DEDUP_ACTIVITIES,
               ...TELEGRAM_ACTIVITIES,
+              ...BACKUP_ACTIVITIES,
             ],
             // Global backpressure across overlapping source workflows. The
             // workflow-level batches bound one run; this bounds the worker.

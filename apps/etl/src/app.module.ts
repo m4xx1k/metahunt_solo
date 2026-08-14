@@ -24,6 +24,7 @@ import { TaxonomyModule } from "./admin/taxonomy/taxonomy.module";
 import { AppController } from "./app.controller";
 import { AnalyticsModule } from "./platform/analytics/analytics.module";
 import { AuthModule } from "./platform/auth/auth.module";
+import { BackupModule } from "./platform/backup/backup.module";
 import { validateEnv } from "./platform/config/env.validation";
 import { HealthController } from "./platform/health/health.controller";
 import { StorageModule } from "./platform/storage/storage.module";
@@ -46,6 +47,7 @@ import { TemporalInfraModule } from "./platform/temporal/temporal.module";
     AuthModule,
     TemporalInfraModule,
     StorageModule,
+    BackupModule,
     RssModule,
     LoaderModule,
     TaxonomyModule,
