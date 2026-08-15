@@ -1,7 +1,7 @@
 # met-118-analytics-page — one analytics page, PostHog-backed
 
 **Linear:** MET-118 (child of MET-114)
-**Status:** spec ready, not started
+**Status:** done — shipped 2026-08-02 as PR #159
 **Written:** 2026-08-01
 
 Build ONE analytics page: metrics with a working time picker, a traffic-source
