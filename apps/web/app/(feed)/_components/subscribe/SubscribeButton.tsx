@@ -20,11 +20,9 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    analytics.subscriptionCreateStarted("feed", params);
     const tab = window.open("about:blank", "_blank");
     try {
       const res = await subscriptionsApi.create(params);
-      analytics.subscriptionHandoffOpened("feed");
       if (tab) {
         tab.opener = null;
         tab.location.href = res.deepLink;

@@ -50,15 +50,6 @@ export const SYSTEM_EMITTED_EVENTS = [
   ANALYTICS_EVENTS.matchScored,
 ] as const;
 
-export const BROWSER_ANALYTICS_EVENTS = [
-  ANALYTICS_EVENTS.landingView,
-  ANALYTICS_EVENTS.landingCtaClicked,
-  ANALYTICS_EVENTS.subscriptionCreateStarted,
-  ANALYTICS_EVENTS.subscriptionHandoffOpened,
-  ANALYTICS_EVENTS.subscriptionCreateFailed,
-] as const;
-
-export type BrowserAnalyticsEventName = (typeof BROWSER_ANALYTICS_EVENTS)[number];
 export type ProductEventSource = DatabaseProductEventSource;
 
 export function posthogEventName(name: string): string {

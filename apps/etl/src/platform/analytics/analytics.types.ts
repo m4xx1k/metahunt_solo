@@ -1,17 +1,9 @@
-import type { BrowserAnalyticsEventName, ProductEventSource } from "./events";
+import type { ProductEventSource } from "./events";
 
 // Shared with the v2 contract in product-analytics.service.ts — the lookups
 // that resolve a subscriber need these before the capture layer sees them.
 export type SubscriptionKind = "feed" | "cv";
 export type OutboundSurface = "web_feed" | "telegram_digest";
-
-export interface BrowserProductEvent {
-  journeyId: string;
-  eventId: string;
-  name: BrowserAnalyticsEventName;
-  occurredAt: Date;
-  properties: Record<string, unknown>;
-}
 
 export interface SubscriptionProductEvent {
   subscriptionId: string;

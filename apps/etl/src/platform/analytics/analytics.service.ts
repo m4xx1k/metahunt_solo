@@ -15,7 +15,6 @@ import {
 } from "./analytics.ports";
 import type {
   BotBlockedEvent,
-  BrowserProductEvent,
   DigestDeliveryFailedEvent,
   DigestEvaluatedEvent,
   DigestSentEvent,
@@ -46,18 +45,6 @@ export class AnalyticsService {
     @Inject(ANALYTICS_SINK) private readonly posthog: AnalyticsSink,
     private readonly productAnalytics: ProductAnalyticsService,
   ) {}
-
-  async browserEvent(event: BrowserProductEvent): Promise<void> {
-    await this.record({
-      journeyId: event.journeyId,
-      isTest: event.properties.is_test === true,
-      name: event.name,
-      source: "browser",
-      dedupeKey: `browser:${event.eventId}`,
-      occurredAt: event.occurredAt,
-      properties: event.properties,
-    });
-  }
 
   aliasJourneyToPerson(journeyId: string, personId: string): void {
     this.posthog.alias(personId, journeyId);

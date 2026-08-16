@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 
 import { SubscribeCta } from "@/features/subscribe/SubscribeCta";
 import { cvApi, type CvIngestResult } from "@/lib/api/cv";
-import { useAnalytics, type AcquisitionAttribution } from "@/lib/analytics/use-analytics";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { buildMatchHref } from "@/lib/match-draft";
@@ -30,7 +30,7 @@ const STEP_TITLES: Record<MatchStep, string> = {
 // The /match onboarding island. Step lives in ?step= (shallow pushState, so
 // browser back walks the flow); the profile state lives here: a stored
 // candidate for the CV path, local picks for the manual path.
-export function MatchStepper({ attribution }: { attribution: AcquisitionAttribution }) {
+export function MatchStepper() {
   const analytics = useAnalytics();
   const saved = useSaved();
   const push = useShallowSearchParams();
@@ -45,13 +45,6 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
   const [manualSkills, setManualSkills] = useState<SkillPick[]>([]);
   const [roleIds, setRoleIds] = useState<Set<string>>(new Set());
   const [excludes, setExcludes] = useState<SkillPick[]>([]);
-
-  const impressionSent = useRef(false);
-  useEffect(() => {
-    if (impressionSent.current) return;
-    impressionSent.current = true;
-    analytics.landingViewed("match", attribution);
-  }, [analytics, attribution]);
 
   // The candidate is component state, so a reload with a stale ?step= lands
   // back on the entry step instead of an empty flow.
@@ -90,7 +83,6 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
     async (file: File) => {
       setUploadError(null);
       setUploading(true);
-      analytics.cvUploadStarted();
       try {
         const info = await cvApi.uploadFile(file);
         analytics.cvUpload(info.reused);
@@ -100,7 +92,6 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
           addedAt: Date.now(),
         });
         setIngest(info);
-        analytics.matchFlowStarted("cv");
         goTo("skills");
       } catch (e) {
         analytics.cvUploadFailed();
@@ -114,9 +105,8 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
 
   const onManual = useCallback(() => {
     setManual(true);
-    analytics.matchFlowStarted("manual");
     goTo("skills");
-  }, [analytics, goTo]);
+  }, [goTo]);
 
   const stepIndex = MATCH_STEPS.findIndex((s) => s.key === step);
   const next = () => goTo(MATCH_STEPS[stepIndex + 1]!.key);
@@ -221,14 +211,12 @@ export function MatchStepper({ attribution }: { attribution: AcquisitionAttribut
               {candidateId == null && manualSkills.length > 0 ? (
                 <div className="flex flex-col gap-2 sm:items-end">
                   <SubscribeCta
-                    landingVariant="match_manual"
                     params={{
                       skillIds: manualSkills.map((s) => s.id),
                       roleIds: [...roleIds],
                       excludedSkillIds: excludes.map((skill) => skill.id),
                       postedWithinDays: 30,
                     }}
-                    attribution={attribution}
                     label="Отримувати нові в Telegram →"
                   />
                   <p className="font-mono text-[10px] text-text-muted">

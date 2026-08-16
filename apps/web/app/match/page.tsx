@@ -4,7 +4,6 @@ import { CheckCircleIcon, EyeSlashIcon, ListChecksIcon } from "@phosphor-icons/r
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
-import { readAcquisitionAttribution } from "@/lib/analytics/attribution";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { tracksApi } from "@/lib/api/tracks";
 import { formatKyivTime } from "@/lib/format";
@@ -32,17 +31,8 @@ export const metadata: Metadata = pageMetadata({
     "Скинь CV або обери навички — побачиш лише вакансії під свій стек, зі збігом на кожній картці.",
 });
 
-export default async function MatchPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const [aggregates, { tracks }, rawSearchParams] = await Promise.all([
-    aggregatesApi.get(),
-    tracksApi.get(),
-    searchParams,
-  ]);
-  const attribution = readAcquisitionAttribution(rawSearchParams);
+export default async function MatchPage() {
+  const [aggregates, { tracks }] = await Promise.all([aggregatesApi.get(), tracksApi.get()]);
 
   const disciplines = tracks
     .filter((t) => t.parentSlug === null && t.count > 0)
@@ -95,7 +85,7 @@ export default async function MatchPage({
         <section className="px-4 py-10 sm:px-6 md:px-12 md:py-14">
           <div className="mx-auto w-full max-w-[880px]">
             <Suspense fallback={null}>
-              <MatchStepper attribution={attribution} />
+              <MatchStepper />
             </Suspense>
           </div>
         </section>

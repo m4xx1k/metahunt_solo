@@ -11,7 +11,6 @@ import {
 
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
-import { readAcquisitionAttribution } from "@/lib/analytics/attribution";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { publicApiBase } from "@/lib/api/client";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
@@ -55,19 +54,9 @@ export async function generateMetadata({
   });
 }
 
-export default async function TrackRadarPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<PageParams>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function TrackRadarPage({ params }: { params: Promise<PageParams> }) {
   const { track: slug } = await params;
-  const [aggregates, { tracks }, rawSearchParams] = await Promise.all([
-    aggregatesApi.get(),
-    tracksApi.get(),
-    searchParams,
-  ]);
+  const [aggregates, { tracks }] = await Promise.all([aggregatesApi.get(), tracksApi.get()]);
 
   const track = tracks.find((t) => t.slug === slug);
   if (!track) notFound();
@@ -83,7 +72,6 @@ export default async function TrackRadarPage({
     page: 1,
     pageSize: PROOF_VACANCY_COUNT,
   });
-  const attribution = readAcquisitionAttribution(rawSearchParams);
   const lastSync = formatKyivTime(aggregates.lastSyncAt);
 
   const label = track.label;
@@ -137,12 +125,7 @@ export default async function TrackRadarPage({
                 </div>
               ) : null}
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-                <SubscribeCta
-                  landingVariant={`radar_${slug}`}
-                  params={subscriptionParams}
-                  attribution={attribution}
-                  trackImpression
-                />
+                <SubscribeCta params={subscriptionParams} />
                 <Link
                   href={`/${slug}`}
                   className="inline-flex items-center justify-center gap-2 px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:text-accent"
@@ -244,11 +227,7 @@ export default async function TrackRadarPage({
             <h2 className="font-display text-3xl font-bold text-text-primary sm:text-4xl">
               Нехай наступна вакансія знайде тебе сама.
             </h2>
-            <SubscribeCta
-              landingVariant={`radar_${slug}`}
-              params={subscriptionParams}
-              attribution={attribution}
-            />
+            <SubscribeCta params={subscriptionParams} />
             <Link href="/privacy" className="text-xs text-text-muted underline hover:text-accent">
               Як MetaHunt працює з даними
             </Link>

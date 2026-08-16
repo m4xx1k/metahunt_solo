@@ -139,22 +139,6 @@ describe("AnalyticsService", () => {
     expect(capture).not.toHaveBeenCalled();
   });
 
-  it("rejects a browser event when the durable ledger write fails", async () => {
-    const service = makeService();
-    record.mockRejectedValueOnce(new Error("database unavailable"));
-
-    await expect(
-      service.browserEvent({
-        journeyId: "11111111-1111-1111-1111-111111111111",
-        eventId: "22222222-2222-2222-2222-222222222222",
-        name: ANALYTICS_EVENTS.landingView,
-        occurredAt: new Date(),
-        properties: {},
-      }),
-    ).rejects.toThrow("database unavailable");
-    expect(capture).not.toHaveBeenCalled();
-  });
-
   it("does not fail a domain flow when journey resolution fails", async () => {
     const service = makeService();
     journeyForSubscription.mockRejectedValueOnce(new Error("database unavailable"));

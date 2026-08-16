@@ -2,7 +2,6 @@ import { Global, Module } from "@nestjs/common";
 
 import { AnalyticsOutboxDispatcher } from "./analytics-outbox.dispatcher";
 import { AnalyticsOutboxStore } from "./analytics-outbox.store";
-import { AnalyticsController } from "./analytics.controller";
 import { ANALYTICS_OUTBOX_WRITER, ANALYTICS_SINK, PRODUCT_EVENT_WRITER } from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
 import { PostHogSink } from "./posthog.sink";
@@ -14,7 +13,6 @@ import { ProductEventStore } from "./product-event.store";
 // PostHog SDK — feature code calls its domain methods, never capture() directly.
 @Global()
 @Module({
-  controllers: [AnalyticsController],
   providers: [
     AnalyticsService,
     ProductAnalyticsService,
