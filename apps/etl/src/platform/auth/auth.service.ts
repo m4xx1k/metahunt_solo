@@ -117,6 +117,7 @@ export class AuthService {
       .update(users)
       .set({ roles: isAdmin ? ["user", "admin"] : ["user"] })
       .where(eq(users.id, userId));
+    this.posthog?.setStaff(userId, isAdmin);
   }
 
   /**

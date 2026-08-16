@@ -105,6 +105,18 @@ export class PostHogClient implements OnModuleDestroy {
     this.alias(personId, previousPersonId);
   }
 
+  // Marks the person as internal so the owner's own clicks can be taken out of
+  // a headline number. Called wherever roles are computed, which is the single
+  // source both stores read.
+  setStaff(personId: string, isStaff: boolean): void {
+    if (!this.client || !personId) return;
+    try {
+      this.client.identify({ distinctId: personId, properties: { is_staff: isStaff } });
+    } catch (error) {
+      this.logger.warn(`analytics staff flag failed: ${describeError(error)}`);
+    }
+  }
+
   capture(distinctId: string, event: string, properties: Record<string, unknown>): void {
     if (!this.client || !distinctId) return;
     try {

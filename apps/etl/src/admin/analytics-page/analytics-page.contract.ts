@@ -61,6 +61,9 @@ export interface AnalyticsPagePerson {
   activeSubscriptions: number;
   firstSubscriptionAt: string | null;
   telegramLinked: boolean;
+  // Us, not a user. Derived from users.roles — the same source that sets
+  // `is_staff` on the PostHog person, so both stores agree on who is internal.
+  isStaff: boolean;
   // PostHog side — null when the query client is unavailable.
   firstEventAt: string | null;
   lastEventAt: string | null;

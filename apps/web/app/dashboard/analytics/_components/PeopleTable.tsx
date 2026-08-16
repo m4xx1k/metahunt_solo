@@ -39,7 +39,14 @@ function PersonIdentity({ row }: { row: AnalyticsPagePerson }) {
   const googleLogin = row.providers.includes("google");
   return (
     <div className="min-w-0 w-[18rem] max-w-full">
-      <p className="truncate font-medium text-text-primary">{row.displayName}</p>
+      <p className="truncate font-medium text-text-primary">
+        {row.displayName}
+        {row.isStaff ? (
+          <span className="ml-2 align-middle font-mono text-2xs uppercase text-text-muted">
+            staff
+          </span>
+        ) : null}
+      </p>
       <div className="mt-1 flex items-center gap-2 overflow-hidden text-2xs">
         {row.telegramUsername ? (
           <a

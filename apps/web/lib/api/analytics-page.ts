@@ -67,6 +67,8 @@ export interface AnalyticsPagePerson {
   activeSubscriptions: number;
   firstSubscriptionAt: string | null;
   telegramLinked: boolean;
+  /** Us, not a user — from users.roles, the same source PostHog's is_staff reads. */
+  isStaff: boolean;
   // PostHog side — null when the personal API key is unavailable.
   firstEventAt: string | null;
   lastEventAt: string | null;
