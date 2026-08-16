@@ -44,46 +44,73 @@ export class ProductAnalyticsService implements OnModuleDestroy {
     });
   }
 
-  accountCreated(userId: string, provider: Provider): void {
-    this.capture(userId, "account_created", { provider });
+  accountCreated(personId: string, provider: Provider): void {
+    this.capture(personId, "account_created", { provider }, { has_account: true });
   }
 
-  signedIn(userId: string, provider: Provider): void {
-    this.capture(userId, "signed_in", { provider });
+  signedIn(personId: string, provider: Provider): void {
+    this.capture(personId, "signed_in", { provider });
   }
 
-  subscriptionCreated(userId: string, subscriptionKind: SubscriptionKind): void {
-    this.capture(userId, "subscription_created", { subscription_kind: subscriptionKind });
+  subscriptionCreated(personId: string, subscriptionKind: SubscriptionKind): void {
+    this.capture(
+      personId,
+      "subscription_created",
+      { subscription_kind: subscriptionKind },
+      { subscription_kind: subscriptionKind, is_subscriber: true },
+    );
   }
 
-  digestSent(userId: string, subscriptionKind: SubscriptionKind): void {
-    this.capture(userId, "digest_sent", { subscription_kind: subscriptionKind });
+  digestSent(personId: string, subscriptionKind: SubscriptionKind): void {
+    this.capture(
+      personId,
+      "digest_sent",
+      { subscription_kind: subscriptionKind },
+      { subscription_kind: subscriptionKind, is_subscriber: true },
+    );
   }
 
-  vacancyOutboundClicked(userId: string, surface: OutboundSurface): void {
-    this.capture(userId, "vacancy_outbound_clicked", { surface });
+  vacancyOutboundClicked(personId: string, surface: OutboundSurface): void {
+    this.capture(personId, "vacancy_outbound_clicked", { surface });
   }
 
-  subscriptionDeactivated(userId: string, reason: DeactivationReason): void {
-    this.capture(userId, "subscription_deactivated", { reason });
+  subscriptionDeactivated(personId: string, reason: DeactivationReason): void {
+    this.capture(personId, "subscription_deactivated", { reason }, { is_subscriber: false });
+  }
+
+  // Merges the person a Telegram subscription carried before an account claimed
+  // it into the account's person. PostHog cannot re-stitch retroactively, so
+  // this has to be emitted at claim time or the two people stay two people.
+  mergePerson(personId: string, previousPersonId: string): void {
+    if (!this.client || !personId || !previousPersonId || personId === previousPersonId) return;
+    try {
+      this.client.alias({ distinctId: personId, alias: previousPersonId });
+    } catch (error) {
+      this.logger.warn(`Analytics person merge failed: ${describeError(error)}`);
+    }
   }
 
   private capture(
-    userId: string,
+    personId: string,
     event: ProductAnalyticsEvent,
     properties: Record<string, string>,
+    // Written onto the person profile, which is how a Telegram-only subscriber
+    // becomes a person PostHog can segment rather than a bare distinct id.
+    personProperties?: Record<string, string | boolean>,
   ): void {
-    if (!this.client || !isUuid(userId)) return;
+    if (!this.client || !personId) return;
     try {
       this.client.capture({
-        distinctId: userId,
+        distinctId: personId,
         event,
-        properties: { ...properties, is_test: this.isTest },
+        properties: {
+          ...properties,
+          is_test: this.isTest,
+          ...(personProperties ? { $set: personProperties } : {}),
+        },
       });
     } catch (error) {
-      this.logger.warn(
-        `Analytics v2 capture failed: event=${event} error=${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.warn(`Analytics v2 capture failed: event=${event} ${describeError(error)}`);
     }
   }
 
@@ -92,6 +119,6 @@ export class ProductAnalyticsService implements OnModuleDestroy {
   }
 }
 
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+function describeError(error: unknown): string {
+  return `error=${error instanceof Error ? error.message : String(error)}`;
 }

@@ -75,7 +75,7 @@ export class ProductEventStore implements ProductEventWriter {
 
   async subscriberForSubscription(subscriptionId: string): Promise<SubscriberIdentity | null> {
     const [subscription] = await this.db
-      .select({ userId: subscriptions.userId, candidateId: subscriptions.candidateId })
+      .select({ personId: subscriptions.personId, candidateId: subscriptions.candidateId })
       .from(subscriptions)
       .where(eq(subscriptions.id, subscriptionId));
     return toSubscriber(subscription);
@@ -85,7 +85,7 @@ export class ProductEventStore implements ProductEventWriter {
     // A journey can carry zero or many subscriptions; only an unambiguous one
     // names a person, so two rows resolve to nobody rather than to a guess.
     const rows = await this.db
-      .select({ userId: subscriptions.userId, candidateId: subscriptions.candidateId })
+      .select({ personId: subscriptions.personId, candidateId: subscriptions.candidateId })
       .from(subscriptions)
       .where(eq(subscriptions.journeyId, journeyId))
       .limit(2);
@@ -94,9 +94,9 @@ export class ProductEventStore implements ProductEventWriter {
 }
 
 function toSubscriber(row?: {
-  userId: string | null;
+  personId: string | null;
   candidateId: string | null;
 }): SubscriberIdentity | null {
-  if (!row?.userId) return null;
-  return { userId: row.userId, subscriptionKind: row.candidateId ? "cv" : "feed" };
+  if (!row?.personId) return null;
+  return { personId: row.personId, subscriptionKind: row.candidateId ? "cv" : "feed" };
 }

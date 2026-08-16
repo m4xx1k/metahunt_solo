@@ -153,7 +153,7 @@ export class SentNotificationsService {
       const [subscription] = await tx
         .select({
           journeyId: subscriptions.journeyId,
-          userId: subscriptions.userId,
+          personId: subscriptions.personId,
           candidateId: subscriptions.candidateId,
         })
         .from(subscriptions)
@@ -179,15 +179,15 @@ export class SentNotificationsService {
           ...(completesDelivery ? { status: "completed" as const, completedAt: sql`now()` } : {}),
         })
         .where(eq(digestDeliveries.id, delivery.id));
-      if (!completesDelivery || !subscription?.userId) return null;
+      if (!completesDelivery || !subscription) return null;
       return {
-        userId: subscription.userId,
+        personId: subscription.personId,
         subscriptionKind: subscription.candidateId ? "cv" : "feed",
       } satisfies SubscriberIdentity;
     });
     // Captured after commit: a rolled-back delivery must not report a digest
-    // that was never sent. An unlinked subscription emits nothing.
+    // that was never sent.
     if (subscriber)
-      this.productAnalytics.digestSent(subscriber.userId, subscriber.subscriptionKind);
+      this.productAnalytics.digestSent(subscriber.personId, subscriber.subscriptionKind);
   }
 }

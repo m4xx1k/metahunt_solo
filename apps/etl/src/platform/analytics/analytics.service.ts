@@ -273,15 +273,15 @@ export class AnalyticsService {
   }
 
   // The v2 half of an outbound click. Silence is the correct output for an
-  // unlinked subscription or an ambiguous journey: a stand-in id is what turned
-  // every click into its own person in the old project.
+  // ambiguous journey: a stand-in id is what turned every click into its own
+  // person in the old project.
   private async captureOutboundClick(
     resolve: () => Promise<SubscriberIdentity | null>,
     surface: OutboundSurface,
   ): Promise<void> {
     try {
       const subscriber = await resolve();
-      if (subscriber) this.productAnalytics.vacancyOutboundClicked(subscriber.userId, surface);
+      if (subscriber) this.productAnalytics.vacancyOutboundClicked(subscriber.personId, surface);
     } catch (error) {
       this.logger.warn(
         `outbound click identity lookup failed: surface=${surface} error=${

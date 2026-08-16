@@ -219,10 +219,10 @@ describe("AnalyticsService", () => {
     );
   });
 
-  it("attributes a digest tap to the subscription's user", async () => {
+  it("attributes a digest tap to the subscription's person", async () => {
     const service = makeService();
     subscriberForSubscription.mockResolvedValue({
-      userId: "33333333-3333-4333-8333-333333333333",
+      personId: "33333333-3333-4333-8333-333333333333",
       subscriptionKind: "feed",
     });
 
@@ -234,7 +234,7 @@ describe("AnalyticsService", () => {
     );
   });
 
-  it("emits nothing for a digest tap on a subscription with no linked user", async () => {
+  it("emits nothing for a digest tap on a subscription that no longer exists", async () => {
     const service = makeService();
 
     await service.applyClicked("vacancy-1", "subscription-1");
@@ -246,7 +246,7 @@ describe("AnalyticsService", () => {
   it("attributes a feed tap when the journey resolves to a single subscriber", async () => {
     const service = makeService();
     subscriberForJourney.mockResolvedValue({
-      userId: "44444444-4444-4444-8444-444444444444",
+      personId: "44444444-4444-4444-8444-444444444444",
       subscriptionKind: "cv",
     });
 

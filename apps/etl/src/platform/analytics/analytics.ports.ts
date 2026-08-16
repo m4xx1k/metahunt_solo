@@ -20,10 +20,11 @@ export interface ProductEventWrite {
   properties: Record<string, unknown>;
 }
 
-// The v2 identity of a subscriber: `users.id` or nothing. A subscription with
-// no linked user is not yet a person and must never be given a stand-in id.
+// The identity of a subscriber: `subscriptions.person_id`. Every subscription
+// has one from birth, and claiming an account rewrites it to `users.id` — so a
+// Telegram-only subscriber is a person on day one, not on the day they sign in.
 export interface SubscriberIdentity {
-  userId: string;
+  personId: string;
   subscriptionKind: SubscriptionKind;
 }
 

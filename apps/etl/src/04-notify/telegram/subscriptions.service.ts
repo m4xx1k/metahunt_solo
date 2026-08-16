@@ -68,14 +68,17 @@ export class SubscriptionsService {
         candidateId: options.candidateId ?? null,
         userId: options.userId,
       })
-      .returning({ id: subscriptions.id });
+      .returning({ id: subscriptions.id, personId: subscriptions.personId });
 
     this.logger.log(
       `create sub ${created.id}: candidateId=${options.candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
     );
     // DB transaction is complete at this point. V2 capture is explicitly
     // best-effort and cannot turn a successful subscription into a failure.
-    this.productAnalytics.subscriptionCreated(options.userId, options.candidateId ? "cv" : "feed");
+    this.productAnalytics.subscriptionCreated(
+      created.personId,
+      options.candidateId ? "cv" : "feed",
+    );
 
     return created.id;
   }
@@ -275,7 +278,7 @@ export class SubscriptionsService {
         .returning({
           id: subscriptions.id,
           journeyId: subscriptions.journeyId,
-          userId: subscriptions.userId,
+          personId: subscriptions.personId,
         });
 
       for (const stoppedSubscription of stopped) {
@@ -297,8 +300,7 @@ export class SubscriptionsService {
       return stopped;
     });
     for (const subscription of stopped) {
-      if (subscription.userId)
-        this.productAnalytics.subscriptionDeactivated(subscription.userId, "user");
+      this.productAnalytics.subscriptionDeactivated(subscription.personId, "user");
     }
     return stopped.length;
   }
@@ -324,7 +326,7 @@ export class SubscriptionsService {
         .returning({
           id: subscriptions.id,
           journeyId: subscriptions.journeyId,
-          userId: subscriptions.userId,
+          personId: subscriptions.personId,
         });
 
       if (!stopped) return null;
@@ -339,7 +341,7 @@ export class SubscriptionsService {
       }
       return stopped;
     });
-    if (stopped?.userId) this.productAnalytics.subscriptionDeactivated(stopped.userId, "user");
+    if (stopped) this.productAnalytics.subscriptionDeactivated(stopped.personId, "user");
     return stopped !== null;
   }
 

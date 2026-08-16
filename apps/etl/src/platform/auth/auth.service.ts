@@ -558,16 +558,19 @@ export class AuthService {
     telegramId: string,
     db: DrizzleExecutor,
   ): Promise<void> {
-    await db
-      .update(subscriptions)
-      .set({ userId, personId: userId })
-      .where(
-        and(
-          eq(subscriptions.chatId, telegramId),
-          isNull(subscriptions.userId),
-          isNull(subscriptions.candidateId),
-        ),
-      );
+    const unclaimed = and(
+      eq(subscriptions.chatId, telegramId),
+      isNull(subscriptions.userId),
+      isNull(subscriptions.candidateId),
+    );
+    // Read the person ids the subscriptions carried before the claim rewrites
+    // them: PostHog cannot stitch two people together retroactively, so the
+    // merge has to be emitted at exactly this moment or never.
+    const claimed = await db
+      .select({ personId: subscriptions.personId })
+      .from(subscriptions)
+      .where(unclaimed);
+    await db.update(subscriptions).set({ userId, personId: userId }).where(unclaimed);
     await db
       .update(analyticsJourneys)
       .set({ personId: userId })
@@ -580,5 +583,8 @@ export class AuthService {
             .where(and(eq(subscriptions.userId, userId), isNull(subscriptions.candidateId))),
         ),
       );
+    for (const personId of new Set(claimed.map((row) => row.personId))) {
+      this.productAnalytics?.mergePerson(userId, personId);
+    }
   }
 }

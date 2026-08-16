@@ -38,10 +38,15 @@ export class AnalyticsOutboxStore implements AnalyticsOutboxWriter {
         properties: Record<string, unknown>;
         occurred_at: string | Date;
       }>(sql`
-        SELECT outbox.id, outbox.journey_id, journey.person_id, journey.is_test, outbox.subscription_id,
+        SELECT outbox.id, outbox.journey_id,
+               COALESCE(sub.person_id, journey.person_id) AS person_id,
+               journey.is_test, outbox.subscription_id,
                outbox.name, outbox.source, outbox.dedupe_key, outbox.properties, outbox.occurred_at
         FROM analytics_outbox outbox
         JOIN analytics_journeys journey ON journey.id = outbox.journey_id
+        -- The subscription's person outranks the journey's: it survives an
+        -- account claim, where a per-journey id becomes a permanent stranger.
+        LEFT JOIN subscriptions sub ON sub.id = outbox.subscription_id
         WHERE outbox.processed_at IS NULL
         ORDER BY outbox.created_at ASC
         LIMIT ${limit}
