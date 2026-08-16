@@ -148,7 +148,8 @@ export class MeService {
       }
       throw error;
     }
-    return this.db.transaction(async (tx) => {
+    let deactivatedPersonId: string | null = null;
+    const patched = await this.db.transaction(async (tx) => {
       const [existing] = await tx
         .select({
           id: subscriptions.id,
@@ -201,9 +202,12 @@ export class MeService {
       } else {
         void this.analytics.unsubscribed({ method: "account", subscriptionId: id });
       }
-      if (!patch.isActive) this.posthog.subscriptionDeactivated(existing.personId, "user");
+      if (!patch.isActive) deactivatedPersonId = existing.personId;
       return true;
     });
+    // Captured after commit: a rolled-back change must not be reported.
+    if (deactivatedPersonId) this.posthog.subscriptionDeactivated(deactivatedPersonId, "user");
+    return patched;
   }
 
   async deleteSubscription(userId: string, id: string): Promise<boolean> {

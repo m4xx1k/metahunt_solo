@@ -352,7 +352,7 @@ export class SubscriptionsService {
    * set — unlike an explicit unsubscribe, which must stay off.
    */
   async deactivateForBlock(chatId: string): Promise<number> {
-    return this.db.transaction(async (tx) => {
+    const blocked = await this.db.transaction(async (tx) => {
       const blocked = await tx
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "blocked" })
@@ -364,7 +364,6 @@ export class SubscriptionsService {
         });
 
       for (const sub of blocked) {
-        this.posthog.subscriptionDeactivated(sub.personId, "blocked");
         const props = {
           method: "chat_member" as const,
           subscriptionId: sub.id,
@@ -376,8 +375,11 @@ export class SubscriptionsService {
           void this.analytics.botBlocked(props);
         }
       }
-      return blocked.length;
+      return blocked;
     });
+    // Captured after commit: a rolled-back deactivation must not be reported.
+    for (const sub of blocked) this.posthog.subscriptionDeactivated(sub.personId, "blocked");
+    return blocked.length;
   }
 
   /** Unblock restores only what the block (or bounced deliveries) turned off. */
@@ -418,7 +420,7 @@ export class SubscriptionsService {
    * the poller missed (downtime, chats deleted without a block).
    */
   async recordUnreachableDelivery(id: string): Promise<void> {
-    return this.db.transaction(async (tx) => {
+    const deactivated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(subscriptions)
         .set({ unreachableCount: sql`${subscriptions.unreachableCount} + 1` })
@@ -428,8 +430,7 @@ export class SubscriptionsService {
           journeyId: subscriptions.journeyId,
           personId: subscriptions.personId,
         });
-      if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return;
-      this.posthog.subscriptionDeactivated(row.personId, "unreachable");
+      if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return null;
 
       await tx
         .update(subscriptions)
@@ -445,7 +446,10 @@ export class SubscriptionsService {
       } else {
         void this.analytics.botBlocked(props);
       }
+      return row.personId;
     });
+    // Captured after commit: a rolled-back deactivation must not be reported.
+    if (deactivated) this.posthog.subscriptionDeactivated(deactivated, "unreachable");
   }
 
   /** A send got through — the chat is reachable, restart the bounce counter. */

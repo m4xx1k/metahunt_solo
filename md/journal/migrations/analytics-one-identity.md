@@ -80,6 +80,12 @@ risk miscounting historic rows. Not worth it for a table with a scheduled death.
 lying to our own data. The rule instead: leave bot filtering off on product insights. Web Analytics
 excludes server events, which is what Web Analytics is for.
 
+**`journeyId` merges the person, it is not stored on the row.** The controller reads it now, and
+the create path aliases the browser journey into the subscription's person — which is the half that
+answers "did this visit become a subscriber". Persisting it into `subscriptions.journey_id` would
+need the `analytics_journeys` row to exist first (it is a foreign key, and the browser no longer
+creates journey rows), and a subscription create must never fail on analytics.
+
 **Browser events kept vs dropped (Rule 4 applied).** Kept: outcomes an outsider watching URLs and
 clicks cannot infer — upload results, feedback sentiment, login failures, match-flow completion.
 Dropped: clicks autocapture already sees (`lens_switch`, `*_started`) and account lifecycle the
