@@ -2,6 +2,8 @@
 // (POST /subscriptions). Source of truth:
 // apps/etl/src/telegram/subscriptions.contract.ts. Hand-mirrored per ADR-0005.
 
+import { getOrCreateJourneyId } from "@/lib/analytics/journey";
+
 import { apiPost } from "./client";
 import type { FitTier } from "./ranking";
 import type {
@@ -41,9 +43,12 @@ export interface CreateSubscriptionResponse {
 }
 
 export const subscriptionsApi = {
+  // The journey id ties this subscriber back to the anonymous visit that
+  // created them — without it the web and Telegram halves stay two people.
   create: (params: SubscriptionParams | CvMatchParams, candidateId?: string) =>
     apiPost<CreateSubscriptionResponse>(candidateId ? "/subscriptions/cv" : "/subscriptions", {
       params,
       candidateId,
+      journeyId: getOrCreateJourneyId(),
     }),
 };

@@ -4,27 +4,24 @@ import { ConfigService } from "@nestjs/config";
 import { PostHog } from "posthog-node";
 
 import type { OutboundSurface, SubscriptionKind } from "./analytics.types";
+import type { ProductAnalyticsEvent } from "./events";
 
 type Provider = "telegram" | "google";
 type DeactivationReason = "user" | "blocked" | "unreachable";
 
-// This is the v2 contract. Keep it intentionally small: payload construction
-// is not exposed to product features, which prevents accidental PII fields.
-export const PRODUCT_ANALYTICS_EVENTS = [
-  "$pageview",
-  "account_created",
-  "signed_in",
-  "subscription_created",
-  "digest_sent",
-  "vacancy_outbound_clicked",
-  "subscription_deactivated",
-] as const;
+export interface ClickedVacancy {
+  vacancyId: string;
+  source?: string;
+  company?: string;
+}
 
-type ProductAnalyticsEvent = (typeof PRODUCT_ANALYTICS_EVENTS)[number];
-
+// The only PostHog client in the process. Product code calls the verbs below,
+// which keeps payload construction — and therefore accidental PII — out of
+// feature modules. Raw capture() exists for AnalyticsService's personless
+// events, which describe the system rather than a human.
 @Injectable()
-export class ProductAnalyticsService implements OnModuleDestroy {
-  private readonly logger = new Logger(ProductAnalyticsService.name);
+export class PostHogClient implements OnModuleDestroy {
+  private readonly logger = new Logger(PostHogClient.name);
   private readonly client?: PostHog;
   private readonly isTest: boolean;
 
@@ -45,15 +42,15 @@ export class ProductAnalyticsService implements OnModuleDestroy {
   }
 
   accountCreated(personId: string, provider: Provider): void {
-    this.capture(personId, "account_created", { provider }, { has_account: true });
+    this.captureProduct(personId, "account_created", { provider }, { has_account: true });
   }
 
   signedIn(personId: string, provider: Provider): void {
-    this.capture(personId, "signed_in", { provider });
+    this.captureProduct(personId, "signed_in", { provider });
   }
 
   subscriptionCreated(personId: string, subscriptionKind: SubscriptionKind): void {
-    this.capture(
+    this.captureProduct(
       personId,
       "subscription_created",
       { subscription_kind: subscriptionKind },
@@ -61,8 +58,19 @@ export class ProductAnalyticsService implements OnModuleDestroy {
     );
   }
 
+  // The Telegram chat is bound and the subscription is live. Nothing about this
+  // act is visible from a URL — it happens inside Telegram.
+  telegramLinked(personId: string, subscriptionKind: SubscriptionKind): void {
+    this.captureProduct(
+      personId,
+      "telegram_linked",
+      { subscription_kind: subscriptionKind },
+      { subscription_kind: subscriptionKind, is_subscriber: true },
+    );
+  }
+
   digestSent(personId: string, subscriptionKind: SubscriptionKind): void {
-    this.capture(
+    this.captureProduct(
       personId,
       "digest_sent",
       { subscription_kind: subscriptionKind },
@@ -70,27 +78,52 @@ export class ProductAnalyticsService implements OnModuleDestroy {
     );
   }
 
-  vacancyOutboundClicked(personId: string, surface: OutboundSurface): void {
-    this.capture(personId, "vacancy_outbound_clicked", { surface });
+  vacancyOutboundClicked(
+    personId: string,
+    surface: OutboundSurface,
+    vacancy: ClickedVacancy,
+  ): void {
+    this.captureProduct(personId, "vacancy_outbound_clicked", {
+      surface,
+      vacancy_id: vacancy.vacancyId,
+      ...(vacancy.source ? { source: vacancy.source } : {}),
+      ...(vacancy.company ? { company: vacancy.company } : {}),
+    });
   }
 
+  // One verb for every way a subscription stops, told apart by `reason`:
+  // an explicit stop, a blocked bot, and a chat that stopped answering.
   subscriptionDeactivated(personId: string, reason: DeactivationReason): void {
-    this.capture(personId, "subscription_deactivated", { reason }, { is_subscriber: false });
+    this.captureProduct(personId, "subscription_deactivated", { reason }, { is_subscriber: false });
   }
 
   // Merges the person a Telegram subscription carried before an account claimed
   // it into the account's person. PostHog cannot re-stitch retroactively, so
   // this has to be emitted at claim time or the two people stay two people.
   mergePerson(personId: string, previousPersonId: string): void {
-    if (!this.client || !personId || !previousPersonId || personId === previousPersonId) return;
+    if (!personId || !previousPersonId || personId === previousPersonId) return;
+    this.alias(personId, previousPersonId);
+  }
+
+  capture(distinctId: string, event: string, properties: Record<string, unknown>): void {
+    if (!this.client || !distinctId) return;
     try {
-      this.client.alias({ distinctId: personId, alias: previousPersonId });
+      this.client.capture({ distinctId, event, properties });
     } catch (error) {
-      this.logger.warn(`Analytics person merge failed: ${describeError(error)}`);
+      this.logger.warn(`analytics capture failed: event=${event} ${describeError(error)}`);
     }
   }
 
-  private capture(
+  alias(distinctId: string, alias: string): void {
+    if (!this.client) return;
+    try {
+      this.client.alias({ distinctId, alias });
+    } catch (error) {
+      this.logger.warn(`analytics alias failed: ${describeError(error)}`);
+    }
+  }
+
+  private captureProduct(
     personId: string,
     event: ProductAnalyticsEvent,
     properties: Record<string, string>,
@@ -98,20 +131,11 @@ export class ProductAnalyticsService implements OnModuleDestroy {
     // becomes a person PostHog can segment rather than a bare distinct id.
     personProperties?: Record<string, string | boolean>,
   ): void {
-    if (!this.client || !personId) return;
-    try {
-      this.client.capture({
-        distinctId: personId,
-        event,
-        properties: {
-          ...properties,
-          is_test: this.isTest,
-          ...(personProperties ? { $set: personProperties } : {}),
-        },
-      });
-    } catch (error) {
-      this.logger.warn(`Analytics v2 capture failed: event=${event} ${describeError(error)}`);
-    }
+    this.capture(personId, event, {
+      ...properties,
+      is_test: this.isTest,
+      ...(personProperties ? { $set: personProperties } : {}),
+    });
   }
 
   async onModuleDestroy(): Promise<void> {

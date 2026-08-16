@@ -12,6 +12,7 @@ import { CandidateLoaderService } from "../../03-discovery/cv/candidate-loader.s
 import type { JwtUser } from "../../platform/auth/auth.types";
 import { CurrentUser } from "../../platform/auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { isUuid } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 
 import {
@@ -63,7 +64,10 @@ export class SubscriptionsController {
       );
     }
 
-    const id = await this.subscriptions.create(params, { userId: user.userId });
+    const id = await this.subscriptions.create(params, {
+      userId: user.userId,
+      journeyId: browserJourneyId(body),
+    });
     return createSubscriptionResponse(username, id);
   }
 
@@ -102,7 +106,15 @@ export class SubscriptionsController {
     const id = await this.subscriptions.create(params, {
       candidateId,
       userId: user.userId,
+      journeyId: browserJourneyId(body),
     });
     return createSubscriptionResponse(username, id);
   }
+}
+
+// The journey the browser has been carrying all along. It was a public field
+// the controller never read, which is why the web funnel could not chain.
+function browserJourneyId(body: Partial<CreateSubscriptionRequest>): string | undefined {
+  const journeyId = body?.journeyId;
+  return typeof journeyId === "string" && isUuid(journeyId) ? journeyId : undefined;
 }

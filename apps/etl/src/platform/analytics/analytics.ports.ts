@@ -4,7 +4,6 @@ import type { SubscriptionKind } from "./analytics.types";
 
 export const PRODUCT_EVENT_WRITER = Symbol("PRODUCT_EVENT_WRITER");
 export const ANALYTICS_OUTBOX_WRITER = Symbol("ANALYTICS_OUTBOX_WRITER");
-export const ANALYTICS_SINK = Symbol("ANALYTICS_SINK");
 
 export type AnalyticsExecutor = Pick<DrizzleDB, "insert">;
 
@@ -39,9 +38,4 @@ export interface ProductEventWriter {
 export interface AnalyticsOutboxWriter {
   enqueue(event: ProductEventWrite, executor?: AnalyticsExecutor): Promise<void>;
   drain(limit: number): Promise<ProductEventWrite[]>;
-}
-
-export interface AnalyticsSink {
-  capture(distinctId: string, event: string, properties: Record<string, unknown>): void;
-  alias(distinctId: string, alias: string): void;
 }

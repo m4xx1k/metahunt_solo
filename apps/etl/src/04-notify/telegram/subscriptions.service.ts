@@ -8,7 +8,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
-import { ProductAnalyticsService } from "../../platform/analytics/product-analytics.service";
+import { PostHogClient } from "../../platform/analytics/posthog.client";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { SubscriptionCriteriaService } from "../../platform/subscriptions/subscription-criteria.service";
 import { createSubscriptionName } from "../../platform/subscriptions/subscription-name";
@@ -41,7 +41,7 @@ export class SubscriptionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
-    private readonly productAnalytics: ProductAnalyticsService,
+    private readonly posthog: PostHogClient,
     private readonly criteria: SubscriptionCriteriaService,
   ) {}
 
@@ -73,12 +73,11 @@ export class SubscriptionsService {
     this.logger.log(
       `create sub ${created.id}: candidateId=${options.candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
     );
-    // DB transaction is complete at this point. V2 capture is explicitly
-    // best-effort and cannot turn a successful subscription into a failure.
-    this.productAnalytics.subscriptionCreated(
-      created.personId,
-      options.candidateId ? "cv" : "feed",
-    );
+    // DB write is complete at this point. Analytics is explicitly best-effort
+    // and cannot turn a successful subscription into a failure.
+    void this.analytics.subscriptionCreated(created.id, params);
+    this.posthog.subscriptionCreated(created.personId, options.candidateId ? "cv" : "feed");
+    if (options.journeyId) this.analytics.aliasJourneyToPerson(options.journeyId, created.personId);
 
     return created.id;
   }
@@ -198,6 +197,8 @@ export class SubscriptionsService {
     }
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
+    void this.analytics.telegramLinked(token, "linked");
+    this.posthog.telegramLinked(ownerId, pending.candidateId ? "cv" : "feed");
 
     return "linked";
   }
@@ -300,7 +301,7 @@ export class SubscriptionsService {
       return stopped;
     });
     for (const subscription of stopped) {
-      this.productAnalytics.subscriptionDeactivated(subscription.personId, "user");
+      this.posthog.subscriptionDeactivated(subscription.personId, "user");
     }
     return stopped.length;
   }
@@ -341,7 +342,7 @@ export class SubscriptionsService {
       }
       return stopped;
     });
-    if (stopped) this.productAnalytics.subscriptionDeactivated(stopped.personId, "user");
+    if (stopped) this.posthog.subscriptionDeactivated(stopped.personId, "user");
     return stopped !== null;
   }
 
@@ -356,9 +357,14 @@ export class SubscriptionsService {
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "blocked" })
         .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
-        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+        .returning({
+          id: subscriptions.id,
+          journeyId: subscriptions.journeyId,
+          personId: subscriptions.personId,
+        });
 
       for (const sub of blocked) {
+        this.posthog.subscriptionDeactivated(sub.personId, "blocked");
         const props = {
           method: "chat_member" as const,
           subscriptionId: sub.id,
@@ -420,8 +426,10 @@ export class SubscriptionsService {
         .returning({
           unreachableCount: subscriptions.unreachableCount,
           journeyId: subscriptions.journeyId,
+          personId: subscriptions.personId,
         });
       if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return;
+      this.posthog.subscriptionDeactivated(row.personId, "unreachable");
 
       await tx
         .update(subscriptions)

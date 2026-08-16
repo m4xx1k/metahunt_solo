@@ -7,7 +7,7 @@ import type { DigestDelivery, DigestProfileType, DrizzleDB } from "@metahunt/dat
 
 import type { SubscriberIdentity } from "../../platform/analytics/analytics.ports";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
-import { ProductAnalyticsService } from "../../platform/analytics/product-analytics.service";
+import { PostHogClient } from "../../platform/analytics/posthog.client";
 
 const { digestDeliveries, sentNotifications, subscriptions, vacancies } = schema;
 
@@ -32,7 +32,7 @@ export class SentNotificationsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
-    private readonly productAnalytics: ProductAnalyticsService,
+    private readonly posthog: PostHogClient,
   ) {}
 
   /**
@@ -187,7 +187,6 @@ export class SentNotificationsService {
     });
     // Captured after commit: a rolled-back delivery must not report a digest
     // that was never sent.
-    if (subscriber)
-      this.productAnalytics.digestSent(subscriber.personId, subscriber.subscriptionKind);
+    if (subscriber) this.posthog.digestSent(subscriber.personId, subscriber.subscriptionKind);
   }
 }

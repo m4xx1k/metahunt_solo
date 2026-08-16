@@ -4,11 +4,9 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 
 import {
   ANALYTICS_OUTBOX_WRITER,
-  ANALYTICS_SINK,
   PRODUCT_EVENT_WRITER,
   type AnalyticsExecutor,
   type AnalyticsOutboxWriter,
-  type AnalyticsSink,
   type ProductEventWrite,
   type ProductEventWriter,
   type SubscriberIdentity,
@@ -23,8 +21,8 @@ import type {
   SubscriptionProductEvent,
   UnsubscribedEvent,
 } from "./analytics.types";
-import { ANALYTICS_EVENTS, posthogEventName } from "./events";
-import { ProductAnalyticsService } from "./product-analytics.service";
+import { ANALYTICS_EVENTS } from "./events";
+import { PostHogClient, type ClickedVacancy } from "./posthog.client";
 import {
   botBlockedEvent,
   digestSentEvent,
@@ -35,6 +33,9 @@ import {
   withInsertId,
 } from "./product-event.factory";
 
+// Domain-shaped writes to the Postgres ledger, plus the PostHog verbs that
+// belong to the same act. Every early return here logs: an analytics path that
+// drops an event in silence is how a dashboard ends up confidently wrong.
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
@@ -42,52 +43,26 @@ export class AnalyticsService {
   constructor(
     @Inject(PRODUCT_EVENT_WRITER) private readonly events: ProductEventWriter,
     @Inject(ANALYTICS_OUTBOX_WRITER) private readonly outbox: AnalyticsOutboxWriter,
-    @Inject(ANALYTICS_SINK) private readonly posthog: AnalyticsSink,
-    private readonly productAnalytics: ProductAnalyticsService,
+    private readonly posthog: PostHogClient,
   ) {}
 
+  // A browser journey and the person who owns it are the same human. Called
+  // when a subscription is created from the web, which is the only moment the
+  // two ids are known together.
   aliasJourneyToPerson(journeyId: string, personId: string): void {
-    this.posthog.alias(personId, journeyId);
+    this.posthog.mergePerson(personId, journeyId);
   }
 
   aliasPerson(sourcePersonId: string, targetPersonId: string): void {
-    this.posthog.alias(targetPersonId, sourcePersonId);
+    this.posthog.mergePerson(targetPersonId, sourcePersonId);
   }
 
-  async subscriptionCreated(
-    subscriptionId: string,
-    journeyId: string,
-    params: unknown,
-  ): Promise<void> {
-    await this.enqueue(subscriptionCreatedEvent(subscriptionId, journeyId, params));
-  }
-
-  async enqueueSubscriptionCreated(
-    executor: AnalyticsExecutor,
-    subscriptionId: string,
-    journeyId: string,
-    params: unknown,
-  ): Promise<void> {
-    await this.outbox.enqueue(
-      withInsertId(subscriptionCreatedEvent(subscriptionId, journeyId, params)),
-      executor,
-    );
+  async subscriptionCreated(subscriptionId: string, params: unknown): Promise<void> {
+    await this.enqueueSubscriptionEvent(subscriptionCreatedEvent(subscriptionId, params));
   }
 
   async telegramLinked(subscriptionId: string, result: string): Promise<void> {
     await this.enqueueSubscriptionEvent(telegramLinkedEvent(subscriptionId, result));
-  }
-
-  async enqueueTelegramLinked(
-    executor: AnalyticsExecutor,
-    subscriptionId: string,
-    journeyId: string,
-    result: string,
-  ): Promise<void> {
-    await this.outbox.enqueue(
-      withInsertId({ ...telegramLinkedEvent(subscriptionId, result), journeyId }),
-      executor,
-    );
   }
 
   async activationValueShown(
@@ -154,23 +129,32 @@ export class AnalyticsService {
     });
   }
 
+  // One click, one PostHog verb (`vacancy_outbound_clicked`) told apart by
+  // `surface`. The ledger still keeps its own two names until it retires.
   async applyClicked(
-    vacancyId: string,
+    vacancy: ClickedVacancy,
     subscriptionId?: string,
     journeyId?: string,
   ): Promise<void> {
+    const properties = {
+      vacancy_id: vacancy.vacancyId,
+      ...(vacancy.source ? { source: vacancy.source } : {}),
+      ...(vacancy.company ? { company: vacancy.company } : {}),
+    };
     if (subscriptionId) {
-      const clickId = randomUUID();
       await this.enqueueSubscriptionEvent({
         subscriptionId,
         name: ANALYTICS_EVENTS.digestLinkClicked,
         source: "api",
-        dedupeKey: `digest_link_clicked:${clickId}`,
-        properties: { vacancy_id: vacancyId, surface: "telegram_digest" },
+        // A click is not idempotent by construction — two taps are two clicks.
+        // The key exists to make one call's retries one row, nothing more.
+        dedupeKey: `digest_link_clicked:${randomUUID()}`,
+        properties: { ...properties, surface: "telegram_digest" },
       });
       await this.captureOutboundClick(
         () => this.events.subscriberForSubscription(subscriptionId),
         "telegram_digest",
+        vacancy,
       );
       return;
     }
@@ -184,7 +168,7 @@ export class AnalyticsService {
           name: ANALYTICS_EVENTS.applyClicked,
           source: "browser",
           dedupeKey: `apply_clicked:${randomUUID()}`,
-          properties: { vacancy_id: vacancyId, surface: "web_feed" },
+          properties: { ...properties, surface: "web_feed" },
         });
       } catch {
         // Already logged by record(); swallow so the redirect (already sent
@@ -193,11 +177,13 @@ export class AnalyticsService {
       await this.captureOutboundClick(
         () => this.events.subscriberForJourney(journeyId),
         "web_feed",
+        vacancy,
+        journeyId,
       );
       return;
     }
     this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundClicked, {
-      vacancy_id: vacancyId,
+      ...properties,
       surface: "web_feed",
       $process_person_profile: false,
     });
@@ -259,21 +245,28 @@ export class AnalyticsService {
     );
   }
 
-  // The v2 half of an outbound click. Silence is the correct output for an
-  // ambiguous journey: a stand-in id is what turned every click into its own
+  // The PostHog half of an outbound click. A journey with two subscriptions
+  // names nobody, so it falls back to the journey's own person rather than
+  // guessing — and a stand-in id is what turned every click into its own
   // person in the old project.
   private async captureOutboundClick(
     resolve: () => Promise<SubscriberIdentity | null>,
     surface: OutboundSurface,
+    vacancy: ClickedVacancy,
+    journeyId?: string,
   ): Promise<void> {
     try {
       const subscriber = await resolve();
-      if (subscriber) this.productAnalytics.vacancyOutboundClicked(subscriber.personId, surface);
+      const personId =
+        subscriber?.personId ?? (journeyId ? await this.events.personForJourney(journeyId) : null);
+      if (!personId) {
+        this.logger.warn(`outbound click has no person: surface=${surface}`);
+        return;
+      }
+      this.posthog.vacancyOutboundClicked(personId, surface, vacancy);
     } catch (error) {
       this.logger.warn(
-        `outbound click identity lookup failed: surface=${surface} error=${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `outbound click identity lookup failed: surface=${surface} ${describeError(error)}`,
       );
     }
   }
@@ -281,7 +274,13 @@ export class AnalyticsService {
   private async enqueueSubscriptionEvent(event: SubscriptionProductEvent): Promise<void> {
     try {
       const journeyId = await this.events.journeyForSubscription(event.subscriptionId);
-      if (journeyId) await this.enqueue({ ...event, journeyId });
+      if (!journeyId) {
+        this.logger.warn(
+          `product event dropped, no journey: event=${event.name} subscription=${event.subscriptionId}`,
+        );
+        return;
+      }
+      await this.enqueue({ ...event, journeyId });
     } catch (error) {
       this.logPersistenceFailure(event.name, event.subscriptionId, error);
     }
@@ -296,18 +295,12 @@ export class AnalyticsService {
   }
 
   private async record(event: ProductEventWrite): Promise<void> {
-    const durableEvent = withInsertId(event);
     try {
-      await this.events.record(durableEvent);
+      await this.events.record(withInsertId(event));
     } catch (error) {
       this.logPersistenceFailure(event.name, event.journeyId, error);
       throw error;
     }
-    const personId = await this.events.personForJourney(event.journeyId);
-    this.posthog.capture(personId ?? event.journeyId, posthogEventName(event.name), {
-      ...durableEvent.properties,
-      is_test: durableEvent.isTest ?? false,
-    });
   }
 
   private logPersistenceFailure(eventName: string, correlationId: string, error: unknown): void {
@@ -316,4 +309,8 @@ export class AnalyticsService {
       error instanceof Error ? error.stack : undefined,
     );
   }
+}
+
+function describeError(error: unknown): string {
+  return `error=${error instanceof Error ? error.message : String(error)}`;
 }

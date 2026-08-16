@@ -2,6 +2,9 @@ import type { SubscriptionParams } from "./subscriptions.contract";
 
 export interface CreateSubscriptionOptions {
   candidateId?: string;
+  // The browser journey that led here, so the anonymous web visit and the
+  // subscriber it turned into are one person rather than two.
+  journeyId?: string;
   // A subscription is product state for an account. The public API supplies
   // this from its JWT; internal callers must do the same explicitly.
   userId: string;

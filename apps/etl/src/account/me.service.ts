@@ -6,6 +6,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../platform/analytics/analytics.service";
+import { PostHogClient } from "../platform/analytics/posthog.client";
 import {
   InvalidSubscriptionCriteriaError,
   SubscriptionCriteriaService,
@@ -32,6 +33,7 @@ export class MeService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly criteria: SubscriptionCriteriaService,
     private readonly analytics: AnalyticsService,
+    private readonly posthog: PostHogClient,
   ) {}
 
   async listCvs(userId: string): Promise<MeCv[]> {
@@ -153,6 +155,7 @@ export class MeService {
           candidateId: subscriptions.candidateId,
           isActive: subscriptions.isActive,
           journeyId: subscriptions.journeyId,
+          personId: subscriptions.personId,
         })
         .from(subscriptions)
         .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
@@ -198,6 +201,7 @@ export class MeService {
       } else {
         void this.analytics.unsubscribed({ method: "account", subscriptionId: id });
       }
+      if (!patch.isActive) this.posthog.subscriptionDeactivated(existing.personId, "user");
       return true;
     });
   }

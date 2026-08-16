@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import { countObjectKeys } from "../shared/object-properties";
 
 import type { ProductEventWrite } from "./analytics.ports";
@@ -14,11 +12,9 @@ import { ANALYTICS_EVENTS } from "./events";
 
 export function subscriptionCreatedEvent(
   subscriptionId: string,
-  journeyId: string,
   params: unknown,
-): ProductEventWrite {
+): SubscriptionProductEvent {
   return {
-    journeyId,
     subscriptionId,
     name: ANALYTICS_EVENTS.subscriptionCreated,
     source: "api",
@@ -60,7 +56,7 @@ export function unsubscribedEvent(props: UnsubscribedEvent): SubscriptionProduct
     subscriptionId: props.subscriptionId,
     name: ANALYTICS_EVENTS.unsubscribed,
     source: props.method === "account" ? "api" : "telegram",
-    dedupeKey: `unsubscribed:${props.subscriptionId}:${randomUUID()}`,
+    dedupeKey: `unsubscribed:${props.subscriptionId}:${utcDay()}`,
     properties: {
       method: props.method,
       ...(props.count === undefined ? {} : { count: props.count }),
@@ -76,7 +72,7 @@ export function subscriptionReactivatedEvent(
     subscriptionId,
     name: ANALYTICS_EVENTS.subscriptionReactivated,
     source: method === "account" ? "api" : "telegram",
-    dedupeKey: `subscription_reactivated:${subscriptionId}:${randomUUID()}`,
+    dedupeKey: `subscription_reactivated:${subscriptionId}:${utcDay()}`,
     properties: { method },
   };
 }
@@ -86,12 +82,19 @@ export function botBlockedEvent(props: BotBlockedEvent): SubscriptionProductEven
     subscriptionId: props.subscriptionId,
     name: ANALYTICS_EVENTS.botBlocked,
     source: "telegram",
-    dedupeKey: `bot_blocked:${props.subscriptionId}:${randomUUID()}`,
+    dedupeKey: `bot_blocked:${props.subscriptionId}:${utcDay()}`,
     properties: {
       method: props.method,
       ...(props.count === undefined ? {} : { count: props.count }),
     },
   };
+}
+
+// A subscription can only be stopped, restarted or blocked once on a given
+// day — it has to pass through the opposite state first. That makes the day a
+// safe dedupe grain, where a fresh UUID made the guarantee decorative.
+function utcDay(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function withInsertId(event: ProductEventWrite): ProductEventWrite {

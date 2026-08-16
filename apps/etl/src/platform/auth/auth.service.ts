@@ -20,7 +20,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
 
 import { AnalyticsService } from "../analytics/analytics.service";
-import { ProductAnalyticsService } from "../analytics/product-analytics.service";
+import { PostHogClient } from "../analytics/posthog.client";
 
 import type { AuthProvider, AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
@@ -71,7 +71,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly analytics?: AnalyticsService,
-    private readonly productAnalytics?: ProductAnalyticsService,
+    private readonly posthog?: PostHogClient,
   ) {
     this.adminIds = new Set(
       (this.config.get<string>("ADMIN_TELEGRAM_IDS") ?? "")
@@ -329,8 +329,8 @@ export class AuthService {
   // issueSession through TelegramLoginService, while Google calls this before
   // issuing its session; both producers have explicit account identity.
   captureAuthV2(userId: string, provider: AuthProvider, isNewUser: boolean): void {
-    if (isNewUser) this.productAnalytics?.accountCreated(userId, provider);
-    this.productAnalytics?.signedIn(userId, provider);
+    if (isNewUser) this.posthog?.accountCreated(userId, provider);
+    this.posthog?.signedIn(userId, provider);
   }
 
   // The guard calls this on every authenticated request, so the identity list
@@ -584,7 +584,7 @@ export class AuthService {
         ),
       );
     for (const personId of new Set(claimed.map((row) => row.personId))) {
-      this.productAnalytics?.mergePerson(userId, personId);
+      this.posthog?.mergePerson(userId, personId);
     }
   }
 }
