@@ -45,9 +45,9 @@ The code gates are met in test; the two live gates need production traffic after
 |---|---|
 | Phase 0 — one dashboard, three tiles, data | ✅ verified (digests + clicks return rows) |
 | Phase 1 — full digest coverage, two taps one person | ⏳ needs a day of production traffic |
-| Phase 2 — anonymous visit produces a pageview, login merges it | ⏳ needs a real browser after deploy |
+| Phase 2 — anonymous visit produces a pageview, login merges it | ✅ verified 2026-08-17: 8 pageviews, two distinct ids merged into one person, `signed_in` on the same person |
 | Phase 3 — one definition and one live emitter per name | ✅ `pnpm analytics:catalog`, reachability check verified against a planted unreachable event |
-| Phase 4 — seven days of agreement | ⛔ cannot start before deploy |
+| Phase 4 — seven days of agreement | ⏳ window opens 2026-08-17 (deployed); run the runbook daily |
 | Phase 5 — unplug an emitter, hear about it within a day | ✅ alert armed (daily, fires below one digest) |
 
 ## Decisions
@@ -98,6 +98,7 @@ server owns (`signed_in`, `account_created`).
 
 ## Links
 
+- Runbook (daily check + the parity gate): `md/runbook/analytics-ledger-parity.md`
 - Prior tracker: `md/journal/migrations/analytics-real-metahunt-cutover.md`
 - Audit: Metahunt Analytics Teardown (artifact, 2026-08-15)
 - PR: …
