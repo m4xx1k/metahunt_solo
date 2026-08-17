@@ -37,3 +37,6 @@ backups/
 
 # business/session docs — never commit
 .private/
+
+# Local screenshot scratch (visual checks, never a deliverable)
+scripts/.screenshots/

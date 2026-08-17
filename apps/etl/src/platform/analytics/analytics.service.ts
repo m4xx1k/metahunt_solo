@@ -182,9 +182,14 @@ export class AnalyticsService {
       );
       return;
     }
+    // A click we cannot name. The event is real and worth counting; the id is
+    // not, so it is flagged and kept out of every per-person metric — a
+    // synthetic distinct id counted as a human is how "unique clickers" ends
+    // up higher than the number of people who exist.
     this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundClicked, {
       ...properties,
       surface: "web_feed",
+      is_anonymous: true,
       $process_person_profile: false,
     });
   }
