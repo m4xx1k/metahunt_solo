@@ -8,9 +8,20 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { b } from "../../baml_client";
 import { joinNamesByType } from "../../platform/shared/node-names";
+import { sha256 } from "../dedup/content-fingerprint";
 
-import type { ExtractionResult, ExtractionUsage, VacancyExtractor } from "./vacancy-extractor";
+import {
+  BAML_PRODUCTION_SOURCE_HASH,
+  BAML_RUNTIME_VERSION,
+} from "./baml-production-identity.generated";
+import type {
+  ExtractionIdentity,
+  ExtractionResult,
+  ExtractionUsage,
+  VacancyExtractor,
+} from "./vacancy-extractor";
 
+/** A dashboard label only; spec_hash is the correctness boundary. */
 export const PROMPT_VERSION = 3;
 
 const TAXONOMY_CACHE_TTL_MS = 60_000;
@@ -53,6 +64,37 @@ export class BamlVacancyExtractor implements VacancyExtractor {
         },
       };
     }
+  }
+
+  async identity(text: string): Promise<ExtractionIdentity> {
+    const taxonomy = await this.loadTaxonomy();
+    const provider = "openai-generic";
+    const model = process.env.DEEPSEEK_MODEL ?? "unknown";
+    const taxonomyHash = sha256(
+      [taxonomy.roles, taxonomy.domains, taxonomy.skills]
+        .flatMap((part) => part.split(", ").filter(Boolean))
+        .sort((a, b) => a.localeCompare(b))
+        .join("\n"),
+    );
+    const specHash = sha256(
+      [
+        "ExtractVacancy",
+        BAML_PRODUCTION_SOURCE_HASH,
+        BAML_RUNTIME_VERSION,
+        provider,
+        model,
+        taxonomyHash,
+      ].join("|"),
+    );
+    return {
+      specHash,
+      inputHash: sha256(text),
+      provider,
+      model,
+      bamlVersion: BAML_RUNTIME_VERSION,
+      bamlSourceHash: BAML_PRODUCTION_SOURCE_HASH,
+      taxonomyHash,
+    };
   }
 
   private async loadTaxonomy(): Promise<{

@@ -8,6 +8,7 @@ import {
   WorkFormat,
 } from "../../baml_client";
 import type { ExtractedVacancy } from "../../baml_client";
+import { sha256 } from "../dedup/content-fingerprint";
 
 import type { ExtractionResult, VacancyExtractor } from "./vacancy-extractor";
 
@@ -34,6 +35,20 @@ const PLACEHOLDER: ExtractedVacancy = {
 
 @Injectable()
 export class PlaceholderVacancyExtractor implements VacancyExtractor {
+  async identity(text: string) {
+    const inputHash = sha256(text);
+    const specHash = sha256("ExtractVacancy|placeholder|none|0|placeholder|none");
+    return {
+      specHash,
+      inputHash,
+      provider: "none",
+      model: "none",
+      bamlVersion: "0",
+      bamlSourceHash: "placeholder",
+      taxonomyHash: "none",
+    };
+  }
+
   async extract(): Promise<ExtractionResult> {
     return {
       data: PLACEHOLDER,

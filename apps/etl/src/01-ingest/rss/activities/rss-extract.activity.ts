@@ -6,7 +6,10 @@ import { Activity, ActivityMethod } from "nestjs-temporal-core";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { cleanDescription } from "../../../02-enrich/dedup/sanitize";
+import {
+  contentFingerprint,
+  normalizedVacancyContent,
+} from "../../../02-enrich/dedup/content-fingerprint";
 import {
   VACANCY_EXTRACTOR,
   type VacancyExtractor,
@@ -32,11 +35,12 @@ export class RssExtractActivity {
     // RSS descriptions arrive as HTML (tags + entities); strip to plain text so
     // the LLM extracts skills/role/domain from content, not markup noise. Same
     // cleaner the dedup pipeline uses on this field.
-    const text = `Title: ${record.title}\n\n${cleanDescription(record.description)}`;
+    const text = normalizedVacancyContent(record.title, record.description);
     const result = await this.extractor.extract(text);
     const sidecar = {
       _v: result.meta.promptVersion,
       _usage: result.meta.usage,
+      ...(result.cache ? { _extraction: result.cache } : {}),
     };
 
     if (!result.data) {
@@ -50,6 +54,7 @@ export class RssExtractActivity {
         .set({
           extractedData: { ...sidecar, _error: error },
           extractedAt: new Date(),
+          contentFingerprint: contentFingerprint(record.title, record.description),
         })
         .where(eq(schema.rssRecords.id, recordId));
       throw new Error(error);
@@ -60,6 +65,7 @@ export class RssExtractActivity {
       .set({
         extractedData: { ...result.data, ...sidecar },
         extractedAt: new Date(),
+        contentFingerprint: contentFingerprint(record.title, record.description),
       })
       .where(eq(schema.rssRecords.id, recordId));
   }

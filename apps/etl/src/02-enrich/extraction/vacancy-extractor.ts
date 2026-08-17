@@ -19,10 +19,22 @@ export type ExtractionResult = {
     usage: ExtractionUsage;
     error?: string;
   };
+  cache?: ExtractionIdentity & { artifactId: string; hit: boolean };
+};
+
+export type ExtractionIdentity = {
+  specHash: string;
+  inputHash: string;
+  provider: string;
+  model: string;
+  bamlVersion: string;
+  bamlSourceHash: string;
+  taxonomyHash: string;
 };
 
 export interface VacancyExtractor {
   extract(text: string): Promise<ExtractionResult>;
+  identity(text: string): Promise<ExtractionIdentity>;
 }
 
 export type { ExtractedVacancy };

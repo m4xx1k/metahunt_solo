@@ -1,6 +1,7 @@
 export * from "./sources";
 export * from "./rss-ingests";
 export * from "./rss-records";
+export * from "./extraction-artifacts";
 export * from "./companies";
 export * from "./company-identifiers";
 export * from "./nodes";

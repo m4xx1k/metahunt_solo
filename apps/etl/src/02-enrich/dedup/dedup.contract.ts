@@ -43,6 +43,8 @@ export interface SalaryRange {
 // members and on vacancies that have not been resolved yet.
 
 export interface DedupReason {
+  /** Exact normalized content bypasses only role/seniority ANN gates. */
+  method: "exact_content" | "ann";
   /** Cosine similarity at decision time (1 - distance). */
   similarity: number;
   /**

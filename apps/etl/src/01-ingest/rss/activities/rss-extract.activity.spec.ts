@@ -11,6 +11,7 @@ import {
 import type { ExtractedVacancy } from "../../../baml_client";
 
 import { RssExtractActivity } from "./rss-extract.activity";
+import { contentFingerprint } from "../../../02-enrich/dedup/content-fingerprint";
 
 const RECORD_ID = "33333333-3333-3333-3333-333333333333";
 const SOURCE_ID = "11111111-1111-1111-1111-111111111111";
@@ -92,6 +93,7 @@ function buildDbMocks(record: unknown) {
 describe("RssExtractActivity", () => {
   const extractor: jest.Mocked<VacancyExtractor> = {
     extract: jest.fn(),
+    identity: jest.fn(),
   };
 
   async function bootstrap(record: unknown) {
@@ -129,6 +131,9 @@ describe("RssExtractActivity", () => {
       _usage: sampleUsage,
     });
     expect(setArg.extractedAt).toBeInstanceOf(Date);
+    expect(setArg.contentFingerprint).toBe(
+      contentFingerprint(baseRecord.title, baseRecord.description),
+    );
   });
 
   it("strips HTML/entities from the description before extracting", async () => {
@@ -162,6 +167,9 @@ describe("RssExtractActivity", () => {
       _error: "BAML extraction: boom",
     });
     expect(setArg.extractedAt).toBeInstanceOf(Date);
+    expect(setArg.contentFingerprint).toBe(
+      contentFingerprint(baseRecord.title, baseRecord.description),
+    );
   });
 
   it("writes a fallback error marker when the extractor omits an error message", async () => {

@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
 import { BamlVacancyExtractor } from "./baml.extractor";
+import { CachedVacancyExtractor, RAW_VACANCY_EXTRACTOR } from "./cached-vacancy-extractor";
 import { PlaceholderVacancyExtractor } from "./placeholder.extractor";
 import { VACANCY_EXTRACTOR } from "./vacancy-extractor";
 
@@ -13,7 +14,7 @@ const VALID_PROVIDERS: readonly Provider[] = ["baml", "placeholder"] as const;
     BamlVacancyExtractor,
     PlaceholderVacancyExtractor,
     {
-      provide: VACANCY_EXTRACTOR,
+      provide: RAW_VACANCY_EXTRACTOR,
       inject: [ConfigService, BamlVacancyExtractor, PlaceholderVacancyExtractor],
       useFactory: (
         config: ConfigService,
@@ -30,6 +31,8 @@ const VALID_PROVIDERS: readonly Provider[] = ["baml", "placeholder"] as const;
         return provider === "baml" ? baml : placeholder;
       },
     },
+    CachedVacancyExtractor,
+    { provide: VACANCY_EXTRACTOR, useExisting: CachedVacancyExtractor },
   ],
   exports: [VACANCY_EXTRACTOR],
 })

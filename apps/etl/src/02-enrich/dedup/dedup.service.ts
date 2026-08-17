@@ -79,6 +79,7 @@ interface VacancyForResolve {
   embeddingModel: string;
   storedEmbeddingModel: string | null;
   embeddingSourceHash: string | null;
+  contentFingerprint: string | null;
 }
 
 type Transaction = Parameters<Parameters<DrizzleDB["transaction"]>[0]>[0];
@@ -298,6 +299,11 @@ export class DedupService {
       throw new Error(`Pending vacancy ${v.id} has no position group`);
     }
 
+    // This happens before ANN's role/seniority gates. Those gates remain
+    // untouched below for every non-exact semantic candidate.
+    const exact = await this.resolveExactContent(v);
+    if (exact) return exact;
+
     const windowStart = new Date(v.publishedAt.getTime() - PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
     const windowEnd = new Date(v.publishedAt.getTime() + PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
     const embeddingLiteral = sql`${vectorLiteral(v.embedding)}::vector(${sql.raw(String(EMBEDDING_DIMENSIONS))})`;
@@ -430,6 +436,7 @@ export class DedupService {
       (companyMatch || skillJaccard >= SKILL_JACCARD_GOLD || titleJaccard >= TITLE_JACCARD_GOLD);
 
     const reason: DedupReason = {
+      method: "ann",
       similarity: best.similarity,
       matchedAgainstVacancyId: best.id,
       prefilterMatches: {
@@ -471,6 +478,7 @@ export class DedupService {
       unique_vacancy_id: string | null;
       embedding_model: string | null;
       embedding_source_hash: string | null;
+      content_fingerprint: string | null;
     }>(sql`
       SELECT
         v.id,
@@ -485,8 +493,10 @@ export class DedupService {
         ${requiredSkillIdsSubquery(sql`v.id`)} AS required_skill_ids,
         v.unique_vacancy_id,
         v.embedding_model,
-        v.embedding_source_hash
+        v.embedding_source_hash,
+        record.content_fingerprint
       FROM vacancies v
+      JOIN rss_records record ON record.id = v.last_rss_record_id
       WHERE v.id = ${vacancyId}
     `);
     const r = res.rows[0];
@@ -506,7 +516,83 @@ export class DedupService {
       embeddingModel: r.embedding_model ?? this.openai.model,
       storedEmbeddingModel: r.embedding_model,
       embeddingSourceHash: r.embedding_source_hash,
+      contentFingerprint: r.content_fingerprint,
     };
+  }
+
+  private async resolveExactContent(
+    v: VacancyForResolve,
+  ): Promise<{ action: "joined"; uniqueVacancyId: string } | null> {
+    if (!v.contentFingerprint) return null;
+    const start = new Date(v.publishedAt.getTime() - PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
+    const end = new Date(v.publishedAt.getTime() + PREFILTER_DATE_WINDOW_DAYS * 86_400_000);
+    const matches = await this.db.execute<{
+      id: string;
+      unique_vacancy_id: string;
+      company_id: string | null;
+      published_at: Date;
+    }>(sql`
+      SELECT cand.id, cand.unique_vacancy_id, cand.company_id, cand.published_at
+      FROM vacancies cand
+      JOIN rss_records record ON record.id = cand.last_rss_record_id
+      WHERE cand.id != ${v.id}
+        AND cand.unique_vacancy_id IS NOT NULL
+        AND cand.published_at BETWEEN ${start} AND ${end}
+        AND record.content_fingerprint = ${v.contentFingerprint}
+      ORDER BY cand.published_at ASC, cand.id ASC
+    `);
+    let candidate: (typeof matches.rows)[number] | undefined;
+    for (const match of matches.rows) {
+      if (v.companyId !== null && match.company_id !== null && v.companyId !== match.company_id) {
+        await this.reportExactConflict(v.contentFingerprint, v.id, match.id);
+        continue;
+      }
+      candidate = match;
+      break;
+    }
+    if (!candidate) return null;
+    const reason: DedupReason = {
+      method: "exact_content",
+      similarity: 1,
+      matchedAgainstVacancyId: candidate.id,
+      prefilterMatches: {
+        role: null,
+        seniority: null,
+        workFormat: null,
+        company: triBool(v.companyId, candidate.company_id),
+        dateWindowDays: Math.round(
+          Math.abs(
+            (v.publishedAt.getTime() - toDate(candidate.published_at).getTime()) / 86_400_000,
+          ),
+        ),
+      },
+      confidence: "gold",
+      corroboration: {
+        skillJaccard: 1,
+        titleJaccard: 1,
+        companyMatch: v.companyId !== null && v.companyId === candidate.company_id,
+      },
+      embeddingModel: v.embeddingModel,
+      decidedAt: new Date().toISOString(),
+    };
+    if (!(await this.joinGroup(v, candidate.unique_vacancy_id, reason))) return null;
+    return { action: "joined", uniqueVacancyId: candidate.unique_vacancy_id };
+  }
+
+  private async reportExactConflict(
+    fingerprint: string,
+    vacancyId: string,
+    conflictingVacancyId: string,
+  ): Promise<void> {
+    const [left, right] =
+      vacancyId < conflictingVacancyId
+        ? [vacancyId, conflictingVacancyId]
+        : [conflictingVacancyId, vacancyId];
+    await this.db.execute(sql`
+      INSERT INTO exact_content_conflicts (content_fingerprint, vacancy_id, conflicting_vacancy_id)
+      VALUES (${fingerprint}, ${left}, ${right})
+      ON CONFLICT (content_fingerprint, vacancy_id, conflicting_vacancy_id) DO NOTHING
+    `);
   }
 
   private async resolveInOwnGroup(v: VacancyForResolve): Promise<boolean> {
