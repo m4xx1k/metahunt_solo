@@ -197,6 +197,8 @@ describe("AnalyticsService", () => {
       expect.objectContaining({
         vacancy_id: "vacancy-1",
         surface: "web_feed",
+        // Flagged so no per-person metric can mistake the id for a human.
+        is_anonymous: true,
         $process_person_profile: false,
       }),
     );

@@ -86,6 +86,11 @@ answers "did this visit become a subscriber". Persisting it into `subscriptions.
 need the `analytics_journeys` row to exist first (it is a foreign key, and the browser no longer
 creates journey rows), and a subscription create must never fail on analytics.
 
+**An unnameable click is an event, not a person.** A `/go` hit with no subscription and no
+journey still captures — the volume is real — but with `is_anonymous: true`, and every per-person
+metric filters it out. Rule 3 forbids a synthetic identity, and the reason is arithmetic: the day
+this shipped, 15 anonymous clicks read as 15 unique clickers on a product with three browser people.
+
 **Browser events kept vs dropped (Rule 4 applied).** Kept: outcomes an outsider watching URLs and
 clicks cannot infer — upload results, feedback sentiment, login failures, match-flow completion.
 Dropped: clicks autocapture already sees (`lens_switch`, `*_started`) and account lifecycle the
