@@ -158,7 +158,6 @@ export function validateEnv(config: RawEnv): RawEnv {
   const posthogPersonalApiKey = asString(config.POSTHOG_PERSONAL_API_KEY) ?? "";
   const posthogPrivateHost = asString(config.POSTHOG_PRIVATE_HOST) ?? "";
   const posthogProjectId = asString(config.POSTHOG_PROJECT_ID) ?? "";
-  const posthogArchiveApiKey = asString(config.POSTHOG_ARCHIVE_API_KEY) ?? "";
   if (posthogPrivateHost.length > 0) {
     assertUrl("POSTHOG_PRIVATE_HOST", posthogPrivateHost);
   }
@@ -206,7 +205,6 @@ export function validateEnv(config: RawEnv): RawEnv {
     POSTHOG_PERSONAL_API_KEY: posthogPersonalApiKey,
     POSTHOG_PRIVATE_HOST: posthogPrivateHost,
     POSTHOG_PROJECT_ID: posthogProjectId,
-    POSTHOG_ARCHIVE_API_KEY: posthogArchiveApiKey,
     JWT_SECRET: jwtSecret,
     ADMIN_TELEGRAM_IDS: adminTelegramIds,
     GOOGLE_CLIENT_ID: googleClientId,
