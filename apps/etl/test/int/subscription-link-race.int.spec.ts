@@ -7,7 +7,7 @@ import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 import { SubscriptionsService } from "../../src/04-notify/telegram/subscriptions.service";
 
-import { dormantProductAnalytics, noopAnalytics } from "./analytics";
+import { dormantPostHog, noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 
 const { subscriptions } = schema;
@@ -51,7 +51,7 @@ describe("SubscriptionsService.linkChat", () => {
     const service = new SubscriptionsService(
       db,
       analytics as never,
-      dormantProductAnalytics(),
+      dormantPostHog(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
 
@@ -85,7 +85,7 @@ describe("SubscriptionsService.linkChat", () => {
     const service = new SubscriptionsService(
       db,
       analytics as never,
-      dormantProductAnalytics(),
+      dormantPostHog(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
 
@@ -117,7 +117,7 @@ describe("SubscriptionsService.create", () => {
     const service = new SubscriptionsService(
       db,
       noopAnalytics(db),
-      dormantProductAnalytics(),
+      dormantPostHog(),
       new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
     );
 

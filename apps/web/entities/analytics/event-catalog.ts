@@ -14,6 +14,8 @@ export interface AnalyticsEventDoc {
   actor: EventActor;
   sink: EventSink;
   means: string;
+  /** No producer left in the code — only rows written before it was retired. */
+  historic?: true;
 }
 
 // `countsAsLastAction` is derived, not declared: the roster's "last action" is
@@ -25,11 +27,26 @@ export function countsAsLastAction(event: AnalyticsEventDoc): boolean {
 
 export const EVENT_CATALOG: AnalyticsEventDoc[] = [
   {
+    name: "$pageview",
+    label: "pageview",
+    actor: "user",
+    sink: "posthog-only",
+    means: "opened a page — posthog-js captures it, no product code involved",
+  },
+  {
+    name: "subscription_deactivated",
+    label: "sub stopped",
+    actor: "user",
+    sink: "posthog-only",
+    means: "a subscription stopped — `reason` says whether it was a stop, a block or a dead chat",
+  },
+  {
     name: "landing_view",
     label: "landing view",
     actor: "user",
     sink: "ledger",
     means: "opened the marketing landing",
+    historic: true,
   },
   {
     name: "landing_cta_clicked",
@@ -37,6 +54,7 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     sink: "ledger",
     means: "tapped the landing call to action",
+    historic: true,
   },
   {
     name: "subscription_create_started",
@@ -44,6 +62,7 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     sink: "ledger",
     means: "submitted the subscribe form",
+    historic: true,
   },
   {
     name: "subscription_handoff_opened",
@@ -51,13 +70,14 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     sink: "ledger",
     means: "left for Telegram to finish subscribing",
+    historic: true,
   },
   {
     name: "subscription_create_failed",
     label: "sub failed",
     actor: "user",
-    sink: "ledger",
-    means: "the subscribe request errored",
+    sink: "posthog-only",
+    means: "the subscribe request errored (ledger rows are historic)",
   },
   {
     name: "subscription_created",
@@ -151,20 +171,6 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     means: "a CV was ranked against the feed",
   },
   {
-    name: "lens_switch",
-    label: "lens switch",
-    actor: "user",
-    sink: "posthog-only",
-    means: "toggled between the market and CV lens",
-  },
-  {
-    name: "cv_upload_started",
-    label: "cv upload started",
-    actor: "user",
-    sink: "posthog-only",
-    means: "picked a CV file",
-  },
-  {
     name: "cv_upload_completed",
     label: "cv uploaded",
     actor: "user",
@@ -177,13 +183,6 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     sink: "posthog-only",
     means: "the CV could not be parsed",
-  },
-  {
-    name: "telegram_login_started",
-    label: "tg login started",
-    actor: "user",
-    sink: "posthog-only",
-    means: "began signing in with Telegram",
   },
   {
     name: "telegram_login_cancelled",
@@ -254,13 +253,6 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     sink: "posthog-only",
     means: "tapped an AI helper we have not built",
-  },
-  {
-    name: "match_flow_started",
-    label: "match started",
-    actor: "user",
-    sink: "posthog-only",
-    means: "entered the /match onboarding",
   },
   {
     name: "match_flow_completed",

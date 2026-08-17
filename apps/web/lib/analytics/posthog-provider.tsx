@@ -4,12 +4,17 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { type PropsWithChildren, useEffect } from "react";
 
-import { persistFirstTouch } from "@/lib/analytics/attribution";
-import { PageViewTracker } from "@/lib/analytics/page-view-tracker";
+import {
+  currentReferrerDomain,
+  persistFirstTouch,
+  readAcquisitionAttribution,
+  resolveAttribution,
+} from "@/lib/analytics/attribution";
+import { redactCvLinks } from "@/lib/analytics/redact-cv-links";
 
 // Client-side product analytics. It is dormant without NEXT_PUBLIC_POSTHOG_KEY.
-// Browser events stay anonymous until successful auth identifies with users.id;
-// this app never persists a browser journey or PostHog person ID in product DB.
+// Browser events stay anonymous until successful auth identifies with users.id,
+// which merges the anonymous history onto the person.
 export function PostHogProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     // Runs on every page's first load, independent of the PostHog key: the
@@ -24,29 +29,26 @@ export function PostHogProvider({ children }: PropsWithChildren) {
       // Real UI host so toolbar / "view in PostHog" links resolve correctly.
       ui_host: "https://eu.posthog.com",
       person_profiles: "identified_only",
-      capture_pageview: false,
+      // On load and on every client-side navigation. Pages and clicks are
+      // PostHog's job; custom events are for facts it cannot see.
+      capture_pageview: "history_change",
       // Anonymous outbound clicks have no users.id, so the server cannot name
       // them. Autocapture gives them an anonymous distinct_id that identify()
       // merges into the person on login — the one path that reaches them.
       autocapture: true,
-      // The shareable ?cv=<uuid> is a bearer capability — redact it from
-      // auto-captured URL properties so it never lands in analytics.
-      sanitize_properties: (props) => {
-        for (const k of ["$current_url", "$referrer"]) {
-          const v = props[k];
-          if (typeof v === "string") {
-            props[k] = v.replace(/([?&]cv=)[^&#]+/gi, "$1redacted");
-          }
-        }
-        return props;
-      },
+      sanitize_properties: redactCvLinks,
     });
+    // Acquisition rides along on every event as a super property: internal
+    // navigation drops the query string, and one channel per person is the
+    // question anyway.
+    const attribution = resolveAttribution({
+      ...readAcquisitionAttribution(
+        Object.fromEntries(new URLSearchParams(window.location.search)),
+      ),
+      ...currentReferrerDomain(),
+    });
+    if (Object.keys(attribution).length > 0) posthog.register(attribution);
   }, []);
 
-  return (
-    <PHProvider client={posthog}>
-      <PageViewTracker />
-      {children}
-    </PHProvider>
-  );
+  return <PHProvider client={posthog}>{children}</PHProvider>;
 }

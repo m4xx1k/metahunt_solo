@@ -10,19 +10,20 @@ const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 const BOT_UA = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 const LINK = "https://example.com/apply";
+const TARGET = { link: LINK, source: "djinni", company: "acme" };
 
 describe("RedirectController", () => {
-  const getApplyLink = jest.fn();
+  const getApplyTarget = jest.fn();
   const applyClicked = jest.fn();
   let controller: RedirectController;
 
   beforeEach(async () => {
-    getApplyLink.mockReset().mockResolvedValue(LINK);
+    getApplyTarget.mockReset().mockResolvedValue(TARGET);
     applyClicked.mockReset().mockResolvedValue(undefined);
     const moduleRef = await Test.createTestingModule({
       controllers: [RedirectController],
       providers: [
-        { provide: FeedService, useValue: { getApplyLink } },
+        { provide: FeedService, useValue: { getApplyTarget } },
         { provide: AnalyticsService, useValue: { applyClicked } },
       ],
     }).compile();
@@ -30,7 +31,7 @@ describe("RedirectController", () => {
   });
 
   it("404s when the vacancy has no apply link", async () => {
-    getApplyLink.mockResolvedValue(null);
+    getApplyTarget.mockResolvedValue(null);
     await expect(controller.apply("v1", undefined, undefined, CHROME_UA)).rejects.toBeInstanceOf(
       NotFoundException,
     );
@@ -40,12 +41,20 @@ describe("RedirectController", () => {
   it("records a real navigation tap", async () => {
     const res = await controller.apply("v1", undefined, undefined, CHROME_UA, "navigate");
     expect(res).toEqual({ url: LINK });
-    expect(applyClicked).toHaveBeenCalledWith("v1", undefined, undefined);
+    expect(applyClicked).toHaveBeenCalledWith(
+      { vacancyId: "v1", source: "djinni", company: "acme" },
+      undefined,
+      undefined,
+    );
   });
 
   it("still records when Sec-Fetch-Mode is absent", async () => {
     await controller.apply("v1", undefined, undefined, CHROME_UA, undefined);
-    expect(applyClicked).toHaveBeenCalledWith("v1", undefined, undefined);
+    expect(applyClicked).toHaveBeenCalledWith(
+      { vacancyId: "v1", source: "djinni", company: "acme" },
+      undefined,
+      undefined,
+    );
   });
 
   it("redirects a bot UA without recording", async () => {

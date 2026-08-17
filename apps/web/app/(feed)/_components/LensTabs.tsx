@@ -3,7 +3,7 @@
 import { forwardRef, useRef, type KeyboardEvent, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { useAnalytics, type Lens } from "@/lib/analytics/use-analytics";
+import { type Lens } from "@/lib/analytics/use-analytics";
 import { Badge } from "@/ui";
 
 // Ids shared with the lens tabpanel in the feed shell so the tablist ↔ panel
@@ -24,13 +24,11 @@ export function LensTabs({
   cvLocked: boolean;
   onSelect: (lens: Lens) => void;
 }) {
-  const analytics = useAnalytics();
   const coldRef = useRef<HTMLButtonElement>(null);
   const warmRef = useRef<HTMLButtonElement>(null);
 
   const select = (to: Lens) => {
     if (to === lens || (to === "warm" && cvLocked)) return;
-    analytics.lensSwitched(lens, to);
     onSelect(to);
   };
 

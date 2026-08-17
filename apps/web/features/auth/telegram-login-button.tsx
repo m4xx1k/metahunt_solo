@@ -66,7 +66,6 @@ export function TelegramLoginButton({
 
   const handleClick = useCallback(async () => {
     startedAt.current = Date.now();
-    analytics.telegramLoginStarted("deeplink");
     if (!BOT_USERNAME) {
       analytics.telegramLoginFailed("configuration", "deeplink");
       toast.error("Вхід через Telegram недоступний.");
@@ -137,9 +136,6 @@ export function TelegramLoginButton({
       analytics.identifyAccount(result.user.id);
       if (flow === "link") {
         analytics.identityLinked("telegram");
-      } else {
-        if (result.isNewUser) analytics.signedUp("telegram");
-        analytics.loggedIn("telegram");
       }
       setPending(null);
       setPhase("idle");

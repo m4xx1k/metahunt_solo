@@ -2,30 +2,27 @@ import { Global, Module } from "@nestjs/common";
 
 import { AnalyticsOutboxDispatcher } from "./analytics-outbox.dispatcher";
 import { AnalyticsOutboxStore } from "./analytics-outbox.store";
-import { AnalyticsController } from "./analytics.controller";
-import { ANALYTICS_OUTBOX_WRITER, ANALYTICS_SINK, PRODUCT_EVENT_WRITER } from "./analytics.ports";
+import { ANALYTICS_OUTBOX_WRITER, PRODUCT_EVENT_WRITER } from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
-import { PostHogSink } from "./posthog.sink";
-import { ProductAnalyticsService } from "./product-analytics.service";
+import { PostHogClient } from "./posthog.client";
 import { ProductEventStore } from "./product-event.store";
 
-// Global so any feature service can inject AnalyticsService without re-importing
-// (mirrors DatabaseModule). AnalyticsService is the ONLY place that touches the
-// PostHog SDK — feature code calls its domain methods, never capture() directly.
+// Global so any feature service can inject without re-importing (mirrors
+// DatabaseModule). PostHogClient is the only thing in the process that holds a
+// PostHog SDK instance; feature code calls its verbs, never capture() directly.
+// The outbox writes the Postgres ledger and nothing else — one store, one
+// writer, so the two can never disagree about who said what.
 @Global()
 @Module({
-  controllers: [AnalyticsController],
   providers: [
     AnalyticsService,
-    ProductAnalyticsService,
+    PostHogClient,
     AnalyticsOutboxDispatcher,
     AnalyticsOutboxStore,
     ProductEventStore,
-    PostHogSink,
     { provide: ANALYTICS_OUTBOX_WRITER, useExisting: AnalyticsOutboxStore },
     { provide: PRODUCT_EVENT_WRITER, useExisting: ProductEventStore },
-    { provide: ANALYTICS_SINK, useExisting: PostHogSink },
   ],
-  exports: [AnalyticsService, ProductAnalyticsService, PRODUCT_EVENT_WRITER],
+  exports: [AnalyticsService, PostHogClient, PRODUCT_EVENT_WRITER],
 })
 export class AnalyticsModule {}

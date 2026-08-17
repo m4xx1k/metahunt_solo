@@ -49,6 +49,7 @@ interface RosterRow {
   activeSubscriptions: number;
   firstSubscriptionAt: string | null;
   telegramLinked: boolean;
+  isStaff: boolean;
 }
 
 interface PostHogPersonSide {
@@ -331,6 +332,7 @@ export class AnalyticsPageService {
       active_subscriptions: number;
       first_subscription_at: string | null;
       telegram_linked: boolean;
+      is_staff: boolean;
       total: number;
     }>(sql`
       WITH identity_by_user AS (
@@ -365,7 +367,10 @@ export class AnalyticsPageService {
           COALESCE(su.subscriptions, 0)::int AS subscriptions,
           COALESCE(su.active_subscriptions, 0)::int AS active_subscriptions,
           su.first_subscription_at,
-          COALESCE(su.telegram_linked, false) AS telegram_linked
+          COALESCE(su.telegram_linked, false) AS telegram_linked,
+          -- Staff comes from users.roles, the same source that sets is_staff on
+          -- the PostHog person. One source, so the two stores cannot disagree.
+          ('admin' = ANY(u.roles)) AS is_staff
         FROM users u
         LEFT JOIN identity_by_user ip ON ip.id = u.id
         LEFT JOIN subs_by_user su ON su.user_id = u.id
@@ -403,6 +408,7 @@ export class AnalyticsPageService {
           activeSubscriptions: Number(row.active_subscriptions),
           firstSubscriptionAt: toIsoOrNull(row.first_subscription_at),
           telegramLinked: row.telegram_linked,
+          isStaff: row.is_staff,
         },
       ];
     });

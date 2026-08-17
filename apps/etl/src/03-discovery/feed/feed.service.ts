@@ -25,6 +25,12 @@ import type {
 const EXPERIENCE_OPEN_TOKEN = "6+";
 const EXPERIENCE_OPEN_MIN = 6;
 
+export interface ApplyTarget {
+  link: string;
+  source?: string;
+  company?: string;
+}
+
 export interface FeedSearchParams {
   page: number;
   pageSize: number;
@@ -245,12 +251,25 @@ export class FeedService {
    * representative. Returns null for a malformed id, a missing posting, or a
    * legacy row with no link.
    */
-  async getApplyLink(id: string): Promise<string | null> {
+  // Source and company ride along so an outbound click can say which board and
+  // which employer it went to — a click nobody can attribute answers nothing.
+  async getApplyTarget(id: string): Promise<ApplyTarget | null> {
     if (!isUuid(id)) return null;
-    const rows = await this.db.execute<{ link: string | null }>(sql`
-      SELECT link FROM postings WHERE posting_id = ${id}::uuid LIMIT 1
+    const rows = await this.db.execute<{
+      link: string | null;
+      source_code: string | null;
+      company_slug: string | null;
+    }>(sql`
+      SELECT link, source_code, company_slug
+      FROM postings WHERE posting_id = ${id}::uuid LIMIT 1
     `);
-    return rows.rows[0]?.link ?? null;
+    const row = rows.rows[0];
+    if (!row?.link) return null;
+    return {
+      link: row.link,
+      source: row.source_code ?? undefined,
+      company: row.company_slug ?? undefined,
+    };
   }
 
   // Map each requested Posting id to its Position id. Silently drops

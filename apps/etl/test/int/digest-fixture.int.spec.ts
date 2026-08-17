@@ -14,7 +14,7 @@ import {
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
-import { dormantProductAnalytics } from "./analytics";
+import { dormantPostHog } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 import { insertVacancyWithGroup } from "./vacancy-fixture";
 
@@ -188,13 +188,13 @@ describe("digest fixture flow", () => {
     const sent = new SentNotificationsService(
       db,
       { enqueueDigestSent: jest.fn() } as never,
-      dormantProductAnalytics(),
+      dormantPostHog(),
     );
     const service = makeDigest(
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        dormantProductAnalytics(),
+        dormantPostHog(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
@@ -225,14 +225,14 @@ describe("digest fixture flow", () => {
     const sent = new SentNotificationsService(
       db,
       { enqueueDigestSent: jest.fn() } as never,
-      dormantProductAnalytics(),
+      dormantPostHog(),
     );
     const telegram = new FixtureTelegram();
     const service = makeDigest(
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        dormantProductAnalytics(),
+        dormantPostHog(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
@@ -253,7 +253,7 @@ describe("digest fixture flow", () => {
     const sent = new SentNotificationsService(
       db,
       { enqueueDigestSent: jest.fn() } as never,
-      dormantProductAnalytics(),
+      dormantPostHog(),
     );
     const telegram = new FixtureTelegram();
     telegram.failNext = true;
@@ -261,7 +261,7 @@ describe("digest fixture flow", () => {
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        dormantProductAnalytics(),
+        dormantPostHog(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,
@@ -293,14 +293,14 @@ describe("digest fixture flow", () => {
     const sent = new SentNotificationsService(
       db,
       { enqueueDigestSent: jest.fn() } as never,
-      dormantProductAnalytics(),
+      dormantPostHog(),
     );
     const telegram = new FixtureTelegram();
     const service = makeDigest(
       new SubscriptionsService(
         db,
         { subscriptionCreated: jest.fn() } as never,
-        dormantProductAnalytics(),
+        dormantPostHog(),
         new SubscriptionCriteriaService(db, new NodeSlugResolver(db)),
       ),
       sent,

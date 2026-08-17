@@ -20,7 +20,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, DrizzleExecutor } from "@metahunt/database";
 
 import { AnalyticsService } from "../analytics/analytics.service";
-import { ProductAnalyticsService } from "../analytics/product-analytics.service";
+import { PostHogClient } from "../analytics/posthog.client";
 
 import type { AuthProvider, AuthUser, TelegramLoginResponse } from "./auth.contract";
 import type { JwtPayload } from "./auth.types";
@@ -71,7 +71,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly analytics?: AnalyticsService,
-    private readonly productAnalytics?: ProductAnalyticsService,
+    private readonly posthog?: PostHogClient,
   ) {
     this.adminIds = new Set(
       (this.config.get<string>("ADMIN_TELEGRAM_IDS") ?? "")
@@ -117,6 +117,7 @@ export class AuthService {
       .update(users)
       .set({ roles: isAdmin ? ["user", "admin"] : ["user"] })
       .where(eq(users.id, userId));
+    this.posthog?.setStaff(userId, isAdmin);
   }
 
   /**
@@ -329,8 +330,8 @@ export class AuthService {
   // issueSession through TelegramLoginService, while Google calls this before
   // issuing its session; both producers have explicit account identity.
   captureAuthV2(userId: string, provider: AuthProvider, isNewUser: boolean): void {
-    if (isNewUser) this.productAnalytics?.accountCreated(userId, provider);
-    this.productAnalytics?.signedIn(userId, provider);
+    if (isNewUser) this.posthog?.accountCreated(userId, provider);
+    this.posthog?.signedIn(userId, provider);
   }
 
   // The guard calls this on every authenticated request, so the identity list
@@ -558,16 +559,19 @@ export class AuthService {
     telegramId: string,
     db: DrizzleExecutor,
   ): Promise<void> {
-    await db
-      .update(subscriptions)
-      .set({ userId, personId: userId })
-      .where(
-        and(
-          eq(subscriptions.chatId, telegramId),
-          isNull(subscriptions.userId),
-          isNull(subscriptions.candidateId),
-        ),
-      );
+    const unclaimed = and(
+      eq(subscriptions.chatId, telegramId),
+      isNull(subscriptions.userId),
+      isNull(subscriptions.candidateId),
+    );
+    // Read the person ids the subscriptions carried before the claim rewrites
+    // them: PostHog cannot stitch two people together retroactively, so the
+    // merge has to be emitted at exactly this moment or never.
+    const claimed = await db
+      .select({ personId: subscriptions.personId })
+      .from(subscriptions)
+      .where(unclaimed);
+    await db.update(subscriptions).set({ userId, personId: userId }).where(unclaimed);
     await db
       .update(analyticsJourneys)
       .set({ personId: userId })
@@ -580,5 +584,8 @@ export class AuthService {
             .where(and(eq(subscriptions.userId, userId), isNull(subscriptions.candidateId))),
         ),
       );
+    for (const personId of new Set(claimed.map((row) => row.personId))) {
+      this.posthog?.mergePerson(userId, personId);
+    }
   }
 }

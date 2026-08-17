@@ -1,4 +1,4 @@
-import type { AnalyticsOutboxWriter, AnalyticsSink, ProductEventWrite } from "./analytics.ports";
+import type { AnalyticsOutboxWriter, ProductEventWrite } from "./analytics.ports";
 import { AnalyticsOutboxDispatcher } from "./analytics-outbox.dispatcher";
 
 const EVENT: ProductEventWrite = {
@@ -17,17 +17,12 @@ describe("AnalyticsOutboxDispatcher", () => {
       .mockResolvedValueOnce([EVENT])
       .mockResolvedValueOnce([]);
     const outbox = { drain, enqueue: jest.fn() } as AnalyticsOutboxWriter;
-    const capture = jest.fn();
-    const sink: AnalyticsSink = { capture, alias: jest.fn() };
-    const dispatcher = new AnalyticsOutboxDispatcher(outbox, sink);
+    const dispatcher = new AnalyticsOutboxDispatcher(outbox);
 
     await expect(dispatcher.dispatch()).resolves.toBeUndefined();
-    expect(capture).not.toHaveBeenCalled();
+    expect(drain).toHaveBeenCalledTimes(1);
 
     await expect(dispatcher.dispatch()).resolves.toBeUndefined();
-    expect(capture).toHaveBeenCalledWith(EVENT.journeyId, EVENT.name, {
-      ...EVENT.properties,
-      is_test: false,
-    });
+    expect(drain).toHaveBeenCalledTimes(2);
   });
 });

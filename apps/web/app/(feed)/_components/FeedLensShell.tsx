@@ -106,7 +106,6 @@ export function FeedLensShell({
       }
       setUploadError(null);
       setUploading(true);
-      analytics.cvUploadStarted();
       try {
         const info = await cvApi.uploadFile(file);
         setUploadInfo(info);

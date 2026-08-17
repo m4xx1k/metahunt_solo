@@ -45,17 +45,21 @@ export class RedirectController {
     @Headers("user-agent") userAgent?: string,
     @Headers("sec-fetch-mode") secFetchMode?: string,
   ): Promise<{ url: string }> {
-    const link = await this.feed.getApplyLink(id);
-    if (!link) throw new NotFoundException("Vacancy link not found");
+    const target = await this.feed.getApplyTarget(id);
+    if (!target) throw new NotFoundException("Vacancy link not found");
     // Crawlers hit /go/:id constantly (~95% of clicks); redirect them but never
     // record. Missing UA counts as a bot — real browsers always send one.
-    if (!userAgent || isbot(userAgent)) return { url: link };
+    if (!userAgent || isbot(userAgent)) return { url: target.link };
     // A real apply tap is a top-level navigation; any other Sec-Fetch-Mode is a
     // prefetcher or link-preview bot that isbot can't name. Absent header (older
     // browsers, Telegram in-app taps) still counts as human.
-    if (secFetchMode && secFetchMode !== "navigate") return { url: link };
+    if (secFetchMode && secFetchMode !== "navigate") return { url: target.link };
     const journeyId = journeyIdRaw && isUuid(journeyIdRaw) ? journeyIdRaw : undefined;
-    void this.analytics.applyClicked(id, subscriptionId, journeyId);
-    return { url: link };
+    void this.analytics.applyClicked(
+      { vacancyId: id, source: target.source, company: target.company },
+      subscriptionId,
+      journeyId,
+    );
+    return { url: target.link };
   }
 }

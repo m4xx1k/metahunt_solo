@@ -6,6 +6,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../platform/analytics/analytics.service";
+import { PostHogClient } from "../platform/analytics/posthog.client";
 import {
   InvalidSubscriptionCriteriaError,
   SubscriptionCriteriaService,
@@ -32,6 +33,7 @@ export class MeService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly criteria: SubscriptionCriteriaService,
     private readonly analytics: AnalyticsService,
+    private readonly posthog: PostHogClient,
   ) {}
 
   async listCvs(userId: string): Promise<MeCv[]> {
@@ -146,13 +148,15 @@ export class MeService {
       }
       throw error;
     }
-    return this.db.transaction(async (tx) => {
+    let deactivatedPersonId: string | null = null;
+    const patched = await this.db.transaction(async (tx) => {
       const [existing] = await tx
         .select({
           id: subscriptions.id,
           candidateId: subscriptions.candidateId,
           isActive: subscriptions.isActive,
           journeyId: subscriptions.journeyId,
+          personId: subscriptions.personId,
         })
         .from(subscriptions)
         .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
@@ -198,8 +202,12 @@ export class MeService {
       } else {
         void this.analytics.unsubscribed({ method: "account", subscriptionId: id });
       }
+      if (!patch.isActive) deactivatedPersonId = existing.personId;
       return true;
     });
+    // Captured after commit: a rolled-back change must not be reported.
+    if (deactivatedPersonId) this.posthog.subscriptionDeactivated(deactivatedPersonId, "user");
+    return patched;
   }
 
   async deleteSubscription(userId: string, id: string): Promise<boolean> {

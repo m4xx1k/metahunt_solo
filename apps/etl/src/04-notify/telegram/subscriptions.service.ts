@@ -8,7 +8,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
-import { ProductAnalyticsService } from "../../platform/analytics/product-analytics.service";
+import { PostHogClient } from "../../platform/analytics/posthog.client";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { SubscriptionCriteriaService } from "../../platform/subscriptions/subscription-criteria.service";
 import { createSubscriptionName } from "../../platform/subscriptions/subscription-name";
@@ -41,7 +41,7 @@ export class SubscriptionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
-    private readonly productAnalytics: ProductAnalyticsService,
+    private readonly posthog: PostHogClient,
     private readonly criteria: SubscriptionCriteriaService,
   ) {}
 
@@ -68,14 +68,16 @@ export class SubscriptionsService {
         candidateId: options.candidateId ?? null,
         userId: options.userId,
       })
-      .returning({ id: subscriptions.id });
+      .returning({ id: subscriptions.id, personId: subscriptions.personId });
 
     this.logger.log(
       `create sub ${created.id}: candidateId=${options.candidateId ?? "none"} paramKeys=[${Object.keys(params).join(",")}]`,
     );
-    // DB transaction is complete at this point. V2 capture is explicitly
-    // best-effort and cannot turn a successful subscription into a failure.
-    this.productAnalytics.subscriptionCreated(options.userId, options.candidateId ? "cv" : "feed");
+    // DB write is complete at this point. Analytics is explicitly best-effort
+    // and cannot turn a successful subscription into a failure.
+    void this.analytics.subscriptionCreated(created.id, params);
+    this.posthog.subscriptionCreated(created.personId, options.candidateId ? "cv" : "feed");
+    if (options.journeyId) this.analytics.aliasJourneyToPerson(options.journeyId, created.personId);
 
     return created.id;
   }
@@ -195,6 +197,8 @@ export class SubscriptionsService {
     }
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
+    void this.analytics.telegramLinked(token, "linked");
+    this.posthog.telegramLinked(ownerId, pending.candidateId ? "cv" : "feed");
 
     return "linked";
   }
@@ -275,7 +279,7 @@ export class SubscriptionsService {
         .returning({
           id: subscriptions.id,
           journeyId: subscriptions.journeyId,
-          userId: subscriptions.userId,
+          personId: subscriptions.personId,
         });
 
       for (const stoppedSubscription of stopped) {
@@ -297,8 +301,7 @@ export class SubscriptionsService {
       return stopped;
     });
     for (const subscription of stopped) {
-      if (subscription.userId)
-        this.productAnalytics.subscriptionDeactivated(subscription.userId, "user");
+      this.posthog.subscriptionDeactivated(subscription.personId, "user");
     }
     return stopped.length;
   }
@@ -324,7 +327,7 @@ export class SubscriptionsService {
         .returning({
           id: subscriptions.id,
           journeyId: subscriptions.journeyId,
-          userId: subscriptions.userId,
+          personId: subscriptions.personId,
         });
 
       if (!stopped) return null;
@@ -339,7 +342,7 @@ export class SubscriptionsService {
       }
       return stopped;
     });
-    if (stopped?.userId) this.productAnalytics.subscriptionDeactivated(stopped.userId, "user");
+    if (stopped) this.posthog.subscriptionDeactivated(stopped.personId, "user");
     return stopped !== null;
   }
 
@@ -349,12 +352,16 @@ export class SubscriptionsService {
    * set — unlike an explicit unsubscribe, which must stay off.
    */
   async deactivateForBlock(chatId: string): Promise<number> {
-    return this.db.transaction(async (tx) => {
+    const blocked = await this.db.transaction(async (tx) => {
       const blocked = await tx
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "blocked" })
         .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
-        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+        .returning({
+          id: subscriptions.id,
+          journeyId: subscriptions.journeyId,
+          personId: subscriptions.personId,
+        });
 
       for (const sub of blocked) {
         const props = {
@@ -368,8 +375,11 @@ export class SubscriptionsService {
           void this.analytics.botBlocked(props);
         }
       }
-      return blocked.length;
+      return blocked;
     });
+    // Captured after commit: a rolled-back deactivation must not be reported.
+    for (const sub of blocked) this.posthog.subscriptionDeactivated(sub.personId, "blocked");
+    return blocked.length;
   }
 
   /** Unblock restores only what the block (or bounced deliveries) turned off. */
@@ -410,7 +420,7 @@ export class SubscriptionsService {
    * the poller missed (downtime, chats deleted without a block).
    */
   async recordUnreachableDelivery(id: string): Promise<void> {
-    return this.db.transaction(async (tx) => {
+    const deactivated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(subscriptions)
         .set({ unreachableCount: sql`${subscriptions.unreachableCount} + 1` })
@@ -418,8 +428,9 @@ export class SubscriptionsService {
         .returning({
           unreachableCount: subscriptions.unreachableCount,
           journeyId: subscriptions.journeyId,
+          personId: subscriptions.personId,
         });
-      if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return;
+      if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return null;
 
       await tx
         .update(subscriptions)
@@ -435,7 +446,10 @@ export class SubscriptionsService {
       } else {
         void this.analytics.botBlocked(props);
       }
+      return row.personId;
     });
+    // Captured after commit: a rolled-back deactivation must not be reported.
+    if (deactivated) this.posthog.subscriptionDeactivated(deactivated, "unreachable");
   }
 
   /** A send got through — the chat is reachable, restart the bounce counter. */

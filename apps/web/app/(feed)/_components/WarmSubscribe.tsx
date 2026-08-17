@@ -39,11 +39,9 @@ export function WarmSubscribe({
     if (isSubmitting) return;
     setIsSubmitting(true);
     const params = toCvMatchParams(filters);
-    analytics.subscriptionCreateStarted("cv", params);
     const tab = window.open("about:blank", "_blank");
     try {
       const res = await subscriptionsApi.create(params, candidateId);
-      analytics.subscriptionHandoffOpened("cv");
       addSub({
         id: res.id,
         lens: "warm",

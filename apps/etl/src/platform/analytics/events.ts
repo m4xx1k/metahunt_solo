@@ -1,3 +1,28 @@
+// The one server-side event registry. Two lists mirror it and are kept honest
+// by `pnpm analytics:catalog`: the browser's names in
+// apps/web/lib/analytics/use-analytics.ts (apps/web has no workspace
+// dependencies, so it cannot import this file) and the console's catalog in
+// apps/web/entities/analytics/event-catalog.ts.
+
+// What PostHog receives. Deliberately small: one verb per act, each one a fact
+// no outsider watching URLs and clicks could infer.
+export const PRODUCT_ANALYTICS_EVENTS = [
+  "$pageview",
+  "account_created",
+  "signed_in",
+  "subscription_created",
+  "telegram_linked",
+  "digest_sent",
+  "vacancy_outbound_clicked",
+  "subscription_deactivated",
+] as const;
+
+export type ProductAnalyticsEvent = (typeof PRODUCT_ANALYTICS_EVENTS)[number];
+
+// What the Postgres ledger records. Wider than the PostHog set, and it retires
+// with `product_events` (phase 4 of the analytics-one-identity tracker). The
+// first five names are historic: their producers were deleted with the browser
+// ingest endpoint, and only existing rows still carry them.
 export const ANALYTICS_EVENTS = {
   landingView: "landing_view",
   landingCtaClicked: "landing_cta_clicked",
@@ -50,20 +75,5 @@ export const SYSTEM_EMITTED_EVENTS = [
   ANALYTICS_EVENTS.matchScored,
 ] as const;
 
-export const BROWSER_ANALYTICS_EVENTS = [
-  ANALYTICS_EVENTS.landingView,
-  ANALYTICS_EVENTS.landingCtaClicked,
-  ANALYTICS_EVENTS.subscriptionCreateStarted,
-  ANALYTICS_EVENTS.subscriptionHandoffOpened,
-  ANALYTICS_EVENTS.subscriptionCreateFailed,
-] as const;
-
-export type BrowserAnalyticsEventName = (typeof BROWSER_ANALYTICS_EVENTS)[number];
 export type ProductEventSource = DatabaseProductEventSource;
-
-export function posthogEventName(name: string): string {
-  return name === ANALYTICS_EVENTS.digestLinkClicked || name === ANALYTICS_EVENTS.applyClicked
-    ? ANALYTICS_EVENTS.vacancyOutboundClicked
-    : name;
-}
 import type { ProductEventSource as DatabaseProductEventSource } from "@metahunt/database";

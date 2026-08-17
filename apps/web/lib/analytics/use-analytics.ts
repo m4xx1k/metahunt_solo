@@ -2,44 +2,29 @@ import { useMemo } from "react";
 import { usePostHog } from "posthog-js/react";
 import type { PostHog } from "posthog-js";
 
-import {
-  currentReferrerDomain,
-  resolveAttribution,
-  type AcquisitionAttribution,
-} from "@/lib/analytics/attribution";
-import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
-
 export type { AcquisitionAttribution } from "@/lib/analytics/attribution";
 
-// Single source of truth for client-side event names (mirrors the backend
-// events.ts) — no event-name string literals in components.
+// Client-side event names (mirrored in the backend's events.ts, checked by
+// `pnpm analytics:catalog`) — no event-name string literals in components.
+// Every name here is a verb whose outcome an outsider watching URLs and clicks
+// could not infer; pages and plain clicks belong to $pageview and autocapture.
 const ANALYTICS_EVENTS = {
-  pageViewed: "$pageview",
-  landingView: "landing_view",
-  landingCtaClicked: "landing_cta_clicked",
-  subscriptionCreateStarted: "subscription_create_started",
-  subscriptionHandoffOpened: "subscription_handoff_opened",
   subscriptionCreateFailed: "subscription_create_failed",
-  lensSwitch: "lens_switch",
-  cvUploadStarted: "cv_upload_started",
   cvUploadCompleted: "cv_upload_completed",
   cvUploadFailed: "cv_upload_failed",
-  telegramLoginStarted: "telegram_login_started",
   telegramLoginCancelled: "telegram_login_cancelled",
   telegramLoginFailed: "telegram_login_failed",
   googleLoginFailed: "google_login_failed",
   identityLinked: "identity_linked",
   identityUnlinked: "identity_unlinked",
   identityLinkConflict: "identity_link_conflict",
-  loggedIn: "signed_in",
-  signup: "account_created",
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
-  matchFlowStarted: "match_flow_started",
   matchFlowCompleted: "match_flow_completed",
   feedScoreLocked: "feed_score_locked",
 } as const;
 
+// The feed lens, kept here because it predates any better home.
 export type Lens = "cold" | "warm";
 export type TelegramLoginMethod = "deeplink";
 export type LoginProvider = "telegram" | "google";
@@ -47,29 +32,12 @@ export type SubscriptionProfile = "feed" | "cv";
 
 type AnalyticsProperty = string | number | boolean | undefined;
 const IS_TEST_TRAFFIC = process.env.NEXT_PUBLIC_ANALYTICS_TEST_TRAFFIC === "true";
-const PRODUCT_BROWSER_EVENTS = new Set(["$pageview"]);
 
-function captureBrowserEvent(
-  posthog: PostHog | undefined,
-  name: string,
-  properties: Record<string, string | number | boolean>,
-): void {
-  // Archive-only browser events intentionally have no clean-project mapping.
-  // Keep old event names out of the new project rather than inventing aliases.
-  void posthog;
-  void name;
-  void properties;
-  return;
-}
-
-function capturePostHogEvent(
+function capture(
   posthog: PostHog | undefined,
   name: string,
   properties?: Record<string, AnalyticsProperty>,
 ): void {
-  // Browser ownership is deliberately narrow: account lifecycle events come
-  // from the committed server mutation, so one login cannot create duplicates.
-  if (!PRODUCT_BROWSER_EVENTS.has(name)) return;
   posthog?.capture(name, { ...properties, is_test: IS_TEST_TRAFFIC });
 }
 
@@ -82,81 +50,22 @@ export function useAnalytics() {
         posthog?.identify(userId);
       },
 
-      pageViewed(pageType: string, attribution: AcquisitionAttribution) {
-        // DAU is authenticated users.id only. Do not turn an anonymous
-        // landing into a human pageview before identify() has completed.
-        if (!posthog?.get_property("$user_id")) return;
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.pageViewed, {
-          path: window.location.pathname,
-          page_type: pageType,
-          ...resolveAttribution({ ...attribution, ...currentReferrerDomain() }),
-        });
-      },
-
-      // Attribution falls back to the stored first touch when the current URL
-      // carries no tags — internal navigation drops the query string.
-      landingViewed(variant: string, attribution: AcquisitionAttribution) {
-        captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingView, {
-          landing_variant: variant,
-          path: window.location.pathname,
-          ...resolveAttribution({ ...attribution, ...currentReferrerDomain() }),
-        });
-      },
-
-      landingCtaClicked(variant: string, attribution: AcquisitionAttribution) {
-        captureBrowserEvent(posthog, ANALYTICS_EVENTS.landingCtaClicked, {
-          landing_variant: variant,
-          destination: "telegram_subscription",
-          ...resolveAttribution({ ...attribution, ...currentReferrerDomain() }),
-        });
-      },
-
-      subscriptionCreateStarted(
-        profile: SubscriptionProfile,
-        params: SubscriptionParams | CvMatchParams,
-      ) {
-        captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionCreateStarted, {
-          profile_type: profile,
-          filter_count: Object.keys(params).length,
-        });
-      },
-
-      subscriptionHandoffOpened(profile: SubscriptionProfile) {
-        captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionHandoffOpened, {
-          profile_type: profile,
-        });
-      },
-
       subscriptionCreateFailed(profile: SubscriptionProfile) {
-        captureBrowserEvent(posthog, ANALYTICS_EVENTS.subscriptionCreateFailed, {
-          profile_type: profile,
-        });
-      },
-
-      lensSwitched(from: Lens, to: Lens) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.lensSwitch, { from, to });
+        capture(posthog, ANALYTICS_EVENTS.subscriptionCreateFailed, { profile_type: profile });
       },
 
       // The candidateId is a shareable bearer capability, so it is deliberately
       // NOT sent as a property.
-      cvUploadStarted() {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadStarted);
-      },
-
       cvUpload(reused: boolean) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadCompleted, { reused });
+        capture(posthog, ANALYTICS_EVENTS.cvUploadCompleted, { reused });
       },
 
       cvUploadFailed() {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.cvUploadFailed);
-      },
-
-      telegramLoginStarted(method: TelegramLoginMethod) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginStarted, { method });
+        capture(posthog, ANALYTICS_EVENTS.cvUploadFailed);
       },
 
       telegramLoginCancelled(msSinceStart: number, method: TelegramLoginMethod) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginCancelled, {
+        capture(posthog, ANALYTICS_EVENTS.telegramLoginCancelled, {
           ms_since_start: msSinceStart,
           method,
         });
@@ -166,60 +75,41 @@ export function useAnalytics() {
         stage: "configuration" | "session" | "expired",
         method: TelegramLoginMethod,
       ) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.telegramLoginFailed, { stage, method });
+        capture(posthog, ANALYTICS_EVENTS.telegramLoginFailed, { stage, method });
       },
 
       googleLoginFailed(stage: "widget" | "session") {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.googleLoginFailed, { stage });
+        capture(posthog, ANALYTICS_EVENTS.googleLoginFailed, { stage });
       },
 
       identityLinked(provider: LoginProvider) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityLinked, { provider });
+        capture(posthog, ANALYTICS_EVENTS.identityLinked, { provider });
       },
 
       identityUnlinked(provider: LoginProvider) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityUnlinked, { provider });
+        capture(posthog, ANALYTICS_EVENTS.identityUnlinked, { provider });
       },
 
       identityLinkConflict(provider: LoginProvider) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.identityLinkConflict, { provider });
-      },
-
-      loggedIn(provider: LoginProvider) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.loggedIn, {
-          login_method: provider,
-        });
-      },
-
-      // Fired once per account, on the first-ever login through any provider
-      // (the server says whether the user row was just created).
-      signedUp(provider: LoginProvider) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.signup, { method: provider });
+        capture(posthog, ANALYTICS_EVENTS.identityLinkConflict, { provider });
       },
 
       vacancyFeedback(vacancyId: string, sentiment: "up" | "down") {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.vacancyFeedback, {
+        capture(posthog, ANALYTICS_EVENTS.vacancyFeedback, {
           vacancy_id: vacancyId,
           sentiment,
         });
       },
 
       baitClick(feature: "cover_letter" | "tune_cv", vacancyId?: string) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.baitClick, {
-          feature,
-          vacancy_id: vacancyId,
-        });
-      },
-
-      matchFlowStarted(entry: "cv" | "manual") {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.matchFlowStarted, { entry });
+        capture(posthog, ANALYTICS_EVENTS.baitClick, { feature, vacancy_id: vacancyId });
       },
 
       // A cold visitor tapped the locked Fit slot on a /feed card. The whole
       // point of showing a locked score is to find out whether the number is
       // what people actually want — this is that measurement.
       feedScoreLocked(vacancyId: string) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.feedScoreLocked, { vacancy_id: vacancyId });
+        capture(posthog, ANALYTICS_EVENTS.feedScoreLocked, { vacancy_id: vacancyId });
       },
 
       matchFlowCompleted(props: {
@@ -228,7 +118,7 @@ export function useAnalytics() {
         roles_count: number;
         excludes_count: number;
       }) {
-        capturePostHogEvent(posthog, ANALYTICS_EVENTS.matchFlowCompleted, props);
+        capture(posthog, ANALYTICS_EVENTS.matchFlowCompleted, props);
       },
     }),
     [posthog],

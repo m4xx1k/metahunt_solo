@@ -9,6 +9,7 @@ import { MeService } from "../../src/account/me.service";
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 import { SubscriptionCriteriaService } from "../../src/platform/subscriptions/subscription-criteria.service";
 
+import { dormantPostHog } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
 import { insertVacancyWithGroup } from "./vacancy-fixture";
 
@@ -33,7 +34,7 @@ const unsubscribed = jest.fn();
 function makeService(): MeService {
   const analytics = { subscriptionReactivated, unsubscribed } as never;
   const criteria = new SubscriptionCriteriaService(db, new NodeSlugResolver(db));
-  return new MeService(db, criteria, analytics);
+  return new MeService(db, criteria, analytics, dormantPostHog());
 }
 
 async function seedUser(): Promise<string> {
