@@ -125,7 +125,21 @@ async function planOrApply(pool: Pool, apply: boolean): Promise<void> {
     // Persist rollback state before mutation. It contains no connection data.
     await mkdir(dirname(manifestPath), { recursive: true });
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 });
+    // Exact clusters can overlap through a pre-existing semantic group. Apply
+    // every move before deleting anything: deleting a group midway would break
+    // the deferred membership FK for a later cluster in the same transaction.
     for (const plan of plans) await applyPlan(client, plan, rows);
+    const targetGroups = [...new Set(plans.map((plan) => plan.targetGroupId))];
+    for (const groupId of targetGroups) await repairRollup(client, groupId);
+    const sourceGroups = [...new Set(plans.flatMap((plan) => plan.sourceGroupIds))];
+    if (sourceGroups.length) {
+      await client.query(
+        `DELETE FROM unique_vacancies u
+         WHERE u.id = ANY($1::uuid[])
+           AND NOT EXISTS (SELECT 1 FROM vacancies v WHERE v.unique_vacancy_id = u.id)`,
+        [sourceGroups],
+      );
+    }
     const after = Number(
       (await client.query<{ count: string }>("SELECT count(*)::text AS count FROM vacancies"))
         .rows[0].count,
@@ -208,10 +222,6 @@ async function applyPlan(client: PoolClient, plan: Plan, all: Row[]): Promise<vo
     "UPDATE vacancies SET unique_vacancy_id=$1::uuid, dedup_reason=jsonb_build_object('method','exact_content','similarity',1,'matchedAgainstVacancyId',id::text,'confidence','gold','decidedAt',now()::text) WHERE unique_vacancy_id = ANY($2::uuid[])",
     [plan.targetGroupId, plan.sourceGroupIds],
   );
-  await repairRollup(client, plan.targetGroupId);
-  await client.query("DELETE FROM unique_vacancies WHERE id = ANY($1::uuid[])", [
-    plan.sourceGroupIds,
-  ]);
 }
 
 async function repairRollup(client: PoolClient, groupId: string): Promise<void> {
