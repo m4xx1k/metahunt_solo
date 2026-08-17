@@ -50,7 +50,10 @@ export class AnalyticsOutboxStore implements AnalyticsOutboxWriter {
         WHERE outbox.processed_at IS NULL
         ORDER BY outbox.created_at ASC
         LIMIT ${limit}
-        FOR UPDATE SKIP LOCKED
+        -- OF outbox is load-bearing: a bare FOR UPDATE tries to lock every
+        -- table in the query, and Postgres refuses to lock the nullable side
+        -- of an outer join. Only the outbox rows are being claimed anyway.
+        FOR UPDATE OF outbox SKIP LOCKED
       `);
       if (pending.rows.length === 0) return [];
 
