@@ -20,9 +20,11 @@ export class DedupSweepActivity {
   async dedupSweep(): Promise<void> {
     const embed = await this.dedup.embedAll();
     const resolve = await this.dedup.resolveAll();
+    const exactContentSplits = await this.dedup.countExactContentSplits();
     this.logger.log(
       `dedup sweep — embedded=${embed.embedded} skipped=${embed.skipped}; ` +
-        `resolved=${resolve.processed} assigned=${resolve.assigned}`,
+        `resolved=${resolve.processed} assigned=${resolve.assigned}; ` +
+        `exact_content_splits=${exactContentSplits}`,
     );
   }
 }

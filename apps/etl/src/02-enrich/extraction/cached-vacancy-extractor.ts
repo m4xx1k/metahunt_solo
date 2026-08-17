@@ -32,7 +32,10 @@ export class CachedVacancyExtractor {
           data: artifact.data,
           meta: {
             promptVersion: PROMPT_VERSION_FOR_AUDIT,
-            usage: artifact.usage,
+            // This request made no provider call. The canonical artifact keeps
+            // the original usage for audit, while the hit itself is explicitly
+            // zero-cost in the rss record metadata.
+            usage: zeroUsage(identity),
             ...(artifact.error ? { error: artifact.error } : {}),
           },
           cache: { ...identity, artifactId: artifact.id, hit: true },

@@ -93,6 +93,22 @@ export class DedupService {
     private readonly openai: OpenAIEmbeddingsClient,
   ) {}
 
+  /** Read-only production smoke detector; conflicts are reported separately. */
+  async countExactContentSplits(): Promise<number> {
+    const result = await this.db.execute<{ count: string }>(sql`
+      SELECT count(*)::text AS count
+      FROM (
+        SELECT record.content_fingerprint
+        FROM vacancies v
+        JOIN rss_records record ON record.id = v.last_rss_record_id
+        WHERE record.content_fingerprint IS NOT NULL
+        GROUP BY record.content_fingerprint
+        HAVING count(DISTINCT v.unique_vacancy_id) > 1
+      ) exact_splits
+    `);
+    return Number(result.rows[0]?.count ?? 0);
+  }
+
   // ═════════════════════════════════════════════════════════════
   // Embed phase — populates vacancies.embedding for all eligible
   // rows. Idempotent via embedding_source_hash: rerunning is cheap

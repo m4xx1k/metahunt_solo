@@ -119,4 +119,30 @@ describe("BamlVacancyExtractor", () => {
     expect(domains).toBe("");
     expect(skills).toBe("");
   });
+
+  it("derives cache identity from normalized input, model, and verified taxonomy", async () => {
+    const { extractor } = await bootstrap([
+      { type: "SKILL", name: "TypeScript" },
+      { type: "ROLE", name: "Backend Developer" },
+      { type: "DOMAIN", name: "Fintech" },
+    ]);
+    process.env.DEEPSEEK_MODEL = "deepseek-v4-flash";
+
+    const first = await extractor.identity("exact input");
+    const repeated = await extractor.identity("exact input");
+    expect(repeated).toEqual(first);
+
+    process.env.DEEPSEEK_MODEL = "deepseek-v4-flash-next";
+    const modelChanged = await extractor.identity("exact input");
+    const inputChanged = await extractor.identity("different input");
+    expect(modelChanged.specHash).not.toBe(first.specHash);
+    expect(inputChanged.inputHash).not.toBe(first.inputHash);
+    expect(first).toMatchObject({
+      provider: "openai-generic",
+      model: "deepseek-v4-flash",
+      bamlVersion: expect.any(String),
+      bamlSourceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      taxonomyHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+  });
 });
