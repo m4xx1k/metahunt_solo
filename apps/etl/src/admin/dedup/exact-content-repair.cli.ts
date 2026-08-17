@@ -32,6 +32,8 @@ type Manifest = {
   createdAt: string;
   postingCount: number;
   plans: Plan[];
+  /** Known-company exact matches intentionally excluded from automatic repair. */
+  conflictVacancyIds: string[];
   groups: unknown[];
   memberships: Array<{ id: string; groupId: string }>;
 };
