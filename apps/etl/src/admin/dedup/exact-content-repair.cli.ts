@@ -22,6 +22,8 @@ type Row = {
 };
 type Plan = {
   fingerprint: string;
+  /** Every exact fingerprint represented by this connected group component. */
+  fingerprints: string[];
   targetGroupId: string;
   sourceGroupIds: string[];
   recordIds: string[];
@@ -68,7 +70,11 @@ async function planOrApply(pool: Pool, apply: boolean): Promise<void> {
   `)
   ).rows;
   const discovered = makePlans(rows);
-  const plans = discovered.filter((plan) => plan.conflicts.length === 0);
+  // Several exact-content clusters can share a historical semantic group.
+  // Treat their union as one component so every membership moves to the same,
+  // deterministic survivor, regardless of the order in which fingerprints
+  // happen to be discovered.
+  const plans = coalescePlans(discovered.filter((plan) => plan.conflicts.length === 0));
   const conflicts = discovered.flatMap((p) => p.conflicts);
   // Deliberately prints only UUIDs/fingerprints/group ids; never DATABASE_URL.
   console.log(
@@ -125,9 +131,8 @@ async function planOrApply(pool: Pool, apply: boolean): Promise<void> {
     // Persist rollback state before mutation. It contains no connection data.
     await mkdir(dirname(manifestPath), { recursive: true });
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 });
-    // Exact clusters can overlap through a pre-existing semantic group. Apply
-    // every move before deleting anything: deleting a group midway would break
-    // the deferred membership FK for a later cluster in the same transaction.
+    // Components are disjoint, but move all memberships before deleting any
+    // emptied group so the deferred membership FK stays valid throughout.
     for (const plan of plans) await applyPlan(client, plan, rows);
     const targetGroups = [...new Set(plans.map((plan) => plan.targetGroupId))];
     for (const groupId of targetGroups) await repairRollup(client, groupId);
@@ -187,6 +192,7 @@ function makePlans(rows: Row[]): Plan[] {
     if (conflicts.length) {
       plans.push({
         fingerprint,
+        fingerprints: [fingerprint],
         targetGroupId: groups.sort()[0],
         sourceGroupIds: groups.slice(1),
         recordIds: members.map((m) => m.id),
@@ -197,6 +203,7 @@ function makePlans(rows: Row[]): Plan[] {
     const sortedGroups = groups.sort();
     plans.push({
       fingerprint,
+      fingerprints: [fingerprint],
       targetGroupId: sortedGroups[0],
       sourceGroupIds: sortedGroups.slice(1),
       recordIds: members.map((m) => m.id),
@@ -204,6 +211,64 @@ function makePlans(rows: Row[]): Plan[] {
     });
   }
   return plans;
+}
+
+/**
+ * Coalesce overlapping exact-match plans into disjoint connected components.
+ * A component has one lexicographically deterministic survivor, rather than
+ * allowing a group that is a target in one plan and source in another to make
+ * the final result depend on update order.
+ */
+function coalescePlans(plans: Plan[]): Plan[] {
+  const parent = new Map<string, string>();
+  const ensure = (id: string) => {
+    if (!parent.has(id)) parent.set(id, id);
+  };
+  const find = (id: string): string => {
+    const root = parent.get(id);
+    if (!root) throw new Error(`missing repair group ${id}`);
+    if (root === id) return id;
+    const resolved = find(root);
+    parent.set(id, resolved);
+    return resolved;
+  };
+  const union = (left: string, right: string) => {
+    const leftRoot = find(left);
+    const rightRoot = find(right);
+    if (leftRoot !== rightRoot) parent.set(rightRoot, leftRoot);
+  };
+
+  for (const plan of plans) {
+    const groups = [plan.targetGroupId, ...plan.sourceGroupIds];
+    for (const group of groups) ensure(group);
+    for (const group of groups.slice(1)) union(groups[0], group);
+  }
+
+  const components = new Map<string, { groups: Set<string>; plans: Plan[] }>();
+  for (const plan of plans) {
+    const component = components.get(find(plan.targetGroupId)) ?? {
+      groups: new Set<string>(),
+      plans: [],
+    };
+    for (const group of [plan.targetGroupId, ...plan.sourceGroupIds]) component.groups.add(group);
+    component.plans.push(plan);
+    components.set(find(plan.targetGroupId), component);
+  }
+
+  return [...components.values()]
+    .map(({ groups, plans: componentPlans }) => {
+      const sortedGroups = [...groups].sort();
+      const fingerprints = [...new Set(componentPlans.flatMap((plan) => plan.fingerprints))].sort();
+      return {
+        fingerprint: fingerprints[0],
+        fingerprints,
+        targetGroupId: sortedGroups[0],
+        sourceGroupIds: sortedGroups.slice(1),
+        recordIds: [...new Set(componentPlans.flatMap((plan) => plan.recordIds))].sort(),
+        conflicts: [],
+      };
+    })
+    .sort((left, right) => left.targetGroupId.localeCompare(right.targetGroupId));
 }
 
 async function applyPlan(client: PoolClient, plan: Plan, all: Row[]): Promise<void> {
