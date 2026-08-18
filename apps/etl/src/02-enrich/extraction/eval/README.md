@@ -35,3 +35,16 @@ pnpm eval:vacancy-extraction -- --live --runs 3 --max-calls 180 \
 `--max-calls` is a hard pre-flight ceiling. `--max-cost-usd` stops additional
 calls once observed provider usage reaches the declared budget; an individual
 provider request can only be priced after it completes.
+
+## Production-candidate intake
+
+This is a separate read-only command. It selects recent boundary cases and
+prints source references plus cleaned extraction input locally; it never calls
+a model and never writes the database.
+
+```bash
+DATABASE_URL="$(scripts/prod-db-url.sh)" pnpm eval:vacancy-intake -- --per-slice 6
+```
+
+Do not commit its raw output. A reviewer must de-identify and label only the
+chosen cases before adding them to the golden set.
