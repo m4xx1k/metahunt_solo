@@ -19,3 +19,19 @@ a model call by itself.
 The evaluator will refuse to make live model calls unless every selected case is
 approved. It captures the live VERIFIED taxonomy at evaluation time, rather
 than pretending this draft's small role list is a production taxonomy snapshot.
+
+## Commands
+
+```bash
+# Default and safe: validates the dataset and prints a plan. No DB/model access.
+pnpm eval:vacancy-extraction -- --dry-run
+
+# Only after a human marks the selected cases approved. This is deliberately
+# explicit and records a JSON report; it is never part of Jest or CI.
+pnpm eval:vacancy-extraction -- --live --runs 3 --max-calls 180 \
+  --max-cost-usd 5 --out .scratch/role-contract-v1.json
+```
+
+`--max-calls` is a hard pre-flight ceiling. `--max-cost-usd` stops additional
+calls once observed provider usage reaches the declared budget; an individual
+provider request can only be priced after it completes.

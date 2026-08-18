@@ -40,6 +40,7 @@
     "dedup:reset": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/02-enrich/dedup/dedup.cli.js reset",
     "dedup:repair-exact": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/dedup/exact-content-repair.cli.js",
     "baml:identity:check": "node scripts/check-baml-production-identity.mjs",
+    "eval:vacancy-extraction": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/extraction-eval/vacancy-extraction-eval.cli.js",
     "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
     "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int",
     "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js"
