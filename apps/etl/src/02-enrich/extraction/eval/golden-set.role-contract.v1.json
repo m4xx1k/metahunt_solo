@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "contract": "role-contract-v1",
+  "taxonomySource": "live-verified-at-eval-time",
+  "cases": [
+    {
+      "id": "backend-lead-discipline",
+      "slice": "lead-discipline",
+      "source": "synthetic_contract_fixture",
+      "text": "Tech Lead Backend Engineer. Lead a small Node.js team and design APIs in TypeScript and PostgreSQL.",
+      "expected": { "isTech": true, "role": "Backend Engineer", "seniority": "LEAD" },
+      "rationale": "Lead changes seniority; backend remains the browseable discipline.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "frontend-senior-no-lead",
+      "slice": "lead-discipline",
+      "source": "synthetic_contract_fixture",
+      "text": "Senior Frontend Engineer. Work with React, TypeScript and accessibility. Mentor teammates occasionally.",
+      "expected": { "isTech": true, "role": "Frontend Engineer", "seniority": "SENIOR" },
+      "rationale": "Occasional mentoring alone must not promote a senior IC vacancy to LEAD.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "data-architect-principal",
+      "slice": "architect",
+      "source": "synthetic_contract_fixture",
+      "text": "Principal Data Architect. Own the data platform architecture, Kafka pipelines and warehouse strategy.",
+      "expected": { "isTech": true, "role": "Data Engineer", "seniority": "PRINCIPAL" },
+      "rationale": "The discipline is data engineering; explicit Principal supports the level.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "security-architect-context",
+      "slice": "architect",
+      "source": "synthetic_contract_fixture",
+      "text": "Security Architect. Define cloud security controls and threat modelling for AWS services.",
+      "expected": { "isTech": true, "role": "Security Engineer", "seniority": "PRINCIPAL" },
+      "rationale": "Architect should not erase the security discipline; reviewer must confirm the chosen level policy.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "cto-technical-leadership",
+      "slice": "executive",
+      "source": "synthetic_contract_fixture",
+      "text": "CTO for a SaaS startup. Set engineering strategy, hire leaders and remain accountable for platform architecture.",
+      "expected": { "isTech": true, "role": null, "seniority": "C_LEVEL" },
+      "rationale": "Executive technical leadership is not silently mapped to a coding specialty.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "cto-nontechnical",
+      "slice": "executive",
+      "source": "synthetic_contract_fixture",
+      "text": "CTO for a marketing agency. Own vendor selection, office IT and business technology budgets.",
+      "expected": { "isTech": false, "role": null, "seniority": "C_LEVEL" },
+      "rationale": "A senior title at a technology-using company is not automatically an in-scope engineering role.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "generic-software-engineer",
+      "slice": "generic-role",
+      "source": "synthetic_contract_fixture",
+      "text": "Software Engineer. Build internal services in Go; the posting gives no clearer product discipline.",
+      "expected": { "isTech": true, "role": "Software Engineer", "seniority": null },
+      "rationale": "Generic Software Engineer is permitted only as an explicit escape hatch, not a fallback for a known discipline.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "software-engineer-backend-evidence",
+      "slice": "generic-role",
+      "source": "synthetic_contract_fixture",
+      "text": "Software Engineer, backend focus. Design REST APIs, PostgreSQL data models and asynchronous Go services.",
+      "expected": { "isTech": true, "role": "Backend Engineer", "seniority": null },
+      "rationale": "Specific backend evidence beats the generic title.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "ml-engineer",
+      "slice": "data-ai-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Machine Learning Engineer. Productionize ranking models, feature pipelines and model monitoring.",
+      "expected": { "isTech": true, "role": "Machine Learning Engineer", "seniority": null },
+      "rationale": "ML engineering is an approved distinct discipline.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "data-analyst",
+      "slice": "data-ai-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Data Analyst. Build BI dashboards, SQL reports and product metrics for stakeholders.",
+      "expected": { "isTech": true, "role": "Data Analyst", "seniority": null },
+      "rationale": "Analytics is not silently folded into Data Engineer.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "automation-qa",
+      "slice": "qa-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Senior QA Automation Engineer. Create Playwright regression suites and CI quality gates.",
+      "expected": { "isTech": true, "role": "Automation QA Engineer", "seniority": "SENIOR" },
+      "rationale": "Automation QA is more specific than the QA parent role.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "manual-qa",
+      "slice": "qa-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Manual QA Engineer. Test web releases, write test cases and report defects; no automation responsibilities.",
+      "expected": { "isTech": true, "role": "Manual QA Engineer", "seniority": null },
+      "rationale": "Manual and automation QA must remain distinguishable.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "ios-engineer",
+      "slice": "mobile-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "iOS Engineer. Ship native Swift and SwiftUI features for a consumer application.",
+      "expected": { "isTech": true, "role": "iOS Engineer", "seniority": null },
+      "rationale": "The mobile platform is known and should not collapse to a generic mobile role.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "cross-platform-mobile",
+      "slice": "mobile-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Cross-platform Mobile Engineer. Build Android and iOS applications in Flutter.",
+      "expected": { "isTech": true, "role": "Cross-platform Mobile Engineer", "seniority": null },
+      "rationale": "Cross-platform is distinct from an iOS-only or Android-only role.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "product-manager-nontech",
+      "slice": "is-tech-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Product Manager. Define roadmaps, interview customers and coordinate design and engineering teams.",
+      "expected": { "isTech": false, "role": null, "seniority": null },
+      "rationale": "Product management is out of the approved engineering-role scope.",
+      "reviewStatus": "draft"
+    },
+    {
+      "id": "devops-platform",
+      "slice": "discipline-boundary",
+      "source": "synthetic_contract_fixture",
+      "text": "Platform Engineer. Operate Kubernetes, Terraform and CI/CD for internal developer infrastructure.",
+      "expected": { "isTech": true, "role": "DevOps Engineer", "seniority": null },
+      "rationale": "The approved taxonomy treats platform engineering as the DevOps discipline.",
+      "reviewStatus": "draft"
+    }
+  ]
+}
