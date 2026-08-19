@@ -36,6 +36,17 @@ pnpm eval:vacancy-extraction -- --live --runs 3 --max-calls 180 \
 calls once observed provider usage reaches the declared budget; an individual
 provider request can only be priced after it completes.
 
+Run the baseline and candidate from their respective checked-out Git revisions,
+then compare their saved reports offline. The comparison refuses different
+golden-set versions and writes aggregate plus per-case metric deltas.
+
+```bash
+pnpm eval:vacancy-extraction:compare -- \
+  --baseline .scratch/role-contract-baseline.json \
+  --candidate .scratch/role-contract-candidate.json \
+  --out .scratch/role-contract-comparison.json
+```
+
 ## Production-candidate intake
 
 This is a separate read-only command. It selects recent boundary cases and

@@ -42,6 +42,7 @@
     "baml:identity:check": "node scripts/check-baml-production-identity.mjs",
     "baml:identity:update": "node scripts/check-baml-production-identity.mjs --write",
     "eval:vacancy-extraction": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/extraction-eval/vacancy-extraction-eval.cli.js",
+    "eval:vacancy-extraction:compare": "pnpm --filter @metahunt/etl build && node apps/etl/dist/admin/extraction-eval/vacancy-extraction-compare.cli.js",
     "eval:vacancy-intake": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/extraction-eval/golden-set-intake.cli.js",
     "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
     "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int",
