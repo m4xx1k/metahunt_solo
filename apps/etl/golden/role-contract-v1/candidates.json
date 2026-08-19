@@ -1,0 +1,7161 @@
+{
+  "generatedAt": "2026-08-19T22:34:27.407Z",
+  "candidates": [
+    {
+      "id": "292dcef5-538d-483f-81aa-82ad0f2b44be",
+      "title": "Recruitment Team Lead",
+      "link": "https://djinni.co/jobs/831321-recruitment-team-lead/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "IT Recruiter",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "IT Recruiter"
+        },
+        "seniority": {
+          "value": "LEAD",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "LEAD"
+        },
+        "skills": {
+          "value": {
+            "optional": [
+              "Automation",
+              "People Management",
+              "Interviewing",
+              "Negotiation",
+              "Sourcing"
+            ],
+            "required": [
+              "Talent Acquisition",
+              "Technical Recruiting",
+              "ATS",
+              "LinkedIn Recruiter",
+              "Hiring"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [
+              "Automation",
+              "People Management",
+              "Interviewing",
+              "Negotiation",
+              "Sourcing"
+            ],
+            "required": [
+              "Talent Acquisition",
+              "Technical Recruiting",
+              "ATS",
+              "LinkedIn Recruiter",
+              "Hiring"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": {
+            "max": 120000,
+            "min": 120000,
+            "currency": "UAH"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": 120000,
+            "min": 120000,
+            "currency": "UAH"
+          }
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "bodo",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "bodo"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "3eeeb5b0-8a33-497b-b156-abf8f79e9074",
+      "title": "Android Team Lead for Unity",
+      "link": "https://djinni.co/jobs/843297-android-team-lead-for-unity/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Team Lead",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Team Lead"
+        },
+        "seniority": {
+          "value": "LEAD",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "LEAD"
+        },
+        "skills": {
+          "value": {
+            "optional": ["GitHub Copilot", "Cursor"],
+            "required": [
+              "Kotlin",
+              "Kotlin Coroutines",
+              "Flow",
+              "MVVM",
+              "MVI",
+              "Clean Architecture",
+              "SOLID",
+              "Android SDK",
+              "CI/CD",
+              "Dependency Injection"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["GitHub Copilot", "Cursor"],
+            "required": [
+              "Kotlin",
+              "Kotlin Coroutines",
+              "Flow",
+              "MVVM",
+              "MVI",
+              "Clean Architecture",
+              "SOLID",
+              "Android SDK",
+              "CI/CD",
+              "Dependency Injection"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "CONTRACT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "CONTRACT"
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": "Media",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Media"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "49e09469-08ad-43da-ad15-aa48b36c581d",
+      "title": "Технічний керівник (Head of Engineering / on-site CTO)",
+      "link": "https://djinni.co/jobs/829113-tekhnichnii-kerivnik-head-of-engineering-on-s/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Engineering Manager",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Engineering Manager"
+        },
+        "seniority": {
+          "value": "LEAD",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "LEAD"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": ["Mechatronics", "Embedded Systems"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": ["Mechatronics", "Embedded Systems"]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": "HealthTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HealthTech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Versi Bionics",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Versi Bionics"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "6467a37a-051c-4a89-b314-0bb871bc9856",
+      "title": "Head of Engineering в Futurra Group, Київ",
+      "link": "https://jobs.dou.ua/companies/futurra-group/vacancies/366228/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Engineering Manager",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Engineering Manager"
+        },
+        "seniority": {
+          "value": "C_LEVEL",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "C_LEVEL"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": [
+              "PHP",
+              "Laravel",
+              "MySQL",
+              "RabbitMQ",
+              "Redis",
+              "Elasticsearch",
+              "Microservices",
+              "Kubernetes",
+              "Vue.js"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": [
+              "PHP",
+              "Laravel",
+              "MySQL",
+              "RabbitMQ",
+              "Redis",
+              "Elasticsearch",
+              "Microservices",
+              "Kubernetes",
+              "Vue.js"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 4,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 4
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "OFFICE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OFFICE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": "AI",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AI"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Futurra Group",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Futurra Group"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "a3eff97d-daa5-4d4d-a294-3d5294bb0b2c",
+      "title": "Lead Data Engineer / Solution Architect в Xenoss, за кордоном, віддалено",
+      "link": "https://jobs.dou.ua/companies/xenoss/vacancies/362234/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Data Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Data Engineer"
+        },
+        "seniority": {
+          "value": "LEAD",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "LEAD"
+        },
+        "skills": {
+          "value": {
+            "optional": ["DSP", "SSP", "DMP", "CDP"],
+            "required": [
+              "Snowflake",
+              "dbt",
+              "Azure DevOps",
+              "Python",
+              "SQL",
+              "Snowpark",
+              "Data Warehousing",
+              "Data Governance",
+              "ETL",
+              "CI/CD"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["DSP", "SSP", "DMP", "CDP"],
+            "required": [
+              "Snowflake",
+              "dbt",
+              "Azure DevOps",
+              "Python",
+              "SQL",
+              "Snowpark",
+              "Data Warehousing",
+              "Data Governance",
+              "ETL",
+              "CI/CD"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 12,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 12
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "AdTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AdTech"
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "Xenoss",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Xenoss"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "dc6cfdc1-8afc-4db7-8ad6-02b6aabe9f74",
+      "title": "Senior Android Engineer",
+      "link": "https://djinni.co/jobs/843917-senior-android-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Android Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Android Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["VoIP", "JNI", "Android NDK", "C", "C++", "Machine Learning"],
+            "required": [
+              "Kotlin",
+              "Java",
+              "Kotlin Coroutines",
+              "Android SDK",
+              "Android Jetpack",
+              "Jetpack Compose",
+              "MVVM",
+              "Clean Architecture",
+              "Koin",
+              "Hilt",
+              "Dagger",
+              "BLE",
+              "REST-API",
+              "Retrofit",
+              "Room",
+              "Git",
+              "CI/CD"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["VoIP", "JNI", "Android NDK", "C", "C++", "Machine Learning"],
+            "required": [
+              "Kotlin",
+              "Java",
+              "Kotlin Coroutines",
+              "Android SDK",
+              "Android Jetpack",
+              "Jetpack Compose",
+              "MVVM",
+              "Clean Architecture",
+              "Koin",
+              "Hilt",
+              "Dagger",
+              "BLE",
+              "REST-API",
+              "Retrofit",
+              "Room",
+              "Git",
+              "CI/CD"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 6,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 6
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "N-iX",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "N-iX"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "fc4fc7a4-240b-4248-b480-bfd369921416",
+      "title": "Middle iOS Engineer",
+      "link": "https://djinni.co/jobs/841388-middle-ios-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "iOS Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "iOS Engineer"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": ["BLE", "OTA"],
+            "required": [
+              "Swift",
+              "Xcode",
+              "UIKit",
+              "SwiftUI",
+              "Core Bluetooth",
+              "CocoaPods",
+              "SPM",
+              "GCD",
+              "Combine",
+              "REST API"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["BLE", "OTA"],
+            "required": [
+              "Swift",
+              "Xcode",
+              "UIKit",
+              "SwiftUI",
+              "Core Bluetooth",
+              "CocoaPods",
+              "SPM",
+              "GCD",
+              "Combine",
+              "REST API"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "N-iX",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "N-iX"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "87a0e610-1bd1-43ec-a82d-7aa0c46aa422",
+      "title": "Інженер програмного забезпечення (верстати з ЧПУ) в NGO Umbrella, $500–2000, Київ",
+      "link": "https://jobs.dou.ua/companies/nvo-sil-oboroni/vacancies/286354/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": {
+            "max": 2000,
+            "min": 500,
+            "currency": "USD"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": 2000,
+            "min": 500,
+            "currency": "USD"
+          }
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": "NGO Umbrella",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "NGO Umbrella"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "900e03b2-8f36-4e20-9be6-c7f6c58516e5",
+      "title": "Full-stack Developer (JS, AI)",
+      "link": "https://djinni.co/jobs/834995-full-stack-developer-js-ai/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "b5f4da2c-6f7b-4644-871c-bee4e4ba8ea8",
+      "title": "Senior Computer Vision / ML Engineer (Автономні системи — Drones) в A19Lab.com, від&nbsp;$4000, Arlington, VA, USA, Київ, Варшава (Польща), віддалено",
+      "link": "https://jobs.dou.ua/companies/a19lab/vacancies/285535/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Computer Vision Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Computer Vision Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["ROS", "Linux", "OpenCV", "TensorFlow", "MATLAB"],
+            "required": [
+              "Computer Vision",
+              "Image Processing",
+              "Sensor Fusion",
+              "Linear Algebra",
+              "Calculus",
+              "Statistics",
+              "Bayesian Filtering",
+              "Optimization",
+              "Neural Networks",
+              "Research"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["ROS", "Linux", "OpenCV", "TensorFlow", "MATLAB"],
+            "required": [
+              "Computer Vision",
+              "Image Processing",
+              "Sensor Fusion",
+              "Linear Algebra",
+              "Calculus",
+              "Statistics",
+              "Bayesian Filtering",
+              "Optimization",
+              "Neural Networks",
+              "Research"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": {
+            "max": null,
+            "min": 4000,
+            "currency": "USD"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": null,
+            "min": 4000,
+            "currency": "USD"
+          }
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Arlington",
+              "country": "United States"
+            },
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Arlington",
+              "country": "United States"
+            },
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": "AI",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AI"
+        },
+        "engagementType": {
+          "value": "STARTUP",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "STARTUP"
+        },
+        "companyName": {
+          "value": "A19Lab.com",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "A19Lab.com"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "cfcb7d36-1b1a-4c5b-91de-521e092b8c28",
+      "title": "Head of Learning and Development",
+      "link": "https://djinni.co/jobs/818437-head-of-learning-and-development/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": "Product Manager",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Product Manager"
+        },
+        "seniority": {
+          "value": "LEAD",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "LEAD"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Synthesia", "HeyGen", "AI Agents"],
+            "required": [
+              "AI",
+              "Prompt Engineering",
+              "Knowledge Bases",
+              "Learning Management System",
+              "Product Management",
+              "Analytics",
+              "Performance Management"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Synthesia", "HeyGen", "AI Agents"],
+            "required": [
+              "AI",
+              "Prompt Engineering",
+              "Knowledge Bases",
+              "Learning Management System",
+              "Product Management",
+              "Analytics",
+              "Performance Management"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 2,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 2
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": "SaaS",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SaaS"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Kiss My Apps",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Kiss My Apps"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "127749e3-9277-4842-bb5c-d32583e18c43",
+      "title": "QA Engineer",
+      "link": "https://djinni.co/jobs/825742-qa-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "92650a2b-49a7-45a7-b7e7-5bd228aeae73",
+      "title": "Data Engineer",
+      "link": "https://djinni.co/jobs/824644-data-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Data Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Data Engineer"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": [
+              "Python",
+              "SQL",
+              "Apache Airflow",
+              "ClickHouse",
+              "PostgreSQL",
+              "MongoDB",
+              "dbt",
+              "AWS"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": [
+              "Python",
+              "SQL",
+              "Apache Airflow",
+              "ClickHouse",
+              "PostgreSQL",
+              "MongoDB",
+              "dbt",
+              "AWS"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 1,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 1
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "Fintech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Fintech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "GiniAnalytics",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "GiniAnalytics"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "b874908a-48ef-4af4-ad8c-be3528be0a7a",
+      "title": "Power Platform Developer в Global Mediator, Київ, Житомир, Бухарест (Румунія), віддалено",
+      "link": "https://jobs.dou.ua/companies/global-mediator/vacancies/316238/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Zhytomyr",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Bucharest",
+              "country": "Romania"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Zhytomyr",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Bucharest",
+              "country": "Romania"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": "Global Mediator",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Global Mediator"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "c5453d84-742f-40af-b58f-f3c8bf690b5a",
+      "title": "Data Analyst",
+      "link": "https://djinni.co/jobs/829399-data-analyst/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "b2dd5236-e240-4704-aaa7-7de0c01dee36",
+      "title": "Senior Data Analyst в Sigma Software, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Варшава (Польща), Краків (Польща), Познань (Польща), віддалено",
+      "link": "https://jobs.dou.ua/companies/sigma-software/vacancies/360350/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Data Analyst",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Data Analyst"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": ["SQL", "Python", "R", "Power BI", "Tableau", "Looker", "Excel"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": ["SQL", "Python", "R", "Power BI", "Tableau", "Looker", "Excel"]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Kharkiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Dnipro",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Odesa",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Vinnytsia",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Ivano-Frankivsk",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Krakow",
+              "country": "Poland"
+            },
+            {
+              "city": "Poznan",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Kharkiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Dnipro",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Odesa",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Vinnytsia",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Ivano-Frankivsk",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Krakow",
+              "country": "Poland"
+            },
+            {
+              "city": "Poznan",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": "Ecommerce",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Ecommerce"
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "Sigma Software",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Sigma Software"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "0587af8d-fbe2-42af-8d84-e058b92aad12",
+      "title": "Ardupilot Engineer",
+      "link": "https://djinni.co/jobs/834924-ardupilot-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "39416226-aa0f-416d-9f41-26a478c9f668",
+      "title": "Shopify CRO and Product-Page Specialist (AI-native)",
+      "link": "https://djinni.co/jobs/832339-shopify-cro-and-product-page-specialist-ai-na/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": "Copywriter / Content Manager",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Copywriter / Content Manager"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["ChatGPT", "Claude", "Canva"],
+            "required": [
+              "Shopify",
+              "Copywriting",
+              "A/B Testing",
+              "Google Analytics",
+              "Meta Marketing API",
+              "Figma"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["ChatGPT", "Claude", "Canva"],
+            "required": [
+              "Shopify",
+              "Copywriting",
+              "A/B Testing",
+              "Google Analytics",
+              "Meta Marketing API",
+              "Figma"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": {
+            "max": 4333.33,
+            "min": 2600,
+            "currency": "USD"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": 4333.33,
+            "min": 2600,
+            "currency": "USD"
+          }
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "PART_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PART_TIME"
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "Ecommerce",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Ecommerce"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "rüte®",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "rüte®"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "252fdac2-b0e1-44d8-93f1-5390ff65a2ae",
+      "title": "Senior Full Stack Developer (React + Node.js)",
+      "link": "https://djinni.co/jobs/834975-senior-full-stack-developer-react-node-js/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "25c4b623-7824-4c1d-b6ee-2b4a68bc1a34",
+      "title": "Principal AI-Augmented Test Automation Engineer в Sigma Software, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Тернопіль, Черкаси, Чернівці, Варшава (Польща), Краків (Польща), Лісабон (Португалія), Познань (Польща), віддалено",
+      "link": "https://jobs.dou.ua/companies/sigma-software/vacancies/359820/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "SDET",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SDET"
+        },
+        "seniority": {
+          "value": "PRINCIPAL",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRINCIPAL"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Cursor", "Claude Code", "AI-native QA", "SDLC"],
+            "required": [
+              "Playwright",
+              "TypeScript",
+              "AI coding agents",
+              "E2E testing",
+              "Test automation architecture"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Cursor", "Claude Code", "AI-native QA", "SDLC"],
+            "required": [
+              "Playwright",
+              "TypeScript",
+              "AI coding agents",
+              "E2E testing",
+              "Test automation architecture"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Kharkiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Dnipro",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Odesa",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Vinnytsia",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Ivano-Frankivsk",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Ternopil",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Cherkasy",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Chernivtsi",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Kraków",
+              "country": "Poland"
+            },
+            {
+              "city": "Lisbon",
+              "country": "Portugal"
+            },
+            {
+              "city": "Poznań",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Kharkiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Dnipro",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Odesa",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Vinnytsia",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Ivano-Frankivsk",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Ternopil",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Cherkasy",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Chernivtsi",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Kraków",
+              "country": "Poland"
+            },
+            {
+              "city": "Lisbon",
+              "country": "Portugal"
+            },
+            {
+              "city": "Poznań",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "Sigma Software",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Sigma Software"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "4e595517-1e05-4048-a875-b3636b411162",
+      "title": "Product Owner / Business Analyst - AI ERP from scratch",
+      "link": "https://djinni.co/jobs/836550-product-owner-business-analyst-ai-erp-from-sc/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": "Business Analyst",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Business Analyst"
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "optional": ["Figma", "API"],
+            "required": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Figma", "API"],
+            "required": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": {
+            "max": 1500,
+            "min": 700,
+            "currency": "USD"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": 1500,
+            "min": 700,
+            "currency": "USD"
+          }
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "ERP",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "ERP"
+        },
+        "engagementType": {
+          "value": "AGENCY",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AGENCY"
+        },
+        "companyName": {
+          "value": "Tailored Tech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Tailored Tech"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "6c872105-0c50-43ed-a906-dc7f3b50d25f",
+      "title": "AI Creator",
+      "link": "https://djinni.co/jobs/838925-ai-creator/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "PART_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PART_TIME"
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Houston",
+              "country": "United States"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Houston",
+              "country": "United States"
+            }
+          ]
+        },
+        "domain": {
+          "value": "Logistics",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Logistics"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Cargofy",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Cargofy"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "4a9199d1-30b1-4a2d-84dd-6e08306a311d",
+      "title": "Embedded C/C++ Software Engineer",
+      "link": "https://djinni.co/jobs/813869-embedded-c-c-software-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "e33ce465-c738-4ca6-8db7-f0e923e64083",
+      "title": "Senior Control Engineer — Drones and Robotics в A19Lab.com, від&nbsp;$4000, Київ, Варшава (Польща), віддалено",
+      "link": "https://jobs.dou.ua/companies/a19lab/vacancies/285536/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Embedded Software Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Embedded Software Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [
+              "Computer Vision",
+              "Hardware Engineering",
+              "Path Planning",
+              "Aerodynamics",
+              "Statistics"
+            ],
+            "required": [
+              "C/C++",
+              "MATLAB",
+              "Octave",
+              "Sensor Fusion",
+              "Optimal Control",
+              "Systems Modeling"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [
+              "Computer Vision",
+              "Hardware Engineering",
+              "Path Planning",
+              "Aerodynamics",
+              "Statistics"
+            ],
+            "required": [
+              "C/C++",
+              "MATLAB",
+              "Octave",
+              "Sensor Fusion",
+              "Optimal Control",
+              "Systems Modeling"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": {
+            "max": null,
+            "min": 4000,
+            "currency": "USD"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": null,
+            "min": 4000,
+            "currency": "USD"
+          }
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": "Hardware",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Hardware"
+        },
+        "engagementType": {
+          "value": "STARTUP",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "STARTUP"
+        },
+        "companyName": {
+          "value": "A19Lab.com",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "A19Lab.com"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "4070f454-abb6-4e3d-8393-625579edb2b3",
+      "title": "Manual QA Specialist",
+      "link": "https://djinni.co/jobs/833187-manual-qa-specialist/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Manual QA Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Manual QA Engineer"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": ["k6", "JMeter", "OWASP", "Security Testing"],
+            "required": ["Manual Testing", "Postman", "Swagger", "Jira", "SQL", "CI/CD"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["k6", "JMeter", "OWASP", "Security Testing"],
+            "required": ["Manual Testing", "Postman", "Swagger", "Jira", "SQL", "CI/CD"]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": "SaaS",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SaaS"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "EverHelp",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "EverHelp"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "0f7526fd-a534-4fd8-81dc-b3bb5c0bc237",
+      "title": "RF Engineer",
+      "link": "https://djinni.co/jobs/825424-rf-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "required": [],
+            "optional": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "required": [],
+            "optional": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "183bb11b-2377-40bb-8d58-713e57f20e8a",
+      "title": "SecOps Engineer (можливе переведення для чинних військовослужбовців)",
+      "link": "https://djinni.co/jobs/829588-secops-engineer-mozhlive-perevedennia-dlia-ch/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Security Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Security Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Kubernetes", "Container Security", "MITRE ATT&CK", "NIST", "ISO 27001"],
+            "required": [
+              "SIEM",
+              "Microsoft Sentinel",
+              "Splunk",
+              "Elastic Stack",
+              "Wazuh",
+              "IAM",
+              "MFA",
+              "Linux",
+              "Network Security",
+              "VPN"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Kubernetes", "Container Security", "MITRE ATT&CK", "NIST", "ISO 27001"],
+            "required": [
+              "SIEM",
+              "Microsoft Sentinel",
+              "Splunk",
+              "Elastic Stack",
+              "Wazuh",
+              "IAM",
+              "MFA",
+              "Linux",
+              "Network Security",
+              "VPN"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 4,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 4
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "OFFICE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OFFICE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "bf79b3f9-7535-4fcc-88e6-f96b347800af",
+      "title": "Support Engineer",
+      "link": "https://djinni.co/jobs/835636-support-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": "Technical Support Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Technical Support Engineer"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": []
+          }
+        },
+        "experienceYears": {
+          "value": 1,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 1
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Sofia",
+              "country": "Bulgaria"
+            },
+            {
+              "city": "Prague",
+              "country": "Czech Republic"
+            },
+            {
+              "city": "Bratislava",
+              "country": "Slovakia"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Bucharest",
+              "country": "Romania"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lviv",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Sofia",
+              "country": "Bulgaria"
+            },
+            {
+              "city": "Prague",
+              "country": "Czech Republic"
+            },
+            {
+              "city": "Bratislava",
+              "country": "Slovakia"
+            },
+            {
+              "city": "Warsaw",
+              "country": "Poland"
+            },
+            {
+              "city": "Bucharest",
+              "country": "Romania"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "06e99bec-6f27-4659-a846-34559e16adae",
+      "title": "Junior/Middle Java/Kotlin Developer",
+      "link": "https://djinni.co/jobs/778435-junior-middle-java-kotlin-developer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Backend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Backend Developer"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": ["Java", "Kotlin", "Hibernate", "Spring", "MySQL"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": ["Java", "Kotlin", "Hibernate", "Spring", "MySQL"]
+          }
+        },
+        "experienceYears": {
+          "value": 1,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 1
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "OFFICE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OFFICE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Uzhhorod",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Gdansk",
+              "country": "Poland"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Uzhhorod",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Gdansk",
+              "country": "Poland"
+            }
+          ]
+        },
+        "domain": {
+          "value": "HealthTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HealthTech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Gransoft",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Gransoft"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "e74e64f5-9090-4c6b-8d1a-665423a03c2a",
+      "title": "Director of Product (AI Platform)",
+      "link": "https://djinni.co/jobs/838885-director-of-product-ai-platform/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "seniority": {
+          "value": "C_LEVEL",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "C_LEVEL"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": []
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": []
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": "SaaS",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SaaS"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "aec3528b-8b9b-44fd-a262-062c19b0d620",
+      "title": "Senior PHP Developer",
+      "link": "https://djinni.co/jobs/526179-senior-php-developer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Backend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Backend Developer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Symfony", "PostgreSQL", "Docker", "XDebug", "Nginx", "UnitTest"],
+            "required": [
+              "PHP",
+              "OOP",
+              "Firebird",
+              "MSSQL",
+              "SQL",
+              "PDO",
+              "InterBase",
+              "JavaScript",
+              "jQuery",
+              "HTML/CSS",
+              "REST API",
+              "JSON",
+              "Git",
+              "GitLab",
+              "Apache",
+              "Composer"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Symfony", "PostgreSQL", "Docker", "XDebug", "Nginx", "UnitTest"],
+            "required": [
+              "PHP",
+              "OOP",
+              "Firebird",
+              "MSSQL",
+              "SQL",
+              "PDO",
+              "InterBase",
+              "JavaScript",
+              "jQuery",
+              "HTML/CSS",
+              "REST API",
+              "JSON",
+              "Git",
+              "GitLab",
+              "Apache",
+              "Composer"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "WorkTime",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "WorkTime"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "286146ee-fe88-4081-b286-de0f074b396c",
+      "title": "C++ Developer",
+      "link": "https://djinni.co/jobs/824183-c-developer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Embedded Software Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Embedded Software Engineer"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": ["CMake", "Ninja", "LTspice", "Linux", "Embedded Systems"],
+            "required": [
+              "C++",
+              "C",
+              "Firmware",
+              "STM32",
+              "Bluetooth",
+              "LoRaWAN",
+              "NB-IoT",
+              "Qt",
+              "Multithreading",
+              "Altium Designer"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["CMake", "Ninja", "LTspice", "Linux", "Embedded Systems"],
+            "required": [
+              "C++",
+              "C",
+              "Firmware",
+              "STM32",
+              "Bluetooth",
+              "LoRaWAN",
+              "NB-IoT",
+              "Qt",
+              "Multithreading",
+              "Altium Designer"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "OFFICE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OFFICE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Odesa",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lisbon",
+              "country": "Portugal"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Odesa",
+              "country": "Ukraine"
+            },
+            {
+              "city": "Lisbon",
+              "country": "Portugal"
+            }
+          ]
+        },
+        "domain": {
+          "value": "Hardware",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Hardware"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "talanovyti",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "talanovyti"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        }
+      }
+    },
+    {
+      "id": "83980334-1c4b-42fa-9d26-9c023feb6c53",
+      "title": "Middle Organic Growth Specialist (SEO and AI)",
+      "link": "https://djinni.co/jobs/834035-middle-organic-growth-specialist-seo-and-ai/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "role": {
+          "value": "SEO Specialist",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SEO Specialist"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": [
+              "SEO",
+              "Claude",
+              "Ahrefs",
+              "Google Analytics",
+              "Content Marketing",
+              "Technical SEO",
+              "On-page SEO",
+              "Link building",
+              "AI Agents"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": [
+              "SEO",
+              "Claude",
+              "Ahrefs",
+              "Google Analytics",
+              "Content Marketing",
+              "Technical SEO",
+              "On-page SEO",
+              "Link building",
+              "AI Agents"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": {
+            "max": null,
+            "min": 2000,
+            "currency": "USD"
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": null,
+            "min": 2000,
+            "currency": "USD"
+          }
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "SaaS",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SaaS"
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": "GrowPad",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "GrowPad"
+        },
+        "hasTestAssignment": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "0556ac5e-dec8-48db-8fec-84e8ff575db3",
+      "title": "Strong Junior Data Scientist",
+      "link": "https://djinni.co/jobs/815160-strong-junior-data-scientist/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Data Scientist",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Data Scientist"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Neural Networks"],
+            "required": [
+              "Python",
+              "LLM",
+              "Diffusion Models",
+              "Prompt Engineering",
+              "LangChain",
+              "RAG",
+              "NLP",
+              "Machine Learning",
+              "Pandas",
+              "SQL"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Neural Networks"],
+            "required": [
+              "Python",
+              "LLM",
+              "Diffusion Models",
+              "Prompt Engineering",
+              "LangChain",
+              "RAG",
+              "NLP",
+              "Machine Learning",
+              "Pandas",
+              "SQL"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 1,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 1
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "01272765-ee0c-4fba-a5a9-6242f95afd1f",
+      "title": "AI Developer",
+      "link": "https://djinni.co/jobs/826959-ai-developer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "AI Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AI Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [
+              "Azure OpenAI",
+              "AWS Bedrock",
+              "GCP Vertex AI",
+              "Fine-tuning",
+              "Kubernetes"
+            ],
+            "required": [
+              "Python",
+              "LLMs",
+              "RAG",
+              "OpenAI",
+              "Anthropic",
+              "LLM frameworks",
+              "Prompt Engineering",
+              "CI/CD"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [
+              "Azure OpenAI",
+              "AWS Bedrock",
+              "GCP Vertex AI",
+              "Fine-tuning",
+              "Kubernetes"
+            ],
+            "required": [
+              "Python",
+              "LLMs",
+              "RAG",
+              "OpenAI",
+              "Anthropic",
+              "LLM frameworks",
+              "Prompt Engineering",
+              "CI/CD"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "Cybersecurity",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Cybersecurity"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Raiffeisen Bank",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Raiffeisen Bank"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        }
+      }
+    },
+    {
+      "id": "13af1bf0-6c59-4410-b9e0-1667a1de566e",
+      "title": "Frontend (React.js) developer (Junior+/Middle)",
+      "link": "https://djinni.co/jobs/773651-frontend-react-js-developer-junior-middle/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Frontend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Frontend Developer"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": ["React", "TypeScript", "Next.js"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": ["React", "TypeScript", "Next.js"]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "Snotor",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Snotor"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "0046a857-27fb-4599-9562-01783bd36bfb",
+      "title": "Embedded develope",
+      "link": "https://djinni.co/jobs/835100-embedded-develope/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Embedded Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Embedded Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [
+              "Yocto",
+              "Buildroot",
+              "systemd",
+              "LoRa",
+              "FreeRTOS",
+              "CMake",
+              "Make",
+              "KiCad",
+              "DSP"
+            ],
+            "required": [
+              "C",
+              "C++",
+              "ESP32",
+              "STM32",
+              "ARM",
+              "Embedded Linux",
+              "UART",
+              "SPI",
+              "I2C",
+              "GPIO"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [
+              "Yocto",
+              "Buildroot",
+              "systemd",
+              "LoRa",
+              "FreeRTOS",
+              "CMake",
+              "Make",
+              "KiCad",
+              "DSP"
+            ],
+            "required": [
+              "C",
+              "C++",
+              "ESP32",
+              "STM32",
+              "ARM",
+              "Embedded Linux",
+              "UART",
+              "SPI",
+              "I2C",
+              "GPIO"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 4,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 4
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "DefTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "DefTech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Moodro",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Moodro"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "064e507f-6c71-479f-a9f9-3733a3c7829b",
+      "title": "Junior+ / Middle System Administrator",
+      "link": "https://djinni.co/jobs/835478-junior-middle-system-administrator/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "System Administrator",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "System Administrator"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Google Workspace"],
+            "required": [
+              "Linux",
+              "Networking",
+              "VPN",
+              "Proxy",
+              "Server Administration",
+              "Information Security"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Google Workspace"],
+            "required": [
+              "Linux",
+              "Networking",
+              "VPN",
+              "Proxy",
+              "Server Administration",
+              "Information Security"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 1,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 1
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "00060c1e-3eb9-4c5c-a26e-f336321feb0e",
+      "title": "Dynamics 365 Business Central Developer (AL, .NET)",
+      "link": "https://djinni.co/jobs/822594-dynamics-365-business-central-developer-al-ne/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Backend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Backend Developer"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": [
+              "AL",
+              "C/AL",
+              "Microsoft Dynamics 365 Business Central",
+              ".NET",
+              "T-SQL",
+              "Git",
+              "APIs",
+              "Azure DevOps"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": [
+              "AL",
+              "C/AL",
+              "Microsoft Dynamics 365 Business Central",
+              ".NET",
+              "T-SQL",
+              "Git",
+              "APIs",
+              "Azure DevOps"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "00219d37-22ce-42fd-8bfa-7681d832cf56",
+      "title": "Senior Azure Devops",
+      "link": "https://djinni.co/jobs/833551-senior-azure-devops/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "DevOps Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "DevOps Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Azure Functions", "Azure IoT Hub", "App Service", "Log Analytics"],
+            "required": [
+              "Azure",
+              "Azure DevOps",
+              "IoT",
+              "CI/CD",
+              "Terraform",
+              "Bicep",
+              "ARM",
+              "Azure Monitor",
+              "Application Insights",
+              "Python"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Azure Functions", "Azure IoT Hub", "App Service", "Log Analytics"],
+            "required": [
+              "Azure",
+              "Azure DevOps",
+              "IoT",
+              "CI/CD",
+              "Terraform",
+              "Bicep",
+              "ARM",
+              "Azure Monitor",
+              "Application Insights",
+              "Python"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "IoT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "IoT"
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "01d90fbe-a194-4ec4-b78b-1c62fa8c4708",
+      "title": "Junior Front-end Developer",
+      "link": "https://djinni.co/jobs/825137-junior-front-end-developer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Frontend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Frontend Developer"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Figma"],
+            "required": ["HTML", "CSS", "JavaScript", "jQuery"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Figma"],
+            "required": ["HTML", "CSS", "JavaScript", "jQuery"]
+          }
+        },
+        "experienceYears": {
+          "value": 0.5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 0.5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "0811f808-5000-4f57-a1a3-745c480ecd61",
+      "title": "AdTech Solutions Engineer",
+      "link": "https://djinni.co/jobs/829757-adtech-solutions-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Solutions Architect",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Solutions Architect"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": [
+              "Google Ads API",
+              "Meta Marketing API",
+              "LinkedIn Ads API",
+              "TikTok Ads API",
+              "JavaScript",
+              "Python"
+            ],
+            "required": ["API", "REST API", "OAuth 2.0", "Webhooks", "JSON", "HTTP", "Azure"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [
+              "Google Ads API",
+              "Meta Marketing API",
+              "LinkedIn Ads API",
+              "TikTok Ads API",
+              "JavaScript",
+              "Python"
+            ],
+            "required": ["API", "REST API", "OAuth 2.0", "Webhooks", "JSON", "HTTP", "Azure"]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "UPPER_INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "UPPER_INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "AdTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AdTech"
+        },
+        "engagementType": {
+          "value": "OUTSOURCE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSOURCE"
+        },
+        "companyName": {
+          "value": "Softermii",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Softermii"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "005c9b3c-79c6-4964-bcb2-25e7c3f2c06d",
+      "title": "Junior QA Automation with Python",
+      "link": "https://djinni.co/jobs/839558-junior-qa-automation-with-python/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Automation QA Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Automation QA Engineer"
+        },
+        "seniority": {
+          "value": "JUNIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "JUNIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": ["Python", "Selenium", "Playwright", "PyTest", "API Testing"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": ["Python", "Selenium", "Playwright", "PyTest", "API Testing"]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "iGaming",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "iGaming"
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": "King Group",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "King Group"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "00b91e72-1874-4c8e-88b6-ebd422135d22",
+      "title": "Backend Engineer Core Team (GoLang + PHP)",
+      "link": "https://djinni.co/jobs/812977-backend-engineer-core-team-golang-php/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Backend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Backend Developer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Symfony", "Laravel", "Helm", "Istio", "AWS", "REST-API"],
+            "required": [
+              "Go",
+              "PHP",
+              "MySQL",
+              "PostgreSQL",
+              "RabbitMQ",
+              "Apache Kafka",
+              "Amazon SQS",
+              "Redis",
+              "Kubernetes",
+              "Docker"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Symfony", "Laravel", "Helm", "Istio", "AWS", "REST-API"],
+            "required": [
+              "Go",
+              "PHP",
+              "MySQL",
+              "PostgreSQL",
+              "RabbitMQ",
+              "Apache Kafka",
+              "Amazon SQS",
+              "Redis",
+              "Kubernetes",
+              "Docker"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "HealthTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HealthTech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "BetterMe",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "BetterMe"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "013cfda8-a4fd-41e5-ada5-9b4bb5dc4670",
+      "title": "Hardware Engineer",
+      "link": "https://djinni.co/jobs/803963-hardware-engineer/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Hardware Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Hardware Engineer"
+        },
+        "seniority": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "skills": {
+          "value": {
+            "optional": ["STM32", "Signal Integrity", "Power Integrity"],
+            "required": ["Altium Designer", "PCB Design", "Circuit Design"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["STM32", "Signal Integrity", "Power Integrity"],
+            "required": ["Altium Designer", "PCB Design", "Circuit Design"]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "INTERMEDIATE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "INTERMEDIATE"
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "Hardware",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Hardware"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Ajax Systems",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Ajax Systems"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "004419c5-230e-41b5-955d-687649fbdfb6",
+      "title": "Senior QA engineer  (electro-energetic domain)",
+      "link": "https://djinni.co/jobs/841976-senior-qa-engineer-electro-energetic-domain/",
+      "source": "djinni",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "QA Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "QA Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": ["TCP/IP", "Modbus"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": ["TCP/IP", "Modbus"]
+          }
+        },
+        "experienceYears": {
+          "value": 3,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 3
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": "NATIVE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "NATIVE"
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "engagementType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "companyName": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "00b0055f-cf6e-4a07-b1ed-c5b6ec2ffc68",
+      "title": "RF Engineer (Радіоінженер) в Technо, Київ",
+      "link": "https://jobs.dou.ua/companies/techno-electronica/vacancies/361771/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Hardware Engineer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Hardware Engineer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["Band-pass Filter", "Low-pass Filter", "BPLD", "Telecommunications"],
+            "required": [
+              "Antenna Design",
+              "RF Engineering",
+              "VNA",
+              "Spectrum Analyzer",
+              "Link Budget"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["Band-pass Filter", "Low-pass Filter", "BPLD", "Telecommunications"],
+            "required": [
+              "Antenna Design",
+              "RF Engineering",
+              "VNA",
+              "Spectrum Analyzer",
+              "Link Budget"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "salary": {
+          "value": {
+            "max": null,
+            "min": null,
+            "currency": null
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "max": null,
+            "min": null,
+            "currency": null
+          }
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "OFFICE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OFFICE"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": "Hardware",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Hardware"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Technо",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Technо"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "001758de-2c6b-4aa3-8f50-1dd6ab5d7c29",
+      "title": "Middle Data Analyst (Marketing Team, EdTech, Web) в BUKI - marketplace for tutoring, Київ, віддалено",
+      "link": "https://jobs.dou.ua/companies/buki/vacancies/367230/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Data Analyst",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Data Analyst"
+        },
+        "seniority": {
+          "value": "MIDDLE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "MIDDLE"
+        },
+        "skills": {
+          "value": {
+            "optional": [
+              "GA4",
+              "GTM",
+              "Google Ads API",
+              "Meta Ads API",
+              "DBT",
+              "Tableau",
+              "Power BI",
+              "Claude",
+              "ChatGPT",
+              "n8n"
+            ],
+            "required": ["SQL", "BigQuery", "Looker Studio"]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [
+              "GA4",
+              "GTM",
+              "Google Ads API",
+              "Meta Ads API",
+              "DBT",
+              "Tableau",
+              "Power BI",
+              "Claude",
+              "ChatGPT",
+              "n8n"
+            ],
+            "required": ["SQL", "BigQuery", "Looker Studio"]
+          }
+        },
+        "experienceYears": {
+          "value": 2,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 2
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "HYBRID",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "HYBRID"
+        },
+        "locations": {
+          "value": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": [
+            {
+              "city": "Kyiv",
+              "country": "Ukraine"
+            }
+          ]
+        },
+        "domain": {
+          "value": "EdTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "EdTech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "BUKI",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "BUKI"
+        },
+        "hasTestAssignment": {
+          "value": false,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": false
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "00b0584b-a237-455c-8b9f-e7687aff6134",
+      "title": "Golang Developer в Stape, Inc, за кордоном",
+      "link": "https://jobs.dou.ua/companies/stape-inc/vacancies/356716/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "role": {
+          "value": "Backend Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Backend Developer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": ["PHP", "Symfony", "MongoDB", "Fiber", "gRPC", "OpenAPI"],
+            "required": [
+              "Go",
+              "PostgreSQL",
+              "Docker",
+              "Kubernetes",
+              "Traefik",
+              "Nginx",
+              "RabbitMQ",
+              "Redis"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": ["PHP", "Symfony", "MongoDB", "Fiber", "gRPC", "OpenAPI"],
+            "required": [
+              "Go",
+              "PostgreSQL",
+              "Docker",
+              "Kubernetes",
+              "Traefik",
+              "Nginx",
+              "RabbitMQ",
+              "Redis"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": "FULL_TIME",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "FULL_TIME"
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "AdTech",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "AdTech"
+        },
+        "engagementType": {
+          "value": "PRODUCT",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "PRODUCT"
+        },
+        "companyName": {
+          "value": "Stape, Inc",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Stape, Inc"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    },
+    {
+      "id": "0017ca0f-d8b0-485a-be72-641a69e4a649",
+      "title": "Senior Full-Stack Developer PHP (Laravel + Vue.js) в Digital Hiring, віддалено",
+      "link": "https://jobs.dou.ua/companies/digital-hiring/vacancies/365512/?utm_source=jobsrss",
+      "source": "dou",
+      "fields": {
+        "isTech": {
+          "value": true,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": true
+        },
+        "role": {
+          "value": "Full Stack Developer",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Full Stack Developer"
+        },
+        "seniority": {
+          "value": "SENIOR",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "SENIOR"
+        },
+        "skills": {
+          "value": {
+            "optional": [],
+            "required": [
+              "PHP",
+              "Laravel",
+              "Vue.js",
+              "Nuxt.js",
+              "OOP",
+              "REST API",
+              "HTML/CSS",
+              "SASS",
+              "MySQL",
+              "TypeScript"
+            ]
+          },
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": {
+            "optional": [],
+            "required": [
+              "PHP",
+              "Laravel",
+              "Vue.js",
+              "Nuxt.js",
+              "OOP",
+              "REST API",
+              "HTML/CSS",
+              "SASS",
+              "MySQL",
+              "TypeScript"
+            ]
+          }
+        },
+        "experienceYears": {
+          "value": 5,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": 5
+        },
+        "salary": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "englishLevel": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "employmentType": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "workFormat": {
+          "value": "REMOTE",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "REMOTE"
+        },
+        "locations": {
+          "value": [],
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": []
+        },
+        "domain": {
+          "value": "Ecommerce",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Ecommerce"
+        },
+        "engagementType": {
+          "value": "OUTSTAFF",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "OUTSTAFF"
+        },
+        "companyName": {
+          "value": "Digital Hiring",
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": "Digital Hiring"
+        },
+        "hasTestAssignment": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        },
+        "hasReservation": {
+          "value": null,
+          "verdict": "prod-differs",
+          "a": null,
+          "b": null,
+          "prod": null
+        }
+      }
+    }
+  ]
+}

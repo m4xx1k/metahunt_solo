@@ -79,9 +79,10 @@ locally. It is not a production write path.
 
 The historical MET-24 labels are useful review evidence but are not automatically
 P1 ground truth: they were made under the previous role taxonomy (for example,
-they contain `CTO (Chief Technology Officer)` as a role). The P1 reviewer labels
-only `isTech`, `role`, and `seniority` against this contract, from the actual
-vacancy text. All other field labels remain untouched.
+they contain `CTO (Chief Technology Officer)` as a role). The new review covers
+all extraction fields from actual vacancy text. `isTech`, `role`, and
+`seniority` are reported as an explicit product slice, but never replace the
+full-field score.
 
 Minimum slices:
 

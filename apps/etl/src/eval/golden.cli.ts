@@ -3,6 +3,7 @@ import { arbitrate } from "./commands/arbitrate";
 import { archive } from "./commands/archive";
 import { batch } from "./commands/batch";
 import { merge } from "./commands/merge";
+import { prepareReview } from "./commands/prepare-review";
 import { releaseCheck } from "./commands/release-check";
 import { review } from "./commands/review";
 import { sample } from "./commands/sample";
@@ -15,6 +16,7 @@ const COMMANDS: Record<string, (argv: string[]) => Promise<void>> = {
   snapshot,
   batch,
   merge,
+  "prepare-review": prepareReview,
   arbitrate,
   archive,
   review,

@@ -19,16 +19,19 @@ manifest, not this prose.
 
 ## Review status
 
-No P1 labels have been approved yet. The older MET-24 labels must not be copied
-as role-contract truth because they use the old taxonomy. Human review will set
-only `isTech`, `role`, and `seniority` from the original local text under the P1
-contract; no provider call and no production write is allowed at this stage.
+No labels have been approved yet. The older MET-24 labels must not be copied as
+truth because they use the old taxonomy. This review covers all 15 extraction
+fields; `role` and `seniority` are important slices, not a separate benchmark.
+No provider call and no production write is allowed at this stage.
 
-To open the local, plaintext review packets when the P1 labelling format is
-ready, regenerate them rather than committing them:
+Prepare the full human-review queue once, then open it locally:
 
 ```bash
-GOLDEN_DIR=apps/etl/golden/role-contract-v1 pnpm golden batch
+GOLDEN_DIR=apps/etl/golden/role-contract-v1 pnpm golden prepare-review
+GOLDEN_DIR=apps/etl/golden/role-contract-v1 pnpm golden review
 ```
 
-`batches/` is ignored intentionally because it contains decoded source text.
+`prepare-review` only makes the current production extraction a visible proposal;
+it does not manufacture labels. The reviewer sees every field and the decoded
+source text, then either keeps the proposal or edits it. `batches/` is ignored
+intentionally because it contains decoded source text.
