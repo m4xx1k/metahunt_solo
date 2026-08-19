@@ -53,6 +53,12 @@ export function compareEvaluationReports(baseline: EvaluationReport, candidate: 
   if (baseline.datasetHash !== candidate.datasetHash) {
     throw new Error("cannot compare reports from different golden-set datasets");
   }
+  if (baseline.identity.model !== candidate.identity.model) {
+    throw new Error("cannot compare reports from different models");
+  }
+  if (baseline.identity.taxonomyHash !== candidate.identity.taxonomyHash) {
+    throw new Error("cannot compare reports from different VERIFIED taxonomy snapshots");
+  }
 
   const baselineCases = new Map(baseline.cases.map((item) => [item.id, item]));
   const candidateCases = new Map(candidate.cases.map((item) => [item.id, item]));

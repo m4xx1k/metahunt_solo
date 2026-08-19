@@ -58,4 +58,17 @@ describe("vacancy extraction evaluation comparison", () => {
       compareEvaluationReports(report("Backend Engineer"), report("Software Engineer", hash("f"))),
     ).toThrow("different golden-set datasets");
   });
+
+  it("refuses a comparison when the model or taxonomy changed", () => {
+    const baseline = report("Backend Engineer");
+    const differentModel = report("Software Engineer");
+    differentModel.identity.model = "another-model";
+    expect(() => compareEvaluationReports(baseline, differentModel)).toThrow("different models");
+
+    const differentTaxonomy = report("Software Engineer");
+    differentTaxonomy.identity.taxonomyHash = hash("f");
+    expect(() => compareEvaluationReports(baseline, differentTaxonomy)).toThrow(
+      "different VERIFIED taxonomy snapshots",
+    );
+  });
 });
