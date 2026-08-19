@@ -4,6 +4,9 @@
  * vacancy text or guessing labels. The reviewer de-identifies and promotes
  * chosen cases into golden-set.role-contract.v1.json.
  */
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+
 import { Pool } from "pg";
 
 import { normalizedVacancyContent } from "../../02-enrich/dedup/content-fingerprint";
@@ -89,19 +92,24 @@ async function main(): Promise<void> {
       reviewStatus: "draft",
       requiresDeidentification: true,
     }));
-    console.log(
-      JSON.stringify(
-        {
-          generatedAt: new Date().toISOString(),
-          perSlice,
-          candidateCount: candidates.length,
-          note: "Read-only intake. De-identify and human-label before copying cases into the versioned golden set.",
-          candidates,
-        },
-        null,
-        2,
-      ),
-    );
+    const intake = {
+      generatedAt: new Date().toISOString(),
+      perSlice,
+      candidateCount: candidates.length,
+      note: "Read-only intake. De-identify and human-label before copying cases into the versioned golden set.",
+      candidates,
+    };
+    const out = stringValue("--out");
+    if (out) {
+      const path = resolve(out);
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, `${JSON.stringify(intake, null, 2)}\n`, { mode: 0o600 });
+      console.log(
+        JSON.stringify({ mode: "read-only-intake", out: path, candidateCount: candidates.length }),
+      );
+    } else {
+      console.log(JSON.stringify(intake, null, 2));
+    }
   } finally {
     await pool.end();
   }
@@ -113,6 +121,12 @@ function value(flag: string, fallback: number): number {
   const result = Number(process.argv[index + 1]);
   if (!Number.isFinite(result)) throw new Error(`${flag} must be a number`);
   return result;
+}
+
+function stringValue(flag: string): string | undefined {
+  const index = process.argv.indexOf(flag);
+  const result = process.argv[index + 1];
+  return index >= 0 && result ? result : undefined;
 }
 
 void main().catch((error) => {

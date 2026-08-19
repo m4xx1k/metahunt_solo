@@ -54,8 +54,10 @@ prints source references plus cleaned extraction input locally; it never calls
 a model and never writes the database.
 
 ```bash
-DATABASE_URL="$(scripts/prod-db-url.sh)" pnpm eval:vacancy-intake -- --per-slice 6
+DATABASE_URL="$(scripts/prod-db-url.sh)" pnpm eval:vacancy-intake -- \
+  --per-slice 6 --out .scratch/role-contract-intake.json
 ```
 
-Do not commit its raw output. A reviewer must de-identify and label only the
-chosen cases before adding them to the golden set.
+`--out` writes the raw local review input with mode `0600` and prints only its
+path. Do not commit it. A reviewer must de-identify and label only the chosen
+cases before adding them to the golden set.
