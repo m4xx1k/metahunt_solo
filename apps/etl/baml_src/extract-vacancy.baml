@@ -99,6 +99,8 @@ class Salary {
 }
 
 // ============== Top-level vacancy ==============
+// Role/seniority contract: md/todo/dedup/p1-role-contract-review.md.
+// Keep policy changes reviewed there before changing these instructions.
 
 class ExtractedVacancy {
   role string? @description(#"

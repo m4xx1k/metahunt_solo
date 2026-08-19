@@ -118,7 +118,7 @@ the agreed golden set and a stated product reason for any trade-off.
 ## Explicit non-actions in this pass
 
 - No taxonomy status changes, merges, hides, or renames.
-- No BAML prompt/model change and no paid model calls.
+- No deployed BAML prompt/model change and no paid model calls.
 - No re-extraction, re-embedding, dedup reset, or production mutation.
 
 ## Agreed seven-stage delivery plan

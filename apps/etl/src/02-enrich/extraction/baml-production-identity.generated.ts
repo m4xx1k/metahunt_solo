@@ -2,5 +2,5 @@
 // Test blocks currently live in production BAML files, so fixture-only edits also
 // invalidate cache entries. Move them out before relying on that boundary.
 export const BAML_PRODUCTION_SOURCE_HASH =
-  "1c01c816e414c9cbe35b95ddd97693d1f43b046821bf6f6402b77d77b4b81512";
+  "ea926c2a1b3b1a500080b9549b9336998e2fc2f569036285fb1f4ff25981202e";
 export const BAML_RUNTIME_VERSION = "0.222.0";
