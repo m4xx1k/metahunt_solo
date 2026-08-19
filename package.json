@@ -46,7 +46,16 @@
     "eval:vacancy-intake": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/extraction-eval/golden-set-intake.cli.js",
     "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
     "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int",
-    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js"
+    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js",
+    "golden": "node --env-file-if-exists=.env -r ts-node/register/transpile-only apps/etl/src/eval/golden.cli.ts",
+    "golden:sample": "pnpm golden sample",
+    "golden:batch": "pnpm golden batch",
+    "golden:merge": "pnpm golden merge",
+    "golden:arbitrate": "pnpm golden arbitrate",
+    "golden:review": "pnpm golden review",
+    "golden:score": "pnpm golden score",
+    "golden:release-check": "pnpm golden release-check",
+    "golden:archive": "pnpm golden archive"
   },
   "engines": {
     "node": ">=22"

@@ -1,0 +1,80 @@
+{
+  "id": "v1-policy-2026-08-08",
+  "policyVersion": "ADR-0015",
+  "createdAt": "2026-08-08T22:42:55.107Z",
+  "rows": 25,
+  "files": {
+    "manifest.json": {
+      "sha256": "97c3d3ebd0c6e8de1a253bf09f95d01a0e12e24ae2929bc255c3287b74b4a96c",
+      "bytes": 33167
+    },
+    "corpus.enc.json": {
+      "sha256": "a984cb3110d68e62b788e9596c7c0293608f68f052ccc17b53972cf7dd7e9319",
+      "bytes": 57172
+    },
+    "snapshot.json": {
+      "sha256": "d8257c39b3d48a7e0107079a01aa1a75c79a18b40d67d85469d55116e386d47d",
+      "bytes": 398529
+    },
+    "candidates.json": {
+      "sha256": "52d516f5d87ca51e1ea21c2b5d16285633ff58a3ba2b7922a136b3c1b831c847",
+      "bytes": 99643
+    },
+    "decisions.json": {
+      "sha256": "37108e7203ebc2909133f033e4da1f605d7543331974194281ccca3e75e49e10",
+      "bytes": 27205
+    },
+    "dataset.json": {
+      "sha256": "f86ac9166425ce7d7084eaaa34a7b99e2162abdcc3db3f42f86674376e8c86a1",
+      "bytes": 28150
+    },
+    "labels/arbiter.json": {
+      "sha256": "b227ba963499ae53d72b0486319c64ad4da9141e529338e6d17194125120b872",
+      "bytes": 6039
+    },
+    "labels/batch-01.a.json": {
+      "sha256": "c41a14d27f553e5b6b051daa9f37e8c3edd91cbc50513b3c5a5ffcd1bb68e17a",
+      "bytes": 8552
+    },
+    "labels/batch-01.b.json": {
+      "sha256": "1d4b698a2ec20bbcf51fa9b920f6d6acf4538849fa8033876c1da3ac9f87acbb",
+      "bytes": 7829
+    },
+    "labels/batch-02.a.json": {
+      "sha256": "8a3a7148a90a60d9cc92e4279273d56114bc4d0f9de4701e1e4f67c9b411cdeb",
+      "bytes": 9403
+    },
+    "labels/batch-02.b.json": {
+      "sha256": "df15708cb50da66f9a4b230fdf200e58acb0f45f5c5203de13e9ee9b6b605c62",
+      "bytes": 8984
+    },
+    "labels/batch-03.a.json": {
+      "sha256": "cde560aa4f308da1b34cb4f367e625aca8d05d19b7201c24f9a23af5e09b8f0d",
+      "bytes": 9326
+    },
+    "labels/batch-03.b.json": {
+      "sha256": "8838e788bf6d6d752fdd050cdec77770b5b9c0d25d09e98b037114f1c5fa2134",
+      "bytes": 10228
+    },
+    "labels/batch-04.a.json": {
+      "sha256": "96439a68f500e6910cfecb009194fe8e5b98610bd6264ed06f8dff4d73883ef9",
+      "bytes": 7187
+    },
+    "labels/batch-04.b.json": {
+      "sha256": "a063e1200e2a3b0f91548ef0d863034025d7b609bbd784a492fdb3bd2676d642",
+      "bytes": 7662
+    },
+    "labels/batch-05.a.json": {
+      "sha256": "25bf9d31cfd8f3d8bd6defca52700824f2a96fa832f13e260444b40a8fc061ce",
+      "bytes": 8374
+    },
+    "labels/batch-05.b.json": {
+      "sha256": "8e28180e85ace901b7731445c28dfad7713a0639d05d4589302b96634a1129dd",
+      "bytes": 8106
+    },
+    "runs/prod.json": {
+      "sha256": "c98f4a3bd660b2364b9744724a668e3055b1905b9429d38e6524169bc1f40c58",
+      "bytes": 21383
+    }
+  }
+}

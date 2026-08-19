@@ -1,0 +1,180 @@
+{
+  "batch": 5,
+  "labeller": "b",
+  "labels": [
+    {
+      "id": "00d60864-b357-4d22-9aa6-c4674ffb970c",
+      "values": {
+        "isTech": true,
+        "role": "CRM Developer",
+        "seniority": "LEAD",
+        "skills": { "required": ["GoHighLevel"], "optional": [] },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "PropTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Real Estate Bees",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "isTech": "borderline between marketing-ops and engineering; role is hands-on platform work (webhooks, API integrations, automation building) matching the canonical CRM Developer role — spec says prefer true when torn",
+        "role": "no umbrella dev role fits a GoHighLevel platform specialist; canonical 'CRM Developer' is the closest exact-spelling match",
+        "seniority": "title contains 'Lead' (CRM Automation Lead); title wins per rule 1",
+        "skills": "the only named hard skill is GoHighLevel; 'Voice AI agents', 'webhooks', 'API integrations' are generic categories per EXCLUDE rules; Salesforce/HubSpot are mentioned only as anti-requirements",
+        "engagementType": "own marketplace product; 'startup environment' is mentioned but the company is described as fast-growing/established, so PRODUCT over STARTUP"
+      }
+    },
+    {
+      "id": "13a0fd86-dfac-44bb-9845-4242a139d405",
+      "values": {
+        "isTech": true,
+        "role": "Security Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Windows Server",
+            "Active Directory",
+            "Microsoft Entra ID",
+            "Microsoft 365",
+            "Azure",
+            "Linux",
+            "TCP/IP",
+            "Jira"
+          ],
+          "optional": ["Microsoft Purview", "Microsoft Intune", "Splunk", "PowerShell", "Python"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "Fintech",
+        "engagementType": "PRODUCT",
+        "companyName": "UNIVERSALNA",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "no seniority in title and no years of experience stated; cannot be inferred, so null per rule 4",
+        "skills": "required trimmed to concrete named products; IAM/SIEM/EDR/DLP/networking are generic categories per EXCLUDE; optional capped at 5 from a much longer nice-to-have list (also mentioned: Ansible, Keycloak, Elastic Stack, BitLocker, Bash, Defender/Sentinel)",
+        "domain": "insurance company within a financial group; no Insurance/InsurTech in knownDomains — Fintech is the closest canonical fit",
+        "locations": "no office city stated for the job (Toronto refers to the parent group's HQ, not the vacancy)"
+      }
+    },
+    {
+      "id": "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2",
+      "values": {
+        "isTech": true,
+        "role": "Automation QA Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "C",
+            "Python",
+            "PyTest",
+            "asyncio",
+            "CI/CD",
+            "CMake",
+            "Embedded Systems",
+            "Hardware Testing",
+            "TestRail"
+          ],
+          "optional": []
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "OFFICE",
+        "locations": [{ "city": "Kyiv", "country": "Ukraine" }],
+        "domain": "Hardware",
+        "engagementType": "PRODUCT",
+        "companyName": "Quantum-Systems",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "designs and implements automated test suites (pytest, HIL, CI pipelines) — canonical 'Automation QA Engineer' over the plain 'QA Engineer' umbrella",
+        "seniority": "not in title; inferred from '3+ years' per rule 4 (years-based inference allowed) → MIDDLE",
+        "skills": "Scrum and 'QA methodologies' excluded as process/methodology; GitLab CI/GitHub Actions/Jenkins listed as interchangeable alternatives, collapsed into canonical 'CI/CD'; oscilloscopes/logic analyzers mapped to canonical 'Hardware Testing'",
+        "employmentType": "explicitly stated: 'This is a full-time office job'",
+        "englishLevel": "'English — Intermediate+' → INTERMEDIATE (B1)",
+        "domain": "drone manufacturer / aerial data; defense use is plausible but not stated in the posting, so canonical 'Hardware'"
+      }
+    },
+    {
+      "id": "5596ee51-a05c-4523-bcb8-384ea7d14653",
+      "values": {
+        "isTech": true,
+        "role": "Solutions Architect",
+        "seniority": "PRINCIPAL",
+        "skills": { "required": ["Kubernetes"], "optional": [] },
+        "experienceYears": null,
+        "salary": { "min": 670, "max": 1800, "currency": "USD" },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [{ "city": "Kharkiv", "country": "Ukraine" }],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": "13 бригада оперативного призначення НГУ «Хартія»",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "title contains both 'Architect' and 'Tech Lead'; rule 2: Architect → PRINCIPAL, title wins",
+        "skills": "only Kubernetes is a concrete named technology; 'distributed systems', 'event-driven architecture', 'cloud' are generic/architectural concepts, leadership and code review are soft/process — excluded",
+        "salary": "title states $670–1800/mo (USD); body gives the same range in UAH (30 000 base + up to 50 000 additional) — used the USD title figures, both within the 100..50000 guardrail",
+        "engagementType": "a National Guard military unit fits none of the commercial engagement models; null per 'null if unclear'",
+        "workFormat": "Kharkiv is given as the location but the posting never states office/remote policy — null"
+      }
+    },
+    {
+      "id": "0093c6a8-1f44-467a-839a-68e4a0b69294",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "WordPress",
+            "PHP",
+            "HTML/CSS",
+            "JavaScript",
+            "jQuery",
+            "MySQL",
+            "Figma",
+            "SEO",
+            "A/B Testing"
+          ],
+          "optional": ["React", "VWO"]
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": "ADVANCED",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "no WordPress/CMS role in knownRoles; stack spans PHP/MySQL backend plus pixel-perfect frontend (HTML/CSS/JS/jQuery) → umbrella 'Full Stack Developer'",
+        "seniority": "title says 'Middle/Senior' — a range; took the lower bound MIDDLE by analogy with the range rule, consistent with the 4-years requirement",
+        "skills": "Git excluded (tool every dev uses); ACF/custom post types folded into WordPress; Asana appears only as a responsibility, not a required skill",
+        "englishLevel": "'Proficient in English' has no CEFR code; proficiency maps to C1/C2 → ADVANCED",
+        "workFormat": "team described as 'a remote, multicultural environment' → REMOTE",
+        "domain": "business domain never stated ('multiple brands' in a marketing growth department is not identifiable) → null"
+      }
+    }
+  ]
+}
