@@ -4,7 +4,7 @@
  * vacancy text or guessing labels. The reviewer de-identifies and promotes
  * chosen cases into golden-set.role-contract.v1.json.
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 import { Pool } from "pg";
@@ -104,6 +104,7 @@ async function main(): Promise<void> {
       const path = resolve(out);
       await mkdir(dirname(path), { recursive: true });
       await writeFile(path, `${JSON.stringify(intake, null, 2)}\n`, { mode: 0o600 });
+      await chmod(path, 0o600);
       console.log(
         JSON.stringify({ mode: "read-only-intake", out: path, candidateCount: candidates.length }),
       );
