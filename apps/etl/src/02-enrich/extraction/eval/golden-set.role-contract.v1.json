@@ -35,8 +35,8 @@
       "slice": "architect",
       "source": "synthetic_contract_fixture",
       "text": "Security Architect. Define cloud security controls and threat modelling for AWS services.",
-      "expected": { "isTech": true, "role": "Security Engineer", "seniority": "PRINCIPAL" },
-      "rationale": "Architect should not erase the security discipline; reviewer must confirm the chosen level policy.",
+      "expected": { "isTech": true, "role": "Security Engineer", "seniority": null },
+      "rationale": "Architect preserves the security discipline, but the title alone does not establish principal-level scope.",
       "reviewStatus": "draft"
     },
     {
