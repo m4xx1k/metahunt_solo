@@ -29,4 +29,11 @@ describe("candidatesFromProduction", () => {
     expect(candidate.fields.locations.value).toEqual([]);
     expect(Object.keys(candidate.fields)).toHaveLength(15);
   });
+
+  it("keeps an extractor failure visible to the reviewer", () => {
+    const [candidate] = candidatesFromProduction(manifest, {
+      "posting-1": { _error: "provider timeout" },
+    }).candidates;
+    expect(candidate.productionError).toBe("provider timeout");
+  });
 });

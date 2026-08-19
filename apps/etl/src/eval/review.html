@@ -491,7 +491,7 @@
           `${state.i + 1} / ${state.data.candidates.length}`;
         document.getElementById("posting").innerHTML =
           `<h2>${escapeHtml(c.title)}</h2>` +
-          `<div class="meta">${escapeHtml(c.source)}${safeLink(c.link)}${d?.approved ? " · <b>approved</b>" : ""}</div>` +
+          `<div class="meta">${escapeHtml(c.source)}${safeLink(c.link)}${c.productionError ? " · <b style=\"color:var(--hot)\">prod extractor failed</b>" : ""}${d?.approved ? " · <b>approved</b>" : ""}</div>` +
           `<pre>${escapeHtml(state.data.texts[c.id])}</pre>`;
         renderFields();
         const approved = Object.values(state.data.decisions).filter((x) => x.approved).length;

@@ -41,17 +41,30 @@ export function candidatesFromProduction(
       }),
     ) as LabelCandidate["fields"];
 
-    return { id: entry.id, title: entry.title, link: entry.link, source: entry.source, fields };
+    return {
+      id: entry.id,
+      title: entry.title,
+      link: entry.link,
+      source: entry.source,
+      productionError: typeof extracted._error === "string" ? extracted._error : undefined,
+      fields,
+    };
   });
   return { generatedAt: new Date().toISOString(), candidates };
 }
 
-export async function prepareReview(): Promise<void> {
+export async function prepareReview(argv: string[]): Promise<void> {
+  const replace = argv.length === 1 && argv[0] === "--replace";
+  if (!replace && argv.length > 0) throw new Error("usage: golden prepare-review [--replace]");
   const existing = [paths.candidates, paths.decisions, paths.dataset].filter(existsSync);
   if (existing.length > 0) {
-    throw new Error(
-      `refusing to replace existing review artifacts: ${existing.join(", ")}. Start a new GOLDEN_DIR instead.`,
-    );
+    if (replace && existing.every((path) => path === paths.candidates)) {
+      // Safe before review begins: do not permit replacing decisions or a dataset.
+    } else {
+      throw new Error(
+        `refusing to replace existing review artifacts: ${existing.join(", ")}. Start a new GOLDEN_DIR instead.`,
+      );
+    }
   }
   const manifest = readJson<Manifest>(paths.manifest);
   const production = readJson<Record<string, Extraction>>(paths.run("prod"));

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T22:34:27.407Z",
+  "generatedAt": "2026-08-19T22:35:54.467Z",
   "candidates": [
     {
       "id": "292dcef5-538d-483f-81aa-82ad0f2b44be",
@@ -1180,6 +1180,7 @@
       "title": "Full-stack Developer (JS, AI)",
       "link": "https://djinni.co/jobs/834995-full-stack-developer-js-ai/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,
@@ -1627,6 +1628,7 @@
       "title": "QA Engineer",
       "link": "https://djinni.co/jobs/825742-qa-engineer/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,
@@ -2028,6 +2030,7 @@
       "title": "Data Analyst",
       "link": "https://djinni.co/jobs/829399-data-analyst/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,
@@ -2348,6 +2351,7 @@
       "title": "Ardupilot Engineer",
       "link": "https://djinni.co/jobs/834924-ardupilot-engineer/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,
@@ -2608,6 +2612,7 @@
       "title": "Senior Full Stack Developer (React + Node.js)",
       "link": "https://djinni.co/jobs/834975-senior-full-stack-developer-react-node-js/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,
@@ -3244,6 +3249,7 @@
       "title": "Embedded C/C++ Software Engineer",
       "link": "https://djinni.co/jobs/813869-embedded-c-c-software-engineer/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,
@@ -3671,6 +3677,7 @@
       "title": "RF Engineer",
       "link": "https://djinni.co/jobs/825424-rf-engineer/",
       "source": "djinni",
+      "productionError": "BAML extraction: BamlError: BamlClientError: BamlClientHttpError: Request failed with status code: 429 Too Many Requests. {\"error\":{\"message\":\"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\"type\":\"insufficient_quota\",\"param\":null,\"code\":\"insufficient_quota\"}}",
       "fields": {
         "isTech": {
           "value": null,

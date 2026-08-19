@@ -111,6 +111,8 @@ export type LabelCandidate = {
   title: string;
   link: string | null;
   source: string;
+  /** Present only for a draft seeded from a failed production extraction. */
+  productionError?: string;
   fields: Record<string, CandidateField>;
 };
 
