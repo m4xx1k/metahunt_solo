@@ -10,7 +10,6 @@ import { dirname, resolve } from "node:path";
 import { Collector } from "@boundaryml/baml";
 import { Pool } from "pg";
 
-import { sha256 } from "../../02-enrich/dedup/content-fingerprint";
 import {
   BAML_PRODUCTION_SOURCE_HASH,
   BAML_RUNTIME_VERSION,
@@ -25,6 +24,10 @@ import {
   buildEvaluationPlan,
   summarizeEvaluation,
 } from "../../02-enrich/extraction/eval/vacancy-extraction-eval";
+import {
+  buildVacancyExtractionSpecHash,
+  hashVerifiedTaxonomy,
+} from "../../02-enrich/extraction/extraction-identity";
 import { MODEL_PRICING_USD_PER_MTOK } from "../../02-enrich/extraction/pricing";
 import { b } from "../../baml_client";
 import { joinNamesByType } from "../../platform/shared/node-names";
@@ -81,16 +84,13 @@ async function main(): Promise<void> {
     const taxonomy = await loadTaxonomy(pool);
     assertExpectedRolesAreVerified(dataset, taxonomy.roles.split(", ").filter(Boolean));
     const model = process.env.DEEPSEEK_MODEL;
-    const specHash = sha256(
-      [
-        "ExtractVacancy",
-        BAML_PRODUCTION_SOURCE_HASH,
-        BAML_RUNTIME_VERSION,
-        "openai-generic",
-        model,
-        taxonomy.taxonomyHash,
-      ].join("|"),
-    );
+    const specHash = buildVacancyExtractionSpecHash({
+      bamlSourceHash: BAML_PRODUCTION_SOURCE_HASH,
+      bamlVersion: BAML_RUNTIME_VERSION,
+      provider: "openai-generic",
+      model,
+      taxonomyHash: taxonomy.taxonomyHash,
+    });
     let spentUsd = 0;
     const cases = [] as Array<{ id: string; expected: GoldenSetCase["expected"]; runs: Run[] }>;
     for (const item of dataset.cases.filter((candidate) => candidate.reviewStatus === "approved")) {
@@ -170,12 +170,7 @@ async function loadTaxonomy(pool: Pool): Promise<Taxonomy> {
     roles,
     domains,
     skills,
-    taxonomyHash: sha256(
-      [roles, domains, skills]
-        .flatMap((part) => part.split(", ").filter(Boolean))
-        .sort((left, right) => left.localeCompare(right))
-        .join("\n"),
-    ),
+    taxonomyHash: hashVerifiedTaxonomy([roles, domains, skills]),
   };
 }
 

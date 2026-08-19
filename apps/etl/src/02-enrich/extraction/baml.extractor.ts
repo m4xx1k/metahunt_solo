@@ -14,6 +14,7 @@ import {
   BAML_PRODUCTION_SOURCE_HASH,
   BAML_RUNTIME_VERSION,
 } from "./baml-production-identity.generated";
+import { buildVacancyExtractionSpecHash, hashVerifiedTaxonomy } from "./extraction-identity";
 import type {
   ExtractionIdentity,
   ExtractionResult,
@@ -70,22 +71,14 @@ export class BamlVacancyExtractor implements VacancyExtractor {
     const taxonomy = await this.loadTaxonomy();
     const provider = "openai-generic";
     const model = process.env.DEEPSEEK_MODEL ?? "unknown";
-    const taxonomyHash = sha256(
-      [taxonomy.roles, taxonomy.domains, taxonomy.skills]
-        .flatMap((part) => part.split(", ").filter(Boolean))
-        .sort((a, b) => a.localeCompare(b))
-        .join("\n"),
-    );
-    const specHash = sha256(
-      [
-        "ExtractVacancy",
-        BAML_PRODUCTION_SOURCE_HASH,
-        BAML_RUNTIME_VERSION,
-        provider,
-        model,
-        taxonomyHash,
-      ].join("|"),
-    );
+    const taxonomyHash = hashVerifiedTaxonomy([taxonomy.roles, taxonomy.domains, taxonomy.skills]);
+    const specHash = buildVacancyExtractionSpecHash({
+      bamlSourceHash: BAML_PRODUCTION_SOURCE_HASH,
+      bamlVersion: BAML_RUNTIME_VERSION,
+      provider,
+      model,
+      taxonomyHash,
+    });
     return {
       specHash,
       inputHash: sha256(text),
