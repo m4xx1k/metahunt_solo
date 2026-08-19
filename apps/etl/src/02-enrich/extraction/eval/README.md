@@ -1,9 +1,8 @@
 # Vacancy role golden set
 
-`golden-set.role-contract.v1.json` is the versioned input to the future opt-in
-prompt evaluation. It contains 16 synthetic contract fixtures and 42
-de-identified, production-derived drafts. It is **not** production input and
-never triggers a model call by itself.
+`golden-set.role-contract.v1.json` is the small, versioned input to the future
+opt-in prompt evaluation. It is **not** production input and it never triggers
+a model call by itself.
 
 ## Review workflow
 
@@ -13,8 +12,9 @@ never triggers a model call by itself.
    value must not be inferred.
 3. Change `reviewStatus` to `approved` only when a human accepts that label.
    Use `rejected` for an invalid or redundant case; do not delete its history.
-4. Before a paid evaluation, approve or reject the 58 drafts. Keep source IDs
-   outside Git if they are needed for internal traceability.
+4. Before a paid evaluation, extend this draft with 40–60 approved,
+   production-derived and de-identified cases. Keep source IDs outside Git if
+   they are needed for internal traceability.
 
 The evaluator will refuse to make live model calls unless every selected case is
 approved. It captures the live VERIFIED taxonomy at evaluation time, rather

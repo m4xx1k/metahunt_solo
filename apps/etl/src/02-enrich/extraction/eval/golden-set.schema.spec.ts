@@ -9,17 +9,12 @@ describe("role-contract golden set", () => {
 
   it("is a valid, review-gated v1 dataset", () => {
     expect(goldenSet.contract).toBe("role-contract-v1");
-    expect(goldenSet.cases).toHaveLength(58);
+    expect(goldenSet.cases).toHaveLength(16);
     expect(new Set(goldenSet.cases.map((item) => item.id)).size).toBe(goldenSet.cases.length);
     expect(goldenSet.cases.every((item) => item.reviewStatus === "draft")).toBe(true);
   });
 
-  it("contains de-identified production-derived drafts across every contract boundary", () => {
-    const productionCases = goldenSet.cases.filter(
-      (item) => item.source === "production_candidate",
-    );
-    expect(productionCases).toHaveLength(42);
-    expect(productionCases.every((item) => !item.text.startsWith("Title:"))).toBe(true);
+  it("covers every approved contract boundary before production cases are added", () => {
     expect(new Set(goldenSet.cases.map((item) => item.slice))).toEqual(
       new Set([
         "lead-discipline",
