@@ -1,7 +1,12 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
-export const GOLDEN_DIR = resolve(__dirname, "../../golden");
+// A policy experiment must never overwrite the reviewed default corpus.  Commands
+// can opt into an isolated working set, e.g.
+// GOLDEN_DIR=apps/etl/golden/role-contract-v1 pnpm golden sample --size=50
+export const GOLDEN_DIR = process.env.GOLDEN_DIR
+  ? resolve(process.env.GOLDEN_DIR)
+  : resolve(__dirname, "../../golden");
 
 export const paths = {
   manifest: resolve(GOLDEN_DIR, "manifest.json"),

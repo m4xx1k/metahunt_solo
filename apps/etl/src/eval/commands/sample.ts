@@ -10,12 +10,19 @@ export async function sample(argv: string[]): Promise<void> {
   const sizeArg = argv.find((a) => a.startsWith("--size="));
   const size = sizeArg ? Number(sizeArg.split("=")[1]) : DEFAULT_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`bad --size: ${sizeArg}`);
+  const includeIds = argv.flatMap((arg, index) => {
+    if (arg.startsWith("--include-id=")) return [arg.slice("--include-id=".length)];
+    return arg === "--include-id" ? [argv[index + 1] ?? ""] : [];
+  });
+  if (includeIds.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
+    throw new Error("--include-id must be a UUID");
+  }
 
   await withDb(async (client) => {
     const pool = await loadFeatures(client);
     console.log(`pool: ${pool.length} postings`);
 
-    const { picked, cellsById, coverage, overCapPicks } = selectSample(pool, size);
+    const { picked, cellsById, coverage, overCapPicks } = selectSample(pool, size, includeIds);
     const texts = await loadTexts(
       client,
       picked.map((p) => p.id),

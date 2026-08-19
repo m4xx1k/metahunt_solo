@@ -121,10 +121,20 @@ function byId(a: FeatureRow, b: FeatureRow): number {
 
 // Greedy: a posting scores `axisWeight / (1 + timesUsed)` over its cells, so gaps fill
 // first and covered cells decay. Ties break on id; nothing is random.
-export function selectSample(rows: FeatureRow[], size: number): Selection {
+export function selectSample(
+  rows: FeatureRow[],
+  size: number,
+  includeIds: readonly string[] = [],
+): Selection {
   const cuts = lengthCuts(rows);
   const pool = [...rows].sort(byId);
   const cellsById = new Map(pool.map((r) => [r.id, cellsOf(r, cuts)]));
+  const byPostingId = new Map(pool.map((r) => [r.id, r]));
+  const forcedIds = [...new Set(includeIds)].sort();
+  const missing = forcedIds.filter((id) => !byPostingId.has(id));
+  if (missing.length > 0) throw new Error(`forced sample id(s) not in pool: ${missing.join(", ")}`);
+  if (forcedIds.length > size)
+    throw new Error(`forced sample has ${forcedIds.length} rows, over size ${size}`);
 
   const poolCounts = new Map<string, number>();
   for (const cells of cellsById.values()) {
@@ -136,8 +146,12 @@ export function selectSample(rows: FeatureRow[], size: number): Selection {
   );
 
   const used = new Map<string, number>();
-  const picked: FeatureRow[] = [];
+  const picked: FeatureRow[] = forcedIds.map((id) => byPostingId.get(id)!);
   const remaining = new Set(pool.map((r) => r.id));
+  for (const row of picked) {
+    remaining.delete(row.id);
+    for (const cell of cellsById.get(row.id)!) used.set(cell, (used.get(cell) ?? 0) + 1);
+  }
   const atCap = (cell: string) => (used.get(cell) ?? 0) >= caps.get(cell)!;
   let overCapPicks = 0;
 

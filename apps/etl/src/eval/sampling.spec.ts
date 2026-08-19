@@ -143,4 +143,14 @@ describe("selectSample", () => {
     const ids = selectSample(mixedPool(300), 40).picked.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it("keeps explicitly included boundary cases in the deterministic sample", () => {
+    const ids = selectSample(mixedPool(300), 25, ["id-0042", "id-0007"]).picked.map((p) => p.id);
+    expect(ids).toEqual(expect.arrayContaining(["id-0042", "id-0007"]));
+    expect(ids).toHaveLength(25);
+  });
+
+  it("rejects a forced id outside the source pool", () => {
+    expect(() => selectSample(mixedPool(10), 5, ["missing"])).toThrow("not in pool");
+  });
 });

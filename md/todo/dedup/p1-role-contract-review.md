@@ -71,8 +71,17 @@ output?” without building a separate prompt registry.
 
 ## Golden-set proposal
 
-Start with **40–60 manually labelled, de-identified vacancy texts**. They should
-be a test corpus, not a new production write path.
+Use an isolated **40–60 row working set of real vacancy texts**. MET-24 already
+provides the reviewed corpus/release machinery and its default 25-row release
+must remain immutable. Build the P1 working set with the same sampler under a
+separate `GOLDEN_DIR`; it reads production only and stores the corpus obfuscated
+locally. It is not a production write path.
+
+The historical MET-24 labels are useful review evidence but are not automatically
+P1 ground truth: they were made under the previous role taxonomy (for example,
+they contain `CTO (Chief Technology Officer)` as a role). The P1 reviewer labels
+only `isTech`, `role`, and `seniority` against this contract, from the actual
+vacancy text. All other field labels remain untouched.
 
 Minimum slices:
 
@@ -89,7 +98,9 @@ Minimum slices:
 
 For each example, a reviewer supplies only: `isTech`, expected discipline role
 or `null`, expected seniority or `null`, and a one-line rationale. The point is
-to decide contract boundaries, not to label every extracted field.
+to decide contract boundaries, not to label every extracted field. A P1 set is
+versioned by its corpus, prompt and taxonomy snapshot; it never rewrites the
+historical MET-24 release.
 
 ## Evaluation gate
 
