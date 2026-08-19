@@ -1,0 +1,221 @@
+{
+  "generatedAt": "2026-08-19T22:42:02.963Z",
+  "rows": [
+    {
+      "id": "900e03b2-8f36-4e20-9be6-c7f6c58516e5",
+      "title": "Full-stack Developer (JS, AI)",
+      "link": "https://djinni.co/jobs/834995-full-stack-developer-js-ai/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["React", "TypeScript", "React Query", "Node.js", "NestJS"],
+          "optional": ["Tailwind", "Prisma", "PostgreSQL"]
+        },
+        "experienceYears": null,
+        "salary": {
+          "min": null,
+          "max": 2500,
+          "currency": "USD"
+        },
+        "englishLevel": null,
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": "STARTUP",
+        "companyName": "Tailored Tech",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "exclusions": {},
+      "approvedAt": "2026-08-19T22:42:02.941Z"
+    },
+    {
+      "id": "127749e3-9277-4842-bb5c-d32583e18c43",
+      "title": "QA Engineer",
+      "link": "https://djinni.co/jobs/825742-qa-engineer/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [],
+          "optional": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "exclusions": {},
+      "approvedAt": "2026-08-19T22:42:02.950Z"
+    },
+    {
+      "id": "c5453d84-742f-40af-b58f-f3c8bf690b5a",
+      "title": "Data Analyst",
+      "link": "https://djinni.co/jobs/829399-data-analyst/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": null,
+        "skills": {
+          "required": ["SQL", "Google Sheets", "Microsoft Excel", "Looker", "Power BI"],
+          "optional": [
+            "Python",
+            "Google Analytics 4",
+            "Google Tag Manager",
+            "Meta Pixel",
+            "Amplitude"
+          ]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "EdTech",
+        "engagementType": "PRODUCT",
+        "companyName": "ZNOHUB",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "exclusions": {},
+      "approvedAt": "2026-08-19T22:42:02.953Z"
+    },
+    {
+      "id": "0587af8d-fbe2-42af-8d84-e058b92aad12",
+      "title": "Ardupilot Engineer",
+      "link": "https://djinni.co/jobs/834924-ardupilot-engineer/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "Embedded Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["ArduPilot", "PX4", "MAVLink", "Mission Planner", "MAVProxy"],
+          "optional": ["Python", "Linux", "Raspberry Pi", "Jetson"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "exclusions": {},
+      "approvedAt": "2026-08-19T22:42:02.955Z"
+    },
+    {
+      "id": "252fdac2-b0e1-44d8-93f1-5390ff65a2ae",
+      "title": "Senior Full Stack Developer (React + Node.js)",
+      "link": "https://djinni.co/jobs/834975-senior-full-stack-developer-react-node-js/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "Selenium"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": "OUTSOURCE",
+        "companyName": "Aimprosoft",
+        "hasTestAssignment": true,
+        "hasReservation": true
+      },
+      "exclusions": {
+        "domain": {
+          "reason": "taxonomy-gap",
+          "evidence": "Posting explicitly says Utilities domain, which is absent from the frozen verified domains."
+        }
+      },
+      "approvedAt": "2026-08-19T22:42:02.958Z"
+    },
+    {
+      "id": "4a9199d1-30b1-4a2d-84dd-6e08306a311d",
+      "title": "Embedded C/C++ Software Engineer",
+      "link": "https://djinni.co/jobs/813869-embedded-c-c-software-engineer/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "Embedded Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["C", "C++", "Microcontrollers"],
+          "optional": []
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": "DEVIRO",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "exclusions": {},
+      "approvedAt": "2026-08-19T22:42:02.961Z"
+    },
+    {
+      "id": "0f7526fd-a534-4fd8-81dc-b3bb5c0bc237",
+      "title": "RF Engineer",
+      "link": "https://djinni.co/jobs/825424-rf-engineer/",
+      "source": "djinni",
+      "values": {
+        "isTech": true,
+        "role": "Hardware Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["RF Engineering", "RF Design", "Antenna Design", "Radar"],
+          "optional": ["SDR", "Python", "MATLAB", "CST", "HFSS"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": "Buntar Aerospace",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "exclusions": {},
+      "approvedAt": "2026-08-19T22:42:02.963Z"
+    }
+  ]
+}

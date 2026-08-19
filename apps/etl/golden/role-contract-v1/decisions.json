@@ -1,0 +1,536 @@
+{
+  "generatedAt": "2026-08-19T22:42:02.963Z",
+  "decisions": {
+    "900e03b2-8f36-4e20-9be6-c7f6c58516e5": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "Full Stack Engineer",
+        "skills": {
+          "required": ["React", "TypeScript", "React Query", "Node.js", "NestJS"],
+          "optional": ["Tailwind", "Prisma", "PostgreSQL"]
+        },
+        "salary": {
+          "min": null,
+          "max": 2500,
+          "currency": "USD"
+        },
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "engagementType": "STARTUP",
+        "companyName": "Tailored Tech",
+        "hasReservation": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "Full-stack developer builds React/NestJS CRM/ERP."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "Title and duties explicitly say full-stack developer."
+        },
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements name React, TypeScript, React Query and Node/NestJS; listed pluses are optional."
+        },
+        "salary": {
+          "disposition": "manual-ruling",
+          "evidence": "Conditions say up to $2500/month."
+        },
+        "employmentType": {
+          "disposition": "manual-ruling",
+          "evidence": "Conditions explicitly say Full-time."
+        },
+        "workFormat": {
+          "disposition": "manual-ruling",
+          "evidence": "Conditions explicitly say fully remote."
+        },
+        "engagementType": {
+          "disposition": "manual-ruling",
+          "evidence": "Tailored Tech explicitly describes itself as a startup."
+        },
+        "companyName": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting names Tailored Tech."
+        },
+        "hasReservation": {
+          "disposition": "manual-ruling",
+          "evidence": "Conditions say reservation is possible for candidates in Kharkiv."
+        }
+      },
+      "exclusions": {},
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["React", "TypeScript", "React Query", "Node.js", "NestJS"],
+          "optional": ["Tailwind", "Prisma", "PostgreSQL"]
+        },
+        "experienceYears": null,
+        "salary": {
+          "min": null,
+          "max": 2500,
+          "currency": "USD"
+        },
+        "englishLevel": null,
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": "STARTUP",
+        "companyName": "Tailored Tech",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-08-19T22:42:02.941Z"
+    },
+    "127749e3-9277-4842-bb5c-d32583e18c43": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "hasTestAssignment": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "Testing mobile applications and test automation are technical QA work."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "Title is QA Engineer."
+        },
+        "hasTestAssignment": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting says a test assignment is attached and asks applicants to complete it."
+        }
+      },
+      "exclusions": {},
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [],
+          "optional": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-08-19T22:42:02.950Z"
+    },
+    "c5453d84-742f-40af-b58f-f3c8bf690b5a": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "skills": {
+          "required": ["SQL", "Google Sheets", "Microsoft Excel", "Looker", "Power BI"],
+          "optional": [
+            "Python",
+            "Google Analytics 4",
+            "Google Tag Manager",
+            "Meta Pixel",
+            "Amplitude"
+          ]
+        },
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "domain": "EdTech",
+        "engagementType": "PRODUCT",
+        "companyName": "ZNOHUB",
+        "hasTestAssignment": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "Role owns data warehouse, dashboards and quantitative analysis."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "Title is Data Analyst."
+        },
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements name SQL, Sheets/Excel, Looker Studio or Power BI; pluses list Python and analytics tools."
+        },
+        "employmentType": {
+          "disposition": "manual-ruling",
+          "evidence": "Conditions explicitly say full employment."
+        },
+        "workFormat": {
+          "disposition": "manual-ruling",
+          "evidence": "Conditions explicitly say remote format."
+        },
+        "domain": {
+          "disposition": "manual-ruling",
+          "evidence": "Company provides education/exam-preparation products."
+        },
+        "engagementType": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting describes ZNOHUB building its own education products."
+        },
+        "companyName": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting names ZNOHUB."
+        },
+        "hasTestAssignment": {
+          "disposition": "manual-ruling",
+          "evidence": "Hiring stages explicitly include a test assignment."
+        }
+      },
+      "exclusions": {},
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": null,
+        "skills": {
+          "required": ["SQL", "Google Sheets", "Microsoft Excel", "Looker", "Power BI"],
+          "optional": [
+            "Python",
+            "Google Analytics 4",
+            "Google Tag Manager",
+            "Meta Pixel",
+            "Amplitude"
+          ]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "EdTech",
+        "engagementType": "PRODUCT",
+        "companyName": "ZNOHUB",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "reviewedAt": "2026-08-19T22:42:02.953Z"
+    },
+    "0587af8d-fbe2-42af-8d84-e058b92aad12": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "Embedded Engineer",
+        "skills": {
+          "required": ["ArduPilot", "PX4", "MAVLink", "Mission Planner", "MAVProxy"],
+          "optional": ["Python", "Linux", "Raspberry Pi", "Jetson"]
+        },
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "hasReservation": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "UAV flight-controller configuration, debugging and flight tests are technical engineering."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "ArduPilot/UAV flight-controller work maps to the verified Embedded Engineer discipline."
+        },
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements explicitly name ArduPilot/PX4, MAVLink, Mission Planner and MAVProxy; Python/Linux/companion computers are pluses."
+        },
+        "workFormat": {
+          "disposition": "manual-ruling",
+          "evidence": "Location and format explicitly say Kyiv office."
+        },
+        "locations": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting explicitly names Kyiv."
+        },
+        "domain": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting explicitly describes a Ukrainian MilTech company building UAVs."
+        },
+        "engagementType": {
+          "disposition": "manual-ruling",
+          "evidence": "Company develops its own UAV products through the full creation cycle."
+        },
+        "hasReservation": {
+          "disposition": "manual-ruling",
+          "evidence": "Company offers reservation from the first work day."
+        }
+      },
+      "exclusions": {},
+      "values": {
+        "isTech": true,
+        "role": "Embedded Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["ArduPilot", "PX4", "MAVLink", "Mission Planner", "MAVProxy"],
+          "optional": ["Python", "Linux", "Raspberry Pi", "Jetson"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-08-19T22:42:02.955Z"
+    },
+    "252fdac2-b0e1-44d8-93f1-5390ff65a2ae": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "Full Stack Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "Selenium"]
+        },
+        "experienceYears": 5,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "engagementType": "OUTSOURCE",
+        "companyName": "Aimprosoft",
+        "hasTestAssignment": true,
+        "hasReservation": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "End-to-end React/Node engineering role."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "Title explicitly says Senior Full Stack Developer."
+        },
+        "seniority": {
+          "disposition": "manual-ruling",
+          "evidence": "Title explicitly says Senior."
+        },
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Core requirements name Node.js, React, NestJS, PostgreSQL and AWS; listed nice-to-haves are optional."
+        },
+        "experienceYears": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements explicitly say 5+ years of commercial Node.js experience."
+        },
+        "englishLevel": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements explicitly say B2+ English."
+        },
+        "employmentType": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting explicitly says contract basis."
+        },
+        "workFormat": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting location is remote."
+        },
+        "engagementType": {
+          "disposition": "manual-ruling",
+          "evidence": "Aimprosoft places the hire on an international client project."
+        },
+        "companyName": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting names AIMPROSOFT/Aimprosoft."
+        },
+        "hasTestAssignment": {
+          "disposition": "manual-ruling",
+          "evidence": "Hiring process includes a hands-on practical task."
+        },
+        "hasReservation": {
+          "disposition": "manual-ruling",
+          "evidence": "Offer explicitly includes military deferment/reservation."
+        }
+      },
+      "exclusions": {
+        "domain": {
+          "reason": "taxonomy-gap",
+          "evidence": "Posting explicitly says Utilities domain, which is absent from the frozen verified domains."
+        }
+      },
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Engineer",
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["Node.js", "React", "NestJS", "PostgreSQL", "AWS"],
+          "optional": ["TypeScript", "Docker", "Terraform", "Playwright", "Selenium"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": "OUTSOURCE",
+        "companyName": "Aimprosoft",
+        "hasTestAssignment": true,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-08-19T22:42:02.958Z"
+    },
+    "4a9199d1-30b1-4a2d-84dd-6e08306a311d": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "Embedded Engineer",
+        "skills": {
+          "required": ["C", "C++", "Microcontrollers"],
+          "optional": []
+        },
+        "experienceYears": 4,
+        "workFormat": "OFFICE",
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": "DEVIRO",
+        "hasReservation": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "Role develops and tests low-level UAV software integrated with hardware."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "Title explicitly says Embedded C/C++ Software Engineer."
+        },
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements explicitly name C/C++ and microcontrollers."
+        },
+        "experienceYears": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements explicitly say commercial C/C++ experience from 4 years."
+        },
+        "workFormat": {
+          "disposition": "manual-ruling",
+          "evidence": "Offer explicitly includes a comfortable office."
+        },
+        "domain": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting describes Ukrainian UAV development."
+        },
+        "engagementType": {
+          "disposition": "manual-ruling",
+          "evidence": "DEVIRO creates its own UAV product from idea to flight."
+        },
+        "companyName": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting names DEVIRO."
+        },
+        "hasReservation": {
+          "disposition": "manual-ruling",
+          "evidence": "Offer explicitly mentions reservation from mobilisation."
+        }
+      },
+      "exclusions": {},
+      "values": {
+        "isTech": true,
+        "role": "Embedded Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["C", "C++", "Microcontrollers"],
+          "optional": []
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": "DEVIRO",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-08-19T22:42:02.961Z"
+    },
+    "0f7526fd-a534-4fd8-81dc-b3bb5c0bc237": {
+      "approved": true,
+      "overrides": {
+        "isTech": true,
+        "role": "Hardware Engineer",
+        "skills": {
+          "required": ["RF Engineering", "RF Design", "Antenna Design", "Radar"],
+          "optional": ["SDR", "Python", "MATLAB", "CST", "HFSS"]
+        },
+        "companyName": "Buntar Aerospace",
+        "hasReservation": true
+      },
+      "rationales": {
+        "isTech": {
+          "disposition": "manual-ruling",
+          "evidence": "Role designs, analyses and validates RF, antenna and radar systems."
+        },
+        "role": {
+          "disposition": "manual-ruling",
+          "evidence": "RF engineering is a hardware-engineering discipline in the verified taxonomy."
+        },
+        "skills": {
+          "disposition": "manual-ruling",
+          "evidence": "Requirements name RF systems/design, antenna work and radar; SDR/Python/MATLAB/CST/HFSS are listed pluses."
+        },
+        "companyName": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting names Buntar Aerospace."
+        },
+        "hasReservation": {
+          "disposition": "manual-ruling",
+          "evidence": "Posting states reservation for 100% of employees."
+        }
+      },
+      "exclusions": {},
+      "values": {
+        "isTech": true,
+        "role": "Hardware Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["RF Engineering", "RF Design", "Antenna Design", "Radar"],
+          "optional": ["SDR", "Python", "MATLAB", "CST", "HFSS"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": "Buntar Aerospace",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "reviewedAt": "2026-08-19T22:42:02.963Z"
+    }
+  }
+}
