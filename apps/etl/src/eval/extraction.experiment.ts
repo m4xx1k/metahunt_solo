@@ -306,21 +306,26 @@ async function main(): Promise<void> {
     const legacy = legacyDataset
       ? await inspectLegacyDataset(legacyDataset, argumentValue("--legacy-decisions"))
       : undefined;
+    const targetedDataset = argumentValue("--targeted-dataset");
+    const targetedCases = targetedDataset
+      ? await readTargetedDraftCases(targetedDataset)
+      : undefined;
     console.log(
       JSON.stringify(
         {
           mode: "dry-run",
           dataset: argumentValue("--dataset") ?? "metahunt/vacancy-requirements-v2",
           draftPlan: {
-            reusedReviewedVacancies: legacy?.rows ?? 15,
-            explicitOrCases: 5,
-            competencyAndMethodologyCases: 5,
-            totalDraftCases: (legacy?.rows ?? 15) + 10,
+            reusedReviewedVacancies: legacy?.rows ?? 0,
+            targetedBoundaryCases: targetedCases?.length ?? 0,
+            totalLoadedDraftCases: (legacy?.rows ?? 0) + (targetedCases?.length ?? 0),
           },
           draftCases: legacy
-            ? [...legacy.legacyCases, ...targetedDraftCases]
-            : "Pass --legacy-dataset to render the 15 reviewed singleton baselines plus 10 targeted cases.",
-          note: "No database, LLM, Langfuse, or other external call was made. Supply --legacy-dataset to verify the 15 reviewed source rows before preparing the draft in Langfuse.",
+            ? [...legacy.legacyCases, ...(targetedCases ?? [])]
+            : "Pass --legacy-dataset; add a local-only --targeted-dataset with 10 real, reviewed-source boundary cases for the full draft.",
+          note: targetedCases
+            ? "No database, LLM, Langfuse, or other external call was made. This runner never invents vacancy text or labels."
+            : "No database, LLM, Langfuse, or other external call was made. Add --targeted-dataset to validate the full 25-case draft.",
         },
         null,
         2,
@@ -364,9 +369,12 @@ async function main(): Promise<void> {
 async function prepareDraftFromDatabase(): Promise<void> {
   const legacyDataset = argumentValue("--legacy-dataset");
   if (!legacyDataset) throw new Error("--legacy-dataset is required for --prepare-draft");
+  const targetedDataset = argumentValue("--targeted-dataset");
+  if (!targetedDataset) throw new Error("--targeted-dataset is required for --prepare-draft");
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for --prepare-draft");
 
   const legacy = await inspectLegacyDataset(legacyDataset, argumentValue("--legacy-decisions"));
+  const targetedCases = await readTargetedDraftCases(targetedDataset);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   try {
     const ids = legacy.legacyCases.map((item) => item.input.id);
@@ -388,7 +396,7 @@ async function prepareDraftFromDatabase(): Promise<void> {
         expectedOutput: item.expectedOutput,
         metadata: item.metadata,
       })),
-      ...targetedDraftCases,
+      ...targetedCases,
     ];
     const out = resolve(argumentValue("--out") ?? ".scratch/vacancy-requirements-v2-draft.json");
     await mkdir(dirname(out), { recursive: true });
@@ -405,91 +413,16 @@ async function prepareDraftFromDatabase(): Promise<void> {
   }
 }
 
-const targetedDraftCases: RequirementDatasetCase[] = [
-  requirementCase(
-    "or-pytorch-tensorflow",
-    "ML Engineer",
-    "PyTorch or TensorFlow is required.",
-    ["or"],
-    { priority: "must", anyOf: ["PyTorch", "TensorFlow"] },
-  ),
-  requirementCase(
-    "or-prisma-typeorm",
-    "Backend Engineer",
-    "Prisma or TypeORM experience is required.",
-    ["or"],
-    { priority: "must", anyOf: ["Prisma", "TypeORM"] },
-  ),
-  requirementCase(
-    "or-aws-gcp",
-    "Platform Engineer",
-    "Production AWS or GCP experience is required.",
-    ["or"],
-    { priority: "must", anyOf: ["AWS", "GCP"] },
-  ),
-  requirementCase(
-    "or-test-framework",
-    "QA Automation Engineer",
-    "Selenium, Cypress, or Playwright experience is required.",
-    ["or"],
-    { priority: "must", anyOf: ["Selenium", "Cypress", "Playwright"] },
-  ),
-  requirementCase(
-    "or-tdd-bdd",
-    "Backend Engineer",
-    "TDD or BDD practice is required.",
-    ["or", "methodology"],
-    { priority: "must", anyOf: ["TDD", "BDD"] },
-  ),
-  requirementCase(
-    "competency-api-testing",
-    "QA Engineer",
-    "API Testing experience is required.",
-    ["competency"],
-    { priority: "must", value: "API Testing" },
-  ),
-  requirementCase(
-    "competency-distributed-systems",
-    "Backend Engineer",
-    "Experience designing Distributed Systems is required.",
-    ["competency"],
-    { priority: "must", value: "Distributed Systems" },
-  ),
-  requirementCase(
-    "competency-high-load",
-    "Backend Engineer",
-    "High-load Systems experience is required.",
-    ["competency"],
-    { priority: "must", value: "High-load Systems" },
-  ),
-  requirementCase(
-    "competency-system-design",
-    "Staff Engineer",
-    "System Design expertise is required.",
-    ["competency"],
-    { priority: "must", value: "System Design" },
-  ),
-  requirementCase(
-    "methodology-scrum",
-    "Delivery Engineer",
-    "Scrum experience is required.",
-    ["methodology"],
-    { priority: "must", value: "Scrum" },
-  ),
-];
-
-function requirementCase(
-  id: string,
-  title: string,
-  text: string,
-  slices: string[],
-  requirement: RequirementDatasetCase["expectedOutput"]["requirements"][number],
-): RequirementDatasetCase {
-  return {
-    input: { id, title, text },
-    expectedOutput: { isTech: true, role: null, seniority: null, requirements: [requirement] },
-    metadata: { reviewStatus: "draft", slices, contractVersion: "requirements-v2" },
-  };
+async function readTargetedDraftCases(path: string): Promise<RequirementDatasetCase[]> {
+  const parsed = JSON.parse(await readFile(path, "utf8")) as unknown;
+  if (!Array.isArray(parsed) || parsed.length !== 10) {
+    throw new Error("--targeted-dataset must contain exactly 10 real boundary cases");
+  }
+  const cases = parsed.map((item) => parseDatasetCase(item as DatasetItem));
+  if (cases.some((item) => item.metadata.reviewStatus !== "draft")) {
+    throw new Error("--targeted-dataset cases must remain draft until a human approves them");
+  }
+  return cases;
 }
 
 async function inspectLegacyDataset(
@@ -525,9 +458,9 @@ async function inspectLegacyDataset(
       }
     >;
   };
-  if (!Array.isArray(parsed.rows) || parsed.rows.length < 15)
-    throw new Error("legacy dataset must contain at least 15 reviewed rows");
-  const legacyCases: LegacyDraftCase[] = parsed.rows.slice(0, 15).map((row) => {
+  if (!Array.isArray(parsed.rows) || parsed.rows.length === 0)
+    throw new Error("legacy dataset must contain at least one reviewed row");
+  const legacyCases: LegacyDraftCase[] = parsed.rows.map((row) => {
     const decision = typeof row.id === "string" ? decisions.decisions?.[row.id] : undefined;
     if (decision?.approved !== true) {
       throw new Error(
