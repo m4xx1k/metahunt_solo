@@ -10,7 +10,7 @@ import type {
   ExtractionUsage,
   VacancyExtractor,
 } from "../02-enrich/extraction/vacancy-extractor";
-import { b, RequirementPriority } from "../baml_client";
+import { b, RequirementPriority, Seniority } from "../baml_client";
 import type {
   ExtractedVacancy,
   ExtractedVacancyRequirementsV2,
@@ -18,9 +18,9 @@ import type {
 } from "../baml_client";
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
-export const REQUIREMENTS_V2_PROMPT_VERSION = 2;
+export const REQUIREMENTS_V2_PROMPT_VERSION = 3;
 export const BAML_REQUIREMENTS_V2_SOURCE_HASH =
-  "a1dade5fd4d999036f85378c803d8f340f57eb460af0177eeb1266e83981298d";
+  "4c742f2359a3bb721fea51722602947bde28f721bd4413d9cd030dd835af4312";
 
 /** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
 const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
@@ -63,7 +63,7 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
     try {
       const data = await b.ExtractVacancyRequirementsV2(text, { collector });
       return {
-        data: toEvalVacancy(data),
+        data: toEvalVacancy(data, text),
         meta: { promptVersion: REQUIREMENTS_V2_PROMPT_VERSION, usage: readUsage(collector) },
       };
     } catch (error) {
@@ -87,6 +87,7 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
       specHash: sha256(
         [
           "ExtractVacancyRequirementsV2",
+          String(REQUIREMENTS_V2_PROMPT_VERSION),
           BAML_REQUIREMENTS_V2_SOURCE_HASH,
           BAML_RUNTIME_VERSION,
           provider,
@@ -104,7 +105,7 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
   }
 }
 
-function toEvalVacancy(data: ExtractedVacancyRequirementsV2): ExtractedVacancy {
+function toEvalVacancy(data: ExtractedVacancyRequirementsV2, text: string): ExtractedVacancy {
   const requirements = data.requirements.map((requirement) => ({
     priority: requirement.priority === RequirementPriority.MUST ? "must" : "nice",
     ...(requirement.value ? { value: requirement.value } : {}),
@@ -113,8 +114,59 @@ function toEvalVacancy(data: ExtractedVacancyRequirementsV2): ExtractedVacancy {
   return {
     ...data,
     role: data.role ? ROLE_DISPLAY_NAMES[data.role] : null,
+    seniority: advertisedSeniority(text),
     requirements,
   } as unknown as ExtractedVacancy;
+}
+
+/** Explicit advertised level is a source fact; do not let the model infer it from duties or years. */
+function advertisedSeniority(text: string): Seniority | null {
+  const header = text.slice(0, 500);
+  const title = /^Title:\s*([^\n]*)/i.exec(header)?.[1] ?? "";
+  const intro = header.slice(header.indexOf("\n") + 1);
+  const matches = new Set<Seniority>();
+  const roleNoun = "(?:engineer|developer|architect|administrator|analyst|scientist|specialist)";
+  const levels: Array<[Seniority, RegExp, RegExp]> = [
+    [
+      Seniority.INTERN,
+      /\b(?:intern|internship)\b/i,
+      new RegExp(`\\b(?:intern|internship)\\b(?=.{0,30}${roleNoun})`, "i"),
+    ],
+    [
+      Seniority.JUNIOR,
+      /\b(?:junior|jr\.?)\b/i,
+      new RegExp(`\\b(?:junior|jr[.]?)\\b(?=.{0,30}${roleNoun})`, "i"),
+    ],
+    [
+      Seniority.MIDDLE,
+      /\b(?:middle|mid-level)\b/i,
+      new RegExp(`\\b(?:middle|mid-level)\\b(?=.{0,30}${roleNoun})`, "i"),
+    ],
+    [
+      Seniority.SENIOR,
+      /\b(?:senior|sr\.?)\b/i,
+      new RegExp(`\\b(?:senior|sr[.]?)\\b(?=.{0,30}${roleNoun})`, "i"),
+    ],
+    [
+      Seniority.LEAD,
+      /\b(?:team lead|tech(?:nical)? lead|lead)\b/i,
+      new RegExp(`\\b(?:team lead|tech(?:nical)? lead|lead)\\b(?=.{0,30}${roleNoun})`, "i"),
+    ],
+    [
+      Seniority.PRINCIPAL,
+      /\bprincipal\b/i,
+      new RegExp(`\\bprincipal\\b(?=.{0,30}${roleNoun})`, "i"),
+    ],
+    [
+      Seniority.C_LEVEL,
+      /\b(?:cto|chief technology officer)\b/i,
+      /\b(?:cto|chief technology officer)\b/i,
+    ],
+  ];
+  for (const [level, titlePattern, introPattern] of levels) {
+    if (titlePattern.test(title) || introPattern.test(intro)) matches.add(level);
+  }
+  return matches.size === 1 ? [...matches][0] : null;
 }
 
 function readUsage(collector: Collector): ExtractionUsage {

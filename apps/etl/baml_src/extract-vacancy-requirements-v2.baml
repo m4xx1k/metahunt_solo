@@ -9,10 +9,10 @@ enum RequirementPriority {
 // Closed role-v2 evaluation vocabulary. These are disciplines, not levels,
 // leadership titles, languages, frameworks, or products.
 enum RequirementsV2Role {
-  AI_ENGINEER @alias("AI Engineer")
+  AI_ENGINEER @alias("AI Engineer") @description("AI, Generative AI, LLM, RAG, or agent engineering; includes AI Architect")
   ANDROID_ENGINEER @alias("Android Engineer")
   AUTOMATION_QA_ENGINEER @alias("Automation QA Engineer")
-  BACKEND_ENGINEER @alias("Backend Engineer")
+  BACKEND_ENGINEER @alias("Backend Engineer") @description("Server-side application and API engineering; excludes MLOps and infrastructure operations")
   BLOCKCHAIN_ENGINEER @alias("Blockchain Engineer")
   BUSINESS_ANALYST @alias("Business Analyst")
   COMPUTER_VISION_ENGINEER @alias("Computer Vision Engineer")
@@ -21,17 +21,17 @@ enum RequirementsV2Role {
   DATA_ENGINEER @alias("Data Engineer")
   DATA_SCIENTIST @alias("Data Scientist")
   DATABASE_ENGINEER @alias("Database Engineer")
-  DEVOPS_ENGINEER @alias("DevOps Engineer")
-  EMBEDDED_ENGINEER @alias("Embedded Engineer")
+  DEVOPS_ENGINEER @alias("DevOps Engineer") @description("Cloud, platform, SRE, DevSecOps, or FinOps engineering; includes Cloud Architect")
+  EMBEDDED_ENGINEER @alias("Embedded Engineer") @description("Firmware or embedded-software engineering for devices; not electronics or RF hardware design")
   ERP_CRM_ENGINEER @alias("ERP / CRM Engineer")
   FPGA_ENGINEER @alias("FPGA Engineer")
   FRONTEND_ENGINEER @alias("Frontend Engineer")
-  FULL_STACK_ENGINEER @alias("Full Stack Engineer")
+  FULL_STACK_ENGINEER @alias("Full Stack Engineer") @description("One role explicitly covering both a user interface and backend/server-side implementation")
   GAME_ENGINEER @alias("Game Engineer")
-  HARDWARE_ENGINEER @alias("Hardware Engineer")
+  HARDWARE_ENGINEER @alias("Hardware Engineer") @description("Electronics, PCB, RF, radar, or physical computer hardware design; includes Hardware or Radar System Architect")
   IOS_ENGINEER @alias("iOS Engineer")
   IT_SUPPORT_ENGINEER @alias("IT Support Engineer")
-  MACHINE_LEARNING_ENGINEER @alias("Machine Learning Engineer")
+  MACHINE_LEARNING_ENGINEER @alias("Machine Learning Engineer") @description("Machine-learning model or MLOps engineering; includes ML Architect and MLOps Engineer")
   MANUAL_QA_ENGINEER @alias("Manual QA Engineer")
   NETWORK_ENGINEER @alias("Network Engineer")
   SECURITY_ENGINEER @alias("Security Engineer")
@@ -76,11 +76,15 @@ class ExtractedVacancyRequirementsV2 {
   "#)
 
   seniority Seniority? @description(#"
-    Junior / Middle / Senior in the title wins. Use LEAD only for an actual
-    people or technical-function lead role. Architect alone does not imply
-    PRINCIPAL; use PRINCIPAL only with explicit principal-level ownership
-    across a domain or organization. Use C_LEVEL only for a technical
-    executive role. Otherwise use null.
+    Position level, not years of experience, difficulty, ownership, mentoring,
+    or senior-sounding duties. Prefer an explicit level in the job title or an
+    explicit statement that this position has that level.
+
+    `Architect` never implies `PRINCIPAL`, `LEAD`, or `SENIOR`. Use PRINCIPAL
+    only when `Principal` explicitly names the position. Use LEAD only when
+    `Lead`, `Team Lead`, or `Tech Lead` explicitly names the position. Use
+    C_LEVEL only when CTO or another technical C-level title explicitly names
+    the position. Otherwise use null.
   "#)
 
   requirements VacancyRequirementV2[] @description(#"
@@ -111,6 +115,16 @@ function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequireme
     You extract only the Requirements v2 contract from a job posting for the
     Ukrainian IT market. Return exactly the requested schema; use null when
     role or seniority is genuinely unknown.
+
+    Role rules:
+      - First identify the advertised job title. Strip level and leadership
+        modifiers, then map its underlying discipline to the closed role enum.
+      - Architect and Lead are modifiers, not disciplines. Map Cloud Architect
+        to DevOps Engineer, AI Architect to AI Engineer, and Hardware or Radar
+        System Architect to Hardware Engineer.
+      - Do not infer seniority from years, ownership, mentoring, architecture,
+        or technical-leadership duties. Only an explicitly named position
+        level counts.
 
     Evidence rules:
       - Extract all explicit hard-technical qualifications and concrete
