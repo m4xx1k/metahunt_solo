@@ -1,6 +1,7 @@
 import { assertReleaseGate, parseDatasetCase } from "./extraction.experiment";
 import { scoreRequirements } from "./extraction.scorer";
 import type { RequirementDatasetCase } from "./extraction-eval.types";
+import draftDataset from "./vacancy-requirements-v2.dataset.json";
 
 const approvedOrCase: RequirementDatasetCase = {
   input: { id: "or-1", title: "Platform engineer", text: "AWS or GCP is required." },
@@ -14,6 +15,16 @@ const approvedOrCase: RequirementDatasetCase = {
 };
 
 describe("Requirements v2 Langfuse experiment", () => {
+  it("ships 25 real-text draft cases, including explicit OR boundaries", () => {
+    expect(draftDataset).toHaveLength(25);
+    expect(new Set(draftDataset.map((item) => item.input.id)).size).toBe(25);
+    expect(draftDataset.every((item) => item.metadata.reviewStatus === "draft")).toBe(true);
+    expect(draftDataset.some((item) => item.metadata.slices.includes("or"))).toBe(true);
+    expect(draftDataset.every((item) => item.input.text.length > 100)).toBe(true);
+    expect(draftDataset.every((item) => item.expectedOutput.requirements.length > 0)).toBe(true);
+    expect(() => draftDataset.forEach((item) => parseDatasetCase(item))).not.toThrow();
+  });
+
   it("rejects hosted rows that do not contain the focused contract", () => {
     expect(() =>
       parseDatasetCase({ input: { id: "x" }, expectedOutput: {}, metadata: {} }),
