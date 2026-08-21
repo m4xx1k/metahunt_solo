@@ -1,7 +1,8 @@
 # Vacancy Requirements v2 evaluation
 
-[`vacancy-requirements-v2.dataset.json`](./vacancy-requirements-v2.dataset.json)
-is the review surface: 25 real vacancy texts and manual `draft` labels. There
+[`vacancy-requirements-v2.review.md`](./vacancy-requirements-v2.review.md) is
+the readable GitHub review view for 25 real vacancy texts and manual `draft`
+labels. The adjacent JSON is only the machine-readable Langfuse source; there
 is no legacy conversion and no data-preparation CLI.
 
 After reviewing and uploading that exact dataset to Langfuse, run:
@@ -23,5 +24,6 @@ and alternative accuracy, `or_split_errors`, and the three regression guards.
 Aliases use production `normalizeAliasName`; unknown names retain a stable
 `unresolved:` key until taxonomy curation catches up.
 
-Only approved rows participate in the release gate. Draft rows are for review
-only and cannot pass it.
+When a run contains approved rows, only those rows participate in its release
+gate. A draft-only run still shows its aggregate metrics, but never passes a
+release gate.

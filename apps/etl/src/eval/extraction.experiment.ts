@@ -129,26 +129,31 @@ export async function runHostedExperiment(input: {
   }: {
     itemResults: Array<{ item: DatasetItem; output: ExperimentOutput }>;
   }) => {
-    const approvedScores = itemResults
-      .map((result) => {
-        const itemCase = parseDatasetCase(result.item);
-        return {
-          itemCase,
-          score: scoreRequirements(
-            itemCase.expectedOutput,
-            result.output.actual,
-            input.aliases,
-            result.output.providerError,
-          ),
-        };
-      })
-      .filter(({ itemCase }) => itemCase.metadata.reviewStatus === "approved")
-      .map(({ score }) => score);
-    const summary = summarizeRequirements(approvedScores);
-    assertReleaseGate(
-      approvedScores,
-      itemResults.map((result) => parseDatasetCase(result.item)),
+    const scoredItems = itemResults.map((result) => {
+      const itemCase = parseDatasetCase(result.item);
+      return {
+        itemCase,
+        score: scoreRequirements(
+          itemCase.expectedOutput,
+          result.output.actual,
+          input.aliases,
+          result.output.providerError,
+        ),
+      };
+    });
+    const approvedItems = scoredItems.filter(
+      ({ itemCase }) => itemCase.metadata.reviewStatus === "approved",
     );
+    // Draft-only runs are for inspection: show their aggregate, but never claim a release gate.
+    // Once there is an approved subset, summaries and gates use only that reviewed subset.
+    const summaryItems = approvedItems.length > 0 ? approvedItems : scoredItems;
+    if (approvedItems.length > 0) {
+      assertReleaseGate(
+        approvedItems.map(({ score }) => score),
+        scoredItems.map(({ itemCase }) => itemCase),
+      );
+    }
+    const summary = summarizeRequirements(summaryItems.map(({ score }) => score));
     return summaryToLangfuse(summary);
   };
 
@@ -177,12 +182,15 @@ export async function runHostedExperiment(input: {
   const approvedItems = scoredItems.filter(
     ({ itemCase }) => itemCase.metadata.reviewStatus === "approved",
   );
-  assertReleaseGate(
-    approvedItems.map(({ score }) => score),
-    scoredItems.map(({ itemCase }) => itemCase),
-  );
+  if (approvedItems.length > 0) {
+    assertReleaseGate(
+      approvedItems.map(({ score }) => score),
+      scoredItems.map(({ itemCase }) => itemCase),
+    );
+  }
+  const summaryItems = approvedItems.length > 0 ? approvedItems : scoredItems;
   return {
-    summary: summarizeRequirements(approvedItems.map(({ score }) => score)),
+    summary: summarizeRequirements(summaryItems.map(({ score }) => score)),
     formatted: await result.format(),
     datasetVersion: dataset.version,
     datasetRunUrl: result.datasetRunUrl,
