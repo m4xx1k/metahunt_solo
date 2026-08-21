@@ -22,7 +22,7 @@ import type {
 } from "./vacancy-extractor";
 
 /** A dashboard label only; spec_hash is the correctness boundary. */
-export const PROMPT_VERSION = 3;
+export const PROMPT_VERSION = 4;
 
 const TAXONOMY_CACHE_TTL_MS = 60_000;
 
@@ -42,9 +42,10 @@ export class BamlVacancyExtractor implements VacancyExtractor {
     const { roles, domains, skills } = await this.loadTaxonomy();
 
     try {
-      const data = await b.ExtractVacancy(text, roles, domains, skills, {
+      const extracted = await b.ExtractVacancy(text, roles, domains, skills, {
         collector,
       });
+      const data = ensureVerifiedTechnicalRole(extracted, roles);
       return {
         data,
         meta: { promptVersion: PROMPT_VERSION, usage: readUsage(collector) },
@@ -131,6 +132,28 @@ export class BamlVacancyExtractor implements VacancyExtractor {
       skills: this.taxonomyCache.skills,
     };
   }
+}
+
+/**
+ * Roles outside the verified taxonomy are created as NEW nodes by the loader
+ * and are consequently invisible in public search. The prompt is the primary
+ * classifier; this is the final integrity guard for technical vacancies.
+ */
+function ensureVerifiedTechnicalRole(
+  data: Awaited<ReturnType<typeof b.ExtractVacancy>>,
+  roles: string,
+): Awaited<ReturnType<typeof b.ExtractVacancy>> {
+  if (data.isTech !== true) return data;
+
+  const verifiedRoles = new Set(roles.split(", ").filter(Boolean));
+  if (data.role && verifiedRoles.has(data.role)) return data;
+
+  return {
+    ...data,
+    // Software Engineer is the deliberately verified generic fallback. Keep
+    // null only for a malformed taxonomy that does not contain it.
+    role: verifiedRoles.has("Software Engineer") ? "Software Engineer" : null,
+  };
 }
 
 function readUsage(collector: Collector): ExtractionUsage {

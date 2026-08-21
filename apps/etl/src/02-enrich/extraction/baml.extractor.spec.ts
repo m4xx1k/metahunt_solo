@@ -18,6 +18,7 @@ const extractVacancy = b.ExtractVacancy as unknown as jest.Mock;
 // at runtime, so string literals match the enum members structurally in TS.
 const sampleVacancy = {
   role: "Backend Developer",
+  isTech: true,
   seniority: "SENIOR",
   skills: {
     required: ["Node.js", "TypeScript", "PostgreSQL"],
@@ -118,6 +119,25 @@ describe("BamlVacancyExtractor", () => {
     expect(roles).toBe("");
     expect(domains).toBe("");
     expect(skills).toBe("");
+  });
+
+  it("falls back to the verified generic role instead of creating an invisible role", async () => {
+    const { extractor } = await bootstrap([
+      { type: "ROLE", name: "Backend Developer" },
+      { type: "ROLE", name: "Software Engineer" },
+    ]);
+    extractVacancy.mockResolvedValue({
+      ...sampleVacancy,
+      role: "Platform Wizard",
+      isTech: true,
+    });
+
+    const result = await extractor.extract("Technical vacancy");
+
+    expect(result.data).toMatchObject({
+      role: "Software Engineer",
+      isTech: true,
+    });
   });
 
   it("derives cache identity from normalized input, model, and verified taxonomy", async () => {

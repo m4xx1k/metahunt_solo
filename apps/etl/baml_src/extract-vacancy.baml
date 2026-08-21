@@ -113,10 +113,12 @@ class ExtractedVacancy {
       "iOS Engineer"               → "Mobile Developer (iOS)"
       "SRE / Platform Engineer"    → "DevOps Engineer"
 
-    If a canonical name from the prompt's `knownRoles` list fits — use it
-    with EXACT spelling, do not invent variants. If genuinely niche with
-    no umbrella fit, use a clear role name.
-    null only if the posting is not a software / tech job at all.
+    For every technical posting, return a role from the prompt's `knownRoles`
+    list with EXACT spelling. Never invent a role or variant: an unverified
+    role is invisible in the product. Preserve its underlying discipline for
+    Lead, Team Lead, Tech Lead, and Architect titles. Use `Software Engineer`
+    only as the explicit generic fallback when the advertised technical role
+    has no more specific discipline in the list. null only for non-tech jobs.
   "#)
 
   isTech bool @description(#"
@@ -129,15 +131,15 @@ class ExtractedVacancy {
   "#)
 
   seniority Seniority? @description(#"
-    Seniority level inferred from title or requirements.
+    Seniority level only when explicitly named in the advertised position title.
     Rules:
-      1. If the title contains Junior / Middle / Senior / Lead / Architect /
-         "Head of", the TITLE wins over the body text — even when the body
-         contradicts it. E.g. title "Middle QA" with body "5+ years, mentors
-         the team" → MIDDLE, not SENIOR.
-      2. "Architect" → PRINCIPAL.
-      3. "Head of" / "VP" → C_LEVEL or LEAD depending on context.
-      4. If not explicit and cannot be inferred from years of experience → null.
+      1. Junior / Middle / Senior in the title map to that exact level.
+      2. Lead / Team Lead / Tech Lead in the title → LEAD.
+      3. Principal in the title → PRINCIPAL. Architect is a role modifier and
+         NEVER implies PRINCIPAL, LEAD, or SENIOR.
+      4. CTO or another technical C-level title → C_LEVEL.
+      5. Do not infer a level from years, ownership, mentoring, architecture,
+         responsibilities, or the body text. Otherwise return null.
   "#)
 
   skills Skills @description(#"
@@ -261,8 +263,14 @@ function ExtractVacancy(
       - "Дія Сіті" / "Diia City" → Ukrainian tax regime, not a domain.
       - Salary is usually monthly in USD. A bare "$" defaults to USD / month.
 
-    PREFER these canonical ROLE names. Use the EXACT spelling when applicable.
-    If none fit, use a clear role name; do NOT invent variant spellings.
+    For a technical posting, choose a ROLE from this list with its EXACT
+    spelling. Never invent a role. If no specific listed role fits, use
+    `Software Engineer` when present; use null only for a non-tech posting.
+
+    Role and seniority are independent. An Architect title does NOT establish
+    seniority: `Cloud Architect` → role `DevOps Engineer`, seniority null.
+    `Team Lead, Backend` → role `Backend Developer`, seniority LEAD. Use the
+    `Team Lead` role only if the title provides no underlying discipline.
     Canonical roles:
     {{ knownRoles }}
 
