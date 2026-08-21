@@ -1,7 +1,7 @@
 /*
- * Offline Langfuse experiment for the raw vacancy extractor. It deliberately
- * does not boot Nest or use the cache: BamlVacancyExtractor is instantiated
- * directly with the same database-backed taxonomy source as production.
+ * Offline Langfuse experiment for the eval-only Requirements v2 extractor.
+ * It deliberately does not boot Nest or use the cache; production's
+ * ExtractVacancy contract remains untouched.
  */
 import { LangfuseClient } from "@langfuse/client";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
@@ -13,7 +13,6 @@ import { Pool } from "pg";
 import { schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { BamlVacancyExtractor } from "../02-enrich/extraction/baml.extractor";
 import type { ExtractionResult, VacancyExtractor } from "../02-enrich/extraction/vacancy-extractor";
 import { normalizeAliasName } from "../platform/shared/normalize-alias";
 
@@ -24,6 +23,7 @@ import type {
   ScorerAliasMap,
 } from "./extraction-eval.types";
 import { scoreRequirements, summarizeRequirements } from "./extraction.scorer";
+import { BamlRequirementsV2Extractor } from "./requirements-v2.baml.extractor";
 
 type ExperimentOutput = {
   actual: ExtractedVacancyForEval | null;
@@ -160,7 +160,7 @@ export async function runHostedExperiment(input: {
   const result = await dataset.runExperiment({
     name: "vacancy-extraction-requirements-v2",
     runName: input.runName,
-    description: "Raw BamlVacancyExtractor scored with the deterministic Requirements v2 scorer.",
+    description: "Eval-only BAML Requirements v2 extractor scored with the deterministic scorer.",
     metadata,
     task,
     evaluators: [evaluator],
@@ -313,7 +313,7 @@ async function main(): Promise<void> {
     const db = drizzle(pool, { schema });
     const result = await runHostedExperiment({
       langfuse: new LangfuseClient() as unknown as LangfuseGateway,
-      extractor: new BamlVacancyExtractor(db),
+      extractor: new BamlRequirementsV2Extractor(db),
       aliases: await loadAliases(db),
       datasetName,
       datasetVersion: argumentValue("--dataset-version"),

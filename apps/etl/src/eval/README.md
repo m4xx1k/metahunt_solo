@@ -5,6 +5,11 @@ the readable GitHub review view for 25 real vacancy texts and manual `draft`
 labels. The adjacent JSON is only the machine-readable Langfuse source; there
 is no legacy conversion and no data-preparation CLI.
 
+The eval calls the isolated
+[`extract-vacancy-requirements-v2.baml`](../../baml_src/extract-vacancy-requirements-v2.baml)
+function. It is deliberately separate from production `extract-vacancy.baml`:
+the production `skills` contract is not changed by this experiment.
+
 After reviewing and uploading that exact dataset to Langfuse, run:
 
 ```bash
