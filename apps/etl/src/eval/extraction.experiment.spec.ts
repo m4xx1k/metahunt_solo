@@ -32,7 +32,10 @@ describe("Requirements v2 Langfuse experiment", () => {
   });
 
   it("keeps role and seniority as separate contracts", () => {
-    expect(REQUIREMENTS_V2_ROLES).toHaveLength(28);
+    expect(REQUIREMENTS_V2_ROLES).toHaveLength(30);
+    expect(REQUIREMENTS_V2_ROLES).toEqual(
+      expect.arrayContaining(["Engineering Manager", "Software Engineer"]),
+    );
     expect(REQUIREMENTS_V2_ROLES).not.toEqual(
       expect.arrayContaining(["Architect", "Software Architect", "Team Lead", "Tech Lead"]),
     );

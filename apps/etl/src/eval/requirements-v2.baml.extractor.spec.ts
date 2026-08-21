@@ -73,4 +73,19 @@ describe("BamlRequirementsV2Extractor", () => {
 
     expect(result.data?.seniority).toBe(expected);
   });
+
+  it("keeps a technical vacancy browseable when the model omits its role", async () => {
+    extractRequirements.mockResolvedValue({
+      isTech: true,
+      role: null,
+      seniority: null,
+      requirements: [],
+    });
+
+    const result = await new BamlRequirementsV2Extractor().extract(
+      "Title: Software Engineer\\n\\nBuild and maintain product software.",
+    );
+
+    expect(result.data?.role).toBe("Software Engineer");
+  });
 });

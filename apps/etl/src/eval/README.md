@@ -13,7 +13,7 @@ the production `skills` contract is not changed by this experiment.
 After reviewing and uploading that exact dataset to Langfuse, run:
 
 ```bash
-pnpm eval:requirements-v2 -- --dataset metahunt/vacancy-requirements-v2 --dataset-version <version> --run-name baseline-current-skills
+pnpm eval:requirements-v2 -- --dataset metahunt-vacancy-requirements-v2-draft --dataset-version <version> --run-name baseline-current-skills
 ```
 
 The command needs `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, optional

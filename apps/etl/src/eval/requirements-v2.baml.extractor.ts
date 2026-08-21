@@ -18,9 +18,9 @@ import type {
 } from "../baml_client";
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
-export const REQUIREMENTS_V2_PROMPT_VERSION = 3;
+export const REQUIREMENTS_V2_PROMPT_VERSION = 4;
 export const BAML_REQUIREMENTS_V2_SOURCE_HASH =
-  "4c742f2359a3bb721fea51722602947bde28f721bd4413d9cd030dd835af4312";
+  "baa02d4d5644c5b7e63d9fea37a2245f3400f274c1d01fec7f3e0e1ed832f94a";
 
 /** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
 const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
@@ -38,6 +38,7 @@ const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
   DATABASE_ENGINEER: "Database Engineer",
   DEVOPS_ENGINEER: "DevOps Engineer",
   EMBEDDED_ENGINEER: "Embedded Engineer",
+  ENGINEERING_MANAGER: "Engineering Manager",
   ERP_CRM_ENGINEER: "ERP / CRM Engineer",
   FPGA_ENGINEER: "FPGA Engineer",
   FRONTEND_ENGINEER: "Frontend Engineer",
@@ -50,6 +51,7 @@ const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
   MANUAL_QA_ENGINEER: "Manual QA Engineer",
   NETWORK_ENGINEER: "Network Engineer",
   SECURITY_ENGINEER: "Security Engineer",
+  SOFTWARE_ENGINEER: "Software Engineer",
   SYSTEMS_ADMINISTRATOR: "Systems Administrator",
   WEB_CMS_ENGINEER: "Web / CMS Engineer",
 };
@@ -113,7 +115,14 @@ function toEvalVacancy(data: ExtractedVacancyRequirementsV2, text: string): Extr
   }));
   return {
     ...data,
-    role: data.role ? ROLE_DISPLAY_NAMES[data.role] : null,
+    // The browse contract cannot surface a technical vacancy without a role.
+    // Keep the generic role as a deliberate, reviewable escape hatch rather
+    // than letting a transient model omission make the vacancy invisible.
+    role: data.role
+      ? ROLE_DISPLAY_NAMES[data.role]
+      : data.isTech
+        ? ROLE_DISPLAY_NAMES.SOFTWARE_ENGINEER
+        : null,
     seniority: advertisedSeniority(text),
     requirements,
   } as unknown as ExtractedVacancy;

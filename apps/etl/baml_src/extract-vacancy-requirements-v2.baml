@@ -23,6 +23,7 @@ enum RequirementsV2Role {
   DATABASE_ENGINEER @alias("Database Engineer")
   DEVOPS_ENGINEER @alias("DevOps Engineer") @description("Cloud, platform, SRE, DevSecOps, or FinOps engineering; includes Cloud Architect")
   EMBEDDED_ENGINEER @alias("Embedded Engineer") @description("Firmware or embedded-software engineering for devices; not electronics or RF hardware design")
+  ENGINEERING_MANAGER @alias("Engineering Manager") @description("An explicit engineering-management position; not a Team Lead or Tech Lead title")
   ERP_CRM_ENGINEER @alias("ERP / CRM Engineer")
   FPGA_ENGINEER @alias("FPGA Engineer")
   FRONTEND_ENGINEER @alias("Frontend Engineer")
@@ -35,6 +36,7 @@ enum RequirementsV2Role {
   MANUAL_QA_ENGINEER @alias("Manual QA Engineer")
   NETWORK_ENGINEER @alias("Network Engineer")
   SECURITY_ENGINEER @alias("Security Engineer")
+  SOFTWARE_ENGINEER @alias("Software Engineer") @description("Generic software engineering when the advertised title has no more specific discipline")
   SYSTEMS_ADMINISTRATOR @alias("Systems Administrator")
   WEB_CMS_ENGINEER @alias("Web / CMS Engineer")
 }
@@ -64,8 +66,10 @@ class ExtractedVacancyRequirementsV2 {
     framework-, product-, Lead-, Architect-, CTO-, VP-, or Head-based role.
 
     Preserve the underlying discipline for Lead and Architect titles. An
-    Architect is not automatically a Principal. Generic Software Engineer is
-    not a fallback when a more specific discipline is identifiable.
+    Architect is not automatically a Principal. Use Software Engineer only
+    for an otherwise-unspecified software-engineering title. Use Engineering
+    Manager only when that management title is explicit. If isTech is true,
+    role must not be null.
   "#)
 
   isTech bool @description(#"
@@ -122,6 +126,11 @@ function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequireme
       - Architect and Lead are modifiers, not disciplines. Map Cloud Architect
         to DevOps Engineer, AI Architect to AI Engineer, and Hardware or Radar
         System Architect to Hardware Engineer.
+      - For an explicit Engineering Manager title, use Engineering Manager.
+        For an explicit but otherwise-unspecified Software Engineer title, use
+        Software Engineer. A technical posting must always return a role from
+        the enum; null is only for a non-technical or genuinely unclassifiable
+        posting.
       - Do not infer seniority from years, ownership, mentoring, architecture,
         or technical-leadership duties. Only an explicitly named position
         level counts.
