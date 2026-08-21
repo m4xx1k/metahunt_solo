@@ -77,6 +77,44 @@ export enum EnglishLevel {
   NATIVE = "NATIVE",
 }
 
+export enum RequirementPriority {
+  MUST = "MUST",
+  NICE = "NICE",
+}
+
+export enum RequirementsV2Role {
+  AI_ENGINEER = "AI_ENGINEER",
+  ANDROID_ENGINEER = "ANDROID_ENGINEER",
+  AUTOMATION_QA_ENGINEER = "AUTOMATION_QA_ENGINEER",
+  BACKEND_ENGINEER = "BACKEND_ENGINEER",
+  BLOCKCHAIN_ENGINEER = "BLOCKCHAIN_ENGINEER",
+  BUSINESS_ANALYST = "BUSINESS_ANALYST",
+  COMPUTER_VISION_ENGINEER = "COMPUTER_VISION_ENGINEER",
+  CROSS_PLATFORM_MOBILE_ENGINEER = "CROSS_PLATFORM_MOBILE_ENGINEER",
+  DATA_ANALYST = "DATA_ANALYST",
+  DATA_ENGINEER = "DATA_ENGINEER",
+  DATA_SCIENTIST = "DATA_SCIENTIST",
+  DATABASE_ENGINEER = "DATABASE_ENGINEER",
+  DEVOPS_ENGINEER = "DEVOPS_ENGINEER",
+  EMBEDDED_ENGINEER = "EMBEDDED_ENGINEER",
+  ENGINEERING_MANAGER = "ENGINEERING_MANAGER",
+  ERP_CRM_ENGINEER = "ERP_CRM_ENGINEER",
+  FPGA_ENGINEER = "FPGA_ENGINEER",
+  FRONTEND_ENGINEER = "FRONTEND_ENGINEER",
+  FULL_STACK_ENGINEER = "FULL_STACK_ENGINEER",
+  GAME_ENGINEER = "GAME_ENGINEER",
+  HARDWARE_ENGINEER = "HARDWARE_ENGINEER",
+  IOS_ENGINEER = "IOS_ENGINEER",
+  IT_SUPPORT_ENGINEER = "IT_SUPPORT_ENGINEER",
+  MACHINE_LEARNING_ENGINEER = "MACHINE_LEARNING_ENGINEER",
+  MANUAL_QA_ENGINEER = "MANUAL_QA_ENGINEER",
+  NETWORK_ENGINEER = "NETWORK_ENGINEER",
+  SECURITY_ENGINEER = "SECURITY_ENGINEER",
+  SOFTWARE_ENGINEER = "SOFTWARE_ENGINEER",
+  SYSTEMS_ADMINISTRATOR = "SYSTEMS_ADMINISTRATOR",
+  WEB_CMS_ENGINEER = "WEB_CMS_ENGINEER",
+}
+
 export enum Seniority {
   INTERN = "INTERN",
   JUNIOR = "JUNIOR",
@@ -153,6 +191,14 @@ export interface ExtractedVacancy {
   
 }
 
+export interface ExtractedVacancyRequirementsV2 {
+  role?: RequirementsV2Role | null
+  isTech: boolean
+  seniority?: Seniority | null
+  requirements: VacancyRequirementV2[]
+  
+}
+
 export interface Salary {
   min?: number | null
   max?: number | null
@@ -169,5 +215,12 @@ export interface SkillToClassify {
 export interface Skills {
   required: string[]
   optional: string[]
+  
+}
+
+export interface VacancyRequirementV2 {
+  priority: RequirementPriority
+  value?: string | null
+  anyOf?: string[] | null
   
 }

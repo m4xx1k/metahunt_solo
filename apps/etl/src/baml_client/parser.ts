@@ -23,7 +23,7 @@ import { toBamlError } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, Salary, Seniority, SkillCategory, SkillToClassify, Skills, WorkFormat} from "./types"
+import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, RequirementsV2Role, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
 import type TypeBuilder from "./type_builder"
 
 export class LlmResponseParser {
@@ -99,6 +99,29 @@ export class LlmResponseParser {
     }
   }
   
+  ExtractVacancyRequirementsV2(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): types.ExtractedVacancyRequirementsV2 {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "ExtractVacancyRequirementsV2",
+        llmResponse,
+        false,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as types.ExtractedVacancyRequirementsV2
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
 }
 
 export class LlmStreamParser {
@@ -169,6 +192,29 @@ export class LlmStreamParser {
         __baml_options__?.clientRegistry,
         __env__,
       ) as partial_types.ExtractedVacancy
+    } catch (error) {
+      throw toBamlError(error);
+    }
+  }
+  
+  ExtractVacancyRequirementsV2(
+      llmResponse: string,
+      __baml_options__?: { tb?: TypeBuilder, clientRegistry?: ClientRegistry, env?: Record<string, string | undefined> }
+  ): partial_types.ExtractedVacancyRequirementsV2 {
+    try {
+      const __rawEnv__ = __baml_options__?.env ? { ...process.env, ...__baml_options__.env } : { ...process.env };
+      const __env__: Record<string, string> = Object.fromEntries(
+        Object.entries(__rawEnv__).filter(([_, value]) => value !== undefined) as [string, string][]
+      );
+      return this.runtime.parseLlmResponse(
+        "ExtractVacancyRequirementsV2",
+        llmResponse,
+        true,
+        this.ctxManager.cloneContext(),
+        __baml_options__?.tb?.__tb(),
+        __baml_options__?.clientRegistry,
+        __env__,
+      ) as partial_types.ExtractedVacancyRequirementsV2
     } catch (error) {
       throw toBamlError(error);
     }
