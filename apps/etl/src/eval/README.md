@@ -8,21 +8,21 @@ It does not change BAML, persistence, matching, or production tracing.
 
 ## One command
 
-The safe command produces the 25-case draft plan (15 existing reviewed rows,
-five explicit-OR rows, and five competency/methodology rows) without contacting
-the database, an LLM, Langfuse, or any other external service:
+The safe command renders only cases supplied from reviewed sources; it never
+creates synthetic vacancy fragments or labels. It makes no database, LLM,
+Langfuse, or other external call:
 
 ```bash
 pnpm eval:requirements-v2 -- --dry-run --legacy-dataset apps/etl/golden/role-contract-v1/dataset.json
 ```
 
-The legacy file stays user-owned: it is read only to verify that at least 15
-reviewed rows are available. It is never copied into this PR. The proposed
-25-case dry-run renders their singleton requirement labels plus ten targeted
-draft cases. Its legacy rows deliberately contain a source-text placeholder:
-replace that from the reviewed source before uploading. The Langfuse dataset
-must retain the source text and only the four fields below, with all items
-initially marked `draft`:
+The legacy file stays user-owned: it is read only to verify its reviewed rows.
+It is never copied into this PR. Its rows
+deliberately contain a source-text placeholder. The ten targeted boundaries are
+a separate local-only JSON array derived from real vacancy source text and
+manually labelled; pass it with `--targeted-dataset`. The Langfuse dataset must
+retain the source text and only the four fields below, with all items initially
+marked `draft`:
 
 ```json
 {
@@ -44,14 +44,14 @@ and no Langfuse API call occurs:
 ```bash
 DATABASE_URL="$(scripts/prod-db-url.sh)" pnpm eval:requirements-v2 -- --prepare-draft \
   --legacy-dataset apps/etl/golden/role-contract-v1/dataset.json \
+  --targeted-dataset .scratch/real-boundary-cases.json \
   --out .scratch/vacancy-requirements-v2-draft.json
 ```
 
-Targeted draft rows cover `PyTorch or TensorFlow`, `Prisma or TypeORM`, `AWS or
-GCP`, `Selenium/Cypress/Playwright`, and hard requirements such as API Testing,
-Distributed Systems, System Design, TDD/BDD, and explicitly required Scrum.
-The human reviewer corrects only `requirements` and changes `reviewStatus` to
-`approved`; difficult rows remain draft.
+`--targeted-dataset` must contain exactly ten real, `draft` cases. The human
+reviewer corrects `requirements` and changes `reviewStatus` to `approved`;
+difficult rows remain draft. Raw vacancy text and this local target file never
+enter Git.
 
 ## Langfuse smoke
 
