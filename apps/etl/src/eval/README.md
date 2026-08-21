@@ -13,7 +13,7 @@ creates synthetic vacancy fragments or labels. It makes no database, LLM,
 Langfuse, or other external call:
 
 ```bash
-pnpm eval:requirements-v2 -- --dry-run --legacy-dataset apps/etl/golden/role-contract-v1/dataset.json
+pnpm eval:requirements-v2 -- --dry-run --legacy-dataset /path/to/reviewed-dataset.json
 ```
 
 The legacy file stays user-owned: it is read only to verify its reviewed rows.
@@ -43,7 +43,7 @@ and no Langfuse API call occurs:
 
 ```bash
 DATABASE_URL="$(scripts/prod-db-url.sh)" pnpm eval:requirements-v2 -- --prepare-draft \
-  --legacy-dataset apps/etl/golden/role-contract-v1/dataset.json \
+  --legacy-dataset /path/to/reviewed-dataset.json \
   --targeted-dataset .scratch/real-boundary-cases.json \
   --out .scratch/vacancy-requirements-v2-draft.json
 ```
