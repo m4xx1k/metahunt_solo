@@ -1,25 +1,46 @@
 # Requirements v2 — draft review
 
-25 реальних вакансій з production DB. Це читабельний GitHub-view тієї ж draft-розмітки; канонічні дані залишаються в `vacancy-requirements-v2.dataset.json`.
+25 реальних вакансій з production DB. Це читабельний GitHub-view канонічного `vacancy-requirements-v2.dataset.json`.
 
-Усі лейбли зроблені вручну й мають статус `draft`: їх ще не можна трактувати як release-gate benchmark.
+Розмітку v2 зроблено вручну за текстом вакансій, а не відповідями DeepSeek. Role labels використовують цільові discipline-ролі з role-v2; `Architect` не означає `PRINCIPAL` автоматично. Статус лишається `draft`, доки owner не підтвердить labels.
 
 ## 01. Middle System Administrator в Levi9 Ukraine, Київ
 
-**ID:** `1f481401-b3e8-4e44-bf75-df21cf019bf6`  \
+**ID:** `1f481401-b3e8-4e44-bf75-df21cf019bf6` \
 **Slices:** `or`, `cloud`
 
 **Expected:** tech: `true`; role: `Systems Administrator`; seniority: `MIDDLE`
 
+- `must` Networking
 - `must` Mikrotik
 - `must` Juniper
-- `must` VMware
+- `must` HP Networking
+- `must` Aruba
+- `must` Ubiquiti
+- `must` VPN
+- `must` IPSec
+- `must` EoIP
+- `must` VLAN
+- `must` 802.1X
+- `must` RADIUS
+- `must` Firewalls
+- `must` DNS
+- `must` DHCP
+- `must` VMware vCenter
+- `must` Network Security
+- `must` Load Balancing
+- `must` Proxy Servers
 - `must` Windows Server
 - `must` Linux
 - `must` Azure **OR** AWS
 - `must` Docker **OR** Kubernetes
 - `nice` Office 365
+- `nice` macOS **OR** iOS
+- `nice` Jamf
 - `nice` Puppet
+- `nice` Chef
+- `nice` API
+- `nice` SVN **OR** Git **OR** TeamCity **OR** Jira **OR** Confluence
 
 <details>
 <summary>Текст вакансії</summary>
@@ -32,13 +53,35 @@ Title: Middle System Administrator в Levi9 Ukraine, Київ
 
 ## 02. Middle FinOps Engineer; ID 100980 в SoftServe, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Луцьк, Полтава, Рівне, Тернопіль, Ужгород, Хмельницький, Чернівці, віддалено
 
-**ID:** `31edad8c-e079-4dd7-acd1-5ecea8a2fca5`  \
+**ID:** `31edad8c-e079-4dd7-acd1-5ecea8a2fca5` \
 **Slices:** `or`, `cloud`
 
-**Expected:** tech: `true`; role: `FinOps Engineer`; seniority: `MIDDLE`
+**Expected:** tech: `true`; role: `DevOps Engineer`; seniority: `MIDDLE`
 
 - `must` AWS **OR** Azure **OR** GCP
 - `must` FinOps
+- `must` Cost Allocation
+- `must` Tag Governance
+- `must` Commitment Management
+- `must` Showback/Chargeback
+- `must` Anomaly Detection
+- `must` FinOps Operating Model
+- `must` Maturity Scoring
+- `must` AWS Cost Explorer **OR** Azure Cost Management **OR** GCP Billing Console
+- `must` CloudZero **OR** CloudHealth **OR** Kubecost
+- `must` Cloud Pricing Models
+- `must` Reserved Instances
+- `must` Savings Plans
+- `must` Committed Use Discounts
+- `must` Spot/Preemptible Instances
+- `must` Unified Cost Model
+- `must` Budget Management
+- `must` Cost Forecasting
+- `nice` Multi-cloud
+- `nice` Kubernetes Cost Management
+- `nice` AWS CUR **OR** Azure Cost Export **OR** GCP BigQuery Billing Export
+- `nice` SaaS Cost Management
+- `nice` AI/ML Cost Optimization
 - `nice` Terraform
 
 <details>
@@ -52,18 +95,23 @@ Title: Middle FinOps Engineer; ID 100980 в SoftServe, Київ, Харків, �
 
 ## 03. Junior Automation QA Engineer (JS)
 
-**ID:** `3881a497-a17f-4168-a7de-d4f34d35ac6c`  \
+**ID:** `3881a497-a17f-4168-a7de-d4f34d35ac6c` \
 **Slices:** `or`, `qa`
 
-**Expected:** tech: `true`; role: `QA Engineer`; seniority: `JUNIOR`
+**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `JUNIOR`
 
 - `must` JavaScript
-- `must` TypeScript
 - `must` Playwright
+- `must` QA Methodologies
+- `must` OOP
 - `must` Cypress **OR** WebdriverIO **OR** Playwright
+- `must` API Test Automation
+- `must` UI Test Automation
+- `nice` Linux
 - `nice` Docker
 - `nice` CI/CD
 - `nice` SQL
+- `nice` API/UI Test Integration
 
 <details>
 <summary>Текст вакансії</summary>
@@ -76,15 +124,19 @@ Due to the launch of a new project, we are looking for a Junior Automation QA En
 
 ## 04. Senior Python Automation QA Engineer
 
-**ID:** `06a94eef-a83f-4fd8-8d32-67f61ac3854c`  \
+**ID:** `06a94eef-a83f-4fd8-8d32-67f61ac3854c` \
 **Slices:** `qa`, `methodology`
 
-**Expected:** tech: `true`; role: `QA Automation Engineer`; seniority: `SENIOR`
+**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `SENIOR`
 
+- `must` OOP
+- `must` UI Test Automation
+- `must` Service Test Automation
 - `must` Python
 - `must` BDD
 - `must` AWS
 - `must` CI/CD
+- `must` Test Reporting
 - `must` Selenium
 - `must` API Testing
 
@@ -99,21 +151,30 @@ Description About Project: Comprised of the Company’s international business u
 
 ## 05. Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено
 
-**ID:** `94c194b8-0ef0-43c4-999a-879411e7bc5e`  \
+**ID:** `94c194b8-0ef0-43c4-999a-879411e7bc5e` \
 **Slices:** `methodology`
 
-**Expected:** tech: `true`; role: `.NET Engineer`; seniority: `SENIOR`
+**Expected:** tech: `true`; role: `Full Stack Engineer`; seniority: `SENIOR`
 
 - `must` .NET
 - `must` Angular
 - `must` TypeScript
 - `must` SQL
+- `must` Shift-left Testing
 - `must` TDD
 - `must` BDD
 - `must` CI/CD
 - `must` DevSecOps
+- `must` Secure Coding
+- `must` Automated Testing
 - `must` Azure
 - `nice` AI/ML
+- `nice` LLMs
+- `nice` Agentic Systems
+- `nice` MCP
+- `nice` Event-driven Systems
+- `nice` Microservices
+- `nice` Serverless
 
 <details>
 <summary>Текст вакансії</summary>
@@ -126,16 +187,21 @@ We are seeking a highly skilled Senior .NET AI Software Engineer to lead the dev
 
 ## 06. ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено
 
-**ID:** `44f8f1d5-f52b-4407-b84d-cd84a129601f`  \
+**ID:** `44f8f1d5-f52b-4407-b84d-cd84a129601f` \
 **Slices:** `competency`, `nice`
 
-**Expected:** tech: `true`; role: `Backend Engineer`; seniority: `null`
+**Expected:** tech: `true`; role: `Full Stack Engineer`; seniority: `null`
 
 - `must` C++
+- `must` OOP
 - `must` Qt
+- `must` Server-side Development
 - `must` Linux
 - `nice` Distributed Systems
 - `nice` Networking
+- `nice` Data Visualization
+- `nice` Frontend Development
+- `nice` UI/UX
 
 <details>
 <summary>Текст вакансії</summary>
@@ -148,11 +214,19 @@ Title: ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed 
 
 ## 07. QA Engineer
 
-**ID:** `97ec4fbc-6f58-4c48-aca4-983b8946a633`  \
+**ID:** `97ec4fbc-6f58-4c48-aca4-983b8946a633` \
 **Slices:** `methodology`, `nice`
 
-**Expected:** tech: `true`; role: `QA Engineer`; seniority: `null`
+**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `null`
 
+- `must` TypeScript
+- `must` Playwright **OR** Cypress
+- `must` Cursor
+- `must` Manual Testing
+- `must` Exploratory Testing
+- `must` CI/CD
+- `must` Defect Tracking
+- `must` Test Specifications
 - `nice` Agile
 - `nice` Scrum
 
@@ -167,20 +241,26 @@ Tasks Design, write, and maintain automated test suites (e.g., using TypeScript 
 
 ## 08. Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів
 
-**ID:** `ac76929d-692e-4458-bc93-07ecc1be906a`  \
+**ID:** `ac76929d-692e-4458-bc93-07ecc1be906a` \
 **Slices:** `qa`, `api-testing`
 
-**Expected:** tech: `true`; role: `QA Automation Engineer`; seniority: `SENIOR`
+**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `SENIOR`
 
 - `must` Playwright
+- `must` REST Assured
 - `must` API Testing
-- `must` TypeScript
-- `must` JavaScript
+- `must` TypeScript **OR** JavaScript
 - `must` Java
+- `must` Relational Databases
 - `must` Azure DevOps
+- `must` AI-based Testing
 - `nice` Docker
 - `nice` Kubernetes
-- `nice` ETL
+- `nice` Data Validation
+- `nice` IICS **OR** Informatica PowerCenter
+- `nice` Data Mapping
+- `nice` Data Profiling
+- `nice` ETL Scheduling
 - `nice` Performance Testing
 
 <details>
@@ -194,16 +274,17 @@ We are looking for a Senior Automation QA Engineer (Playwright, RestAssured, TS/
 
 ## 09. Python Engineer
 
-**ID:** `c4ac496c-7f80-4ec0-86ac-85ee2742ace9`  \
+**ID:** `c4ac496c-7f80-4ec0-86ac-85ee2742ace9` \
 **Slices:** `api-testing`
 
-**Expected:** tech: `true`; role: `Python Engineer`; seniority: `null`
+**Expected:** tech: `true`; role: `Backend Engineer`; seniority: `null`
 
 - `must` Python
 - `must` FastAPI
-- `nice` SQLAlchemy
-- `nice` Redis
-- `nice` Docker
+- `must` Async Programming
+- `must` Pydantic
+- `must` API Design
+- `nice` SQLAlchemy **OR** Async Database Drivers **OR** Redis **OR** Background Task Queues **OR** Containerized Deployments
 
 <details>
 <summary>Текст вакансії</summary>
@@ -216,21 +297,24 @@ We’re hiring a skilled Python developer with strong FastAPI experience to help
 
 ## 10. Middle Automation QA Engineer (Playwright) в Exoft, Львів
 
-**ID:** `ab523145-c7b7-4271-b765-63380c6e8f53`  \
+**ID:** `ab523145-c7b7-4271-b765-63380c6e8f53` \
 **Slices:** `qa`, `cloud`
 
-**Expected:** tech: `true`; role: `QA Automation Engineer`; seniority: `MIDDLE`
+**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `MIDDLE`
 
 - `must` Playwright
 - `must` Python **OR** JavaScript **OR** TypeScript **OR** Java
 - `must` API Testing
+- `must` SaaS Testing
 - `must` AWS
 - `must` CI/CD
 - `must` Git
+- `must` AI/LLM Tools
 - `nice` Docker
 - `nice` Microservices
 - `nice` Performance Testing
-- `nice` Terraform
+- `nice` Terraform **OR** CloudFormation
+- `nice` CloudWatch **OR** Datadog **OR** Grafana
 
 <details>
 <summary>Текст вакансії</summary>
@@ -243,15 +327,19 @@ Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer
 
 ## 11. QA Automation Engineer (Contract) в IT Service Ukraine, за кордоном, віддалено
 
-**ID:** `40d73699-35db-4a14-be41-a4429c7451be`  \
+**ID:** `40d73699-35db-4a14-be41-a4429c7451be` \
 **Slices:** `qa`
 
-**Expected:** tech: `true`; role: `QA Automation Engineer`; seniority: `null`
+**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `null`
 
 - `must` Playwright
-- `must` API Testing
+- `must` API Test Automation
+- `must` QA Processes
+- `must` Software Testing
 - `nice` Shopify
+- `nice` E-commerce Testing
 - `nice` CI/CD
+- `nice` Automated Testing Pipelines
 
 <details>
 <summary>Текст вакансії</summary>
@@ -264,10 +352,10 @@ We’re looking for a QA Automation Engineer to join our team on a full-time con
 
 ## 12. MLOps Engineer
 
-**ID:** `95407129-4421-4ebb-a701-1429592d6a90`  \
+**ID:** `95407129-4421-4ebb-a701-1429592d6a90` \
 **Slices:** `or`, `cloud`
 
-**Expected:** tech: `true`; role: `MLOps Engineer`; seniority: `SENIOR`
+**Expected:** tech: `true`; role: `Machine Learning Engineer`; seniority: `SENIOR`
 
 - `must` MLOps
 - `must` AWS **OR** GCP **OR** Azure
@@ -287,7 +375,7 @@ Senior MLOps Engineer with 7+ years of experience needed for a global project in
 
 ## 13. Frontend Engineer (JavaScript/TypeScript)
 
-**ID:** `4950053b-d757-4b4d-9828-3ff51f4509fb`  \
+**ID:** `4950053b-d757-4b4d-9828-3ff51f4509fb` \
 **Slices:** `or`
 
 **Expected:** tech: `true`; role: `Frontend Engineer`; seniority: `SENIOR`
@@ -295,6 +383,7 @@ Senior MLOps Engineer with 7+ years of experience needed for a global project in
 - `must` JavaScript
 - `must` TypeScript
 - `must` React **OR** Vue.js **OR** Angular
+- `must` Web Development
 
 <details>
 <summary>Текст вакансії</summary>
@@ -307,7 +396,7 @@ Senior Frontend Engineer with 10+ years of experience needed for a global projec
 
 ## 14. Data Engineer
 
-**ID:** `d649c71a-7f2a-42dc-9af2-2311bc9a0d5f`  \
+**ID:** `d649c71a-7f2a-42dc-9af2-2311bc9a0d5f` \
 **Slices:** `data`
 
 **Expected:** tech: `true`; role: `Data Engineer`; seniority: `null`
@@ -315,8 +404,9 @@ Senior Frontend Engineer with 10+ years of experience needed for a global projec
 - `must` Data Engineering
 - `must` Python
 - `must` Data Pipelines
-- `nice` ETL
-- `nice` Cloud
+- `nice` ETL **OR** ELT
+- `nice` Cloud Data Platforms
+- `nice` Modern Data Stack
 
 <details>
 <summary>Текст вакансії</summary>
@@ -329,18 +419,20 @@ We’re looking for a Data Engineer to improve our data infrastructure and integ
 
 ## 15. Senior Data Engineer
 
-**ID:** `b2d7b7d4-e51b-46cd-bf08-2cecee9900a7`  \
+**ID:** `b2d7b7d4-e51b-46cd-bf08-2cecee9900a7` \
 **Slices:** `data`
 
 **Expected:** tech: `true`; role: `Data Engineer`; seniority: `SENIOR`
 
 - `must` Data Engineering
-- `must` ETL/ELT
+- `must` ETL **OR** ELT
 - `must` AWS
 - `must` Azure
 - `must` SQL
+- `must` Relational Database Design
 - `must` Data Warehousing
 - `must` Data Lakes
+- `must` Lakehouse Architecture
 - `must` Data Modeling
 - `must` Data Quality
 - `must` Performance Optimization
@@ -356,7 +448,7 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
 
 ## 16. Senior DevOps Engineer (Java)
 
-**ID:** `32e7e8af-290a-463a-a612-747282522816`  \
+**ID:** `32e7e8af-290a-463a-a612-747282522816` \
 **Slices:** `devops`
 
 **Expected:** tech: `true`; role: `DevOps Engineer`; seniority: `SENIOR`
@@ -365,6 +457,8 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
 - `must` Terraform
 - `must` Java
 - `must` Spring Boot
+- `must` Cloud Infrastructure
+- `must` Deployment Automation
 - `must` CI/CD
 
 <details>
@@ -378,7 +472,7 @@ We are looking for a Senior DevOps / Backend Engineer (Java) to join our client'
 
 ## 17. Senior Full-Stack (Node + React) Engineer
 
-**ID:** `bc2deda3-7698-40c3-9a1c-edea450e62cb`  \
+**ID:** `bc2deda3-7698-40c3-9a1c-edea450e62cb` \
 **Slices:** `fullstack`
 
 **Expected:** tech: `true`; role: `Full Stack Engineer`; seniority: `SENIOR`
@@ -389,10 +483,19 @@ We are looking for a Senior DevOps / Backend Engineer (Java) to join our client'
 - `must` MySQL
 - `must` BullMQ
 - `must` Redis
-- `must` REST API
+- `must` REST API Integration
 - `must` Docker
-- `must` React
+- `must` Nginx
 - `must` CI/CD
+- `must` Cloud Infrastructure
+- `must` React
+- `must` React Admin
+- `must` MUI
+- `nice` MDM
+- `nice` Activation Lock
+- `nice` FileVault
+- `nice` Apple Business Manager
+- `nice` Automated Device Enrollment
 
 <details>
 <summary>Текст вакансії</summary>
@@ -405,22 +508,28 @@ Title: Senior Full-Stack (Node + React) Engineer
 
 ## 18. Python Developer (Django)
 
-**ID:** `c595d814-5ed1-48b5-9686-6d0a953c598d`  \
+**ID:** `c595d814-5ed1-48b5-9686-6d0a953c598d` \
 **Slices:** `api-testing`
 
-**Expected:** tech: `true`; role: `Python Engineer`; seniority: `null`
+**Expected:** tech: `true`; role: `Backend Engineer`; seniority: `null`
 
 - `must` Python
 - `must` Django
 - `must` REST API
 - `must` PostgreSQL
 - `must` OOP
+- `must` Backend Services
 - `must` asyncio
+- `must` Multiprocessing
+- `must` Third-party API Integration
 - `must` Git
 - `must` Linux
 - `must` Docker
 - `must` AWS
 - `must` CI/CD
+- `must` Logging
+- `must` Error Handling
+- `must` System Reliability
 
 <details>
 <summary>Текст вакансії</summary>
@@ -433,7 +542,7 @@ Title: Python Developer (Django)
 
 ## 19. Node.js Developer
 
-**ID:** `700f21ca-52cc-40cc-ae4f-2ae153b74fab`  \
+**ID:** `700f21ca-52cc-40cc-ae4f-2ae153b74fab` \
 **Slices:** `api-testing`
 
 **Expected:** tech: `true`; role: `Backend Engineer`; seniority: `null`
@@ -445,10 +554,16 @@ Title: Python Developer (Django)
 - `must` TypeScript
 - `must` PostgreSQL
 - `must` GraphQL
+- `must` Async Programming
+- `must` Third-party API Integration
 - `must` Microservices
+- `must` Git
 - `must` Docker
 - `must` AWS
 - `must` CI/CD
+- `must` Logging
+- `must` Error Handling
+- `must` System Reliability
 
 <details>
 <summary>Текст вакансії</summary>
@@ -461,7 +576,7 @@ Title: Node.js Developer
 
 ## 20. Backend Developer (Node.js)
 
-**ID:** `1b5c33e8-9ffb-461e-81d5-8cd987a71a46`  \
+**ID:** `1b5c33e8-9ffb-461e-81d5-8cd987a71a46` \
 **Slices:** `backend`
 
 **Expected:** tech: `true`; role: `Backend Engineer`; seniority: `null`
@@ -470,6 +585,12 @@ Title: Node.js Developer
 - `must` NestJS
 - `must` SQL
 - `must` NoSQL
+- `must` Microservices
+- `must` Payment System Integration
+- `must` Database Design
+- `must` Database Indexing
+- `must` Database Migrations
+- `must` SQL Optimization
 - `must` Docker
 - `must` Kubernetes
 - `must` AWS
@@ -489,18 +610,23 @@ Title: Backend Developer (Node.js)
 
 ## 21. Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
 
-**ID:** `365476ce-7843-49a5-9863-724c78abd568`  \
+**ID:** `365476ce-7843-49a5-9863-724c78abd568` \
 **Slices:** `backend`
 
-**Expected:** tech: `true`; role: `Shopware Developer`; seniority: `null`
+**Expected:** tech: `true`; role: `Web / CMS Engineer`; seniority: `null`
 
 - `must` Shopware
 - `must` PHP
 - `must` Symfony
-- `must` MySQL
-- `must` REST API
-- `nice` JavaScript
-- `nice` TypeScript
+- `must` MySQL **OR** MariaDB
+- `must` Shopware Plugin System
+- `must` Shopware DAL
+- `must` Twig
+- `must` Shopware Storefront Extensions
+- `must` Shopware Admin Extensions
+- `must` Shopware Architecture
+- `must` REST API Integration
+- `nice` JavaScript **OR** TypeScript
 - `nice` Vue.js
 - `nice` Docker
 - `nice` Git
@@ -516,16 +642,20 @@ We are looking for a Middle+/Senior Full-stack Shopware developer to join our te
 
 ## 22. Middle DevOps
 
-**ID:** `3f08d0da-1d87-4d8f-a1bf-17db9a324e86`  \
+**ID:** `3f08d0da-1d87-4d8f-a1bf-17db9a324e86` \
 **Slices:** `devops`, `cloud`
 
 **Expected:** tech: `true`; role: `DevOps Engineer`; seniority: `MIDDLE`
 
 - `must` Terraform
 - `must` Kubernetes
+- `must` Public Cloud Infrastructure
 - `must` Windows Server
 - `must` Active Directory
 - `must` Networking
+- `must` Firewalls
+- `must` VPN
+- `must` Cloud Peering
 - `nice` GCP
 - `nice` Tencent Cloud
 
@@ -540,17 +670,29 @@ Requirements: Hands-on experience with preparing automation scenarios using Terr
 
 ## 23. Linux embedded
 
-**ID:** `2eb4a20a-ebb0-4210-86aa-e6250891237d`  \
+**ID:** `2eb4a20a-ebb0-4210-86aa-e6250891237d` \
 **Slices:** `embedded`
 
 **Expected:** tech: `true`; role: `Embedded Engineer`; seniority: `null`
 
 - `must` Python
 - `must` Embedded Systems
-- `must` Linux
+- `must` Linux/UNIX Administration
+- `must` Cryptography
 - `must` Information Security
 - `must` Git
+- `nice` Linux Boot Process
+- `nice` U-Boot
+- `nice` Linux Kernel
+- `nice` initramfs
+- `nice` systemd
+- `nice` Device Drivers
+- `nice` Device Tree
+- `nice` Build Systems
 - `nice` CMake
+- `nice` Autotools
+- `nice` pkg-config
+- `nice` Cross-compilation Toolchains
 
 <details>
 <summary>Текст вакансії</summary>
@@ -563,20 +705,30 @@ Title: Linux embedded
 
 ## 24. Embedded / UAV Software Engineer
 
-**ID:** `fa303161-eab2-4375-956d-faf5e328b4e0`  \
+**ID:** `fa303161-eab2-4375-956d-faf5e328b4e0` \
 **Slices:** `embedded`
 
 **Expected:** tech: `true`; role: `Embedded Engineer`; seniority: `null`
 
-- `must` C++
+- `must` C **OR** C++
 - `must` Lua
 - `must` ArduPilot **OR** PX4
+- `must` Flight Controller Architecture
 - `must` RTOS
 - `must` MAVLink
-- `must` Linux
+- `must` Log Analysis
+- `must` Linux/UNIX Administration
 - `must` Git
+- `nice` UAV
+- `nice` UAV Piloting
+- `nice` PID Controllers
+- `nice` EKF
+- `nice` Notch Filters
 - `nice` ROS
 - `nice` Python
+- `nice` Arduino **OR** Raspberry Pi
+- `nice` Cryptography
+- `nice` Information Security
 
 <details>
 <summary>Текст вакансії</summary>
@@ -589,15 +741,23 @@ Title: Embedded / UAV Software Engineer
 
 ## 25. Junior QA Engineer
 
-**ID:** `ef22000b-3d54-4916-8151-5489fdddcb2f`  \
+**ID:** `ef22000b-3d54-4916-8151-5489fdddcb2f` \
 **Slices:** `qa`, `api-testing`
 
-**Expected:** tech: `true`; role: `QA Engineer`; seniority: `JUNIOR`
+**Expected:** tech: `true`; role: `Manual QA Engineer`; seniority: `JUNIOR`
 
+- `must` Databases
 - `must` SQL
 - `must` API Testing
 - `must` Postman
 - `must` Software Testing
+- `must` Jira
+- `must` Confluence
+- `must` Manual Testing
+- `must` JMeter
+- `must` Load Testing
+- `must` Creatio CRM
+- `must` Integration Testing
 
 <details>
 <summary>Текст вакансії</summary>
@@ -607,4 +767,3 @@ Title: Junior QA Engineer
 Компанія Consimple шукає Junior QA Manual Engineer , який підсилить нашу команду! Необхідні навички: впевнене розуміння баз даних; володіння написанням SQL-запитів; знання та вміння користуватися API; базові навички роботи з Postman; знання Microsoft Office (Word, Excel, Outlook); аналітичне мислення; практичний досвід тестування ПЗ Обов'язки: аналіз вимог Клієнта; робота з документацією створення тест-кейсів робота з БТС (баг-трекінгова система) JIRA робота з Confluence мануальне тестування API (Postman) тестування навантаження (Jmeter) мануальне тестування кастомних рішень у CRM-системі Creatio інтеграційне тестування зі сторонніми системами (1С, сайт, каси, МП тощо) комунікація з клієнтом та командою. Ми обіцяємо: довгострокова зайнятість; шляхи для зростання та саморозвитку; віддалений формат роботи; доброзичливий командний дух; цікаві колективні заходи. Вакансія передбачає виконання тестового завдання.
 
 </details>
-

@@ -12,6 +12,10 @@
       "requirements": [
         {
           "priority": "must",
+          "value": "Networking"
+        },
+        {
+          "priority": "must",
           "value": "Mikrotik"
         },
         {
@@ -20,7 +24,67 @@
         },
         {
           "priority": "must",
-          "value": "VMware"
+          "value": "HP Networking"
+        },
+        {
+          "priority": "must",
+          "value": "Aruba"
+        },
+        {
+          "priority": "must",
+          "value": "Ubiquiti"
+        },
+        {
+          "priority": "must",
+          "value": "VPN"
+        },
+        {
+          "priority": "must",
+          "value": "IPSec"
+        },
+        {
+          "priority": "must",
+          "value": "EoIP"
+        },
+        {
+          "priority": "must",
+          "value": "VLAN"
+        },
+        {
+          "priority": "must",
+          "value": "802.1X"
+        },
+        {
+          "priority": "must",
+          "value": "RADIUS"
+        },
+        {
+          "priority": "must",
+          "value": "Firewalls"
+        },
+        {
+          "priority": "must",
+          "value": "DNS"
+        },
+        {
+          "priority": "must",
+          "value": "DHCP"
+        },
+        {
+          "priority": "must",
+          "value": "VMware vCenter"
+        },
+        {
+          "priority": "must",
+          "value": "Network Security"
+        },
+        {
+          "priority": "must",
+          "value": "Load Balancing"
+        },
+        {
+          "priority": "must",
+          "value": "Proxy Servers"
         },
         {
           "priority": "must",
@@ -44,7 +108,27 @@
         },
         {
           "priority": "nice",
+          "anyOf": ["macOS", "iOS"]
+        },
+        {
+          "priority": "nice",
+          "value": "Jamf"
+        },
+        {
+          "priority": "nice",
           "value": "Puppet"
+        },
+        {
+          "priority": "nice",
+          "value": "Chef"
+        },
+        {
+          "priority": "nice",
+          "value": "API"
+        },
+        {
+          "priority": "nice",
+          "anyOf": ["SVN", "Git", "TeamCity", "Jira", "Confluence"]
         }
       ]
     },
@@ -62,7 +146,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "FinOps Engineer",
+      "role": "DevOps Engineer",
       "seniority": "MIDDLE",
       "requirements": [
         {
@@ -72,6 +156,94 @@
         {
           "priority": "must",
           "value": "FinOps"
+        },
+        {
+          "priority": "must",
+          "value": "Cost Allocation"
+        },
+        {
+          "priority": "must",
+          "value": "Tag Governance"
+        },
+        {
+          "priority": "must",
+          "value": "Commitment Management"
+        },
+        {
+          "priority": "must",
+          "value": "Showback/Chargeback"
+        },
+        {
+          "priority": "must",
+          "value": "Anomaly Detection"
+        },
+        {
+          "priority": "must",
+          "value": "FinOps Operating Model"
+        },
+        {
+          "priority": "must",
+          "value": "Maturity Scoring"
+        },
+        {
+          "priority": "must",
+          "anyOf": ["AWS Cost Explorer", "Azure Cost Management", "GCP Billing Console"]
+        },
+        {
+          "priority": "must",
+          "anyOf": ["CloudZero", "CloudHealth", "Kubecost"]
+        },
+        {
+          "priority": "must",
+          "value": "Cloud Pricing Models"
+        },
+        {
+          "priority": "must",
+          "value": "Reserved Instances"
+        },
+        {
+          "priority": "must",
+          "value": "Savings Plans"
+        },
+        {
+          "priority": "must",
+          "value": "Committed Use Discounts"
+        },
+        {
+          "priority": "must",
+          "value": "Spot/Preemptible Instances"
+        },
+        {
+          "priority": "must",
+          "value": "Unified Cost Model"
+        },
+        {
+          "priority": "must",
+          "value": "Budget Management"
+        },
+        {
+          "priority": "must",
+          "value": "Cost Forecasting"
+        },
+        {
+          "priority": "nice",
+          "value": "Multi-cloud"
+        },
+        {
+          "priority": "nice",
+          "value": "Kubernetes Cost Management"
+        },
+        {
+          "priority": "nice",
+          "anyOf": ["AWS CUR", "Azure Cost Export", "GCP BigQuery Billing Export"]
+        },
+        {
+          "priority": "nice",
+          "value": "SaaS Cost Management"
+        },
+        {
+          "priority": "nice",
+          "value": "AI/ML Cost Optimization"
         },
         {
           "priority": "nice",
@@ -93,7 +265,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Engineer",
+      "role": "Automation QA Engineer",
       "seniority": "JUNIOR",
       "requirements": [
         {
@@ -102,15 +274,31 @@
         },
         {
           "priority": "must",
-          "value": "TypeScript"
-        },
-        {
-          "priority": "must",
           "value": "Playwright"
         },
         {
           "priority": "must",
+          "value": "QA Methodologies"
+        },
+        {
+          "priority": "must",
+          "value": "OOP"
+        },
+        {
+          "priority": "must",
           "anyOf": ["Cypress", "WebdriverIO", "Playwright"]
+        },
+        {
+          "priority": "must",
+          "value": "API Test Automation"
+        },
+        {
+          "priority": "must",
+          "value": "UI Test Automation"
+        },
+        {
+          "priority": "nice",
+          "value": "Linux"
         },
         {
           "priority": "nice",
@@ -123,6 +311,10 @@
         {
           "priority": "nice",
           "value": "SQL"
+        },
+        {
+          "priority": "nice",
+          "value": "API/UI Test Integration"
         }
       ]
     },
@@ -140,9 +332,21 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Automation Engineer",
+      "role": "Automation QA Engineer",
       "seniority": "SENIOR",
       "requirements": [
+        {
+          "priority": "must",
+          "value": "OOP"
+        },
+        {
+          "priority": "must",
+          "value": "UI Test Automation"
+        },
+        {
+          "priority": "must",
+          "value": "Service Test Automation"
+        },
         {
           "priority": "must",
           "value": "Python"
@@ -158,6 +362,10 @@
         {
           "priority": "must",
           "value": "CI/CD"
+        },
+        {
+          "priority": "must",
+          "value": "Test Reporting"
         },
         {
           "priority": "must",
@@ -183,7 +391,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": ".NET Engineer",
+      "role": "Full Stack Engineer",
       "seniority": "SENIOR",
       "requirements": [
         {
@@ -204,6 +412,10 @@
         },
         {
           "priority": "must",
+          "value": "Shift-left Testing"
+        },
+        {
+          "priority": "must",
           "value": "TDD"
         },
         {
@@ -220,11 +432,43 @@
         },
         {
           "priority": "must",
+          "value": "Secure Coding"
+        },
+        {
+          "priority": "must",
+          "value": "Automated Testing"
+        },
+        {
+          "priority": "must",
           "value": "Azure"
         },
         {
           "priority": "nice",
           "value": "AI/ML"
+        },
+        {
+          "priority": "nice",
+          "value": "LLMs"
+        },
+        {
+          "priority": "nice",
+          "value": "Agentic Systems"
+        },
+        {
+          "priority": "nice",
+          "value": "MCP"
+        },
+        {
+          "priority": "nice",
+          "value": "Event-driven Systems"
+        },
+        {
+          "priority": "nice",
+          "value": "Microservices"
+        },
+        {
+          "priority": "nice",
+          "value": "Serverless"
         }
       ]
     },
@@ -242,7 +486,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "Backend Engineer",
+      "role": "Full Stack Engineer",
       "seniority": null,
       "requirements": [
         {
@@ -251,7 +495,15 @@
         },
         {
           "priority": "must",
+          "value": "OOP"
+        },
+        {
+          "priority": "must",
           "value": "Qt"
+        },
+        {
+          "priority": "must",
+          "value": "Server-side Development"
         },
         {
           "priority": "must",
@@ -264,6 +516,18 @@
         {
           "priority": "nice",
           "value": "Networking"
+        },
+        {
+          "priority": "nice",
+          "value": "Data Visualization"
+        },
+        {
+          "priority": "nice",
+          "value": "Frontend Development"
+        },
+        {
+          "priority": "nice",
+          "value": "UI/UX"
         }
       ]
     },
@@ -281,9 +545,41 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Engineer",
+      "role": "Automation QA Engineer",
       "seniority": null,
       "requirements": [
+        {
+          "priority": "must",
+          "value": "TypeScript"
+        },
+        {
+          "priority": "must",
+          "anyOf": ["Playwright", "Cypress"]
+        },
+        {
+          "priority": "must",
+          "value": "Cursor"
+        },
+        {
+          "priority": "must",
+          "value": "Manual Testing"
+        },
+        {
+          "priority": "must",
+          "value": "Exploratory Testing"
+        },
+        {
+          "priority": "must",
+          "value": "CI/CD"
+        },
+        {
+          "priority": "must",
+          "value": "Defect Tracking"
+        },
+        {
+          "priority": "must",
+          "value": "Test Specifications"
+        },
         {
           "priority": "nice",
           "value": "Agile"
@@ -308,7 +604,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Automation Engineer",
+      "role": "Automation QA Engineer",
       "seniority": "SENIOR",
       "requirements": [
         {
@@ -317,15 +613,15 @@
         },
         {
           "priority": "must",
+          "value": "REST Assured"
+        },
+        {
+          "priority": "must",
           "value": "API Testing"
         },
         {
           "priority": "must",
-          "value": "TypeScript"
-        },
-        {
-          "priority": "must",
-          "value": "JavaScript"
+          "anyOf": ["TypeScript", "JavaScript"]
         },
         {
           "priority": "must",
@@ -333,7 +629,15 @@
         },
         {
           "priority": "must",
+          "value": "Relational Databases"
+        },
+        {
+          "priority": "must",
           "value": "Azure DevOps"
+        },
+        {
+          "priority": "must",
+          "value": "AI-based Testing"
         },
         {
           "priority": "nice",
@@ -345,7 +649,23 @@
         },
         {
           "priority": "nice",
-          "value": "ETL"
+          "value": "Data Validation"
+        },
+        {
+          "priority": "nice",
+          "anyOf": ["IICS", "Informatica PowerCenter"]
+        },
+        {
+          "priority": "nice",
+          "value": "Data Mapping"
+        },
+        {
+          "priority": "nice",
+          "value": "Data Profiling"
+        },
+        {
+          "priority": "nice",
+          "value": "ETL Scheduling"
         },
         {
           "priority": "nice",
@@ -367,7 +687,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "Python Engineer",
+      "role": "Backend Engineer",
       "seniority": null,
       "requirements": [
         {
@@ -379,16 +699,26 @@
           "value": "FastAPI"
         },
         {
-          "priority": "nice",
-          "value": "SQLAlchemy"
+          "priority": "must",
+          "value": "Async Programming"
+        },
+        {
+          "priority": "must",
+          "value": "Pydantic"
+        },
+        {
+          "priority": "must",
+          "value": "API Design"
         },
         {
           "priority": "nice",
-          "value": "Redis"
-        },
-        {
-          "priority": "nice",
-          "value": "Docker"
+          "anyOf": [
+            "SQLAlchemy",
+            "Async Database Drivers",
+            "Redis",
+            "Background Task Queues",
+            "Containerized Deployments"
+          ]
         }
       ]
     },
@@ -406,7 +736,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Automation Engineer",
+      "role": "Automation QA Engineer",
       "seniority": "MIDDLE",
       "requirements": [
         {
@@ -423,6 +753,10 @@
         },
         {
           "priority": "must",
+          "value": "SaaS Testing"
+        },
+        {
+          "priority": "must",
           "value": "AWS"
         },
         {
@@ -432,6 +766,10 @@
         {
           "priority": "must",
           "value": "Git"
+        },
+        {
+          "priority": "must",
+          "value": "AI/LLM Tools"
         },
         {
           "priority": "nice",
@@ -447,7 +785,11 @@
         },
         {
           "priority": "nice",
-          "value": "Terraform"
+          "anyOf": ["Terraform", "CloudFormation"]
+        },
+        {
+          "priority": "nice",
+          "anyOf": ["CloudWatch", "Datadog", "Grafana"]
         }
       ]
     },
@@ -465,7 +807,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Automation Engineer",
+      "role": "Automation QA Engineer",
       "seniority": null,
       "requirements": [
         {
@@ -474,7 +816,15 @@
         },
         {
           "priority": "must",
-          "value": "API Testing"
+          "value": "API Test Automation"
+        },
+        {
+          "priority": "must",
+          "value": "QA Processes"
+        },
+        {
+          "priority": "must",
+          "value": "Software Testing"
         },
         {
           "priority": "nice",
@@ -482,7 +832,15 @@
         },
         {
           "priority": "nice",
+          "value": "E-commerce Testing"
+        },
+        {
+          "priority": "nice",
           "value": "CI/CD"
+        },
+        {
+          "priority": "nice",
+          "value": "Automated Testing Pipelines"
         }
       ]
     },
@@ -500,7 +858,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "MLOps Engineer",
+      "role": "Machine Learning Engineer",
       "seniority": "SENIOR",
       "requirements": [
         {
@@ -557,6 +915,10 @@
         {
           "priority": "must",
           "anyOf": ["React", "Vue.js", "Angular"]
+        },
+        {
+          "priority": "must",
+          "value": "Web Development"
         }
       ]
     },
@@ -591,11 +953,15 @@
         },
         {
           "priority": "nice",
-          "value": "ETL"
+          "anyOf": ["ETL", "ELT"]
         },
         {
           "priority": "nice",
-          "value": "Cloud"
+          "value": "Cloud Data Platforms"
+        },
+        {
+          "priority": "nice",
+          "value": "Modern Data Stack"
         }
       ]
     },
@@ -622,7 +988,7 @@
         },
         {
           "priority": "must",
-          "value": "ETL/ELT"
+          "anyOf": ["ETL", "ELT"]
         },
         {
           "priority": "must",
@@ -638,11 +1004,19 @@
         },
         {
           "priority": "must",
+          "value": "Relational Database Design"
+        },
+        {
+          "priority": "must",
           "value": "Data Warehousing"
         },
         {
           "priority": "must",
           "value": "Data Lakes"
+        },
+        {
+          "priority": "must",
+          "value": "Lakehouse Architecture"
         },
         {
           "priority": "must",
@@ -693,6 +1067,14 @@
         },
         {
           "priority": "must",
+          "value": "Cloud Infrastructure"
+        },
+        {
+          "priority": "must",
+          "value": "Deployment Automation"
+        },
+        {
+          "priority": "must",
           "value": "CI/CD"
         }
       ]
@@ -740,7 +1122,7 @@
         },
         {
           "priority": "must",
-          "value": "REST API"
+          "value": "REST API Integration"
         },
         {
           "priority": "must",
@@ -748,11 +1130,47 @@
         },
         {
           "priority": "must",
-          "value": "React"
+          "value": "Nginx"
         },
         {
           "priority": "must",
           "value": "CI/CD"
+        },
+        {
+          "priority": "must",
+          "value": "Cloud Infrastructure"
+        },
+        {
+          "priority": "must",
+          "value": "React"
+        },
+        {
+          "priority": "must",
+          "value": "React Admin"
+        },
+        {
+          "priority": "must",
+          "value": "MUI"
+        },
+        {
+          "priority": "nice",
+          "value": "MDM"
+        },
+        {
+          "priority": "nice",
+          "value": "Activation Lock"
+        },
+        {
+          "priority": "nice",
+          "value": "FileVault"
+        },
+        {
+          "priority": "nice",
+          "value": "Apple Business Manager"
+        },
+        {
+          "priority": "nice",
+          "value": "Automated Device Enrollment"
         }
       ]
     },
@@ -770,7 +1188,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "Python Engineer",
+      "role": "Backend Engineer",
       "seniority": null,
       "requirements": [
         {
@@ -795,7 +1213,19 @@
         },
         {
           "priority": "must",
+          "value": "Backend Services"
+        },
+        {
+          "priority": "must",
           "value": "asyncio"
+        },
+        {
+          "priority": "must",
+          "value": "Multiprocessing"
+        },
+        {
+          "priority": "must",
+          "value": "Third-party API Integration"
         },
         {
           "priority": "must",
@@ -816,6 +1246,18 @@
         {
           "priority": "must",
           "value": "CI/CD"
+        },
+        {
+          "priority": "must",
+          "value": "Logging"
+        },
+        {
+          "priority": "must",
+          "value": "Error Handling"
+        },
+        {
+          "priority": "must",
+          "value": "System Reliability"
         }
       ]
     },
@@ -866,7 +1308,19 @@
         },
         {
           "priority": "must",
+          "value": "Async Programming"
+        },
+        {
+          "priority": "must",
+          "value": "Third-party API Integration"
+        },
+        {
+          "priority": "must",
           "value": "Microservices"
+        },
+        {
+          "priority": "must",
+          "value": "Git"
         },
         {
           "priority": "must",
@@ -879,6 +1333,18 @@
         {
           "priority": "must",
           "value": "CI/CD"
+        },
+        {
+          "priority": "must",
+          "value": "Logging"
+        },
+        {
+          "priority": "must",
+          "value": "Error Handling"
+        },
+        {
+          "priority": "must",
+          "value": "System Reliability"
         }
       ]
     },
@@ -914,6 +1380,30 @@
         {
           "priority": "must",
           "value": "NoSQL"
+        },
+        {
+          "priority": "must",
+          "value": "Microservices"
+        },
+        {
+          "priority": "must",
+          "value": "Payment System Integration"
+        },
+        {
+          "priority": "must",
+          "value": "Database Design"
+        },
+        {
+          "priority": "must",
+          "value": "Database Indexing"
+        },
+        {
+          "priority": "must",
+          "value": "Database Migrations"
+        },
+        {
+          "priority": "must",
+          "value": "SQL Optimization"
         },
         {
           "priority": "must",
@@ -959,7 +1449,7 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "Shopware Developer",
+      "role": "Web / CMS Engineer",
       "seniority": null,
       "requirements": [
         {
@@ -976,19 +1466,39 @@
         },
         {
           "priority": "must",
-          "value": "MySQL"
+          "anyOf": ["MySQL", "MariaDB"]
         },
         {
           "priority": "must",
-          "value": "REST API"
+          "value": "Shopware Plugin System"
+        },
+        {
+          "priority": "must",
+          "value": "Shopware DAL"
+        },
+        {
+          "priority": "must",
+          "value": "Twig"
+        },
+        {
+          "priority": "must",
+          "value": "Shopware Storefront Extensions"
+        },
+        {
+          "priority": "must",
+          "value": "Shopware Admin Extensions"
+        },
+        {
+          "priority": "must",
+          "value": "Shopware Architecture"
+        },
+        {
+          "priority": "must",
+          "value": "REST API Integration"
         },
         {
           "priority": "nice",
-          "value": "JavaScript"
-        },
-        {
-          "priority": "nice",
-          "value": "TypeScript"
+          "anyOf": ["JavaScript", "TypeScript"]
         },
         {
           "priority": "nice",
@@ -1031,6 +1541,10 @@
         },
         {
           "priority": "must",
+          "value": "Public Cloud Infrastructure"
+        },
+        {
+          "priority": "must",
           "value": "Windows Server"
         },
         {
@@ -1040,6 +1554,18 @@
         {
           "priority": "must",
           "value": "Networking"
+        },
+        {
+          "priority": "must",
+          "value": "Firewalls"
+        },
+        {
+          "priority": "must",
+          "value": "VPN"
+        },
+        {
+          "priority": "must",
+          "value": "Cloud Peering"
         },
         {
           "priority": "nice",
@@ -1078,7 +1604,11 @@
         },
         {
           "priority": "must",
-          "value": "Linux"
+          "value": "Linux/UNIX Administration"
+        },
+        {
+          "priority": "must",
+          "value": "Cryptography"
         },
         {
           "priority": "must",
@@ -1090,7 +1620,51 @@
         },
         {
           "priority": "nice",
+          "value": "Linux Boot Process"
+        },
+        {
+          "priority": "nice",
+          "value": "U-Boot"
+        },
+        {
+          "priority": "nice",
+          "value": "Linux Kernel"
+        },
+        {
+          "priority": "nice",
+          "value": "initramfs"
+        },
+        {
+          "priority": "nice",
+          "value": "systemd"
+        },
+        {
+          "priority": "nice",
+          "value": "Device Drivers"
+        },
+        {
+          "priority": "nice",
+          "value": "Device Tree"
+        },
+        {
+          "priority": "nice",
+          "value": "Build Systems"
+        },
+        {
+          "priority": "nice",
           "value": "CMake"
+        },
+        {
+          "priority": "nice",
+          "value": "Autotools"
+        },
+        {
+          "priority": "nice",
+          "value": "pkg-config"
+        },
+        {
+          "priority": "nice",
+          "value": "Cross-compilation Toolchains"
         }
       ]
     },
@@ -1113,7 +1687,7 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "C++"
+          "anyOf": ["C", "C++"]
         },
         {
           "priority": "must",
@@ -1125,6 +1699,10 @@
         },
         {
           "priority": "must",
+          "value": "Flight Controller Architecture"
+        },
+        {
+          "priority": "must",
           "value": "RTOS"
         },
         {
@@ -1133,11 +1711,35 @@
         },
         {
           "priority": "must",
-          "value": "Linux"
+          "value": "Log Analysis"
+        },
+        {
+          "priority": "must",
+          "value": "Linux/UNIX Administration"
         },
         {
           "priority": "must",
           "value": "Git"
+        },
+        {
+          "priority": "nice",
+          "value": "UAV"
+        },
+        {
+          "priority": "nice",
+          "value": "UAV Piloting"
+        },
+        {
+          "priority": "nice",
+          "value": "PID Controllers"
+        },
+        {
+          "priority": "nice",
+          "value": "EKF"
+        },
+        {
+          "priority": "nice",
+          "value": "Notch Filters"
         },
         {
           "priority": "nice",
@@ -1146,6 +1748,18 @@
         {
           "priority": "nice",
           "value": "Python"
+        },
+        {
+          "priority": "nice",
+          "anyOf": ["Arduino", "Raspberry Pi"]
+        },
+        {
+          "priority": "nice",
+          "value": "Cryptography"
+        },
+        {
+          "priority": "nice",
+          "value": "Information Security"
         }
       ]
     },
@@ -1163,9 +1777,13 @@
     },
     "expectedOutput": {
       "isTech": true,
-      "role": "QA Engineer",
+      "role": "Manual QA Engineer",
       "seniority": "JUNIOR",
       "requirements": [
+        {
+          "priority": "must",
+          "value": "Databases"
+        },
         {
           "priority": "must",
           "value": "SQL"
@@ -1181,6 +1799,34 @@
         {
           "priority": "must",
           "value": "Software Testing"
+        },
+        {
+          "priority": "must",
+          "value": "Jira"
+        },
+        {
+          "priority": "must",
+          "value": "Confluence"
+        },
+        {
+          "priority": "must",
+          "value": "Manual Testing"
+        },
+        {
+          "priority": "must",
+          "value": "JMeter"
+        },
+        {
+          "priority": "must",
+          "value": "Load Testing"
+        },
+        {
+          "priority": "must",
+          "value": "Creatio CRM"
+        },
+        {
+          "priority": "must",
+          "value": "Integration Testing"
         }
       ]
     },

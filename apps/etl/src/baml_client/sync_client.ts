@@ -22,7 +22,7 @@ import type { BamlRuntime, FunctionResult, BamlCtxManager, Image, Audio, Pdf, Vi
 import { toBamlError, BamlAbortError, ClientRegistry, type HTTPRequest } from "@boundaryml/baml"
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type * as types from "./types"
-import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
+import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, RequirementsV2Role, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
 import type TypeBuilder from "./type_builder"
 import { HttpRequest, HttpStreamRequest } from "./sync_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -248,7 +248,7 @@ export class BamlSyncClient {
   }
   
   ExtractVacancyRequirementsV2(
-      text: string,knownRoles: string,knownSkills: string,
+      text: string,
       __baml_options__?: BamlCallOptions<never>
   ): types.ExtractedVacancyRequirementsV2 {
     try {
@@ -280,7 +280,7 @@ export class BamlSyncClient {
       const __raw__ = this.runtime.callFunctionSync(
         "ExtractVacancyRequirementsV2",
         {
-          "text": text,"knownRoles": knownRoles,"knownSkills": knownSkills
+          "text": text
         },
         this.ctxManager.cloneContext(),
         __options__.tb?.__tb(),

@@ -1,10 +1,6 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import { Collector } from "@boundaryml/baml";
-import { eq } from "drizzle-orm";
-
-import { DRIZZLE, schema } from "@metahunt/database";
-import type { DrizzleDB } from "@metahunt/database";
 
 import { sha256 } from "../02-enrich/dedup/content-fingerprint";
 import { BAML_RUNTIME_VERSION } from "../02-enrich/extraction/baml-production-identity.generated";
@@ -15,27 +11,57 @@ import type {
   VacancyExtractor,
 } from "../02-enrich/extraction/vacancy-extractor";
 import { b, RequirementPriority } from "../baml_client";
-import type { ExtractedVacancy, ExtractedVacancyRequirementsV2 } from "../baml_client";
-import { joinNamesByType } from "../platform/shared/node-names";
+import type {
+  ExtractedVacancy,
+  ExtractedVacancyRequirementsV2,
+  RequirementsV2Role,
+} from "../baml_client";
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
-export const REQUIREMENTS_V2_PROMPT_VERSION = 1;
+export const REQUIREMENTS_V2_PROMPT_VERSION = 2;
 export const BAML_REQUIREMENTS_V2_SOURCE_HASH =
-  "7d5d4fa2b99c379172a3d8c1f8708c5fbfa01d5a99f3bf3b84cb9fb168f2c5b6";
+  "b75ab120c97a104a13985cd9e0744e29ba49e324b7f50a0f061b507b713d19b3";
 
-const TAXONOMY_CACHE_TTL_MS = 60_000;
+/** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
+const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
+  AI_ENGINEER: "AI Engineer",
+  ANDROID_ENGINEER: "Android Engineer",
+  AUTOMATION_QA_ENGINEER: "Automation QA Engineer",
+  BACKEND_ENGINEER: "Backend Engineer",
+  BLOCKCHAIN_ENGINEER: "Blockchain Engineer",
+  BUSINESS_ANALYST: "Business Analyst",
+  COMPUTER_VISION_ENGINEER: "Computer Vision Engineer",
+  CROSS_PLATFORM_MOBILE_ENGINEER: "Cross-platform Mobile Engineer",
+  DATA_ANALYST: "Data Analyst",
+  DATA_ENGINEER: "Data Engineer",
+  DATA_SCIENTIST: "Data Scientist",
+  DATABASE_ENGINEER: "Database Engineer",
+  DEVOPS_ENGINEER: "DevOps Engineer",
+  EMBEDDED_ENGINEER: "Embedded Engineer",
+  ERP_CRM_ENGINEER: "ERP / CRM Engineer",
+  FPGA_ENGINEER: "FPGA Engineer",
+  FRONTEND_ENGINEER: "Frontend Engineer",
+  FULL_STACK_ENGINEER: "Full Stack Engineer",
+  GAME_ENGINEER: "Game Engineer",
+  HARDWARE_ENGINEER: "Hardware Engineer",
+  IOS_ENGINEER: "iOS Engineer",
+  IT_SUPPORT_ENGINEER: "IT Support Engineer",
+  MACHINE_LEARNING_ENGINEER: "Machine Learning Engineer",
+  MANUAL_QA_ENGINEER: "Manual QA Engineer",
+  NETWORK_ENGINEER: "Network Engineer",
+  SECURITY_ENGINEER: "Security Engineer",
+  SYSTEMS_ADMINISTRATOR: "Systems Administrator",
+  WEB_CMS_ENGINEER: "Web / CMS Engineer",
+};
+
+export const REQUIREMENTS_V2_ROLES = Object.values(ROLE_DISPLAY_NAMES);
 
 @Injectable()
 export class BamlRequirementsV2Extractor implements VacancyExtractor {
-  private taxonomyCache: { roles: string; skills: string; expiresAt: number } | null = null;
-
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
-
   async extract(text: string): Promise<ExtractionResult> {
     const collector = new Collector("vacancy-requirements-v2-extract");
-    const { roles, skills } = await this.loadTaxonomy();
     try {
-      const data = await b.ExtractVacancyRequirementsV2(text, roles, skills, { collector });
+      const data = await b.ExtractVacancyRequirementsV2(text, { collector });
       return {
         data: toEvalVacancy(data),
         meta: { promptVersion: REQUIREMENTS_V2_PROMPT_VERSION, usage: readUsage(collector) },
@@ -54,15 +80,9 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
   }
 
   async identity(text: string): Promise<ExtractionIdentity> {
-    const taxonomy = await this.loadTaxonomy();
     const provider = "openai-generic";
     const model = process.env.DEEPSEEK_MODEL ?? "unknown";
-    const taxonomyHash = sha256(
-      [taxonomy.roles, taxonomy.skills]
-        .flatMap((part) => part.split(", ").filter(Boolean))
-        .sort((a, b) => a.localeCompare(b))
-        .join("\n"),
-    );
+    const taxonomyHash = sha256([...REQUIREMENTS_V2_ROLES].sort().join("\n"));
     return {
       specHash: sha256(
         [
@@ -82,22 +102,6 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
       taxonomyHash,
     };
   }
-
-  private async loadTaxonomy(): Promise<{ roles: string; skills: string }> {
-    const now = Date.now();
-    if (this.taxonomyCache && this.taxonomyCache.expiresAt > now) return this.taxonomyCache;
-
-    const verified = await this.db
-      .select({ type: schema.nodes.type, name: schema.nodes.canonicalName })
-      .from(schema.nodes)
-      .where(eq(schema.nodes.status, "VERIFIED"));
-    this.taxonomyCache = {
-      roles: joinNamesByType(verified, "ROLE"),
-      skills: joinNamesByType(verified, "SKILL"),
-      expiresAt: now + TAXONOMY_CACHE_TTL_MS,
-    };
-    return this.taxonomyCache;
-  }
 }
 
 function toEvalVacancy(data: ExtractedVacancyRequirementsV2): ExtractedVacancy {
@@ -106,7 +110,11 @@ function toEvalVacancy(data: ExtractedVacancyRequirementsV2): ExtractedVacancy {
     ...(requirement.value ? { value: requirement.value } : {}),
     ...(requirement.anyOf ? { anyOf: requirement.anyOf } : {}),
   }));
-  return { ...data, requirements } as unknown as ExtractedVacancy;
+  return {
+    ...data,
+    role: data.role ? ROLE_DISPLAY_NAMES[data.role] : null,
+    requirements,
+  } as unknown as ExtractedVacancy;
 }
 
 function readUsage(collector: Collector): ExtractionUsage {

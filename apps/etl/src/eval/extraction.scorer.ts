@@ -78,8 +78,7 @@ export function scoreRequirements(
     adaptLegacySkills(parsed.data.skills)) as Requirement[];
   const invalidAnyOf = actualRequirements.find(
     (requirement) =>
-      "anyOf" in requirement &&
-      new Set(requirement.anyOf.map((value) => canonicalizeRequirement(value, aliases))).size < 2,
+      "anyOf" in requirement && new Set(requirement.anyOf.map(normalizeAliasName)).size < 2,
   );
   if (invalidAnyOf) {
     return failureScore(false, "anyOf must contain at least two distinct canonical requirements");
@@ -151,8 +150,24 @@ function normalizeClauses(
 ): NormalizedClause[] {
   const byAlternatives = new Map<string, NormalizedClause>();
   for (const requirement of requirements) {
-    const alternatives = ("value" in requirement ? [requirement.value] : requirement.anyOf)
-      .map((value) => canonicalizeRequirement(value, aliases))
+    const values = "value" in requirement ? [requirement.value] : requirement.anyOf;
+    const rawAlternatives = values.map(normalizeAliasName);
+    const canonicalAlternatives = values.map((value) => canonicalizeRequirement(value, aliases));
+    const canonicalRawValues = canonicalAlternatives.reduce<Map<string, Set<string>>>(
+      (valuesByCanonical, value, index) => {
+        const rawValues = valuesByCanonical.get(value) ?? new Set<string>();
+        rawValues.add(rawAlternatives[index]);
+        valuesByCanonical.set(value, rawValues);
+        return valuesByCanonical;
+      },
+      new Map(),
+    );
+    // A bad taxonomy alias must not erase a real source-level alternative such
+    // as MySQL OR MariaDB. Preserve raw identities only for canonical collisions.
+    const alternatives = canonicalAlternatives
+      .map((value, index) =>
+        (canonicalRawValues.get(value)?.size ?? 0) > 1 ? `raw:${rawAlternatives[index]}` : value,
+      )
       .sort();
     const uniqueAlternatives = [...new Set(alternatives)];
     const alternativesKey = uniqueAlternatives.join("|");

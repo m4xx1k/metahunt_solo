@@ -58,6 +58,8 @@ export default class TypeBuilder {
     
     RequirementPriority: EnumViewer<'RequirementPriority', "MUST" | "NICE">;
     
+    RequirementsV2Role: EnumViewer<'RequirementsV2Role', "AI_ENGINEER" | "ANDROID_ENGINEER" | "AUTOMATION_QA_ENGINEER" | "BACKEND_ENGINEER" | "BLOCKCHAIN_ENGINEER" | "BUSINESS_ANALYST" | "COMPUTER_VISION_ENGINEER" | "CROSS_PLATFORM_MOBILE_ENGINEER" | "DATA_ANALYST" | "DATA_ENGINEER" | "DATA_SCIENTIST" | "DATABASE_ENGINEER" | "DEVOPS_ENGINEER" | "EMBEDDED_ENGINEER" | "ERP_CRM_ENGINEER" | "FPGA_ENGINEER" | "FRONTEND_ENGINEER" | "FULL_STACK_ENGINEER" | "GAME_ENGINEER" | "HARDWARE_ENGINEER" | "IOS_ENGINEER" | "IT_SUPPORT_ENGINEER" | "MACHINE_LEARNING_ENGINEER" | "MANUAL_QA_ENGINEER" | "NETWORK_ENGINEER" | "SECURITY_ENGINEER" | "SYSTEMS_ADMINISTRATOR" | "WEB_CMS_ENGINEER">;
+
     Seniority: EnumViewer<'Seniority', "INTERN" | "JUNIOR" | "MIDDLE" | "SENIOR" | "LEAD" | "PRINCIPAL" | "C_LEVEL">;
     
     SkillCategory: EnumViewer<'SkillCategory', "LANGUAGE" | "FRAMEWORK" | "LIBRARY" | "DATASTORE" | "CLOUD" | "TOOL" | "PRACTICE" | "SOFT">;
@@ -71,7 +73,7 @@ export default class TypeBuilder {
             "CandidateSkills","ClassifiedSkill","ExtractedCandidate","ExtractedLocation","ExtractedVacancy","ExtractedVacancyRequirementsV2","Salary","SkillToClassify","Skills","VacancyRequirementV2",
           ]),
           enums: new Set([
-            "Currency","EmploymentType","EngagementType","EnglishLevel","RequirementPriority","Seniority","SkillCategory","WorkFormat",
+            "Currency","EmploymentType","EngagementType","EnglishLevel","RequirementPriority","RequirementsV2Role","Seniority","SkillCategory","WorkFormat",
           ]),
           runtime: DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME
         });
@@ -137,6 +139,10 @@ export default class TypeBuilder {
           "MUST","NICE",
         ]);
         
+        this.RequirementsV2Role = this.tb.enumViewer("RequirementsV2Role", [
+          "AI_ENGINEER","ANDROID_ENGINEER","AUTOMATION_QA_ENGINEER","BACKEND_ENGINEER","BLOCKCHAIN_ENGINEER","BUSINESS_ANALYST","COMPUTER_VISION_ENGINEER","CROSS_PLATFORM_MOBILE_ENGINEER","DATA_ANALYST","DATA_ENGINEER","DATA_SCIENTIST","DATABASE_ENGINEER","DEVOPS_ENGINEER","EMBEDDED_ENGINEER","ERP_CRM_ENGINEER","FPGA_ENGINEER","FRONTEND_ENGINEER","FULL_STACK_ENGINEER","GAME_ENGINEER","HARDWARE_ENGINEER","IOS_ENGINEER","IT_SUPPORT_ENGINEER","MACHINE_LEARNING_ENGINEER","MANUAL_QA_ENGINEER","NETWORK_ENGINEER","SECURITY_ENGINEER","SYSTEMS_ADMINISTRATOR","WEB_CMS_ENGINEER",
+        ]);
+
         this.Seniority = this.tb.enumViewer("Seniority", [
           "INTERN","JUNIOR","MIDDLE","SENIOR","LEAD","PRINCIPAL","C_LEVEL",
         ]);

@@ -24,7 +24,7 @@ import { toBamlError, BamlStream, BamlAbortError, Collector, ClientRegistry } fr
 import type { Checked, Check, RecursivePartialNull as MovedRecursivePartialNull } from "./types"
 import type { partial_types } from "./partial_types"
 import type * as types from "./types"
-import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
+import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, RequirementsV2Role, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
 import type TypeBuilder from "./type_builder"
 import { AsyncHttpRequest, AsyncHttpStreamRequest } from "./async_request"
 import { LlmResponseParser, LlmStreamParser } from "./parser"
@@ -266,7 +266,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             }
             
         async ExtractVacancyRequirementsV2(
-        text: string,knownRoles: string,knownSkills: string,
+        text: string,
         __baml_options__?: BamlCallOptions<never>
         ): Promise<types.ExtractedVacancyRequirementsV2> {
           try {
@@ -280,7 +280,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
           // Check if onTick is provided - route through streaming if so
           if (__options__.onTick) {
           const __stream__ = this.stream.ExtractVacancyRequirementsV2(
-          text,knownRoles,knownSkills,
+          text,
           __baml_options__
           );
 
@@ -304,7 +304,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
             const __raw__ = await this.runtime.callFunction(
             "ExtractVacancyRequirementsV2",
             {
-            "text": text,"knownRoles": knownRoles,"knownSkills": knownSkills
+            "text": text
             },
             this.ctxManager.cloneContext(),
             __options__.tb?.__tb(),
@@ -558,7 +558,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                   }
                   
             ExtractVacancyRequirementsV2(
-            text: string,knownRoles: string,knownSkills: string,
+            text: string,
             __baml_options__?: BamlCallOptions<never>
             ): BamlStream<partial_types.ExtractedVacancyRequirementsV2, types.ExtractedVacancyRequirementsV2>
               {
@@ -607,7 +607,7 @@ export type RecursivePartialNull<T> = MovedRecursivePartialNull<T>
                 const __raw__ = this.runtime.streamFunction(
                 "ExtractVacancyRequirementsV2",
                 {
-                "text": text,"knownRoles": knownRoles,"knownSkills": knownSkills
+                "text": text
                 },
                 undefined,
                 this.ctxManager.cloneContext(),

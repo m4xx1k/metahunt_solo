@@ -6,6 +6,39 @@ enum RequirementPriority {
   NICE
 }
 
+// Closed role-v2 evaluation vocabulary. These are disciplines, not levels,
+// leadership titles, languages, frameworks, or products.
+enum RequirementsV2Role {
+  AI_ENGINEER @alias("AI Engineer")
+  ANDROID_ENGINEER @alias("Android Engineer")
+  AUTOMATION_QA_ENGINEER @alias("Automation QA Engineer")
+  BACKEND_ENGINEER @alias("Backend Engineer")
+  BLOCKCHAIN_ENGINEER @alias("Blockchain Engineer")
+  BUSINESS_ANALYST @alias("Business Analyst")
+  COMPUTER_VISION_ENGINEER @alias("Computer Vision Engineer")
+  CROSS_PLATFORM_MOBILE_ENGINEER @alias("Cross-platform Mobile Engineer")
+  DATA_ANALYST @alias("Data Analyst")
+  DATA_ENGINEER @alias("Data Engineer")
+  DATA_SCIENTIST @alias("Data Scientist")
+  DATABASE_ENGINEER @alias("Database Engineer")
+  DEVOPS_ENGINEER @alias("DevOps Engineer")
+  EMBEDDED_ENGINEER @alias("Embedded Engineer")
+  ERP_CRM_ENGINEER @alias("ERP / CRM Engineer")
+  FPGA_ENGINEER @alias("FPGA Engineer")
+  FRONTEND_ENGINEER @alias("Frontend Engineer")
+  FULL_STACK_ENGINEER @alias("Full Stack Engineer")
+  GAME_ENGINEER @alias("Game Engineer")
+  HARDWARE_ENGINEER @alias("Hardware Engineer")
+  IOS_ENGINEER @alias("iOS Engineer")
+  IT_SUPPORT_ENGINEER @alias("IT Support Engineer")
+  MACHINE_LEARNING_ENGINEER @alias("Machine Learning Engineer")
+  MANUAL_QA_ENGINEER @alias("Manual QA Engineer")
+  NETWORK_ENGINEER @alias("Network Engineer")
+  SECURITY_ENGINEER @alias("Security Engineer")
+  SYSTEMS_ADMINISTRATOR @alias("Systems Administrator")
+  WEB_CMS_ENGINEER @alias("Web / CMS Engineer")
+}
+
 class VacancyRequirementV2 {
   priority RequirementPriority @description(#"
     `MUST` only when the posting explicitly requires the item. `NICE` only
@@ -25,9 +58,14 @@ class VacancyRequirementV2 {
 }
 
 class ExtractedVacancyRequirementsV2 {
-  role string? @description(#"
-    Canonical technical role without seniority. Prefer an EXACT name from
-    `knownRoles`; null only for a non-tech posting.
+  role RequirementsV2Role? @description(#"
+    Technical DISCIPLINE / job function, never seniority or leadership.
+    Use null when no listed discipline fits. Do not invent a language-,
+    framework-, product-, Lead-, Architect-, CTO-, VP-, or Head-based role.
+
+    Preserve the underlying discipline for Lead and Architect titles. An
+    Architect is not automatically a Principal. Generic Software Engineer is
+    not a fallback when a more specific discipline is identifiable.
   "#)
 
   isTech bool @description(#"
@@ -38,57 +76,71 @@ class ExtractedVacancyRequirementsV2 {
   "#)
 
   seniority Seniority? @description(#"
-    Infer from the title first: Junior, Middle, Senior, Lead, Architect, Head
-    of. Use null when it cannot be determined.
+    Junior / Middle / Senior in the title wins. Use LEAD only for an actual
+    people or technical-function lead role. Architect alone does not imply
+    PRINCIPAL; use PRINCIPAL only with explicit principal-level ownership
+    across a domain or organization. Use C_LEVEL only for a technical
+    executive role. Otherwise use null.
   "#)
 
   requirements VacancyRequirementV2[] @description(#"
-    The explicit technical requirements from the posting. Include named tools,
-    languages, frameworks, cloud providers, methodologies (TDD, BDD, API
-    Testing, System Design), and concrete technical concepts when the posting
-    asks for them. Do NOT include soft skills, generic work duties, English
-    level, years of experience, salary, location, or company marketing.
+    Every explicit hard technical requirement from the posting. Include named
+    tools, languages, frameworks, cloud providers, methodologies (TDD, BDD,
+    API Testing, System Design), and concrete technical concepts. A requirement
+    can appear under Requirements / Skills or as a concrete technology the
+    candidate is explicitly expected to use in duties. Do not infer it merely
+    from the product, company, domain, or surrounding context.
+
+    Exclude soft skills, generic duties without a technical capability,
+    English, years of experience, salary, location, and company marketing.
 
     Keep `must` vs `nice` faithfully. Preserve every explicit `A or B` choice
     as one `anyOf` requirement. A singleton and an `anyOf` group may both be
     correct when the source states them as separate requirements.
 
     Deduplicate equivalent spellings: JS → JavaScript, TS → TypeScript,
-    React.js → React, K8s → Kubernetes. When a value matches `knownSkills`,
-    use its EXACT spelling. MAX 20 must and 10 nice items.
+    React.js → React, Vue js → Vue.js, K8s → Kubernetes. Keep distinct
+    technologies distinct even when they are related (MySQL != MariaDB,
+    JavaScript != TypeScript). Prefer concise market-standard English names.
   "#)
 }
 
-function ExtractVacancyRequirementsV2(
-  text: string,
-  knownRoles: string,
-  knownSkills: string,
-) -> ExtractedVacancyRequirementsV2 {
+function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequirementsV2 {
   client DeepSeekClient
   prompt #"
     You extract only the Requirements v2 contract from a job posting for the
     Ukrainian IT market. Return exactly the requested schema; use null when
     role or seniority is genuinely unknown.
 
-    The key correctness rule: preserve explicit alternatives. For "AWS or GCP
-    is required", output one item `{ priority: MUST, anyOf: ["AWS", "GCP"] }`.
-    Never output separate MUST items for AWS and GCP in that case.
+    Evidence rules:
+      - Extract all explicit hard-technical qualifications and concrete
+        technologies the candidate is explicitly expected to use.
+      - Do not infer a requirement from project stack or company context.
+      - A local qualifier (optional / preferred / plus) overrides a surrounding
+        Requirements heading.
 
     Priority rules:
-      - Required / must-have / "we need" / listed under Requirements → MUST.
+      - Required / must-have / "we need" / unqualified item under Requirements
+        or Required Skills → MUST.
       - Nice to have / plus / preferred / optional / advantage → NICE.
-      - Do not invent requirements from responsibilities or company context.
 
-    Output named technical methodologies and concepts if explicitly requested:
-    TDD, BDD, API Testing, System Design, Data Pipelines, Testing, etc. Do not
-    discard them merely because they are not programming languages or tools.
+    Alternative rules:
+      - Preserve one logical choice as one `anyOf`: "AWS or GCP", "one of A/B",
+        "A and/or B", or a provider/framework list clearly meaning any one.
+      - Do not use `anyOf` for a list where every item is required.
+      - Never split one choice into singleton requirements.
+      - A separately stated singleton and a later `anyOf` containing it may
+        both be correct; they represent different source statements.
 
-    PREFER these canonical ROLE names. Use their EXACT spelling when applicable:
-    {{ knownRoles }}
+    Examples:
+      Required: AWS or GCP. Terraform is a plus.
+      -> MUST anyOf [AWS, GCP]; NICE Terraform.
 
-    PREFER these canonical SKILL names. Other clear technical terms are also
-    allowed, in their market-standard English form:
-    {{ knownSkills }}
+      Requirements: JavaScript and TypeScript. React, Vue, or Angular.
+      -> MUST JavaScript; MUST TypeScript; MUST anyOf [React, Vue.js, Angular].
+
+      We build on Kubernetes. You must administer Linux.
+      -> MUST Linux only; Kubernetes is project context, not a requirement.
 
     {{ ctx.output_format }}
 
@@ -101,7 +153,5 @@ test requirements_v2_or_boundary {
   functions [ExtractVacancyRequirementsV2]
   args {
     text "Senior DevOps Engineer. Required: AWS or GCP, Docker or Kubernetes. Terraform is a plus."
-    knownRoles "DevOps Engineer"
-    knownSkills "AWS, GCP, Docker, Kubernetes, Terraform"
   }
 }

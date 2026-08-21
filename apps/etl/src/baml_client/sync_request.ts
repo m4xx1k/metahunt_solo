@@ -22,7 +22,7 @@ import type { BamlRuntime, BamlCtxManager, Image, Audio, Pdf, Video } from "@bou
 import { toBamlError, HTTPRequest, ClientRegistry } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
 import type * as types from "./types"
-import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
+import type {CandidateSkills, ClassifiedSkill, Currency, EmploymentType, EngagementType, EnglishLevel, ExtractedCandidate, ExtractedLocation, ExtractedVacancy, ExtractedVacancyRequirementsV2, RequirementPriority, RequirementsV2Role, Salary, Seniority, SkillCategory, SkillToClassify, Skills, VacancyRequirementV2, WorkFormat} from "./types"
 import type TypeBuilder from "./type_builder"
 import type * as events from "./events"
 
@@ -138,7 +138,7 @@ export class HttpRequest {
   }
   
   ExtractVacancyRequirementsV2(
-      text: string,knownRoles: string,knownSkills: string,
+      text: string,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -157,7 +157,7 @@ export class HttpRequest {
       return this.runtime.buildRequestSync(
         "ExtractVacancyRequirementsV2",
         {
-          "text": text,"knownRoles": knownRoles,"knownSkills": knownSkills
+          "text": text
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),
@@ -276,7 +276,7 @@ export class HttpStreamRequest {
   }
   
   ExtractVacancyRequirementsV2(
-      text: string,knownRoles: string,knownSkills: string,
+      text: string,
       __baml_options__?: BamlCallOptions<never>
   ): HTTPRequest {
     try {
@@ -295,7 +295,7 @@ export class HttpStreamRequest {
       return this.runtime.buildRequestSync(
         "ExtractVacancyRequirementsV2",
         {
-          "text": text,"knownRoles": knownRoles,"knownSkills": knownSkills
+          "text": text
         },
         this.ctxManager.cloneContext(),
         __baml_options__?.tb?.__tb(),

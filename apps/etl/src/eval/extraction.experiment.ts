@@ -313,7 +313,7 @@ async function main(): Promise<void> {
     const db = drizzle(pool, { schema });
     const result = await runHostedExperiment({
       langfuse: new LangfuseClient() as unknown as LangfuseGateway,
-      extractor: new BamlRequirementsV2Extractor(db),
+      extractor: new BamlRequirementsV2Extractor(),
       aliases: await loadAliases(db),
       datasetName,
       datasetVersion: argumentValue("--dataset-version"),

@@ -59,6 +59,26 @@ describe("Requirements v2 scorer", () => {
     expect(score).toMatchObject({ schemaValid: false, providerFailure: false });
   });
 
+  it("keeps distinct alternatives when the taxonomy incorrectly aliases them together", () => {
+    const brokenAliases = new Map([
+      ["mysql", "skill-mysql"],
+      ["mariadb", "skill-mysql"],
+    ]);
+    const score = scoreRequirements(
+      expected([{ priority: "must", anyOf: ["MySQL", "MariaDB"] }]),
+      actual([{ priority: "must", anyOf: ["MariaDB", "MySQL"] }]),
+      brokenAliases,
+    );
+    expect(score).toMatchObject({ schemaValid: true, requirementsF1: 1 });
+
+    const omitted = scoreRequirements(
+      expected([{ priority: "must", anyOf: ["MySQL", "MariaDB"] }]),
+      actual([{ priority: "must", value: "MySQL" }]),
+      brokenAliases,
+    );
+    expect(omitted.requirementsF1).toBe(0);
+  });
+
   it("keeps priority separate from a matching alternative group", () => {
     const score = scoreRequirements(
       expected([{ priority: "must", value: "TypeScript" }]),

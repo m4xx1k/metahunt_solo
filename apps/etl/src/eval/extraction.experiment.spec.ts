@@ -1,6 +1,7 @@
 import { assertReleaseGate, parseDatasetCase } from "./extraction.experiment";
 import { scoreRequirements } from "./extraction.scorer";
 import type { RequirementDatasetCase } from "./extraction-eval.types";
+import { REQUIREMENTS_V2_ROLES } from "./requirements-v2.baml.extractor";
 import draftDataset from "./vacancy-requirements-v2.dataset.json";
 
 const approvedOrCase: RequirementDatasetCase = {
@@ -22,7 +23,19 @@ describe("Requirements v2 Langfuse experiment", () => {
     expect(draftDataset.some((item) => item.metadata.slices.includes("or"))).toBe(true);
     expect(draftDataset.every((item) => item.input.text.length > 100)).toBe(true);
     expect(draftDataset.every((item) => item.expectedOutput.requirements.length > 0)).toBe(true);
+    expect(
+      draftDataset.every((item) =>
+        new Set<string>(REQUIREMENTS_V2_ROLES).has(item.expectedOutput.role),
+      ),
+    ).toBe(true);
     expect(() => draftDataset.forEach((item) => parseDatasetCase(item))).not.toThrow();
+  });
+
+  it("keeps role and seniority as separate contracts", () => {
+    expect(REQUIREMENTS_V2_ROLES).toHaveLength(28);
+    expect(REQUIREMENTS_V2_ROLES).not.toEqual(
+      expect.arrayContaining(["Architect", "Software Architect", "Team Lead", "Tech Lead"]),
+    );
   });
 
   it("rejects hosted rows that do not contain the focused contract", () => {
