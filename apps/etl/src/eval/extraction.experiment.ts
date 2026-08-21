@@ -3,9 +3,6 @@
  * does not boot Nest or use the cache: BamlVacancyExtractor is instantiated
  * directly with the same database-backed taxonomy source as production.
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-
 import { LangfuseClient } from "@langfuse/client";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
 import { NodeSDK } from "@opentelemetry/sdk-node";
@@ -16,7 +13,6 @@ import { Pool } from "pg";
 import { schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { cleanDescription } from "../02-enrich/dedup/sanitize";
 import { BamlVacancyExtractor } from "../02-enrich/extraction/baml.extractor";
 import type { ExtractionResult, VacancyExtractor } from "../02-enrich/extraction/vacancy-extractor";
 import { normalizeAliasName } from "../platform/shared/normalize-alias";
@@ -27,7 +23,7 @@ import type {
   RequirementScore,
   ScorerAliasMap,
 } from "./extraction-eval.types";
-import { adaptLegacySkills, scoreRequirements, summarizeRequirements } from "./extraction.scorer";
+import { scoreRequirements, summarizeRequirements } from "./extraction.scorer";
 
 type ExperimentOutput = {
   actual: ExtractedVacancyForEval | null;
@@ -48,13 +44,6 @@ type HostedDataset = {
 type LangfuseGateway = {
   dataset: { get: (name: string, options?: { version?: string }) => Promise<HostedDataset> };
 };
-type LegacyDraftCase = Omit<RequirementDatasetCase, "expectedOutput"> & {
-  expectedOutput: Omit<RequirementDatasetCase["expectedOutput"], "isTech"> & {
-    isTech: boolean | null;
-  };
-  note: string;
-};
-
 export async function runHostedExperiment(input: {
   langfuse: LangfuseGateway;
   extractor: VacancyExtractor;
@@ -296,43 +285,6 @@ async function loadAliases(db: DrizzleDB): Promise<ScorerAliasMap> {
 }
 
 async function main(): Promise<void> {
-  const live = process.argv.includes("--live");
-  if (process.argv.includes("--prepare-draft")) {
-    await prepareDraftFromDatabase();
-    return;
-  }
-  if (!live) {
-    const legacyDataset = argumentValue("--legacy-dataset");
-    const legacy = legacyDataset
-      ? await inspectLegacyDataset(legacyDataset, argumentValue("--legacy-decisions"))
-      : undefined;
-    const targetedDataset = argumentValue("--targeted-dataset");
-    const targetedCases = targetedDataset
-      ? await readTargetedDraftCases(targetedDataset)
-      : undefined;
-    console.log(
-      JSON.stringify(
-        {
-          mode: "dry-run",
-          dataset: argumentValue("--dataset") ?? "metahunt/vacancy-requirements-v2",
-          draftPlan: {
-            reusedReviewedVacancies: legacy?.rows ?? 0,
-            targetedBoundaryCases: targetedCases?.length ?? 0,
-            totalLoadedDraftCases: (legacy?.rows ?? 0) + (targetedCases?.length ?? 0),
-          },
-          draftCases: legacy
-            ? [...legacy.legacyCases, ...(targetedCases ?? [])]
-            : "Pass --legacy-dataset; add a local-only --targeted-dataset with 10 real, reviewed-source boundary cases for the full draft.",
-          note: targetedCases
-            ? "No database, LLM, Langfuse, or other external call was made. This runner never invents vacancy text or labels."
-            : "No database, LLM, Langfuse, or other external call was made. Add --targeted-dataset to validate the full 25-case draft.",
-        },
-        null,
-        2,
-      ),
-    );
-    return;
-  }
   const datasetName = argumentValue("--dataset");
   if (!datasetName) throw new Error("--dataset is required for --live");
   for (const name of [
@@ -364,190 +316,6 @@ async function main(): Promise<void> {
     await otelSdk.shutdown();
     await pool.end();
   }
-}
-
-async function prepareDraftFromDatabase(): Promise<void> {
-  const legacyDataset = argumentValue("--legacy-dataset");
-  if (!legacyDataset) throw new Error("--legacy-dataset is required for --prepare-draft");
-  const targetedDataset = argumentValue("--targeted-dataset");
-  if (!targetedDataset) throw new Error("--targeted-dataset is required for --prepare-draft");
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for --prepare-draft");
-
-  const legacy = await inspectLegacyDataset(legacyDataset, argumentValue("--legacy-decisions"));
-  const targetedCases = await readTargetedDraftCases(targetedDataset);
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  try {
-    const ids = legacy.legacyCases.map((item) => item.input.id);
-    const { rows } = await pool.query<{ id: string; title: string; description: string }>(
-      "SELECT id::text AS id, title, description FROM rss_records WHERE id = ANY($1::uuid[])",
-      [ids],
-    );
-    const texts = new Map(
-      rows.map((row) => [row.id, `Title: ${row.title}\n\n${cleanDescription(row.description)}`]),
-    );
-    if (texts.size !== legacy.legacyCases.length) {
-      throw new Error(
-        `database returned ${texts.size}/${legacy.legacyCases.length} reviewed vacancy texts`,
-      );
-    }
-    const draftCases = [
-      ...legacy.legacyCases.map((item) => ({
-        input: { ...item.input, text: texts.get(item.input.id)! },
-        expectedOutput: item.expectedOutput,
-        metadata: item.metadata,
-      })),
-      ...targetedCases,
-    ];
-    const out = resolve(argumentValue("--out") ?? ".scratch/vacancy-requirements-v2-draft.json");
-    await mkdir(dirname(out), { recursive: true });
-    await writeFile(out, `${JSON.stringify(draftCases, null, 2)}\n`, { mode: 0o600 });
-    console.log(
-      JSON.stringify(
-        { mode: "prepare-draft", out, cases: draftCases.length, reviewStatus: "draft" },
-        null,
-        2,
-      ),
-    );
-  } finally {
-    await pool.end();
-  }
-}
-
-async function readTargetedDraftCases(path: string): Promise<RequirementDatasetCase[]> {
-  const parsed = JSON.parse(await readFile(path, "utf8")) as unknown;
-  if (!Array.isArray(parsed) || parsed.length !== 10) {
-    throw new Error("--targeted-dataset must contain exactly 10 real boundary cases");
-  }
-  const cases = parsed.map((item) => parseDatasetCase(item as DatasetItem));
-  if (cases.some((item) => item.metadata.reviewStatus !== "draft")) {
-    throw new Error("--targeted-dataset cases must remain draft until a human approves them");
-  }
-  return cases;
-}
-
-async function inspectLegacyDataset(
-  path: string,
-  decisionsPath = resolve(dirname(path), "decisions.json"),
-): Promise<{
-  rows: number;
-  legacyCases: LegacyDraftCase[];
-}> {
-  const parsed = JSON.parse(await readFile(path, "utf8")) as {
-    rows?: Array<{
-      id?: unknown;
-      title?: unknown;
-      values?: {
-        isTech?: unknown;
-        role?: unknown;
-        seniority?: unknown;
-        skills?: { required?: unknown; optional?: unknown };
-      };
-    }>;
-  };
-  const decisions = JSON.parse(await readFile(decisionsPath, "utf8")) as {
-    decisions?: Record<
-      string,
-      {
-        approved?: unknown;
-        overrides?: {
-          isTech?: unknown;
-          role?: unknown;
-          seniority?: unknown;
-          skills?: { required?: unknown; optional?: unknown };
-        };
-      }
-    >;
-  };
-  if (!Array.isArray(parsed.rows) || parsed.rows.length === 0)
-    throw new Error("legacy dataset must contain at least one reviewed row");
-  const legacyCases: LegacyDraftCase[] = parsed.rows.map((row) => {
-    const decision = typeof row.id === "string" ? decisions.decisions?.[row.id] : undefined;
-    if (decision?.approved !== true) {
-      throw new Error(
-        `legacy row ${typeof row.id === "string" ? row.id : "unknown"} is not approved`,
-      );
-    }
-    const values = mergeLegacyValues(row.values, decision?.overrides);
-    if (
-      typeof row.id !== "string" ||
-      typeof row.title !== "string" ||
-      (values.isTech !== null && typeof values.isTech !== "boolean") ||
-      (values.role !== null && typeof values.role !== "string") ||
-      (values.seniority !== null && typeof values.seniority !== "string")
-    ) {
-      throw new Error(
-        "legacy dataset rows must include reviewed id, title, isTech, role, and seniority values",
-      );
-    }
-    const skills = values.skills;
-    if (
-      (skills?.required !== undefined && !isStringArray(skills.required)) ||
-      (skills?.optional !== undefined && !isStringArray(skills.optional))
-    ) {
-      throw new Error("legacy dataset skills must contain only string arrays");
-    }
-    const required = skills?.required;
-    const optional = skills?.optional;
-    const legacySkills = {
-      required: isStringArray(required) ? required : undefined,
-      optional: isStringArray(optional) ? optional : undefined,
-    };
-    return {
-      input: { id: row.id, title: row.title, text: "<load reviewed source text before upload>" },
-      expectedOutput: {
-        isTech: values.isTech,
-        role: values.role,
-        seniority: values.seniority,
-        requirements: adaptLegacySkills(legacySkills),
-      },
-      metadata: {
-        reviewStatus: "draft",
-        slices: ["legacy-reviewed"],
-        contractVersion: "requirements-v2",
-      },
-      note: "Replace placeholder text from the reviewed source before upload; preserve a null guard only until its human review resolves it.",
-    };
-  });
-  return { rows: legacyCases.length, legacyCases };
-}
-
-function mergeLegacyValues(
-  values:
-    | {
-        isTech?: unknown;
-        role?: unknown;
-        seniority?: unknown;
-        skills?: { required?: unknown; optional?: unknown };
-      }
-    | undefined,
-  overrides:
-    | {
-        isTech?: unknown;
-        role?: unknown;
-        seniority?: unknown;
-        skills?: { required?: unknown; optional?: unknown };
-      }
-    | undefined,
-): {
-  isTech: unknown;
-  role: unknown;
-  seniority: unknown;
-  skills: { required?: unknown; optional?: unknown } | undefined;
-} {
-  const select = (key: "isTech" | "role" | "seniority" | "skills") =>
-    overrides && Object.prototype.hasOwnProperty.call(overrides, key)
-      ? overrides[key]
-      : values?.[key];
-  return {
-    isTech: select("isTech"),
-    role: select("role"),
-    seniority: select("seniority"),
-    skills: select("skills") as { required?: unknown; optional?: unknown } | undefined,
-  };
-}
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
 function argumentValue(flag: string): string | undefined {
