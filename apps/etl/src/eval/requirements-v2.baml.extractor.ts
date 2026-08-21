@@ -20,7 +20,7 @@ import type {
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
 export const REQUIREMENTS_V2_PROMPT_VERSION = 2;
 export const BAML_REQUIREMENTS_V2_SOURCE_HASH =
-  "b75ab120c97a104a13985cd9e0744e29ba49e324b7f50a0f061b507b713d19b3";
+  "a1dade5fd4d999036f85378c803d8f340f57eb460af0177eeb1266e83981298d";
 
 /** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
 const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {

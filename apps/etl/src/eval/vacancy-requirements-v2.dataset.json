@@ -128,7 +128,23 @@
         },
         {
           "priority": "nice",
-          "anyOf": ["SVN", "Git", "TeamCity", "Jira", "Confluence"]
+          "value": "SVN"
+        },
+        {
+          "priority": "nice",
+          "value": "Git"
+        },
+        {
+          "priority": "nice",
+          "value": "TeamCity"
+        },
+        {
+          "priority": "nice",
+          "value": "Jira"
+        },
+        {
+          "priority": "nice",
+          "value": "Confluence"
         }
       ]
     },
@@ -867,7 +883,15 @@
         },
         {
           "priority": "must",
-          "anyOf": ["AWS", "GCP", "Azure"]
+          "value": "AWS"
+        },
+        {
+          "priority": "must",
+          "value": "GCP"
+        },
+        {
+          "priority": "must",
+          "value": "Azure"
         },
         {
           "priority": "must",
@@ -1751,7 +1775,11 @@
         },
         {
           "priority": "nice",
-          "anyOf": ["Arduino", "Raspberry Pi"]
+          "value": "Arduino"
+        },
+        {
+          "priority": "nice",
+          "value": "Raspberry Pi"
         },
         {
           "priority": "nice",

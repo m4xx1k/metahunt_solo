@@ -40,7 +40,11 @@
 - `nice` Puppet
 - `nice` Chef
 - `nice` API
-- `nice` SVN **OR** Git **OR** TeamCity **OR** Jira **OR** Confluence
+- `nice` SVN
+- `nice` Git
+- `nice` TeamCity
+- `nice` Jira
+- `nice` Confluence
 
 <details>
 <summary>Текст вакансії</summary>
@@ -358,7 +362,9 @@ We’re looking for a QA Automation Engineer to join our team on a full-time con
 **Expected:** tech: `true`; role: `Machine Learning Engineer`; seniority: `SENIOR`
 
 - `must` MLOps
-- `must` AWS **OR** GCP **OR** Azure
+- `must` AWS
+- `must` GCP
+- `must` Azure
 - `must` Kubernetes
 - `must` Docker
 - `must` CI/CD
@@ -726,7 +732,8 @@ Title: Linux embedded
 - `nice` Notch Filters
 - `nice` ROS
 - `nice` Python
-- `nice` Arduino **OR** Raspberry Pi
+- `nice` Arduino
+- `nice` Raspberry Pi
 - `nice` Cryptography
 - `nice` Information Security
 

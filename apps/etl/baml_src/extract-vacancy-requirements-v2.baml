@@ -126,8 +126,10 @@ function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequireme
 
     Alternative rules:
       - Preserve one logical choice as one `anyOf`: "AWS or GCP", "one of A/B",
-        "A and/or B", or a provider/framework list clearly meaning any one.
+        "A and/or B", or "any framework: A, B, C".
       - Do not use `anyOf` for a list where every item is required.
+      - A comma-separated stack is cumulative unless the text explicitly marks
+        it as alternatives.
       - Never split one choice into singleton requirements.
       - A separately stated singleton and a later `anyOf` containing it may
         both be correct; they represent different source statements.
@@ -139,8 +141,14 @@ function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequireme
       Requirements: JavaScript and TypeScript. React, Vue, or Angular.
       -> MUST JavaScript; MUST TypeScript; MUST anyOf [React, Vue.js, Angular].
 
+      Requirements: AWS, Azure, SQL. Experience applying TDD or BDD.
+      -> MUST AWS; MUST Azure; MUST SQL; MUST anyOf [TDD, BDD].
+
       We build on Kubernetes. You must administer Linux.
       -> MUST Linux only; Kubernetes is project context, not a requirement.
+
+      We work in Agile. Experience with CI/CD is required.
+      -> MUST CI/CD only; Agile describes company process, not a requirement.
 
     {{ ctx.output_format }}
 
