@@ -140,6 +140,23 @@ describe("BamlVacancyExtractor", () => {
     });
   });
 
+  it("normalizes title semantics after the model so sources cannot disagree", async () => {
+    const { extractor } = await bootstrap([
+      { type: "ROLE", name: "Data Engineer" },
+      { type: "ROLE", name: "Software Engineer" },
+    ]);
+    extractVacancy.mockResolvedValue({
+      ...sampleVacancy,
+      role: "Data Engineer",
+      seniority: "PRINCIPAL",
+      experienceYears: 8,
+    });
+
+    const result = await extractor.extract("Title: Lead Data Engineer (Architect)\n\nbody");
+
+    expect(result.data).toMatchObject({ role: "Data Engineer", seniority: "LEAD" });
+  });
+
   it("derives cache identity from normalized input, model, and verified taxonomy", async () => {
     const { extractor } = await bootstrap([
       { type: "SKILL", name: "TypeScript" },

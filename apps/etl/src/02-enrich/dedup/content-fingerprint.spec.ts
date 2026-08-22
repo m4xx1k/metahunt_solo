@@ -10,9 +10,18 @@ describe("exact content fingerprint", () => {
     );
   });
 
-  it("changes for material title or description changes", () => {
+  it("ignores title wrappers when the advertised body is identical", () => {
+    expect(contentFingerprint("Lead Data Engineer", "Go")).toBe(
+      contentFingerprint("Data Engineer (Architect)", "Go"),
+    );
+  });
+
+  it("changes for a material description change and falls back to title without a body", () => {
     expect(contentFingerprint("Backend Engineer", "Go")).not.toBe(
-      contentFingerprint("Frontend Engineer", "Go"),
+      contentFingerprint("Backend Engineer", "Rust"),
+    );
+    expect(contentFingerprint("Backend Engineer", null)).not.toBe(
+      contentFingerprint("Frontend Engineer", null),
     );
   });
 });

@@ -131,15 +131,18 @@ class ExtractedVacancy {
   "#)
 
   seniority Seniority? @description(#"
-    Seniority level only when explicitly named in the advertised position title.
+    Seniority level from the advertised position title. A deterministic
+    post-extraction policy is authoritative, so never use body-text signals.
     Rules:
       1. Junior / Middle / Senior in the title map to that exact level.
       2. Lead / Team Lead / Tech Lead in the title → LEAD.
-      3. Principal in the title → PRINCIPAL. Architect is a role modifier and
-         NEVER implies PRINCIPAL, LEAD, or SENIOR.
-      4. CTO or another technical C-level title → C_LEVEL.
-      5. Do not infer a level from years, ownership, mentoring, architecture,
-         responsibilities, or the body text. Otherwise return null.
+      3. Principal, Staff, Distinguished, Fellow → PRINCIPAL. Architect is a
+         role modifier and NEVER itself implies PRINCIPAL, LEAD, or SENIOR.
+      4. Head / Director / VP → LEAD; CTO/CIO/CISO → C_LEVEL.
+      5. For multiple title labels use the lower level (Senior/Principal →
+         SENIOR), except CTO/CIO/CISO always wins.
+      6. Do not infer upper levels from years, ownership, mentoring,
+         architecture, responsibilities, or the body text. Otherwise null.
   "#)
 
   skills Skills @description(#"
@@ -269,8 +272,12 @@ function ExtractVacancy(
 
     Role and seniority are independent. An Architect title does NOT establish
     seniority: `Cloud Architect` → role `DevOps Engineer`, seniority null.
-    `Team Lead, Backend` → role `Backend Developer`, seniority LEAD. Use the
-    `Team Lead` role only if the title provides no underlying discipline.
+    `Team Lead, Backend` → role `Backend Developer`, seniority LEAD. Do not
+    select generic `Team Lead` or `Tech Lead` where a discipline is evident.
+    Use QA variants only from title evidence: Manual QA, Automation QA/SDET,
+    otherwise QA Engineer. Use Android/iOS/Cross-platform Mobile only from
+    title evidence; plain mobile stays Mobile Developer. `Data Architect` is
+    Data Engineer; only Software Architect and Solutions Architect are roles.
     Canonical roles:
     {{ knownRoles }}
 

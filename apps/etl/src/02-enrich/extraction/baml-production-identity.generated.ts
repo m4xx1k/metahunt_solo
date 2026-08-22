@@ -2,5 +2,5 @@
 // Only production BAML files are included: test fixtures must not invalidate
 // production cache entries.
 export const BAML_PRODUCTION_SOURCE_HASH =
-  "20b79059e0385eecf9a96e7b56b3b8bff37c9efa0ac45963bcb42955bc6d6bc4";
+  "23bd63ab3de57c8530b2c2d75a3619a19fcc3347f608f2518aa95082c29ea708";
 export const BAML_RUNTIME_VERSION = "0.222.0";

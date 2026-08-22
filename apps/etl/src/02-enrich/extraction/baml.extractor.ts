@@ -8,6 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { b } from "../../baml_client";
 import { joinNamesByType } from "../../platform/shared/node-names";
+import { applyRoleSeniorityPolicy } from "../../platform/shared/role-seniority-policy";
 import { sha256 } from "../dedup/content-fingerprint";
 
 import {
@@ -22,7 +23,7 @@ import type {
 } from "./vacancy-extractor";
 
 /** A dashboard label only; spec_hash is the correctness boundary. */
-export const PROMPT_VERSION = 4;
+export const PROMPT_VERSION = 5;
 
 const TAXONOMY_CACHE_TTL_MS = 60_000;
 
@@ -45,7 +46,7 @@ export class BamlVacancyExtractor implements VacancyExtractor {
       const extracted = await b.ExtractVacancy(text, roles, domains, skills, {
         collector,
       });
-      const data = ensureVerifiedTechnicalRole(extracted, roles);
+      const data = applyVacancyPolicy(text, ensureVerifiedTechnicalRole(extracted, roles), roles);
       return {
         data,
         meta: { promptVersion: PROMPT_VERSION, usage: readUsage(collector) },
@@ -132,6 +133,22 @@ export class BamlVacancyExtractor implements VacancyExtractor {
       skills: this.taxonomyCache.skills,
     };
   }
+}
+
+function applyVacancyPolicy(
+  text: string,
+  data: Awaited<ReturnType<typeof b.ExtractVacancy>>,
+  roles: string,
+): Awaited<ReturnType<typeof b.ExtractVacancy>> {
+  if (!data.isTech) return data;
+  const policy = applyRoleSeniorityPolicy({
+    text,
+    role: data.role ?? null,
+    seniority: data.seniority ?? null,
+    experienceYears: data.experienceYears ?? null,
+    knownRoles: roles.split(", ").filter(Boolean),
+  });
+  return { ...data, role: policy.role, seniority: policy.seniority as typeof data.seniority };
 }
 
 /**

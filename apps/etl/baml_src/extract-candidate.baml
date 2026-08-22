@@ -40,13 +40,15 @@ class ExtractedCandidate {
   "#)
 
   seniority Seniority? @description(#"
-    Overall seniority inferred from years of experience and role titles held.
+    Overall seniority inferred from years and the candidate's current title.
     Rules:
-      1. An explicit current title (Junior / Middle / Senior / Lead / Architect)
+      1. An explicit current title (Junior / Middle / Senior / Lead / Principal)
          wins.
-      2. "Architect" → PRINCIPAL. "Head of" / "VP" / "CTO" → C_LEVEL.
-      3. Otherwise infer from total years: <1 INTERN, 1-2 JUNIOR, 2-4 MIDDLE,
-         4-7 SENIOR, 7+ LEAD — but defer to explicit titles.
+      2. Architect alone does not imply a level. Staff/Principal/Distinguished
+         / Fellow → PRINCIPAL. Head/Director/VP → LEAD. CTO/CIO/CISO → C_LEVEL.
+      3. Otherwise infer only ordinary IC levels from total years: <1 INTERN,
+         1-2 JUNIOR, 2-4 MIDDLE, 4+ SENIOR. Never infer LEAD/PRINCIPAL/C_LEVEL
+         from years alone.
       4. null if it genuinely cannot be inferred.
   "#)
 

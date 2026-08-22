@@ -5,6 +5,11 @@ import { and, eq, sql, type SQL } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import {
+  rolesCompatible,
+  senioritiesCompatible,
+} from "../../platform/shared/role-seniority-policy";
+
 import type {
   DedupMetrics,
   DedupReason,
@@ -53,6 +58,7 @@ interface CandidateRow {
   id: string;
   uniqueVacancyId: string | null;
   roleNodeId: string | null;
+  roleName: string | null;
   seniority: string | null;
   workFormat: string | null;
   companyId: string | null;
@@ -70,6 +76,7 @@ interface VacancyForResolve {
   publishedAt: Date;
   embedding: number[];
   roleNodeId: string | null;
+  roleName: string | null;
   seniority: string | null;
   workFormat: string | null;
   companyId: string | null;
@@ -328,6 +335,7 @@ export class DedupService {
       id: string;
       unique_vacancy_id: string | null;
       role_node_id: string | null;
+      role_name: string | null;
       seniority: string | null;
       work_format: string | null;
       company_id: string | null;
@@ -341,6 +349,7 @@ export class DedupService {
         cand.id,
         cand.unique_vacancy_id,
         cand.role_node_id,
+        cand_role.canonical_name AS role_name,
         cand.seniority::text AS seniority,
         cand.work_format::text AS work_format,
         cand.company_id,
@@ -354,28 +363,16 @@ export class DedupService {
         END AS centroid_similarity
       FROM vacancies cand
       LEFT JOIN unique_vacancies uv ON uv.id = cand.unique_vacancy_id
+      LEFT JOIN nodes cand_role ON cand_role.id = cand.role_node_id
       -- Same-source allowed: a board reposting a job under a new id is a true
       -- duplicate; the 0.92 threshold + gates keep distinct openings apart.
       WHERE cand.id != ${v.id}
         AND cand.embedding IS NOT NULL
         AND cand.published_at IS NOT NULL
         AND cand.published_at BETWEEN ${windowStart} AND ${windowEnd}
-        -- Hard structural gates: when BOTH sides know a field, they must
-        -- agree. Null-permissive so a missing extraction on one side
-        -- doesn't kill the match. role + seniority are the primary
-        -- defense against boilerplate-driven snowballs (e.g. SKELAR
-        -- products sharing intro text across Backend/Frontend postings
-        -- and seniority levels).
-        AND (
-          cand.role_node_id IS NULL
-          OR ${v.roleNodeId}::uuid IS NULL
-          OR cand.role_node_id = ${v.roleNodeId}::uuid
-        )
-        AND (
-          cand.seniority IS NULL
-          OR ${v.seniority}::text IS NULL
-          OR cand.seniority::text = ${v.seniority}
-        )
+        -- Role family compatibility is applied in TypeScript below. It cannot
+        -- be represented as FK equality: generic QA/Mobile legitimately match
+        -- their specialised child, while specialised siblings must not match.
         -- Negative company gate: if both sides resolved a company and
         -- they differ, it cannot be the same posting — this splits
         -- distinct products inside one holding (the SKELAR ecosystem).
@@ -392,6 +389,7 @@ export class DedupService {
       id: r.id,
       uniqueVacancyId: r.unique_vacancy_id,
       roleNodeId: r.role_node_id,
+      roleName: r.role_name,
       seniority: r.seniority,
       workFormat: r.work_format,
       companyId: r.company_id,
@@ -416,6 +414,8 @@ export class DedupService {
     const eligible = candidates.filter(
       (c) =>
         c.uniqueVacancyId &&
+        rolesCompatible(v.roleName, c.roleName) &&
+        senioritiesCompatible(v.seniority, c.seniority) &&
         c.similarity >= HARD_THRESHOLD &&
         c.centroidSimilarity !== null &&
         c.centroidSimilarity >= HARD_THRESHOLD,
@@ -486,6 +486,7 @@ export class DedupService {
       published_at: Date;
       embedding: string;
       role_node_id: string | null;
+      role_name: string | null;
       seniority: string | null;
       work_format: string | null;
       company_id: string | null;
@@ -502,6 +503,7 @@ export class DedupService {
         v.published_at,
         v.embedding::text AS embedding,
         v.role_node_id,
+        role_node.canonical_name AS role_name,
         v.seniority::text AS seniority,
         v.work_format::text AS work_format,
         v.company_id,
@@ -513,6 +515,7 @@ export class DedupService {
         record.content_fingerprint
       FROM vacancies v
       JOIN rss_records record ON record.id = v.last_rss_record_id
+      LEFT JOIN nodes role_node ON role_node.id = v.role_node_id
       WHERE v.id = ${vacancyId}
     `);
     const r = res.rows[0];
@@ -523,6 +526,7 @@ export class DedupService {
       publishedAt: toDate(r.published_at),
       embedding: parseVectorText(r.embedding),
       roleNodeId: r.role_node_id,
+      roleName: r.role_name,
       seniority: r.seniority,
       workFormat: r.work_format,
       companyId: r.company_id,
