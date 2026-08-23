@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-CONTAINER="${CONTAINER:-metahunt-db}"
+CONTAINER="${CONTAINER:-metahunt-railway-db}"
 DB="${DB:-metahunt_railway}"
 DB_USER="${DB_USER:-metahunt}"
 

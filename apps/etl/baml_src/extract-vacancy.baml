@@ -116,14 +116,16 @@ class ExtractedVacancy {
     For every technical posting, return a role from the prompt's `knownRoles`
     list with EXACT spelling. Never invent a role or variant: an unverified
     role is invisible in the product. Preserve its underlying discipline for
-    Lead, Team Lead, Tech Lead, and Architect titles. Use `Software Engineer`
+    Lead, Team Lead, Tech Lead, and Architect titles: role is the underlying
+    discipline, while seniority is separate. Never return `Team Lead` or
+    `Tech Lead` when the title provides a discipline. Use `Software Engineer`
     only as the explicit generic fallback when the advertised technical role
     has no more specific discipline in the list. null only for non-tech jobs.
   "#)
 
   isTech bool @description(#"
     TRUE if this is a technical/engineering role: software dev, QA, DevOps/SRE,
-    data, security, embedded, or engineering management of those.
+    data, security, embedded, engineering management of those, or CTO/CIO/CISO.
     FALSE for non-tech roles even at a tech company: sales, marketing, media
     buying, copywriting, recruiting/HR, finance, legal, support, product/project
     management, design (UI/UX/graphic). A FALSE vacancy is dropped, not stored —
@@ -131,8 +133,9 @@ class ExtractedVacancy {
   "#)
 
   seniority Seniority? @description(#"
-    Seniority level from the advertised position title. A deterministic
-    post-extraction policy is authoritative, so never use body-text signals.
+    Seniority level only when explicitly named in the advertised position title:
+    the first `Title:` line in the input. Ignore seniority words, years, and
+    quoted job titles anywhere in the body.
     Rules:
       1. Junior / Middle / Senior in the title map to that exact level.
       2. Lead / Team Lead / Tech Lead in the title → LEAD.
@@ -272,12 +275,24 @@ function ExtractVacancy(
 
     Role and seniority are independent. An Architect title does NOT establish
     seniority: `Cloud Architect` → role `DevOps Engineer`, seniority null.
-    `Team Lead, Backend` → role `Backend Developer`, seniority LEAD. Do not
-    select generic `Team Lead` or `Tech Lead` where a discipline is evident.
-    Use QA variants only from title evidence: Manual QA, Automation QA/SDET,
-    otherwise QA Engineer. Use Android/iOS/Cross-platform Mobile only from
-    title evidence; plain mobile stays Mobile Developer. `Data Architect` is
-    Data Engineer; only Software Architect and Solutions Architect are roles.
+    `Team Lead, Backend` → role `Backend Developer`, seniority LEAD; `React
+    Tech Lead` → role `Frontend Developer`, seniority LEAD; `Head of DevOps`
+    → role `DevOps Engineer`, seniority LEAD; `VP of Engineering` → role
+    `Software Engineer`, seniority LEAD. Do not select generic `Team Lead` or
+    `Tech Lead` where a discipline is evident.
+    Select these variants only with explicit title evidence and exact canonical
+    spelling: Manual/Functional QA → `Manual QA Engineer`; Automation QA,
+    SDET, or AQA → `Automation QA Engineer`; otherwise QA → `QA Engineer`.
+    iOS → `iOS Engineer`; Android → `Android Engineer`; Flutter, React Native,
+    Xamarin, Ionic, Capacitor, or Kotlin Multiplatform →
+    `Cross-platform Mobile Engineer`; plain mobile → `Mobile Developer`.
+    `Data Architect` is `Data Engineer`; only `Software Architect` and
+    `Solutions Architect` are architect roles.
+    For role and seniority, the first `Title:` line is the sole title evidence.
+    Ignore titles quoted in the body (for example, a company description or a
+    reposted original title), and never infer seniority from required years.
+    For example, `Title: Tech Lead, Full Stack` with `Senior Full Stack` in
+    the body must return `Full Stack Developer` / LEAD, not SENIOR.
     Canonical roles:
     {{ knownRoles }}
 

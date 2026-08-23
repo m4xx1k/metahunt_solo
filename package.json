@@ -43,8 +43,7 @@
     "eval:requirements-v2": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=../.env.langfuse apps/etl/dist/eval/extraction.experiment.js",
     "skills:classify": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/03-discovery/ranking/classify-skills.cli.js",
     "test:etl:int": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl test:int",
-    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js",
-    "role-seniority:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/role-seniority/role-seniority-migrate.cli.js"
+    "taxonomy:migrate": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build && node --env-file-if-exists=.env apps/etl/dist/admin/taxonomy/taxonomy-migrate.cli.js"
   },
   "engines": {
     "node": ">=22"
