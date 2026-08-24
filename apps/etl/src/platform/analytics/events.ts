@@ -38,6 +38,11 @@ export const ANALYTICS_EVENTS = {
   digestLinkClicked: "digest_link_clicked",
   applyClicked: "apply_clicked",
   vacancyOutboundClicked: "vacancy_outbound_clicked",
+  // A /go tap carrying neither a referring subscription (`?s=`) nor a browser
+  // journey (`?j=`). Its own name so `vacancy_outbound_clicked` can mean "a
+  // click we can attribute" without a filter anyone has to remember — the
+  // unattributed volume is ~97% of /go taps and would otherwise drown it.
+  vacancyOutboundUnattributed: "vacancy_outbound_unattributed",
   subscriptionReactivated: "subscription_reactivated",
   unsubscribed: "unsubscribed",
   // Telegram told us the user blocked the bot (or deliveries kept bouncing) —
@@ -60,6 +65,10 @@ export const USER_ACTION_EVENTS = [
   ANALYTICS_EVENTS.digestLinkClicked,
   ANALYTICS_EVENTS.applyClicked,
   ANALYTICS_EVENTS.vacancyOutboundClicked,
+  // A tap all the same, so it belongs here rather than among our own sends.
+  // It never reaches the ledger (PostHog-only, personless), so listing it
+  // leaves every product_events query that reads this set unchanged.
+  ANALYTICS_EVENTS.vacancyOutboundUnattributed,
   ANALYTICS_EVENTS.subscriptionReactivated,
   ANALYTICS_EVENTS.unsubscribed,
 ] as const;
