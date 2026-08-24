@@ -9,7 +9,15 @@ on:
 jobs:
   contract:
     name: contract (seo)
-    if: github.event.deployment_status.state == 'success'
+    # Railway posts deployment_status too (environment "metahunt / production",
+    # creator railway-app[bot]). Without this the audit crawls the Railway
+    # dashboard URL and reports 32 "failures" that are just railway.com not
+    # being our marketing site. The env-name guard below cannot catch it: it is
+    # an AND with the bypass-secret check, so configuring that secret (done
+    # 2026-07-27) disabled the skip for every non-Vercel deploy.
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.creator.login == 'vercel[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
