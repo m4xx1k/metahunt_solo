@@ -112,7 +112,16 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     label: "vacancy outbound click",
     actor: "user",
     sink: "posthog-only",
-    means: "opened a vacancy from the feed or a Telegram digest",
+    means: "opened a vacancy from the feed or a Telegram digest, and we know who",
+  },
+  {
+    name: "vacancy_outbound_unattributed",
+    label: "unattributed outbound click",
+    actor: "user",
+    sink: "posthog-only",
+    means:
+      "opened a vacancy through a link carrying neither a subscription nor a " +
+      "browser journey — real volume, no one to credit it to",
   },
   {
     name: "subscription_reactivated",

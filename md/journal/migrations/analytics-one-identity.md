@@ -1,7 +1,7 @@
 # analytics-one-identity — finish the analytics cutover on one identity
 
 **Branch:** `refactor/analytics-one-identity`
-**Status:** in-progress (phase 4 blocked on its seven-day gate)
+**Status:** in-progress (phase 4 unblocked 2026-08-24 — gate passed; the retirement itself is not started)
 **Started:** 2026-08-16 · **Closed:** —
 
 Continues [`analytics-real-metahunt-cutover.md`](analytics-real-metahunt-cutover.md), which shipped
@@ -16,9 +16,13 @@ client remains, and each store has exactly one author. PostHog is cleaned: start
 eight insights deleted, six replay playlists archived, authorized URLs set, cutover annotated, a
 daily no-digest alert armed, and the internal cohort repointed at `is_staff`.
 
-**Phase 4 is deliberately not started.** Its condition is seven consecutive days of PostHog
-reproducing the ledger's digest and click counts within 5%, and that window cannot begin until this
-branch is deployed. The date in the old cutover doc (18 Aug) is not the condition.
+**Phase 4 is unblocked as of 2026-08-24 but not started.** Its condition was seven consecutive days
+of PostHog reproducing the ledger's digest and click counts within 5%. The window ran 2026-08-18 to
+2026-08-23 and produced six full days at **0.0%** divergence — the two stores agree event for event,
+not merely inside the tolerance. The deploy day (08-17) is excluded for cause, and the seventh day
+was waived by the owner rather than wait for a restatement. Full rows, both exclusions, and the
+mis-specified feed-click comparison that had to be fixed before the gate could be read at all:
+[`md/runbook/analytics-ledger-parity.md`](../../runbook/analytics-ledger-parity.md).
 
 ## Why this exists
 
@@ -34,7 +38,7 @@ simply unused.
 - [x] T1 — Phase 1, one identity: capture on `person_id`, alias on account link, `$set` profiles — *done when:* digest coverage reaches every active subscription and two clicks on one link land on one person
 - [x] T2 — Phase 2, unmute the browser: real pageviews, no stub, no allow-list, `$set_once` redaction — *done when:* an anonymous visit produces a pageview and login merges its history
 - [x] T3 — Phase 3, one registry, one writer, one client — *done when:* every event name has exactly one definition and at least one live emitter
-- [ ] T4 — Phase 4, retire the ledger — **gated**: needs 7 consecutive days of PostHog reproducing the ledger's counts within 5%. Cannot start before that window closes.
+- [ ] T4 — Phase 4, retire the ledger — **unblocked 2026-08-24**, not started: drop `product_events` + `analytics_outbox`, delete the funnel/channels/retention/growth panels, keep the roster, retarget the outbox at PostHog. Separate migration — do not mix with `subscriptions.user_id NOT NULL`.
 - [x] T5 — Phase 5, make silent breakage loud: no-digest alert, staff flag, reachability in the catalog check — *done when:* unplugging an emitter surfaces within a day
 
 ## Verification status
@@ -44,10 +48,10 @@ The code gates are met in test; the two live gates need production traffic after
 | Gate | Status |
 |---|---|
 | Phase 0 — one dashboard, three tiles, data | ✅ verified (digests + clicks return rows) |
-| Phase 1 — full digest coverage, two taps one person | ⏳ needs a day of production traffic |
+| Phase 1 — full digest coverage, two taps one person | ✅ verified 2026-08-24: six days of digests reproduced exactly (127/101/103/103/29/28), one event per person per send |
 | Phase 2 — anonymous visit produces a pageview, login merges it | ✅ verified 2026-08-17: 8 pageviews, two distinct ids merged into one person, `signed_in` on the same person |
 | Phase 3 — one definition and one live emitter per name | ✅ `pnpm analytics:catalog`, reachability check verified against a planted unreachable event |
-| Phase 4 — seven days of agreement | ⏳ window opens 2026-08-17 (deployed); run the runbook daily |
+| Phase 4 — seven days of agreement | ✅ closed 2026-08-24: six full days at 0.0%, deploy day excluded, seventh waived |
 | Phase 5 — unplug an emitter, hear about it within a day | ✅ alert armed (daily, fires below one digest) |
 
 ## Decisions
@@ -90,6 +94,24 @@ creates journey rows), and a subscription create must never fail on analytics.
 journey still captures — the volume is real — but with `is_anonymous: true`, and every per-person
 metric filters it out. Rule 3 forbids a synthetic identity, and the reason is arithmetic: the day
 this shipped, 15 anonymous clicks read as 15 unique clickers on a product with three browser people.
+
+**…and as of 2026-08-24 it gets its own name, not just a flag.** The flag protected per-person
+metrics but not raw volume, and the volume turned out to be the whole story: unattributed taps ran
+~30:1 against attributed ones (08-23: 68 against 2), so `vacancy_outbound_clicked` meant nothing to
+anyone who forgot to filter. The fallback branch now emits `vacancy_outbound_unattributed`, leaving
+the attributed verb clean by default. `is_anonymous: true` stays on it for continuity with the rows
+already ingested under the shared name.
+
+**The unattributed volume is not old users PostHog cannot recognise.** The theory was that people
+who signed up before the cutover, then moved to Telegram, now land unattributed. The code says
+otherwise: `ApplyLink.tsx` calls `getOrCreateJourneyId()` — *create* — so a journey id is minted in
+localStorage on first render of a feed card, for any browser, regardless of when the account was
+made. A real feed tap therefore always carries `?j=`, and a digest tap always carries `?s=`. A hit
+with neither is not a returning human. `redirect.controller.ts` already filters `isbot` and
+non-`navigate` `Sec-Fetch-Mode`, and passes an *absent* `Sec-Fetch-Mode` as human so Telegram in-app
+taps survive — which is the gap a browser-UA crawler walks through. Tightening that is open work,
+deliberately separate from the rename: the rename makes the number honest, it does not stop the
+traffic.
 
 **Browser events kept vs dropped (Rule 4 applied).** Kept: outcomes an outsider watching URLs and
 clicks cannot infer — upload results, feedback sentiment, login failures, match-flow completion.

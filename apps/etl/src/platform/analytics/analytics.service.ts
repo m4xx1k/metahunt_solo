@@ -182,11 +182,14 @@ export class AnalyticsService {
       );
       return;
     }
-    // A click we cannot name. The event is real and worth counting; the id is
-    // not, so it is flagged and kept out of every per-person metric — a
-    // synthetic distinct id counted as a human is how "unique clickers" ends
-    // up higher than the number of people who exist.
-    this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundClicked, {
+    // A click we cannot name: no `?s=`, no `?j=`. The volume is real and worth
+    // counting, but the id is not, so it gets its own verb and stays out of
+    // every per-person metric — a synthetic distinct id counted as a human is
+    // how "unique clickers" ends up higher than the number of people who exist.
+    // Separate name, not just the flag: unattributed taps outnumber attributed
+    // ones ~30:1, so sharing `vacancy_outbound_clicked` made the headline click
+    // count meaningless unless every reader remembered to filter it.
+    this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundUnattributed, {
       ...properties,
       surface: "web_feed",
       is_anonymous: true,

@@ -1,8 +1,10 @@
 # Analytics verification and the ledger parity gate
 
 Two jobs live here: the **daily check** that the post-cutover analytics are
-telling the truth, and the **parity gate** that decides when `product_events`
-may finally be deleted. Background and the decisions behind both:
+telling the truth, and the **parity gate** that decided when `product_events`
+may be deleted — closed 2026-08-24, kept as the record phase 4 rests on. Only
+the daily check is still a thing you run. Background and the decisions behind
+both:
 [`md/journal/migrations/analytics-one-identity.md`](../journal/migrations/analytics-one-identity.md).
 
 ## Run it
@@ -39,28 +41,43 @@ somewhere — grep for a capture still keyed on a user id rather than
 
 ### 2. Unique clickers must count people, not ids
 
+Since 2026-08-24 the split is carried by the event name, not by a property a
+reader has to remember: an attributable tap is `vacancy_outbound_clicked`, one
+with neither `?s=` nor `?j=` is `vacancy_outbound_unattributed`. The
+`is_anonymous: true` flag stays on the latter, so queries written against it —
+and the rows ingested under the old shared name before that date — keep working.
+
 ```sql
-SELECT if(properties.is_anonymous = true, 'anonymous', 'named') AS kind,
-       count() AS clicks, uniq(person_id) AS ids
-FROM events WHERE event = 'vacancy_outbound_clicked' AND timestamp > now() - INTERVAL 24 HOUR
-GROUP BY kind
+SELECT event, count() AS clicks, uniq(person_id) AS ids
+FROM events
+WHERE event IN ('vacancy_outbound_clicked', 'vacancy_outbound_unattributed')
+  AND timestamp > now() - INTERVAL 24 HOUR
+GROUP BY event
 ```
 
-**Pass:** every `anonymous` click carries the flag, and insight `rbXvDt0P`
-("Unique users — vacancy outbound") counts only the `named` ones.
-**Fail:** anonymous clicks without the flag → a capture path is missing
-`is_anonymous: true`. A count of "people" close to the count of clicks in the
-`named` row → synthetic identities are leaking into a person metric again.
+**Pass:** `vacancy_outbound_clicked` carries only attributable taps, and its
+`ids` count sits well below its `clicks` count (people tap more than once).
+Insight `rbXvDt0P` ("Unique users — vacancy outbound") reads that event.
+**Fail:** `ids` close to `clicks` on the attributed row → synthetic identities
+are leaking into a person metric again. Any `vacancy_outbound_clicked` row
+carrying `is_anonymous = true` → a capture path skipped the rename.
 
 ### 3. Are the anonymous clicks human?
 
-Open question since 2026-08-17: 24 outbound clicks arrived in one hour, all
-`surface=web_feed` with neither a subscription nor a journey, on a site with a
+Still open. Measured 2026-08-24 across the 08-17→08-23 window, unattributed taps
+per day: 18, 180, 42, 44, 55, 89, 68 — against 30, 14, 24, 8, 18, 4, 2
+attributed ones. On 08-23 that is 97% of all `/go` volume, on a site with a
 couple of pageviews a day.
+
+One theory is already ruled out: these are **not** pre-cutover users PostHog
+fails to recognise. `ApplyLink.tsx` mints a journey id on first render for any
+browser, so a real feed tap always carries `?j=` and a digest tap always carries
+`?s=`, whenever the account was created. A hit with neither is not a returning
+human.
 
 ```sql
 SELECT toStartOfMinute(timestamp) AS minute, count() AS clicks
-FROM events WHERE event = 'vacancy_outbound_clicked' AND properties.is_anonymous = true
+FROM events WHERE event = 'vacancy_outbound_unattributed'
   AND timestamp > now() - INTERVAL 24 HOUR
 GROUP BY minute ORDER BY minute
 ```
@@ -94,12 +111,42 @@ Person properties attach to an event when it is ingested, so events older than
 the first `is_staff` write may not be excluded. Compare the tile before and
 after flipping the toggle and record the difference rather than assuming it.
 
-## Parity gate — when the ledger may be deleted
+## Parity gate — CLOSED 2026-08-24
 
-`product_events` and `analytics_outbox` stay until PostHog independently
-reproduces the ledger's counts for **seven consecutive days within 5%**. The
-date in the old cutover document is not the condition; the condition is the
-condition. A failed day resets the window.
+**The gate passed and is no longer run.** It is kept here because phase 4 is the
+work it authorised, and whoever does that work should see what it rested on.
+
+The condition was seven consecutive days of PostHog reproducing the ledger's
+counts within 5%. What the window produced was **six consecutive full days at
+0.0% divergence** — not "inside the tolerance", identical event for event — plus
+a seventh day excluded for cause. The owner accepted six on 2026-08-24 rather
+than wait for a seventh that could only restate the same result.
+
+| Kyiv day | digest_sent | digest click | feed click | activation |
+|---|---|---|---|---|
+| 2026-08-18 | 127 = 127 | 8 = 8 | 14 = 14 | 2 = 2 |
+| 2026-08-19 | 101 = 101 | 3 = 3 | 24 = 24 | 0 = 0 |
+| 2026-08-20 | 103 = 103 | 5 = 5 | 8 = 8 | 0 = 0 |
+| 2026-08-21 | 103 = 103 | 2 = 2 | 18 = 18 | 0 = 0 |
+| 2026-08-22 | 29 = 29 | 1 = 1 | 4 = 4 | 0 = 0 |
+| 2026-08-23 | 28 = 28 | 1 = 1 | 2 = 2 | 2 = 2 |
+
+Ledger left of `=`, PostHog right. Two readings that look like failures and are
+not:
+
+**2026-08-17 is excluded, not failed.** Ledger 129 digests against PostHog 85.
+Per hour the two agree exactly from 15:00 Kyiv onward (13, 12, 9, 14, 13, 10, 4)
+and diverge before it. PR #187 deployed at 15:22 +0300. The window opens with the
+code that closes it, so its first day is a partial by construction.
+
+**Feed clicks match only once the unattributable ones are excluded.** Raw
+`surface=web_feed` in PostHog ran 3–23× the ledger (70 against 2 on 08-23). That
+is not drift: `product_events.journey_id` is a `NOT NULL` foreign key, so a `/go`
+tap with neither `?s=` nor `?j=` **cannot be written to the ledger at all** —
+`applyClicked()` sends it straight to PostHog and returns. Comparing the
+attributed subset reproduces the ledger exactly on all seven days, 08-17
+included. The row below was mis-specified: as first written it could never have
+passed, on any day, however healthy both systems were.
 
 Compare the same half-open Kyiv interval `[from, to)` in both systems:
 
@@ -107,16 +154,15 @@ Compare the same half-open Kyiv interval `[from, to)` in both systems:
 |---|---|---|
 | Digest delivered | `digest_sent` | `digest_sent` |
 | Digest outbound click | `digest_link_clicked` | `vacancy_outbound_clicked`, `surface=telegram_digest` |
-| Feed outbound click | `apply_clicked` | `vacancy_outbound_clicked`, `surface=web_feed` |
+| Feed outbound click | `apply_clicked` | `vacancy_outbound_clicked`, `surface=web_feed` — **attributed only**: before 2026-08-24 add `is_anonymous != true`; after it the rename does this by itself |
 | Activation | `telegram_linked` | `telegram_linked` |
 
 The ledger keeps two names for a click; PostHog keeps one, split by `surface`.
 That asymmetry is deliberate and ends with the ledger.
 
-Record each day's row in the tracker. Investigate any gap above 5% or an
-unexplained identity split before counting the day. When seven days pass, the
-deletion work is phase 4 of the tracker — it drops the two tables and the
-funnel, channels, retention and growth panels, and keeps the roster.
+Phase 4 of the tracker is now unblocked: drop `product_events` and
+`analytics_outbox`, delete the funnel, channels, retention and growth panels,
+keep the roster, and retarget the outbox at PostHog as the single forwarder.
 
 ## Rollback
 

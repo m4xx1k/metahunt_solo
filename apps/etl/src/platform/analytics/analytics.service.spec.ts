@@ -184,7 +184,7 @@ describe("AnalyticsService", () => {
     expect(capture).not.toHaveBeenCalled();
   });
 
-  it("falls back to an anonymous apply click when neither subscription nor journey is present", async () => {
+  it("records an unattributed click when neither subscription nor journey is present", async () => {
     const service = makeService();
 
     await service.applyClicked(VACANCY);
@@ -193,11 +193,13 @@ describe("AnalyticsService", () => {
     expect(enqueue).not.toHaveBeenCalled();
     expect(capture).toHaveBeenCalledWith(
       expect.any(String),
-      ANALYTICS_EVENTS.vacancyOutboundClicked,
+      ANALYTICS_EVENTS.vacancyOutboundUnattributed,
       expect.objectContaining({
         vacancy_id: "vacancy-1",
         surface: "web_feed",
-        // Flagged so no per-person metric can mistake the id for a human.
+        // Flagged so no per-person metric can mistake the id for a human. The
+        // flag stays alongside the name so filters written against it (and the
+        // rows already in PostHog under the old name) keep working.
         is_anonymous: true,
         $process_person_profile: false,
       }),
