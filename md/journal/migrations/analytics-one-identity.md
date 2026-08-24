@@ -118,6 +118,62 @@ clicks cannot infer — upload results, feedback sentiment, login failures, matc
 Dropped: clicks autocapture already sees (`lens_switch`, `*_started`) and account lifecycle the
 server owns (`signed_in`, `account_created`).
 
+## Phase 4 — execution brief
+
+Owner decisions, 2026-08-24. Everything here is decided; do not re-open it, and do not
+improvise on the roster.
+
+### Scope correction — read this first
+
+The line "drops the two tables and the funnel, channels, retention and growth panels, and
+keeps the roster" understates the work by a wide margin. A scan of
+`admin/product-analytics/product-analytics.service.ts` shows **14 of its 15 methods touch
+`product_events` or `analytics_journeys`**, most through raw SQL rather than the drizzle
+table objects (so grepping for `productEvents` alone under-reports it). Only `growth()` is
+already ledger-free. Phase 4 is a rewrite of that service, not a deletion pass.
+
+| Method | Disposition |
+|---|---|
+| `people`, `subscriberActivity`, `subscriberStates` | **Rewrite on PostHog.** This is the roster and it stays whole — see below. |
+| `deliverySummary`, `deliveryDaily` | **Rewrite on `sent_notifications`**, not PostHog: it is the domain source of truth for "already sent" (composite PK, anti-join drives matching), so digests/day and messages-per-chat-per-day come straight from it. Failures by `failure_kind` have no domain home — take them from PostHog or drop that sub-panel. |
+| `orderedFunnel`, `channels`, `retention`, `feedEngagement`, `periodFlow` | **Delete** with their panels, as planned. PostHog answers these. |
+| `recentJourneys`, `updateJourney`, `identityHealth` | **Delete.** All three exist to inspect or repair the ledger; they have no meaning once it is gone. `updateJourney` is how test journeys were marked — that job now belongs to the PostHog internal cohort. |
+| `overview` | Recompose from whatever survives. |
+
+### The roster is the decided exception
+
+Owner chose to keep it whole rather than accept the loss. Two queries carry it, and both
+read `product_events` today:
+
+- `subscriberActivity` (~line 1229) — "last action" is `max(occurred_at)` over
+  `USER_ACTION_EVENTS`, taken twice: once keyed on `journey_id` for browsing, once on
+  `subscription_id` for digest/link events, then the newest of the two.
+- `subscriberStates` (~line 488) — active / dormant / churned, where dormant is "active
+  subscription, ≥3 digests in 14d, zero user actions". Shipped in #139.
+
+Both are reproducible in HogQL: same event names, same `person_id` spine. Dormant is the
+only early-warning signal for churn the product has — losing it silently is the one
+outcome this brief exists to prevent.
+
+### Order of work
+
+1. Rewrite the roster trio and the delivery pair; prove them against the ledger **while
+   both still exist** — that comparison is free now and impossible afterwards.
+2. Delete the panels and methods marked Delete, with their contract types and UI.
+3. Retarget the outbox at PostHog so it becomes the single forwarder, and drop
+   `product_events`, `analytics_outbox`, `analytics_journeys` in a migration of their own.
+
+### Constraints
+
+- **Backup taken 2026-08-24:** `backups/Postgres-1787610415466.sql.gz` (291 MB, prod).
+  Owner waived the restore-test; do not spend time on one, and do not take another.
+- **Separate migration.** Do not mix the drop with `subscriptions.user_id NOT NULL`.
+- **`?j=` survives the drop.** `analytics_journeys` disappears, but `ApplyLink.tsx` must
+  keep stamping the journey id: post-drop it is the PostHog alias that ties an anonymous
+  visit to the subscriber, and it is half of what tells an attributable click from a
+  crawler's. Removing it re-breaks what #193 fixed.
+- **Do not touch `redirect.controller.ts`.** The crawler gap is deliberately after phase 4.
+
 ## Links
 
 - Runbook (daily check + the parity gate): `md/runbook/analytics-ledger-parity.md`
