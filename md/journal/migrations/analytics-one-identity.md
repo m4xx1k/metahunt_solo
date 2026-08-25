@@ -163,6 +163,99 @@ outcome this brief exists to prevent.
 3. Retarget the outbox at PostHog so it becomes the single forwarder, and drop
    `product_events`, `analytics_outbox`, `analytics_journeys` in a migration of their own.
 
+### Proof — the rewrites measured against the ledger, 2026-08-25
+
+Run before a line of the retirement was written, against production Postgres and
+PostHog project 239290, with a fixed upper bound of `2026-08-25 14:00 UTC` on both
+sides so the two stores see the same window. Scripts were throwaway; the numbers
+are the record.
+
+**The parity gate still holds, extended to today.** Same four behaviours, same
+half-open Kyiv days, ledger `=` PostHog:
+
+| Kyiv day | digest_sent | digest click | feed click | activation |
+|---|---|---|---|---|
+| 2026-08-18 | 127 = 127 | 8 = 8 | 14 = 14 | 2 = 2 |
+| 2026-08-19 | 101 = 101 | 3 = 3 | 24 = 24 | 0 = 0 |
+| 2026-08-20 | 103 = 103 | 5 = 5 | 8 = 8 | 0 = 0 |
+| 2026-08-21 | 103 = 103 | 2 = 2 | 18 = 18 | 0 = 0 |
+| 2026-08-22 | 29 = 29 | 1 = 1 | 4 = 4 | 0 = 0 |
+| 2026-08-23 | 28 = 28 | 1 = 1 | 2 = 2 | 2 = 2 |
+| 2026-08-24 | 53 = 53 | 0 = 0 | 21 = 21 | 0 = 0 |
+| 2026-08-25 | 41 = 41 | 2 = 2 | 20 = 20 | 0 = 0 |
+
+**Roster clicks and last action** — every person in the roster spine (51 rows:
+27 accounts ∪ 34 subscription persons, deduplicated), post-cutover window:
+
+| Field | New source | Result |
+|---|---|---|
+| `feedClicks` | `vacancy_outbound_clicked`, `surface=web_feed`, attributed | **51/51 people identical**, totals 8 = 8 |
+| `telegramClicks` | `vacancy_outbound_clicked`, `surface=telegram_digest` | **51/51 identical**, totals 22 = 22 |
+| `lastProductActionAt` | PostHog user-action set on the person | **49/51 identical** |
+
+The two rows that differ, differ **upward**: PostHog carries `$pageview`s under a
+browser distinct id that the alias merged into the person, and the ledger cannot
+hold them at all — its browser ingest endpoint was deleted in phase 2. One reads
+`∅ → 2026-08-20T11:15`, the other `2026-08-18T14:14 → 2026-08-19T16:38`. Both were
+read event by event and are pageviews. The new query is never blinder than the old
+one on this field, only sharper.
+
+**Subscriber states** — the panel this brief exists to protect. Chat spine and
+`is_active` from `subscriptions`, digests from `sent_notifications`, user actions
+from PostHog:
+
+| Dormancy window | Old (ledger) | New | Agreement |
+|---|---|---|---|
+| 14d, 08-11 → 08-25 | 18 active / 9 dormant / 5 churned | 17 / 10 / 5 | **31/32 chats** |
+| 7d, 08-18 → 08-25 | 16 / 11 / 5 | 16 / 11 / 5 | **32/32 chats** |
+| 5d, 08-20 → 08-25 | 15 / 12 / 5 | 15 / 12 / 5 | **32/32 chats** |
+
+The single chat that moves on the 14-day window is chat `662831789`: three
+`digest_link_clicked` on 2026-08-13 keep it `active` in the ledger, and PostHog
+holds **no event at all for that person before 2026-08-17** — the cutover date.
+It is the pre-cutover history gap, not a defect in the rewrite, and it closes by
+itself on **2026-08-31**, when a 14-day window first lies wholly inside the
+covered era. Every window that already does agrees chat for chat.
+
+**Delivery** — `sent_notifications` reproduces `digest_sent` by grouping rows on
+`(subscription_id, date_trunc('hour', sent_at))`. Digests are hourly, so the hour
+is the send. Measured over every day since the ledger began:
+
+| Comparison | Result |
+|---|---|
+| Groups vs events, all-time since ledger start (2026-07-23) | 2541 groups, 2546 events, **2540 matched** |
+| Groups vs events, last 30 days | 2491 groups, 2490 events, **2490 matched**, 0 duplicate groups |
+| Digests per Kyiv day, 08-11 → 08-24 | **13 of 14 days exact**, one day off by one |
+| Distinct subscriptions reached per day, 08-13 → 08-24 | **12 of 12 days exact** |
+
+Both sides of the residue were read row by row. The 6 ledger-only events are all
+from 2026-07-23, the ledger's first day, and carry a **null `subscription_id`** —
+they cannot be matched to a chat by construction. The 1 group-only row is chat
+`7ee17ab7`'s 08-13 08:30 send, which has a `digest_delivery_failed` against it: the
+vacancy rows were written and the message never landed. `sent_notifications`
+counts the attempt, the ledger counted the success. That is one send in 2541.
+
+**`telegramLinkedAt` needs no analytics store at all.** `subscriptions.linked_at`
+is the domain fact and already the fallback in the shipped code. Against the
+ledger: 40 of 40 `telegram_linked` events land **within 5 seconds** of the
+subscription's `linked_at`, zero events exist without one, and `linked_at` covers
+41 subscriptions to the ledger's 40. Moving the field to the column is a small
+gain, not a loss.
+
+### Three fields the ledger cannot hand over
+
+Measured, not assumed. Their producers are already dead — the browser ingest
+endpoint went away in phase 2, so these stopped being written weeks before this
+work started:
+
+| Field | Last real value | Disposition |
+|---|---|---|
+| `SubscriberActivity.ctaClickedAt` | `landing_cta_clicked`, last seen **2026-07-31** | **Deleted.** Computed, typed, rendered nowhere — the same shape #196 removed from Delivery, on the owner's own precedent. |
+| `SubscriberActivity.firstSeenAt` | first ledger event on the journey | **Deleted.** Rendered nowhere, and `joinedAt` (earliest `subscriptions.created_at`) is the truthful version of the same question — the contract already says so. |
+| `SubscriberActivity.source` | `landing_view` utm/referrer, last seen **2026-08-03** | **Rewritten on PostHog `$referring_domain`**, folded through the existing `resolveChannelSource`. It *is* rendered (Users panel, "from"), so it keeps a source rather than being dropped — but only 3 of 32 chats can be attributed today, because 29 of them arrived before the browser was unmuted. |
+
+Nothing else in the roster, the states or the delivery pair lost a source.
+
 ### Constraints
 
 - **Backup taken 2026-08-24:** `backups/Postgres-1787610415466.sql.gz` (291 MB, prod).

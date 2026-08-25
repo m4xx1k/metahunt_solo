@@ -1,97 +1,7 @@
-import { IsBoolean, IsOptional, IsString, MaxLength } from "class-validator";
-
-import { ANALYTICS_EVENTS } from "../../platform/analytics/events";
 import { REPORTING_PERIODS, type ReportingPeriod } from "../../platform/shared/reporting-period";
 
 export const PRODUCT_ANALYTICS_PERIODS = REPORTING_PERIODS;
 export type ProductAnalyticsPeriod = ReportingPeriod;
-
-export const PRODUCT_ANALYTICS_POPULATIONS = ["production", "test", "all"] as const;
-export type ProductAnalyticsPopulation = (typeof PRODUCT_ANALYTICS_POPULATIONS)[number];
-
-export const MAX_ANALYTICS_COHORT_ID_LENGTH = 64;
-
-export class UpdateAnalyticsJourneyDto {
-  @IsBoolean()
-  isTest!: boolean;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(MAX_ANALYTICS_COHORT_ID_LENGTH)
-  cohortId?: string | null;
-}
-
-export const PRODUCT_FUNNEL_STEPS = [
-  ANALYTICS_EVENTS.landingView,
-  ANALYTICS_EVENTS.landingCtaClicked,
-  ANALYTICS_EVENTS.subscriptionCreated,
-  ANALYTICS_EVENTS.telegramLinked,
-] as const;
-
-export type ProductFunnelStep = (typeof PRODUCT_FUNNEL_STEPS)[number];
-
-export const GROWTH_WINDOW_WEEKS = 8;
-export const RETENTION_WINDOW_WEEKS = 6;
-
-export interface ProductGrowthWeek {
-  weekStart: string;
-  linked: number;
-  cumulative: number;
-}
-
-export interface ProductGrowth {
-  weeks: ProductGrowthWeek[];
-  current: number;
-  previous: number;
-  totalLinked: number;
-}
-
-// Cohorts are grouped by the calendar week of the first link, but `returned[i]`
-// counts a ROLLING 7-day window from each chat's own anchor — i=0 is that
-// chat's first week, not the rest of the calendar week. `size` is the
-// denominator, and must be shown next to any percentage derived from it.
-export interface ProductRetentionCohort {
-  weekStart: string;
-  size: number;
-  returned: number[];
-}
-
-export interface ProductRetention {
-  windowWeeks: number;
-  cohorts: ProductRetentionCohort[];
-}
-
-export interface ProductAnalyticsOverview {
-  generatedAt: Date;
-  period: ProductAnalyticsPeriod;
-  population: ProductAnalyticsPopulation;
-  growth: ProductGrowth;
-  retention: ProductRetention;
-  funnel: Array<{ name: ProductFunnelStep; events: number; journeys: number }>;
-  // Journeys in the cohort that reached a later step without ever landing
-  // (feed/warm-lens subscribers) — excluded from the anchored funnel above.
-  funnelBypass: number;
-  subscriptions: {
-    total: number;
-    createdInPeriod: number;
-    active: number;
-    pending: number;
-    linked: number;
-    feed: number;
-    cv: number;
-    deactivated: number;
-    delivered: number;
-    linkedWithoutDelivery: number;
-  };
-  flow: ProductPeriodFlow;
-  channels: ProductChannel[];
-  identity: ProductIdentityHealth;
-  recentJourneys: RecentProductJourney[];
-  subscriberActivity: SubscriberActivity[];
-  feedEngagement: ProductFeedEngagement;
-  subscriberStates: ProductSubscriberStates;
-  delivery: ProductDeliveryHealth;
-}
 
 export const CRM_PEOPLE_SORTS = ["recent", "first_known", "clicks", "at_risk"] as const;
 export type CrmPeopleSort = (typeof CRM_PEOPLE_SORTS)[number];
@@ -117,51 +27,6 @@ export interface CrmPeoplePage {
   limit: number;
 }
 
-// Distinct journeys (and raw event count) that clicked a feed vacancy
-// (`apply_clicked`), scoped to the same period/population as the funnel.
-// Kept separate from PRODUCT_FUNNEL_STEPS: a feed click doesn't require ever
-// subscribing, so it isn't a step in that linear chain.
-export interface ProductFeedEngagement {
-  journeys: number;
-  events: number;
-}
-
-export interface ProductIdentityHealth {
-  journeysTotal: number;
-  browserJourneys: number;
-  serverJourneys: number;
-  legacyJourneys: number;
-  accountLinkedJourneys: number;
-  multiJourneyUsers: number;
-  subscriptionsWithoutJourney: number;
-  trackedLinkedWithoutEvent: number;
-  trackedDeliveryWithoutEvent: number;
-  multiSubscriptionJourneys: number;
-  pendingOutboxEvents: number;
-}
-
-export interface RecentProductJourney {
-  id: string;
-  origin: string;
-  isTest: boolean;
-  cohortId: string | null;
-  createdAt: Date;
-  lastSeenAt: Date;
-  subscriptions: number;
-  activeSubscriptions: number;
-  linkedSubscriptions: number;
-  deliveredSubscriptions: number;
-  events: number;
-  eventNames: string[];
-  lastEventAt: Date | null;
-}
-
-export interface AnalyticsJourneyClassification {
-  id: string;
-  isTest: boolean;
-  cohortId: string | null;
-}
-
 export interface SubscriberSubscription {
   id: string;
   isActive: boolean;
@@ -170,75 +35,40 @@ export interface SubscriberSubscription {
   createdAt: Date;
 }
 
-// One row per Telegram chat_id, summarizing that subscriber's whole funnel
-// journey across all of their subscriptions (a subscriber may run more than
-// one). `vacancyClicks` is digest-link taps only (Telegram digest_link_clicked,
-// attributed to a subscription). `feedClicks` is web feed taps (apply_clicked,
-// attributed to a journey) — a SEPARATE measure, never merged with digest
-// clicks. Feed clicks only roll up to this subscriber when their journey has
-// exactly one subscription; a journey shared by several subscriptions can't be
-// split between them, so it contributes 0 rather than risk double-counting.
-// `joinedAt` is the earliest subscription `created_at` — the truthful "first
-// touch," unlike `firstSeenAt` which only reflects the analytics ledger (live
-// since this feature's own deploy, so it understates age for older subscribers).
-// `lastActionAt` is the newest USER_ACTION_EVENTS timestamp across this
-// subscriber's journeys and subscriptions — deliberately not counting the
-// digests we send, so a silent subscriber reads as silent.
 // Lifecycle per chat — the same rules the subscriberStates tiles aggregate:
 // blocked = deactivated because the bot was cut off (block / unreachable),
 // churned = the user unsubscribed everything, dormant = digests land but no
 // user action for the dormancy window, active = the rest.
 export type SubscriberStatus = "active" | "dormant" | "churned" | "blocked";
 
+// One row per Telegram chat_id, summarizing that subscriber across all of their
+// subscriptions (a subscriber may run more than one). `vacancyClicks` is
+// digest-link taps, `feedClicks` is web feed taps — a SEPARATE measure, never
+// merged. Both come from PostHog, keyed on the person, so a chat's two
+// subscriptions cannot double-count one tap.
+// `joinedAt` is the earliest subscription `created_at`; `telegramLinkedAt` is
+// `subscriptions.linked_at`, the domain fact rather than an analytics echo of it.
+// `lastActionAt` is the newest event a PERSON caused — deliberately not the
+// digests we send, so a silent subscriber reads as silent.
 export interface SubscriberActivity {
   chatId: string;
   tgUsername: string | null;
   tgFirstName: string | null;
   joinedAt: Date;
-  firstSeenAt: Date | null;
-  ctaClickedAt: Date | null;
   telegramLinkedAt: Date | null;
   lastActionAt: Date | null;
   vacancyClicks: number;
   feedClicks: number;
-  // First-touch channel of this subscriber's journey — the same label the
-  // Channels panel aggregates. Null when the journey has no landing event at
-  // all (feed/warm-lens entry, or a subscription older than the ledger).
+  // First-touch referrer of this subscriber's person, folded into a channel
+  // label. Null for anyone who arrived before the browser was unmuted.
   source: string | null;
   isActive: boolean;
   status: SubscriberStatus;
   subscriptions: SubscriberSubscription[];
 }
 
-// Period-scoped movement, as opposed to the all-time state in `subscriptions`.
-// Every number here answers "what happened in the selected window".
-export interface ProductPeriodFlow {
-  joined: number;
-  activated: number;
-  digestClicks: number;
-  feedClicks: number;
-  churned: number;
-}
-
-// First-touch acquisition: the utm_source carried by a journey's earliest
-// landing event. `null` source means the visit arrived without one (direct,
-// organic, or a link that dropped the params).
-export interface ProductChannel {
-  // Always a label, never null: an untagged, unreferred arrival is "direct".
-  // Classification lives in `channel-source.ts`.
-  source: string;
-  // First-touch utm_campaign — one row per (source, campaign) so every post
-  // gets its own funnel line. Null = arrived without a campaign tag.
-  campaign: string | null;
-  landed: number;
-  subscribed: number;
-  activated: number;
-  digestClicks: number;
-}
-
-// Subscriber lifecycle STATE per chat_id, all-time (not period-scoped) —
-// replaces the broken `flow.churned` event-count headline. See product-events
-// query in the service for the active/dormant/churned definitions.
+// Subscriber lifecycle STATE per chat_id, all-time (not period-scoped).
+// Dormant is the early-warning signal: digests are landing and nobody answers.
 export interface ProductSubscriberStates {
   active: number;
   dormant: number;
@@ -250,15 +80,34 @@ export interface ProductDeliveryDay {
   digests: number;
   chats: number;
   perChat: number;
-  failures: number;
 }
 
-// System health, not user behavior: what OUR delivery pipeline did. `daily`
-// is always the last 7 days, independent of the page's period selector.
+// System health, not user behavior: what OUR delivery pipeline did, counted from
+// `sent_notifications`. `daily` is always the last 7 days, independent of the
+// page's period selector.
 export interface ProductDeliveryHealth {
   digestsSent: number;
   chatsReached: number;
   messagesPerChatPerDay: number;
-  unsubscribed: number;
   daily: ProductDeliveryDay[];
+}
+
+export interface ProductAnalyticsOverview {
+  generatedAt: Date;
+  period: ProductAnalyticsPeriod;
+  subscriptions: {
+    total: number;
+    createdInPeriod: number;
+    active: number;
+    pending: number;
+    linked: number;
+    feed: number;
+    cv: number;
+    deactivated: number;
+    delivered: number;
+    linkedWithoutDelivery: number;
+  };
+  subscriberActivity: SubscriberActivity[];
+  subscriberStates: ProductSubscriberStates;
+  delivery: ProductDeliveryHealth;
 }

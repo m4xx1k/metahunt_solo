@@ -1,44 +1,33 @@
 import { Inject, Injectable } from "@nestjs/common";
 
-import { and, count, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
+import { count, gte, isNotNull, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { ANALYTICS_EVENTS, USER_ACTION_EVENTS } from "../../platform/analytics/events";
+import {
+  PostHogQueryClient,
+  type PostHogQueryRow,
+} from "../../platform/analytics/posthog-query.client";
 import { asStringArray } from "../../platform/shared/coerce";
 import { reportingPeriodSince } from "../../platform/shared/reporting-period";
 
-import { compareChannels, resolveChannelSource } from "./channel-source";
+import { resolveChannelSource } from "./channel-source";
 import {
-  GROWTH_WINDOW_WEEKS,
-  PRODUCT_FUNNEL_STEPS,
-  RETENTION_WINDOW_WEEKS,
-  type AnalyticsJourneyClassification,
   type CrmPeoplePage,
   type CrmPeopleSort,
   type ProductAnalyticsOverview,
   type ProductAnalyticsPeriod,
-  type ProductAnalyticsPopulation,
-  type ProductChannel,
   type ProductDeliveryDay,
   type ProductDeliveryHealth,
-  type ProductFeedEngagement,
-  type ProductGrowth,
-  type ProductIdentityHealth,
-  type ProductPeriodFlow,
-  type ProductRetention,
   type ProductSubscriberStates,
-  type RecentProductJourney,
   type SubscriberActivity,
   type SubscriberStatus,
   type SubscriberSubscription,
-  type UpdateAnalyticsJourneyDto,
 } from "./product-analytics.contract";
 
-const { analyticsJourneys, nodes, productEvents, sentNotifications, subscriptions } = schema;
+const { nodes, sentNotifications, subscriptions } = schema;
 const CRM_PEOPLE_LIMIT = 50;
-const RECENT_JOURNEY_LIMIT = 30;
 const SUBSCRIBER_ACTIVITY_LIMIT = 50;
 const UNLABELED_TRACK = "усі ролі";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -47,70 +36,122 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const DORMANT_WINDOW_DAYS = 14;
 const DORMANT_MIN_DIGESTS = 3;
 const DELIVERY_DAILY_WINDOW_DAYS = 7;
+const PERSON_HISTORY_DAYS = 180;
+
+// Every act a PERSON causes, as PostHog names them. Our own sends (`digest_sent`)
+// are deliberately absent: counting them would make every subscriber look active
+// forever. This is the PostHog half of what `USER_ACTION_EVENTS` meant to the
+// ledger — the ledger's other names had their producers deleted in phase 2.
+const PERSON_ACTION_EVENTS = [
+  "$pageview",
+  "account_created",
+  "signed_in",
+  "subscription_created",
+  "telegram_linked",
+  "vacancy_outbound_clicked",
+  "subscription_deactivated",
+] as const;
+
+const PERSON_ACTIONS_SQL = PERSON_ACTION_EVENTS.map((name) => `'${name}'`).join(", ");
+const IS_PERSON_ACTION = `e.event IN (${PERSON_ACTIONS_SQL})`;
+// `vacancy_outbound_unattributed` has its own name since 2026-08-24; rows
+// ingested under the shared name before that are told apart by this flag.
+const ATTRIBUTED = "ifNull(toString(e.properties.is_anonymous), '') != 'true'";
+const FEED_CLICK = `e.event = 'vacancy_outbound_clicked' AND e.properties.surface = 'web_feed' AND ${ATTRIBUTED}`;
+const DIGEST_CLICK =
+  "e.event = 'vacancy_outbound_clicked' AND e.properties.surface = 'telegram_digest'";
+
+// What one person's PostHog side contributes to a roster row.
+interface PersonActivity {
+  lastActionAt: Date | null;
+  feedClicks: number;
+  digestClicks: number;
+  actedSince: Date | null;
+  source: string | null;
+}
+
+const EMPTY_ACTIVITY: PersonActivity = {
+  lastActionAt: null,
+  feedClicks: 0,
+  digestClicks: 0,
+  actedSince: null,
+  source: null,
+};
 
 function isNonNull<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
 }
 
 // `since` (period) takes precedence; for "all" fall back to the span since
-// the earliest scoped event so the ratio isn't divided by an arbitrary unit.
+// the earliest scoped send so the ratio isn't divided by an arbitrary unit.
 function periodDaysFor(since: Date | null, earliestAt: Date | null): number {
   if (since) return (Date.now() - since.getTime()) / DAY_MS;
   if (!earliestAt) return 0;
   return Math.max((Date.now() - earliestAt.getTime()) / DAY_MS, 1);
 }
 
+function toNumber(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+// PostHog returns timestamps as strings, and an aggregate over zero matching
+// rows comes back as the epoch rather than null — which would read as 1970.
+function toDateOrNull(value: unknown): Date | null {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.getUTCFullYear() < 2000 ? null : date;
+}
+
+// Row keys come back as `unknown`; narrow rather than stringify, so an
+// unexpected shape drops the row instead of keying it on "[object Object]".
+function toKey(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+// HogQL takes no bind parameters on the query endpoint, so every id reaching a
+// query string goes through this. Ids here are uuids read out of our own
+// database, never request input, but the escape is what keeps that true.
+function escapeHogql(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+// The roster, the subscriber lifecycle, and delivery health — everything the
+// operator console still answers from our own stores. Behaviour comes from
+// PostHog keyed on the person; "who exists" and "what we sent" stay in Postgres,
+// where they are domain facts rather than an analytics echo.
 @Injectable()
 export class ProductAnalyticsService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly posthog: PostHogQueryClient,
+  ) {}
 
-  async overview(
-    period: ProductAnalyticsPeriod,
-    population: ProductAnalyticsPopulation = "production",
-  ): Promise<ProductAnalyticsOverview> {
+  async overview(period: ProductAnalyticsPeriod): Promise<ProductAnalyticsOverview> {
     const since = reportingPeriodSince(period);
     const createdPeriod = since ? gte(subscriptions.createdAt, since) : undefined;
-    const populationFilter = this.populationFilter(population);
 
-    const [
-      funnelChain,
-      subscriptionRows,
-      identityRows,
-      recentJourneys,
-      subscriberActivity,
-      feedEngagement,
-    ] = await Promise.all([
-      this.orderedFunnel(since, population),
-      this.db
-        .select({
-          total: count(),
-          createdInPeriod: sql<number>`count(*) filter (where ${createdPeriod ?? sql`true`})::int`,
-          active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
-          pending: sql<number>`count(*) filter (where ${subscriptions.chatId} is null)::int`,
-          linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
-          feed: sql<number>`count(*) filter (where ${subscriptions.candidateId} is null)::int`,
-          cv: sql<number>`count(*) filter (where ${subscriptions.candidateId} is not null)::int`,
-          deactivated: sql<number>`count(*) filter (where not ${subscriptions.isActive} and ${subscriptions.chatId} is not null)::int`,
-          delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
-        })
-        .from(subscriptions)
-        .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
-        .where(populationFilter),
-      this.identityHealth(population),
-      this.recentJourneys(population),
-      this.subscriberActivity(population, since),
-      this.feedEngagement(since, population),
-    ]);
-
-    const [flow, channels, subscriberStates, deliverySummary, deliveryDaily, growth, retention] =
+    const [subscriptionRows, subscriberActivity, subscriberStates, deliverySummary, deliveryDaily] =
       await Promise.all([
-        this.periodFlow(since, population),
-        this.channels(since, population),
-        this.subscriberStates(population),
-        this.deliverySummary(since, population),
-        this.deliveryDaily(population),
-        this.growth(population),
-        this.retention(population),
+        this.db
+          .select({
+            total: count(),
+            createdInPeriod: sql<number>`count(*) filter (where ${createdPeriod ?? sql`true`})::int`,
+            active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
+            pending: sql<number>`count(*) filter (where ${subscriptions.chatId} is null)::int`,
+            linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
+            feed: sql<number>`count(*) filter (where ${subscriptions.candidateId} is null)::int`,
+            cv: sql<number>`count(*) filter (where ${subscriptions.candidateId} is not null)::int`,
+            deactivated: sql<number>`count(*) filter (where not ${subscriptions.isActive} and ${subscriptions.chatId} is not null)::int`,
+            delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
+          })
+          .from(subscriptions),
+        this.subscriberActivity(since),
+        this.subscriberStates(),
+        this.deliverySummary(since),
+        this.deliveryDaily(),
       ]);
 
     const subscriptionsRow = subscriptionRows[0];
@@ -120,11 +161,6 @@ export class ProductAnalyticsService {
     return {
       generatedAt: new Date(),
       period,
-      population,
-      growth,
-      retention,
-      funnel: funnelChain.steps,
-      funnelBypass: funnelChain.bypass,
       subscriptions: {
         total: subscriptionsRow?.total ?? 0,
         createdInPeriod: subscriptionsRow?.createdInPeriod ?? 0,
@@ -137,35 +173,10 @@ export class ProductAnalyticsService {
         delivered,
         linkedWithoutDelivery: Math.max(linked - delivered, 0),
       },
-      flow: { ...flow, joined: subscriptionsRow?.createdInPeriod ?? 0 },
-      channels,
-      identity: identityRows,
-      recentJourneys,
       subscriberActivity,
-      feedEngagement,
       subscriberStates,
-      delivery: { ...deliverySummary, daily: deliveryDaily, unsubscribed: flow.churned },
+      delivery: { ...deliverySummary, daily: deliveryDaily },
     };
-  }
-
-  async updateJourney(
-    id: string,
-    input: UpdateAnalyticsJourneyDto,
-  ): Promise<AnalyticsJourneyClassification | null> {
-    const cohortId = input.cohortId === undefined ? undefined : input.cohortId?.trim() || null;
-    const [updated] = await this.db
-      .update(analyticsJourneys)
-      .set({
-        isTest: input.isTest,
-        ...(cohortId === undefined ? {} : { cohortId }),
-      })
-      .where(eq(analyticsJourneys.id, id))
-      .returning({
-        id: analyticsJourneys.id,
-        isTest: analyticsJourneys.isTest,
-        cohortId: analyticsJourneys.cohortId,
-      });
-    return updated ?? null;
   }
 
   async people(
@@ -184,34 +195,17 @@ export class ProductAnalyticsService {
     const limit = Math.min(input.limit ?? CRM_PEOPLE_LIMIT, CRM_PEOPLE_LIMIT);
     const offset = Math.max(input.offset, 0);
     const query = input.q?.trim().toLowerCase().slice(0, 64) ?? "";
-    const orderBy =
-      input.sort === "first_known"
-        ? sql`first_known_at ASC, id ASC`
-        : input.sort === "clicks"
-          ? sql`(feed_clicks + telegram_clicks) DESC, id ASC`
-          : input.sort === "at_risk"
-            ? sql`(state = 'at_risk') DESC, last_product_action_at DESC NULLS LAST, id ASC`
-            : sql`last_product_action_at DESC NULLS LAST, id ASC`;
-    const userActions = sql.join(
-      USER_ACTION_EVENTS.map((name) => sql`${name}`),
-      sql`, `,
-    );
-    const result = await this.db.execute<{
-      id: string | null;
+
+    // Who exists is a Postgres question: an account, or a subscription's person.
+    // The two converge on `users.id` once an account claims a subscription.
+    const spine = await this.db.execute<{
+      id: string;
       display_name: string | null;
       has_account: boolean;
       has_telegram: boolean;
       first_known_at: Date | string;
-      last_product_action_at: Date | string | null;
       subscriptions: number;
-      feed_clicks: number;
-      telegram_clicks: number;
-      state: "active" | "at_risk" | "no_subscription";
-      total: number;
-      known_people: number;
-      telegram_connected: number;
-      job_clickers: number;
-      at_risk: number;
+      has_active_subscription: boolean;
     }>(sql`
       WITH people_raw AS (
         SELECT
@@ -219,10 +213,7 @@ export class ProductAnalyticsService {
           true AS has_account,
           false AS has_telegram,
           u.created_at AS first_known_at,
-          COALESCE(
-            ip.display_name,
-            NULLIF(u.email, '')
-          ) AS display_name
+          COALESCE(ip.display_name, NULLIF(u.email, '')) AS display_name
         FROM users u
         LEFT JOIN (
           SELECT
@@ -245,834 +236,162 @@ export class ProductAnalyticsService {
         FROM subscriptions s
         GROUP BY s.person_id
       ),
-      people AS (
-        SELECT
-          id,
-          bool_or(has_account) AS has_account,
-          bool_or(has_telegram) AS has_telegram,
-          MIN(first_known_at) AS first_known_at,
-          MAX(display_name) AS display_name
-        FROM people_raw
-        GROUP BY id
-      ),
-      activity AS (
-        SELECT
-          j.person_id AS id,
-          MAX(e.occurred_at) FILTER (WHERE e.name IN (${userActions})) AS last_product_action_at,
-          COUNT(*) FILTER (
-            WHERE e.name = ${ANALYTICS_EVENTS.applyClicked}
-              AND e.occurred_at >= COALESCE(${since}, '-infinity'::timestamptz)
-              AND e.occurred_at < COALESCE(${until}, 'infinity'::timestamptz)
-          )::int AS feed_clicks,
-          COUNT(*) FILTER (
-            WHERE e.name = ${ANALYTICS_EVENTS.digestLinkClicked}
-              AND e.occurred_at >= COALESCE(${since}, '-infinity'::timestamptz)
-              AND e.occurred_at < COALESCE(${until}, 'infinity'::timestamptz)
-          )::int AS telegram_clicks
-        FROM analytics_journeys j
-        LEFT JOIN product_events e ON e.journey_id = j.id
-        GROUP BY j.person_id
-      ),
       subscriptions_by_person AS (
-        SELECT person_id AS id, COUNT(*)::int AS subscriptions, bool_or(is_active) AS has_active_subscription
+        SELECT person_id AS id, COUNT(*)::int AS subscriptions, bool_or(is_active) AS has_active
         FROM subscriptions
         GROUP BY person_id
-      ),
-      roster AS (
-        SELECT
-          p.id,
-          COALESCE(p.display_name, 'Unknown person') AS display_name,
-          p.has_account,
-          p.has_telegram,
-          p.first_known_at,
-          a.last_product_action_at,
-          COALESCE(s.subscriptions, 0)::int AS subscriptions,
-          COALESCE(a.feed_clicks, 0)::int AS feed_clicks,
-          COALESCE(a.telegram_clicks, 0)::int AS telegram_clicks,
-          CASE
-            WHEN COALESCE(s.subscriptions, 0) = 0 THEN 'no_subscription'
-            WHEN NOT COALESCE(s.has_active_subscription, false)
-              OR a.last_product_action_at IS NULL
-              OR (${since}::timestamptz IS NOT NULL AND a.last_product_action_at < ${since}) THEN 'at_risk'
-            ELSE 'active'
-          END AS state
-        FROM people p
-        LEFT JOIN activity a ON a.id = p.id
-        LEFT JOIN subscriptions_by_person s ON s.id = p.id
-      ),
-      filtered AS (
-        SELECT * FROM roster
-        WHERE ${query} = ''
-          OR id::text ILIKE ${`%${query}%`}
-          OR display_name ILIKE ${`%${query}%`}
-      ),
-      metrics AS (
-        SELECT
-          COUNT(*)::int AS known_people,
-          COUNT(*) FILTER (WHERE has_telegram)::int AS telegram_connected,
-          COUNT(*) FILTER (WHERE feed_clicks + telegram_clicks > 0)::int AS job_clickers,
-          COUNT(*) FILTER (WHERE state = 'at_risk')::int AS at_risk
-        FROM roster
-      ),
-      page AS (
-        SELECT filtered.*, COUNT(*) OVER()::int AS total
-        FROM filtered
-        ORDER BY ${orderBy}
-        LIMIT ${limit} OFFSET ${offset}
       )
-      SELECT page.*, metrics.*
-      FROM metrics
-      LEFT JOIN page ON true
-      ORDER BY ${orderBy}
+      SELECT
+        p.id::text AS id,
+        COALESCE(MAX(p.display_name), 'Unknown person') AS display_name,
+        bool_or(p.has_account) AS has_account,
+        bool_or(p.has_telegram) AS has_telegram,
+        MIN(p.first_known_at) AS first_known_at,
+        COALESCE(MAX(s.subscriptions), 0)::int AS subscriptions,
+        COALESCE(bool_or(s.has_active), false) AS has_active_subscription
+      FROM people_raw p
+      LEFT JOIN subscriptions_by_person s ON s.id = p.id
+      GROUP BY p.id
     `);
-    const first = result.rows[0];
+
+    const activity = await this.personActivity(
+      spine.rows.map((row) => row.id),
+      { since, until },
+    );
+
+    const roster = spine.rows.map((row) => {
+      const person = activity.get(row.id) ?? EMPTY_ACTIVITY;
+      const lastProductActionAt = person.lastActionAt;
+      const state: CrmPeoplePage["rows"][number]["state"] =
+        row.subscriptions === 0
+          ? "no_subscription"
+          : !row.has_active_subscription ||
+              lastProductActionAt === null ||
+              (since !== null && lastProductActionAt < since)
+            ? "at_risk"
+            : "active";
+      return {
+        id: row.id,
+        displayName: row.display_name ?? "Unknown person",
+        hasAccount: row.has_account,
+        hasTelegram: row.has_telegram,
+        firstKnownAt: new Date(row.first_known_at),
+        lastProductActionAt,
+        subscriptions: row.subscriptions,
+        feedClicks: person.feedClicks,
+        telegramClicks: person.digestClicks,
+        state,
+      };
+    });
+
+    const metrics = {
+      knownPeople: roster.length,
+      telegramConnected: roster.filter((row) => row.hasTelegram).length,
+      jobClickers: roster.filter((row) => row.feedClicks + row.telegramClicks > 0).length,
+      atRisk: roster.filter((row) => row.state === "at_risk").length,
+    };
+
+    const filtered =
+      query === ""
+        ? roster
+        : roster.filter(
+            (row) =>
+              row.id.toLowerCase().includes(query) || row.displayName.toLowerCase().includes(query),
+          );
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (input.sort === "first_known") {
+        return a.firstKnownAt.getTime() - b.firstKnownAt.getTime() || a.id.localeCompare(b.id);
+      }
+      if (input.sort === "clicks") {
+        return (
+          b.feedClicks + b.telegramClicks - (a.feedClicks + a.telegramClicks) ||
+          a.id.localeCompare(b.id)
+        );
+      }
+      if (input.sort === "at_risk") {
+        const risk = Number(b.state === "at_risk") - Number(a.state === "at_risk");
+        if (risk !== 0) return risk;
+      }
+      return (
+        (b.lastProductActionAt?.getTime() ?? -Infinity) -
+          (a.lastProductActionAt?.getTime() ?? -Infinity) || a.id.localeCompare(b.id)
+      );
+    });
+
     return {
-      metrics: {
-        knownPeople: Number(first?.known_people ?? 0),
-        telegramConnected: Number(first?.telegram_connected ?? 0),
-        jobClickers: Number(first?.job_clickers ?? 0),
-        atRisk: Number(first?.at_risk ?? 0),
-      },
-      rows: result.rows
-        .filter((row): row is typeof row & { id: string } => row.id !== null)
-        .map((row) => ({
-          id: row.id,
-          displayName: row.display_name ?? "Unknown person",
-          hasAccount: row.has_account,
-          hasTelegram: row.has_telegram,
-          firstKnownAt: new Date(row.first_known_at),
-          lastProductActionAt: row.last_product_action_at
-            ? new Date(row.last_product_action_at)
-            : null,
-          subscriptions: Number(row.subscriptions),
-          feedClicks: Number(row.feed_clicks),
-          telegramClicks: Number(row.telegram_clicks),
-          state: row.state,
-        })),
-      total: Number(first?.total ?? 0),
+      metrics,
+      rows: sorted.slice(offset, offset + limit),
+      total: sorted.length,
       offset,
       limit,
     };
   }
 
-  // Ordered chain anchored at landing_view: a journey counts at step N only if
-  // it also has every earlier step, so rows are monotonic by construction and
-  // "% of landing" is a real conversion. Journeys that subscribe without ever
-  // landing (feed, warm lens) are reported separately as `bypass`.
-  private async orderedFunnel(since: Date | null, population: ProductAnalyticsPopulation) {
-    const stepFlags = PRODUCT_FUNNEL_STEPS.map(
-      (name, index) => sql`bool_or(event.name = ${name}) AS ${sql.raw(`step_${index}`)}`,
-    );
-    const chainCounts = PRODUCT_FUNNEL_STEPS.map((_, index) => {
-      const required = sql.join(
-        PRODUCT_FUNNEL_STEPS.slice(0, index + 1).map((__, i) => sql.raw(`step_${i}`)),
-        sql` AND `,
-      );
-      return sql`COUNT(*) FILTER (WHERE ${required})::int AS ${sql.raw(`journeys_${index}`)}`;
-    });
-    const eventCounts = PRODUCT_FUNNEL_STEPS.map(
-      (_, index) => sql`SUM(${sql.raw(`events_${index}`)})::int AS ${sql.raw(`events_${index}`)}`,
-    );
-    const eventFlags = PRODUCT_FUNNEL_STEPS.map(
-      (name, index) =>
-        sql`COUNT(*) FILTER (WHERE event.name = ${name})::int AS ${sql.raw(`events_${index}`)}`,
-    );
-
-    const result = await this.db.execute<Record<string, number>>(sql`
-      WITH cohort AS (
-        SELECT id
-        FROM analytics_journeys
-        WHERE (${since}::timestamptz IS NULL OR created_at >= ${since})
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT is_test)
-            OR (${population} = 'test' AND is_test)
-          )
-      ),
-      journey_steps AS (
-        SELECT
-          event.journey_id,
-          ${sql.join(stepFlags, sql`, `)},
-          ${sql.join(eventFlags, sql`, `)}
-        FROM product_events event
-        JOIN cohort ON cohort.id = event.journey_id
-        WHERE event.name IN (${sql.join(
-          PRODUCT_FUNNEL_STEPS.map((name) => sql`${name}`),
-          sql`, `,
-        )})
-        GROUP BY event.journey_id
-      )
-      SELECT
-        ${sql.join(chainCounts, sql`, `)},
-        ${sql.join(eventCounts, sql`, `)},
-        COUNT(*) FILTER (WHERE NOT step_0)::int AS bypass
-      FROM journey_steps
-    `);
-    const row = result.rows[0] ?? {};
-    return {
-      steps: PRODUCT_FUNNEL_STEPS.map((name, index) => ({
-        name,
-        events: Number(row[`events_${index}`] ?? 0),
-        journeys: Number(row[`journeys_${index}`] ?? 0),
-      })),
-      bypass: Number(row.bypass ?? 0),
-    };
-  }
-
-  // Feed clicks (#103) aren't part of the linear subscribe→digest chain — a
-  // visitor can tap a feed vacancy without ever subscribing — so this is a
-  // standalone KPI rather than another PRODUCT_FUNNEL_STEPS bar.
-  private async feedEngagement(
-    since: Date | null,
-    population: ProductAnalyticsPopulation,
-  ): Promise<ProductFeedEngagement> {
-    const result = await this.db.execute<{ journeys: number; events: number }>(sql`
-      SELECT
-        COUNT(DISTINCT event.journey_id)::int AS journeys,
-        COUNT(event.id)::int AS events
-      FROM product_events event
-      JOIN analytics_journeys journey ON journey.id = event.journey_id
-      WHERE event.name = ${ANALYTICS_EVENTS.applyClicked}
-        AND (${since}::timestamptz IS NULL OR journey.created_at >= ${since})
-        AND (
-          ${population} = 'all'
-          OR (${population} = 'production' AND NOT journey.is_test)
-          OR (${population} = 'test' AND journey.is_test)
-        )
-    `);
-    const row = result.rows[0];
-    return { journeys: Number(row?.journeys ?? 0), events: Number(row?.events ?? 0) };
-  }
-
-  // Movement inside the window, counted from the ledger rather than from
-  // subscription state: `activated`/`churned` are events, so a chat that linked
-  // and left in the same window shows up in both.
-  private async periodFlow(
-    since: Date | null,
-    population: ProductAnalyticsPopulation,
-  ): Promise<Omit<ProductPeriodFlow, "joined">> {
-    const result = await this.db.execute<{
-      activated: number;
-      digest_clicks: number;
-      feed_clicks: number;
-      churned: number;
-    }>(sql`
-      SELECT
-        COUNT(DISTINCT event.subscription_id) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.telegramLinked})::int AS activated,
-        COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.digestLinkClicked})::int AS digest_clicks,
-        COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.applyClicked})::int AS feed_clicks,
-        COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.unsubscribed})::int AS churned
-      FROM product_events event
-      JOIN analytics_journeys journey ON journey.id = event.journey_id
-      WHERE (${since}::timestamptz IS NULL OR event.occurred_at >= ${since})
-        AND (
-          ${population} = 'all'
-          OR (${population} = 'production' AND NOT journey.is_test)
-          OR (${population} = 'test' AND journey.is_test)
-        )
-    `);
-    const row = result.rows[0];
-    return {
-      activated: Number(row?.activated ?? 0),
-      digestClicks: Number(row?.digest_clicks ?? 0),
-      feedClicks: Number(row?.feed_clicks ?? 0),
-      churned: Number(row?.churned ?? 0),
-    };
-  }
-
-  // Lifecycle STATE per chat_id, all-time (not period-scoped): churned = every
-  // linked subscription deactivated; dormant = active but ≥3 digests landed in
-  // 14d with zero USER_ACTION_EVENTS in reply; active = the rest. Digests are
-  // matched to the chat's own subscriptions (never a shared journey's), so a
-  // narrow track's silence can't be padded by a sibling subscription's clicks.
-  private async subscriberStates(
-    population: ProductAnalyticsPopulation,
-  ): Promise<ProductSubscriberStates> {
+  // Active / dormant / churned per chat. The chat spine and `is_active` are
+  // domain state; "digests actually landed" is `sent_notifications`; "the person
+  // answered" is PostHog. Dormant is the only early-warning signal for churn
+  // this product has, so it is computed here rather than left to a saved query.
+  private async subscriberStates(): Promise<ProductSubscriberStates> {
     const dormantSince = new Date(Date.now() - DORMANT_WINDOW_DAYS * DAY_MS);
-    const userActionNames = sql.join(
-      USER_ACTION_EVENTS.map((name) => sql`${name}`),
-      sql`, `,
-    );
-    const result = await this.db.execute<{ active: number; dormant: number; churned: number }>(sql`
-      WITH chat_subs AS (
-        SELECT s.chat_id, s.id AS subscription_id, s.journey_id, s.is_active
-        FROM subscriptions s
-        JOIN analytics_journeys j ON j.id = s.journey_id
-        WHERE s.chat_id IS NOT NULL
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT j.is_test)
-            OR (${population} = 'test' AND j.is_test)
-          )
-      ),
-      chat_state AS (
-        SELECT chat_id, bool_or(is_active) AS has_active
-        FROM chat_subs
-        GROUP BY chat_id
-      ),
-      recent_digests AS (
-        SELECT cs.chat_id, COUNT(*)::int AS digests
-        FROM product_events e
-        JOIN chat_subs cs ON cs.subscription_id = e.subscription_id
-        WHERE e.name = ${ANALYTICS_EVENTS.digestSent}
-          AND e.occurred_at >= ${dormantSince}
-        GROUP BY cs.chat_id
-      ),
-      recent_actions AS (
-        SELECT DISTINCT cs.chat_id
-        FROM product_events e
-        JOIN chat_subs cs ON cs.journey_id = e.journey_id
-        WHERE e.name IN (${userActionNames})
-          AND e.occurred_at >= ${dormantSince}
-      )
-      SELECT
-        COUNT(*) FILTER (
-          WHERE cs2.has_active
-            AND NOT (COALESCE(rd.digests, 0) >= ${DORMANT_MIN_DIGESTS} AND ra.chat_id IS NULL)
-        )::int AS active,
-        COUNT(*) FILTER (
-          WHERE cs2.has_active
-            AND COALESCE(rd.digests, 0) >= ${DORMANT_MIN_DIGESTS}
-            AND ra.chat_id IS NULL
-        )::int AS dormant,
-        COUNT(*) FILTER (WHERE NOT cs2.has_active)::int AS churned
-      FROM chat_state cs2
-      LEFT JOIN recent_digests rd ON rd.chat_id = cs2.chat_id
-      LEFT JOIN recent_actions ra ON ra.chat_id = cs2.chat_id
-    `);
-    const row = result.rows[0];
-    return {
-      active: Number(row?.active ?? 0),
-      dormant: Number(row?.dormant ?? 0),
-      churned: Number(row?.churned ?? 0),
-    };
-  }
-
-  // Chats that reached a linked state, keyed by the FIRST link. Anchored on
-  // `subscriptions.linked_at` rather than the `telegram_linked` event: the
-  // event ledger only exists since analytics shipped, so the event would
-  // silently drop every older subscriber out of both growth and retention.
-  private linkedChatsCte(population: ProductAnalyticsPopulation) {
-    return sql`
-      SELECT s.chat_id, MIN(s.linked_at) AS anchor_at
-      FROM subscriptions s
-      JOIN analytics_journeys j ON j.id = s.journey_id
-      WHERE s.chat_id IS NOT NULL
-        AND s.linked_at IS NOT NULL
-        AND (
-          ${population} = 'all'
-          OR (${population} = 'production' AND NOT j.is_test)
-          OR (${population} = 'test' AND j.is_test)
-        )
-      GROUP BY s.chat_id
-    `;
-  }
-
-  // The north star: newly linked chats per ISO week (Postgres weeks start
-  // Monday). Buckets are generated so a zero week reads as a zero, not a gap.
-  private async growth(population: ProductAnalyticsPopulation): Promise<ProductGrowth> {
-    const result = await this.db.execute<{
-      week_start: string;
-      linked: number;
-      cumulative: number;
-      total_linked: number;
-    }>(sql`
-      WITH linked_chats AS (${this.linkedChatsCte(population)}),
-      buckets AS (
-        SELECT (date_trunc('week', now()) - (week_offset::text || ' weeks')::interval)::date AS week_start
-        FROM generate_series(0, ${GROWTH_WINDOW_WEEKS - 1}) AS week_offset
-      ),
-      per_week AS (
-        SELECT date_trunc('week', anchor_at)::date AS week_start, COUNT(*)::int AS linked
-        FROM linked_chats
-        GROUP BY 1
-      )
-      SELECT
-        to_char(buckets.week_start, 'YYYY-MM-DD') AS week_start,
-        COALESCE(per_week.linked, 0)::int AS linked,
-        (
-          SELECT COUNT(*)
-          FROM linked_chats lc
-          WHERE lc.anchor_at < buckets.week_start + interval '7 days'
-        )::int AS cumulative,
-        (SELECT COUNT(*) FROM linked_chats)::int AS total_linked
-      FROM buckets
-      LEFT JOIN per_week ON per_week.week_start = buckets.week_start
-      ORDER BY buckets.week_start
-    `);
-
-    const weeks = result.rows.map((row) => ({
-      weekStart: row.week_start,
-      linked: Number(row.linked),
-      cumulative: Number(row.cumulative),
-    }));
-    return {
-      weeks,
-      current: weeks.at(-1)?.linked ?? 0,
-      previous: weeks.at(-2)?.linked ?? 0,
-      totalLinked: Number(result.rows[0]?.total_linked ?? 0),
-    };
-  }
-
-  // Weekly cohorts of linked chats vs. whether they acted again. The action
-  // join goes through journey OR subscription, matching how `lastActionAt` is
-  // resolved — otherwise a digest tap and a landing visit land in different
-  // cohorts for the same person.
-  private async retention(population: ProductAnalyticsPopulation): Promise<ProductRetention> {
-    const userActionNames = sql.join(
-      USER_ACTION_EVENTS.map((name) => sql`${name}`),
-      sql`, `,
-    );
-    const returnedColumns = Array.from(
-      { length: RETENTION_WINDOW_WEEKS },
-      (_, offset) =>
-        sql`COUNT(DISTINCT o.chat_id) FILTER (WHERE o.week_offset = ${offset})::int AS ${sql.raw(
-          `returned_${offset}`,
-        )}`,
-    );
-
-    const result = await this.db.execute<Record<string, string | number>>(sql`
-      WITH linked_chats AS (${this.linkedChatsCte(population)}),
-      cohorts AS (
-        SELECT chat_id, anchor_at, date_trunc('week', anchor_at)::date AS week_start
-        FROM linked_chats
-        WHERE anchor_at >= date_trunc('week', now()) - (${RETENTION_WINDOW_WEEKS - 1}::text || ' weeks')::interval
-      ),
-      chat_subs AS (
-        SELECT s.chat_id, s.id AS subscription_id, s.journey_id
-        FROM subscriptions s
-        WHERE s.chat_id IN (SELECT chat_id FROM cohorts)
-      ),
-      actions AS (
-        SELECT DISTINCT cs.chat_id, e.occurred_at
-        FROM product_events e
-        JOIN chat_subs cs
-          ON cs.journey_id = e.journey_id
-          OR cs.subscription_id = e.subscription_id
-        WHERE e.name IN (${userActionNames})
-      ),
-      offsets AS (
-        SELECT
-          c.chat_id,
-          FLOOR(EXTRACT(EPOCH FROM (a.occurred_at - c.anchor_at)) / 604800)::int AS week_offset
-        FROM cohorts c
-        JOIN actions a ON a.chat_id = c.chat_id
-        WHERE a.occurred_at >= c.anchor_at
-      )
-      SELECT
-        to_char(c.week_start, 'YYYY-MM-DD') AS week_start,
-        COUNT(DISTINCT c.chat_id)::int AS size,
-        ${sql.join(returnedColumns, sql`, `)}
-      FROM cohorts c
-      LEFT JOIN offsets o ON o.chat_id = c.chat_id
-      GROUP BY c.week_start
-      ORDER BY c.week_start
-    `);
-
-    return {
-      windowWeeks: RETENTION_WINDOW_WEEKS,
-      cohorts: result.rows.map((row) => ({
-        weekStart: String(row.week_start),
-        size: Number(row.size),
-        returned: Array.from({ length: RETENTION_WINDOW_WEEKS }, (_, offset) =>
-          Number(row[`returned_${offset}`] ?? 0),
-        ),
-      })),
-    };
-  }
-
-  // System health (our pipeline, not user behavior): what got sent and what
-  // failed, period-scoped. `messagesPerChatPerDay` is the churn-risk number —
-  // "all" falls back to the span since the earliest scoped digest.
-  private async deliverySummary(
-    since: Date | null,
-    population: ProductAnalyticsPopulation,
-  ): Promise<Omit<ProductDeliveryHealth, "daily" | "unsubscribed">> {
-    const result = await this.db.execute<{
-      digests_sent: number;
-      chats_reached: number;
-      earliest_at: string | null;
-    }>(sql`
-      WITH digests AS (
-        SELECT e.occurred_at, s.chat_id
-        FROM product_events e
-        JOIN subscriptions s ON s.id = e.subscription_id
-        JOIN analytics_journeys j ON j.id = e.journey_id
-        WHERE e.name = ${ANALYTICS_EVENTS.digestSent}
-          AND (${since}::timestamptz IS NULL OR e.occurred_at >= ${since})
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT j.is_test)
-            OR (${population} = 'test' AND j.is_test)
-          )
-      )
-      SELECT
-        (SELECT COUNT(*) FROM digests)::int AS digests_sent,
-        (SELECT COUNT(DISTINCT chat_id) FROM digests)::int AS chats_reached,
-        (SELECT MIN(occurred_at) FROM digests) AS earliest_at
-    `);
-    const row = result.rows[0];
-    const digestsSent = Number(row?.digests_sent ?? 0);
-    const chatsReached = Number(row?.chats_reached ?? 0);
-    const earliestAt = row?.earliest_at ? new Date(row.earliest_at) : null;
-    const days = periodDaysFor(since, earliestAt);
-    return {
-      digestsSent,
-      chatsReached,
-      messagesPerChatPerDay: chatsReached > 0 && days > 0 ? digestsSent / (chatsReached * days) : 0,
-    };
-  }
-
-  // Fixed 7-day drill-down for the Delivery panel, independent of the page's
-  // period selector — a supplementary trend, not the headline number.
-  private async deliveryDaily(
-    population: ProductAnalyticsPopulation,
-  ): Promise<ProductDeliveryDay[]> {
-    const result = await this.db.execute<{
-      date: string;
+    const chats = await this.db.execute<{
+      chat_id: string;
+      has_active: boolean;
+      person_ids: string[];
       digests: number;
-      chats: number;
-      failures: number;
     }>(sql`
-      WITH buckets AS (
-        SELECT (date_trunc('day', now()) - (day_offset::text || ' days')::interval)::date AS day
-        FROM generate_series(0, ${DELIVERY_DAILY_WINDOW_DAYS - 1}) AS day_offset
-      ),
-      digests AS (
-        SELECT date_trunc('day', e.occurred_at)::date AS day, s.chat_id
-        FROM product_events e
-        JOIN subscriptions s ON s.id = e.subscription_id
-        JOIN analytics_journeys j ON j.id = e.journey_id
-        WHERE e.name = ${ANALYTICS_EVENTS.digestSent}
-          AND e.occurred_at >= now() - (${DELIVERY_DAILY_WINDOW_DAYS}::text || ' days')::interval
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT j.is_test)
-            OR (${population} = 'test' AND j.is_test)
-          )
-      ),
-      digest_counts AS (
-        SELECT day, COUNT(*)::int AS digests, COUNT(DISTINCT chat_id)::int AS chats
-        FROM digests
-        GROUP BY day
-      ),
-      failures AS (
-        SELECT date_trunc('day', e.occurred_at)::date AS day, COUNT(*)::int AS failures
-        FROM product_events e
-        JOIN analytics_journeys j ON j.id = e.journey_id
-        WHERE e.name = ${ANALYTICS_EVENTS.digestDeliveryFailed}
-          AND e.occurred_at >= now() - (${DELIVERY_DAILY_WINDOW_DAYS}::text || ' days')::interval
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT j.is_test)
-            OR (${population} = 'test' AND j.is_test)
-          )
-        GROUP BY day
+      WITH recent_digests AS (
+        SELECT s.chat_id, COUNT(*)::int AS digests
+        FROM (
+          SELECT sn.subscription_id, date_trunc('hour', sn.sent_at) AS send
+          FROM ${sentNotifications} sn
+          WHERE sn.sent_at >= ${dormantSince}
+          GROUP BY 1, 2
+        ) sends
+        JOIN ${subscriptions} s ON s.id = sends.subscription_id
+        WHERE s.chat_id IS NOT NULL
+        GROUP BY s.chat_id
       )
       SELECT
-        to_char(buckets.day, 'YYYY-MM-DD') AS date,
-        COALESCE(digest_counts.digests, 0)::int AS digests,
-        COALESCE(digest_counts.chats, 0)::int AS chats,
-        COALESCE(failures.failures, 0)::int AS failures
-      FROM buckets
-      LEFT JOIN digest_counts ON digest_counts.day = buckets.day
-      LEFT JOIN failures ON failures.day = buckets.day
-      ORDER BY buckets.day
-    `);
-    return result.rows.map((row) => {
-      const digests = Number(row.digests);
-      const chats = Number(row.chats);
-      return {
-        date: row.date,
-        digests,
-        chats,
-        perChat: chats > 0 ? digests / chats : 0,
-        failures: Number(row.failures),
-      };
-    });
-  }
-
-  // First-touch attribution: a journey's channel comes from the utm_source on
-  // its earliest landing event, falling back to that landing's referrer for the
-  // untagged third of arrivals. SQL groups by the raw pair; `resolveChannelSource`
-  // then folds domains into channels in TS, so several referrers (threads.com,
-  // threads.net, an in-app package name) collapse into one row. The period
-  // filters on the landing, not on journey creation — "who arrived in this
-  // window".
-  private async channels(
-    since: Date | null,
-    population: ProductAnalyticsPopulation,
-  ): Promise<ProductChannel[]> {
-    const result = await this.db.execute<{
-      source: string | null;
-      campaign: string | null;
-      referrer_domain: string | null;
-      landed: number;
-      subscribed: number;
-      activated: number;
-      digest_clicks: number;
-    }>(sql`
-      WITH first_touch AS (
-        SELECT
-          event.journey_id,
-          (ARRAY_AGG(NULLIF(event.properties->>'utm_source', '') ORDER BY event.occurred_at))[1] AS source,
-          (ARRAY_AGG(NULLIF(event.properties->>'utm_campaign', '') ORDER BY event.occurred_at))[1] AS campaign,
-          (ARRAY_AGG(NULLIF(event.properties->>'referrer_domain', '') ORDER BY event.occurred_at))[1] AS referrer_domain,
-          MIN(event.occurred_at) AS landed_at
-        FROM product_events event
-        WHERE event.name IN (${ANALYTICS_EVENTS.landingView}, ${ANALYTICS_EVENTS.landingCtaClicked})
-        GROUP BY event.journey_id
-      ),
-      scoped AS (
-        SELECT
-          first_touch.journey_id,
-          first_touch.source,
-          first_touch.campaign,
-          first_touch.referrer_domain
-        FROM first_touch
-        JOIN analytics_journeys journey ON journey.id = first_touch.journey_id
-        WHERE (${since}::timestamptz IS NULL OR first_touch.landed_at >= ${since})
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT journey.is_test)
-            OR (${population} = 'test' AND journey.is_test)
-          )
-      ),
-      per_journey AS (
-        SELECT
-          scoped.source,
-          scoped.campaign,
-          scoped.referrer_domain,
-          scoped.journey_id,
-          COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.subscriptionCreated}) > 0 AS subscribed,
-          COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.telegramLinked}) > 0 AS activated,
-          COUNT(*) FILTER (WHERE event.name = ${ANALYTICS_EVENTS.digestLinkClicked})::int AS digest_clicks
-        FROM scoped
-        LEFT JOIN product_events event ON event.journey_id = scoped.journey_id
-        GROUP BY scoped.source, scoped.campaign, scoped.referrer_domain, scoped.journey_id
-      )
-      SELECT
-        source,
-        campaign,
-        referrer_domain,
-        COUNT(*)::int AS landed,
-        COUNT(*) FILTER (WHERE subscribed)::int AS subscribed,
-        COUNT(*) FILTER (WHERE activated)::int AS activated,
-        COALESCE(SUM(digest_clicks), 0)::int AS digest_clicks
-      FROM per_journey
-      GROUP BY source, campaign, referrer_domain
+        s.chat_id AS chat_id,
+        bool_or(s.is_active) AS has_active,
+        array_agg(DISTINCT s.person_id::text) AS person_ids,
+        COALESCE(MAX(rd.digests), 0)::int AS digests
+      FROM ${subscriptions} s
+      LEFT JOIN recent_digests rd ON rd.chat_id = s.chat_id
+      WHERE s.chat_id IS NOT NULL
+      GROUP BY s.chat_id
     `);
 
-    const merged = new Map<string, ProductChannel>();
-    for (const row of result.rows) {
-      const channel = resolveChannelSource(row.source, row.referrer_domain);
-      const key = `${channel}|${row.campaign ?? ""}`;
-      const existing = merged.get(key);
-      const next: ProductChannel = existing ?? {
-        source: channel,
-        campaign: row.campaign,
-        landed: 0,
-        subscribed: 0,
-        activated: 0,
-        digestClicks: 0,
-      };
-      next.landed += Number(row.landed);
-      next.subscribed += Number(row.subscribed);
-      next.activated += Number(row.activated);
-      next.digestClicks += Number(row.digest_clicks);
-      merged.set(key, next);
+    const activity = await this.personActivity(
+      chats.rows.flatMap((row) => row.person_ids),
+      { since: dormantSince, until: null },
+    );
+
+    const states = { active: 0, dormant: 0, churned: 0 };
+    for (const row of chats.rows) {
+      if (!row.has_active) {
+        states.churned += 1;
+        continue;
+      }
+      const acted = row.person_ids.some(
+        (personId) => (activity.get(personId) ?? EMPTY_ACTIVITY).actedSince !== null,
+      );
+      if (!acted && row.digests >= DORMANT_MIN_DIGESTS) states.dormant += 1;
+      else states.active += 1;
     }
-
-    return [...merged.values()].sort(compareChannels);
+    return states;
   }
 
-  private async identityHealth(
-    population: ProductAnalyticsPopulation,
-  ): Promise<ProductIdentityHealth> {
-    const result = await this.db.execute<{
-      journeys_total: string;
-      browser_journeys: string;
-      server_journeys: string;
-      legacy_journeys: string;
-      account_linked_journeys: string;
-      multi_journey_users: string;
-      subscriptions_without_journey: string;
-      tracked_linked_without_event: string;
-      tracked_delivery_without_event: string;
-      multi_subscription_journeys: string;
-      pending_outbox_events: string;
-    }>(sql`
-      WITH selected_journeys AS (
-        SELECT id, origin
-        FROM analytics_journeys
-        WHERE ${population} = 'all'
-          OR (${population} = 'production' AND NOT is_test)
-          OR (${population} = 'test' AND is_test)
-      )
-      SELECT
-        (SELECT COUNT(*) FROM selected_journeys)::text AS journeys_total,
-        (SELECT COUNT(*) FROM selected_journeys WHERE origin = 'browser')::text AS browser_journeys,
-        (SELECT COUNT(*) FROM selected_journeys WHERE origin = 'server')::text AS server_journeys,
-        (SELECT COUNT(*) FROM selected_journeys WHERE origin = 'legacy_subscription')::text AS legacy_journeys,
-        (
-          SELECT COUNT(DISTINCT s.journey_id)
-          FROM subscriptions s
-          JOIN selected_journeys j ON j.id = s.journey_id
-          WHERE s.user_id IS NOT NULL
-        )::text AS account_linked_journeys,
-        (
-          SELECT COUNT(*) FROM (
-            SELECT s.user_id
-            FROM subscriptions s
-            JOIN selected_journeys j ON j.id = s.journey_id
-            WHERE s.user_id IS NOT NULL
-            GROUP BY s.user_id HAVING COUNT(DISTINCT s.journey_id) > 1
-          ) grouped
-        )::text AS multi_journey_users,
-        (
-          SELECT CASE WHEN ${population} = 'test' THEN 0 ELSE COUNT(*) END
-          FROM subscriptions WHERE journey_id IS NULL
-        )::text AS subscriptions_without_journey,
-        (
-          SELECT COUNT(*)
-          FROM subscriptions s
-          JOIN selected_journeys j ON j.id = s.journey_id
-          WHERE j.origin <> 'legacy_subscription'
-            AND s.chat_id IS NOT NULL
-            AND NOT EXISTS (
-              SELECT 1 FROM product_events e
-              WHERE e.subscription_id = s.id AND e.name = ${ANALYTICS_EVENTS.telegramLinked}
-            )
-            AND NOT EXISTS (
-              SELECT 1 FROM analytics_outbox o
-              WHERE o.subscription_id = s.id AND o.name = ${ANALYTICS_EVENTS.telegramLinked}
-            )
-        )::text AS tracked_linked_without_event,
-        (
-          SELECT COUNT(*)
-          FROM subscriptions s
-          JOIN selected_journeys j ON j.id = s.journey_id
-          WHERE j.origin <> 'legacy_subscription'
-            AND EXISTS (SELECT 1 FROM sent_notifications sn WHERE sn.subscription_id = s.id)
-            AND NOT EXISTS (
-              SELECT 1 FROM product_events e
-              WHERE e.subscription_id = s.id AND e.name = ${ANALYTICS_EVENTS.digestSent}
-            )
-            AND NOT EXISTS (
-              SELECT 1 FROM analytics_outbox o
-              WHERE o.subscription_id = s.id AND o.name = ${ANALYTICS_EVENTS.digestSent}
-            )
-            AND NOT EXISTS (
-              SELECT 1 FROM digest_deliveries d
-              WHERE d.subscription_id = s.id AND d.status = 'pending'
-            )
-        )::text AS tracked_delivery_without_event,
-        (
-          SELECT COUNT(*) FROM (
-            SELECT s.journey_id
-            FROM subscriptions s
-            JOIN selected_journeys j ON j.id = s.journey_id
-            GROUP BY s.journey_id HAVING COUNT(*) > 1
-          ) grouped
-        )::text AS multi_subscription_journeys,
-        (
-          SELECT COUNT(*)
-          FROM analytics_outbox o
-          JOIN selected_journeys j ON j.id = o.journey_id
-          WHERE o.processed_at IS NULL
-        )::text AS pending_outbox_events
-    `);
-    const row = result.rows[0];
-    return {
-      journeysTotal: Number(row?.journeys_total ?? 0),
-      browserJourneys: Number(row?.browser_journeys ?? 0),
-      serverJourneys: Number(row?.server_journeys ?? 0),
-      legacyJourneys: Number(row?.legacy_journeys ?? 0),
-      accountLinkedJourneys: Number(row?.account_linked_journeys ?? 0),
-      multiJourneyUsers: Number(row?.multi_journey_users ?? 0),
-      subscriptionsWithoutJourney: Number(row?.subscriptions_without_journey ?? 0),
-      trackedLinkedWithoutEvent: Number(row?.tracked_linked_without_event ?? 0),
-      trackedDeliveryWithoutEvent: Number(row?.tracked_delivery_without_event ?? 0),
-      multiSubscriptionJourneys: Number(row?.multi_subscription_journeys ?? 0),
-      pendingOutboxEvents: Number(row?.pending_outbox_events ?? 0),
-    };
-  }
-
-  private async recentJourneys(
-    population: ProductAnalyticsPopulation,
-  ): Promise<RecentProductJourney[]> {
-    const journeys = await this.db
-      .select({
-        id: analyticsJourneys.id,
-        origin: analyticsJourneys.origin,
-        isTest: analyticsJourneys.isTest,
-        cohortId: analyticsJourneys.cohortId,
-        createdAt: analyticsJourneys.createdAt,
-        lastSeenAt: analyticsJourneys.lastSeenAt,
-      })
-      .from(analyticsJourneys)
-      .where(this.populationFilter(population))
-      .orderBy(desc(analyticsJourneys.lastSeenAt))
-      .limit(RECENT_JOURNEY_LIMIT);
-    const ids = journeys.map(({ id }) => id);
-    if (ids.length === 0) return [];
-
-    const [subscriptionRows, eventRows] = await Promise.all([
-      this.db
-        .select({
-          journeyId: subscriptions.journeyId,
-          subscriptions: count(),
-          active: sql<number>`count(*) filter (where ${subscriptions.isActive})::int`,
-          linked: sql<number>`count(*) filter (where ${subscriptions.chatId} is not null)::int`,
-          delivered: sql<number>`count(*) filter (where exists (select 1 from ${sentNotifications} sn where sn.subscription_id = ${subscriptions.id}))::int`,
-        })
-        .from(subscriptions)
-        .where(inArray(subscriptions.journeyId, ids))
-        .groupBy(subscriptions.journeyId),
-      this.db
-        .select({
-          journeyId: productEvents.journeyId,
-          events: count(),
-          eventNames: sql<
-            string[]
-          >`array_agg(distinct ${productEvents.name} order by ${productEvents.name})`,
-          lastEventAt: sql<Date>`max(${productEvents.occurredAt})`,
-        })
-        .from(productEvents)
-        .where(inArray(productEvents.journeyId, ids))
-        .groupBy(productEvents.journeyId),
-    ]);
-
-    return journeys.map((journey) => {
-      const subscription = subscriptionRows.find((row) => row.journeyId === journey.id);
-      const event = eventRows.find((row) => row.journeyId === journey.id);
-      return {
-        ...journey,
-        subscriptions: subscription?.subscriptions ?? 0,
-        activeSubscriptions: subscription?.active ?? 0,
-        linkedSubscriptions: subscription?.linked ?? 0,
-        deliveredSubscriptions: subscription?.delivered ?? 0,
-        events: event?.events ?? 0,
-        eventNames: event?.eventNames ?? [],
-        lastEventAt: event?.lastEventAt ?? null,
-      };
-    });
-  }
-
-  // Per-chat_id funnel view: every linked subscriber's first signal, landing
-  // CTA, telegram_linked event (falling back to the subscription's own
-  // `linked_at` for pre-instrumentation links), and their subscriptions with a
-  // role-derived track label. Mirrors recentJourneys' batch-then-merge shape
-  // rather than one mega-join, since a subscriber can span several journeys.
-  private async subscriberActivity(
-    population: ProductAnalyticsPopulation,
-    since: Date | null,
-  ): Promise<SubscriberActivity[]> {
-    const populationFilter = this.populationFilter(population);
+  // One row per chat. Everything that says "who" comes from `subscriptions`;
+  // everything that says "what they did" comes from PostHog, keyed on the
+  // person — so two subscriptions on one chat can never double-count a tap.
+  private async subscriberActivity(since: Date | null): Promise<SubscriberActivity[]> {
     const subs = await this.db
       .select({
         id: subscriptions.id,
         chatId: subscriptions.chatId,
+        personId: subscriptions.personId,
         tgUsername: subscriptions.tgUsername,
         tgFirstName: subscriptions.tgFirstName,
         candidateId: subscriptions.candidateId,
@@ -1080,229 +399,29 @@ export class ProductAnalyticsService {
         deactivatedReason: subscriptions.deactivatedReason,
         createdAt: subscriptions.createdAt,
         linkedAt: subscriptions.linkedAt,
-        journeyId: subscriptions.journeyId,
         params: subscriptions.params,
       })
       .from(subscriptions)
-      .innerJoin(analyticsJourneys, eq(analyticsJourneys.id, subscriptions.journeyId))
-      .where(
-        populationFilter
-          ? and(isNotNull(subscriptions.chatId), populationFilter)
-          : isNotNull(subscriptions.chatId),
-      );
+      .where(isNotNull(subscriptions.chatId));
     if (subs.length === 0) return [];
 
-    const journeyIds = [...new Set(subs.map((row) => row.journeyId).filter(isNonNull))];
-    const subscriptionIds = subs.map((row) => row.id);
-    const roleIds = [...new Set(subs.flatMap((row) => asStringArray(row.params.roleIds)))];
-
     const dormantSince = new Date(Date.now() - DORMANT_WINDOW_DAYS * DAY_MS);
-    const [
-      firstEvents,
-      ctaEvents,
-      telegramEvents,
-      vacancyClickEvents,
-      recentDigestEvents,
-      roleNodes,
-      journeySubscriptionCounts,
-      feedClickEvents,
-      lastActionByJourneyRows,
-      lastActionBySubRows,
-      firstTouchRows,
-    ] = await Promise.all([
-      this.db
-        .select({
-          journeyId: productEvents.journeyId,
-          at: sql<Date>`min(${productEvents.occurredAt})`,
-        })
-        .from(productEvents)
-        .where(inArray(productEvents.journeyId, journeyIds))
-        .groupBy(productEvents.journeyId),
-      this.db
-        .select({
-          journeyId: productEvents.journeyId,
-          at: sql<Date>`min(${productEvents.occurredAt})`,
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.journeyId, journeyIds),
-            eq(productEvents.name, ANALYTICS_EVENTS.landingCtaClicked),
-          ),
-        )
-        .groupBy(productEvents.journeyId),
-      this.db
-        .select({
-          subscriptionId: productEvents.subscriptionId,
-          at: sql<Date>`min(${productEvents.occurredAt})`,
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.subscriptionId, subscriptionIds),
-            eq(productEvents.name, ANALYTICS_EVENTS.telegramLinked),
-          ),
-        )
-        .groupBy(productEvents.subscriptionId),
-      this.db
-        .select({
-          subscriptionId: productEvents.subscriptionId,
-          clicks: count(),
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.subscriptionId, subscriptionIds),
-            eq(productEvents.name, ANALYTICS_EVENTS.digestLinkClicked),
-          ),
-        )
-        .groupBy(productEvents.subscriptionId),
-      // Dormancy input: digests that actually landed recently — the same
-      // definition the subscriberStates tiles use, so the row badge and the
-      // headline numbers can never disagree.
-      this.db
-        .select({
-          subscriptionId: productEvents.subscriptionId,
-          digests: count(),
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.subscriptionId, subscriptionIds),
-            eq(productEvents.name, ANALYTICS_EVENTS.digestSent),
-            gte(productEvents.occurredAt, dormantSince),
-          ),
-        )
-        .groupBy(productEvents.subscriptionId),
+    const roleIds = [...new Set(subs.flatMap((row) => asStringArray(row.params.roleIds)))];
+    const [roleNodes, activity, recentDigests] = await Promise.all([
       roleIds.length > 0
         ? this.db
             .select({ id: nodes.id, name: nodes.canonicalName })
             .from(nodes)
-            .where(inArray(nodes.id, roleIds))
+            .where(sql`${nodes.id} in ${roleIds}`)
         : Promise.resolve([]),
-      // Unfiltered by population/chatId — this counts every subscription a
-      // journey has ever had, the denominator for the feed-click 1:1 guard.
-      this.db
-        .select({
-          journeyId: subscriptions.journeyId,
-          subscriptionCount: count(),
-        })
-        .from(subscriptions)
-        .where(inArray(subscriptions.journeyId, journeyIds))
-        .groupBy(subscriptions.journeyId),
-      this.db
-        .select({
-          journeyId: productEvents.journeyId,
-          clicks: count(),
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.journeyId, journeyIds),
-            eq(productEvents.name, ANALYTICS_EVENTS.applyClicked),
-          ),
-        )
-        .groupBy(productEvents.journeyId),
-      // "Last action" spans both attachment points: browsing events hang off the
-      // journey, digest/link events off the subscription. Take the newest of
-      // either, and only from USER_ACTION_EVENTS so our own digest sends never
-      // resurrect a silent subscriber.
-      this.db
-        .select({
-          journeyId: productEvents.journeyId,
-          at: sql<Date>`max(${productEvents.occurredAt})`,
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.journeyId, journeyIds),
-            inArray(productEvents.name, [...USER_ACTION_EVENTS]),
-          ),
-        )
-        .groupBy(productEvents.journeyId),
-      this.db
-        .select({
-          subscriptionId: productEvents.subscriptionId,
-          at: sql<Date>`max(${productEvents.occurredAt})`,
-        })
-        .from(productEvents)
-        .where(
-          and(
-            inArray(productEvents.subscriptionId, subscriptionIds),
-            inArray(productEvents.name, [...USER_ACTION_EVENTS]),
-          ),
-        )
-        .groupBy(productEvents.subscriptionId),
-      // First touch per journey — the same pair the Channels panel groups on, so
-      // a subscriber's row and the channel total can never disagree. Guarded on
-      // empty: unlike drizzle's inArray, a raw `IN ()` is a syntax error, and
-      // every subscription having a null journey_id is a real state.
-      journeyIds.length === 0
-        ? Promise.resolve({ rows: [] })
-        : this.db.execute<{
-            journey_id: string;
-            source: string | null;
-            referrer_domain: string | null;
-          }>(sql`
-        SELECT
-          event.journey_id,
-          (ARRAY_AGG(NULLIF(event.properties->>'utm_source', '') ORDER BY event.occurred_at))[1] AS source,
-          (ARRAY_AGG(NULLIF(event.properties->>'referrer_domain', '') ORDER BY event.occurred_at))[1] AS referrer_domain
-        FROM product_events event
-        WHERE event.journey_id IN (${sql.join(
-          journeyIds.map((id) => sql`${id}::uuid`),
-          sql`, `,
-        )})
-          AND event.name IN (${ANALYTICS_EVENTS.landingView}, ${ANALYTICS_EVENTS.landingCtaClicked})
-        GROUP BY event.journey_id
-      `),
+      this.personActivity([...new Set(subs.map((row) => row.personId))], {
+        since: null,
+        until: null,
+        actedSince: dormantSince,
+      }),
+      this.recentDigestsByChat(dormantSince),
     ]);
-
-    // node-postgres's driver returns raw `min(timestamptz)` aggregates as
-    // strings (drizzle only auto-maps real columns, not sql-tagged ones) —
-    // coerce to Date so downstream comparisons/getTime() calls are safe.
-    const firstEventByJourney = new Map(
-      firstEvents.map((row) => [row.journeyId, new Date(row.at)]),
-    );
-    const ctaByJourney = new Map(ctaEvents.map((row) => [row.journeyId, new Date(row.at)]));
-    const telegramLinkedBySub = new Map(
-      telegramEvents
-        .filter((row): row is { subscriptionId: string; at: Date } => row.subscriptionId !== null)
-        .map((row) => [row.subscriptionId, new Date(row.at)]),
-    );
-    const vacancyClicksBySub = new Map(
-      vacancyClickEvents
-        .filter(
-          (row): row is { subscriptionId: string; clicks: number } => row.subscriptionId !== null,
-        )
-        .map((row) => [row.subscriptionId, row.clicks]),
-    );
-    const recentDigestsBySub = new Map(
-      recentDigestEvents
-        .filter(
-          (row): row is { subscriptionId: string; digests: number } => row.subscriptionId !== null,
-        )
-        .map((row) => [row.subscriptionId, row.digests]),
-    );
     const roleNameById = new Map(roleNodes.map((node) => [node.id, node.name]));
-    const subscriptionCountByJourney = new Map(
-      journeySubscriptionCounts.map((row) => [row.journeyId, row.subscriptionCount]),
-    );
-    const feedClicksByJourney = new Map(feedClickEvents.map((row) => [row.journeyId, row.clicks]));
-    const lastActionByJourney = new Map(
-      lastActionByJourneyRows.map((row) => [row.journeyId, new Date(row.at)]),
-    );
-    const lastActionBySub = new Map(
-      lastActionBySubRows
-        .filter((row): row is { subscriptionId: string; at: Date } => row.subscriptionId !== null)
-        .map((row) => [row.subscriptionId, new Date(row.at)]),
-    );
-    const sourceByJourney = new Map(
-      firstTouchRows.rows.map((row) => [
-        row.journey_id,
-        resolveChannelSource(row.source, row.referrer_domain),
-      ]),
-    );
 
     const byChat = new Map<string, (typeof subs)[number][]>();
     for (const row of subs) {
@@ -1313,6 +432,9 @@ export class ProductAnalyticsService {
     }
 
     const rows: SubscriberActivity[] = [...byChat.entries()].map(([chatId, subRows]) => {
+      const people = [...new Set(subRows.map((row) => row.personId))].map(
+        (personId) => activity.get(personId) ?? EMPTY_ACTIVITY,
+      );
       const subscriptionSummaries: SubscriberSubscription[] = subRows.map((row) => ({
         id: row.id,
         isActive: row.isActive,
@@ -1320,60 +442,29 @@ export class ProductAnalyticsService {
         trackLabel: this.trackLabel(row.params, roleNameById),
         createdAt: row.createdAt,
       }));
-      const firstSeenAt = this.earliest(
-        subRows.map((row) => firstEventByJourney.get(row.journeyId ?? "") ?? null),
-      );
-      const ctaClickedAt = this.earliest(
-        subRows.map((row) => ctaByJourney.get(row.journeyId ?? "") ?? null),
-      );
-      const telegramLinkedAt = this.earliest(
-        subRows.map((row) => telegramLinkedBySub.get(row.id) ?? row.linkedAt),
-      );
-      const vacancyClicks = subRows.reduce(
-        (sum, row) => sum + (vacancyClicksBySub.get(row.id) ?? 0),
-        0,
-      );
-      // Feed clicks live on the journey, not the subscription — only roll one
-      // up to this subscriber when their journey has exactly one subscription,
-      // so a journey shared by several subscriptions never gets double-counted.
-      const feedClicks = subRows.reduce((sum, row) => {
-        const journeyId = row.journeyId;
-        if (!journeyId || subscriptionCountByJourney.get(journeyId) !== 1) return sum;
-        return sum + (feedClicksByJourney.get(journeyId) ?? 0);
-      }, 0);
-      // created_at is NOT NULL, so unlike the other timestamps this always
-      // resolves — the truthful "joined" date, independent of the ledger.
+      // created_at is NOT NULL, so unlike the analytics timestamps this always
+      // resolves — the truthful "joined" date, independent of any event store.
       const joinedAt = subRows.reduce(
         (min, row) => (row.createdAt < min ? row.createdAt : min),
         subRows[0].createdAt,
       );
-      const lastActionAt = this.latest([
-        ...subRows.map((row) => lastActionByJourney.get(row.journeyId ?? "") ?? null),
-        ...subRows.map((row) => lastActionBySub.get(row.id) ?? null),
-      ]);
-      const tgUsername = subRows.map((row) => row.tgUsername).find(isNonNull) ?? null;
-      const tgFirstName = subRows.map((row) => row.tgFirstName).find(isNonNull) ?? null;
+      const lastActionAt = this.latest(people.map((person) => person.lastActionAt));
       const isActive = subRows.some((row) => row.isActive);
-      const recentDigests = subRows.reduce(
-        (sum, row) => sum + (recentDigestsBySub.get(row.id) ?? 0),
-        0,
-      );
+      const recentDigestCount = recentDigests.get(chatId) ?? 0;
+      const acted = people.some((person) => person.actedSince !== null);
 
       return {
         chatId,
-        tgUsername,
-        tgFirstName,
+        tgUsername: subRows.map((row) => row.tgUsername).find(isNonNull) ?? null,
+        tgFirstName: subRows.map((row) => row.tgFirstName).find(isNonNull) ?? null,
         joinedAt,
-        firstSeenAt,
-        ctaClickedAt,
-        telegramLinkedAt,
+        telegramLinkedAt: this.earliest(subRows.map((row) => row.linkedAt)),
         lastActionAt,
-        vacancyClicks,
-        feedClicks,
-        source:
-          subRows.map((row) => sourceByJourney.get(row.journeyId ?? "")).find(isNonNull) ?? null,
+        vacancyClicks: people.reduce((sum, person) => sum + person.digestClicks, 0),
+        feedClicks: people.reduce((sum, person) => sum + person.feedClicks, 0),
+        source: people.map((person) => person.source).find(isNonNull) ?? null,
         isActive,
-        status: this.subscriberStatus(subRows, isActive, recentDigests, lastActionAt, dormantSince),
+        status: this.subscriberStatus(subRows, isActive, recentDigestCount, acted),
         subscriptions: subscriptionSummaries,
       };
     });
@@ -1397,6 +488,152 @@ export class ProductAnalyticsService {
       .slice(0, SUBSCRIBER_ACTIVITY_LIMIT);
   }
 
+  // A digest is one send to one subscription. Rows land one per vacancy inside
+  // it, each with its own `sent_at`, and the schedule is hourly — so the hour
+  // is the send. Verified against `digest_sent` over every day the ledger ran.
+  private async recentDigestsByChat(since: Date): Promise<Map<string, number>> {
+    const result = await this.db.execute<{ chat_id: string; digests: number }>(sql`
+      SELECT s.chat_id AS chat_id, COUNT(*)::int AS digests
+      FROM (
+        SELECT sn.subscription_id, date_trunc('hour', sn.sent_at) AS send
+        FROM ${sentNotifications} sn
+        WHERE sn.sent_at >= ${since}
+        GROUP BY 1, 2
+      ) sends
+      JOIN ${subscriptions} s ON s.id = sends.subscription_id
+      WHERE s.chat_id IS NOT NULL
+      GROUP BY s.chat_id
+    `);
+    return new Map(result.rows.map((row) => [row.chat_id, Number(row.digests)]));
+  }
+
+  private async deliverySummary(since: Date | null): Promise<Omit<ProductDeliveryHealth, "daily">> {
+    const result = await this.db.execute<{
+      digests_sent: number;
+      chats_reached: number;
+      earliest_at: string | null;
+    }>(sql`
+      WITH sends AS (
+        SELECT s.chat_id, MIN(sn.sent_at) AS sent_at
+        FROM ${sentNotifications} sn
+        JOIN ${subscriptions} s ON s.id = sn.subscription_id
+        WHERE s.chat_id IS NOT NULL
+          AND (${since}::timestamptz IS NULL OR sn.sent_at >= ${since})
+        GROUP BY s.chat_id, sn.subscription_id, date_trunc('hour', sn.sent_at)
+      )
+      SELECT
+        (SELECT COUNT(*) FROM sends)::int AS digests_sent,
+        (SELECT COUNT(DISTINCT chat_id) FROM sends)::int AS chats_reached,
+        (SELECT MIN(sent_at) FROM sends) AS earliest_at
+    `);
+    const row = result.rows[0];
+    const digestsSent = Number(row?.digests_sent ?? 0);
+    const chatsReached = Number(row?.chats_reached ?? 0);
+    const days = periodDaysFor(since, row?.earliest_at ? new Date(row.earliest_at) : null);
+    return {
+      digestsSent,
+      chatsReached,
+      messagesPerChatPerDay: chatsReached > 0 && days > 0 ? digestsSent / (chatsReached * days) : 0,
+    };
+  }
+
+  // Fixed 7-day drill-down for the Delivery panel, independent of the page's
+  // period selector — a supplementary trend, not the headline number.
+  private async deliveryDaily(): Promise<ProductDeliveryDay[]> {
+    const result = await this.db.execute<{ date: string; digests: number; chats: number }>(sql`
+      WITH buckets AS (
+        SELECT (date_trunc('day', now()) - (day_offset::text || ' days')::interval)::date AS day
+        FROM generate_series(0, ${DELIVERY_DAILY_WINDOW_DAYS - 1}) AS day_offset
+      ),
+      sends AS (
+        SELECT date_trunc('day', MIN(sn.sent_at))::date AS day, s.chat_id
+        FROM ${sentNotifications} sn
+        JOIN ${subscriptions} s ON s.id = sn.subscription_id
+        WHERE s.chat_id IS NOT NULL
+          AND sn.sent_at >= now() - (${DELIVERY_DAILY_WINDOW_DAYS}::text || ' days')::interval
+        GROUP BY s.chat_id, sn.subscription_id, date_trunc('hour', sn.sent_at)
+      ),
+      send_counts AS (
+        SELECT day, COUNT(*)::int AS digests, COUNT(DISTINCT chat_id)::int AS chats
+        FROM sends GROUP BY day
+      )
+      SELECT
+        to_char(buckets.day, 'YYYY-MM-DD') AS date,
+        COALESCE(send_counts.digests, 0)::int AS digests,
+        COALESCE(send_counts.chats, 0)::int AS chats
+      FROM buckets
+      LEFT JOIN send_counts ON send_counts.day = buckets.day
+      ORDER BY buckets.day
+    `);
+    return result.rows.map((row) => {
+      const digests = Number(row.digests);
+      const chats = Number(row.chats);
+      return { date: row.date, digests, chats, perChat: chats > 0 ? digests / chats : 0 };
+    });
+  }
+
+  // One PostHog round trip for every person the caller needs. Grouping is on
+  // PostHog's `person_id` rather than our id directly: an account that claimed a
+  // Telegram subscription — or a browser journey aliased into a subscriber — is
+  // one person there under several distinct ids, and only the merged view sees
+  // all of their events.
+  private async personActivity(
+    personIds: string[],
+    window: { since: Date | null; until: Date | null; actedSince?: Date },
+  ): Promise<Map<string, PersonActivity>> {
+    const ids = [...new Set(personIds.filter((id) => id.length > 0))];
+    if (ids.length === 0 || !this.posthog.isAvailable()) return new Map();
+
+    const idList = ids.map((id) => `'${escapeHogql(id)}'`).join(", ");
+    const clickWindow = [
+      window.since ? `AND e.timestamp >= toDateTime('${hogTime(window.since)}', 'UTC')` : "",
+      window.until ? `AND e.timestamp < toDateTime('${hogTime(window.until)}', 'UTC')` : "",
+    ].join(" ");
+    const actedSince = window.actedSince ?? window.since;
+    const actedClause = actedSince
+      ? `AND e.timestamp >= toDateTime('${hogTime(actedSince)}', 'UTC')`
+      : "";
+
+    const rows = await this.posthog.query(`
+      WITH anchors AS (
+          SELECT distinct_id AS person_key, argMax(person_id, timestamp) AS merged_id
+          FROM events
+          WHERE distinct_id IN (${idList})
+            AND timestamp >= now() - INTERVAL ${PERSON_HISTORY_DAYS} DAY
+          GROUP BY distinct_id
+      )
+      SELECT
+          a.person_key AS person_key,
+          maxIf(e.timestamp, ${IS_PERSON_ACTION}) AS last_action_at,
+          maxIf(e.timestamp, ${IS_PERSON_ACTION} ${actedClause}) AS acted_since,
+          countIf(${FEED_CLICK} ${clickWindow}) AS feed_clicks,
+          countIf(${DIGEST_CLICK} ${clickWindow}) AS digest_clicks,
+          argMinIf(
+            coalesce(nullIf(toString(e.properties.$referring_domain), ''), 'direct'),
+            e.timestamp,
+            e.event = '$pageview'
+          ) AS referrer
+      FROM events e
+      INNER JOIN anchors a ON e.person_id = a.merged_id
+      WHERE e.timestamp >= now() - INTERVAL ${PERSON_HISTORY_DAYS} DAY
+      GROUP BY a.person_key
+    `);
+    if (rows === null) return new Map();
+
+    return new Map(
+      rows.map((row: PostHogQueryRow) => [
+        toKey(row.person_key),
+        {
+          lastActionAt: toDateOrNull(row.last_action_at),
+          feedClicks: toNumber(row.feed_clicks),
+          digestClicks: toNumber(row.digest_clicks),
+          actedSince: toDateOrNull(row.acted_since),
+          source: resolveChannelSource(null, asReferrer(row.referrer)),
+        },
+      ]),
+    );
+  }
+
   // Same lifecycle rules as the subscriberStates tiles, applied per chat.
   // Blocked outranks churned: both mean "no active subs", but blocked was not
   // the user pressing unsubscribe — it's the bot being cut off.
@@ -1404,8 +641,7 @@ export class ProductAnalyticsService {
     subRows: Array<{ deactivatedReason: string | null }>,
     isActive: boolean,
     recentDigests: number,
-    lastActionAt: Date | null,
-    dormantSince: Date,
+    actedRecently: boolean,
   ): SubscriberStatus {
     if (!isActive) {
       const blocked = subRows.some(
@@ -1413,8 +649,7 @@ export class ProductAnalyticsService {
       );
       return blocked ? "blocked" : "churned";
     }
-    const silent = lastActionAt === null || lastActionAt < dormantSince;
-    if (silent && recentDigests >= DORMANT_MIN_DIGESTS) return "dormant";
+    if (!actedRecently && recentDigests >= DORMANT_MIN_DIGESTS) return "dormant";
     return "active";
   }
 
@@ -1436,10 +671,15 @@ export class ProductAnalyticsService {
     if (valid.length === 0) return null;
     return valid.reduce((max, date) => (date > max ? date : max));
   }
+}
 
-  private populationFilter(population: ProductAnalyticsPopulation) {
-    if (population === "production") return eq(analyticsJourneys.isTest, false);
-    if (population === "test") return eq(analyticsJourneys.isTest, true);
-    return undefined;
-  }
+function hogTime(date: Date): string {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+// `direct` is the query's own stand-in for "no referrer"; the channel resolver
+// wants the absence, not the word, so it can report null rather than invent one.
+function asReferrer(value: unknown): string | null {
+  const referrer = typeof value === "string" ? value : "";
+  return referrer === "" || referrer === "direct" ? null : referrer;
 }
