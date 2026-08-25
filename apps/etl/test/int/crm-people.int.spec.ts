@@ -43,7 +43,7 @@ afterAll(async () => {
 beforeEach(async () => {
   postHogRows = [];
   await db.execute(
-    sql`TRUNCATE TABLE sent_notifications, product_events, analytics_outbox, analytics_journeys, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE sent_notifications, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
   );
 });
 

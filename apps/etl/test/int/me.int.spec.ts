@@ -28,13 +28,13 @@ const {
 
 let db: DrizzleDB;
 let pool: Pool;
-const subscriptionReactivated = jest.fn();
-const unsubscribed = jest.fn();
+// The lifecycle verb PostHog receives; the ledger that used to shadow it is gone.
+const subscriptionDeactivated = jest.fn();
 
 function makeService(): MeService {
-  const analytics = { subscriptionReactivated, unsubscribed } as never;
+  const posthog = Object.assign(dormantPostHog(), { subscriptionDeactivated });
   const criteria = new SubscriptionCriteriaService(db, new NodeSlugResolver(db));
-  return new MeService(db, criteria, analytics, dormantPostHog());
+  return new MeService(db, criteria, {} as never, posthog);
 }
 
 async function seedUser(): Promise<string> {
@@ -131,8 +131,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  subscriptionReactivated.mockReset();
-  unsubscribed.mockReset();
+  subscriptionDeactivated.mockReset();
   await db.execute(
     sql`TRUNCATE TABLE sent_notifications, subscriptions, user_cvs, auth_identities, users RESTART IDENTITY CASCADE`,
   );
@@ -152,10 +151,7 @@ describe("MeService.setSubscriptionActive (integration)", () => {
       .where(eq(subscriptions.id, subscriptionId));
     expect(paused.isActive).toBe(false);
     expect(paused.deactivatedAt).toBeInstanceOf(Date);
-    expect(unsubscribed).toHaveBeenCalledWith({
-      method: "account",
-      subscriptionId,
-    });
+    expect(subscriptionDeactivated).toHaveBeenCalledWith(expect.any(String), "user");
 
     await expect(me.setSubscriptionActive(userId, subscriptionId, true)).resolves.toBe(true);
     const [resumed] = await db
@@ -164,7 +160,6 @@ describe("MeService.setSubscriptionActive (integration)", () => {
       .where(eq(subscriptions.id, subscriptionId));
     expect(resumed.isActive).toBe(true);
     expect(resumed.deactivatedAt).toBeNull();
-    expect(subscriptionReactivated).toHaveBeenCalledWith(subscriptionId);
   });
 
   it("treats an already-applied state as success without duplicating events", async () => {
@@ -173,8 +168,7 @@ describe("MeService.setSubscriptionActive (integration)", () => {
     const subscriptionId = await seedSubscription({ userId });
 
     await expect(me.setSubscriptionActive(userId, subscriptionId, true)).resolves.toBe(true);
-    expect(subscriptionReactivated).not.toHaveBeenCalled();
-    expect(unsubscribed).not.toHaveBeenCalled();
+    expect(subscriptionDeactivated).not.toHaveBeenCalled();
   });
 });
 

@@ -24,9 +24,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  await db.execute(
-    sql`TRUNCATE TABLE sent_notifications, subscriptions, analytics_outbox, analytics_journeys RESTART IDENTITY CASCADE`,
-  );
+  await db.execute(sql`TRUNCATE TABLE sent_notifications, subscriptions RESTART IDENTITY CASCADE`);
   await truncateAll(db);
 });
 

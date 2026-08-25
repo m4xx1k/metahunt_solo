@@ -10,9 +10,11 @@ import {
   type PostHogQueryRow,
 } from "../../src/platform/analytics/posthog-query.client";
 
-import { makeTestDb } from "./db";
+import { makeTestDb, truncateAll } from "./db";
+import { insertVacancyWithGroup } from "./vacancy-fixture";
 
-const { sentNotifications, subscriptions, vacancies } = schema;
+const { rssIngests, rssRecords, sentNotifications, sources, subscriptions } = schema;
+const SEEDED_AT = new Date("2026-01-01T00:00:00.000Z");
 
 const PERSON_A = "11111111-1111-1111-1111-111111111111";
 const PERSON_B = "22222222-2222-2222-2222-222222222222";
@@ -51,18 +53,45 @@ function person(
   };
 }
 
-async function seedVacancy(id: string): Promise<void> {
-  await db
-    .insert(vacancies)
-    .values({ id, title: `vacancy ${id}`, sourceUrl: `https://example.test/${id}` })
-    .onConflictDoNothing();
+let sequence = 0;
+
+async function seedVacancy(): Promise<string> {
+  const suffix = ++sequence;
+  const [source] = await db
+    .insert(sources)
+    .values({ code: `pa-${suffix}`, displayName: "Fixture", baseUrl: "https://example.test" })
+    .returning({ id: sources.id });
+  const [ingest] = await db
+    .insert(rssIngests)
+    .values({ sourceId: source.id, triggeredBy: "fixture", startedAt: SEEDED_AT })
+    .returning({ id: rssIngests.id });
+  const [record] = await db
+    .insert(rssRecords)
+    .values({
+      sourceId: source.id,
+      rssIngestId: ingest.id,
+      externalId: `pa-${suffix}`,
+      hash: `pa-${suffix}`,
+      title: "Fixture Backend Engineer",
+      link: "https://example.test/job",
+      publishedAt: SEEDED_AT,
+    })
+    .returning({ id: rssRecords.id });
+  return insertVacancyWithGroup(db, {
+    sourceId: source.id,
+    externalId: `pa-${suffix}`,
+    lastRssRecordId: record.id,
+    title: "Fixture Backend Engineer",
+    loadedAt: SEEDED_AT,
+    updatedAt: SEEDED_AT,
+  });
 }
 
 // A digest is one send: several vacancy rows written inside the same hour for
 // one subscription. Spread the rows by seconds, the way a real send does.
-async function seedDigest(subscriptionId: string, at: Date, vacancyIds: string[]): Promise<void> {
-  for (const [index, vacancyId] of vacancyIds.entries()) {
-    await seedVacancy(vacancyId);
+async function seedDigest(subscriptionId: string, at: Date, count: number): Promise<void> {
+  for (let index = 0; index < count; index += 1) {
+    const vacancyId = await seedVacancy();
     await db.insert(sentNotifications).values({
       subscriptionId,
       vacancyId,
@@ -97,8 +126,9 @@ beforeEach(async () => {
   postHogRows = [];
   postHogAvailable = true;
   await db.execute(
-    sql`TRUNCATE TABLE sent_notifications, product_events, analytics_outbox, analytics_journeys, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE sent_notifications, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
   );
+  await truncateAll(db);
 });
 
 describe("subscriber roster", () => {
@@ -198,8 +228,8 @@ describe("subscriber states", () => {
 
     for (const day of [1, 2, 3]) {
       const at = new Date(Date.now() - day * DAY);
-      await seedDigest(dormant.id, at, [`d-${day}-1`, `d-${day}-2`]);
-      await seedDigest(answered.id, at, [`a-${day}-1`]);
+      await seedDigest(dormant.id, at, 2);
+      await seedDigest(answered.id, at, 1);
     }
     postHogRows = [person(PERSON_B, { acted_since: new Date(Date.now() - 2 * DAY).toISOString() })];
 
@@ -216,7 +246,7 @@ describe("subscriber states", () => {
       .insert(subscriptions)
       .values({ personId: PERSON_A, chatId: CHAT_A, params: {}, isActive: true })
       .returning({ id: subscriptions.id });
-    await seedDigest(quiet.id, new Date(Date.now() - DAY), ["one"]);
+    await seedDigest(quiet.id, new Date(Date.now() - DAY), 1);
 
     const overview = await service.overview("all");
 
@@ -263,8 +293,8 @@ describe("delivery health", () => {
       .returning({ id: subscriptions.id });
     const morning = new Date(Date.now() - 4 * 60 * 60 * 1000);
     const later = new Date(morning.getTime() + 2 * 60 * 60 * 1000);
-    await seedDigest(sub.id, morning, ["v1", "v2", "v3", "v4"]);
-    await seedDigest(sub.id, later, ["v5", "v6"]);
+    await seedDigest(sub.id, morning, 4);
+    await seedDigest(sub.id, later, 2);
 
     const overview = await service.overview("all");
 
@@ -278,7 +308,7 @@ describe("delivery health", () => {
       .insert(subscriptions)
       .values({ personId: PERSON_A, chatId: CHAT_A, params: {}, isActive: true })
       .returning({ id: subscriptions.id });
-    await seedDigest(sub.id, new Date(Date.now() - 2 * DAY), ["v1"]);
+    await seedDigest(sub.id, new Date(Date.now() - 2 * DAY), 1);
 
     const overview = await service.overview("all");
 
