@@ -9,7 +9,6 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 
-import { analyticsJourneys } from "./analytics-journeys";
 import { users } from "./users";
 
 // A saved vacancy query + the Telegram chat to deliver digests to. `id` is the
@@ -31,9 +30,9 @@ export const subscriptions = pgTable(
     candidateId: text("candidate_id"),
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     personId: uuid("person_id").notNull().defaultRandom(),
-    journeyId: uuid("journey_id").references(() => analyticsJourneys.id, {
-      onDelete: "set null",
-    }),
+    // A browser journey id, kept after `analytics_journeys` was dropped: it is
+    // what ties an anonymous visit's `?j=` tap to this subscriber in PostHog.
+    journeyId: uuid("journey_id"),
     name: text("name"),
     params: jsonb("params").notNull().$type<Record<string, unknown>>(),
     isActive: boolean("is_active").notNull().default(false),

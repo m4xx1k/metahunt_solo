@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -69,7 +69,7 @@ export class DigestService {
    * subscription-scoped), so a chat with overlapping subscriptions gets any
    * given vacancy at most once per run. Returns total new matched.
    */
-  async deliver(subscriptionId: string, evaluationId: string = randomUUID()): Promise<number> {
+  async deliver(subscriptionId: string): Promise<number> {
     const sub = await this.subscriptions.getActiveById(subscriptionId);
     if (!sub) return 0;
 
@@ -79,13 +79,6 @@ export class DigestService {
       !(await this.sentNotifications.hasCompletedDelivery(sub.id));
     const { items, total, label } = await this.matcher.matchNew(sub, sub.chatId);
     const profileType = sub.candidateId ? "cv" : "feed";
-    void this.analytics.digestEvaluated({
-      subscriptionId: sub.id,
-      matches: total,
-      isFirstDigest,
-      profileType,
-      evaluationId: `digest_evaluated:${evaluationId}`,
-    });
     if (total === 0) return 0;
 
     const remainingVacancies = pendingDelivery
@@ -133,16 +126,6 @@ export class DigestService {
         sentThisAttempt += page.vacancyIds.length;
       } catch (error) {
         const unreachable = isChatUnreachable(error);
-        void this.analytics.digestDeliveryFailed({
-          subscriptionId: sub.id,
-          vacancies: delivery.vacancies,
-          pages: delivery.pages,
-          failedPage: delivery.sentPages + pageIndex + 1,
-          deliveryId: delivery.id,
-          failureKind: unreachable ? "chat_unreachable" : "transient",
-          isFirstDigest: delivery.isFirstDigest,
-          profileType: delivery.profileType,
-        });
         // Safety net behind my_chat_member: enough consecutive bounces
         // deactivate the subscription instead of retrying it hourly forever.
         if (unreachable) void this.subscriptions.recordUnreachableDelivery(sub.id);

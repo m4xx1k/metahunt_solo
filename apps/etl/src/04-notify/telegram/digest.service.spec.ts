@@ -70,8 +70,6 @@ describe("DigestService", () => {
   const createDelivery = jest.fn();
   const record = jest.fn();
   const sendMessage = jest.fn();
-  const digestEvaluated = jest.fn();
-  const digestDeliveryFailed = jest.fn();
   const recordUnreachableDelivery = jest.fn();
   const clearUnreachable = jest.fn();
   const search = jest.fn();
@@ -92,8 +90,6 @@ describe("DigestService", () => {
     }));
     record.mockReset().mockResolvedValue(undefined);
     sendMessage.mockReset().mockResolvedValue(1);
-    digestEvaluated.mockReset();
-    digestDeliveryFailed.mockReset();
     recordUnreachableDelivery.mockReset().mockResolvedValue(undefined);
     clearUnreachable.mockReset().mockResolvedValue(undefined);
     search.mockReset().mockResolvedValue({ items: [], page: 1, pageSize: 50, total: 0 });
@@ -117,7 +113,7 @@ describe("DigestService", () => {
         { provide: TelegramService, useValue: { sendMessage } },
         {
           provide: AnalyticsService,
-          useValue: { digestEvaluated, digestDeliveryFailed },
+          useValue: {},
         },
         { provide: FeedService, useValue: { search } },
       ],
@@ -137,18 +133,9 @@ describe("DigestService", () => {
       getActiveById.mockResolvedValue(activeSub());
       matchNew.mockResolvedValue(digestMatch([], 0));
 
-      await expect(service.deliver("sub-1", "evaluation-1")).resolves.toBe(0);
+      await expect(service.deliver("sub-1")).resolves.toBe(0);
       expect(sendMessage).not.toHaveBeenCalled();
       expect(record).not.toHaveBeenCalled();
-      expect(digestEvaluated).toHaveBeenCalledWith(
-        expect.objectContaining({
-          subscriptionId: "sub-1",
-          matches: 0,
-          isFirstDigest: true,
-          profileType: "feed",
-          evaluationId: "digest_evaluated:evaluation-1",
-        }),
-      );
     });
 
     it("sends the page, then records its vacancies", async () => {
@@ -222,9 +209,6 @@ describe("DigestService", () => {
 
       await expect(service.deliver("sub-1")).resolves.toBe(1);
 
-      expect(digestEvaluated).toHaveBeenCalledWith(
-        expect.objectContaining({ isFirstDigest: false, profileType: "cv" }),
-      );
       expect(record).toHaveBeenCalledWith(
         "sub-1",
         expect.any(Array),
@@ -242,16 +226,6 @@ describe("DigestService", () => {
       await expect(service.deliver("sub-1")).rejects.toBe(error);
 
       expect(record).not.toHaveBeenCalled();
-      expect(digestDeliveryFailed).toHaveBeenCalledWith({
-        subscriptionId: "sub-1",
-        vacancies: 1,
-        pages: 1,
-        failedPage: 1,
-        deliveryId: "a096952d79fe2672783125e6a7b7ae2e7bfb8d029c939fd268f840a1a2aa4f94",
-        failureKind: "chat_unreachable",
-        isFirstDigest: true,
-        profileType: "feed",
-      });
       expect(recordUnreachableDelivery).toHaveBeenCalledWith("sub-1");
       expect(clearUnreachable).not.toHaveBeenCalled();
     });
@@ -314,15 +288,6 @@ describe("DigestService", () => {
           isFirstDigest: true,
         }),
         true,
-      );
-      expect(digestDeliveryFailed).toHaveBeenCalledWith(
-        expect.objectContaining({
-          deliveryId: original.id,
-          vacancies: 6,
-          pages: 6,
-          failedPage: 2,
-          isFirstDigest: true,
-        }),
       );
     });
   });

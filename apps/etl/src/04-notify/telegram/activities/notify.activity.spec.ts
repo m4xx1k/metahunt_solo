@@ -1,12 +1,5 @@
 import { Test } from "@nestjs/testing";
 
-jest.mock("@temporalio/activity", () => ({
-  ...jest.requireActual("@temporalio/activity"),
-  activityInfo: jest.fn(),
-}));
-
-import { activityInfo } from "@temporalio/activity";
-
 import { DigestService } from "../digest.service";
 import { SubscriptionsService } from "../subscriptions.service";
 
@@ -18,10 +11,6 @@ describe("NotifyActivity", () => {
 
   beforeEach(async () => {
     deliver.mockReset().mockResolvedValue(2);
-    (activityInfo as jest.Mock).mockReturnValue({
-      activityId: "2",
-      workflowExecution: { runId: "run-1", workflowId: "notify-subscribers" },
-    });
     const moduleRef = await Test.createTestingModule({
       providers: [
         NotifyActivity,
@@ -32,9 +21,26 @@ describe("NotifyActivity", () => {
     activity = moduleRef.get(NotifyActivity);
   });
 
-  it("uses a retry-stable Temporal evaluation id", async () => {
+  it("returns the digest's new-vacancy count", async () => {
     await expect(activity.deliverToSubscription("subscription-1")).resolves.toBe(2);
+    expect(deliver).toHaveBeenCalledWith("subscription-1");
+  });
 
-    expect(deliver).toHaveBeenCalledWith("subscription-1", "run-1:2");
+  // A blocked bot cannot be fixed by retrying: the activity must fail on the
+  // first attempt so the workflow moves to the next subscriber.
+  it("maps an unreachable chat to a non-retryable failure", async () => {
+    deliver.mockRejectedValue({ error_code: 403 });
+
+    await expect(activity.deliverToSubscription("subscription-1")).rejects.toMatchObject({
+      nonRetryable: true,
+      type: "TelegramChatUnreachable",
+    });
+  });
+
+  it("lets a transient failure stay retryable", async () => {
+    const error = new Error("telegram timeout");
+    deliver.mockRejectedValue(error);
+
+    await expect(activity.deliverToSubscription("subscription-1")).rejects.toBe(error);
   });
 });

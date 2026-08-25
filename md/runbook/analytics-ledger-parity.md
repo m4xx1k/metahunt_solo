@@ -2,8 +2,9 @@
 
 Two jobs live here: the **daily check** that the post-cutover analytics are
 telling the truth, and the **parity gate** that decided when `product_events`
-may be deleted — closed 2026-08-24, kept as the record phase 4 rests on. Only
-the daily check is still a thing you run. Background and the decisions behind
+may be deleted — closed 2026-08-24, kept as the record phase 4 rests on. The
+ledger itself was dropped on 2026-08-25, so only the daily check is still a
+thing you run, and nothing below can be re-measured against Postgres. Background and the decisions behind
 both:
 [`md/journal/migrations/analytics-one-identity.md`](../journal/migrations/analytics-one-identity.md).
 
@@ -88,14 +89,15 @@ GROUP BY minute ORDER BY minute
 hole a browser-UA crawler walks through. If it is a crawler, tighten
 `redirect.controller.ts` — do not "fix" it by dropping the events.
 
-### 4. The dispatcher is silent
+### 4. Nothing is buffering
 
-The outbox dispatcher logs only on failure, so silence is the pass. Railway
-project `d1bea564-d901-4b79-be43-119e6826590d`, environment `production`,
-service `@metahunt/etl`, deploy logs, search `dispatch failed`.
+There is no outbox any more: `PostHogClient` captures directly from the domain
+service that owns the act, so a dropped event shows up as a missing count in
+check 1, not as a backlog. Railway project `d1bea564-d901-4b79-be43-119e6826590d`,
+environment `production`, service `@metahunt/etl`, deploy logs, search
+`analytics` — every early return in an analytics path logs at warn.
 
-**Fail:** anything at all. Pending rows retry forever, so the symptom is a
-growing `analytics_outbox` backlog rather than lost data.
+**Fail:** `outbound click has no person`, or any `analytics capture failed`.
 
 ### 5. The staff filter, once the cohort has a member
 
@@ -160,12 +162,14 @@ Compare the same half-open Kyiv interval `[from, to)` in both systems:
 The ledger keeps two names for a click; PostHog keeps one, split by `surface`.
 That asymmetry is deliberate and ends with the ledger.
 
-Phase 4 of the tracker is now unblocked: drop `product_events` and
-`analytics_outbox`, delete the funnel, channels, retention and growth panels,
-keep the roster, and retarget the outbox at PostHog as the single forwarder.
+Phase 4 shipped on 2026-08-25 on the strength of this gate, plus a second
+measurement of every rewritten query against the one it replaced. Those numbers,
+and the three fields that had no source left, are in the tracker.
 
 ## Rollback
 
-Nothing here is destructive. If PostHog delivery or identity stitching
-regresses, the ledger is still authoritative: fix the producer, then restart
-the window.
+Nothing here is destructive, but the ledger is gone: there is no second store to
+fall back on. If PostHog delivery or identity stitching regresses, the domain
+tables still hold what we actually did — `sent_notifications` for every digest,
+`subscriptions` for who exists and their lifecycle. Fix the producer against
+those, not against an event store.
