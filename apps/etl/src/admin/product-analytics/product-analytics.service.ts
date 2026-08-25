@@ -692,8 +692,6 @@ export class ProductAnalyticsService {
       digests_sent: number;
       chats_reached: number;
       earliest_at: string | null;
-      chat_unreachable: number;
-      transient: number;
     }>(sql`
       WITH digests AS (
         SELECT e.occurred_at, s.chat_id
@@ -707,25 +705,11 @@ export class ProductAnalyticsService {
             OR (${population} = 'production' AND NOT j.is_test)
             OR (${population} = 'test' AND j.is_test)
           )
-      ),
-      failures AS (
-        SELECT e.properties
-        FROM product_events e
-        JOIN analytics_journeys j ON j.id = e.journey_id
-        WHERE e.name = ${ANALYTICS_EVENTS.digestDeliveryFailed}
-          AND (${since}::timestamptz IS NULL OR e.occurred_at >= ${since})
-          AND (
-            ${population} = 'all'
-            OR (${population} = 'production' AND NOT j.is_test)
-            OR (${population} = 'test' AND j.is_test)
-          )
       )
       SELECT
         (SELECT COUNT(*) FROM digests)::int AS digests_sent,
         (SELECT COUNT(DISTINCT chat_id) FROM digests)::int AS chats_reached,
-        (SELECT MIN(occurred_at) FROM digests) AS earliest_at,
-        (SELECT COUNT(*) FROM failures WHERE properties->>'failure_kind' = 'chat_unreachable')::int AS chat_unreachable,
-        (SELECT COUNT(*) FROM failures WHERE properties->>'failure_kind' = 'transient')::int AS transient
+        (SELECT MIN(occurred_at) FROM digests) AS earliest_at
     `);
     const row = result.rows[0];
     const digestsSent = Number(row?.digests_sent ?? 0);
@@ -736,10 +720,6 @@ export class ProductAnalyticsService {
       digestsSent,
       chatsReached,
       messagesPerChatPerDay: chatsReached > 0 && days > 0 ? digestsSent / (chatsReached * days) : 0,
-      failures: {
-        chatUnreachable: Number(row?.chat_unreachable ?? 0),
-        transient: Number(row?.transient ?? 0),
-      },
     };
   }
 

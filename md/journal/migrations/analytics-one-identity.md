@@ -135,7 +135,7 @@ already ledger-free. Phase 4 is a rewrite of that service, not a deletion pass.
 | Method | Disposition |
 |---|---|
 | `people`, `subscriberActivity`, `subscriberStates` | **Rewrite on PostHog.** This is the roster and it stays whole — see below. |
-| `deliverySummary`, `deliveryDaily` | **Rewrite on `sent_notifications`**, not PostHog: it is the domain source of truth for "already sent" (composite PK, anti-join drives matching), so digests/day and messages-per-chat-per-day come straight from it. Failures by `failure_kind` have no domain home — take them from PostHog or drop that sub-panel. |
+| `deliverySummary`, `deliveryDaily` | **Rewrite on `sent_notifications`**, not PostHog: it is the domain source of truth for "already sent" (composite PK, anti-join drives matching), so digests/day and messages-per-chat-per-day come straight from it. Failure-by-kind is already gone — owner dropped it 2026-08-25 once it turned out to be computed, typed, and rendered nowhere. |
 | `orderedFunnel`, `channels`, `retention`, `feedEngagement`, `periodFlow` | **Delete** with their panels, as planned. PostHog answers these. |
 | `recentJourneys`, `updateJourney`, `identityHealth` | **Delete.** All three exist to inspect or repair the ledger; they have no meaning once it is gone. `updateJourney` is how test journeys were marked — that job now belongs to the PostHog internal cohort. |
 | `overview` | Recompose from whatever survives. |

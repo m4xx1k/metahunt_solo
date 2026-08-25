@@ -196,7 +196,6 @@ describe("AnalyticsService", () => {
       ANALYTICS_EVENTS.vacancyOutboundUnattributed,
       expect.objectContaining({
         vacancy_id: "vacancy-1",
-        surface: "web_feed",
         // Flagged so no per-person metric can mistake the id for a human. The
         // flag stays alongside the name so filters written against it (and the
         // rows already in PostHog under the old name) keep working.
@@ -204,6 +203,9 @@ describe("AnalyticsService", () => {
         $process_person_profile: false,
       }),
     );
+    // objectContaining ignores extra keys, so assert the absence directly:
+    // there is no surface to report when nothing identified the tap.
+    expect(capture.mock.calls[0][2]).not.toHaveProperty("surface");
   });
 
   it("attributes a digest tap to the subscription's person", async () => {

@@ -189,9 +189,10 @@ export class AnalyticsService {
     // Separate name, not just the flag: unattributed taps outnumber attributed
     // ones ~30:1, so sharing `vacancy_outbound_clicked` made the headline click
     // count meaningless unless every reader remembered to filter it.
+    // No `surface`: a tap with no `?s=` and no `?j=` gives us nothing to infer
+    // it from, and stamping "web_feed" on it made an unknown look like a fact.
     this.posthog.capture(randomUUID(), ANALYTICS_EVENTS.vacancyOutboundUnattributed, {
       ...properties,
-      surface: "web_feed",
       is_anonymous: true,
       $process_person_profile: false,
     });
