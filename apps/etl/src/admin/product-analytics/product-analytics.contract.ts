@@ -245,11 +245,6 @@ export interface ProductSubscriberStates {
   churned: number;
 }
 
-export interface ProductDeliveryFailures {
-  chatUnreachable: number;
-  transient: number;
-}
-
 export interface ProductDeliveryDay {
   date: string;
   digests: number;
@@ -264,7 +259,6 @@ export interface ProductDeliveryHealth {
   digestsSent: number;
   chatsReached: number;
   messagesPerChatPerDay: number;
-  failures: ProductDeliveryFailures;
   unsubscribed: number;
   daily: ProductDeliveryDay[];
 }

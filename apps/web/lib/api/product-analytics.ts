@@ -154,7 +154,6 @@ export interface ProductDeliveryHealth {
   digestsSent: number;
   chatsReached: number;
   messagesPerChatPerDay: number;
-  failures: { chatUnreachable: number; transient: number };
   unsubscribed: number;
   daily: ProductDeliveryDay[];
 }

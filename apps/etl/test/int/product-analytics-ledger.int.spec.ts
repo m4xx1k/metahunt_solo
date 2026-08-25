@@ -442,7 +442,6 @@ describe("first-party product analytics ledger", () => {
     expect(statusByChat.get("chat-blocked")).toBe("blocked");
     expect(overview.delivery.digestsSent).toBe(4);
     expect(overview.delivery.chatsReached).toBe(2);
-    expect(overview.delivery.failures).toEqual({ chatUnreachable: 1, transient: 0 });
     expect(overview.delivery.unsubscribed).toBe(0);
     expect(overview.delivery.messagesPerChatPerDay).toBeGreaterThan(0);
     expect(overview.delivery.daily).toHaveLength(7);
