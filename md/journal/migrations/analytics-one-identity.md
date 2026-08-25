@@ -1,8 +1,8 @@
 # analytics-one-identity — finish the analytics cutover on one identity
 
 **Branch:** `refactor/analytics-one-identity`
-**Status:** in-progress (phase 4 unblocked 2026-08-24 — gate passed; the retirement itself is not started)
-**Started:** 2026-08-16 · **Closed:** —
+**Status:** done (phase 4 shipped 2026-08-25 — the ledger is dropped)
+**Started:** 2026-08-16 · **Closed:** 2026-08-25
 
 Continues [`analytics-real-metahunt-cutover.md`](analytics-real-metahunt-cutover.md), which shipped
 steps 0–2 and stopped. This tracker carries the phases from the 2026-08-15 teardown audit
@@ -16,7 +16,7 @@ client remains, and each store has exactly one author. PostHog is cleaned: start
 eight insights deleted, six replay playlists archived, authorized URLs set, cutover annotated, a
 daily no-digest alert armed, and the internal cohort repointed at `is_staff`.
 
-**Phase 4 is unblocked as of 2026-08-24 but not started.** Its condition was seven consecutive days
+**Phase 4 shipped on 2026-08-25.** Its condition was seven consecutive days
 of PostHog reproducing the ledger's digest and click counts within 5%. The window ran 2026-08-18 to
 2026-08-23 and produced six full days at **0.0%** divergence — the two stores agree event for event,
 not merely inside the tolerance. The deploy day (08-17) is excluded for cause, and the seventh day
@@ -38,7 +38,7 @@ simply unused.
 - [x] T1 — Phase 1, one identity: capture on `person_id`, alias on account link, `$set` profiles — *done when:* digest coverage reaches every active subscription and two clicks on one link land on one person
 - [x] T2 — Phase 2, unmute the browser: real pageviews, no stub, no allow-list, `$set_once` redaction — *done when:* an anonymous visit produces a pageview and login merges its history
 - [x] T3 — Phase 3, one registry, one writer, one client — *done when:* every event name has exactly one definition and at least one live emitter
-- [ ] T4 — Phase 4, retire the ledger — **unblocked 2026-08-24**, not started: drop `product_events` + `analytics_outbox`, delete the funnel/channels/retention/growth panels, keep the roster, retarget the outbox at PostHog. Separate migration — do not mix with `subscriptions.user_id NOT NULL`.
+- [x] T4 — Phase 4, retire the ledger — **shipped 2026-08-25**: roster and delivery rewritten and measured against the ledger first, then the funnel/channels/retention/growth panels deleted, then `product_events` + `analytics_outbox` + `analytics_journeys` dropped in migration 0053 of their own. The outbox retired with the table it drained into rather than being retargeted: `PostHogClient` was already the single forwarder, and adding a second would have double-counted every digest.
 - [x] T5 — Phase 5, make silent breakage loud: no-digest alert, staff flag, reachability in the catalog check — *done when:* unplugging an emitter surfaces within a day
 
 ## Verification status
@@ -52,6 +52,7 @@ The code gates are met in test; the two live gates need production traffic after
 | Phase 2 — anonymous visit produces a pageview, login merges it | ✅ verified 2026-08-17: 8 pageviews, two distinct ids merged into one person, `signed_in` on the same person |
 | Phase 3 — one definition and one live emitter per name | ✅ `pnpm analytics:catalog`, reachability check verified against a planted unreachable event |
 | Phase 4 — seven days of agreement | ✅ closed 2026-08-24: six full days at 0.0%, deploy day excluded, seventh waived |
+| Phase 4 — every rewritten query measured against the one it replaces | ✅ 2026-08-25 on production, before a line of the retirement was written — see *Proof* below |
 | Phase 5 — unplug an emitter, hear about it within a day | ✅ alert armed (daily, fires below one digest) |
 
 ## Decisions
