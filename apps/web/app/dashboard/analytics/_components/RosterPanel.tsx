@@ -6,22 +6,20 @@ import type { SubscriberActivity } from "@/lib/api/product-analytics";
 import { LastAction } from "@/entities/subscriber/LastAction";
 import { SubscriberIdentity } from "@/entities/subscriber/SubscriberIdentity";
 import { SubscriberStatusBadge } from "@/entities/subscriber/SubscriberStatusBadge";
+import { formatCount, formatDateOnly } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { DataTable, type Column } from "@/ui/data/DataTable";
 import { EmptyState } from "@/ui/feedback/EmptyState";
 import { Panel } from "@/ui/layout/Panel";
-import { PanelLink } from "@/ui/navigation/PanelLink";
 
-type SortKey = "lastAction";
+type SortKey = "lastAction" | "joined" | "clicks";
 
-// null last actions sort as "oldest" so silent subscribers sink on desc.
 const SORT_VALUE: Record<SortKey, (row: SubscriberActivity) => number> = {
+  // null last actions sort as "oldest" so silent subscribers sink on desc.
   lastAction: (row) => (row.lastActionAt ? new Date(row.lastActionAt).getTime() : 0),
+  joined: (row) => new Date(row.joinedAt).getTime(),
+  clicks: (row) => row.feedClicks + row.vacancyClicks,
 };
-
-// A glance, not a ledger — the full roster with clicks and joined dates lives on
-// the analytics screen. Past this the panel stops being scannable.
-const GLANCE_LIMIT = 8;
 
 function SortHeader({
   label,
@@ -49,17 +47,15 @@ function SortHeader({
   );
 }
 
-// The first thing on the console: who is actually here. A subscriber is in the
-// window if they joined in it or did something in it — so an old subscriber who
-// clicked today still shows on 24h.
-export function UsersPanel({
+// Who is actually here, one row per Telegram chat. A subscriber is in the window
+// if they joined in it or did something in it — so an old subscriber who clicked
+// today still shows on 24h.
+export function RosterPanel({
   subscribers,
   period,
-  className,
 }: {
   subscribers: SubscriberActivity[];
   period: string;
-  className?: string;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("lastAction");
   const [descending, setDescending] = useState(true);
@@ -76,9 +72,7 @@ export function UsersPanel({
   const rows = useMemo(() => {
     const value = SORT_VALUE[sortKey];
     const direction = descending ? -1 : 1;
-    return [...subscribers]
-      .sort((a, b) => direction * (value(a) - value(b)))
-      .slice(0, GLANCE_LIMIT);
+    return [...subscribers].sort((a, b) => direction * (value(a) - value(b)));
   }, [subscribers, sortKey, descending]);
 
   const sortHeader = (key: SortKey, label: string) => (
@@ -115,6 +109,24 @@ export function UsersPanel({
       ),
     },
     {
+      key: "joined",
+      header: sortHeader("joined", "joined"),
+      render: (row) => <span className="font-mono">{formatDateOnly(row.joinedAt)}</span>,
+    },
+    {
+      key: "clicks",
+      header: sortHeader("clicks", "clicks"),
+      align: "right",
+      render: (row) => (
+        <span className="font-mono">
+          {formatCount(row.feedClicks)}
+          <span className="text-text-muted"> feed · </span>
+          {formatCount(row.vacancyClicks)}
+          <span className="text-text-muted"> digest</span>
+        </span>
+      ),
+    },
+    {
       key: "lastAction",
       header: sortHeader("lastAction", "last action"),
       render: (row) => <LastAction at={row.lastActionAt} />,
@@ -123,10 +135,9 @@ export function UsersPanel({
 
   return (
     <Panel
-      title="Users"
+      title="Subscribers"
       meta={`${subscribers.length} active or joined · ${period}`}
       scope="period"
-      className={className}
     >
       {subscribers.length === 0 ? (
         <EmptyState
@@ -134,11 +145,8 @@ export function UsersPanel({
           hint="no subscriber joined or acted here — widen the period."
         />
       ) : (
-        <DataTable columns={columns} rows={rows} rowKey={(row) => row.chatId} minWidth={420} />
+        <DataTable columns={columns} rows={rows} rowKey={(row) => row.chatId} minWidth={640} />
       )}
-      <div className="mt-auto pt-1">
-        <PanelLink href="/dashboard/analytics?tab=debug">full subscriber ledger</PanelLink>
-      </div>
     </Panel>
   );
 }

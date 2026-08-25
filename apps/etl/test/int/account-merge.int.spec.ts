@@ -16,7 +16,7 @@ jest.mock("../../src/platform/auth/google-verify", () => ({
 }));
 const verifyMock = verifyGoogleIdToken as jest.MockedFunction<typeof verifyGoogleIdToken>;
 
-const { analyticsJourneys, authIdentities, subscriptions, users } = schema;
+const { authIdentities, subscriptions, users } = schema;
 const TELEGRAM_ID = "555000111";
 const JOURNEY_ID = "33333333-3333-3333-3333-333333333333";
 
@@ -51,20 +51,19 @@ beforeEach(async () => {
     firstName: "Source",
   });
   await db.execute(
-    sql`TRUNCATE TABLE account_merge_requests, product_events, analytics_outbox, analytics_journeys, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE account_merge_requests, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
   );
 });
 
 afterEach(async () => {
   await db.execute(
-    sql`TRUNCATE TABLE account_merge_requests, product_events, analytics_outbox, analytics_journeys, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE account_merge_requests, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
   );
 });
 
 it("requires two sessions, then merges the source into the current account atomically", async () => {
   const source = await auth.loginGoogle("source-credential");
   const { userId: target } = await auth.resolveTelegramUser(TELEGRAM_ID, "tguser", "Tessa");
-  await db.insert(analyticsJourneys).values({ id: JOURNEY_ID, personId: source.user.id });
   const [subscription] = await db
     .insert(subscriptions)
     .values({ userId: source.user.id, personId: source.user.id, journeyId: JOURNEY_ID, params: {} })
@@ -87,12 +86,6 @@ it("requires two sessions, then merges the source into the current account atomi
       .from(subscriptions)
       .where(eq(subscriptions.id, subscription.id)),
   ).resolves.toEqual([{ userId: target, personId: target }]);
-  await expect(
-    db
-      .select({ personId: analyticsJourneys.personId })
-      .from(analyticsJourneys)
-      .where(eq(analyticsJourneys.id, JOURNEY_ID)),
-  ).resolves.toEqual([{ personId: target }]);
   await expect(auth.confirmAccountMerge(target, code)).rejects.toMatchObject({ status: 400 });
   await expect(db.select({ id: users.id }).from(users)).resolves.toHaveLength(1);
   await expect(db.select({ id: authIdentities.id }).from(authIdentities)).resolves.toHaveLength(2);

@@ -151,26 +151,9 @@ export class SentNotificationsService {
         .returning({ vacancyId: sentNotifications.vacancyId });
       if (!delivery || inserted.length === 0) return null;
       const [subscription] = await tx
-        .select({
-          journeyId: subscriptions.journeyId,
-          personId: subscriptions.personId,
-          candidateId: subscriptions.candidateId,
-        })
+        .select({ personId: subscriptions.personId, candidateId: subscriptions.candidateId })
         .from(subscriptions)
         .where(eq(subscriptions.id, subscriptionId));
-      if (subscription?.journeyId) {
-        if (completesDelivery) {
-          await this.analytics.enqueueDigestSent(tx, {
-            subscriptionId,
-            vacancies: delivery.vacancies,
-            pages: delivery.pages,
-            deliveryId: delivery.id,
-            isFirstDigest: delivery.isFirstDigest,
-            profileType: delivery.profileType,
-            journeyId: subscription.journeyId,
-          });
-        }
-      }
       await tx
         .update(digestDeliveries)
         .set({

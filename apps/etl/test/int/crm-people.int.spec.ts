@@ -1,25 +1,39 @@
-import { eq, sql } from "drizzle-orm";
+import { Test } from "@nestjs/testing";
+import { sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
-import { schema, type DrizzleDB } from "@metahunt/database";
+import { DRIZZLE, schema, type DrizzleDB } from "@metahunt/database";
 
 import { ProductAnalyticsService } from "../../src/admin/product-analytics/product-analytics.service";
-import { ANALYTICS_EVENTS } from "../../src/platform/analytics/events";
+import {
+  PostHogQueryClient,
+  type PostHogQueryRow,
+} from "../../src/platform/analytics/posthog-query.client";
 
 import { makeTestDb } from "./db";
 
-const { analyticsJourneys, productEvents, subscriptions, users } = schema;
+const { subscriptions, users } = schema;
 const ACCOUNT_ID = "11111111-1111-1111-1111-111111111111";
 const TELEGRAM_PERSON_ID = "22222222-2222-2222-2222-222222222222";
-const JOURNEY_ID = "33333333-3333-3333-3333-333333333333";
 
 let db: DrizzleDB;
 let pool: Pool;
 let service: ProductAnalyticsService;
+let postHogRows: PostHogQueryRow[] = [];
 
-beforeAll(() => {
+beforeAll(async () => {
   ({ db, pool } = makeTestDb());
-  service = new ProductAnalyticsService(db);
+  const moduleRef = await Test.createTestingModule({
+    providers: [
+      ProductAnalyticsService,
+      { provide: DRIZZLE, useValue: db },
+      {
+        provide: PostHogQueryClient,
+        useValue: { isAvailable: () => true, query: async () => postHogRows },
+      },
+    ],
+  }).compile();
+  service = moduleRef.get(ProductAnalyticsService);
 });
 
 afterAll(async () => {
@@ -27,48 +41,32 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  postHogRows = [];
   await db.execute(
-    sql`TRUNCATE TABLE product_events, analytics_outbox, analytics_journeys, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE sent_notifications, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
   );
 });
 
-afterEach(async () => {
-  await db.execute(
-    sql`TRUNCATE TABLE product_events, analytics_outbox, analytics_journeys, subscriptions, auth_identities, users RESTART IDENTITY CASCADE`,
-  );
-});
-
-it("returns account-only and Telegram people with period-scoped click metrics", async () => {
+// The spine is "who exists": an account, or a subscription's person. Behaviour
+// hangs off it, so a person with no PostHog row is still a row here.
+it("returns account-only and Telegram people with their click metrics", async () => {
   await db.insert(users).values({ id: ACCOUNT_ID, source: "google-login" });
-  await db.insert(analyticsJourneys).values({ id: JOURNEY_ID, personId: TELEGRAM_PERSON_ID });
-  const [subscription] = await db
-    .insert(subscriptions)
-    .values({
-      personId: TELEGRAM_PERSON_ID,
-      journeyId: JOURNEY_ID,
-      chatId: "private-chat",
-      params: {},
-      isActive: true,
-    })
-    .returning({ id: subscriptions.id });
-  await db.insert(productEvents).values([
+  await db.insert(subscriptions).values({
+    personId: TELEGRAM_PERSON_ID,
+    chatId: "private-chat",
+    params: {},
+    isActive: true,
+  });
+  postHogRows = [
     {
-      journeyId: JOURNEY_ID,
-      subscriptionId: subscription.id,
-      name: ANALYTICS_EVENTS.applyClicked,
-      source: "browser",
-      dedupeKey: "crm-feed-click",
-      properties: {},
+      person_key: TELEGRAM_PERSON_ID,
+      last_action_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      acted_since: null,
+      feed_clicks: 1,
+      digest_clicks: 1,
+      referrer: "direct",
     },
-    {
-      journeyId: JOURNEY_ID,
-      subscriptionId: subscription.id,
-      name: ANALYTICS_EVENTS.digestLinkClicked,
-      source: "api",
-      dedupeKey: "crm-telegram-click",
-      properties: {},
-    },
-  ]);
+  ];
 
   const page = await service.people("week", { sort: "recent", offset: 0 });
 
@@ -88,23 +86,48 @@ it("returns account-only and Telegram people with period-scoped click metrics", 
     telegramClicks: 1,
     state: "active",
   });
+});
+
+// An active subscription that has done nothing in the window is the whole point
+// of the at-risk tile — it must not read as active just because it is enabled.
+it("marks a silent active subscriber at risk and keeps metrics off the filtered page", async () => {
+  await db.insert(subscriptions).values({
+    personId: TELEGRAM_PERSON_ID,
+    chatId: "private-chat",
+    params: {},
+    isActive: true,
+  });
+
+  await expect(service.people("week", { sort: "at_risk", offset: 0 })).resolves.toMatchObject({
+    metrics: { knownPeople: 1, telegramConnected: 1, jobClickers: 0, atRisk: 1 },
+    rows: [expect.objectContaining({ id: TELEGRAM_PERSON_ID, state: "at_risk" })],
+  });
+
+  await expect(
+    service.people("week", { q: "not-a-person", sort: "recent", offset: 0 }),
+  ).resolves.toMatchObject({
+    metrics: { knownPeople: 1, telegramConnected: 1, jobClickers: 0, atRisk: 1 },
+    rows: [],
+    total: 0,
+  });
+});
+
+it("searches by id prefix and display name", async () => {
+  await db.insert(subscriptions).values({
+    personId: TELEGRAM_PERSON_ID,
+    chatId: "private-chat",
+    params: {},
+    isActive: true,
+    tgFirstName: "Tester",
+  });
+
   await expect(
     service.people("week", { q: TELEGRAM_PERSON_ID.slice(0, 8), sort: "recent", offset: 0 }),
   ).resolves.toMatchObject({
     total: 1,
-    rows: [expect.objectContaining({ id: TELEGRAM_PERSON_ID })],
+    rows: [expect.objectContaining({ id: TELEGRAM_PERSON_ID, displayName: "Tester" })],
   });
   await expect(
-    service.people("week", { q: "not-a-person", sort: "recent", offset: 50 }),
-  ).resolves.toMatchObject({
-    metrics: { knownPeople: 2, telegramConnected: 1, jobClickers: 1, atRisk: 0 },
-    rows: [],
-    total: 0,
-  });
-  await expect(
-    db
-      .select({ personId: subscriptions.personId })
-      .from(subscriptions)
-      .where(eq(subscriptions.id, subscription.id)),
-  ).resolves.toEqual([{ personId: TELEGRAM_PERSON_ID }]);
+    service.people("week", { q: "test", sort: "recent", offset: 0 }),
+  ).resolves.toMatchObject({ total: 1 });
 });

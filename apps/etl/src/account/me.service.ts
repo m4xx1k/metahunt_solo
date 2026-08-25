@@ -155,7 +155,6 @@ export class MeService {
           id: subscriptions.id,
           candidateId: subscriptions.candidateId,
           isActive: subscriptions.isActive,
-          journeyId: subscriptions.journeyId,
           personId: subscriptions.personId,
         })
         .from(subscriptions)
@@ -187,21 +186,6 @@ export class MeService {
           deactivatedReason: patch.isActive ? null : "user",
         })
         .where(eq(subscriptions.id, existing.id));
-      if (existing.journeyId) {
-        if (patch.isActive) {
-          await this.analytics.enqueueSubscriptionReactivated(tx, existing.id, existing.journeyId);
-        } else {
-          await this.analytics.enqueueUnsubscribed(tx, {
-            method: "account",
-            subscriptionId: existing.id,
-            journeyId: existing.journeyId,
-          });
-        }
-      } else if (patch.isActive) {
-        void this.analytics.subscriptionReactivated(id);
-      } else {
-        void this.analytics.unsubscribed({ method: "account", subscriptionId: id });
-      }
       if (!patch.isActive) deactivatedPersonId = existing.personId;
       return true;
     });

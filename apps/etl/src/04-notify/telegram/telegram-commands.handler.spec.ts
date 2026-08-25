@@ -86,7 +86,6 @@ describe("TelegramCommandsHandler", () => {
   const reactivateAfterUnblock = jest.fn();
   const sample = jest.fn();
   const get = jest.fn();
-  const activationValueShown = jest.fn();
 
   const subscriptions = {
     linkChat,
@@ -100,7 +99,7 @@ describe("TelegramCommandsHandler", () => {
   } as unknown as SubscriptionsService;
   const matcher = { sample } as unknown as SubscriptionMatcherService;
   const config = { get } as unknown as ConfigService;
-  const analytics = { activationValueShown } as unknown as AnalyticsService;
+  const analytics = {} as unknown as AnalyticsService;
   const describeLogin = jest.fn();
   const confirmLogin = jest.fn();
   const declineLogin = jest.fn();
@@ -211,7 +210,6 @@ describe("TelegramCommandsHandler", () => {
       expect(ctx.reply.mock.calls[1][0]).toContain("Backend");
       expect(ctx.reply.mock.calls[1][0]).toContain("?s=the-token");
       expect(ctx.reply.mock.calls[1][1]).toEqual(expect.objectContaining({ parse_mode: "HTML" }));
-      expect(activationValueShown).toHaveBeenCalledWith("the-token", 1, 1);
     });
 
     it("keeps a successful activation confirmed when preview matching fails", async () => {
@@ -230,7 +228,6 @@ describe("TelegramCommandsHandler", () => {
 
       expect(ctx.reply).toHaveBeenCalledTimes(1);
       expect(ctx.reply).toHaveBeenCalledWith(copy.start.linked);
-      expect(activationValueShown).not.toHaveBeenCalled();
     });
   });
 

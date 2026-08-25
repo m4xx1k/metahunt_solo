@@ -75,7 +75,6 @@ export class SubscriptionsService {
     );
     // DB write is complete at this point. Analytics is explicitly best-effort
     // and cannot turn a successful subscription into a failure.
-    void this.analytics.subscriptionCreated(created.id, params);
     this.posthog.subscriptionCreated(created.personId, options.candidateId ? "cv" : "feed");
     if (options.journeyId) this.analytics.aliasJourneyToPerson(options.journeyId, created.personId);
 
@@ -197,7 +196,6 @@ export class SubscriptionsService {
     }
 
     this.logger.log(`link ${token}: activated (candidateId=${pending.candidateId ?? "none"})`);
-    void this.analytics.telegramLinked(token, "linked");
     this.posthog.telegramLinked(ownerId, pending.candidateId ? "cv" : "feed");
 
     return "linked";
@@ -276,28 +274,8 @@ export class SubscriptionsService {
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "user" })
         .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
-        .returning({
-          id: subscriptions.id,
-          journeyId: subscriptions.journeyId,
-          personId: subscriptions.personId,
-        });
+        .returning({ id: subscriptions.id, personId: subscriptions.personId });
 
-      for (const stoppedSubscription of stopped) {
-        if (stoppedSubscription.journeyId) {
-          await this.analytics.enqueueUnsubscribed(tx, {
-            method: "stop_command",
-            subscriptionId: stoppedSubscription.id,
-            journeyId: stoppedSubscription.journeyId,
-            count: stopped.length,
-          });
-        } else {
-          void this.analytics.unsubscribed({
-            method: "stop_command",
-            subscriptionId: stoppedSubscription.id,
-            count: stopped.length,
-          });
-        }
-      }
       return stopped;
     });
     for (const subscription of stopped) {
@@ -324,22 +302,9 @@ export class SubscriptionsService {
             eq(subscriptions.isActive, true),
           ),
         )
-        .returning({
-          id: subscriptions.id,
-          journeyId: subscriptions.journeyId,
-          personId: subscriptions.personId,
-        });
+        .returning({ id: subscriptions.id, personId: subscriptions.personId });
 
       if (!stopped) return null;
-      if (stopped.journeyId) {
-        await this.analytics.enqueueUnsubscribed(tx, {
-          method: "button",
-          subscriptionId: stopped.id,
-          journeyId: stopped.journeyId,
-        });
-      } else {
-        void this.analytics.unsubscribed({ method: "button", subscriptionId: stopped.id });
-      }
       return stopped;
     });
     if (stopped) this.posthog.subscriptionDeactivated(stopped.personId, "user");
@@ -357,24 +322,8 @@ export class SubscriptionsService {
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "blocked" })
         .where(and(eq(subscriptions.chatId, chatId), eq(subscriptions.isActive, true)))
-        .returning({
-          id: subscriptions.id,
-          journeyId: subscriptions.journeyId,
-          personId: subscriptions.personId,
-        });
+        .returning({ id: subscriptions.id, personId: subscriptions.personId });
 
-      for (const sub of blocked) {
-        const props = {
-          method: "chat_member" as const,
-          subscriptionId: sub.id,
-          count: blocked.length,
-        };
-        if (sub.journeyId) {
-          await this.analytics.enqueueBotBlocked(tx, { ...props, journeyId: sub.journeyId });
-        } else {
-          void this.analytics.botBlocked(props);
-        }
-      }
       return blocked;
     });
     // Captured after commit: a rolled-back deactivation must not be reported.
@@ -400,15 +349,8 @@ export class SubscriptionsService {
             inArray(subscriptions.deactivatedReason, ["blocked", "unreachable"]),
           ),
         )
-        .returning({ id: subscriptions.id, journeyId: subscriptions.journeyId });
+        .returning({ id: subscriptions.id });
 
-      for (const sub of restored) {
-        if (sub.journeyId) {
-          await this.analytics.enqueueSubscriptionReactivated(tx, sub.id, sub.journeyId, "unblock");
-        } else {
-          void this.analytics.subscriptionReactivated(sub.id, "unblock");
-        }
-      }
       return restored.length;
     });
   }
@@ -427,7 +369,6 @@ export class SubscriptionsService {
         .where(and(eq(subscriptions.id, id), eq(subscriptions.isActive, true)))
         .returning({
           unreachableCount: subscriptions.unreachableCount,
-          journeyId: subscriptions.journeyId,
           personId: subscriptions.personId,
         });
       if (!row || row.unreachableCount < UNREACHABLE_DEACTIVATE_AFTER) return null;
@@ -436,16 +377,6 @@ export class SubscriptionsService {
         .update(subscriptions)
         .set({ isActive: false, deactivatedAt: sql`now()`, deactivatedReason: "unreachable" })
         .where(eq(subscriptions.id, id));
-      const props = {
-        method: "delivery_failure" as const,
-        subscriptionId: id,
-        count: row.unreachableCount,
-      };
-      if (row.journeyId) {
-        await this.analytics.enqueueBotBlocked(tx, { ...props, journeyId: row.journeyId });
-      } else {
-        void this.analytics.botBlocked(props);
-      }
       return row.personId;
     });
     // Captured after commit: a rolled-back deactivation must not be reported.

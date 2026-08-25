@@ -35,13 +35,10 @@ interface Producer {
 
 const PRODUCERS: Producer[] = [
   {
-    label: "server ledger",
+    label: "server personless",
     path: SERVER_EVENTS,
     block: /export const ANALYTICS_EVENTS = \{([\s\S]*?)\n\} as const;/,
-    emitters: [
-      "apps/etl/src/platform/analytics/analytics.service.ts",
-      "apps/etl/src/platform/analytics/product-event.factory.ts",
-    ],
+    emitters: ["apps/etl/src/platform/analytics/analytics.service.ts"],
     reference: "key",
   },
   {

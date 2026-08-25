@@ -1,267 +1,109 @@
-import type {
-  AnalyticsOutboxWriter,
-  ProductEventWrite,
-  ProductEventWriter,
-  SubscriberIdentity,
-} from "./analytics.ports";
 import { AnalyticsService } from "./analytics.service";
-import type { OutboundSurface } from "./analytics.types";
-import { ANALYTICS_EVENTS } from "./events";
-import type { ClickedVacancy, PostHogClient } from "./posthog.client";
+import type { SubscriberIdentity, SubscriberIdentityReader } from "./analytics.ports";
+import type { PostHogClient } from "./posthog.client";
 
-const VACANCY: ClickedVacancy = { vacancyId: "vacancy-1", source: "djinni", company: "acme" };
+const VACANCY = { vacancyId: "vac-1", source: "dou", company: "Acme" };
 
-describe("AnalyticsService", () => {
-  const record = jest.fn<Promise<void>, [ProductEventWrite]>();
-  const enqueue = jest.fn<Promise<void>, [ProductEventWrite]>();
-  const drain = jest.fn<Promise<ProductEventWrite[]>, [number]>();
-  const journeyForSubscription = jest.fn<Promise<string | null>, [string]>();
-  const personForJourney = jest.fn<Promise<string | null>, [string]>();
-  const subscriberForSubscription = jest.fn<Promise<SubscriberIdentity | null>, [string]>();
-  const subscriberForJourney = jest.fn<Promise<SubscriberIdentity | null>, [string]>();
-  const capture = jest.fn<void, [string, string, Record<string, unknown>]>();
-  const vacancyOutboundClicked = jest.fn<void, [string, OutboundSurface, ClickedVacancy]>();
+function makeService(identity: Partial<SubscriberIdentityReader> = {}) {
+  const posthog = {
+    capture: jest.fn(),
+    vacancyOutboundClicked: jest.fn(),
+    mergePerson: jest.fn(),
+  };
+  const reader: SubscriberIdentityReader = {
+    subscriberForSubscription: jest.fn(async () => null),
+    subscriberForJourney: jest.fn(async () => null),
+    ...identity,
+  };
+  return {
+    posthog,
+    reader,
+    service: new AnalyticsService(reader, posthog as unknown as PostHogClient),
+  };
+}
 
-  function makeService(): AnalyticsService {
-    const events: ProductEventWriter = {
-      record,
-      journeyForSubscription,
-      personForJourney,
-      subscriberForSubscription,
-      subscriberForJourney,
-    };
-    const outbox: AnalyticsOutboxWriter = { enqueue, drain };
-    const posthog = { capture, vacancyOutboundClicked } as unknown as PostHogClient;
-    return new AnalyticsService(events, outbox, posthog);
-  }
+const subscriber: SubscriberIdentity = { personId: "person-1", subscriptionKind: "feed" };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    record.mockResolvedValue();
-    enqueue.mockResolvedValue();
-    journeyForSubscription.mockResolvedValue("journey-1");
-    personForJourney.mockResolvedValue("person-1");
-    subscriberForSubscription.mockResolvedValue(null);
-    subscriberForJourney.mockResolvedValue(null);
-  });
-
-  it("summarizes subscription filters without sending their values", async () => {
-    const service = makeService();
-
-    await service.subscriptionCreated("subscription-1", {
-      roleIds: ["role-1"],
-      q: "sensitive search",
-    });
-
-    expect(enqueue).toHaveBeenCalledWith({
-      journeyId: "journey-1",
-      subscriptionId: "subscription-1",
-      name: ANALYTICS_EVENTS.subscriptionCreated,
-      source: "api",
-      dedupeKey: "subscription_created:subscription-1",
-      properties: {
-        filterCount: 2,
-        $insert_id: "subscription_created:subscription-1",
-      },
-    });
-    expect(capture).not.toHaveBeenCalled();
-  });
-
-  it("resolves Telegram events back to the subscription journey", async () => {
-    const service = makeService();
-
-    await service.telegramLinked("subscription-1", "linked");
-
-    expect(journeyForSubscription).toHaveBeenCalledWith("subscription-1");
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        journeyId: "journey-1",
-        name: ANALYTICS_EVENTS.telegramLinked,
-      }),
-    );
-  });
-
-  it("records immediate activation value without user identifiers", async () => {
-    const service = makeService();
-
-    await service.activationValueShown("subscription-1", 7, 3);
-
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({ name: ANALYTICS_EVENTS.activationValueShown }),
-    );
-  });
-
-  it("uses deterministic delivery identity", async () => {
-    const service = makeService();
-
-    await service.digestSent({
-      subscriptionId: "subscription-1",
-      vacancies: 3,
-      pages: 1,
-      deliveryId: "delivery-hash",
-      isFirstDigest: true,
-      profileType: "feed",
-    });
-
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: ANALYTICS_EVENTS.digestSent,
-        dedupeKey: "delivery-hash",
-      }),
-    );
-  });
-
-  it("records zero-match evaluation as an observable outcome", async () => {
-    const service = makeService();
-
-    await service.digestEvaluated({
-      subscriptionId: "subscription-1",
-      matches: 0,
-      isFirstDigest: true,
-      profileType: "feed",
-      evaluationId: "evaluation-1",
-    });
-
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: ANALYTICS_EVENTS.digestEvaluated,
-        dedupeKey: "evaluation-1",
-      }),
-    );
-  });
-
-  it("contains an outbox persistence failure", async () => {
-    const service = makeService();
-    enqueue.mockRejectedValueOnce(new Error("database unavailable"));
-
-    await expect(service.telegramLinked("subscription-1", "linked")).resolves.toBeUndefined();
-    expect(capture).not.toHaveBeenCalled();
-  });
-
-  it("does not fail a domain flow when journey resolution fails", async () => {
-    const service = makeService();
-    journeyForSubscription.mockRejectedValueOnce(new Error("database unavailable"));
-
-    await expect(service.telegramLinked("subscription-1", "linked")).resolves.toBeUndefined();
-    expect(capture).not.toHaveBeenCalled();
-  });
-
-  it("attributes an apply click to the subscription when one is present, even with a journey", async () => {
-    const service = makeService();
-
-    await service.applyClicked(VACANCY, "subscription-1", "journey-2");
-
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: ANALYTICS_EVENTS.digestLinkClicked,
-        journeyId: "journey-1",
-        properties: expect.objectContaining({
-          vacancy_id: "vacancy-1",
-          source: "djinni",
-          company: "acme",
-          surface: "telegram_digest",
-        }),
-      }),
-    );
-    expect(record).not.toHaveBeenCalled();
-  });
-
-  it("records a durable journey-level apply click when there is no subscription", async () => {
-    const service = makeService();
-
-    await service.applyClicked(VACANCY, undefined, "journey-2");
-
-    expect(record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        journeyId: "journey-2",
-        name: ANALYTICS_EVENTS.applyClicked,
-        source: "browser",
-        properties: expect.objectContaining({ vacancy_id: "vacancy-1", surface: "web_feed" }),
-      }),
-    );
-    // One click, one PostHog event, on the journey's own person.
-    expect(vacancyOutboundClicked).toHaveBeenCalledWith("person-1", "web_feed", VACANCY);
-    expect(capture).not.toHaveBeenCalled();
-  });
-
-  it("records an unattributed click when neither subscription nor journey is present", async () => {
-    const service = makeService();
-
-    await service.applyClicked(VACANCY);
-
-    expect(record).not.toHaveBeenCalled();
-    expect(enqueue).not.toHaveBeenCalled();
-    expect(capture).toHaveBeenCalledWith(
-      expect.any(String),
-      ANALYTICS_EVENTS.vacancyOutboundUnattributed,
-      expect.objectContaining({
-        vacancy_id: "vacancy-1",
-        // Flagged so no per-person metric can mistake the id for a human. The
-        // flag stays alongside the name so filters written against it (and the
-        // rows already in PostHog under the old name) keep working.
-        is_anonymous: true,
-        $process_person_profile: false,
-      }),
-    );
-    // objectContaining ignores extra keys, so assert the absence directly:
-    // there is no surface to report when nothing identified the tap.
-    expect(capture.mock.calls[0][2]).not.toHaveProperty("surface");
-  });
-
+describe("outbound clicks", () => {
   it("attributes a digest tap to the subscription's person", async () => {
-    const service = makeService();
-    subscriberForSubscription.mockResolvedValue({
-      personId: "33333333-3333-4333-8333-333333333333",
-      subscriptionKind: "feed",
+    const { service, posthog } = makeService({
+      subscriberForSubscription: jest.fn(async () => subscriber),
     });
 
-    await service.applyClicked(VACANCY, "subscription-1");
+    await service.applyClicked(VACANCY, "sub-1");
 
-    expect(vacancyOutboundClicked).toHaveBeenCalledWith(
-      "33333333-3333-4333-8333-333333333333",
+    expect(posthog.vacancyOutboundClicked).toHaveBeenCalledWith(
+      "person-1",
       "telegram_digest",
       VACANCY,
     );
+    expect(posthog.capture).not.toHaveBeenCalled();
   });
 
-  it("emits nothing for a digest tap on a subscription that no longer exists", async () => {
-    const service = makeService();
-
-    await service.applyClicked(VACANCY, "subscription-1");
-
-    expect(enqueue).toHaveBeenCalled();
-    expect(vacancyOutboundClicked).not.toHaveBeenCalled();
-  });
-
-  it("attributes a feed tap when the journey resolves to a single subscriber", async () => {
-    const service = makeService();
-    subscriberForJourney.mockResolvedValue({
-      personId: "44444444-4444-4444-8444-444444444444",
-      subscriptionKind: "cv",
+  it("attributes a feed tap to the subscriber when the journey names exactly one", async () => {
+    const { service, posthog } = makeService({
+      subscriberForJourney: jest.fn(async () => subscriber),
     });
 
-    await service.applyClicked(VACANCY, undefined, "journey-2");
+    await service.applyClicked(VACANCY, undefined, "journey-1");
 
-    expect(subscriberForJourney).toHaveBeenCalledWith("journey-2");
-    expect(vacancyOutboundClicked).toHaveBeenCalledWith(
-      "44444444-4444-4444-8444-444444444444",
-      "web_feed",
-      VACANCY,
+    expect(posthog.vacancyOutboundClicked).toHaveBeenCalledWith("person-1", "web_feed", VACANCY);
+  });
+
+  // The journey id IS the person id for a browser visit that has not subscribed
+  // yet; an account claim merges the two by alias, so capturing on it is not a
+  // synthetic identity.
+  it("falls back to the journey id when the journey names nobody", async () => {
+    const { service, posthog } = makeService();
+
+    await service.applyClicked(VACANCY, undefined, "journey-1");
+
+    expect(posthog.vacancyOutboundClicked).toHaveBeenCalledWith("journey-1", "web_feed", VACANCY);
+  });
+
+  // Neither `?s=` nor `?j=`: real volume, unusable id. Its own verb keeps the
+  // attributed one clean without anyone having to remember a filter.
+  it("gives an unnameable tap its own personless verb", async () => {
+    const { service, posthog } = makeService();
+
+    await service.applyClicked(VACANCY);
+
+    expect(posthog.vacancyOutboundClicked).not.toHaveBeenCalled();
+    expect(posthog.capture).toHaveBeenCalledWith(
+      expect.any(String),
+      "vacancy_outbound_unattributed",
+      expect.objectContaining({ is_anonymous: true, $process_person_profile: false }),
     );
+    const [, , properties] = posthog.capture.mock.calls[0];
+    expect(properties).not.toHaveProperty("surface");
   });
 
-  it("keeps the outbound click alive when the identity lookup fails", async () => {
-    const service = makeService();
-    subscriberForSubscription.mockRejectedValueOnce(new Error("database unavailable"));
+  it("never lets an identity lookup failure reach the redirect", async () => {
+    const { service, posthog } = makeService({
+      subscriberForSubscription: jest.fn(async () => {
+        throw new Error("db down");
+      }),
+    });
 
-    await expect(service.applyClicked(VACANCY, "subscription-1")).resolves.toBeUndefined();
-    expect(vacancyOutboundClicked).not.toHaveBeenCalled();
+    await expect(service.applyClicked(VACANCY, "sub-1")).resolves.toBeUndefined();
+    expect(posthog.vacancyOutboundClicked).not.toHaveBeenCalled();
+  });
+});
+
+describe("identity merges", () => {
+  it("merges a browser journey into the subscriber's person", () => {
+    const { service, posthog } = makeService();
+
+    service.aliasJourneyToPerson("journey-1", "person-1");
+
+    expect(posthog.mergePerson).toHaveBeenCalledWith("person-1", "journey-1");
   });
 
-  it("keeps the redirect's fire-and-forget call safe when the journey ledger write fails", async () => {
-    const service = makeService();
-    record.mockRejectedValueOnce(new Error("database unavailable"));
+  it("merges a claimed person into the account's person", () => {
+    const { service, posthog } = makeService();
 
-    await expect(service.applyClicked(VACANCY, undefined, "journey-2")).resolves.toBeUndefined();
+    service.aliasPerson("old-person", "account-person");
+
+    expect(posthog.mergePerson).toHaveBeenCalledWith("account-person", "old-person");
   });
 });

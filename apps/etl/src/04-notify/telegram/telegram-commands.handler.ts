@@ -269,7 +269,6 @@ export class TelegramCommandsHandler {
         label,
         subscriptionId,
       });
-      void this.analytics.activationValueShown(subscriptionId, total, shown.length);
     } catch (error) {
       this.logger.warn(
         `Activation preview failed for subscription ${subscriptionId}: ${

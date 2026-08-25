@@ -6,14 +6,18 @@ import {
   isAnalyticsPagePeriod,
   type AnalyticsPagePeriod,
 } from "@/lib/api/analytics-page";
+import { productAnalyticsApi, type ProductAnalyticsPeriod } from "@/lib/api/product-analytics";
 import { firstSearchParam, nonNegativeIntegerSearchParam } from "@/lib/search-params";
 import { EmptyState } from "@/ui/feedback/EmptyState";
 import { PageBody } from "@/ui/layout/PageBody";
 import { PageHeader } from "@/ui/layout/PageHeader";
 import { UrlSegments } from "@/ui/navigation/UrlSegments";
+import { DeliveryPanel } from "./_components/DeliveryPanel";
 import { FunnelSection } from "./_components/FunnelSection";
+import { LifecyclePanel } from "./_components/LifecyclePanel";
 import { MetricsTiles } from "./_components/MetricsTiles";
 import { PeopleTable } from "./_components/PeopleTable";
+import { RosterPanel } from "./_components/RosterPanel";
 import { SourceFilter } from "./_components/SourceFilter";
 import { SourcesSection } from "./_components/SourcesSection";
 
@@ -42,6 +46,15 @@ const POSTHOG_STATUS_COPY = {
   ready: { title: "", hint: "" },
 } as const;
 
+// The roster, lifecycle and delivery endpoint speaks the console's older period
+// vocabulary; this page's picker is the PostHog one. Map, don't widen either.
+const PRODUCT_PERIOD: Record<AnalyticsPagePeriod, ProductAnalyticsPeriod> = {
+  "24h": "24h",
+  "7d": "week",
+  "30d": "30d",
+  "90d": "all",
+};
+
 const PERIOD_OPTIONS: Array<{ value: AnalyticsPagePeriod; label: string }> = [
   { value: "24h", label: "24h" },
   { value: "7d", label: "7d" },
@@ -65,7 +78,7 @@ export default async function AnalyticsPage({
   const dir: "asc" | "desc" = firstSearchParam(sp.dir) === "desc" ? "desc" : "asc";
   const offset = nonNegativeIntegerSearchParam(sp.offset, 0);
 
-  const [metrics, people] = await Promise.all([
+  const [metrics, people, product] = await Promise.all([
     analyticsPageApi.metrics({ period, source }),
     analyticsPageApi.people({
       period,
@@ -76,7 +89,9 @@ export default async function AnalyticsPage({
       offset,
       limit: PEOPLE_PAGE_LIMIT,
     }),
+    productAnalyticsApi.overview(PRODUCT_PERIOD[period]).catch(() => null),
   ]);
+  const periodLabel = period === "24h" ? "last 24h" : `last ${period}`;
 
   return (
     <>
@@ -109,6 +124,20 @@ export default async function AnalyticsPage({
             <FunnelSection funnel={metrics.funnel} ctaClicks={metrics.ctaClicks} />
             <SourcesSection sources={metrics.sources} activeSource={source} period={period} />
           </>
+        )}
+
+        {product ? (
+          <>
+            <LifecyclePanel states={product.subscriberStates} />
+            <RosterPanel subscribers={product.subscriberActivity} period={periodLabel} />
+            <DeliveryPanel delivery={product.delivery} period={periodLabel} />
+          </>
+        ) : (
+          <EmptyState
+            title="product analytics api unavailable"
+            hint="the roster, lifecycle and delivery panels need /admin/product-analytics."
+            tone="danger"
+          />
         )}
 
         <PeopleTable

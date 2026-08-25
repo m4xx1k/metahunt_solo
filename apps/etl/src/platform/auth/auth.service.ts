@@ -28,7 +28,6 @@ import { verifyGoogleIdToken } from "./google-verify";
 
 const {
   accountMergeRequests,
-  analyticsJourneys,
   authIdentities,
   subscriptions,
   telegramLoginRequests,
@@ -489,10 +488,6 @@ export class AuthService {
     if (cvConflict) throw new ConflictException("Both accounts own the same CV");
 
     await db
-      .update(analyticsJourneys)
-      .set({ personId: targetUserId })
-      .where(eq(analyticsJourneys.personId, sourceUserId));
-    await db
       .update(subscriptions)
       .set({ userId: targetUserId, personId: targetUserId })
       .where(eq(subscriptions.userId, sourceUserId));
@@ -572,18 +567,6 @@ export class AuthService {
       .from(subscriptions)
       .where(unclaimed);
     await db.update(subscriptions).set({ userId, personId: userId }).where(unclaimed);
-    await db
-      .update(analyticsJourneys)
-      .set({ personId: userId })
-      .where(
-        inArray(
-          analyticsJourneys.id,
-          db
-            .select({ journeyId: subscriptions.journeyId })
-            .from(subscriptions)
-            .where(and(eq(subscriptions.userId, userId), isNull(subscriptions.candidateId))),
-        ),
-      );
     for (const personId of new Set(claimed.map((row) => row.personId))) {
       this.posthog?.mergePerson(userId, personId);
     }
