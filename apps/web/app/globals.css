@@ -109,35 +109,40 @@ input:-webkit-autofill:focus {
 }
 
 /* Sanitized vacancy-description HTML from DOU/Djinni — scoped so it can't leak styles elsewhere. */
+/* Mobile first: at 375px the description column is ~300px wide, and 16px/1.7
+   put it at ~30 characters per line. The sm branch below restores the desktop
+   size once there is room for it. */
 .vacancy-body {
   font-family: var(--font-body);
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 0.9375rem;
+  line-height: 1.65;
   color: var(--color-text-secondary);
-  max-width: 68ch;
+  max-width: 72ch;
   overflow-wrap: break-word;
 }
 .vacancy-body > :first-child {
   margin-top: 0;
 }
-.vacancy-body > :last-child {
+/* Not `> :last-child`: the block rules below match descendants, so a <p> that
+   closes a <blockquote> or an <li> needs neutralizing at its own level too. */
+.vacancy-body :last-child {
   margin-bottom: 0;
 }
-.vacancy-body > p {
+.vacancy-body p {
   margin: 0 0 1em;
 }
-.vacancy-body > ul,
-.vacancy-body > ol {
+.vacancy-body ul,
+.vacancy-body ol {
   margin: 0 0 1em;
-  padding-left: 1.5em;
+  padding-left: 1.25em;
   display: flex;
   flex-direction: column;
   gap: 0.4em;
 }
-.vacancy-body > ul {
+.vacancy-body ul {
   list-style-type: disc;
 }
-.vacancy-body > ol {
+.vacancy-body ol {
   list-style-type: decimal;
 }
 .vacancy-body li {
@@ -163,10 +168,10 @@ input:-webkit-autofill:focus {
   margin: 1.4em 0 0.6em;
 }
 .vacancy-body h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
 }
 .vacancy-body h3 {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
 }
 .vacancy-body h4 {
   font-size: 1rem;
@@ -208,6 +213,23 @@ input:-webkit-autofill:focus {
   background: none;
   border: none;
   padding: 0;
+}
+
+@media (min-width: 640px) {
+  .vacancy-body {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  .vacancy-body ul,
+  .vacancy-body ol {
+    padding-left: 1.5em;
+  }
+  .vacancy-body h2 {
+    font-size: 1.25rem;
+  }
+  .vacancy-body h3 {
+    font-size: 1.125rem;
+  }
 }
 
 /* Release bodies come from md/journal/releases.md through lib/releases.ts, which
