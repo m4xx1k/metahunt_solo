@@ -121,3 +121,10 @@ export function pluralizeUa(n: number, one: string, few: string, many: string): 
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
   return many;
 }
+
+// Labels are stored lowercase because the badges that render them are uppercase
+// by CSS. Anywhere they appear as prose — a SERP title, a pill value — they need
+// a capital.
+export function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}

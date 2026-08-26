@@ -40,3 +40,6 @@ backups/
 
 # Local screenshot scratch (visual checks, never a deliverable)
 scripts/.screenshots/
+
+# local-only compose overrides (prod creds neutralised for local dev)
+compose.override.yaml

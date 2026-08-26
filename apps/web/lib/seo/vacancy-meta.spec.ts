@@ -9,7 +9,14 @@ describe("vacancyTitle", () => {
   it("uses seniority + role + qualifier when they fit", () => {
     expect(
       vacancyTitle({ role: "Backend Developer", seniority: "middle", qualifier: "Firetics" }),
-    ).toBe("middle Backend Developer — Firetics");
+    ).toBe("Middle Backend Developer — Firetics");
+  });
+
+  it("capitalizes the seniority label, which is stored lowercase for the badge", () => {
+    expect(vacancyTitle({ role: "Backend Developer", seniority: "senior" })).toBe(
+      "Senior Backend Developer",
+    );
+    expect(vacancyTitle({ role: "Architect", seniority: "c-level" })).toBe("C-level Architect");
   });
 
   it("falls back to the role alone when nothing else is known", () => {
