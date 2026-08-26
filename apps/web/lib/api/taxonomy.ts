@@ -2,7 +2,7 @@
 // Source of truth: apps/etl/src/taxonomy/taxonomy.{controller,service}.ts.
 // Hand-mirrored per ADR-0005 — same posture as lib/api/monitoring.ts.
 
-import { apiBase, apiGet, buildQs } from "./client";
+import { apiBase, apiGet, authHeaders, buildQs } from "./client";
 
 export type AxisKey = "role" | "skill" | "domain";
 
@@ -149,22 +149,19 @@ export class TaxonomyApiError extends Error {
   }
 }
 
-function get<T>(
-  path: string,
-  params?: Record<string, string | number | undefined>,
-): Promise<T> {
+function get<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
   return apiGet<T>(`${path}${buildQs(params)}`);
 }
 
-async function mutate<T>(
-  method: "PATCH" | "POST",
-  path: string,
-  body?: unknown,
-): Promise<T> {
+async function mutate<T>(method: "PATCH" | "POST", path: string, body?: unknown): Promise<T> {
   const url = `${apiBase()}${path}`;
-  const init: RequestInit = { method, cache: "no-store" };
+  // Every /admin/taxonomy route is @AdminOnly — without the Bearer token the
+  // guard 401s the mutation while the page's GETs (which go through apiGet)
+  // still succeed, so the queue renders but no action on it lands.
+  const headers: Record<string, string> = { ...(await authHeaders()) };
+  const init: RequestInit = { method, cache: "no-store", headers };
   if (body !== undefined) {
-    init.headers = { "content-type": "application/json" };
+    headers["content-type"] = "application/json";
     init.body = JSON.stringify(body);
   }
   const res = await fetch(url, init);
@@ -176,18 +173,12 @@ async function mutate<T>(
     } catch {
       // keep raw text
     }
-    throw new TaxonomyApiError(
-      res.status,
-      parsed,
-      `taxonomy api ${res.status} ${path}`,
-    );
+    throw new TaxonomyApiError(res.status, parsed, `taxonomy api ${res.status} ${path}`);
   }
   return (await res.json()) as T;
 }
 
-function listParams(
-  filters: NodeListFilters,
-): Record<string, string | number | undefined> {
+function listParams(filters: NodeListFilters): Record<string, string | number | undefined> {
   return {
     type: filters.type,
     status: filters.statuses?.join(","),
@@ -202,30 +193,19 @@ export const taxonomyApi = {
   coverage: () => get<TaxonomyCoverage>("/admin/taxonomy/coverage"),
   list: (filters: NodeListFilters = {}) =>
     get<NodeListResult>("/admin/taxonomy/nodes", listParams(filters)),
-  node: (id: string) =>
-    get<NodeDetail>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}`),
+  node: (id: string) => get<NodeDetail>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}`),
   fuzzyMatches: (id: string) =>
-    get<FuzzyMatchResult>(
-      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/fuzzy-matches`,
-    ),
+    get<FuzzyMatchResult>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}/fuzzy-matches`),
   searchVerified: (type: NodeType, q: string, limit?: number) =>
     get<SearchResult>("/admin/taxonomy/nodes/search", { type, q, limit }),
   verify: (id: string) =>
-    mutate<TrimmedNode>(
-      "PATCH",
-      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/verify`,
-    ),
+    mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/verify`),
   hide: (id: string) =>
-    mutate<TrimmedNode>(
-      "PATCH",
-      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/hide`,
-    ),
+    mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/hide`),
   rename: (id: string, name: string) =>
-    mutate<TrimmedNode>(
-      "PATCH",
-      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/rename`,
-      { name },
-    ),
+    mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/rename`, {
+      name,
+    }),
   mergeInto: (sourceId: string, targetId: string) =>
     mutate<{ mergedInto: string; source: string; target: string }>(
       "POST",

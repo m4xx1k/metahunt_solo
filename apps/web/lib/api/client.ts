@@ -12,7 +12,9 @@ import { SESSION_COOKIE } from "./session-cookie";
 // since localStorage never reaches the server. Dynamic import keeps
 // next/headers out of the client bundle — this file is also imported from
 // Client Components (e.g. use-session.ts).
-async function authHeaders(): Promise<Record<string, string>> {
+// Exported so resource files that need their own fetch (taxonomy's typed-error
+// mutate, cv's multipart upload) authenticate the same way apiGet/apiWrite do.
+export async function authHeaders(): Promise<Record<string, string>> {
   const token = typeof window === "undefined" ? await serverToken() : getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
