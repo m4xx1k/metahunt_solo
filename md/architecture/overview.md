@@ -119,10 +119,11 @@ not cross-stage DI — which keeps each stage independently extractable later.
 ## Local infra (docker-compose)
 
 Split in two: `compose.infra.yaml` (the shared services below) + `compose.yaml`
-(the etl + web app stack, live-reloaded via Docker Compose Watch). `pnpm
-docker:infra` brings up just the shared services (for running the apps natively);
-`pnpm docker:dev` brings up infra + apps with hot-reload. Full guide:
-[`md/runbook/docker-dev.md`](../runbook/docker-dev.md).
+(the etl + web app stack). `pnpm docker:infra` brings up just the shared services
+(for running the apps natively); `pnpm docker:up` brings up infra + apps
+detached, with web live-reloading off a bind mount; `pnpm docker:dev` adds
+Docker Compose Watch in the foreground, which is what etl needs to reload. Full
+guide: [`md/runbook/docker-dev.md`](../runbook/docker-dev.md).
 
 | Service       | Image                        | Ports                         | Purpose                                                                                |
 | ------------- | ---------------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |

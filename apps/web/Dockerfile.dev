@@ -19,5 +19,10 @@ RUN pnpm install -r --frozen-lockfile
 
 COPY --chown=node:node . .
 
+# The sidecar ignore file drops .next from the build context, so compose's
+# anonymous volume for it would be seeded from nothing and land root-owned —
+# and next dev, running as `node`, then cannot write its own build dir.
+RUN mkdir -p /app/apps/web/.next
+
 ENV NODE_ENV=development
 CMD ["pnpm", "--filter", "@metahunt/web", "dev"]

@@ -1,9 +1,17 @@
-# App services (etl + web) with live watch via `docker compose watch`: source
-# edits are synced into the containers and dependency changes trigger a rebuild
-# — no bind mount, so nothing is written back to the host. One baked dev image,
-# two commands. Requires the shared infra + its network first:
-#   docker compose -f compose.infra.yaml up -d   (or `pnpm db:up`)
-#   docker compose watch                         (or `pnpm dev:docker`)
+# App services (etl + web). Requires the shared infra + its network first:
+#   docker compose -f compose.infra.yaml up -d   (or `pnpm docker:infra`)
+#   docker compose up -d                         (web is live on its own)
+#   docker compose watch                         (adds etl live-reload; foreground)
+#
+# The two apps reload differently on purpose:
+#   web — bind-mounted source, so Next picks edits up with no helper process.
+#   etl — `docker compose watch` (sync+restart); it is a stateful poller that has
+#         to be restarted to pick a change up, and only the watcher can do that.
+#
+# `restart: no` is deliberate. `docker compose watch` is a foreground process that
+# dies with its terminal, while `unless-stopped` used to resurrect these two after
+# a reboot without it — leaving etl silently serving whatever code was baked into
+# the image. A container being up now means someone started it this session.
 
 networks:
   metahunt-infra:
@@ -17,7 +25,7 @@ services:
       dockerfile: apps/etl/Dockerfile.dev
     image: metahunt-etl-dev:latest
     container_name: metahunt-etl-dev
-    restart: unless-stopped
+    restart: "no"
     # tini as PID 1: forwards SIGTERM to node on stop (so sync+restart is a clean,
     # fast container restart) and reaps the short-lived build step's children.
     init: true
@@ -37,6 +45,21 @@ services:
     ports:
       - "3333:3333"
     networks: [metahunt-infra]
+    # `GET /` is process-up + SELECT 1, which is exactly what web needs from etl.
+    # Deliberately NOT /healthz: that one also demands temporal and object storage,
+    # so a slow Temporal would abort `docker compose up` and the frontend would
+    # never start — on the path the runbook recommends for frontend work.
+    # node:22-slim ships neither curl nor wget; node's global fetch needs no layer.
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch("http://localhost:3333/").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
     develop:
       watch:
         # etl is a stateful poller (Telegram + Temporal) that holds port 3333;
@@ -59,10 +82,14 @@ services:
       dockerfile: apps/web/Dockerfile.dev
     image: metahunt-web-dev:latest
     container_name: metahunt-web-dev
-    restart: unless-stopped
+    restart: "no"
     init: true
+    # Wait for /healthz, not just for the container to exist: etl builds on boot
+    # (~40s), and web starting first meant the first page load 500'd on
+    # ECONNREFUSED with nothing to say why.
     depends_on:
-      - etl
+      etl:
+        condition: service_healthy
     env_file:
       - ./apps/web/.env.local
     environment:
@@ -73,11 +100,21 @@ services:
     ports:
       - "4000:4000"
     networks: [metahunt-infra]
+    volumes:
+      # Live source with no watcher to keep alive — `docker compose up -d` is
+      # enough, and a stale container is not a state you can end up in.
+      - ./apps/web:/app/apps/web
+      # Both masks keep the image's own copy: the host's apps/web/node_modules is
+      # a symlink farm into the host store (the whole workspace), while the image
+      # installed web's subset, and .next must not be shared with native dev.
+      #
+      # Compose reuses anonymous volumes when it recreates a container, so after a
+      # dependency change the stale node_modules would mask the freshly installed
+      # one and next dev would die on "Module not found". Both docker: scripts pass
+      # -V (--renew-anon-volumes) so these are always re-seeded from the image.
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
     develop:
       watch:
-        - action: sync
-          path: ./apps/web
-          target: /app/apps/web
-          ignore: [node_modules/, .next/]
         - action: rebuild
           path: ./pnpm-lock.yaml
