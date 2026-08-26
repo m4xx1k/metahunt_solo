@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { SkillChip, type SkillTone } from "@/entities/skill/SkillChip";
+import { SkillChip, type SkillSize, type SkillTone } from "@/entities/skill/SkillChip";
 import type { NodeRef } from "@/lib/api/vacancies";
 
 const OPTIONAL_SHOWN = 5;
@@ -13,25 +13,29 @@ export type VacancyMatch = { haveSkillIds: readonly string[] };
 
 // Required and optional skills on their own rows (colour is the label). Required
 // is never truncated — what the role demands is always fully visible; optional
-// caps at OPTIONAL_SHOWN with one show-all button revealing the overflow in place.
+// caps at OPTIONAL_SHOWN with one show-all button revealing the overflow in
+// place, unless the caller opts out of collapsing entirely.
 export function VacancySkills({
   required,
   optional,
   match,
+  size = "sm",
+  collapseOptional = true,
 }: {
   required: NodeRef[];
   optional: NodeRef[];
   match?: VacancyMatch;
+  size?: SkillSize;
+  /** Feed cards cap the optional row to stay scannable; the vacancy page has
+   *  the room and is where someone reads the full requirement list. */
+  collapseOptional?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const have = useMemo(
-    () => (match ? new Set(match.haveSkillIds) : null),
-    [match],
-  );
+  const have = useMemo(() => (match ? new Set(match.haveSkillIds) : null), [match]);
 
   if (required.length === 0 && optional.length === 0) return null;
 
-  const opt = expanded ? optional : optional.slice(0, OPTIONAL_SHOWN);
+  const opt = expanded || !collapseOptional ? optional : optional.slice(0, OPTIONAL_SHOWN);
   const hidden = optional.length - opt.length;
 
   // Required: have → green ✓, lacks → red ✗. Optional: have → green ✓ (dotted,
@@ -39,15 +43,20 @@ export function VacancySkills({
   // red flag).
   const reqTone = (s: NodeRef): SkillTone =>
     have ? (have.has(s.id) ? "have" : "missing") : "required";
-  const optTone = (s: NodeRef): SkillTone =>
-    have && have.has(s.id) ? "have" : "optional";
+  const optTone = (s: NodeRef): SkillTone => (have && have.has(s.id) ? "have" : "optional");
 
   return (
     <div className="flex flex-col gap-2">
       {required.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {required.map((s) => (
-            <SkillChip key={s.id} name={s.name} tone={reqTone(s)} glyph={have != null} />
+            <SkillChip
+              key={s.id}
+              name={s.name}
+              tone={reqTone(s)}
+              size={size}
+              glyph={have != null}
+            />
           ))}
         </div>
       ) : null}
@@ -58,13 +67,14 @@ export function VacancySkills({
               key={s.id}
               name={s.name}
               tone={optTone(s)}
+              size={size}
               glyph={have != null && have.has(s.id)}
               dotted={have != null && have.has(s.id)}
             />
           ))}
         </div>
       ) : null}
-      {hidden > 0 || expanded ? (
+      {collapseOptional && (hidden > 0 || expanded) ? (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}

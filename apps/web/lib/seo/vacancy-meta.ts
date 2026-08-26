@@ -2,12 +2,14 @@
 // appends " · metahunt" — so a page title has ~50 to work with. Composing it by
 // hand overran that on long roles ("senior embedded software engineer — …").
 
+import { capitalize } from "@/lib/format";
+
 /** 60 minus " · metahunt". */
 export const VACANCY_TITLE_BUDGET = 49;
 
 type TitleParts = {
   role: string;
-  /** Lowercase seniority label, when the vacancy states one. */
+  /** Seniority label as SENIORITY_LABELS stores it (lowercase), when stated. */
   seniority?: string | null;
   /** The most specific distinguishing fact available: company, else city, else source. */
   qualifier?: string | null;
@@ -19,7 +21,9 @@ type TitleParts = {
  * title. Add specificity while it fits, and drop it rather than overrun.
  */
 export function vacancyTitle({ role, seniority, qualifier }: TitleParts): string {
-  const base = seniority ? `${seniority} ${role}` : role;
+  // SENIORITY_LABELS is lowercase because the on-page badge is; a SERP title
+  // that opens with "middle Backend Developer" just reads like a typo.
+  const base = seniority ? `${capitalize(seniority)} ${role}` : role;
   if (base.length >= VACANCY_TITLE_BUDGET) return truncate(base, VACANCY_TITLE_BUDGET);
 
   const withQualifier = qualifier ? `${base} — ${qualifier}` : base;
