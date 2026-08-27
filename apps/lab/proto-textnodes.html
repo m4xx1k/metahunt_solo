@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>proto B — text nodes (no dots, no overlap)</title>
+    <style>
+      html,body{margin:0;background:#0f0f10;color:#e7e7e7;font:13px ui-sans-serif,system-ui,sans-serif}
+      #bar{position:fixed;top:8px;left:8px;z-index:10;background:#000a;padding:6px 10px;border:1px solid #333;border-radius:6px}
+      #bar input[type=range]{vertical-align:middle}
+      #pick{position:fixed;top:8px;right:8px;z-index:10;background:#000c;border:1px solid #333;border-radius:6px;padding:8px 10px;max-width:260px;white-space:pre-wrap}
+    </style>
+  </head>
+  <body>
+    <div id="bar"></div>
+    <div id="pick"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/proto-textnodes.tsx"></script>
+  </body>
+</html>

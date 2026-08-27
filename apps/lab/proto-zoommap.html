@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>proto A — zoom map (settled, always labelled)</title>
+    <style>
+      html,body{margin:0;background:#0f0f10;color:#e7e7e7;font:13px ui-sans-serif,system-ui,sans-serif}
+      #bar{position:fixed;top:8px;left:8px;z-index:10;display:flex;gap:8px;align-items:center;background:#000a;padding:6px 8px;border:1px solid #333;border-radius:6px}
+      #bar input{background:#1b1c1b;border:1px solid #444;color:#e7e7e7;padding:3px 6px;border-radius:4px;width:180px}
+      #pick{position:fixed;top:8px;right:8px;z-index:10;background:#000c;border:1px solid #333;border-radius:6px;padding:8px 10px;max-width:260px;white-space:pre-wrap}
+    </style>
+  </head>
+  <body>
+    <div id="bar"></div>
+    <div id="pick"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/proto-zoommap.tsx"></script>
+  </body>
+</html>

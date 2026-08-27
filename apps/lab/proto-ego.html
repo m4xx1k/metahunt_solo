@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>proto C — ego graph (pick → neighbourhood → click re-centres)</title>
+    <style>
+      html,body{margin:0;background:#0f0f10;color:#e7e7e7;font:13px ui-sans-serif,system-ui,sans-serif}
+      #bar{position:fixed;top:8px;left:8px;z-index:10;background:#000a;padding:6px 10px;border:1px solid #333;border-radius:6px;max-width:70vw}
+      #crumbs{position:fixed;bottom:8px;left:8px;z-index:10;background:#000a;padding:6px 10px;border:1px solid #333;border-radius:6px;max-width:90vw}
+      #crumbs a{color:#7fd3c8;cursor:pointer;text-decoration:underline;margin-right:6px}
+      #bar input{background:#1b1c1b;border:1px solid #444;color:#e7e7e7;padding:3px 6px;border-radius:4px;width:180px}
+    </style>
+  </head>
+  <body>
+    <div id="bar"></div>
+    <div id="crumbs"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/proto-ego.tsx"></script>
+  </body>
+</html>
