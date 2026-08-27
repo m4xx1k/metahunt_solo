@@ -106,13 +106,18 @@ point for reproducing the artifact.
 
 ## Subtasks
 
-- [ ] **T0 — Land what works, then branch** — *done when:* PR #200 is merged;
+- [x] **T0 — Land what works, then branch** — *done when:* PR #200 is merged;
       `feat/lab-constellation` exists off the new `main`; `lab:build`, `lab:check` and
       `lab:relations` are green on it.
 
   PR #200 (skill dossier, FAQ, and the 2026-08-27 data refresh) is already green.
   Merge it so the rebuild starts from a clean single-purpose branch rather than
   stacking on a draft PR.
+
+  **Done 2026-08-27.** #200 squash-merged to `main` as `d6c697c`; `feat/lab-constellation`
+  cut off it. On the branch: `lab:build` exit 0 (bundle 1,155 kB), `lab:check` exit 0,
+  `lab:relations` exit 0 ("no drift"; 26 top-150 edges still unlabelled — known
+  follow-up curation, not blocking).
 
 - [ ] **T1 — Subtract, and fix the invisible file** — *done when:*
       `file apps/lab/src/views/Relations.tsx` reports text, not `data`; a ripgrep-style
