@@ -289,6 +289,24 @@ point for reproducing the artifact.
   choice (it is provisional until here), update `md/architecture/overview.md` if the
   shape changed, add a `md/journal/releases.md` paragraph, and open the PR.
 
+  **In progress — 2026-08-27.** Verified so far, `main` (:4201) vs branch (:4200)
+  side by side under headless Playwright:
+
+  | Check | `main` (sigma + FA2) | branch (constellation) |
+  |---|---|---|
+  | NPMI slider drag, worst frame | 888 ms p95 · 1180 ms max | **65 ms max** — no block |
+  | Click a drifting node | — | lands first time **4/4** |
+  | Warm framerate | static | **60 fps** |
+  | Reduced motion | n/a | settles to a full stop (0.000 px/node), clicks still work |
+
+  - **"both themes hold" — deferred.** The lab's light theme never renders: a
+    pre-existing Tailwind v4 bug (`@theme` nested in `@media`), byte-identical on
+    `main`. `#fcfcfb` is absent from the built CSS. Filed
+    `md/todo/lab-light-theme-broken.md`. T5 is judged on the dark surface only;
+    the cluster tint already swaps lightness by theme but has only been seen dark.
+  - **"you would rather use it" — pending the owner's own A/B.** Not a call an
+    agent makes. Awaiting the verdict before the ADR / overview / releases / PR.
+
 ## Risks
 
 | Risk | Caught by | If it happens |
