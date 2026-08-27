@@ -74,6 +74,37 @@
   }
 }
 
+@layer components {
+  .lab-shell {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 65% 34rem at 74% -6%, var(--color-signal-soft), transparent 68%),
+      linear-gradient(var(--color-ground), var(--color-ground));
+  }
+
+  .lab-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    background:
+      linear-gradient(120deg, color-mix(in srgb, var(--color-panel) 96%, var(--color-signal)), var(--color-panel)),
+      var(--color-panel);
+  }
+
+  .lab-hero::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    opacity: 0.36;
+    background-image:
+      linear-gradient(var(--color-rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
+    background-size: 2rem 2rem;
+    mask-image: linear-gradient(90deg, transparent, black 55%, transparent);
+  }
+}
+
 @utility mag-* {
   /* Magnitude drawn behind a numeric cell: the column reads as a bar chart
      without becoming one. --mag is set inline per row. */

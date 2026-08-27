@@ -6,95 +6,103 @@ import { buildAdjacency, fmt } from "./lib/graph";
 import { MapView } from "./views/Map";
 import { RelationsView } from "./views/Relations";
 import { Roles } from "./views/Roles";
-import { Skills } from "./views/Skills";
-import { tab } from "./ui";
+import { Faq } from "./views/Faq";
+import { SkillDossier } from "./views/SkillDossier";
+import { Experiments } from "./views/Experiments";
+import { panel, tab } from "./ui";
 
 const graph = raw as unknown as Graph;
 const curated = curatedRaw as unknown as PairRelations;
 
-const TABS = [
-  { key: "skills", text: "Skill neighbourhood" },
-  { key: "roles", text: "Roles" },
-  { key: "map", text: "Map" },
-  { key: "relations", text: "Relations" },
-] as const;
-
-type TabKey = (typeof TABS)[number]["key"];
-
-const isTab = (v: string): v is TabKey => TABS.some((t) => t.key === v);
-
 export default function App() {
-  // The view lives in the hash so a reload, a bookmark, or a link to someone
-  // else lands on the same screen.
-  const [view, setViewState] = useState<TabKey>(() => {
-    const h = location.hash.slice(1);
-    return isTab(h) ? h : "skills";
-  });
-
-  const setView = (v: TabKey) => {
-    setViewState(v);
-    location.hash = v;
-  };
   const [selected, setSelected] = useState(() =>
-    Math.max(0, graph.nodes.findIndex((n) => n.name === "Java")),
+    Math.max(0, graph.nodes.findIndex((n) => n.name === "React")),
   );
+  const [dossierPlacement, setDossierPlacement] = useState<"side" | "bottom">("side");
 
   const adj = useMemo(() => buildAdjacency(graph.edges), []);
 
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   const openSkill = (index: number) => {
     setSelected(index);
-    setView("skills");
+    scrollTo("graph");
   };
 
   return (
-    <div className="mx-auto max-w-[1180px] px-5 pb-24">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-rule pt-7 pb-4">
-        <h1 className="font-semibold tracking-tight">
-          metahunt lab <span className="font-normal text-ink-3">· skill graph v0</span>
-        </h1>
-        <p className="font-mono text-[0.72rem] tracking-wide text-ink-3">
-          {fmt(graph.provenance.nPositions)} positions · {graph.provenance.corpusStart} →{" "}
-          {graph.provenance.corpusEnd} · {graph.nodes.length} skills · {fmt(graph.edges.length)} edges
-        </p>
-      </header>
+    <div className="lab-shell">
+      <main className="relative mx-auto max-w-[1440px] px-5 pb-24">
+        <header className="lab-hero mt-5 border border-rule px-5 py-6 sm:px-8 sm:py-8">
+          <div className="relative max-w-3xl">
+            <p className="font-mono text-[0.68rem] tracking-[0.18em] text-signal">METAHUNT RESEARCH LAB · 01</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">What skills travel together?</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-base">
+              Explore the patterns in real job requirements. Select any skill to see the evidence around it — not a course plan, not a prediction.
+            </p>
+          </div>
+          <dl className="relative mt-7 flex flex-wrap gap-x-7 gap-y-3 border-t border-rule pt-4 font-mono text-[0.68rem] text-ink-3">
+            <Metric value={fmt(graph.provenance.nPositions)} label="positions" />
+            <Metric value={String(graph.nodes.length)} label="skills" />
+            <Metric value={fmt(graph.edges.length)} label="observed links" />
+            <Metric value={`${graph.provenance.corpusStart} → ${graph.provenance.corpusEnd}`} label="snapshot" />
+          </dl>
+        </header>
 
-      <nav className="flex gap-1.5 py-4">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            className={tab(view === t.key)}
-            aria-pressed={view === t.key}
-            onClick={() => setView(t.key)}
-          >
-            {t.text}
-          </button>
-        ))}
-      </nav>
+        <section id="graph" className="scroll-mt-5 pt-7">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[0.67rem] tracking-[0.14em] text-signal">EXPLORE</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight">Skill map</h2>
+            </div>
+            <div className="flex gap-1.5" aria-label="Dossier placement">
+              {(["side", "bottom"] as const).map((placement) => (
+                <button key={placement} type="button" className={tab(dossierPlacement === placement)} aria-pressed={dossierPlacement === placement} onClick={() => setDossierPlacement(placement)}>
+                  {placement === "side" ? "Side panel" : "Below map"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={dossierPlacement === "side" ? "grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]" : "grid gap-6"}>
+            <div className="min-w-0"><MapView graph={graph} selected={selected} onSelectSkill={setSelected} onOpenFaq={() => scrollTo("questions")} /></div>
+            <aside aria-label="Selected skill dossier" className={dossierPlacement === "side" ? "min-w-0 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto lg:pr-1" : "min-w-0"}>
+              <SkillDossier graph={graph} curated={curated} adj={adj} selected={selected} onSelect={setSelected} onOpenFaq={() => scrollTo("questions")} variant={dossierPlacement === "side" ? "sidebar" : "full"} />
+            </aside>
+          </div>
+        </section>
 
-      {view === "skills" ? (
-        <Skills graph={graph} adj={adj} selected={selected} onSelect={setSelected} />
-      ) : null}
-      {view === "roles" ? <Roles graph={graph} onSelectSkill={openSkill} /> : null}
-      {view === "map" ? <MapView graph={graph} onSelectSkill={openSkill} /> : null}
-      {view === "relations" ? (
-        <RelationsView graph={graph} curated={curated} onSelectSkill={openSkill} />
-      ) : null}
-
-      <Methodology />
+        <section id="evidence" className="mt-16 scroll-mt-5">
+          <div className="mb-5 max-w-2xl">
+            <p className="font-mono text-[0.67rem] tracking-[0.14em] text-signal">EVIDENCE, NOT DECORATION</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">How to read the map</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-2">The visual comes first. The assumptions, role cuts, and hand-reviewed labels live here when you want to interrogate them.</p>
+          </div>
+          <EvidenceSection title="How this map was built" subtitle="Corpus, thresholds, and limits" open><Methodology /></EvidenceSection>
+          <EvidenceSection title="Explore by role" subtitle="What a specific role asks for"><Roles graph={graph} onSelectSkill={openSkill} onOpenFaq={() => scrollTo("questions")} /></EvidenceSection>
+          <EvidenceSection title="What strong links mean" subtitle="Hand-reviewed: complement, substitute, implies"><RelationsView graph={graph} curated={curated} onSelectSkill={openSkill} /></EvidenceSection>
+          <div id="questions" className="scroll-mt-5"><EvidenceSection title="Questions & limits" subtitle="Plain-language definitions"><Faq /></EvidenceSection></div>
+          <details className="mt-3"><summary className="cursor-pointer font-mono text-[0.7rem] tracking-wide text-ink-3">Unreviewed experiments</summary><div className="mt-5"><Experiments /></div></details>
+        </section>
+      </main>
     </div>
   );
+}
+
+function Metric({ value, label }: { value: string; label: string }) {
+  return <div><dt className="text-ink">{value}</dt><dd className="mt-0.5">{label}</dd></div>;
+}
+
+function EvidenceSection({ title, subtitle, open = false, children }: { title: string; subtitle: string; open?: boolean; children: React.ReactNode }) {
+  return <details className={`${panel} mb-3 group`} open={open}>
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5"><span><span className="block text-sm font-semibold">{title}</span><span className="mt-0.5 block text-xs text-ink-3">{subtitle}</span></span><span className="font-mono text-xs text-signal transition-transform group-open:rotate-45">+</span></summary>
+    <div className="border-t border-rule px-4 py-5 sm:px-5">{children}</div>
+  </details>;
 }
 
 function Methodology() {
   const { contract, provenance, sources } = graph;
   return (
-    <details className="mt-10 border-t border-rule pt-4">
-      <summary className="cursor-pointer font-mono text-[0.72rem] uppercase tracking-wider text-ink-3">
-        Methodology and limits
-      </summary>
-
-      <dl className="mt-4 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-1.5 text-[0.8rem]">
+    <>
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-1.5 text-[0.8rem]">
         <Row k="Grain" v={contract.grain} />
         <Row k="Aggregation" v={contract.positionSkillRule} />
         <Row k="Eligibility" v={contract.skillEligibility} />
@@ -127,7 +135,7 @@ function Methodology() {
           together&quot; would be wrong.
         </p>
       </div>
-    </details>
+    </>
   );
 }
 

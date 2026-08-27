@@ -6,6 +6,7 @@ import Sigma from "sigma";
 import type { Graph } from "../types";
 import { fmt } from "../lib/graph";
 import { input, label, panel, panelHead, panelNote, panelTitle } from "../ui";
+import { HowItWorks } from "./HowItWorks";
 
 const token = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
@@ -16,11 +17,23 @@ type Cluster = { id: number; members: number[]; label: string };
  *  keep by filtering first and grouping second: an NPMI floor decides what is
  *  drawn, Louvain decides what belongs together, and only one cluster is ever
  *  emphasised at a time. */
-export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill: (i: number) => void }) {
+export function MapView({
+  graph,
+  selected,
+  onSelectSkill,
+  onOpenFaq,
+}: {
+  graph: Graph;
+  selected: number;
+  onSelectSkill: (i: number) => void;
+  onOpenFaq: () => void;
+}) {
   const host = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
+  const previousSelected = useRef<number | null>(null);
   const [minNpmi, setMinNpmi] = useState(0.3);
   const [focus, setFocus] = useState<number | null>(null);
+  const [showLabels, setShowLabels] = useState(true);
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
 
   /** Layout and community detection are pure functions of the filter, so they
@@ -112,29 +125,56 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
     if (!host.current || model.g.order === 0) return;
 
     const signal = token("--color-signal");
+    const trap = token("--color-trap");
     const muted = token("--color-ink-3");
     const rule = token("--color-rule-strong");
 
+    const relation = new Map<string, "core" | "periphery">();
+    for (const edge of graph.edges) {
+      if (edge.a !== selected && edge.b !== selected) continue;
+      const other = edge.a === selected ? edge.b : edge.a;
+      const p = edge.a === selected ? edge.pBgivenA : edge.pAgivenB;
+      if (p >= 0.6) relation.set(String(other), "core");
+      else if (p >= 0.2) relation.set(String(other), "periphery");
+    }
+
     model.g.forEachNode((node, attrs) => {
+      const idx = attrs.idx as number;
+      const kind = relation.get(node);
       const inFocus = focus === null || attrs.community === focus;
-      model.g.setNodeAttribute(node, "color", inFocus ? signal : muted);
-      model.g.setNodeAttribute(node, "size", 2 + Math.sqrt(attrs.support as number) / 9);
-      model.g.setNodeAttribute(node, "zIndex", inFocus ? 1 : 0);
+      const base = 2 + Math.sqrt(attrs.support as number) / 9;
+      model.g.setNodeAttribute(node, "color", idx === selected ? trap : kind ? signal : muted);
+      model.g.setNodeAttribute(node, "size", idx === selected ? base + 4 : kind === "core" ? base + 1.5 : base);
+      model.g.setNodeAttribute(node, "zIndex", idx === selected ? 3 : kind ? 2 : inFocus ? 1 : 0);
     });
-    model.g.forEachEdge((edge) => {
-      model.g.setEdgeAttribute(edge, "color", rule);
-      model.g.setEdgeAttribute(edge, "size", 0.6);
+    model.g.forEachEdge((edge, _attrs, source, target) => {
+      const touchesSelected = source === String(selected) || target === String(selected);
+      const other = source === String(selected) ? target : source;
+      const kind = touchesSelected ? relation.get(other) : undefined;
+      model.g.setEdgeAttribute(edge, "color", kind ? signal : rule);
+      model.g.setEdgeAttribute(edge, "size", kind === "core" ? 2.2 : kind === "periphery" ? 1.2 : 0.45);
     });
 
     const renderer = new Sigma(model.g, host.current, {
       labelColor: { color: token("--color-ink-2") },
       labelFont: "ui-sans-serif, system-ui, sans-serif",
       labelSize: 11,
-      labelRenderedSizeThreshold: 6,
+      labelRenderedSizeThreshold: showLabels ? 0 : Infinity,
       defaultEdgeColor: rule,
       zIndex: true,
     });
     sigmaRef.current = renderer;
+
+    // Keep the initial overview intact; on subsequent picks, centre the chosen
+    // skill and move one zoom step closer without hiding the neighbourhood.
+    const shouldZoom = previousSelected.current !== null && previousSelected.current !== selected;
+    previousSelected.current = selected;
+    const selectedNode = model.g.findNode((_node, attrs) => (attrs.idx as number) === selected);
+    if (shouldZoom && selectedNode) {
+      const node = model.g.getNodeAttributes(selectedNode);
+      const position = renderer.graphToViewport({ x: node.x as number, y: node.y as number });
+      renderer.getCamera().animate(renderer.getViewportZoomedState(position, 0.68), { duration: 420 });
+    }
 
     renderer.on("enterNode", ({ node, event }) => {
       const a = model.g.getNodeAttributes(node);
@@ -154,7 +194,7 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
       sigmaRef.current = null;
       setHover(null);
     };
-  }, [model, focus, onSelectSkill]);
+  }, [graph.edges, model, focus, onSelectSkill, selected, showLabels]);
 
   return (
     <>
@@ -196,6 +236,18 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
             ))}
           </select>
         </div>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-2">
+          <input
+            type="checkbox"
+            className="accent-signal"
+            checked={showLabels}
+            onChange={(event) => setShowLabels(event.target.checked)}
+          />
+          Show skill labels
+        </label>
+        <p className="max-w-[42ch] text-xs leading-relaxed text-ink-3">
+          <span className="text-trap">Selected</span> · thick teal = often requested together · thin teal = sometimes requested together
+        </p>
       </div>
 
       <div className={panel}>
@@ -206,7 +258,7 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
           <span className={panelNote}>Louvain communities · ForceAtlas2 layout · click a node</span>
         </div>
         <div className="relative">
-          <div ref={host} className="h-[36rem] w-full" />
+          <div ref={host} className="h-[32rem] w-full sm:h-[42rem]" />
           {hover ? (
             <div
               className="pointer-events-none absolute z-10 whitespace-pre rounded border border-rule-strong bg-ground px-2.5 py-1.5 font-mono text-[0.72rem] leading-relaxed"
@@ -223,13 +275,11 @@ export function MapView({ graph, onSelectSkill }: { graph: Graph; onSelectSkill:
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-ink-3 max-w-[70ch] leading-relaxed">
-        Clusters are found by Louvain on the NPMI-weighted graph — nothing here was defined by hand,
-        and the labels are just each cluster&apos;s three most-demanded skills. Raising the NPMI floor
-        does not zoom in; it changes which links exist, so the clustering is recomputed and may split
-        or merge groups. Position on the canvas carries no meaning beyond &quot;connected things sit
-        together&quot;.
-      </p>
+      <HowItWorks onOpenFaq={onOpenFaq}>
+        The map keeps only links above the NPMI floor, then groups the remaining skills by how tightly
+        they connect. Raising the floor changes the graph and can split or merge clusters; canvas
+        position means only “connected things sit together”.
+      </HowItWorks>
     </>
   );
 }
