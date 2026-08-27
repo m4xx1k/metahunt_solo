@@ -1,10 +1,9 @@
-import Graphology from "graphology";
-import forceAtlas2 from "graphology-layout-forceatlas2";
-import { useEffect, useMemo, useRef, useState } from "react";
-import Sigma from "sigma";
+import { useMemo } from "react";
+import { useState } from "react";
 import type { Graph, LabelledPair, PairRelations, Relation } from "../types";
 import { fmt } from "../lib/graph";
 import { label, panel, panelHead, panelNote, panelTitle, td, tdName, th, thLeft } from "../ui";
+import { Constellation, type ConLink } from "./Constellation";
 
 const token = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
@@ -30,7 +29,13 @@ const hue = (r: Relation) =>
         ? token("--color-relation-implies")
         : token("--color-ink-3");
 
-const key = (a: string, b: string) => [a, b].sort((x, y) => x.localeCompare(y)).join("\u0000");
+// A separator that cannot occur inside a skill name, so ["a b","c"] and
+// ["a","b c"] never collide. String.fromCharCode(0), never a literal NUL
+// byte: a raw NUL in the source made binary-skipping searches miss this file (T1).
+const SEP = String.fromCharCode(0);
+const key = (a: string, b: string) => [a, b].sort((x, y) => x.localeCompare(y)).join(SEP);
+
+const EMPTY_COMMUNITY = new Map<number, number>();
 
 export function RelationsView({
   graph,
@@ -41,11 +46,9 @@ export function RelationsView({
   curated: PairRelations;
   onSelectSkill: (index: number) => void;
 }) {
-  const host = useRef<HTMLDivElement>(null);
   const [only, setOnly] = useState<Relation | null>(null);
-  const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
 
-  const { rows, tally, orphans } = useMemo(() => {
+  const { rows, tally, orphans, byName } = useMemo(() => {
     const byName = new Map(graph.nodes.map((n, i) => [n.name, i]));
     const edgeByPair = new Map(
       graph.edges.map((e) => [key(graph.nodes[e.a].name, graph.nodes[e.b].name), e]),
@@ -58,100 +61,22 @@ export function RelationsView({
     rows.sort((x, y) => (y.edge?.npmi ?? 0) - (x.edge?.npmi ?? 0));
 
     const tally = ORDER.map((r) => ({ r, n: rows.filter((x) => x.relation === r).length }));
-    // A label naming a skill the graph no longer has is the failure mode the
-    // name-keying buys: it must be visible here, not only in lab:relations.
     const orphans = curated.pairs.filter((p) => p.pair.some((n) => !byName.has(n)));
-    return { rows, tally, orphans };
+    return { rows, tally, orphans, byName };
   }, [graph, curated]);
 
   const shown = only ? rows.filter((r) => r.relation === only) : rows;
 
-  const model = useMemo(() => {
-    const byName = new Map(graph.nodes.map((n, i) => [n.name, i]));
-    // Mixed: IMPLIES carries direction and is drawn with an arrowhead, which is
-    // the secondary encoding that keeps it readable without colour.
-    const g = new Graphology({ type: "mixed", multi: false });
-
+  const links = useMemo<ConLink[]>(() => {
+    const out: ConLink[] = [];
     for (const row of shown) {
-      const [a, b] = row.pair;
-      for (const name of row.pair) {
-        if (byName.has(name) && !g.hasNode(name)) {
-          const i = byName.get(name) as number;
-          g.addNode(name, { idx: i, label: name, support: graph.nodes[i].support });
-        }
-      }
-      if (!g.hasNode(a) || !g.hasNode(b)) continue;
-      const attrs = { relation: row.relation, npmi: row.edge?.npmi ?? 0 };
-      if (row.relation === "IMPLIES") g.addDirectedEdge(a, b, attrs);
-      else g.addUndirectedEdge(a, b, attrs);
+      const a = byName.get(row.pair[0]);
+      const b = byName.get(row.pair[1]);
+      if (a === undefined || b === undefined) continue;
+      out.push({ source: a, target: b, kind: row.relation });
     }
-    if (g.order === 0) return g;
-
-    let i = 0;
-    g.forEachNode((node) => {
-      const angle = (2 * Math.PI * i++) / g.order;
-      g.setNodeAttribute(node, "x", Math.cos(angle) * 100);
-      g.setNodeAttribute(node, "y", Math.sin(angle) * 100);
-    });
-    forceAtlas2.assign(g, {
-      iterations: 500,
-      settings: {
-        ...forceAtlas2.inferSettings(g),
-        barnesHutOptimize: true,
-        linLogMode: true,
-        outboundAttractionDistribution: true,
-        gravity: 0.08,
-        scalingRatio: 12,
-        slowDown: 5,
-      },
-    });
-    return g;
-  }, [graph, shown]);
-
-  useEffect(() => {
-    if (!host.current || model.order === 0) return;
-
-    model.forEachNode((node, attrs) => {
-      model.setNodeAttribute(node, "color", token("--color-ink-3"));
-      model.setNodeAttribute(node, "size", 3 + Math.sqrt(attrs.support as number) / 11);
-    });
-    model.forEachEdge((edge, attrs) => {
-      model.setEdgeAttribute(edge, "color", hue(attrs.relation as Relation));
-      model.setEdgeAttribute(edge, "size", attrs.relation === "CONTESTED" ? 1 : 2);
-      if (model.isDirected(edge)) model.setEdgeAttribute(edge, "type", "arrow");
-    });
-
-    const renderer = new Sigma(model, host.current, {
-      labelColor: { color: token("--color-ink-2") },
-      labelFont: "ui-sans-serif, system-ui, sans-serif",
-      labelSize: 11,
-      // Every node is labelled here, unlike the Map: this view exists to be
-      // argued with, and an unlabelled edge cannot be checked.
-      labelRenderedSizeThreshold: 0,
-      defaultEdgeType: "line",
-      zIndex: true,
-    });
-
-    renderer.on("enterEdge", ({ edge, event }) => {
-      const a = model.getEdgeAttributes(edge);
-      const [s, t] = model.extremities(edge);
-      const arrow = a.relation === "IMPLIES" ? " ⇒ " : " · ";
-      setHover({
-        x: event.x,
-        y: event.y,
-        text: `${s}${arrow}${t}\n${a.relation as string}\nNPMI ${(a.npmi as number).toFixed(3)}`,
-      });
-    });
-    renderer.on("leaveEdge", () => setHover(null));
-    renderer.on("clickNode", ({ node }) =>
-      onSelectSkill(model.getNodeAttribute(node, "idx") as number),
-    );
-
-    return () => {
-      renderer.kill();
-      setHover(null);
-    };
-  }, [model, onSelectSkill]);
+    return out;
+  }, [shown, byName]);
 
   return (
     <>
@@ -213,16 +138,18 @@ export function RelationsView({
         </p>
       )}
 
-      <div className={`${panel} mb-5 relative`}>
-        <div ref={host} className="h-[540px] w-full" />
-        {hover && (
-          <div
-            className="pointer-events-none absolute z-10 whitespace-pre rounded border border-rule-strong bg-panel-2 px-2 py-1 font-mono text-[0.7rem] text-ink-2"
-            style={{ left: hover.x + 12, top: hover.y + 12 }}
-          >
-            {hover.text}
-          </div>
-        )}
+      <div className={`${panel} mb-5`}>
+        <div className="px-1 py-1">
+          <Constellation
+            graph={graph}
+            selected={-1}
+            onSelectSkill={onSelectSkill}
+            links={links}
+            community={EMPTY_COMMUNITY}
+            variant="relations"
+            height={480}
+          />
+        </div>
       </div>
 
       <div className={panel}>

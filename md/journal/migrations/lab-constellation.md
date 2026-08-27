@@ -223,12 +223,47 @@ point for reproducing the artifact.
   rAF is vsync-locked, so 16.7 ms is the observable floor; p95 within ~1 ms of it
   and a single doubled frame per ~7 s is a locked 60. SwiftShader passing removes
   the "was it just the GPU" doubt. Engine decision **not** reopened — the ADR is
-  still deferred to T5. Playwright is now an `apps/lab` devDep; the spike files are
-  deleted in T4.
+  still deferred to T5. Playwright is now an `apps/lab` devDep; `spike.html` and
+  `src/spike.tsx` are deleted in T4, and `spike/measure.mjs` grows into the
+  constellation's behaviour check.
 
-- [ ] **T4 — Build the constellation** — *done when:* one graph engine remains in
+- [x] **T4 — Build the constellation** — *done when:* one graph engine remains in
       `package.json`; dragging the NPMI slider never blocks; clicking a drifting node
       lands first time.
+
+  **Done 2026-08-27.** `src/views/Constellation.tsx` — one component, both views.
+  `react-force-graph-2d` is the only graph engine in `package.json`; `sigma` and
+  `graphology-layout-forceatlas2` removed, `graphology` +
+  `graphology-communities-louvain` kept (Louvain runs per NPMI change, 2–7 ms).
+
+  | Behaviour | How |
+  |---|---|
+  | Rest | all 452 nodes drift; colour = Louvain community (low-chroma golden-angle ramp — see the palette note below), radius = √support, labels earned by top-12%-degree + zoom |
+  | Hover | `onNodeHover` lights node + `adj` neighbours, dims the rest to `palette.dim`; the graph **freezes on pointer-over-canvas** (`onMouseEnter` pins every node), not on node-hover — a 3 px node drifts out from under the cursor before force-graph registers the hover |
+  | Click | `centerAt` + `zoom(3.2)` over 600 ms (0 ms under reduced motion); dossier already keys off `selected` |
+  | NPMI slider | parent refilters `links` + reruns Louvain; `d3ReheatSimulation`, no re-layout, no teardown |
+  | Cluster picker | a gentle radial `d3Force` — chosen community pulled to r=0, the rest to r=520; nudges velocity, skips pinned nodes |
+  | Reduced motion | `d3AlphaDecay` 0.06 + finite `cooldownTicks` → settles to a full stop (measured 0.000 px/node drift); camera moves are cuts |
+
+  `autoPauseRedraw={false}` is load-bearing: without it, a frozen graph stops
+  repainting the pointer-area buffer and the click after a hover is swallowed —
+  the exact regression this gate guards, in a new form.
+
+  Relations view now renders `<Constellation variant="relations">` over the
+  curated-pair subgraph (relation-hued edges, IMPLIES arrowheads); its table,
+  chips and orphan banner are unchanged.
+
+  Gates, via headless Playwright (`spike/measure.mjs`), two consecutive runs:
+  click lands first time **4/4** (cold · after npmi 0.30↔0.50 · after cluster
+  pick); NPMI slider full-sweep worst frame **~65 ms** (ForceAtlas2 was 650 ms) —
+  a hitch from the per-step Louvain, not a block; warm **60 fps**. `lab:build` /
+  `lab:check` / `lab:relations` green; bundle 414 → 502 KB (d3-force).
+
+  **Palette note for T5:** the spec says "colour = Louvain cluster" but
+  `index.css` forbids a 4th categorical hue. Resolved by treating position as the
+  primary grouping cue and the cluster tint as reinforcement — a restrained
+  `hsl(h 52% {52|63}%)` ramp, one string per community, kept clear of `signal` /
+  `trap` / `relation-implies`. Judge it in both themes in T5.
 
   One `<Constellation>` component covering all six behaviours:
 
