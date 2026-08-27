@@ -28,10 +28,6 @@
       "relation": "IMPLIES"
     },
     {
-      "pair": ["Analog Circuit Design", "Digital Circuit Design"],
-      "relation": "COMPLEMENT"
-    },
-    {
       "pair": ["Analog Electronics", "Digital Electronics"],
       "relation": "COMPLEMENT"
     },
@@ -621,7 +617,7 @@
       "relation": "COMPLEMENT"
     },
     {
-      "pair": ["TCP", "UDP"],
+      "pair": ["TCP/IP", "UDP"],
       "relation": "COMPLEMENT"
     },
     {
