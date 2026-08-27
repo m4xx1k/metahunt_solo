@@ -1,5 +1,5 @@
 {
-  "note": "CURATED BY HAND — never regenerated. `lab:data` rebuilds src/data/graph.json; this file is the human judgement layer over it and must survive that rebuild. Keyed by canonical skill name, not node index: indices shift on every rebuild.",
+  "note": "CURATED BY HAND — never regenerated. `lab:data` rebuilds public/data/{core,edges,roles}.json; pipeline/assemble.mjs resolves the names below to node ids against that rebuild and folds them into core.json, failing the build on any name that no longer exists. Keyed by canonical skill name, not node id: a human curates this, and ids are unreadable.",
   "version": 1,
   "labelledAt": "2026-08-08",
   "method": "assistant pre-label over the top 150 edges by NPMI, reviewed by the owner",

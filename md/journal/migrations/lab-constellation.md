@@ -152,9 +152,31 @@ point for reproducing the artifact.
   remove the placement and labels toggles; drop `@react-sigma/core` and
   `graphology-metrics`. No design decisions in this phase.
 
-- [ ] **T2 — Rebuild the artifact, keep the numbers** — *done when:* a fixed set of
+- [x] **T2 — Rebuild the artifact, keep the numbers** — *done when:* a fixed set of
       edges renders identical numbers before and after; the eager payload is under
       100 KB; `lab:relations` reports zero orphans by construction.
+
+  **Done 2026-08-27.** New pipeline: `04-export.sql` drops the 5 unread node
+  fields + `node_tech_meta` join and gets deterministic tie-breaks, emits one raw
+  doc; `pipeline/assemble.mjs` (new) splits it into `public/data/{core,edges,roles}.json`,
+  resolves the name-keyed `pair-relations.json` against the rebuild (exit 1 on any
+  unresolved name — "zero orphans by construction"), folds `rel` into the edge
+  tuple, and builds `adj{}` + per-node `deg` + `top[8]` (8 companions by
+  P(other|node) desc; depth/sort provisional, T4's to tune). `src/data.ts` (new)
+  `fetch`es the three files — no data `import` anywhere (guardrail 5) — and
+  reassembles the same `Graph`/`curated` the views already take, so no view
+  changed. Files moved to `public/data/` so they are served, not bundled.
+
+  Gate: `scratchpad/verify-t2.mjs` — nodes/edges/roles/curated all value-identical
+  to the pre-T2 `graph.json` (edge array order preserved too), SkillDossier
+  companion cards byte-identical for 10 sample skills; `lab:relations` output
+  unchanged from the T1 baseline. `core.json` = **69.5 KB** (< 100 KB). Bundle
+  1,125 → **414 KB** (the ~800 KB artifact left the JS). `lab:build` / `lab:check` /
+  `lab:relations` green; dev server serves `/data/*.json` 200.
+
+  `edges.json` 239 KB / `roles.json` 342 KB — above the tracker's ~160/~120 KB
+  guesses (kept full float precision to protect the "identical numbers" gate);
+  both load after mount, neither is gated.
 
   Re-key curated labels onto `nodes[].id` (update `pipeline/relations-check.mjs` with
   it) and fold the relation into the edge at export time in `pipeline/04-export.sql`.

@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
-import raw from "./data/graph.json";
-import curatedRaw from "./data/pair-relations.json";
+import { useEffect, useMemo, useState } from "react";
 import type { Graph, PairRelations } from "./types";
+import { loadGraph } from "./data";
 import { buildAdjacency, fmt } from "./lib/graph";
 import { MapView } from "./views/Map";
 import { RelationsView } from "./views/Relations";
@@ -10,14 +9,42 @@ import { Faq } from "./views/Faq";
 import { SkillDossier } from "./views/SkillDossier";
 import { panel } from "./ui";
 
-const graph = raw as unknown as Graph;
-const curated = curatedRaw as unknown as PairRelations;
+type Data = { graph: Graph; curated: PairRelations };
 
 export default function App() {
+  const [data, setData] = useState<Data | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadGraph().then(setData, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  }, []);
+
+  if (error) {
+    return (
+      <div className="lab-shell">
+        <main className="mx-auto max-w-[1440px] px-5 py-24">
+          <p className="text-sm text-trap">Could not load the graph: {error}</p>
+        </main>
+      </div>
+    );
+  }
+  if (!data) {
+    return (
+      <div className="lab-shell">
+        <main className="mx-auto max-w-[1440px] px-5 py-24">
+          <p className="font-mono text-[0.68rem] tracking-[0.18em] text-ink-3">LOADING GRAPH…</p>
+        </main>
+      </div>
+    );
+  }
+  return <Lab {...data} />;
+}
+
+function Lab({ graph, curated }: Data) {
   const [selected, setSelected] = useState(() =>
     Math.max(0, graph.nodes.findIndex((n) => n.name === "React")),
   );
-  const adj = useMemo(() => buildAdjacency(graph.edges), []);
+  const adj = useMemo(() => buildAdjacency(graph.edges), [graph.edges]);
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -64,7 +91,7 @@ export default function App() {
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">How to read the map</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-2">The visual comes first. The assumptions, role cuts, and hand-reviewed labels live here when you want to interrogate them.</p>
           </div>
-          <EvidenceSection title="How this map was built" subtitle="Corpus, thresholds, and limits" open><Methodology /></EvidenceSection>
+          <EvidenceSection title="How this map was built" subtitle="Corpus, thresholds, and limits" open><Methodology graph={graph} /></EvidenceSection>
           <EvidenceSection title="Explore by role" subtitle="What a specific role asks for"><Roles graph={graph} onSelectSkill={openSkill} onOpenFaq={() => scrollTo("questions")} /></EvidenceSection>
           <EvidenceSection title="What strong links mean" subtitle="Hand-reviewed: complement, substitute, implies"><RelationsView graph={graph} curated={curated} onSelectSkill={openSkill} /></EvidenceSection>
           <div id="questions" className="scroll-mt-5"><EvidenceSection title="Questions & limits" subtitle="Plain-language definitions"><Faq /></EvidenceSection></div>
@@ -85,7 +112,7 @@ function EvidenceSection({ title, subtitle, open = false, children }: { title: s
   </details>;
 }
 
-function Methodology() {
+function Methodology({ graph }: { graph: Graph }) {
   const { contract, provenance, sources } = graph;
   return (
     <>

@@ -1,12 +1,14 @@
--- Experiment 004 — emit the Metalab v0 graph artifact (MET-129 Phases 6 & 8)
+-- Experiment 004 — emit the Metalab v0 graph document (MET-129 Phases 6 & 8)
 --
 -- One JSON document containing the whole exploratory graph plus the provenance
--- needed to reproduce it. The web app reads this file directly: no runtime
--- database dependency, so the research UI cannot drift from the numbers that
--- were actually reviewed, and prod is never queried to render it.
+-- needed to reproduce it. pipeline/assemble.mjs splits it into the three files
+-- the web app fetches (public/data/{core,edges,roles}.json): no runtime database
+-- dependency, so the research UI cannot drift from the numbers that were
+-- actually reviewed, and prod is never queried to render it.
 --
--- Run:  pipeline/psql.sh -tAf pipeline/04-export.sql \
---         > src/data/graph.json
+-- Run via pipeline/build.sh (lab:data). Standalone:
+--   pipeline/psql.sh -tAf pipeline/04-export.sql > /tmp/raw.json
+--   node pipeline/assemble.mjs /tmp/raw.json public/data
 
 WITH params AS (
   SELECT 'rep'::text AS rule, 25::int AS min_skill_support, 10::int AS min_pair_support,
@@ -19,20 +21,17 @@ node_idx AS MATERIALIZED (
   FROM metalab_skill s CROSS JOIN params p
   WHERE s.rule = p.rule AND s.support >= p.min_skill_support
 ),
+-- Node identity is the UUID; the numeric fields are all the UI reads. The
+-- node_tech_meta columns (category/stack/is_core/generic) and the slug were
+-- only ever consumed by the Experiments sandbox — dropped with it in T1.
 node_rows AS (
   SELECT jsonb_agg(jsonb_build_object(
            'id',         s.node_id,
            'name',       s.canonical_name,
-           'slug',       s.slug,
            'support',    s.support,
-           'prevalence', round(s.prevalence::numeric, 5),
-           'category',   tm.category,
-           'stack',      tm.stack,
-           'isCore',     tm.is_core,
-           'generic',    tm.generic
+           'prevalence', round(s.prevalence::numeric, 5)
          ) ORDER BY s.support DESC, s.node_id) AS v
   FROM metalab_skill s
-  LEFT JOIN node_tech_meta tm ON tm.node_id = s.node_id
   CROSS JOIN params p
   WHERE s.rule = p.rule AND s.support >= p.min_skill_support
 ),
@@ -91,20 +90,22 @@ role_rows AS (
              SELECT COALESCE(jsonb_agg(jsonb_build_object(
                       'n', i.idx, 'support', rs.support,
                       'share', round((rs.support::numeric / rd.n_positions), 4)
-                    ) ORDER BY rs.support DESC), '[]'::jsonb)
+                    ) ORDER BY rs.support DESC, i.idx), '[]'::jsonb)
              FROM role_skill rs
              JOIN node_idx i ON i.node_id = rs.node_id
              WHERE rs.role_node_id = rd.role_node_id
                AND rs.support >= (SELECT min_pair_support FROM params)
            ),
            'edges', (
+             -- ia.idx, ib.idx break pair-count ties so the array order is
+             -- byte-reproducible across runs (the UI reads these order-free).
              SELECT COALESCE(jsonb_agg(jsonb_build_object(
                       'a', ia.idx, 'b', ib.idx, 'pairs', rp.pairs,
                       'pBgivenA', round((rp.pairs::numeric / sa.support), 4),
                       'pAgivenB', round((rp.pairs::numeric / sb.support), 4),
                       'lift', round(((rp.pairs::numeric * rd.n_positions)
                                      / (sa.support::numeric * sb.support)), 3)
-                    ) ORDER BY rp.pairs DESC), '[]'::jsonb)
+                    ) ORDER BY rp.pairs DESC, ia.idx, ib.idx), '[]'::jsonb)
              FROM role_pair rp
              JOIN role_skill sa ON sa.role_node_id = rd.role_node_id AND sa.node_id = rp.a_id
              JOIN role_skill sb ON sb.role_node_id = rd.role_node_id AND sb.node_id = rp.b_id

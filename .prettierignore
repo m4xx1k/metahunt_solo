@@ -11,5 +11,8 @@ backups
 apps/etl/baml_client
 **/*.min.js
 
-# Generated pipeline artifact — reformatting it only inflates the diff
-apps/lab/src/data/graph.json
+# Generated pipeline artifact — reformatting only inflates the diff, and
+# pretty-printing pushes core.json past its 100 KB eager budget.
+apps/lab/public/data/core.json
+apps/lab/public/data/edges.json
+apps/lab/public/data/roles.json

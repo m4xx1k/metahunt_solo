@@ -4,29 +4,33 @@
 //
 // Two jobs. It reports how much of the graph's strong end carries a human
 // judgement, and — the part that matters over time — it fails when a label
-// names a skill the graph no longer has. Labels are keyed by canonical name, so
-// a taxonomy merge or rename silently orphans them; without this check the
-// graph quietly goes back to treating substitutes as complements.
+// names a skill the graph no longer has. src/data/pair-relations.json is
+// name-keyed and hand-edited; pipeline/assemble.mjs already refuses to build an
+// artifact if any name fails to resolve, so a clean rebuild has zero orphans by
+// construction. This check still runs so a hand-edit that lands *without* a
+// rebuild — the one gap assemble cannot see — does not go unnoticed.
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DATA = resolve(dirname(fileURLToPath(import.meta.url)), "../src/data");
-const graph = JSON.parse(readFileSync(resolve(DATA, "graph.json"), "utf8"));
-const curated = JSON.parse(readFileSync(resolve(DATA, "pair-relations.json"), "utf8"));
+const HERE = dirname(fileURLToPath(import.meta.url));
+const core = JSON.parse(readFileSync(resolve(HERE, "../public/data/core.json"), "utf8"));
+const { edges } = JSON.parse(readFileSync(resolve(HERE, "../public/data/edges.json"), "utf8"));
+const curated = JSON.parse(readFileSync(resolve(HERE, "../src/data/pair-relations.json"), "utf8"));
 
 const TOP = Number(process.argv[2] ?? 150);
 const key = (a, b) => [a, b].sort((x, y) => x.localeCompare(y)).join(" | ");
 
-const known = new Set(graph.nodes.map((n) => n.name));
+const known = new Set(core.nodes.map((n) => n.name));
 const labels = new Map(curated.pairs.map((p) => [key(...p.pair), p]));
 
 const orphans = curated.pairs.filter((p) => p.pair.some((n) => !known.has(n)));
 
-const top = graph.edges.slice(0, TOP).map((e) => ({
-  a: graph.nodes[e.a].name,
-  b: graph.nodes[e.b].name,
-  npmi: e.npmi,
+// edges.json rows are [a, b, pairs, pBgivenA, pAgivenB, lift, npmi, rel].
+const top = edges.slice(0, TOP).map((e) => ({
+  a: core.nodes[e[0]].name,
+  b: core.nodes[e[1]].name,
+  npmi: e[6],
 }));
 const unlabelled = top.filter((e) => !labels.has(key(e.a, e.b)));
 
