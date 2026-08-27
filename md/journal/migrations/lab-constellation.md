@@ -198,7 +198,7 @@ point for reproducing the artifact.
   **The old UI keeps running against the new files throughout this phase.** That is the
   point: if any rendered number moves, the encoding is wrong.
 
-- [ ] **T3 — Prove the engine before committing to it** — *done when:* a throwaway page
+- [x] **T3 — Prove the engine before committing to it** — *done when:* a throwaway page
       holds ≥ 60 fps warm at the 446-node / 3,049-edge worst case, or the engine
       decision is reopened.
 
@@ -206,6 +206,25 @@ point for reproducing the artifact.
   NPMI ≥ 0.1, keep the simulation warm, and measure frame time. This gate exists so a
   wrong engine costs an hour rather than a rewrite. If it fails, cosmos.gl becomes the
   answer with hand-built labels as its known cost, or edges get capped by NPMI rank.
+
+  **Done 2026-08-27 — PASS.** `spike.html` + `src/spike.tsx` mount
+  `react-force-graph-2d` at NPMI ≥ 0.1 (446 nodes / 3,049 edges, confirmed), whole
+  graph drifting with `d3AlphaDecay={0}` + `cooldownTime={Infinity}`, nodes and
+  degree-gated labels painted per frame in `nodeCanvasObject`. In-page sampler:
+  180-frame warmup, then 420 frames. `spike/measure.mjs` drives it under headless
+  Playwright Chromium.
+
+  | Run | fps | frame ms p50 / p95 / max |
+  |---|---|---|
+  | Real browser, real GPU (owner) | 60 | 16.7 / 17.5 / 33.3 |
+  | Headless SwiftShader (no GPU — conservative) | 60 | 16.7 / 17.7 / 30.4 |
+  | Headless + pointer-drag stress | 60 | 16.7 / 17.5 / 21.3 |
+
+  rAF is vsync-locked, so 16.7 ms is the observable floor; p95 within ~1 ms of it
+  and a single doubled frame per ~7 s is a locked 60. SwiftShader passing removes
+  the "was it just the GPU" doubt. Engine decision **not** reopened — the ADR is
+  still deferred to T5. Playwright is now an `apps/lab` devDep; the spike files are
+  deleted in T4.
 
 - [ ] **T4 — Build the constellation** — *done when:* one graph engine remains in
       `package.json`; dragging the NPMI slider never blocks; clicking a drifting node
