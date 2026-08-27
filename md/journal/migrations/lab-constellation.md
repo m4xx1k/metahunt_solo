@@ -119,9 +119,21 @@ point for reproducing the artifact.
   `lab:relations` exit 0 ("no drift"; 26 top-150 edges still unlabelled — known
   follow-up curation, not blocking).
 
-- [ ] **T1 — Subtract, and fix the invisible file** — *done when:*
+- [x] **T1 — Subtract, and fix the invisible file** — *done when:*
       `file apps/lab/src/views/Relations.tsx` reports text, not `data`; a ripgrep-style
       search for `sigma` finds **both** `Map.tsx` and `Relations.tsx`; build and lint green.
+
+  **Done 2026-08-27.** NUL at offset 1422 → the `\u0000` escape; `file` now reports
+  "JavaScript source, Unicode text, UTF-8 text" and `rg -i sigma src/` returns both
+  `Relations.tsx` and `Map.tsx`. Deleted `views/Experiments.tsx`,
+  `data/experiments/{domain-axes.json,types.ts}`, `charts/BubbleChart.tsx`,
+  `pipeline/0{5,6}-domain-axes*.sql`. Removed the dossier placement toggle (App.tsx,
+  and the now-dead `tab` in `ui.ts`) and the labels checkbox (Map.tsx; labels stay on
+  — `labelRenderedSizeThreshold: 0`). Dropped `@react-sigma/core` +
+  `graphology-metrics` from `package.json` (`pnpm install` removed 4 pkgs). `lab:build`
+  exit 0 (bundle 1,155 → 1,125 kB, 54 → 51 modules), `lab:check` exit 0,
+  `lab:relations` exit 0. `SkillDossier`'s `"full"` variant left in place — not listed
+  for removal; prune in a follow-up.
 
   **Do the NUL fix first.** `Relations.tsx` contains a raw U+0000 byte at offset 1422
   (line 33), where the pair key joins with a literal zero byte instead of an escape:

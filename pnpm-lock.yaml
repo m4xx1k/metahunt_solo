@@ -167,7 +167,7 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       eslint-plugin-import:
         specifier: ^2.31.0
-        version: 2.32.0(@typescript-eslint/parser@8.59.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))
+        version: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-prettier:
         specifier: ^5.2.2
         version: 5.5.6(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(prettier@3.9.4)
@@ -198,9 +198,6 @@ importers:
 
   apps/lab:
     dependencies:
-      '@react-sigma/core':
-        specifier: ^5.0.6
-        version: 5.0.6(graphology@0.26.0(graphology-types@0.24.8))(react@19.2.8)(sigma@3.0.3(graphology-types@0.24.8))
       graphology:
         specifier: ^0.26.0
         version: 0.26.0(graphology-types@0.24.8)
@@ -210,9 +207,6 @@ importers:
       graphology-layout-forceatlas2:
         specifier: ^0.10.1
         version: 0.10.1(graphology-types@0.24.8)
-      graphology-metrics:
-        specifier: ^2.4.0
-        version: 2.4.0(graphology-types@0.24.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -380,7 +374,7 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       eslint-plugin-import:
         specifier: ^2.31.0
-        version: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+        version: 2.32.0(@typescript-eslint/parser@8.59.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-prettier:
         specifier: ^5.2.2
         version: 5.5.6(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))(prettier@3.9.4)
@@ -3304,13 +3298,6 @@ packages:
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
 
-  '@react-sigma/core@5.0.6':
-    resolution: {integrity: sha512-Xu2qXyvDZIhmvGC1n8d7Kcxm5Ntcz4HbPIM7CPDD2e4h3s/oxVpVPX7wtsNreJRRPj9mK+3oqB6SWXNI4mTqVg==}
-    peerDependencies:
-      graphology: ^0.26.0
-      react: ^18.0.0 || ^19.0.0
-      sigma: ^3.0.2
-
   '@rolldown/binding-android-arm64@1.2.3':
     resolution: {integrity: sha512-zrJtHDcaZJ1Fp7xf4hNl+7seH9Cn/N5TwLYkhgXREtBwAd/jaqW3uqeHxpDugJLVICWg4eW44kOQEGJ1r6jCGw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -4430,9 +4417,6 @@ packages:
 
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
-
-  '@yomguithereal/helpers@1.1.1':
-    resolution: {integrity: sha512-UYvAq/XCA7xoh1juWDYsq3W0WywOB+pz8cgVnE1b45ZfdMhBvHDrgmSFG3jXeZSr2tMTYLGHFHON+ekG05Jebg==}
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -6003,16 +5987,6 @@ packages:
     resolution: {integrity: sha512-ogzBeF1FvWzjkikrIFwxhlZXvD2+wlY54lqhsrWprcdPjopM2J9HoMweUmIgwaTvY4bUYVimpSsOdvDv1gPRFQ==}
     peerDependencies:
       graphology-types: '>=0.19.0'
-
-  graphology-metrics@2.4.0:
-    resolution: {integrity: sha512-7WOfOP+mFLCaTJx55Qg4eY+211vr1/b3D/R3biz3SXGhAaCVcWYkfabnmO4O4WBNWANEHtVnFrGgJ0kj6MM6xw==}
-    peerDependencies:
-      graphology-types: '>=0.20.0'
-
-  graphology-shortest-path@2.1.0:
-    resolution: {integrity: sha512-KbT9CTkP/u72vGEJzyRr24xFC7usI9Es3LMmCPHGwQ1KTsoZjxwA9lMKxfU0syvT/w+7fZUdB/Hu2wWYcJBm6Q==}
-    peerDependencies:
-      graphology-types: '>=0.20.0'
 
   graphology-types@0.24.8:
     resolution: {integrity: sha512-hDRKYXa8TsoZHjgEaysSRyPdT6uB78Ci8WnjgbStlQysz7xR52PInxNsmnB7IBOM1BhikxkNyCVEFgmPKnpx3Q==}
@@ -11863,12 +11837,6 @@ snapshots:
 
   '@radix-ui/rect@1.1.1': {}
 
-  '@react-sigma/core@5.0.6(graphology@0.26.0(graphology-types@0.24.8))(react@19.2.8)(sigma@3.0.3(graphology-types@0.24.8))':
-    dependencies:
-      graphology: 0.26.0(graphology-types@0.24.8)
-      react: 19.2.8
-      sigma: 3.0.3(graphology-types@0.24.8)
-
   '@rolldown/binding-android-arm64@1.2.3':
     optional: true
 
@@ -13041,8 +13009,6 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
-
-  '@yomguithereal/helpers@1.1.1': {}
 
   abort-controller@3.0.0:
     dependencies:
@@ -14870,23 +14836,6 @@ snapshots:
     dependencies:
       graphology-types: 0.24.8
       graphology-utils: 2.5.2(graphology-types@0.24.8)
-
-  graphology-metrics@2.4.0(graphology-types@0.24.8):
-    dependencies:
-      graphology-indices: 0.17.0(graphology-types@0.24.8)
-      graphology-shortest-path: 2.1.0(graphology-types@0.24.8)
-      graphology-types: 0.24.8
-      graphology-utils: 2.5.2(graphology-types@0.24.8)
-      mnemonist: 0.39.8
-      pandemonium: 2.4.1
-
-  graphology-shortest-path@2.1.0(graphology-types@0.24.8):
-    dependencies:
-      '@yomguithereal/helpers': 1.1.1
-      graphology-indices: 0.17.0(graphology-types@0.24.8)
-      graphology-types: 0.24.8
-      graphology-utils: 2.5.2(graphology-types@0.24.8)
-      mnemonist: 0.39.8
 
   graphology-types@0.24.8: {}
 

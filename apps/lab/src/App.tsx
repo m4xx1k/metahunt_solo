@@ -8,8 +8,7 @@ import { RelationsView } from "./views/Relations";
 import { Roles } from "./views/Roles";
 import { Faq } from "./views/Faq";
 import { SkillDossier } from "./views/SkillDossier";
-import { Experiments } from "./views/Experiments";
-import { panel, tab } from "./ui";
+import { panel } from "./ui";
 
 const graph = raw as unknown as Graph;
 const curated = curatedRaw as unknown as PairRelations;
@@ -18,8 +17,6 @@ export default function App() {
   const [selected, setSelected] = useState(() =>
     Math.max(0, graph.nodes.findIndex((n) => n.name === "React")),
   );
-  const [dossierPlacement, setDossierPlacement] = useState<"side" | "bottom">("side");
-
   const adj = useMemo(() => buildAdjacency(graph.edges), []);
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -49,23 +46,14 @@ export default function App() {
         </header>
 
         <section id="graph" className="scroll-mt-5 pt-7">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-mono text-[0.67rem] tracking-[0.14em] text-signal">EXPLORE</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight">Skill map</h2>
-            </div>
-            <div className="flex gap-1.5" aria-label="Dossier placement">
-              {(["side", "bottom"] as const).map((placement) => (
-                <button key={placement} type="button" className={tab(dossierPlacement === placement)} aria-pressed={dossierPlacement === placement} onClick={() => setDossierPlacement(placement)}>
-                  {placement === "side" ? "Side panel" : "Below map"}
-                </button>
-              ))}
-            </div>
+          <div className="mb-5">
+            <p className="font-mono text-[0.67rem] tracking-[0.14em] text-signal">EXPLORE</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight">Skill map</h2>
           </div>
-          <div className={dossierPlacement === "side" ? "grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]" : "grid gap-6"}>
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
             <div className="min-w-0"><MapView graph={graph} selected={selected} onSelectSkill={setSelected} onOpenFaq={() => scrollTo("questions")} /></div>
-            <aside aria-label="Selected skill dossier" className={dossierPlacement === "side" ? "min-w-0 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto lg:pr-1" : "min-w-0"}>
-              <SkillDossier graph={graph} curated={curated} adj={adj} selected={selected} onSelect={setSelected} onOpenFaq={() => scrollTo("questions")} variant={dossierPlacement === "side" ? "sidebar" : "full"} />
+            <aside aria-label="Selected skill dossier" className="min-w-0 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto lg:pr-1">
+              <SkillDossier graph={graph} curated={curated} adj={adj} selected={selected} onSelect={setSelected} onOpenFaq={() => scrollTo("questions")} variant="sidebar" />
             </aside>
           </div>
         </section>
@@ -80,7 +68,6 @@ export default function App() {
           <EvidenceSection title="Explore by role" subtitle="What a specific role asks for"><Roles graph={graph} onSelectSkill={openSkill} onOpenFaq={() => scrollTo("questions")} /></EvidenceSection>
           <EvidenceSection title="What strong links mean" subtitle="Hand-reviewed: complement, substitute, implies"><RelationsView graph={graph} curated={curated} onSelectSkill={openSkill} /></EvidenceSection>
           <div id="questions" className="scroll-mt-5"><EvidenceSection title="Questions & limits" subtitle="Plain-language definitions"><Faq /></EvidenceSection></div>
-          <details className="mt-3"><summary className="cursor-pointer font-mono text-[0.7rem] tracking-wide text-ink-3">Unreviewed experiments</summary><div className="mt-5"><Experiments /></div></details>
         </section>
       </main>
     </div>

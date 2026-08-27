@@ -27,11 +27,3 @@ export const thLeft = `${thBase} text-left`;
 export const td = "font-mono px-3.5 py-1.5 text-right whitespace-nowrap";
 
 export const tdName = "font-sans px-3.5 py-1.5 text-left";
-
-export const tab = (active: boolean) =>
-  [
-    "rounded-full border px-3.5 py-1 text-[0.82rem] cursor-pointer transition-colors",
-    active
-      ? "bg-signal border-signal text-ground"
-      : "bg-transparent border-rule-strong text-ink-2 hover:border-signal hover:text-ink",
-  ].join(" ");

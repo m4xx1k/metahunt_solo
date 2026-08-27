@@ -33,7 +33,6 @@ export function MapView({
   const previousSelected = useRef<number | null>(null);
   const [minNpmi, setMinNpmi] = useState(0.3);
   const [focus, setFocus] = useState<number | null>(null);
-  const [showLabels, setShowLabels] = useState(true);
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
 
   /** Layout and community detection are pure functions of the filter, so they
@@ -159,7 +158,7 @@ export function MapView({
       labelColor: { color: token("--color-ink-2") },
       labelFont: "ui-sans-serif, system-ui, sans-serif",
       labelSize: 11,
-      labelRenderedSizeThreshold: showLabels ? 0 : Infinity,
+      labelRenderedSizeThreshold: 0,
       defaultEdgeColor: rule,
       zIndex: true,
     });
@@ -194,7 +193,7 @@ export function MapView({
       sigmaRef.current = null;
       setHover(null);
     };
-  }, [graph.edges, model, focus, onSelectSkill, selected, showLabels]);
+  }, [graph.edges, model, focus, onSelectSkill, selected]);
 
   return (
     <>
@@ -236,15 +235,6 @@ export function MapView({
             ))}
           </select>
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-2">
-          <input
-            type="checkbox"
-            className="accent-signal"
-            checked={showLabels}
-            onChange={(event) => setShowLabels(event.target.checked)}
-          />
-          Show skill labels
-        </label>
         <p className="max-w-[42ch] text-xs leading-relaxed text-ink-3">
           <span className="text-trap">Selected</span> · thick teal = often requested together · thin teal = sometimes requested together
         </p>
