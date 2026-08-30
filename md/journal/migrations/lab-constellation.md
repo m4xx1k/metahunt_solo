@@ -1,8 +1,14 @@
 # lab-constellation — Rebuild the skill map as a live constellation
 
 **Branch:** `feat/lab-constellation`
-**Status:** in-progress
+**Status:** paused — 2026-08-30
 **Started:** 2026-08-27 · **Closed:** —
+
+**Paused here:** T0–T4 done, T5 blocked on the owner picking a direction from
+the three throwaway prototypes in `apps/lab/src/proto-{zoommap,textnodes,ego}.tsx`
+(commit `5a3ffb4`). No code work is needed to resume — just the pick, then
+ADR + `md/architecture/overview.md` + release note + open the PR (see T5 in
+`## Subtasks` below). Branch never merged; PR never opened.
 
 ## Outcome
 
