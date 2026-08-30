@@ -6,6 +6,7 @@ import {
   LineChart,
   Receipt,
   Rss,
+  SearchCheck,
   Tags,
   type LucideIcon,
 } from "lucide-react";
@@ -37,6 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/sources", label: "Sources", icon: Rss },
       { href: "/dashboard/runs", label: "Runs", icon: Activity },
       { href: "/dashboard/costs", label: "Costs", icon: Receipt },
+      { href: "/dashboard/coverage", label: "Coverage", icon: SearchCheck },
     ],
   },
   {

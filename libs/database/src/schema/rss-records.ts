@@ -34,6 +34,7 @@ export const rssRecords = pgTable(
     index("rss_records_rss_ingest_id_idx").on(t.rssIngestId),
     index("rss_records_extracted_at_idx").on(t.extractedAt),
     index("rss_records_content_fingerprint_idx").on(t.contentFingerprint),
+    index("rss_records_source_external_idx").on(t.sourceId, t.externalId),
   ],
 );
 

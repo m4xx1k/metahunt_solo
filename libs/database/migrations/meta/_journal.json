@@ -379,6 +379,13 @@
       "when": 1787126400000,
       "tag": "0053_retire_analytics_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1787644800000,
+      "tag": "0054_rss_records_source_external_idx",
+      "breakpoints": true
     }
   ]
 }
