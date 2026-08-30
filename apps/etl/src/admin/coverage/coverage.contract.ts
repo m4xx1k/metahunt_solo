@@ -43,8 +43,11 @@ export type CoverageMatch = {
   sourceCode: string;
   publishedAt: string | null;
   loadedAt: string;
-  // Publish → in our database. The roadmap's latency metric, per row.
+  // First publish → in our database. The roadmap's latency metric, per row.
   ingestLagMinutes: number | null;
+  // The source re-dated this listing after we first saw it (a paid "bump"),
+  // so `publishedAt` no longer reflects when it first went live.
+  wasBumpedSincePublish: boolean;
   postingCount: number;
   sourceCount: number;
   isCanonical: boolean;
