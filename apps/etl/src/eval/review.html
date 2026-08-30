@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>golden set review</title>
+    <style>
+      :root {
+        --bg: #0e1116; --panel: #161b22; --line: #262d38; --text: #e6edf3;
+        --dim: #8b949e; --ok: #3fb950; --warn: #d29922; --hot: #f85149; --accent: #58a6ff;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff; --panel: #f6f8fa; --line: #d0d7de; --text: #1f2328;
+          --dim: #656d76; --ok: #1a7f37; --warn: #9a6700; --hot: #cf222e; --accent: #0969da;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--text);
+        font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+      header {
+        position: sticky; top: 0; z-index: 5; background: var(--bg);
+        border-bottom: 1px solid var(--line); padding: 10px 16px;
+        display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+      }
+      .bar { flex: 1; min-width: 160px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+      .bar > i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .2s; }
+      .keys { color: var(--dim); font-size: 13px; }
+      kbd {
+        background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px;
+        border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace;
+      }
+      main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 16px; align-items: start; }
+      @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+      .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+      #posting { padding: 14px 16px; max-height: 78vh; overflow: auto; }
+      #posting h2 { margin: 0 0 4px; font-size: 17px; line-height: 1.3; }
+      #posting .meta { color: var(--dim); font-size: 13px; margin-bottom: 12px; }
+      #posting pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font: 13px/1.6 ui-monospace, monospace; color: var(--text); }
+      #fields { padding: 8px; max-height: 78vh; overflow: auto; }
+      .row { border-bottom: 1px solid var(--line); padding: 9px 8px; }
+      .row:last-child { border-bottom: 0; }
+      .row.done { opacity: .5; }
+      .row.pending { box-shadow: inset 3px 0 0 var(--hot); }
+      .fname { font-weight: 600; font-size: 13px; font-family: ui-monospace, monospace; }
+      .tag { font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: 1px; }
+      .t-contested { background: color-mix(in srgb, var(--hot) 22%, transparent); color: var(--hot); }
+      .t-prod { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+      .t-agreed { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+      .val { font: 13px/1.5 ui-monospace, monospace; word-break: break-word; }
+      .choices { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+      button {
+        font: inherit; font-size: 13px; cursor: pointer; color: var(--text);
+        background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px;
+      }
+      button:hover { border-color: var(--accent); }
+      button.pick { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+      button.big { padding: 9px 18px; font-weight: 600; }
+      button.primary { background: var(--ok); border-color: var(--ok); color: #fff; }
+      .lbl { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+      textarea { width: 100%; margin-top: 6px; background: var(--bg); color: var(--text);
+        border: 1px solid var(--line); border-radius: 7px; padding: 7px; font: 13px ui-monospace, monospace; }
+      footer { padding: 0 16px 28px; display: flex; gap: 10px; align-items: center; }
+      .grow { flex: 1; }
+      .hint { color: var(--dim); font-size: 13px; }
+      .empty { padding: 22px; text-align: center; color: var(--dim); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong id="pos">–</strong>
+      <div class="bar"><i id="prog"></i></div>
+      <span id="count" class="keys"></span>
+      <label class="keys"><input type="checkbox" id="all" /> show settled fields</label>
+      <span class="keys"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>Enter</kbd> approve + next</span>
+    </header>
+
+    <main>
+      <section class="panel" id="posting"></section>
+      <section class="panel" id="fields"></section>
+    </main>
+
+    <footer>
+      <button class="big" id="prev">← prev</button>
+      <button class="big primary" id="approve">Approve · Enter</button>
+      <button class="big" id="next">next →</button>
+      <span class="grow"></span>
+      <span class="hint" id="saved"></span>
+    </footer>
+
+    <script>
+      const state = { i: 0, data: null, overrides: {}, showAll: false, busy: false };
+
+      const fmt = (v) => {
+        if (v === null || v === undefined) return "—";
+        if (typeof v === "string") return v === "" ? '""' : v;
+        if (typeof v === "boolean" || typeof v === "number") return String(v);
+        if (Array.isArray(v)) {
+          if (v.length === 0) return "[]";
+          return v.map((x) => (x && x.city ? `${x.city}, ${x.country ?? ""}`.trim() : JSON.stringify(x))).join(" · ");
+        }
+        if (v.required || v.optional) {
+          const req = (v.required ?? []).join(", ") || "—";
+          const opt = (v.optional ?? []).join(", ");
+          return opt ? `${req}   (+ ${opt})` : req;
+        }
+        if (v.min !== undefined || v.currency !== undefined) {
+          return `${v.min ?? "?"}–${v.max ?? "?"} ${v.currency ?? ""}`.trim();
+        }
+        return JSON.stringify(v);
+      };
+
+      // Key- and order-insensitive: prod serialises skills as {optional,required} while
+      // the labellers emit {required,optional}, and raw stringify calls those different.
+      const canon = (v) => {
+        if (v === null || v === undefined) return null;
+        if (Array.isArray(v)) return v.map(canon).sort((x, y) => (JSON.stringify(x) < JSON.stringify(y) ? -1 : 1));
+        if (typeof v !== "object") return v;
+        return Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])]));
+      };
+      const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+      const cur = () => state.data.candidates[state.i];
+      const decisionFor = (id) => state.data.decisions[id];
+
+      function needsEye(cell) {
+        return cell.verdict !== "agreed";
+      }
+
+      // A contested cell with no arbiter ruling has value null; approving it would
+      // write that null in as ground truth, so the human has to pick first.
+      function undecided(c) {
+        const ov = state.overrides[c.id] ?? {};
+        return state.data.fields.filter(
+          (f) => c.fields[f].verdict === "contested" && c.fields[f].arbiter === undefined && !(f in ov),
+        );
+      }
+
+      function chosenValue(id, field, cell) {
+        const ov = state.overrides[id];
+        return ov && field in ov ? ov[field] : cell.value;
+      }
+
+      function setValue(id, field, value) {
+        state.overrides[id] = state.overrides[id] || {};
+        state.overrides[id][field] = value;
+        render();
+      }
+
+      function choiceButton(label, value, id, field, cell) {
+        const b = document.createElement("button");
+        b.innerHTML = `<span class="lbl">${label}</span> ${escapeHtml(fmt(value))}`;
+        if (same(chosenValue(id, field, cell), value)) b.classList.add("pick");
+        b.onclick = () => setValue(id, field, value ?? null);
+        return b;
+      }
+
+      const safeLink = (href) =>
+        typeof href === "string" && /^https?:\/\//i.test(href)
+          ? ` · <a href="${escapeHtml(href)}" target="_blank" rel="noreferrer">open</a>`
+          : "";
+
+      const escapeHtml = (s) =>
+        String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+      function renderFields() {
+        const c = cur();
+        const box = document.getElementById("fields");
+        box.innerHTML = "";
+        const pending = undecided(c);
+        const fields = state.data.fields.filter((f) => state.showAll || needsEye(c.fields[f]));
+
+        if (fields.length === 0) {
+          box.innerHTML = `<div class="empty">Nothing contested here — both labellers and prod agree on all ${state.data.fields.length} fields.<br />Hit Enter.</div>`;
+          return;
+        }
+
+        for (const field of fields) {
+          const cell = c.fields[field];
+          const row = document.createElement("div");
+          const isUndecided = pending.includes(field);
+          row.className = "row" + (cell.verdict === "agreed" ? " done" : "") + (isUndecided ? " pending" : "");
+
+          const tag =
+            cell.verdict === "contested"
+              ? '<span class="tag t-contested">labellers split</span>'
+              : cell.verdict === "prod-differs"
+                ? '<span class="tag t-prod">prod differs</span>'
+                : '<span class="tag t-agreed">agreed</span>';
+
+          row.innerHTML =
+            `<div><span class="fname">${field}</span>${tag}</div>` +
+            `<div class="val">${escapeHtml(fmt(chosenValue(c.id, field, cell)))}</div>`;
+
+          const choices = document.createElement("div");
+          choices.className = "choices";
+
+          if (cell.verdict === "contested") {
+            choices.append(choiceButton("A", cell.a, c.id, field, cell));
+            if (!same(cell.a, cell.b)) choices.append(choiceButton("B", cell.b, c.id, field, cell));
+            if (cell.arbiter !== undefined && !same(cell.arbiter, cell.a) && !same(cell.arbiter, cell.b)) {
+              choices.append(choiceButton("arbiter", cell.arbiter, c.id, field, cell));
+            }
+            if (!same(cell.prod, cell.a) && !same(cell.prod, cell.b)) {
+              choices.append(choiceButton("prod", cell.prod, c.id, field, cell));
+            }
+          } else if (cell.verdict === "prod-differs") {
+            choices.append(choiceButton("golden", cell.value, c.id, field, cell));
+            choices.append(choiceButton("prod", cell.prod, c.id, field, cell));
+          }
+
+          const edit = document.createElement("button");
+          edit.textContent = "edit";
+          edit.onclick = () => {
+            if (row.querySelector("textarea")) return;
+            const ta = document.createElement("textarea");
+            ta.rows = 3;
+            ta.value = JSON.stringify(chosenValue(c.id, field, cell), null, 1);
+            ta.onblur = () => {
+              try {
+                setValue(c.id, field, JSON.parse(ta.value));
+              } catch {
+                ta.style.borderColor = "var(--hot)";
+              }
+            };
+            row.append(ta);
+            ta.focus();
+          };
+          choices.append(edit);
+          row.append(choices);
+          box.append(row);
+        }
+      }
+
+      function render() {
+        const c = cur();
+        const d = decisionFor(c.id);
+        document.getElementById("pos").textContent = `${state.i + 1} / ${state.data.candidates.length}`;
+        document.getElementById("posting").innerHTML =
+          `<h2>${escapeHtml(c.title)}</h2>` +
+          `<div class="meta">${escapeHtml(c.source)}${safeLink(c.link)}${d?.approved ? " · <b>approved</b>" : ""}</div>` +
+          `<pre>${escapeHtml(state.data.texts[c.id])}</pre>`;
+        renderFields();
+        const approved = Object.values(state.data.decisions).filter((x) => x.approved).length;
+        document.getElementById("prog").style.width = `${(100 * approved) / state.data.candidates.length}%`;
+        document.getElementById("count").textContent = `${approved} approved`;
+      }
+
+      async function approve() {
+        if (state.busy) return;
+        const c = cur();
+        const pending = undecided(c);
+        if (pending.length > 0) {
+          document.getElementById("saved").innerHTML =
+            `<b style="color:var(--hot)">pick a value first: ${pending.join(", ")}</b>`;
+          state.showAll = false;
+          render();
+          return;
+        }
+        state.busy = true;
+        try {
+          const res = await fetch("/api/decision", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ id: c.id, approved: true, overrides: state.overrides[c.id] ?? {} }),
+          });
+          const out = await res.json();
+          if (!res.ok) {
+            document.getElementById("saved").innerHTML = `<b style="color:var(--hot)">${escapeHtml(out.error)}</b>`;
+            return;
+          }
+          state.data.decisions[c.id] = { approved: true, overrides: state.overrides[c.id] ?? {}, values: {}, reviewedAt: "" };
+          document.getElementById("saved").textContent = `saved · dataset.json has ${out.approved} rows`;
+          move(1);
+        } finally {
+          state.busy = false;
+        }
+      }
+
+      function move(step) {
+        const n = state.data.candidates.length;
+        state.i = (state.i + step + n) % n;
+        document.getElementById("posting").scrollTop = 0;
+        document.getElementById("fields").scrollTop = 0;
+        render();
+      }
+
+      document.getElementById("next").onclick = () => move(1);
+      document.getElementById("prev").onclick = () => move(-1);
+      document.getElementById("approve").onclick = approve;
+      document.getElementById("all").onchange = (e) => {
+        state.showAll = e.target.checked;
+        e.target.blur();
+        render();
+      };
+
+      addEventListener("keydown", (e) => {
+        if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+        if (e.key === "j") move(1);
+        if (e.key === "k") move(-1);
+        if (e.key === "Enter") {
+          // Without this a focused button also fires its click, approving twice.
+          e.preventDefault();
+          approve();
+        }
+      });
+
+      fetch("/api/data")
+        .then((r) => r.json())
+        .then((data) => {
+          state.data = data;
+          for (const [id, d] of Object.entries(data.decisions)) state.overrides[id] = { ...d.overrides };
+          render();
+        });
+    </script>
+  </body>
+</html>

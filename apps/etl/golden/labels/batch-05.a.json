@@ -1,0 +1,181 @@
+{
+  "batch": 5,
+  "labeller": "a",
+  "labels": [
+    {
+      "id": "00d60864-b357-4d22-9aa6-c4674ffb970c",
+      "values": {
+        "isTech": true,
+        "role": "CRM Developer",
+        "seniority": "LEAD",
+        "skills": { "required": ["GoHighLevel"], "optional": [] },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "PropTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Real Estate Bees",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "isTech": "CRM automation with webhooks, API integrations, and Voice AI implementation is hands-on technical work, not in the spec's FALSE list (sales/marketing/etc.); spec says prefer TRUE when torn",
+        "role": "GoHighLevel automation specialist maps to canonical 'CRM Developer'; not a generic admin role per the posting itself",
+        "seniority": "title contains 'Lead' (CRM Automation Lead) -> title wins -> LEAD",
+        "skills": "'Voice AI agents', 'webhooks', 'API integrations' are generic categories per spec exclusions; Salesforce/HubSpot are explicitly NOT wanted, so excluded; only the concrete platform GoHighLevel remains",
+        "engagementType": "own marketplace product; 'startup environment' is a vibe descriptor while the company is described as fast-growing and established -> PRODUCT over STARTUP",
+        "workFormat": "not stated anywhere; U.S.-based company but no remote/office/hybrid policy given -> null, locations []"
+      }
+    },
+    {
+      "id": "13a0fd86-dfac-44bb-9845-4242a139d405",
+      "values": {
+        "isTech": true,
+        "role": "Security Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Windows Server",
+            "Active Directory",
+            "Linux",
+            "TCP/IP",
+            "Azure",
+            "Microsoft 365",
+            "Jira"
+          ],
+          "optional": ["PowerShell", "Python", "Ansible", "Splunk", "Elastic Stack"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "Insurance",
+        "engagementType": "PRODUCT",
+        "companyName": "UNIVERSALNA",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "no seniority in title and no years of experience stated ('досвід системного адміністрування' has no number) -> null",
+        "skills": "excluded generic categories per spec: SIEM, EDR/AV, MDM/UEM, DLP, RBAC/MFA/SSO/IAM concepts, DNS/DHCP; optional capped at 5 of a much longer plus-list (dropped Bash, Purview, Intune, Keycloak, BitLocker, etc.)",
+        "locations": "Toronto is the parent group's (Fairfax) HQ, not an office for this job; no job location stated -> []",
+        "domain": "insurance company; no canonical taxonomy entry fits (not Fintech), so clear 1-word domain 'Insurance'",
+        "engagementType": "in-house security team of a company operating its own (insurance) business -> PRODUCT"
+      }
+    },
+    {
+      "id": "00ce1ec9-f15e-4309-a6f6-2a0faa6935a2",
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "C",
+            "Python",
+            "PyTest",
+            "asyncio",
+            "Embedded Systems",
+            "CI/CD",
+            "CMake",
+            "TestRail",
+            "Hardware Testing"
+          ],
+          "optional": []
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": "OFFICE",
+        "locations": [{ "city": "Kyiv", "country": "Ukraine" }],
+        "domain": "Hardware",
+        "engagementType": "PRODUCT",
+        "companyName": "Quantum-Systems",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "title is 'Embedded Software Quality Assurance Engineer'; umbrella preference -> 'QA Engineer' over the more specific 'Automation QA Engineer' despite heavy automation content",
+        "seniority": "no seniority in title; inferred from '3+ years' per spec rule 4 -> MIDDLE",
+        "skills": "pytest-bdd deduped into PyTest; Scrum and 'QA methodologies' excluded as methodologies; GitLab/GitHub Actions/Jenkins folded into the stated umbrella requirement CI/CD; oscilloscopes/logic analyzers mapped to canonical 'Hardware Testing'",
+        "englishLevel": "'Intermediate+' -> INTERMEDIATE (B1)",
+        "employmentType": "posting explicitly says 'This is a full-time office job' -> FULL_TIME",
+        "domain": "company builds high-tech drones for aerial data; 'Hardware' is the literal fit; 'Defense' would require inference beyond the text ('We Stand with Ukraine' is a slogan, defense use is never stated)"
+      }
+    },
+    {
+      "id": "5596ee51-a05c-4523-bcb8-384ea7d14653",
+      "values": {
+        "isTech": true,
+        "role": "Solutions Architect",
+        "seniority": "PRINCIPAL",
+        "skills": { "required": ["Kubernetes"], "optional": [] },
+        "experienceYears": null,
+        "salary": { "min": 670, "max": 1800, "currency": "USD" },
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [{ "city": "Kharkiv", "country": "Ukraine" }],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": "13 бригада оперативного призначення НГУ «Хартія»",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "title contains both 'Архітектор/Solutions Architect' and 'Tech Lead'; spec rule 2 'Architect -> PRINCIPAL' wins over LEAD",
+        "skills": "'distributed systems' and 'event-driven architecture' are generic categories, 'cloud' is generic, code review is process, leadership/communication are soft skills; only Kubernetes is a concrete hard skill",
+        "salary": "title states $670-1800 (USD, monthly, within guardrail); body's UAH figures (30 000 + up to 50 000) are the same package restated -> use the USD range",
+        "engagementType": "a military unit (National Guard brigade) fits none of the company/engagement models -> null",
+        "employmentType": "military service; no enum value explicitly named -> null"
+      }
+    },
+    {
+      "id": "0093c6a8-1f44-467a-839a-68e4a0b69294",
+      "values": {
+        "isTech": true,
+        "role": "Full Stack Developer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "WordPress",
+            "PHP",
+            "HTML/CSS",
+            "JavaScript",
+            "jQuery",
+            "MySQL",
+            "Figma",
+            "SEO",
+            "A/B Testing"
+          ],
+          "optional": ["React", "VWO"]
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": "ADVANCED",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "WordPress Developer is not in the taxonomy; stack spans backend (PHP, MySQL) and frontend (HTML/CSS, JS, pixel-perfect implementation) -> umbrella 'Full Stack Developer'",
+        "seniority": "title says 'Middle/Senior' (a range); by analogy with the spec's lower-bound rule for ranges -> MIDDLE",
+        "skills": "Git excluded as a tool every dev uses (spec exclusion overrides its taxonomy presence); ACF/custom post types folded into WordPress; troubleshooting/debugging excluded as generic",
+        "englishLevel": "'Proficient in English' maps to CEFR Proficiency (C1/C2) -> ADVANCED",
+        "workFormat": "'collaborating ... across a remote, multicultural environment' states the team is remote -> REMOTE",
+        "domain": "'Marketing Growth Department' and 'multiple brands' describe the team, not a business domain -> null"
+      }
+    }
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "batch": 2,
+  "labeller": "a",
+  "labels": [
+    {
+      "id": "127749e3-9277-4842-bb5c-d32583e18c43",
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": null,
+        "skills": {
+          "required": ["Manual Testing", "Test Automation"],
+          "optional": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "mix of manual + automation duties; title is plain 'QA Engineer' so the umbrella canonical 'QA Engineer' over Manual/Automation QA variants",
+        "skills": "posting names no concrete tools; 'AI tools' excluded as generic category per spec; mobile-app testing has no canonical skill and is a generic category; kept Manual Testing + Test Automation which are canonical taxonomy skills and the two explicit requirements",
+        "workFormat": "not stated anywhere, so null despite this looking like a small remote-style gig",
+        "engagementType": "personal 'Шукаю людину' posting, no company description at all"
+      }
+    },
+    {
+      "id": "d2a46405-1db7-43c8-a196-3e1045c1cce2",
+      "values": {
+        "isTech": true,
+        "role": "Data Analyst",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": ["SQL", "dbt"],
+          "optional": ["Python"]
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Warsaw", "country": "Poland" },
+          { "city": "Kyiv", "country": "Ukraine" }
+        ],
+        "domain": "AdTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Zeely AI",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "title has no level; inferred from '3-4+ роки досвіду' per spec rule 4 -> MIDDLE (UA market ~2-4y = middle)",
+        "skills": "visualization/reporting/statistical analysis are generic categories, excluded; only named hard techs are SQL, dbt (required) and Python (перевагою -> optional)",
+        "experienceYears": "'3-4+ роки' is a range -> lower bound 3",
+        "workFormat": "'віддалено' in title, 'Remote-first' in body; offices are optional -> REMOTE",
+        "locations": "remote-first but offices in Warsaw and Kyiv explicitly mentioned -> one entry per city",
+        "domain": "AI-marketing platform for ad creatives and Meta/TikTok campaigns -> AdTech (canonical) fits better than the vaguer 'AI'",
+        "engagementType": "own product, 1.5M+ businesses, 200+ team -> PRODUCT rather than STARTUP"
+      }
+    },
+    {
+      "id": "52c83a7f-6eb8-48cf-8ecb-e9d0e57bc70e",
+      "values": {
+        "isTech": true,
+        "role": "AI Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "Python",
+            "Go",
+            "Java",
+            "Node.js",
+            ".NET",
+            "React",
+            "Angular",
+            "Vue.js",
+            "PostgreSQL",
+            "LLM"
+          ],
+          "optional": ["RAG", "LangChain", "LlamaIndex", "Vector Databases"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [{ "city": "Kyiv", "country": "Ukraine" }],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "role": "title 'Full Stack AI Engineer'; both 'Full Stack Developer' and 'AI Engineer' are canonical, but the mission is explicitly building LLM/RAG products ('перетворює AI capability у працюючий продукт') so the canonical 'AI Engineer' fits the posting's own framing",
+        "seniority": "no level in title; '2+ роки' software engineering -> MIDDLE per years inference (past junior threshold)",
+        "skills": "backend and frontend requirements list alternatives ('Python, Go, Java, Node.js або .NET'; 'React, Next.js, Angular або Vue') — all alternatives extracted; MAX 10 cap forced dropping Next.js (React-family), gRPC and CI/CD in favor of the load-bearing PostgreSQL and LLM; REST excluded as concept per spec; tests/code review excluded as methodology",
+        "employmentType": "'Офіційне працевлаштування' means official employment, does not explicitly name FULL_TIME/CONTRACT -> null per no-default rule",
+        "domain": "posting is for active military servicemen, military service in Kyiv -> Defense",
+        "engagementType": "employer is a military unit, none of the company models apply -> null",
+        "hasReservation": "'Можливе бронювання' for civilians -> true"
+      }
+    },
+    {
+      "id": "c92417fc-130a-495f-b26c-f6d3f9007a6c",
+      "values": {
+        "isTech": true,
+        "role": "Embedded Software Engineer",
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Embedded Systems",
+            "MAVLink",
+            "ArduPilot",
+            "PX4",
+            "Linux",
+            "Docker",
+            "Python",
+            "SQL",
+            "NoSQL",
+            "Raspberry Pi"
+          ],
+          "optional": ["Embedded Linux", "C", "C++"]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Lviv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": "Defense",
+        "engagementType": "STARTUP",
+        "companyName": "Swarmer",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "notes": {
+        "role": "title 'Integration Engineer (Hardware/Embedded)' is not canonical; requirements lead with 'Embedded Development Experience ... is essential', so umbrella = 'Embedded Software Engineer' (Hardware Engineer was the runner-up)",
+        "seniority": "no level in title, no years of experience stated ('proven track record' is not a number) -> null",
+        "skills": "'Networking' and 'Shell scripting' excluded as spec-listed generic categories despite Networking being in the taxonomy — the spec EXCLUDE list wins; 'IoT communication protocols' and 'RF engineering' too generic; Embedded Linux ('significant advantage') and C/C++ ('is a plus') moved to optional per their own wording",
+        "workFormat": "'Flexible remote work options' but 'possibility to commute to the office if needed is essential' -> spec maps Flexible/mix to HYBRID",
+        "engagementType": "text self-describes as 'the first Ukrainian defense startup', Series A stage -> STARTUP over PRODUCT",
+        "hasTestAssignment": "hiring process lists interviews and security check only, no test task -> null"
+      }
+    },
+    {
+      "id": "1c16aa37-74c4-4fe0-b0f3-8ce536b01baa",
+      "values": {
+        "isTech": false,
+        "role": null,
+        "seniority": "LEAD",
+        "skills": {
+          "required": ["Prompt Engineering"],
+          "optional": ["Synthesia", "HeyGen"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          { "city": "Kyiv", "country": "Ukraine" },
+          { "city": "Warsaw", "country": "Poland" }
+        ],
+        "domain": null,
+        "engagementType": "PRODUCT",
+        "companyName": "Kiss My Apps",
+        "hasTestAssignment": true,
+        "hasReservation": true
+      },
+      "notes": {
+        "isTech": "Head of L&D is HR/training + product-ownership work — both in the spec's FALSE list — even though it builds an AI system; not an engineering role",
+        "role": "spec says role is null only when the posting is not a software/tech job at all; L&D leadership is not a tech job, so null (not 'HR Manager / People Partner' from the taxonomy — the spec rule wins)",
+        "seniority": "'Head of' -> C_LEVEL or LEAD by context; department-level lead reporting inside the company, not C-suite -> LEAD",
+        "skills": "only hard skills named: prompt engineering (canonical 'Prompt Engineering') required; Synthesia/HeyGen named tools under Nice to Have; knowledge-base/competency-model items are domain knowledge, excluded",
+        "experienceYears": "'2+ роки у L&D на рівні керівника' -> 2",
+        "workFormat": "'fully remote з будь-якої точки' with offices optional -> REMOTE",
+        "domain": "multi-vertical consumer app platform (utilities, lifestyle, health&fitness) — no single canonical domain fits, so null",
+        "hasReservation": "'є опція бронювання для військовозобов'язаних після випробувального терміну' -> true"
+      }
+    }
+  ]
+}

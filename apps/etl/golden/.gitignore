@@ -1,0 +1,4 @@
+# Derived and plaintext: batch packets and the arbitration work list embed the decoded
+# posting text, which would undo corpus.enc.json. Regenerate with golden:batch.
+batches/
+arbitration.json

@@ -1,0 +1,157 @@
+{
+  "batch": 4,
+  "labeller": "b",
+  "labels": [
+    {
+      "id": "3e3cd609-3b14-4c83-90fa-af7e3eaff8a6",
+      "values": {
+        "isTech": true,
+        "role": "CTO (Chief Technology Officer)",
+        "seniority": "C_LEVEL",
+        "skills": { "required": [], "optional": [] },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "iGaming",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "skills": "requirements name only domain knowledge (PSP/APM integrations, Pay In/Pay Out, payment routing, KYC/AML) and generic categories (high-load systems, system architecture) — no concrete languages/frameworks/tools, so both lists are empty per the EXCLUDE rules",
+        "seniority": "title 'CTO' maps to C_LEVEL per rule 3 context",
+        "engagementType": "company is anonymized with no self-description; casino product vs payments provider cannot be inferred, so null",
+        "isTech": "CTO here is hands-on engineering leadership of payment infrastructure — engineering management counts as tech per spec"
+      }
+    },
+    {
+      "id": "00d54c50-e14a-4a10-abea-dffbee2bcbf0",
+      "values": {
+        "isTech": true,
+        "role": "Software Engineer",
+        "seniority": "SENIOR",
+        "skills": { "required": ["C++", "Qt", "Make", "Conan", "MSVC", "CEF"], "optional": [] },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "HealthTech",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "C++ desktop engineer has no narrower canonical umbrella; 'Software Engineer' from knownRoles fits",
+        "skills": "multithreading/concurrency/performance optimization excluded as generic categories; optional 'AI-assisted coding tools' excluded (ai tools = generic category per spec), German and regulated-environment experience are not hard tech skills",
+        "englishLevel": "'Intermediate or higher' → minimum stated level INTERMEDIATE",
+        "engagementType": "no company self-description (product vs outsource not inferable) — null"
+      }
+    },
+    {
+      "id": "0cbdf1dc-08e3-4c03-a720-636cc41143ef",
+      "values": {
+        "isTech": true,
+        "role": "QA Engineer",
+        "seniority": "MIDDLE",
+        "skills": { "required": ["Electronics"], "optional": [] },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [{ "city": "Kyiv", "country": "Ukraine" }],
+        "domain": "Hardware",
+        "engagementType": "PRODUCT",
+        "companyName": "Svarock",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "seniority": "no level in title; inferred from '2 роки релевантного досвіду' → MIDDLE per rule 4 (years-based inference allowed); borderline with JUNIOR",
+        "skills": "'основи електроніки та схемотехніки' → Electronics (canonical); testing theory, test-case/check-list documentation and bug reporting excluded as methodologies/technical documentation; 'технічна освіта' is not a skill",
+        "workFormat": "not stated verbatim, but the job is physical assembly/configuration/testing of hardware devices in Kyiv — inherently on-site, so OFFICE",
+        "salary": "'конкурентна зарплата' has no numbers → null",
+        "domain": "company builds its own hardware products ('наших апаратних продуктів') → canonical 'Hardware'"
+      }
+    },
+    {
+      "id": "00345013-b591-4336-b1f2-335fb414c716",
+      "values": {
+        "isTech": true,
+        "role": "DevOps Engineer",
+        "seniority": "LEAD",
+        "skills": {
+          "required": [
+            "AWS",
+            "Kubernetes",
+            "Terraform",
+            "Helm",
+            "GitHub Actions",
+            "ArgoCD",
+            "Prometheus",
+            "Grafana",
+            "Redis",
+            "Python"
+          ],
+          "optional": ["Kafka", "Linux"]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "iGaming",
+        "engagementType": "PRODUCT",
+        "companyName": "NuxGame",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "'DevOps Team Lead' → umbrella 'DevOps Engineer' without the seniority prefix; Lead goes to seniority",
+        "skills": "required trimmed to the 10 most central of a much longer list (dropped MySQL/Aurora, Bash, Cloudflare, New Relic, Sentry, Alertmanager, VictoriaMetrics, Jenkins, FluxCD); optional keeps Kafka and Linux, excludes PCI DSS/compliance (domain knowledge), FinOps and multi-cloud architecture (generic categories)",
+        "experienceYears": "'5+ years in a DevOps role' → 5 (the 2+ leadership years is a sub-requirement, not the minimum commercial experience)",
+        "engagementType": "own iGaming platform sold to operators ('delivering software solutions... empower operators') → PRODUCT"
+      }
+    },
+    {
+      "id": "46c98bf9-179d-4015-8430-4401c8d9494b",
+      "values": {
+        "isTech": true,
+        "role": "Software Engineer",
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": ["C++", "C", "Python", "Linux", "CI/CD"],
+          "optional": ["PX4", "ArduPilot", "Betaflight", "Computer Vision"]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "HYBRID",
+        "locations": [{ "city": "Kyiv", "country": "Ukraine" }],
+        "domain": "Defense",
+        "engagementType": null,
+        "companyName": "LIRA",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "notes": {
+        "role": "title leads with 'Software Engineer' (canonical, umbrella) even though the parenthetical mentions Embedded — work spans embedded, networking and UI tooling, so the umbrella wins over 'Embedded Software Engineer'",
+        "seniority": "no level in title; inferred from '2+ роки досвіду' → MIDDLE per years-based inference; borderline with JUNIOR",
+        "skills": "'C/C++ або Python' → C, C++, Python; Git excluded (universal tool); 'мережеві технології' excluded (networking = generic category per spec, MikroTik/VLAN/VPN appear only in responsibilities); streaming video and 'low-level/real-time' excluded as generic; radio comms excluded as generic",
+        "workFormat": "'офіс або гібридний формат' and 'Київ, можливий гібрид (офіс + частково remote)' → HYBRID (mix of office and remote offered)",
+        "domain": "dual-use technologies born of the war, UAV/front-line focus → 'Defense'",
+        "engagementType": "explicitly 'інфраструктурна платформа..., а не виробник продуктів' — fits none of the enum values cleanly → null",
+        "salary": "'конкурентний salary' has no numbers → null"
+      }
+    }
+  ]
+}
