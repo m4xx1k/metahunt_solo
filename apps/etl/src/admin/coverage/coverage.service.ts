@@ -30,9 +30,20 @@ type PostingRow = {
   source_code: string;
   rss_record_id: string | null;
   // Raw db.execute() output — a driver string, not yet a Date. See toDate().
+  // `published_at` is mutable (a source "bump" overwrites it); `first_published_at`
+  // is `min()` over every observation, so it's stable — see FIRST_PUBLISHED_AT.
   published_at: string | Date | null;
+  first_published_at: string | Date | null;
   loaded_at: string | Date;
 };
+
+// The vacancy's own source_id/external_id — never the input parameter — so
+// this is correct whichever query matched (exact, or the legacy LIKE form).
+const FIRST_PUBLISHED_AT = sql`
+  (SELECT min(r.published_at) FROM rss_records r
+    WHERE r.source_id = postings.source_id AND r.external_id = postings.external_id
+  ) AS first_published_at
+`;
 
 type PositionEligibility = {
   canonical_posting_id: string;
@@ -132,6 +143,11 @@ export class CoverageService {
   ): Promise<CoverageRow> {
     const position = await this.getPositionEligibility(posting.position_id);
     const publishedAt = posting.published_at ? toDate(posting.published_at) : null;
+    // rss_records always has at least the row this vacancy was created from,
+    // so this is only null in the same cases publishedAt is.
+    const firstPublishedAt = posting.first_published_at
+      ? toDate(posting.first_published_at)
+      : publishedAt;
     const loadedAt = toDate(posting.loaded_at);
     const match: CoverageMatch = {
       positionId: posting.position_id,
@@ -141,7 +157,13 @@ export class CoverageService {
       sourceCode: posting.source_code,
       publishedAt: publishedAt?.toISOString() ?? null,
       loadedAt: loadedAt.toISOString(),
-      ingestLagMinutes: lagMinutes(publishedAt, loadedAt),
+      ingestLagMinutes: lagMinutes(firstPublishedAt, loadedAt),
+      // published_at moved past first_published_at: the source re-dated this
+      // listing after we first saw it (e.g. Djinni's paid "bump").
+      wasBumpedSincePublish:
+        publishedAt != null && firstPublishedAt != null
+          ? publishedAt.getTime() > firstPublishedAt.getTime()
+          : false,
       postingCount: position?.posting_count ?? 1,
       sourceCount: position?.source_count ?? 1,
       isCanonical: position ? position.canonical_posting_id === posting.posting_id : true,
@@ -179,7 +201,7 @@ export class CoverageService {
   private async findPostingById(postingId: string): Promise<PostingRow | null> {
     const res = await this.db.execute<PostingRow>(sql`
       SELECT posting_id, position_id, external_id, title, company_name, source_code,
-             rss_record_id, published_at, loaded_at
+             rss_record_id, published_at, loaded_at, ${FIRST_PUBLISHED_AT}
       FROM postings
       WHERE posting_id = ${postingId}::uuid
     `);
@@ -192,7 +214,7 @@ export class CoverageService {
   ): Promise<PostingRow | null> {
     const res = await this.db.execute<PostingRow>(sql`
       SELECT posting_id, position_id, external_id, title, company_name, source_code,
-             rss_record_id, published_at, loaded_at
+             rss_record_id, published_at, loaded_at, ${FIRST_PUBLISHED_AT}
       FROM postings
       WHERE source_code = ${sourceCode} AND external_id = ${externalId}
       ORDER BY loaded_at DESC
@@ -207,7 +229,7 @@ export class CoverageService {
   ): Promise<PostingRow | null> {
     const res = await this.db.execute<PostingRow>(sql`
       SELECT posting_id, position_id, external_id, title, company_name, source_code,
-             rss_record_id, published_at, loaded_at
+             rss_record_id, published_at, loaded_at, ${FIRST_PUBLISHED_AT}
       FROM postings
       WHERE source_code = ${sourceCode} AND external_id LIKE ${pattern}
       ORDER BY loaded_at DESC

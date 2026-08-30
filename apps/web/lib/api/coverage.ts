@@ -21,6 +21,7 @@ export interface CoverageMatch {
   publishedAt: string | null;
   loadedAt: string;
   ingestLagMinutes: number | null;
+  wasBumpedSincePublish: boolean;
   postingCount: number;
   sourceCount: number;
   isCanonical: boolean;

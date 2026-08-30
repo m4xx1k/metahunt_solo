@@ -127,8 +127,57 @@ describe("CoverageService.lookup", () => {
     expect(res.rows).toHaveLength(1);
     expect(res.rows[0].verdict).toBe("found");
     expect(res.rows[0].match?.ingestLagMinutes).toBe(45);
+    expect(res.rows[0].match?.wasBumpedSincePublish).toBe(false);
     expect(res.rows[0].match?.legacyExternalIdForm).toBe(false);
     expect(res.summary).toMatchObject({ total: 1, found: 1, checked: 1, coveragePct: 100 });
+  });
+
+  // Djinni lets a recruiter pay to re-date a listing without changing its URL
+  // or external_id. published_at is mutable (updated on every re-observation,
+  // vacancy.repository.ts's IMMUTABLE_ON_UPDATE excludes it); loaded_at is
+  // not. Naively diffing loaded_at against the *current* published_at goes
+  // deeply negative for anything bumped since it was first loaded.
+  it("does not report a bumped listing's stale re-publish date as negative lag", async () => {
+    const { sourceId, ingestId } = await seedSource("djinni");
+    const firstPublishedAt = new Date("2026-05-01T00:00:00Z");
+    const loadedAt = new Date("2026-05-01T00:20:00Z"); // genuinely fast first load
+    const bumpedPublishedAt = new Date("2026-08-29T00:00:00Z"); // re-dated 3 months later
+
+    // The original observation — this is what first_published_at must reflect.
+    await seedRecord({
+      sourceId,
+      ingestId,
+      externalId: "900555",
+      title: "Senior Backend Engineer",
+      link: "https://djinni.co/jobs/900555-senior-backend-engineer/",
+      publishedAt: firstPublishedAt,
+    });
+    // The bump — a fresh rss_records row, same external_id, later claimed date.
+    const bumpRecordId = await seedRecord({
+      sourceId,
+      ingestId,
+      externalId: "900555",
+      title: "Senior Backend Engineer",
+      link: "https://djinni.co/jobs/900555-senior-backend-engineer/",
+      publishedAt: bumpedPublishedAt,
+    });
+    // The loader re-points the vacancy at the newer record and overwrites
+    // published_at, but never touches loaded_at (IMMUTABLE_ON_UPDATE).
+    await insertVacancyWithGroup(db, {
+      sourceId,
+      externalId: "900555",
+      lastRssRecordId: bumpRecordId,
+      title: "Senior Backend Engineer",
+      publishedAt: bumpedPublishedAt,
+      loadedAt,
+    });
+
+    const res = await coverage.lookup("https://djinni.co/jobs/900555-senior-backend-engineer/");
+
+    expect(res.rows[0].verdict).toBe("found_not_visible"); // no VERIFIED role in this fixture
+    expect(res.rows[0].match?.publishedAt).toBe(bumpedPublishedAt.toISOString());
+    expect(res.rows[0].match?.ingestLagMinutes).toBe(20); // loadedAt - first_published_at
+    expect(res.rows[0].match?.wasBumpedSincePublish).toBe(true);
   });
 
   it("matches a legacy Djinni row whose external_id is the full URL", async () => {

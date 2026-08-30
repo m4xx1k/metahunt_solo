@@ -198,6 +198,9 @@ function RowCard({ row }: { row: CoverageRow }) {
           <span className="text-text-secondary">{match.title}</span>
           {match.companyName ? <span>@ {match.companyName}</span> : null}
           {match.ingestLagMinutes != null ? <span>lag {match.ingestLagMinutes}m</span> : null}
+          {match.wasBumpedSincePublish ? (
+            <span className="text-accent">bumped since first publish</span>
+          ) : null}
           {match.postingCount > 1 ? <span>{match.postingCount} postings in group</span> : null}
           {match.legacyExternalIdForm ? (
             <span className="text-accent">legacy external_id form</span>
