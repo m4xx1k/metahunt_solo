@@ -26,15 +26,15 @@ import { toFilterAggregates } from "./to-filter-aggregates";
 // it never pushes the list off the first screen; on lg+ it is a sticky
 // always-visible column.
 
-// Two layouts share this component:
-// - Landing (no `tracks`): role + skill MultiSelects (both multi, searchable;
-//   the nice-to-have toggle rides the skill section's `extra` slot), with the
-//   ActiveFiltersBar summary on top.
-// - Track route (`tracks` passed): leads with the browse tree; once a track is
-//   active, both axes render as unified TrackAxisSections (preset chips on by
-//   default, contextual suggestions, search-add) writing ?roles / ?skills.
-//   The feed is driven by those explicit axes, so the bar is dropped here —
-//   each section shows its own state.
+// The role/skill axes render one of two ways:
+// - No active track (landing + the merged home): role + skill MultiSelects
+//   (both multi, searchable; the nice-to-have toggle rides the skill section's
+//   `extra` slot), summarised by the ActiveFiltersBar on top.
+// - Active track (`tracks` passed and `activeTrackSlug` set): both axes render
+//   as unified TrackAxisSections (preset chips on by default, contextual
+//   suggestions, search-add) writing ?roles / ?skills, each showing its own
+//   state. The standalone track route also leads with the browse tree
+//   (dropped when `hideTrackTree` — the merged route has a top-band instead).
 export function FeedFilters({
   aggregates,
   tracks,
@@ -72,18 +72,15 @@ export function FeedFilters({
   // Role/skill options come from the full /feed catalog (search reaches every
   // node), not the aggregates top-N. Counts only order the empty-query view.
   const roleOptions = useMemo<OptionRow[]>(
-    () =>
-      (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
+    () => (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
     [roleCatalog],
   );
   const skillOptions = useMemo<OptionRow[]>(
-    () =>
-      (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
+    () => (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
     [skillCatalog],
   );
   const domainOptions = useMemo<OptionRow[]>(
-    () =>
-      (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
+    () => (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
     [domainCatalog],
   );
   const api = useUrlFilters();
@@ -136,37 +133,36 @@ export function FeedFilters({
           />
         )}
         <aside className="flex flex-col border border-border bg-bg-card">
-          {trackMode ? (
+          {trackMode && !hideTrackTree ? (
+            <TrackTree
+              tracks={tracks}
+              activeSlug={activeTrackSlug ?? null}
+              onSelect={handleSelectTrack}
+            />
+          ) : null}
+          {/* An active track drives the feed from its preset axes → unified
+              TrackAxisSections. Otherwise (landing + the merged home) roles and
+              skills are plain searchable MultiSelects writing ?roles / ?skills. */}
+          {showFacets ? (
             <>
-              {hideTrackTree ? null : (
-                <TrackTree
-                  tracks={tracks}
-                  activeSlug={activeTrackSlug ?? null}
-                  onSelect={handleSelectTrack}
-                />
-              )}
-              {showFacets ? (
-                <>
-                  <TrackAxisSection
-                    title="refine · roles"
-                    urlKey="roles"
-                    addLabel="add role…"
-                    presets={presetRoles ?? []}
-                    catalog={roleCatalog ?? []}
-                  />
-                  <TrackAxisSection
-                    title="skills"
-                    urlKey="skills"
-                    addLabel="add skill…"
-                    presets={presetSkills ?? []}
-                    catalog={skillCatalog ?? []}
-                    suggestions={contextualSkills ?? []}
-                  />
-                  <div className="border-b border-border px-4 py-3 last:border-b-0">
-                    <SkillScopeToggle />
-                  </div>
-                </>
-              ) : null}
+              <TrackAxisSection
+                title="refine · roles"
+                urlKey="roles"
+                addLabel="add role…"
+                presets={presetRoles ?? []}
+                catalog={roleCatalog ?? []}
+              />
+              <TrackAxisSection
+                title="skills"
+                urlKey="skills"
+                addLabel="add skill…"
+                presets={presetSkills ?? []}
+                catalog={skillCatalog ?? []}
+                suggestions={contextualSkills ?? []}
+              />
+              <div className="border-b border-border px-4 py-3 last:border-b-0">
+                <SkillScopeToggle />
+              </div>
             </>
           ) : (
             <>
@@ -185,9 +181,7 @@ export function FeedFilters({
                 onToggle={api.toggleSkill}
                 searchable
                 searchPlaceholder="search skill…"
-                extra={
-                  api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null
-                }
+                extra={api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null}
               />
             </>
           )}
