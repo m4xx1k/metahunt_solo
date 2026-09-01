@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
 import { FilterRail } from "@/features/vacancy-filters/FilterRail";
-import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import { type TrackAxis, TrackAxisSection } from "@/features/tracks/TrackAxisSection";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
 import { TrackTree } from "@/features/tracks/TrackTree";
@@ -27,14 +26,15 @@ import { toFilterAggregates } from "./to-filter-aggregates";
 // always-visible column.
 
 // The role/skill axes render one of two ways:
-// - No active track (landing + the merged home): role + skill MultiSelects
-//   (both multi, searchable; the nice-to-have toggle rides the skill section's
-//   `extra` slot), summarised by the ActiveFiltersBar on top.
+// - No active track (landing + the merged home): the shared FilterRail's own
+//   searchable role + skill catalogs (the nice-to-have toggle rides the skill
+//   section's `extra` slot), summarised by the ActiveFiltersBar on top.
 // - Active track (`tracks` passed and `activeTrackSlug` set): both axes render
 //   as unified TrackAxisSections (preset chips on by default, contextual
 //   suggestions, search-add) writing ?roles / ?skills, each showing its own
-//   state. The standalone track route also leads with the browse tree
-//   (dropped when `hideTrackTree` — the merged route has a top-band instead).
+//   state; FilterRail's own role/skill catalogs are suppressed. The standalone
+//   track route also leads with the browse tree (dropped when `hideTrackTree` —
+//   the merged route has a top-band instead).
 export function FeedFilters({
   aggregates,
   tracks,
@@ -140,9 +140,10 @@ export function FeedFilters({
               onSelect={handleSelectTrack}
             />
           ) : null}
-          {/* An active track drives the feed from its preset axes → unified
-              TrackAxisSections. Otherwise (landing + the merged home) roles and
-              skills are plain searchable MultiSelects writing ?roles / ?skills. */}
+          {/* An active track drives the feed from its own preset axes → unified
+              TrackAxisSections here. With no active track (landing + the merged
+              home) roles and skills are just the FilterRail's searchable
+              catalogs below — one widget for both lenses. */}
           {showFacets ? (
             <>
               <TrackAxisSection
@@ -164,33 +165,18 @@ export function FeedFilters({
                 <SkillScopeToggle />
               </div>
             </>
-          ) : (
-            <>
-              <MultiSelect
-                title="role"
-                options={roleOptions}
-                selected={api.filters.roleIds}
-                onToggle={api.toggleRole}
-                searchable
-                searchPlaceholder="search role…"
-              />
-              <MultiSelect
-                title="skills"
-                options={skillOptions}
-                selected={api.filters.skillIds}
-                onToggle={api.toggleSkill}
-                searchable
-                searchPlaceholder="search skill…"
-                extra={api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null}
-              />
-            </>
-          )}
+          ) : null}
           <FilterRail
             api={api}
             lens="cold"
             seniorityOptions={agg.seniorities}
             workFormatOptions={agg.workFormats}
             domainOptions={domainOptions}
+            roleOptions={showFacets ? undefined : roleOptions}
+            skillOptions={showFacets ? undefined : skillOptions}
+            skillExtra={
+              !showFacets && api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : undefined
+            }
             seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
           <SourceSection
