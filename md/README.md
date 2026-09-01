@@ -50,8 +50,26 @@ If a package ever accumulates enough internal-only context that it dominates thi
 - **Snapshot files contain "is" statements.** No dates, no "recently". If you want to write "we recently migrated…", that's a journal entry.
 - **Journal files contain "happened" statements.** No "currently we use X" — that's a snapshot.
 - **ADRs are not edited after `accepted`.** Exception: typos or broken links. Decision changed → write a superseding ADR.
-- **One file = one topic.** Split when caps in `/CLAUDE.md` are reached.
+- **One file = one topic.** Split when the caps below are reached.
 - **Header anchors.** Every `## Section` becomes a GitHub-style anchor (`#section-slug`). Cross-doc references should point at *sections* (e.g. `runbook/railway-deploy.md#deploy-contract`) instead of whole files — readers grep less, agents read less.
+
+## Size caps
+
+Soft caps for new docs. Past the cap, split rather than keep appending.
+
+| Doc type | Cap | Split point |
+|---|---|---|
+| Architecture snapshot | 500 lines | Overview + data-model + modules |
+| ADR | 150 lines | Past this you're conflating decisions — write a sibling |
+| Migration tracker | 600 lines | The initiative needs a sibling tracker |
+| Runbook entry | 300 lines | Split by sub-topic |
+| `engineering/*` style guide | 200 lines | Spawn a new topic file |
+
+Audit before any commit that touches docs:
+
+```bash
+find md -name '*.md' -exec wc -l {} \; | sort -rn | head
+```
 
 ## Archive convention
 

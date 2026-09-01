@@ -18,7 +18,7 @@
     "lint:web": "pnpm --filter @metahunt/web lint",
     "seo:audit": "ts-node --project tsconfig.json scripts/seo-audit.ts",
     "analytics:catalog": "ts-node --project tsconfig.json scripts/analytics-catalog.ts",
-    "posthog:founder": "ts-node --project tsconfig.json scripts/posthog-founder-setup.ts",
+    "dev:jwt": "bash scripts/dev-jwt.sh",
     "lint": "pnpm -r --if-present run lint",
     "format": "prettier --write .",
     "prepare": "husky",
