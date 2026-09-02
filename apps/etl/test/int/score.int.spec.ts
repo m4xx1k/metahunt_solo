@@ -5,7 +5,12 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
-import { overlayFor, overlayForUser } from "../../src/03-discovery/score/scorer.port";
+import {
+  createCandidateScorer,
+  overlayFor,
+  overlayForUser,
+  resolveSampleCandidateId,
+} from "../../src/03-discovery/score/scorer.port";
 
 import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
@@ -102,13 +107,17 @@ async function seedFillers(sourceId: string, ingestId: string, role: string, n =
   for (let i = 0; i < n; i++) await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
 }
 
-async function seedCandidate(skillIds: string[]): Promise<string> {
+async function seedCandidate(
+  skillIds: string[],
+  type: "user" | "sample" = "user",
+): Promise<string> {
   const [candidate] = await db
     .insert(schema.candidates)
     .values({
       contentHash: `candidate-${++seq}`,
       sourceText: "",
       extracted: { unmatchedSkills: [] },
+      type,
     })
     .returning({ id: schema.candidates.id });
   if (skillIds.length > 0) {
@@ -287,5 +296,53 @@ describe("overlayForUser (integration)", () => {
     const overlay = await overlayForUser(db, userId, [await positionIdOf(vac)]);
 
     expect(overlay.size).toBe(0);
+  });
+});
+
+// §7 step 3: what resolveFeedQuery hands FeedService.search once a
+// candidateId is resolved (JWT active CV, or an allowlisted ?sample=).
+describe("createCandidateScorer (integration)", () => {
+  it("scores through the bound CandidateScorer the same as calling overlayFor directly", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const go = await seedNode("SKILL", "Go");
+    const vac = await seedVacancy(sourceId, ingestId, role);
+    await linkSkill(vac, go, true);
+    await seedFillers(sourceId, ingestId, role);
+    await refreshNodeStats();
+    const candidateId = await seedCandidate([go]);
+    const vacPos = await positionIdOf(vac);
+
+    const scorer = await createCandidateScorer(db, candidateId);
+    const direct = await overlayFor(db, [go], [vacPos]);
+
+    expect(scorer).not.toBeNull();
+    await expect(scorer?.overlayFor([vacPos])).resolves.toEqual(direct);
+  });
+
+  it("returns null for a candidate with no skill nodes at all", async () => {
+    const candidateId = await seedCandidate([]);
+
+    await expect(createCandidateScorer(db, candidateId)).resolves.toBeNull();
+  });
+});
+
+describe("resolveSampleCandidateId (integration)", () => {
+  it("resolves a seeded sample candidate's own id", async () => {
+    const candidateId = await seedCandidate([], "sample");
+
+    await expect(resolveSampleCandidateId(db, candidateId)).resolves.toBe(candidateId);
+  });
+
+  it("refuses a real (non-sample) candidate id — the §8 boundary this exists to hold", async () => {
+    const candidateId = await seedCandidate([], "user");
+
+    await expect(resolveSampleCandidateId(db, candidateId)).resolves.toBeNull();
+  });
+
+  it("refuses an id that matches no candidate at all", async () => {
+    await expect(
+      resolveSampleCandidateId(db, "00000000-0000-0000-0000-000000000000"),
+    ).resolves.toBeNull();
   });
 });

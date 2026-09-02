@@ -63,28 +63,74 @@ export async function overlayFor(
 // isActive` — MVP is one active CV per user, ADR-0010-adjacent) and score
 // against it. No account, or no CV linked, or no active one → empty map,
 // same as an anonymous visitor. §7 step 2's "resolve the viewer's CV from
-// the JWT" step; folds into `resolveFeedQuery` when step 3 builds it.
+// the JWT" step for the single-vacancy page.
 export async function overlayForUser(
   db: DrizzleDB,
   userId: string,
   positionIds: string[],
 ): Promise<Map<string, MatchOverlay>> {
-  const candidateNodeIds = await activeCandidateNodeIds(db, userId);
-  if (candidateNodeIds.length === 0) return new Map();
-  return overlayFor(db, candidateNodeIds, positionIds);
+  const candidateId = await resolveActiveCandidateId(db, userId);
+  if (!candidateId) return new Map();
+  return overlayFor(db, await candidateNodeIds(db, candidateId), positionIds);
 }
 
-async function activeCandidateNodeIds(db: DrizzleDB, userId: string): Promise<string[]> {
+// Exported for callers that need the candidateId itself, not just the
+// overlay — resolve-feed-query.ts's `?sample=` fallback (§8) resolves a
+// candidateId either way and wants one composition path for both sources.
+export async function resolveActiveCandidateId(
+  db: DrizzleDB,
+  userId: string,
+): Promise<string | null> {
   const [cv] = await db
     .select({ candidateId: schema.userCvs.candidateId })
     .from(schema.userCvs)
     .where(and(eq(schema.userCvs.userId, userId), eq(schema.userCvs.isActive, true)))
     .limit(1);
-  if (!cv) return [];
+  return cv?.candidateId ?? null;
+}
 
+// §8's wrinkle: sample CVs are public fixtures, not user data, so `GET
+// /feed?sample=<id>` may resolve a scorer from a bare query param — but ONLY
+// when the id is a seeded sample candidate (`candidates.type = 'sample'`).
+// Anything else (a real candidate id, garbage) resolves to null so the
+// caller 404s rather than silently falling back to anonymous.
+export async function resolveSampleCandidateId(
+  db: DrizzleDB,
+  sampleId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ type: schema.candidates.type })
+    .from(schema.candidates)
+    .where(eq(schema.candidates.id, sampleId))
+    .limit(1);
+  return row?.type === "sample" ? sampleId : null;
+}
+
+async function candidateNodeIds(db: DrizzleDB, candidateId: string): Promise<string[]> {
   const rows = await db
     .select({ nodeId: schema.candidateNodes.nodeId })
     .from(schema.candidateNodes)
-    .where(eq(schema.candidateNodes.candidateId, cv.candidateId));
+    .where(eq(schema.candidateNodes.candidateId, candidateId));
   return rows.map((r) => r.nodeId);
+}
+
+// CandidateScorer (§3): the bound, candidate-scoped face of the primitives
+// above — what `resolveFeedQuery` hands `FeedService.search` once a
+// candidateId is resolved (JWT active CV, or an allowlisted `?sample=`).
+// `fragments()` (the FULL PATH's SQL-splice half of §3's interface) lands in
+// §7 step 4, when a consumer actually needs it.
+export interface CandidateScorer {
+  overlayFor(positionIds: string[]): Promise<Map<string, MatchOverlay>>;
+}
+
+// null when the candidate resolves to no skill nodes at all — same
+// "nothing to score" outcome as no candidate, so callers can treat both
+// uniformly (`scorer: CandidateScorer | null`).
+export async function createCandidateScorer(
+  db: DrizzleDB,
+  candidateId: string,
+): Promise<CandidateScorer | null> {
+  const nodeIds = await candidateNodeIds(db, candidateId);
+  if (nodeIds.length === 0) return null;
+  return { overlayFor: (positionIds) => overlayFor(db, nodeIds, positionIds) };
 }

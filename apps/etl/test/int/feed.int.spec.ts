@@ -1,9 +1,11 @@
+import { sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { FacetsService } from "../../src/03-discovery/feed/facets.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
+import { createCandidateScorer } from "../../src/03-discovery/score/scorer.port";
 
 import { makeTestDb, truncateAll } from "./db";
 import { insertVacancyWithGroup, mergeIntoGroup } from "./vacancy-fixture";
@@ -379,5 +381,75 @@ describe("FeedService.search — excluded skills (integration)", () => {
     });
 
     expect(result.items.map((item) => item.id)).toEqual([optional]);
+  });
+});
+
+// §7 step 3: the CHEAP PATH — a scorer attaches `match` to the page FeedService
+// already chose; it must never change WHICH rows come back or `total`.
+describe("FeedService.search — scorer / CHEAP PATH (integration)", () => {
+  it("attaches match without moving total or the result set", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedRole();
+    const [skill] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "Go", status: "VERIFIED" })
+      .returning({ id: schema.nodes.id });
+    const matching = await seedVacancy({
+      sourceId,
+      ingestId,
+      roleNodeId: role,
+      publishedAt: new Date("2026-06-02T00:00:00Z"),
+    });
+    const nonMatching = await seedVacancy({
+      sourceId,
+      ingestId,
+      roleNodeId: role,
+      publishedAt: new Date("2026-06-01T00:00:00Z"),
+    });
+    await db.insert(schema.vacancyNodes).values({
+      vacancyId: matching,
+      nodeId: skill.id,
+      isRequired: true,
+    });
+    // Filler so smoothed IDF (ln(N/(df+5))) stays positive — same note as
+    // score.int.spec.ts / ranking.int.spec.ts.
+    for (let i = 0; i < 12; i++) {
+      await seedVacancy({
+        sourceId,
+        ingestId,
+        roleNodeId: role,
+        publishedAt: new Date("2026-05-01T00:00:00Z"),
+      });
+    }
+    await db.execute(sql`REFRESH MATERIALIZED VIEW node_stats`);
+    const [candidate] = await db
+      .insert(schema.candidates)
+      .values({ contentHash: "cand-search-scorer", sourceText: "", extracted: {} })
+      .returning({ id: schema.candidates.id });
+    await db.insert(schema.candidateNodes).values({ candidateId: candidate.id, nodeId: skill.id });
+
+    const params = { page: 1, pageSize: 20 };
+    const unscored = await feed.search(params);
+    const scorer = await createCandidateScorer(db, candidate.id);
+    const scored = await feed.search(params, scorer);
+
+    expect(scored.total).toBe(unscored.total);
+    expect(scored.items.map((i) => i.id)).toEqual(unscored.items.map((i) => i.id));
+    expect(unscored.items.every((i) => i.match === null)).toBe(true);
+
+    const matchingCard = scored.items.find((i) => i.id === matching)!;
+    const nonMatchingCard = scored.items.find((i) => i.id === nonMatching)!;
+    expect(matchingCard.match).toMatchObject({ tier: "STRONG", percent: 100 });
+    expect(nonMatchingCard.match).toBeNull();
+  });
+
+  it("leaves every card's match null when no scorer is passed — same as before this migration", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedRole();
+    await seedVacancy({ sourceId, ingestId, roleNodeId: role, publishedAt: new Date() });
+
+    const res = await feed.search({ page: 1, pageSize: 20 });
+
+    expect(res.items.every((i) => i.match === null)).toBe(true);
   });
 });

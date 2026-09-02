@@ -8,6 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
+import type { CandidateScorer } from "../score/scorer.port";
 
 import type {
   EmploymentType,
@@ -142,7 +143,15 @@ function positionsFrom(where: SQL | undefined): SQL {
 export class FeedService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async search(params: FeedSearchParams): Promise<FeedResponse> {
+  // `scorer` is the CHEAP PATH (§2.1, §7 step 3): the page query below is
+  // untouched — the score decides neither the result SET nor its ORDER BY —
+  // and one `scorer.overlayFor(pageIds)` call after the page is chosen scores
+  // just these ≤`pageSize` positions. `null` (anonymous, or a candidate with
+  // nothing scored) leaves every card's `match: null`, same as `toDto`'s default.
+  async search(
+    params: FeedSearchParams,
+    scorer: CandidateScorer | null = null,
+  ): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params);
     const base = positionsFrom(where);
@@ -164,13 +173,18 @@ export class FeedService {
       return { items: [], page: params.page, pageSize: params.pageSize, total };
     }
 
-    const rows = await this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`);
+    const [rows, overlay] = await Promise.all([
+      this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
+      scorer ? scorer.overlayFor(positionIds) : null,
+    ]);
     const byPositionId = new Map(rows.map((r) => [r.positionId, r]));
     const skills = await this.fetchSkills(positionIds, params.includeAllSkills === true);
     const items = positionIds
       .map((positionId) => {
         const row = byPositionId.get(positionId);
-        return row ? toDto(row, skills.get(positionId)) : null;
+        if (!row) return null;
+        const dto = toDto(row, skills.get(positionId));
+        return overlay ? { ...dto, match: overlay.get(positionId) ?? null } : dto;
       })
       .filter((x): x is VacancyDto => x !== null);
 

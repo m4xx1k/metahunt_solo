@@ -28,11 +28,16 @@ import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE, isUuid, parseDays } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
-import { overlayForUser } from "../score/scorer.port";
+import {
+  overlayForUser,
+  resolveActiveCandidateId,
+  resolveSampleCandidateId,
+} from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
 import type { SitemapResponse, VacancyDto } from "./feed.contract";
 import { FeedService, type FeedSearchParams } from "./feed.service";
+import { resolveFeedQuery } from "./resolve-feed-query";
 
 // Matches the product's own 30-day freshness window; the cap keeps a hand-typed
 // ?postedWithinDays=99999 from asking for the entire table.
@@ -63,11 +68,18 @@ export class FeedController {
   // transforms flatten repeated params, single values, and CSV to one shape.
   // The role/skill/domain axes arrive as slugs (?roles=backend-engineer); we
   // resolve them to node ids here so everything downstream stays id-based.
+  //
+  // Optional auth, same as `vacancy/:id` (§7 step 2): a signed-in viewer's
+  // active CV scores the page; `?sample=<id>` (§8's wrinkle) scores it against
+  // a public demo fixture instead, allowed for anyone. `resolveFeedQuery` is
+  // CHEAP PATH only for now (§7 step 3) — the page query and its ORDER BY are
+  // untouched; the scorer only adds `match` to cards already chosen.
   @Get()
+  @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: "Browse vacancies with filters and pagination" })
   @ApiOkResponse({ description: "A page of structured vacancies and facets." })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async search(@Query() dto: FeedQueryDto) {
+  async search(@Query() dto: FeedQueryDto, @Req() req: RequestWithUser) {
     let companyId: string | undefined;
     [dto.roleIds, dto.skillIds, dto.excludedSkillIds, dto.domainIds, dto.roleId, companyId] =
       await Promise.all([
@@ -78,7 +90,12 @@ export class FeedController {
         this.slugs.toId("ROLE", dto.roleId),
         this.resolveCompany(dto.companySlug),
       ]);
-    return this.feed.search({ ...toSearchParams(dto), companyId });
+    const candidateId = await this.resolveViewerCandidateId(req, dto.sample);
+    const { filters, scorer } = await resolveFeedQuery(this.db, candidateId, {
+      ...toSearchParams(dto),
+      companyId,
+    });
+    return this.feed.search(filters, scorer);
   }
 
   // Companies aren't taxonomy nodes, so they don't go through NodeSlugResolver.
@@ -86,6 +103,22 @@ export class FeedController {
   private async resolveCompany(slug: string | undefined): Promise<string | undefined> {
     if (!slug) return undefined;
     return (await this.facets.resolveCompanySlug(slug)) ?? UNMATCHABLE_ID;
+  }
+
+  // §8's wrinkle: `?sample=` is public — it never needs a signed-in viewer,
+  // and it wins over the JWT if both are somehow present (the demo is an
+  // explicit, deliberate choice). 404s rather than silently falling back to
+  // anonymous when the id isn't an allowlisted sample candidate.
+  private async resolveViewerCandidateId(
+    req: RequestWithUser,
+    sample: string | undefined,
+  ): Promise<string | null> {
+    if (sample) {
+      const candidateId = await resolveSampleCandidateId(this.db, sample);
+      if (!candidateId) throw new NotFoundException(`sample candidate ${sample} not found`);
+      return candidateId;
+    }
+    return req.user ? resolveActiveCandidateId(this.db, req.user.userId) : null;
   }
 
   // Every publicly visible vacancy URL in one response. The browse endpoint caps

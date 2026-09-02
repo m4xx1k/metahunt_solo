@@ -231,6 +231,17 @@ export class FeedQueryDto extends FilterParamsDto {
   @Min(1)
   @Max(100)
   pageSize?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "A seeded sample candidate id — scores this page against it, same as a signed-in " +
+      "viewer's own CV. Public demo fixtures only; 404s for anything else, real candidate " +
+      "ids included (unified-feed-score.md §8).",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsUUID()
+  sample?: string;
 }
 
 // Filters shared by stored-CV matching and plain-text matching.

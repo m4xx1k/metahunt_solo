@@ -9,7 +9,13 @@ import { OptionalAuthGuard } from "../../platform/auth/optional-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import type { MatchOverlay } from "../score/score.contract";
-import { overlayForUser } from "../score/scorer.port";
+import {
+  createCandidateScorer,
+  overlayForUser,
+  resolveActiveCandidateId,
+  resolveSampleCandidateId,
+  type CandidateScorer,
+} from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
 import type { FeedResponse, VacancyDto } from "./feed.contract";
@@ -18,6 +24,9 @@ import { FeedService } from "./feed.service";
 
 jest.mock("../score/scorer.port");
 const overlayForUserMock = jest.mocked(overlayForUser);
+const resolveActiveCandidateIdMock = jest.mocked(resolveActiveCandidateId);
+const resolveSampleCandidateIdMock = jest.mocked(resolveSampleCandidateId);
+const createCandidateScorerMock = jest.mocked(createCandidateScorer);
 
 const EMPTY: FeedResponse = {
   items: [],
@@ -53,6 +62,9 @@ describe("FeedController", () => {
     listForSitemap.mockReset().mockResolvedValue([]);
     resolveCompanySlug.mockReset().mockResolvedValue(null);
     overlayForUserMock.mockReset().mockResolvedValue(new Map());
+    resolveActiveCandidateIdMock.mockReset().mockResolvedValue(null);
+    resolveSampleCandidateIdMock.mockReset().mockResolvedValue(null);
+    createCandidateScorerMock.mockReset().mockResolvedValue(null);
     const moduleRef = await Test.createTestingModule({
       controllers: [FeedController],
       providers: [
@@ -76,7 +88,7 @@ describe("FeedController", () => {
     Object.assign(new FeedQueryDto(), over);
 
   it("defaults page/pageSize and forwards undefined for absent filters", async () => {
-    await controller.search(dto());
+    await controller.search(dto(), anon);
 
     expect(search).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -88,6 +100,7 @@ describe("FeedController", () => {
         employmentTypes: undefined,
         skillIds: undefined,
       }),
+      null,
     );
   });
 
@@ -102,6 +115,7 @@ describe("FeedController", () => {
         postedWithinDays: 7,
         page: 2,
       }),
+      anon,
     );
 
     expect(search).toHaveBeenCalledWith(
@@ -114,6 +128,7 @@ describe("FeedController", () => {
         postedWithinDays: 7,
         page: 2,
       }),
+      null,
     );
   });
 
@@ -121,16 +136,19 @@ describe("FeedController", () => {
     it("resolves the slug to a company id before filtering", async () => {
       resolveCompanySlug.mockResolvedValue("company-uuid");
 
-      await controller.search(dto({ companySlug: "acme" }));
+      await controller.search(dto({ companySlug: "acme" }), anon);
 
       expect(resolveCompanySlug).toHaveBeenCalledWith("acme");
-      expect(search).toHaveBeenCalledWith(expect.objectContaining({ companyId: "company-uuid" }));
+      expect(search).toHaveBeenCalledWith(
+        expect.objectContaining({ companyId: "company-uuid" }),
+        null,
+      );
     });
 
     it("matches nothing for an unknown slug instead of dropping the filter", async () => {
       resolveCompanySlug.mockResolvedValue(null);
 
-      await controller.search(dto({ companySlug: "does-not-exist" }));
+      await controller.search(dto({ companySlug: "does-not-exist" }), anon);
 
       // Falling through to `undefined` here would return the whole feed under
       // a company landing that has no vacancies.
@@ -139,10 +157,55 @@ describe("FeedController", () => {
     });
 
     it("leaves the filter off when no slug is given", async () => {
-      await controller.search(dto());
+      await controller.search(dto(), anon);
 
       expect(resolveCompanySlug).not.toHaveBeenCalled();
-      expect(search).toHaveBeenCalledWith(expect.objectContaining({ companyId: undefined }));
+      expect(search).toHaveBeenCalledWith(expect.objectContaining({ companyId: undefined }), null);
+    });
+  });
+
+  // §7 step 3: resolveFeedQuery resolves a candidate id (JWT active CV, or an
+  // allowlisted ?sample=) and turns it into the scorer FeedService.search gets.
+  describe("candidate resolution", () => {
+    it("resolves no candidate, and no scorer, for an anonymous request", async () => {
+      await controller.search(dto(), anon);
+
+      expect(resolveActiveCandidateIdMock).not.toHaveBeenCalled();
+      expect(resolveSampleCandidateIdMock).not.toHaveBeenCalled();
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), null);
+    });
+
+    it("scores the page against the signed-in viewer's active CV", async () => {
+      resolveActiveCandidateIdMock.mockResolvedValue("candidate-1");
+      const scorer: CandidateScorer = { overlayFor: jest.fn() };
+      createCandidateScorerMock.mockResolvedValue(scorer);
+
+      await controller.search(dto(), asUser("user-1"));
+
+      expect(resolveActiveCandidateIdMock).toHaveBeenCalledWith(expect.anything(), "user-1");
+      expect(createCandidateScorerMock).toHaveBeenCalledWith(expect.anything(), "candidate-1");
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer);
+    });
+
+    it("scores against an allowlisted ?sample= id, ignoring the signed-in viewer", async () => {
+      resolveSampleCandidateIdMock.mockResolvedValue("sample-1");
+      const scorer: CandidateScorer = { overlayFor: jest.fn() };
+      createCandidateScorerMock.mockResolvedValue(scorer);
+
+      await controller.search(dto({ sample: "sample-1" }), asUser("user-1"));
+
+      expect(resolveSampleCandidateIdMock).toHaveBeenCalledWith(expect.anything(), "sample-1");
+      expect(resolveActiveCandidateIdMock).not.toHaveBeenCalled();
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer);
+    });
+
+    it("404s for a ?sample= id that isn't an allowlisted sample candidate", async () => {
+      resolveSampleCandidateIdMock.mockResolvedValue(null);
+
+      await expect(controller.search(dto({ sample: "not-a-sample" }), anon)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(search).not.toHaveBeenCalled();
     });
   });
 
