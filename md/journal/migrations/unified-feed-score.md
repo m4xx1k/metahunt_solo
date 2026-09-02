@@ -280,10 +280,31 @@ no row) and an off-stack case. Unit suite (`scorer.port.spec.ts`) covers the pur
 row→`MatchOverlay` projection and the empty-input short-circuits. Gate: lint ·
 test:etl · test:etl:int · build · build:all — all green.
 
-One decision made filling a spec gap: `MatchOverlay` (§3's return type) lives in the
-new `scorer.port.ts`, not `score.contract.ts` — putting `tier: FitTier` there would
-import from `ranking.contract.ts`, which already imports `ScoreBreakdown` the other
-way (circular). Revisit when step 6 wires `match` onto `VacancyDto` (web hand-mirrors
-the type per ADR-0005 either way, so this is a backend-only call).
+One decision made filling a spec gap in step 1: `MatchOverlay` (§3's return type)
+lived in `scorer.port.ts`, not `score.contract.ts`, to dodge a circular import with
+`ranking.contract.ts` (which already imports `ScoreBreakdown` the other way).
+**Superseded in step 2** — see below.
 
-Next: step 2 — single vacancy page gets `match`.
+**Step 2 — done, `0bdc6fa`.** `GET /feed/vacancy/:id` resolves the viewer from a new
+`OptionalAuthGuard` (missing/invalid/stale token → anonymous, not a 401; a real
+`AuthService` failure still propagates) and, when signed in, attaches `match` via one
+`overlayForUser(db, userId, [positionId])` — `scorer.port.ts`'s new viewer-facing
+wrapper around `overlayFor`, resolving the user's active `user_cvs` row (MVP: one per
+user) to node ids. `VacancyDto.match: MatchOverlay | null` landed on `feed.contract.ts`;
+`toDto` defaults it `null`, the controller overlays it after `getById`.
+
+Revised the step-1 gap: `FitTier` (+ `FIT_TIER_VALUES`, `TIER_BUCKET`/`TIER_BY_BUCKET`)
+moved from `ranking.contract.ts` into `score.contract.ts` (framework-free, zero
+internal deps), which is where `MatchOverlay` now lives too — `ranking.contract.ts`
+re-exports both so no existing importer changed. `ranking.service.ts` shares the tier
+tables with `scorer.port.ts` instead of keeping its own copy.
+
+Also fixed a real pre-existing int-test harness gap found while proving step 2: `test/
+int/db.ts`'s `truncateAll()` never cleared `unique_vacancies` (the referenced side of
+`vacancies.unique_vacancy_id`), so `dedup.int.spec.ts`'s unscoped `SELECT count(*) FROM
+unique_vacancies` could inflate from rows other suites' fixtures left behind — bisected
+with stash/re-run before landing the fix; full `test:etl:int` green 3/3 after.
+
+Gate: lint · test:etl · test:etl:int · build · build:all — all green, both steps.
+
+Next: step 3 — `resolveFeedQuery` + the cheap path on `GET /feed`.
