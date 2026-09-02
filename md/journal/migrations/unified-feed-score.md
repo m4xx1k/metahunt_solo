@@ -566,22 +566,53 @@ still can't go through `?sample=` (§8), so it stays warm until step 7.
    - all 4 variants HTTP 200, no error markers, no etl/web log errors.
    **Not covered:** a real-browser hydration + console-error pass — needs a
    headless Chromium this box lacks. The SSR render path is clean.
-2. **Vacancy detail page badge + diff panel — NOT started, and it conflicts with
-   an existing decision.** `app/vacancy/[slug]/page.tsx` is `export const dynamic =
-   "force-static"` *on purpose* (crawl budget — the comment there is explicit:
-   "renders identically for everyone, signed in or not; force-static makes
-   cookies() return empty"). A per-viewer Fit badge cannot come from the static
-   render. The only way that keeps the ISR win is a **client island** that fetches
-   `/feed/vacancy/:id` with credentials after hydration and renders the badge +
-   `VacancyDetailDto.diff` panel then. That is the recommended approach but it is a
-   real design choice on a live SEO-critical page — **confirm with the owner
-   before building it.**
-3. **Production `(feed)` route group** — still deliberately untouched. Whether step
-   6 must also migrate `app/(feed)/[[...slug]]/page.tsx` before step 7 collapses
-   `use-results.ts`, or the lab route is a sufficient step 6 and production moves
-   as part of step 7 — **owner decision, unchanged from the previous handoff.**
+2. **Vacancy detail page badge + diff panel — DONE, `6346b95`.** Owner picked the
+   client-island approach. `app/vacancy/[slug]/page.tsx` stays `force-static`
+   (crawl budget); new `_components/FitPanel.tsx` is a `"use client"` island that
+   re-fetches `GET /feed/vacancy/:id` after hydration (localStorage Bearer token
+   is readable there), gated on `useSession().isLoggedIn`, and renders the
+   `FitBadge` + `VacancyDetailDto.diff` skill lists only when a signed-in
+   viewer's active CV scored this Position. Renders `null` (no layout shift) for
+   anonymous / unscored. `FitBadge` promoted `app/feed/_components` →
+   `entities/vacancy` (second consumer). SSR-checked: anon page 200, panel empty
+   server-side. Not browser-verified for the authed state (no headless browser)
+   — the API path it calls is covered by `feed.controller.spec.ts`.
+3. **Production `(feed)` route group** — owner decision: **defer to step 7**. The
+   lab route is a sufficient step 6.
 
-Steps 7–9 unchanged. 8 and 9 need step 7 *merged* first (one-way door), and the
+### Step 7 — started this session
+
+**Item-id equivalence — PROVEN, 70/70.** Throwaway script (`scratchpad`, not
+committed): for 5 sample CVs × 14 filter combos (base · minFitTier GOOD/STRONG ·
+seniority single+multi · workFormat · page 2 · includeOffStack · hasReservation ·
+postedWithinDays · roleIds · experienceYears · englishLevels · a 4-way combo),
+`GET /feed?sample=<id>&sort=score&<filters>` returns the **same item ids in the
+same order and the same total** as the legacy `GET /cv/samples/:id/matches`.
+Simultaneous A-vs-B comparison against the live local etl, so corpus drift is
+irrelevant (both endpoints see the same rows) — a cleaner proof than the
+stash-and-recapture dance, which only mattered for before/after across a code
+change. This replaces the byte-diff harness per §7. **The unified path is a
+drop-in for the warm sample endpoint.**
+
+**What step 7 still needs — and a spec gap to resolve first.** The remaining
+work is the web-side collapse: `use-results.ts` → one branch/type, migrate the
+production `?cv` warm lens (`app/(feed)/[[...slug]]/page.tsx`, `FeedLensShell`,
+`WarmBody`/`WarmCard`, `use-feed-warm.ts`), move `CandidateProfile` onto
+`GET /cv/:id`, delete `warm-query.ts` / `ranking.ts:match()` /
+`cv.ts:matches(),sampleMatches()`. **Blocker:** §6/§7's phrase "the warm lens
+folds into `/radar`" / "point `/match` at `/radar?sort=score`" is **stale** —
+`/radar` + `/radar/[track]` are the Telegram-bot marketing landing, unrelated to
+the feed. The real target is the home feed's `?cv` lens. That surfaces an
+undecided question: **for a signed-in real (non-sample) CV, does the production
+feed keep the `?cv=<id>` URL param, or drop it and let the unified path resolve
+the active CV from the JWT** (`resolveActiveCandidateId`, which is how `GET /feed`
+already scores a signed-in viewer)? `?cv=` can't route through `?sample=` (§8:
+404s on non-samples), and `?cv` links are already noindex capability tokens the
+journal says are going away. **Decide this before the production collapse** — it
+changes the shape of `app/(feed)/[[...slug]]/page.tsx`'s seed and the shell's
+lens derivation. Once decided, the equivalence proof above says the swap is safe.
+
+Steps 8–9 unchanged. 8 and 9 need step 7 *merged* first (one-way door), and the
 merge is owner-only — a session can take step 7 to a green PR but not past it.
 
 **Stale-process note (updated):** the abandoned native `pnpm dev:etl` /
