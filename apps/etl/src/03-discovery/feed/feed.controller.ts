@@ -32,10 +32,17 @@ import {
   overlayForUser,
   resolveActiveCandidateId,
   resolveSampleCandidateId,
+  resolveViewerSkills,
 } from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
-import type { SitemapResponse, VacancyDto } from "./feed.contract";
+import type {
+  NodeRef,
+  VacancyDetailDto,
+  VacancySkillDiff,
+  SitemapResponse,
+  VacancyDto,
+} from "./feed.contract";
 import { FeedService, type FeedSearchParams } from "./feed.service";
 import { resolveFeedQuery } from "./resolve-feed-query";
 
@@ -168,24 +175,31 @@ export class FeedController {
   // session token rides along, but never rejects an anonymous request. With
   // a signed-in viewer, one `overlayFor([positionId])` scores this single
   // Position against their active CV — MET-144 §7 step 2, the smallest real
-  // overlayFor consumer. Provisional: step 3's resolveFeedQuery becomes "the
-  // only code that knows candidates exist" and this inlined resolve folds
-  // into it then.
+  // overlayFor consumer — plus the §4 skill diff for step 6's detail-page
+  // panel. Provisional: step 3's resolveFeedQuery becomes "the only code
+  // that knows candidates exist" and this inlined resolve folds into it then.
   @Get("vacancy/:id")
   @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: "Read full detail for one vacancy" })
   @ApiOkResponse({ description: "Full vacancy detail, including description." })
   @ApiNotFoundResponse({ description: "Vacancy was not found.", type: ApiErrorResponseDto })
-  async vacancy(@Param("id") id: string, @Req() req: RequestWithUser): Promise<VacancyDto> {
+  async vacancy(@Param("id") id: string, @Req() req: RequestWithUser): Promise<VacancyDetailDto> {
     const vacancy = await this.feed.getById(id);
     if (!vacancy) throw new NotFoundException();
     return this.withMatch(vacancy, req.user?.userId);
   }
 
-  private async withMatch(vacancy: VacancyDto, userId: string | undefined): Promise<VacancyDto> {
-    if (!userId || !vacancy.uniqueVacancyId) return vacancy;
-    const overlay = await overlayForUser(this.db, userId, [vacancy.uniqueVacancyId]);
-    return { ...vacancy, match: overlay.get(vacancy.uniqueVacancyId) ?? null };
+  private async withMatch(
+    vacancy: VacancyDto,
+    userId: string | undefined,
+  ): Promise<VacancyDetailDto> {
+    if (!userId || !vacancy.uniqueVacancyId) return { ...vacancy, diff: null };
+    const [overlay, viewerSkills] = await Promise.all([
+      overlayForUser(this.db, userId, [vacancy.uniqueVacancyId]),
+      resolveViewerSkills(this.db, userId),
+    ]);
+    const match = overlay.get(vacancy.uniqueVacancyId) ?? null;
+    return { ...vacancy, match, diff: match ? buildSkillDiff(vacancy, viewerSkills) : null };
   }
 
   // Members + "why merged" reasons for one dedup group — backs the feed's
@@ -200,6 +214,27 @@ export class FeedController {
     if (!group) throw new NotFoundException();
     return group;
   }
+}
+
+// §4: have = any of the vacancy's own listed skills (required or optional)
+// the viewer has; missing = required skills the viewer lacks; bonus = the
+// viewer's skills the vacancy doesn't ask for at all. No weight — nothing
+// here ranks skills against each other, unlike the ranked list's diff.
+function buildSkillDiff(vacancy: VacancyDto, viewerSkills: NodeRef[]): VacancySkillDiff {
+  const viewerIds = new Set(viewerSkills.map((s) => s.id));
+  const have: NodeRef[] = [];
+  const missing: NodeRef[] = [];
+  for (const skill of vacancy.skills.required) {
+    (viewerIds.has(skill.id) ? have : missing).push(skill);
+  }
+  for (const skill of vacancy.skills.optional) {
+    if (viewerIds.has(skill.id)) have.push(skill);
+  }
+  const vacancyIds = new Set(
+    [...vacancy.skills.required, ...vacancy.skills.optional].map((s) => s.id),
+  );
+  const bonus = viewerSkills.filter((s) => !vacancyIds.has(s.id));
+  return { have, missing, bonus };
 }
 
 function toSearchParams(dto: FeedQueryDto): FeedSearchParams {

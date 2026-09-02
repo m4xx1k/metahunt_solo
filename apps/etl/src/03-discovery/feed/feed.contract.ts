@@ -140,6 +140,25 @@ export interface VacancyDto {
   match: MatchOverlay | null;
 }
 
+// The ✅ have / ❌ missing / ➕ bonus skill diff — §4: computed in TS from the
+// skills the vacancy-detail endpoint already fetches (`skills.required` /
+// `.optional`) plus the viewer's own resolved skills, no extra query for the
+// vacancy side. Unlike the ranked list's `SkillDiff` (ranking.contract.ts),
+// this one carries no IDF weight — the single-vacancy page doesn't rank
+// skills against each other, so there is nothing to sort by.
+export interface VacancySkillDiff {
+  have: NodeRef[];
+  missing: NodeRef[];
+  bonus: NodeRef[];
+}
+
+// `GET /feed/vacancy/:id`'s response: the same card every list uses, plus the
+// diff a detail page can show alongside the Fit badge. `diff` is null exactly
+// when `match` is (no viewer, no CV, or nothing scored for this Position).
+export interface VacancyDetailDto extends VacancyDto {
+  diff: VacancySkillDiff | null;
+}
+
 // ─────────────────────── Search endpoint ───────────────────────
 // The single feed query: filters + pagination. The reusable language every
 // consumer speaks — HTTP, and (in-process) future TG bot / alerts / saved

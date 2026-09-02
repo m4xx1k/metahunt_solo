@@ -14,6 +14,7 @@ import {
   overlayForUser,
   resolveActiveCandidateId,
   resolveSampleCandidateId,
+  resolveViewerSkills,
   type CandidateScorer,
 } from "../score/scorer.port";
 
@@ -26,6 +27,7 @@ jest.mock("../score/scorer.port");
 const overlayForUserMock = jest.mocked(overlayForUser);
 const resolveActiveCandidateIdMock = jest.mocked(resolveActiveCandidateId);
 const resolveSampleCandidateIdMock = jest.mocked(resolveSampleCandidateId);
+const resolveViewerSkillsMock = jest.mocked(resolveViewerSkills);
 const createCandidateScorerMock = jest.mocked(createCandidateScorer);
 
 const EMPTY: FeedResponse = {
@@ -63,6 +65,7 @@ describe("FeedController", () => {
     listForSitemap.mockReset().mockResolvedValue([]);
     resolveCompanySlug.mockReset().mockResolvedValue(null);
     overlayForUserMock.mockReset().mockResolvedValue(new Map());
+    resolveViewerSkillsMock.mockReset().mockResolvedValue([]);
     resolveActiveCandidateIdMock.mockReset().mockResolvedValue(null);
     resolveSampleCandidateIdMock.mockReset().mockResolvedValue(null);
     createCandidateScorerMock.mockReset().mockResolvedValue(null);
@@ -236,11 +239,17 @@ describe("FeedController", () => {
   });
 
   describe("vacancy", () => {
-    it("returns the vacancy when found", async () => {
-      const vacancy = { id: "v1", uniqueVacancyId: "pos-1" } as VacancyDto;
+    const NO_SKILLS = { required: [], optional: [] };
+
+    it("returns the vacancy plus diff: null when found", async () => {
+      const vacancy = {
+        id: "v1",
+        uniqueVacancyId: "pos-1",
+        skills: NO_SKILLS,
+      } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
 
-      await expect(controller.vacancy("v1", anon)).resolves.toBe(vacancy);
+      await expect(controller.vacancy("v1", anon)).resolves.toEqual({ ...vacancy, diff: null });
       expect(getById).toHaveBeenCalledWith("v1");
     });
 
@@ -250,17 +259,27 @@ describe("FeedController", () => {
       await expect(controller.vacancy("missing", anon)).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it("never resolves a scorer for an anonymous visitor", async () => {
-      const vacancy = { id: "v1", uniqueVacancyId: "pos-1" } as VacancyDto;
+    it("never resolves a scorer or the viewer's skills for an anonymous visitor", async () => {
+      const vacancy = {
+        id: "v1",
+        uniqueVacancyId: "pos-1",
+        skills: NO_SKILLS,
+      } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
 
       await controller.vacancy("v1", anon);
 
       expect(overlayForUserMock).not.toHaveBeenCalled();
+      expect(resolveViewerSkillsMock).not.toHaveBeenCalled();
     });
 
     it("attaches the signed-in viewer's match overlay, keyed off the Position id", async () => {
-      const vacancy = { id: "v1", uniqueVacancyId: "pos-1", match: null } as VacancyDto;
+      const vacancy = {
+        id: "v1",
+        uniqueVacancyId: "pos-1",
+        match: null,
+        skills: NO_SKILLS,
+      } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
       const overlay: MatchOverlay = {
         relevance: 1,
@@ -277,14 +296,48 @@ describe("FeedController", () => {
       expect(result.match).toBe(overlay);
     });
 
-    it("leaves match null for a signed-in viewer with nothing scored (no CV)", async () => {
-      const vacancy = { id: "v1", uniqueVacancyId: "pos-1", match: null } as VacancyDto;
+    it("leaves match and diff null for a signed-in viewer with nothing scored (no CV)", async () => {
+      const vacancy = {
+        id: "v1",
+        uniqueVacancyId: "pos-1",
+        match: null,
+        skills: NO_SKILLS,
+      } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
       overlayForUserMock.mockResolvedValue(new Map());
 
       const result = await controller.vacancy("v1", asUser("user-1"));
 
       expect(result.match).toBeNull();
+      expect(result.diff).toBeNull();
+    });
+
+    it("builds the have/missing/bonus diff from the vacancy's skills and the viewer's own", async () => {
+      const required1 = { id: "req-1", name: "Go" }; // viewer has it → have
+      const required2 = { id: "req-2", name: "Kubernetes" }; // viewer lacks it → missing
+      const optional1 = { id: "opt-1", name: "Docker" }; // viewer has it → have
+      const bonusSkill = { id: "bonus-1", name: "Rust" }; // not on the vacancy → bonus
+      const vacancy = {
+        id: "v1",
+        uniqueVacancyId: "pos-1",
+        match: null,
+        skills: { required: [required1, required2], optional: [optional1] },
+      } as unknown as VacancyDto;
+      getById.mockResolvedValue(vacancy);
+      overlayForUserMock.mockResolvedValue(
+        new Map([
+          ["pos-1", { relevance: 1, coverage: 0.5, tier: "GOOD", percent: 50, onStack: true }],
+        ]),
+      );
+      resolveViewerSkillsMock.mockResolvedValue([required1, optional1, bonusSkill]);
+
+      const result = await controller.vacancy("v1", asUser("user-1"));
+
+      expect(result.diff).toEqual({
+        have: [required1, optional1],
+        missing: [required2],
+        bonus: [bonusSkill],
+      });
     });
   });
 });

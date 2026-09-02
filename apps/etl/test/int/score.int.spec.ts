@@ -10,6 +10,7 @@ import {
   overlayFor,
   overlayForUser,
   resolveSampleCandidateId,
+  resolveViewerSkills,
 } from "../../src/03-discovery/score/scorer.port";
 
 import { noopAnalytics } from "./analytics";
@@ -344,5 +345,37 @@ describe("resolveSampleCandidateId (integration)", () => {
     await expect(
       resolveSampleCandidateId(db, "00000000-0000-0000-0000-000000000000"),
     ).resolves.toBeNull();
+  });
+});
+
+// §4 / §7 step 6: the candidate's own resolved skills (id + name), for the
+// vacancy-detail diff's "➕ bonus" column.
+describe("resolveViewerSkills (integration)", () => {
+  it("resolves the active CV's skills, id and name both", async () => {
+    const go = await seedNode("SKILL", "Go");
+    const k8s = await seedNode("SKILL", "Kubernetes");
+    const candidateId = await seedCandidate([go, k8s]);
+    const userId = await seedUser();
+    await linkActiveCv(userId, candidateId);
+
+    const skills = await resolveViewerSkills(db, userId);
+
+    expect(skills.map((s) => s.id).sort()).toEqual([go, k8s].sort());
+    expect(skills.find((s) => s.id === go)?.name).toBe("Go");
+  });
+
+  it("returns empty for a user with no CV at all", async () => {
+    const userId = await seedUser();
+
+    await expect(resolveViewerSkills(db, userId)).resolves.toEqual([]);
+  });
+
+  it("ignores a CV the user marked inactive", async () => {
+    const go = await seedNode("SKILL", "Go");
+    const candidateId = await seedCandidate([go]);
+    const userId = await seedUser();
+    await linkActiveCv(userId, candidateId, false);
+
+    await expect(resolveViewerSkills(db, userId)).resolves.toEqual([]);
   });
 });
