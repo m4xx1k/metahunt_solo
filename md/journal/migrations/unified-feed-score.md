@@ -362,6 +362,22 @@ Layering: `MatchSort` (+ `MATCH_SORT_VALUES`) moved from `ranking.contract.ts` i
 
 Gate: lint · test:etl (559) · test:etl:int (138) · build · build:all — all green.
 
-Next: step 5 — Stage 5 round trips (feed's separate `count` → `count(*) OVER ()`;
-delete `hydratePositionsByIds`; drop `buildItems`'s `skillRows` query). State the
-per-page count saved in the commit body.
+**Step 5 — done, `a47b2ce`.** Stage 5 round trips. `FeedService.searchCheap`'s total
+now rides the page query's own `count(*) OVER ()` (unscored cheap-path load: 4 queries
+→ 3). `hydratePositionsByIds` deleted (its only caller was `RankingService.buildItems`)
+and `buildItems`' own `skillRows` query dropped — both replaced by one new
+`FeedService.fetchSkillRows` (superset of `fetchSkills`: `status <> 'HIDDEN'`, node
+status + IDF weight), run in parallel with `selectPositions`. The DTO's VERIFIED-only
+`skills` list and the ✅/❌/➕ diff both derive from that one row set now, filtered by
+status in TS instead of two separate SQL status gates (warm/match path: 4 queries → 3).
+`fetchSkills` itself untouched — its `includeAllSkills` mode intentionally still
+surfaces HIDDEN nodes for operator/debug use, which the new method must not, so it's a
+deliberately separate query rather than a third mode of the old one.
+
+Same byte-identical proof method as step 4 (fresh before/after captures on the live
+corpus, this diff stashed in between) — 50/50 identical.
+
+Gate: lint · test:etl · test:etl:int · build · build:all — all green.
+
+Next: step 6 — Frontend, the feed side: `match` on cards, Fit badge, sort toggle
+defaulting to freshest, vacancy-detail badge + diff panel.
