@@ -637,6 +637,10 @@ function toDto(
     uniqueVacancyId: row.positionId,
     duplicateCount: row.postingCount > 1 ? row.postingCount : null,
     duplicateSourceCount: row.postingCount > 1 ? row.sourceCount : null,
+
+    // toDto doesn't know about viewers/candidates — every caller gets `null`
+    // here; a caller with a scorer overlays it afterward (feed.controller.ts).
+    match: null,
   };
 }
 

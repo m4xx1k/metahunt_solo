@@ -5,14 +5,18 @@ import type {
   WorkFormat,
 } from "../../platform/shared/contract";
 import type { VacancyDto } from "../feed/feed.contract";
-import type { ScoreBreakdown } from "../score/score.contract";
+import { FIT_TIER_VALUES, type FitTier, type ScoreBreakdown } from "../score/score.contract";
 
 // reverse-ATS matcher contract — see md/journal/migrations/reverse-ats.md (§2).
 // A ranked card = the full feed VacancyDto + a personalized match overlay:
 // Fit (coverage tier) + Relevance (Σ IDF weight, the sort key) + skill diff.
 
-export const FIT_TIER_VALUES = ["STRONG", "GOOD", "STRETCH"] as const;
-export type FitTier = (typeof FIT_TIER_VALUES)[number];
+// Fit tier now lives in score.contract.ts (MET-144 — MatchOverlay needs it
+// without importing back out of this file). Re-exported so every existing
+// `from "./ranking.contract"` / `from "../ranking/ranking.contract"` importer
+// keeps working unchanged.
+export { FIT_TIER_VALUES };
+export type { FitTier };
 
 export interface SkillRef {
   id: string;

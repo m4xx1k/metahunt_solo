@@ -1,9 +1,12 @@
 import {
   Controller,
   Get,
+  Inject,
   NotFoundException,
   Param,
   Query,
+  Req,
+  UseGuards,
   UsePipes,
   ValidationPipe,
 } from "@nestjs/common";
@@ -15,14 +18,20 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 
+import { DRIZZLE } from "@metahunt/database";
+import type { DrizzleDB } from "@metahunt/database";
+
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
+import type { RequestWithUser } from "../../platform/auth/auth.types";
+import { OptionalAuthGuard } from "../../platform/auth/optional-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE, isUuid, parseDays } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
+import { overlayForUser } from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
-import type { SitemapResponse } from "./feed.contract";
+import type { SitemapResponse, VacancyDto } from "./feed.contract";
 import { FeedService, type FeedSearchParams } from "./feed.service";
 
 // Matches the product's own 30-day freshness window; the cap keeps a hand-typed
@@ -42,6 +51,7 @@ const UNMATCHABLE_ID = "00000000-0000-0000-0000-000000000000";
 })
 export class FeedController {
   constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly feed: FeedService,
     private readonly facets: FacetsService,
     private readonly dedup: DedupService,
@@ -120,14 +130,29 @@ export class FeedController {
   // Full detail for one vacancy (including description) — backs the public
   // vacancy detail page (`/vacancy/:id`). `:id` is a vacancies.id; works for
   // any member of a dedup group, not just the representative row.
+  //
+  // Optional auth: OptionalAuthGuard resolves `req.user` when a valid
+  // session token rides along, but never rejects an anonymous request. With
+  // a signed-in viewer, one `overlayFor([positionId])` scores this single
+  // Position against their active CV — MET-144 §7 step 2, the smallest real
+  // overlayFor consumer. Provisional: step 3's resolveFeedQuery becomes "the
+  // only code that knows candidates exist" and this inlined resolve folds
+  // into it then.
   @Get("vacancy/:id")
+  @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: "Read full detail for one vacancy" })
   @ApiOkResponse({ description: "Full vacancy detail, including description." })
   @ApiNotFoundResponse({ description: "Vacancy was not found.", type: ApiErrorResponseDto })
-  async vacancy(@Param("id") id: string) {
+  async vacancy(@Param("id") id: string, @Req() req: RequestWithUser): Promise<VacancyDto> {
     const vacancy = await this.feed.getById(id);
     if (!vacancy) throw new NotFoundException();
-    return vacancy;
+    return this.withMatch(vacancy, req.user?.userId);
+  }
+
+  private async withMatch(vacancy: VacancyDto, userId: string | undefined): Promise<VacancyDto> {
+    if (!userId || !vacancy.uniqueVacancyId) return vacancy;
+    const overlay = await overlayForUser(this.db, userId, [vacancy.uniqueVacancyId]);
+    return { ...vacancy, match: overlay.get(vacancy.uniqueVacancyId) ?? null };
   }
 
   // Members + "why merged" reasons for one dedup group — backs the feed's

@@ -42,6 +42,7 @@ function createVacancy(overrides: Partial<VacancyDto> = {}): VacancyDto {
     uniqueVacancyId: null,
     duplicateCount: null,
     duplicateSourceCount: null,
+    match: null,
     ...overrides,
   };
 }

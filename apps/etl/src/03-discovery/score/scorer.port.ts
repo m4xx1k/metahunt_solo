@@ -1,30 +1,17 @@
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
+import { schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { uuidList } from "../../platform/shared/sql";
-import type { FitTier } from "../ranking/ranking.contract";
 
-import { buildScoreBreakdown, fitPercent } from "./score.contract";
+import {
+  buildScoreBreakdown,
+  fitPercent,
+  TIER_BY_BUCKET,
+  type MatchOverlay,
+} from "./score.contract";
 import { rankedCte } from "./score.sql";
-
-// Mirrors the SQL tier_bucket CASE in score.sql.ts's rankedCte (2=STRONG,
-// 1=GOOD, 0=STRETCH) — same duplication ranking.service.ts already carries
-// locally; the two collapse into one home once the full path drives this
-// module too (§7 step 4).
-const TIER_BY_BUCKET: readonly FitTier[] = ["STRETCH", "GOOD", "STRONG"];
-
-// A vacancy card's personalized overlay — everything the Fit badge needs.
-// The skill diff (✅/❌/➕) is NOT here: it's computed in TS from data the
-// caller already has (the position's skills + the candidate's node ids), see
-// md/journal/migrations/unified-feed-score.md §4.
-export interface MatchOverlay {
-  relevance: number;
-  coverage: number;
-  tier: FitTier;
-  percent: number;
-  onStack: boolean;
-}
 
 // CHEAP PATH primitive (unified-feed-score.md §2.1, §3): score a fixed,
 // already-chosen set of positions — ~2 ms for a page of 20. Every non-ranked
@@ -70,4 +57,34 @@ export async function overlayFor(
     });
   }
   return overlay;
+}
+
+// The viewer-facing wrapper: resolve the JWT user's ACTIVE CV (`user_cvs.
+// isActive` — MVP is one active CV per user, ADR-0010-adjacent) and score
+// against it. No account, or no CV linked, or no active one → empty map,
+// same as an anonymous visitor. §7 step 2's "resolve the viewer's CV from
+// the JWT" step; folds into `resolveFeedQuery` when step 3 builds it.
+export async function overlayForUser(
+  db: DrizzleDB,
+  userId: string,
+  positionIds: string[],
+): Promise<Map<string, MatchOverlay>> {
+  const candidateNodeIds = await activeCandidateNodeIds(db, userId);
+  if (candidateNodeIds.length === 0) return new Map();
+  return overlayFor(db, candidateNodeIds, positionIds);
+}
+
+async function activeCandidateNodeIds(db: DrizzleDB, userId: string): Promise<string[]> {
+  const [cv] = await db
+    .select({ candidateId: schema.userCvs.candidateId })
+    .from(schema.userCvs)
+    .where(and(eq(schema.userCvs.userId, userId), eq(schema.userCvs.isActive, true)))
+    .limit(1);
+  if (!cv) return [];
+
+  const rows = await db
+    .select({ nodeId: schema.candidateNodes.nodeId })
+    .from(schema.candidateNodes)
+    .where(eq(schema.candidateNodes.candidateId, cv.candidateId));
+  return rows.map((r) => r.nodeId);
 }

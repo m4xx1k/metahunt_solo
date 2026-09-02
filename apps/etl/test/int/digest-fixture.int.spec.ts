@@ -74,6 +74,7 @@ function fixtureVacancy(id: string): VacancyDto {
     uniqueVacancyId: null,
     duplicateCount: null,
     duplicateSourceCount: null,
+    match: null,
   };
 }
 

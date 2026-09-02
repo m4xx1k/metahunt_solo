@@ -1,14 +1,23 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { DRIZZLE } from "@metahunt/database";
+
 import { DedupService } from "../../02-enrich/dedup/dedup.service";
+import type { RequestWithUser } from "../../platform/auth/auth.types";
+import { OptionalAuthGuard } from "../../platform/auth/optional-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
+import type { MatchOverlay } from "../score/score.contract";
+import { overlayForUser } from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
 import type { FeedResponse, VacancyDto } from "./feed.contract";
 import { FeedController } from "./feed.controller";
 import { FeedService } from "./feed.service";
+
+jest.mock("../score/scorer.port");
+const overlayForUserMock = jest.mocked(overlayForUser);
 
 const EMPTY: FeedResponse = {
   items: [],
@@ -16,6 +25,12 @@ const EMPTY: FeedResponse = {
   pageSize: 20,
   total: 0,
 };
+
+const anon: RequestWithUser = { headers: {} };
+const asUser = (userId: string): RequestWithUser => ({
+  headers: {},
+  user: { userId, telegramId: null, roles: [] },
+});
 
 // The controller now only maps a validated FeedQueryDto → FeedSearchParams;
 // query parsing/validation lives in the DTO (see filter-params.dto.spec.ts).
@@ -37,15 +52,23 @@ describe("FeedController", () => {
     getById.mockReset();
     listForSitemap.mockReset().mockResolvedValue([]);
     resolveCompanySlug.mockReset().mockResolvedValue(null);
+    overlayForUserMock.mockReset().mockResolvedValue(new Map());
     const moduleRef = await Test.createTestingModule({
       controllers: [FeedController],
       providers: [
+        { provide: DRIZZLE, useValue: {} },
         { provide: FeedService, useValue: { search, getById, listForSitemap } },
         { provide: FacetsService, useValue: { resolveCompanySlug } },
         { provide: DedupService, useValue: {} },
         { provide: NodeSlugResolver, useValue: slugs },
       ],
-    }).compile();
+    })
+      // The guard's own behavior is covered by optional-auth.guard.spec.ts;
+      // these tests call controller methods directly (no HTTP pipeline), and
+      // Nest still resolves a controller's declared guards at compile time.
+      .overrideGuard(OptionalAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
     controller = moduleRef.get(FeedController);
   });
 
@@ -150,17 +173,54 @@ describe("FeedController", () => {
 
   describe("vacancy", () => {
     it("returns the vacancy when found", async () => {
-      const vacancy = { id: "v1" } as VacancyDto;
+      const vacancy = { id: "v1", uniqueVacancyId: "pos-1" } as VacancyDto;
       getById.mockResolvedValue(vacancy);
 
-      await expect(controller.vacancy("v1")).resolves.toBe(vacancy);
+      await expect(controller.vacancy("v1", anon)).resolves.toBe(vacancy);
       expect(getById).toHaveBeenCalledWith("v1");
     });
 
     it("404s when the vacancy is not found", async () => {
       getById.mockResolvedValue(null);
 
-      await expect(controller.vacancy("missing")).rejects.toBeInstanceOf(NotFoundException);
+      await expect(controller.vacancy("missing", anon)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it("never resolves a scorer for an anonymous visitor", async () => {
+      const vacancy = { id: "v1", uniqueVacancyId: "pos-1" } as VacancyDto;
+      getById.mockResolvedValue(vacancy);
+
+      await controller.vacancy("v1", anon);
+
+      expect(overlayForUserMock).not.toHaveBeenCalled();
+    });
+
+    it("attaches the signed-in viewer's match overlay, keyed off the Position id", async () => {
+      const vacancy = { id: "v1", uniqueVacancyId: "pos-1", match: null } as VacancyDto;
+      getById.mockResolvedValue(vacancy);
+      const overlay: MatchOverlay = {
+        relevance: 1,
+        coverage: 0.5,
+        tier: "GOOD",
+        percent: 50,
+        onStack: true,
+      };
+      overlayForUserMock.mockResolvedValue(new Map([["pos-1", overlay]]));
+
+      const result = await controller.vacancy("v1", asUser("user-1"));
+
+      expect(overlayForUserMock).toHaveBeenCalledWith(expect.anything(), "user-1", ["pos-1"]);
+      expect(result.match).toBe(overlay);
+    });
+
+    it("leaves match null for a signed-in viewer with nothing scored (no CV)", async () => {
+      const vacancy = { id: "v1", uniqueVacancyId: "pos-1", match: null } as VacancyDto;
+      getById.mockResolvedValue(vacancy);
+      overlayForUserMock.mockResolvedValue(new Map());
+
+      const result = await controller.vacancy("v1", asUser("user-1"));
+
+      expect(result.match).toBeNull();
     });
   });
 });

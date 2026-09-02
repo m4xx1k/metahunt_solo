@@ -5,7 +5,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
-import { overlayFor } from "../../src/03-discovery/score/scorer.port";
+import { overlayFor, overlayForUser } from "../../src/03-discovery/score/scorer.port";
 
 import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
@@ -100,6 +100,35 @@ async function positionIdOf(vacancyId: string): Promise<string> {
 // note in ranking.int.spec.ts.
 async function seedFillers(sourceId: string, ingestId: string, role: string, n = 12) {
   for (let i = 0; i < n; i++) await seedVacancy(sourceId, ingestId, role, `Filler ${i}`);
+}
+
+async function seedCandidate(skillIds: string[]): Promise<string> {
+  const [candidate] = await db
+    .insert(schema.candidates)
+    .values({
+      contentHash: `candidate-${++seq}`,
+      sourceText: "",
+      extracted: { unmatchedSkills: [] },
+    })
+    .returning({ id: schema.candidates.id });
+  if (skillIds.length > 0) {
+    await db
+      .insert(schema.candidateNodes)
+      .values(skillIds.map((nodeId) => ({ candidateId: candidate.id, nodeId })));
+  }
+  return candidate.id;
+}
+
+async function seedUser(): Promise<string> {
+  const [user] = await db
+    .insert(schema.users)
+    .values({ source: "test" })
+    .returning({ id: schema.users.id });
+  return user.id;
+}
+
+async function linkActiveCv(userId: string, candidateId: string, isActive = true): Promise<void> {
+  await db.insert(schema.userCvs).values({ userId, candidateId, label: "CV", isActive });
 }
 
 beforeAll(() => {
@@ -205,5 +234,58 @@ describe("overlayFor vs the full path (integration)", () => {
     }
     expect(overlay.get(inStackPos)?.onStack).toBe(true);
     expect(overlay.get(offStackPos)?.onStack).toBe(false);
+  });
+});
+
+// §7 step 2: the viewer-facing wrapper — resolves a userId's ACTIVE CV, then
+// runs the same overlayFor primitive proven above.
+describe("overlayForUser (integration)", () => {
+  it("scores against the user's active CV", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const go = await seedNode("SKILL", "Go");
+    const vac = await seedVacancy(sourceId, ingestId, role);
+    await linkSkill(vac, go, true);
+    await seedFillers(sourceId, ingestId, role);
+    await refreshNodeStats();
+
+    const candidateId = await seedCandidate([go]);
+    const userId = await seedUser();
+    await linkActiveCv(userId, candidateId);
+
+    const vacPos = await positionIdOf(vac);
+    const overlay = await overlayForUser(db, userId, [vacPos]);
+
+    expect(overlay.get(vacPos)).toMatchObject({ tier: "STRONG", percent: 100 });
+  });
+
+  it("returns an empty map for a user with no linked CV", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const vac = await seedVacancy(sourceId, ingestId, role);
+    await seedFillers(sourceId, ingestId, role);
+    const userId = await seedUser();
+
+    const overlay = await overlayForUser(db, userId, [await positionIdOf(vac)]);
+
+    expect(overlay.size).toBe(0);
+  });
+
+  it("ignores a CV the user marked inactive", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const go = await seedNode("SKILL", "Go");
+    const vac = await seedVacancy(sourceId, ingestId, role);
+    await linkSkill(vac, go, true);
+    await seedFillers(sourceId, ingestId, role);
+    await refreshNodeStats();
+
+    const candidateId = await seedCandidate([go]);
+    const userId = await seedUser();
+    await linkActiveCv(userId, candidateId, false);
+
+    const overlay = await overlayForUser(db, userId, [await positionIdOf(vac)]);
+
+    expect(overlay.size).toBe(0);
   });
 });

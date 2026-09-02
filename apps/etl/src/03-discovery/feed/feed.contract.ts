@@ -21,6 +21,9 @@ import type {
   Seniority,
   WorkFormat,
 } from "../../platform/shared/contract";
+// score.contract.ts is framework-free like this file, so this import stays a
+// plain type import — no NestJS/Drizzle leaks into the web client.
+import type { MatchOverlay } from "../score/score.contract";
 
 export { SENIORITY_VALUES, WORK_FORMAT_VALUES };
 export type {
@@ -28,6 +31,7 @@ export type {
   EmploymentType,
   EngagementType,
   EnglishLevel,
+  MatchOverlay,
   NodeRef,
   Seniority,
   WorkFormat,
@@ -118,6 +122,14 @@ export interface VacancyDto {
   duplicateCount: number | null;
   /** Distinct sources across the same group; non-null on the same rows as `duplicateCount`. */
   duplicateSourceCount: number | null;
+
+  /**
+   * The viewer's personalized Fit overlay — null for an anonymous visitor OR
+   * a signed-in one with no CV OR nothing scored for this position. See
+   * md/journal/migrations/unified-feed-score.md: "A Fit score is optional
+   * data attached to a vacancy card, not a different endpoint."
+   */
+  match: MatchOverlay | null;
 }
 
 // ─────────────────────── Search endpoint ───────────────────────

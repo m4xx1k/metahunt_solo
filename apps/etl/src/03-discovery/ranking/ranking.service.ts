@@ -9,13 +9,17 @@ import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { buildWhere, FeedService } from "../feed/feed.service";
-import { buildScoreBreakdown, fitPercent } from "../score/score.contract";
+import {
+  buildScoreBreakdown,
+  fitPercent,
+  TIER_BUCKET,
+  TIER_BY_BUCKET,
+} from "../score/score.contract";
 import { rankedCte, scoringCtes } from "../score/score.sql";
 
 import {
   FIT_GOOD_MIN,
   ROLE_SUGGEST_WINDOW_DAYS,
-  type FitTier,
   type MatchFilters,
   type MatchResponse,
   type RankedVacancy,
@@ -25,11 +29,8 @@ import {
 } from "./ranking.contract";
 import { deriveRoleSuggestions } from "./role-suggestions.derive";
 
-// Ordinal of each Fit tier, mirroring the SQL tier_bucket CASE. The minFitTier
-// filter keeps rows with tier_bucket >= the requested tier's ordinal.
-const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRONG: 2 };
-// Inverse of TIER_BUCKET: SQL tier_bucket ordinal → Fit badge (index = bucket).
-const TIER_BY_BUCKET = ["STRETCH", "GOOD", "STRONG"] as const;
+// TIER_BUCKET / TIER_BY_BUCKET now live in score.contract.ts, shared with
+// scorer.port.ts's overlayFor — one table each direction, not one per consumer.
 
 const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
 
