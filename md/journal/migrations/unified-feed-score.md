@@ -332,7 +332,36 @@ went through psql + the int-test harness instead.)
 
 Gate: lint · test:etl · test:etl:int · build · build:all — all green.
 
-Next: step 4 — the full path through the same root; `requireOverlap` becomes a flag;
-`/ranking/match` + `/cv/:id/matches` become thin wrappers passing `true`. Golden
-`/cv/samples/:id/matches` must stay byte-identical to the 50-capture harness from
-PR #205.
+**Step 4 — done, `5566200`.** `CandidateScorer.fragments()` — the FULL PATH half of §3
+— lands and gets two consumers: `RankingService.rankByRefs` (the legacy endpoints,
+`requireOverlap: true` unconditionally) and a new `FeedService.searchScored` branch on
+`GET /feed` (`sort=score`, or `minFitTier` forcing it even with `sort=date`).
+
+**The byte-identical proof for rankByRefs, and why it isn't the .scratch/v2 captures.**
+Those are ~2h old and the corpus drifts under hourly RSS ingest, so a diff against them
+can't tell a real regression from ordinary data drift. Instead: `git stash` the step-4
+diff, capture `rankByRefs` output for all 5 sample candidates × 10 filter combos on the
+step-3 tip (50 files), `git stash pop`, capture again on step-4 (50 files), `diff -r` —
+clean, 50/50 identical. This is provable by construction too: `fragments()` returns the
+exact same `cte`/`join`/`select`/`filter`/`order` sub-expressions `rankByRefs` used to
+build inline, spliced back together the same way, so the emitted SQL text doesn't move.
+
+**Scope decision, flagged rather than silently taken:** "full path through the same
+root" is written as step 4's own heading, and step 6 (frontend sort toggle) has nothing
+to toggle unless `GET /feed` already accepts `sort=score` — step 4 is the only backend
+step in between. So this step also adds `FeedService.searchScored`: off-stack hidden by
+default (`offStackHidden` — new on `FeedResponse`), `requireOverlap: true` (§1 — a
+zero-overlap Position isn't a match), silently falls back to the cheap path with no
+scorer. New int suite in `feed.int.spec.ts` covers order, `minFitTier`, off-stack,
+no-scorer fallback — direct correctness tests, not golden diffs, since this behavior is
+new rather than preserved.
+
+Layering: `MatchSort` (+ `MATCH_SORT_VALUES`) moved from `ranking.contract.ts` into
+`score.contract.ts` alongside `FitTier` — same circular-import reason as step 2's
+`FitTier` move. `ranking.contract.ts` re-exports both.
+
+Gate: lint · test:etl (559) · test:etl:int (138) · build · build:all — all green.
+
+Next: step 5 — Stage 5 round trips (feed's separate `count` → `count(*) OVER ()`;
+delete `hydratePositionsByIds`; drop `buildItems`'s `skillRows` query). State the
+per-page count saved in the commit body.
