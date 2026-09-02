@@ -33,6 +33,7 @@ const EMPTY: FeedResponse = {
   page: 1,
   pageSize: 20,
   total: 0,
+  offStackHidden: 0,
 };
 
 const anon: RequestWithUser = { headers: {} };
@@ -177,7 +178,7 @@ describe("FeedController", () => {
 
     it("scores the page against the signed-in viewer's active CV", async () => {
       resolveActiveCandidateIdMock.mockResolvedValue("candidate-1");
-      const scorer: CandidateScorer = { overlayFor: jest.fn() };
+      const scorer: CandidateScorer = { overlayFor: jest.fn(), fragments: jest.fn() };
       createCandidateScorerMock.mockResolvedValue(scorer);
 
       await controller.search(dto(), asUser("user-1"));
@@ -189,7 +190,7 @@ describe("FeedController", () => {
 
     it("scores against an allowlisted ?sample= id, ignoring the signed-in viewer", async () => {
       resolveSampleCandidateIdMock.mockResolvedValue("sample-1");
-      const scorer: CandidateScorer = { overlayFor: jest.fn() };
+      const scorer: CandidateScorer = { overlayFor: jest.fn(), fragments: jest.fn() };
       createCandidateScorerMock.mockResolvedValue(scorer);
 
       await controller.search(dto({ sample: "sample-1" }), asUser("user-1"));

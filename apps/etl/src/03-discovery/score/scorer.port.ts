@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 
 import { schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -8,7 +8,9 @@ import { uuidList } from "../../platform/shared/sql";
 import {
   buildScoreBreakdown,
   fitPercent,
+  TIER_BUCKET,
   TIER_BY_BUCKET,
+  type FitTier,
   type MatchOverlay,
 } from "./score.contract";
 import { rankedCte } from "./score.sql";
@@ -114,13 +116,55 @@ async function candidateNodeIds(db: DrizzleDB, candidateId: string): Promise<str
   return rows.map((r) => r.nodeId);
 }
 
+// The FULL PATH's SQL-splice half of §3 — what a consumer already running its
+// own ranked-page query (rankByRefs today; the feed's own sort=score later)
+// stitches in, in place of building this SQL itself. `filter`/`order` use
+// BARE column names (`tier_bucket`, `relevance`, `id`…) — they're meant for
+// the outer SELECT of whatever CTE embeds `cte`+`join`+`select`, not for a
+// clause qualified against the `rk` alias `cte`/`join`/`select` use.
+export interface ScoringFragments {
+  cte: SQL;
+  join: SQL;
+  select: SQL;
+  filter: SQL | null;
+  order: SQL;
+}
+
 // CandidateScorer (§3): the bound, candidate-scoped face of the primitives
 // above — what `resolveFeedQuery` hands `FeedService.search` once a
 // candidateId is resolved (JWT active CV, or an allowlisted `?sample=`).
-// `fragments()` (the FULL PATH's SQL-splice half of §3's interface) lands in
-// §7 step 4, when a consumer actually needs it.
 export interface CandidateScorer {
   overlayFor(positionIds: string[]): Promise<Map<string, MatchOverlay>>;
+  fragments(opts: { minFitTier?: FitTier; requireOverlap?: boolean }): ScoringFragments;
+}
+
+// The lower-level factory: build a scorer straight from resolved node ids,
+// no candidateId / DB lookup needed. `rankByRefs`'s plain-text-skills path
+// (`RankingService.match`) never creates a `candidates` row, so it can't go
+// through `createCandidateScorer` below — this is what it (and that below)
+// both drive.
+export function scorerForNodeIds(db: DrizzleDB, candidateNodeIds: string[]): CandidateScorer {
+  const cand = sql.join(
+    candidateNodeIds.map((id) => sql`(${id}::uuid)`),
+    sql`, `,
+  );
+  return {
+    overlayFor: (positionIds) => overlayFor(db, candidateNodeIds, positionIds),
+    fragments: (opts) => {
+      const overlapCond = opts.requireOverlap ? sql`rk.relevance IS NOT NULL` : null;
+      const minBucket = opts.minFitTier !== undefined ? TIER_BUCKET[opts.minFitTier] : 0;
+      const tierCond = minBucket > 0 ? sql`rk.tier_bucket >= ${minBucket}` : null;
+      const conds = [overlapCond, tierCond].filter((c): c is SQL => c !== null);
+      return {
+        cte: rankedCte(cand),
+        join: sql`JOIN positions p ON p.position_id = rk.id`,
+        select: sql`rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket`,
+        filter: conds.length > 0 ? sql.join(conds, sql` AND `) : null,
+        // Score order only — a date-sorted page ignores this fragment.
+        order: sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`,
+      };
+    },
+  };
 }
 
 // null when the candidate resolves to no skill nodes at all — same
@@ -132,5 +176,5 @@ export async function createCandidateScorer(
 ): Promise<CandidateScorer | null> {
   const nodeIds = await candidateNodeIds(db, candidateId);
   if (nodeIds.length === 0) return null;
-  return { overlayFor: (positionIds) => overlayFor(db, nodeIds, positionIds) };
+  return scorerForNodeIds(db, nodeIds);
 }

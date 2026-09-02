@@ -223,6 +223,9 @@ function toSearchParams(dto: FeedQueryDto): FeedSearchParams {
     includeAllSkills: dto.includeAllSkills,
     includeOptionalSkills: dto.includeOptionalSkills,
     postedWithinDays: dto.postedWithinDays,
+    sort: dto.sort,
+    minFitTier: dto.minFitTier,
+    includeOffStack: dto.includeOffStack,
     page: dto.page ?? 1,
     pageSize: dto.pageSize ?? DEFAULT_PAGE_SIZE,
   };

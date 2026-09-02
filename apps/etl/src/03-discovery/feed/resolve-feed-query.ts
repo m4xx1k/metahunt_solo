@@ -16,11 +16,12 @@ export interface ResolvedFeedQuery {
 // a raw query param for a real user. `null` (anonymous, or a candidate with
 // zero skill nodes) yields `scorer: null`, and every card renders `match: null`.
 //
-// CHEAP PATH only for now (§7 step 3): `filters` passes through untouched, and
-// `FeedService.search` uses the scorer for one `overlayFor(pageIds)` call
-// after the page is chosen — it never shapes the result SET or its ORDER BY.
-// `sort` joins this return shape in step 4, when `sort=score` starts driving
-// the FULL PATH instead.
+// `filters` (including `sort`/`minFitTier`) passes through untouched — this
+// function only ever resolves the scorer. `FeedService.search` is what
+// decides cheap vs full path from `filters` + whether a scorer came back
+// (§7 step 4): cheap uses the scorer for one `overlayFor(pageIds)` call after
+// the page is chosen; full splices `scorer.fragments()` into the page query
+// itself, the same way `RankingService.rankByRefs` does.
 export async function resolveFeedQuery(
   db: DrizzleDB,
   candidateId: string | null,

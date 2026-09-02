@@ -242,6 +242,38 @@ export class FeedQueryDto extends FilterParamsDto {
   @trimmed()
   @IsUUID()
   sample?: string;
+
+  @ApiPropertyOptional({
+    enum: MATCH_SORT_VALUES,
+    default: "date",
+    description:
+      'Page order: freshest (default) or best Fit first. "score" needs a signed-in CV ' +
+      "or `sample` — without one it falls back to freshest, same result set.",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsIn([...MATCH_SORT_VALUES])
+  sort?: MatchSort;
+
+  @ApiPropertyOptional({
+    enum: FIT_TIER_VALUES,
+    description: "Hide vacancies below this coverage tier. Needs a scorer, same as sort=score.",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsIn([...FIT_TIER_VALUES])
+  minFitTier?: FitTier;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      "Include vacancies whose required core tech is outside the viewer's stack. Only " +
+      "meaningful together with sort=score or minFitTier.",
+  })
+  @IsOptional()
+  @toBool()
+  @IsBoolean()
+  includeOffStack?: boolean;
 }
 
 // Filters shared by stored-CV matching and plain-text matching.

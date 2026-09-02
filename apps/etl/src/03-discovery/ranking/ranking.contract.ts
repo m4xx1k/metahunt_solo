@@ -5,18 +5,24 @@ import type {
   WorkFormat,
 } from "../../platform/shared/contract";
 import type { VacancyDto } from "../feed/feed.contract";
-import { FIT_TIER_VALUES, type FitTier, type ScoreBreakdown } from "../score/score.contract";
+import {
+  FIT_TIER_VALUES,
+  MATCH_SORT_VALUES,
+  type FitTier,
+  type MatchSort,
+  type ScoreBreakdown,
+} from "../score/score.contract";
 
 // reverse-ATS matcher contract — see md/journal/migrations/reverse-ats.md (§2).
 // A ranked card = the full feed VacancyDto + a personalized match overlay:
 // Fit (coverage tier) + Relevance (Σ IDF weight, the sort key) + skill diff.
 
-// Fit tier now lives in score.contract.ts (MET-144 — MatchOverlay needs it
-// without importing back out of this file). Re-exported so every existing
-// `from "./ranking.contract"` / `from "../ranking/ranking.contract"` importer
-// keeps working unchanged.
-export { FIT_TIER_VALUES };
-export type { FitTier };
+// FitTier and MatchSort now live in score.contract.ts (MET-144 — feed.contract.ts
+// needs MatchOverlay/GET-/feed's-own-sort without importing back out of this
+// file, which imports VacancyDto from feed.contract.ts). Re-exported so every
+// existing `from "./ranking.contract"` importer keeps working unchanged.
+export { FIT_TIER_VALUES, MATCH_SORT_VALUES };
+export type { FitTier, MatchSort };
 
 export interface SkillRef {
   id: string;
@@ -50,12 +56,6 @@ export interface RankedVacancy {
   breakdown: ScoreBreakdown; // what the Fit % is made of (one signal today)
   diff: SkillDiff;
 }
-
-// What the ranked page is ordered by. "score" is the Fit order (the default,
-// what /match has always done); "date" is the cold feed's freshness order with
-// the score still shown on every card.
-export const MATCH_SORT_VALUES = ["score", "date"] as const;
-export type MatchSort = (typeof MATCH_SORT_VALUES)[number];
 
 export interface MatchFilters {
   sort?: MatchSort; // ORDER BY only — the result SET is identical either way

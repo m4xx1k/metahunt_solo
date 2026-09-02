@@ -21,17 +21,25 @@ import type {
   Seniority,
   WorkFormat,
 } from "../../platform/shared/contract";
-// score.contract.ts is framework-free like this file, so this import stays a
-// plain type import — no NestJS/Drizzle leaks into the web client.
-import type { MatchOverlay } from "../score/score.contract";
+// score.contract.ts is framework-free like this file, so these stay plain
+// value/type imports — no NestJS/Drizzle leaks into the web client.
+import {
+  FIT_TIER_VALUES,
+  MATCH_SORT_VALUES,
+  type FitTier,
+  type MatchOverlay,
+  type MatchSort,
+} from "../score/score.contract";
 
-export { SENIORITY_VALUES, WORK_FORMAT_VALUES };
+export { FIT_TIER_VALUES, MATCH_SORT_VALUES, SENIORITY_VALUES, WORK_FORMAT_VALUES };
 export type {
   Currency,
   EmploymentType,
   EngagementType,
   EnglishLevel,
+  FitTier,
   MatchOverlay,
+  MatchSort,
   NodeRef,
   Seniority,
   WorkFormat,
@@ -195,6 +203,27 @@ export interface FeedQuery {
    * skill is returned regardless of status.
    */
   includeAllSkills?: boolean;
+
+  /**
+   * Page order: freshest (default, the CHEAP PATH) or best-Fit-first (the
+   * FULL PATH — needs a signed-in CV or `sample`; falls back to freshest
+   * without one, same result set, just unscored). See
+   * md/journal/migrations/unified-feed-score.md §2.
+   */
+  sort?: MatchSort;
+  /**
+   * Hide vacancies below this coverage tier. Forces the FULL PATH regardless
+   * of `sort` (there is no cheap way to know a Position's tier without
+   * scoring it) — needs a scorer the same way `sort=score` does.
+   */
+  minFitTier?: FitTier;
+  /**
+   * FULL PATH only — off-stack hiding is a warm-lens affordance the cold
+   * feed never had (§8.2). Ignored on the cheap path.
+   */
+  includeOffStack?: boolean;
+  /** A seeded sample candidate id — see `sample` on `FeedQueryDto`. */
+  sample?: string;
 }
 
 export interface FeedResponse {
@@ -203,6 +232,12 @@ export interface FeedResponse {
   pageSize: number;
   /** Total matching rows across all pages. */
   total: number;
+  /**
+   * FULL PATH + off-stack hidden (the default) only: how many otherwise-
+   * matching rows `includeOffStack` would add back. 0 on the cheap path,
+   * where off-stack is never hidden in the first place.
+   */
+  offStackHidden: number;
 }
 
 // ─────────────────────────── Facets ───────────────────────────

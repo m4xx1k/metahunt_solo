@@ -9,13 +9,9 @@ import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { buildWhere, FeedService } from "../feed/feed.service";
-import {
-  buildScoreBreakdown,
-  fitPercent,
-  TIER_BUCKET,
-  TIER_BY_BUCKET,
-} from "../score/score.contract";
-import { rankedCte, scoringCtes } from "../score/score.sql";
+import { buildScoreBreakdown, fitPercent, TIER_BY_BUCKET } from "../score/score.contract";
+import { scoringCtes } from "../score/score.sql";
+import { scorerForNodeIds } from "../score/scorer.port";
 
 import {
   FIT_GOOD_MIN,
@@ -163,12 +159,6 @@ export class RankingService {
       return { resolved, items: [], page, pageSize, total: 0, offStackHidden: 0 };
     }
 
-    // `cand` is a VALUES row list `(uuid), (uuid)`; `candIds` is a flat
-    // `uuid, uuid` for an IN (...) membership test.
-    const cand = sql.join(
-      nodeIds.map((id) => sql`(${id}::uuid)`),
-      sql`, `,
-    );
     const candIds = uuidList(nodeIds);
     // The match path filters through the feed's own builder so the two cannot
     // drift. `includeRoleless: false` keeps the VERIFIED-role gate on.
@@ -195,11 +185,12 @@ export class RankingService {
     const offset = (page - 1) * pageSize;
 
     // Per-Position relevance + coverage + tier_bucket + on_stack, owned by the
-    // score module. Shared by page + count + match_scored query.
-    const scoreCte = rankedCte(cand);
-
-    const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
-    const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
+    // score module — driven through fragments() (§7 step 4) instead of built
+    // inline. `requireOverlap: true` is what keeps this endpoint the "shares
+    // ≥1 skill" set the old `ov` probe used to gate; the unified feed path
+    // (GET /feed) is the one place that leaves it off.
+    const scorer = scorerForNodeIds(this.db, nodeIds);
+    const frag = scorer.fragments({ minFitTier: filters.minFitTier, requireOverlap: true });
 
     // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
     // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page
@@ -212,21 +203,15 @@ export class RankingService {
     // date-sorted page, because the Fit number is on every card either way.
     const byDate = filters.sort === "date";
     // round so exact-IDF ties break by id (raw float-sum order is plan noise).
-    const pageOrder = byDate
-      ? sql`posted_at DESC, id DESC`
-      : sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
+    const pageOrder = byDate ? sql`posted_at DESC, id DESC` : frag.order;
 
-    // `rk.relevance IS NOT NULL` is the old `ov` overlap probe: MET-144 dropped
-    // it from scoringCtes, so `ranked` now spans every Position and a
-    // zero-overlap one arrives with a NULL relevance. Both match consumers want
-    // the "shares ≥1 skill" set — the unified feed path is where this comes off.
     const rankedPositionsCte = sql`
       ranked_positions AS (
-        SELECT p.position_id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
+        SELECT p.position_id::text AS id, ${frag.select},
                p.last_source_activity_at AS posted_at
         FROM ranked rk
-        JOIN positions p ON p.position_id = rk.id
-        WHERE ${where} AND rk.relevance IS NOT NULL${tierCond}
+        ${frag.join}
+        WHERE ${where}${frag.filter ? sql` AND ${frag.filter}` : sql``}
       )`;
 
     const ranked = await this.db.execute<{
@@ -238,7 +223,7 @@ export class RankingService {
       total: number;
       off_stack_hidden: number;
     }>(sql`
-      WITH ${scoreCte}, ${rankedPositionsCte},
+      WITH ${frag.cte}, ${rankedPositionsCte},
       -- Both counts come off the same window pass, before the off-stack rows
       -- are filtered away (a window function can't see what WHERE removed).
       counted AS (
@@ -261,7 +246,7 @@ export class RankingService {
     let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
     if (ranked.rows.length === 0) {
       const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
-        WITH ${scoreCte}, ${rankedPositionsCte}
+        WITH ${frag.cte}, ${rankedPositionsCte}
         SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
                (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
         FROM ranked_positions
@@ -272,7 +257,7 @@ export class RankingService {
 
     // Calibration raw data (design §8): sampled to first pages — every fresh
     // match starts at page 1, so this sees each scoring context once.
-    if (page === 1) void this.emitMatchScored(scoreCte, where, nodeIds.length);
+    if (page === 1) void this.emitMatchScored(frag.cte, where, nodeIds.length);
 
     const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
     return {

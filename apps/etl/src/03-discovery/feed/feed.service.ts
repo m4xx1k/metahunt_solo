@@ -8,6 +8,14 @@ import type { DrizzleDB } from "@metahunt/database";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
+import {
+  buildScoreBreakdown,
+  fitPercent,
+  TIER_BY_BUCKET,
+  type FitTier,
+  type MatchOverlay,
+  type MatchSort,
+} from "../score/score.contract";
 import type { CandidateScorer } from "../score/scorer.port";
 
 import type {
@@ -80,6 +88,14 @@ export interface FeedSearchParams {
    *  already-sent) — matches on the group, so a repost of an already-sent
    *  Position under a different Posting id is still excluded. */
   excludeIds?: string[];
+
+  /** ORDER BY only when a scorer is present — ignored otherwise, same as
+   *  today. "score" (+ `minFitTier` set) forces the FULL PATH. */
+  sort?: MatchSort;
+  /** Hide Positions below this coverage tier. FULL PATH only. */
+  minFitTier?: FitTier;
+  /** FULL PATH only — off-stack hiding never applied on the cheap path (§8.2). */
+  includeOffStack?: boolean;
 }
 
 interface PositionRow {
@@ -143,14 +159,26 @@ function positionsFrom(where: SQL | undefined): SQL {
 export class FeedService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  // `scorer` is the CHEAP PATH (§2.1, §7 step 3): the page query below is
-  // untouched — the score decides neither the result SET nor its ORDER BY —
-  // and one `scorer.overlayFor(pageIds)` call after the page is chosen scores
-  // just these ≤`pageSize` positions. `null` (anonymous, or a candidate with
-  // nothing scored) leaves every card's `match: null`, same as `toDto`'s default.
+  // §2 "Two paths": the score decides neither the result SET nor its ORDER BY
+  // unless the caller asked for `sort=score` or `minFitTier` — those need a
+  // scorer, so without one this always takes the cheap path (unscored, same
+  // as an anonymous visitor).
   async search(
     params: FeedSearchParams,
     scorer: CandidateScorer | null = null,
+  ): Promise<FeedResponse> {
+    const usesFullPath =
+      scorer !== null && (params.sort === "score" || params.minFitTier !== undefined);
+    return usesFullPath ? this.searchScored(params, scorer) : this.searchCheap(params, scorer);
+  }
+
+  // CHEAP PATH (§2.1, §7 step 3): the page query below is untouched, and one
+  // `scorer.overlayFor(pageIds)` call after the page is chosen scores just
+  // these ≤`pageSize` positions. `null` (anonymous, or a candidate with
+  // nothing scored) leaves every card's `match: null`, same as `toDto`'s default.
+  private async searchCheap(
+    params: FeedSearchParams,
+    scorer: CandidateScorer | null,
   ): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params);
@@ -170,7 +198,7 @@ export class FeedService {
     const total = totalRes.rows[0]?.count ?? 0;
 
     if (positionIds.length === 0) {
-      return { items: [], page: params.page, pageSize: params.pageSize, total };
+      return { items: [], page: params.page, pageSize: params.pageSize, total, offStackHidden: 0 };
     }
 
     const [rows, overlay] = await Promise.all([
@@ -188,7 +216,114 @@ export class FeedService {
       })
       .filter((x): x is VacancyDto => x !== null);
 
-    return { items, page: params.page, pageSize: params.pageSize, total };
+    return { items, page: params.page, pageSize: params.pageSize, total, offStackHidden: 0 };
+  }
+
+  // FULL PATH (§2.2, §7 step 4): `sort=score` and/or `minFitTier` — the
+  // score decides the result SET and/or its ORDER BY, so it runs inside the
+  // page query itself via `scorer.fragments()`, `requireOverlap: true` (a
+  // zero-overlap Position is not a match — §1). Off-stack hidden by default
+  // here — a warm-lens affordance the cheap path never had (§8.2). Cost is
+  // the accepted ~150–170 ms of scoring every tagged Position; this runs only
+  // for an explicit "best fit" toggle, never a page load.
+  private async searchScored(
+    params: FeedSearchParams,
+    scorer: CandidateScorer,
+  ): Promise<FeedResponse> {
+    const offset = (params.page - 1) * params.pageSize;
+    const where = buildWhere(params) ?? sql`true`;
+    const frag = scorer.fragments({ minFitTier: params.minFitTier, requireOverlap: true });
+
+    const includeOffStack = params.includeOffStack === true;
+    const keep = includeOffStack ? sql`true` : sql`on_stack`;
+    const byScore = params.sort === "score";
+    const pageOrder = byScore ? frag.order : sql`posted_at DESC, id DESC`;
+
+    const rankedPositionsCte = sql`
+      ranked_positions AS (
+        SELECT p.position_id::text AS id, ${frag.select},
+               p.last_source_activity_at AS posted_at
+        FROM ranked rk
+        ${frag.join}
+        WHERE ${where}${frag.filter ? sql` AND ${frag.filter}` : sql``}
+      )`;
+
+    const ranked = await this.db.execute<{
+      id: string;
+      relevance: number;
+      coverage: number;
+      on_stack: boolean;
+      tier_bucket: number;
+      total: number;
+      off_stack_hidden: number;
+    }>(sql`
+      WITH ${frag.cte}, ${rankedPositionsCte},
+      counted AS (
+        SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
+               (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
+               (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
+        FROM ranked_positions
+      )
+      SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
+      FROM counted
+      WHERE ${keep}
+      ORDER BY ${pageOrder}
+      LIMIT ${params.pageSize} OFFSET ${offset}
+    `);
+
+    let total = ranked.rows[0]?.total ?? 0;
+    let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
+    if (ranked.rows.length === 0) {
+      const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
+        WITH ${frag.cte}, ${rankedPositionsCte}
+        SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
+               (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
+        FROM ranked_positions
+      `);
+      total = totalRes.rows[0]?.count ?? 0;
+      offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
+    }
+
+    const positionIds = ranked.rows.map((r) => r.id);
+    if (positionIds.length === 0) {
+      return {
+        items: [],
+        page: params.page,
+        pageSize: params.pageSize,
+        total,
+        offStackHidden: includeOffStack ? 0 : offStackHidden,
+      };
+    }
+
+    const scoreByPosition = new Map(ranked.rows.map((r) => [r.id, r]));
+    const [rows, skills] = await Promise.all([
+      this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
+      this.fetchSkills(positionIds, params.includeAllSkills === true),
+    ]);
+    const byPositionId = new Map(rows.map((r) => [r.positionId, r]));
+    const items = positionIds
+      .map((positionId): VacancyDto | null => {
+        const row = byPositionId.get(positionId);
+        const scoreRow = scoreByPosition.get(positionId);
+        if (!row || !scoreRow) return null;
+        const match: MatchOverlay = {
+          relevance: scoreRow.relevance,
+          coverage: scoreRow.coverage,
+          tier: TIER_BY_BUCKET[scoreRow.tier_bucket],
+          percent: fitPercent(buildScoreBreakdown(scoreRow.coverage).total),
+          onStack: scoreRow.on_stack,
+        };
+        return { ...toDto(row, skills.get(positionId)), match };
+      })
+      .filter((x): x is VacancyDto => x !== null);
+
+    return {
+      items,
+      page: params.page,
+      pageSize: params.pageSize,
+      total,
+      offStackHidden: includeOffStack ? 0 : offStackHidden,
+    };
   }
 
   /**

@@ -14,6 +14,15 @@
 export const FIT_TIER_VALUES = ["STRONG", "GOOD", "STRETCH"] as const;
 export type FitTier = (typeof FIT_TIER_VALUES)[number];
 
+// What a ranked page is ordered by — moved here alongside FitTier (same
+// reason: feed.contract.ts needs it for GET /feed's own `sort`, and importing
+// it from ranking.contract.ts would be circular — that file imports
+// VacancyDto from feed.contract.ts). "score" is the Fit order (the FULL
+// PATH); "date" is freshness (the CHEAP PATH), with the score still shown on
+// every card either way.
+export const MATCH_SORT_VALUES = ["score", "date"] as const;
+export type MatchSort = (typeof MATCH_SORT_VALUES)[number];
+
 // Ordinal <-> tier, mirroring the SQL tier_bucket CASE in score.sql.ts's
 // rankedCte (2=STRONG, 1=GOOD, 0=STRETCH). One home for both directions so
 // the scorer (scorer.port.ts) and the ranked-page consumer (ranking.service.ts)
