@@ -7,9 +7,12 @@ import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 // ONE definition of Fit. Still live SQL: no materialized score column yet — see
 // MET-120 for the EXPLAIN ANALYZE that a "materialize this" decision needs.
 //
-// The shared aggregation pipeline: candidate VALUES → stack-set → overlap
-// probe → one weighted pass per scored Position → coverage (fitTierWeighted's
-// SQL twin). `cand` is a VALUES row list `(uuid), (uuid)`.
+// The shared aggregation pipeline: candidate VALUES → stack-set → one weighted
+// pass per Position → coverage (fitTierWeighted's SQL twin). `cand` is a VALUES
+// row list `(uuid), (uuid)`. No overlap pre-filter: `agg` scores every Position
+// with a tagged skill, and a zero-overlap Position falls out as `relevance IS
+// NULL` (no `COALESCE` on that column). Callers that need the old "shares ≥1
+// skill" set add `relevance IS NOT NULL` downstream (MET-144).
 export function scoringCtes(cand: SQL): SQL {
   return sql`
       cand(node_id) AS (VALUES ${cand}),
@@ -19,14 +22,8 @@ export function scoringCtes(cand: SQL): SQL {
         JOIN node_tech_meta m ON m.node_id = c.node_id
         WHERE m.is_core AND m.stack IS NOT NULL
       ),
-      -- Positions worth scoring: overlap probe (position_nodes.node_id index).
-      ov AS (
-        SELECT DISTINCT pn.position_id AS id
-        FROM position_nodes pn
-        JOIN cand c ON c.node_id = pn.node_id
-      ),
-      -- one pass per scored Position: relevance + weighted denominators + stack
-      -- flags. node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
+      -- one pass per Position: relevance + weighted denominators + stack flags.
+      -- node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
       agg AS (
         SELECT pn.position_id AS id,
                SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
@@ -36,8 +33,7 @@ export function scoringCtes(cand: SQL): SQL {
                COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
                bool_or(tm.is_core AND pn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
                bool_or(tm.is_core AND pn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
-        FROM ov
-        JOIN position_nodes pn ON pn.position_id = ov.id
+        FROM position_nodes pn
         JOIN node_stats ns ON ns.node_id = pn.node_id
         LEFT JOIN cand c ON c.node_id = pn.node_id
         LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id

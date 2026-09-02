@@ -454,7 +454,9 @@ export class FeedService {
   }
 }
 
-function buildWhere(params: FeedSearchParams): SQL | undefined {
+// Exported so the scoring path (RankingService) filters through the exact same
+// builder — it is a strict superset of the match filters (MET-144 Stage 3).
+export function buildWhere(params: FeedSearchParams): SQL | undefined {
   const conds: SQL[] = [];
   if (params.q) conds.push(sql`p.title ILIKE ${`%${params.q}%`}`);
   if (params.sourceId) {
