@@ -379,5 +379,117 @@ corpus, this diff stashed in between) — 50/50 identical.
 
 Gate: lint · test:etl · test:etl:int · build · build:all — all green.
 
-Next: step 6 — Frontend, the feed side: `match` on cards, Fit badge, sort toggle
-defaulting to freshest, vacancy-detail badge + diff panel.
+**Step 6 — IN PROGRESS, interrupted mid-work. Read this whole section before touching
+anything.** "Frontend — the feed side: `match` on cards, badge, sort toggle defaulting
+to freshest, vacancy-detail badge + diff panel."
+
+**Backend half — done, `6789814`, pushed.** §4 promised a skill diff on
+`GET /feed/vacancy/:id` that step 2 never actually built (it only attached `match`).
+The frontend detail-page panel needs it, so it landed here: `scorer.port.ts` gained
+`resolveViewerSkills` (the viewer's active-CV skills as `NodeRef[]`, for the diff's
+"➕ bonus" column); `feed.contract.ts` gained `VacancySkillDiff` (no weight — this
+endpoint doesn't rank skills against each other) and `VacancyDetailDto extends
+VacancyDto` with `diff`; `feed.controller.ts`'s `vacancy()` builds it from the
+vacancy's own already-fetched `skills.required`/`.optional` — no extra query for the
+vacancy side. Full gate green, pushed to origin.
+
+**Frontend half — UNCOMMITTED, working tree is currently BROKEN. Do not run
+`pnpm build:web` and be surprised.** `git status` on this branch right now shows:
+```
+M apps/web/app/(feed)/_components/FeedShell.tsx
+M apps/web/app/feed/_components/FitBadge.tsx
+M apps/web/app/feed/_components/LabColdCard.tsx
+M apps/web/app/feed/_components/LabWarmCard.tsx
+M apps/web/lib/api/vacancies.ts
+M apps/web/lib/seo/job-posting.spec.ts
+```
+What each one is:
+- `lib/api/vacancies.ts` — hand-mirrored (ADR-0005) `MatchOverlay`, `VacancySkillDiff`,
+  `VacancyDetailDto`; `ListVacanciesQuery` gained `sort`/`minFitTier`/`includeOffStack`/
+  `sample`; `ListVacanciesResponse` gained `offStackHidden`; `byId` now returns
+  `VacancyDetailDto`. **Done, typechecks clean on its own.**
+- `FeedShell.tsx`, `job-posting.spec.ts` — trivial fallout fixes for the new required
+  fields (`offStackHidden`, `match: null`). **Done.**
+- `FitBadge.tsx` — refactored from `{ item: RankedVacancy }` (warm-only shape) to a
+  generic `{ tier, percent, detail?, tooltip }` API, since the new `MatchOverlay` has
+  no per-skill breakdown to itemise. **Done**, and `LabWarmCard.tsx` updated to call it
+  with the old rich tooltip (moved `SIGNAL_LABEL` in locally). **Done.**
+- `LabColdCard.tsx` — rewritten to take a new required `hasViewer: boolean` prop:
+  locked CTA when `!hasViewer` (unchanged behavior), the real `FitBadge` when
+  `vacancy.match` is non-null, nothing when `hasViewer` but nothing scored (no tagged
+  skills). **Done in isolation, but its only caller wasn't updated yet** — this is
+  the actual break:
+  ```
+  app/feed/_components/FeedLabShell.tsx(144,20): error TS2741:
+    Property 'hasViewer' is missing in type '{ key: string; vacancy: VacancyDto; }'
+  ```
+
+**What's NOT done, in order:**
+1. **`app/feed/_components/lab-query.ts`** — `toLabColdQuery` needs `sort`,
+   `minFitTier`, `includeOffStack` (straight off `FilterState`, which already carries
+   all three — `LabControls.tsx`/`FiltersApi` already read/write them, they just never
+   reached the cold query) and a new `sample?: string` param.
+2. **`app/feed/_components/FeedLabShell.tsx`** — the actual wiring, and the one open
+   design decision:
+   - `?cv=<id>` on this route can be EITHER a seeded sample OR an arbitrary real
+     candidate id (`CvSelect`/upload) — `isSample = samples.some(s =>
+     s.candidateId === cv)` already computes which. **`GET /feed?sample=` only
+     accepts allowlisted samples and 404s on anything else (§8's security boundary:
+     "never a real candidate id, so nobody can rank someone else's CV by guessing
+     one")** — so a real `cv` id CANNOT be passed as `?sample=`. Decision taken but
+     not yet implemented: keep `lens = cv && !isSample ? "warm" : "cold"` — a real
+     arbitrary candidateId stays on the untouched warm `/ranking/match` path (step 7's
+     job to retire); only a *sample* `cv` moves onto the cold/unified path. Revisit
+     this split only if it turns out wrong, don't just paper over the 404.
+   - Pass `sample: isSample ? cv : undefined` into `toLabColdQuery`'s call.
+   - Pass `hasViewer={cv != null}` to every `LabColdCard`.
+   - Show `LabControls` (sort/off-stack toggle) in the cold lens too when a sample is
+     selected, not just in "warm" — read `offStackHidden` off `cold.data` there.
+3. Re-run `pnpm exec tsc --noEmit` in `apps/web` (must go clean), then `pnpm exec
+   jest` there (180 tests before this work started — must still be 180+ green).
+4. **Visual check before calling step 6 done** — this session never launched the app.
+   Use the `run` skill (or `pnpm docker:up` + a browser) to actually look at `/feed`
+   with a sample selected: does the real Fit badge render, does sort toggle between
+   freshest/best-fit actually reorder cards, does off-stack unhide work. Nothing here
+   has been visually verified, only typechecked.
+5. **The vacancy detail page — NOT STARTED AT ALL.** `app/vacancy/[slug]/page.tsx` +
+   `_components/` need the Fit badge + diff panel (have/missing/bonus) using the
+   `VacancyDetailDto.match`/`.diff` the backend half already ships. No exploration of
+   this page's current structure has happened yet.
+6. **Production `(feed)` route group — deliberately not touched, undecided.** The
+   home feed (`app/(feed)/[[...slug]]/page.tsx`, the real traffic) still uses the old
+   split cold/warm split (`use-results.ts`'s `ColdOpts | WarmOpts`, `warm-query.ts`'s
+   `fetchMatch`) untouched. This session chose to prototype step 6 on `/feed` (the
+   existing noindex lab route — it already had the sort toggle, off-stack toggle and
+   `useResults` hook built, seemingly anticipating exactly this migration) rather than
+   the production route, to keep risk contained on a live, launched product. Whether
+   step 6 needs to *also* reach the production route before step 7 collapses
+   `use-results.ts` to one branch, or whether the lab is a sufficient step 6 and
+   production migration happens as part of step 7, is **not decided — ask the owner**
+   if it's not obvious once the lab route is finished and visually verified.
+
+**Full gate has NOT been run since the frontend edits started** (`pnpm test:etl:int`,
+`pnpm build`, `pnpm build:all` from `.scratch/met-144/run-gate.sh` — reuse it once web
+typechecks clean again).
+
+**Verification technique reminder for whatever's next (steps 7's item-id equivalence,
+step 8's byte-identical proof isn't needed there but similar rigor might help):** the
+`.scratch/met-144/v2/*.json` static captures are stale (corpus drifts under hourly RSS
+ingest) — don't diff against them. Instead: write a throwaway `apps/etl/scratch-*.ts`
+script (delete before committing), point `DATABASE_URL` at the local dev DB
+(`postgresql://metahunt:metahunt123@localhost:54323/metahunt_railway`), `git stash`
+the diff under test, capture, `git stash pop`, capture again, `diff -r` the two
+directories. Steps 4 and 5 both used exactly this and got 50/50 identical. There's
+also an unrelated, unowned `nest --watch` process that may or may not still be
+sitting on :3333 from an earlier/other session — it was stale last time this was
+checked; don't rely on it, don't kill it without checking whose it is first.
+
+Next: finish step 6 per the checklist above, then step 7 — Frontend, retire the warm
+lens: collapse `use-results.ts` to one branch/type, point `/match` at
+`/radar?sort=score`, move `CandidateProfile` onto `GET /cv/:id`, delete
+`warm-query.ts` / `ranking.ts:match()` / `cv.ts:matches(),sampleMatches()`. **Prove
+item-id equivalence against the 50 golden captures before deleting anything
+server-side** — for each of the 50, `/radar?sort=score&…` (or whatever the production
+route ends up being) must return the same item ids in the same order as
+`/cv/samples/:id/matches` did; that check replaces the byte-diff harness. Steps 7 and
+8 are the one-way door — do not start 8 until 7 is merged.
