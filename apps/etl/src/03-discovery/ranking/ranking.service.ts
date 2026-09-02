@@ -8,7 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
-import { buildWhere, FeedService } from "../feed/feed.service";
+import { buildWhere, FeedService, toDto } from "../feed/feed.service";
 import { buildScoreBreakdown, fitPercent, TIER_BY_BUCKET } from "../score/score.contract";
 import { scoringCtes } from "../score/score.sql";
 import { scorerForNodeIds } from "../score/scorer.port";
@@ -159,7 +159,6 @@ export class RankingService {
       return { resolved, items: [], page, pageSize, total: 0, offStackHidden: 0 };
     }
 
-    const candIds = uuidList(nodeIds);
     // The match path filters through the feed's own builder so the two cannot
     // drift. `includeRoleless: false` keeps the VERIFIED-role gate on.
     const where =
@@ -259,7 +258,7 @@ export class RankingService {
     // match starts at page 1, so this sees each scoring context once.
     if (page === 1) void this.emitMatchScored(frag.cte, where, nodeIds.length);
 
-    const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
+    const items = await this.buildItems(ranked.rows, nodeIds, resolved.matched);
     return {
       resolved,
       items,
@@ -357,6 +356,10 @@ export class RankingService {
 
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
+  // §7 step 5: one shared skill-row fetch (feed.fetchSkillRows) drives both
+  // the vacancy DTO's `skills` (VERIFIED-only, filtered in TS below) and the
+  // diff — `hydratePositionsByIds` + this method's own skillRows query used
+  // to be two separate round trips for what is really one superset read.
   private async buildItems(
     rows: {
       id: string;
@@ -365,56 +368,45 @@ export class RankingService {
       on_stack: boolean;
       tier_bucket: number;
     }[],
-    candIds: SQL,
+    nodeIds: string[],
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);
-    const dtos = await this.feed.hydratePositionsByIds(ids);
+    const candidateNodeIds = new Set(nodeIds);
 
-    const pageIds = uuidList(ids);
-    const skillRows = await this.db.execute<{
-      position_id: string;
-      node_id: string;
-      name: string;
-      is_required: boolean;
-      weight: number | null;
-      in_candidate: boolean;
-    }>(sql`
-      SELECT pn.position_id::text AS position_id, pn.node_id::text AS node_id,
-             n.canonical_name AS name, pn.is_required,
-             ns.weight AS weight,
-             (pn.node_id IN (${candIds})) AS in_candidate
-      FROM position_nodes pn
-      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
-      LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
-      WHERE pn.position_id IN (${pageIds})
-    `);
+    const [positionRows, skillRowsByPosition] = await Promise.all([
+      this.feed.selectPositions(sql`p.position_id IN (${uuidList(ids)})`),
+      this.feed.fetchSkillRows(ids),
+    ]);
+    const positionsById = new Map(positionRows.map((r) => [r.positionId, r]));
 
-    const byPosition = new Map<string, typeof skillRows.rows>();
-    for (const r of skillRows.rows) {
-      const arr = byPosition.get(r.position_id) ?? [];
-      arr.push(r);
-      byPosition.set(r.position_id, arr);
-    }
     const items: RankedVacancy[] = [];
     for (const row of rows) {
-      const vacancy = dtos.get(row.id);
-      if (!vacancy) continue;
-      const vskills = byPosition.get(row.id) ?? [];
-      const vacancyNodeIds = new Set(vskills.map((s) => s.node_id));
+      const positionRow = positionsById.get(row.id);
+      if (!positionRow) continue;
+      const skillRows = skillRowsByPosition.get(row.id) ?? [];
+      const verified = skillRows.filter((s) => s.status === "VERIFIED");
+      const vacancy = toDto(positionRow, {
+        required: verified.filter((s) => s.isRequired).map((s) => ({ id: s.nodeId, name: s.name })),
+        optional: verified
+          .filter((s) => !s.isRequired)
+          .map((s) => ({ id: s.nodeId, name: s.name })),
+      });
+
+      const vacancyNodeIds = new Set(skillRows.map((s) => s.nodeId));
       const have: SkillRef[] = [];
       const missing: SkillRef[] = [];
       // Counts feed the "X of Y required" label; the badge is the SQL tier_bucket.
       let requiredTotal = 0;
       let matchedRequired = 0;
-      for (const s of vskills) {
-        const ref: SkillRef = { id: s.node_id, name: s.name, weight: s.weight ?? 0 };
-        if (s.is_required) requiredTotal += 1;
-        if (s.in_candidate) {
+      for (const s of skillRows) {
+        const ref: SkillRef = { id: s.nodeId, name: s.name, weight: s.weight };
+        if (s.isRequired) requiredTotal += 1;
+        if (candidateNodeIds.has(s.nodeId)) {
           have.push(ref);
-          if (s.is_required) matchedRequired += 1;
-        } else if (s.is_required) {
+          if (s.isRequired) matchedRequired += 1;
+        } else if (s.isRequired) {
           missing.push(ref);
         }
       }

@@ -184,22 +184,26 @@ export class FeedService {
     const where = buildWhere(params);
     const base = positionsFrom(where);
 
-    const pageRes = await this.db.execute<{ position_id: string }>(sql`
-      SELECT p.position_id
+    // §7 step 5: total rides the page query's own window pass — one round
+    // trip, not two — the same shape rankByRefs/searchScored already use.
+    const pageRes = await this.db.execute<{ position_id: string; total: number }>(sql`
+      SELECT p.position_id, (count(*) OVER ())::int AS total
       ${base}
       ORDER BY p.last_source_activity_at DESC, p.position_id DESC
       LIMIT ${params.pageSize} OFFSET ${offset}
     `);
     const positionIds = pageRes.rows.map((r) => r.position_id);
 
-    const totalRes = await this.db.execute<{ count: number }>(sql`
-      SELECT count(*)::int AS count ${base}
-    `);
-    const total = totalRes.rows[0]?.count ?? 0;
-
     if (positionIds.length === 0) {
+      // Empty page (all filtered out, or OFFSET past the end): no row, so
+      // no window total either — fall back to a dedicated count.
+      const totalRes = await this.db.execute<{ count: number }>(sql`
+        SELECT count(*)::int AS count ${base}
+      `);
+      const total = totalRes.rows[0]?.count ?? 0;
       return { items: [], page: params.page, pageSize: params.pageSize, total, offStackHidden: 0 };
     }
+    const total = pageRes.rows[0].total;
 
     const [rows, overlay] = await Promise.all([
       this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
@@ -361,18 +365,6 @@ export class FeedService {
     }));
   }
 
-  // One feed-identical card per canonical Position. The DTO keeps the current
-  // representative Posting id for URLs and source links, while facts and skills
-  // remain the Position's canonical ones.
-  async hydratePositionsByIds(positionIds: string[]): Promise<Map<string, VacancyDto>> {
-    const out = new Map<string, VacancyDto>();
-    if (positionIds.length === 0) return out;
-    const rows = await this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`);
-    const skills = await this.fetchSkills(positionIds, false);
-    for (const row of rows) out.set(row.positionId, toDto(row, skills.get(row.positionId)));
-    return out;
-  }
-
   /**
    * Full detail for one Position, including the raw `description` body —
    * backs the public vacancy detail page (`/vacancy/:id`). Accepts ANY
@@ -436,7 +428,10 @@ export class FeedService {
 
   // Base Position projection: canonical facts + the representative Posting's
   // link/freshness/identity, keyed by `p.position_id`.
-  private async selectPositions(where: SQL): Promise<PositionRow[]> {
+  // Public: RankingService.buildItems drives this directly (§7 step 5) —
+  // `hydratePositionsByIds` used to wrap this + `fetchSkills`, but that was
+  // one round trip buildItems didn't need on top of its own skill-row fetch.
+  async selectPositions(where: SQL): Promise<PositionRow[]> {
     const res = await this.db.execute<{
       position_id: string;
       id: string;
@@ -601,6 +596,54 @@ export class FeedService {
     }
     return out;
   }
+
+  // Public: the ✅/❌/➕ skill diff's data source (RankingService.buildItems,
+  // §7 step 5) — a wider projection than `fetchSkills` above (weight +
+  // node status, so the diff can rank by IDF and the caller can still
+  // derive a VERIFIED-only view in TS) over the same HIDDEN-excluded set.
+  // Deliberately its own query, not a `fetchSkills` mode: that method's
+  // `includeAllSkills` intentionally includes HIDDEN nodes for operator/
+  // debug use, and this must not.
+  async fetchSkillRows(positionIds: string[]): Promise<Map<string, SkillRow[]>> {
+    const out = new Map<string, SkillRow[]>();
+    if (positionIds.length === 0) return out;
+
+    const rows = await this.db.execute<{
+      position_id: string;
+      node_id: string;
+      name: string;
+      status: "NEW" | "VERIFIED";
+      is_required: boolean;
+      weight: number | null;
+    }>(sql`
+      SELECT pn.position_id, pn.node_id, n.canonical_name AS name, n.status,
+             pn.is_required, ns.weight
+      FROM position_nodes pn
+      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
+      LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
+      WHERE pn.position_id IN (${uuidList(positionIds)})
+    `);
+
+    for (const id of positionIds) out.set(id, []);
+    for (const r of rows.rows) {
+      out.get(r.position_id)?.push({
+        nodeId: r.node_id,
+        name: r.name,
+        status: r.status,
+        isRequired: r.is_required,
+        weight: r.weight ?? 0,
+      });
+    }
+    return out;
+  }
+}
+
+export interface SkillRow {
+  nodeId: string;
+  name: string;
+  status: "NEW" | "VERIFIED";
+  isRequired: boolean;
+  weight: number;
 }
 
 // Exported so the scoring path (RankingService) filters through the exact same
@@ -731,7 +774,9 @@ export function buildWhere(params: FeedSearchParams): SQL | undefined {
   return and(...conds);
 }
 
-function toDto(
+// Exported for RankingService.buildItems (§7 step 5) — the same DTO shape a
+// feed card gets, built from `selectPositions` rows it fetches directly now.
+export function toDto(
   row: PositionRow,
   skills: { required: NodeRef[]; optional: NodeRef[] } | undefined,
 ): VacancyDto {
