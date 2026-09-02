@@ -1,6 +1,7 @@
 # feed ⊕ scoring merge — one query, an optional overlay
 
-**Status:** planned, not started. No code written. Branch not cut.
+**Status:** Part 1 shipping — `ov` deleted, the Scorer port reverted, one `buildWhere`
+kept. The unified endpoint + the cheap path are a follow-up PR (see the last section).
 **Tickets:** [MET-144](https://linear.app/metahunt/issue/MET-144) (the merge) ·
 [MET-120](https://linear.app/metahunt/issue/MET-120) (shipped, PR #157) ·
 [MET-104](https://linear.app/metahunt/issue/MET-104) (v2 ranker — where Part 2 lands)
@@ -554,36 +555,76 @@ names, `and(...)` parens).
 
 ---
 
-## Stage 4 — delete `ov`, unify the query shape — SKIPPED (Gate 1)
+## Stage 4 — delete `ov`, revert the Scorer port — DONE 2026-09-02 (owner call)
 
-Not taken — Gate 1's `ov`-removed median was above 150 ms. `ov` stays; the unified
-single-query shape stays deferred with it.
+Gate 1 measured the `ov`-removed query a hair over the 150 ms line, so the original run
+stopped here. The owner reopened it 2026-09-02: **delete `ov` anyway** — it was never
+buying speed (Stage 1/6 had `ov` at ~167–172 ms, no-`ov` at ~150 ms), it was buying a
+*smaller, different* result set, and that is the one structural reason the feed and match
+paths could not merge. Speed is a later lever (score materialisation, MET-120 option C).
 
-**Knock-on: Stage 5 is deferred too.** Its three items (feed's separate `count` →
-window count; delete `hydratePositionsByIds`; drop `buildItems`' `skillRows` query)
-only remove duplication that the Stage 4 merge creates the conditions for — with the
-feed and scoring paths still separate, there is nothing to collapse. `rankByRefs`
-already uses a `count(*) … OVER ()` window; `buildItems` already hydrates only its
-own 20-row page. Re-scope these with Stage 4 if the owner revives it.
+Two changes:
 
-**Only if Gate 1 was green.**
+1. **`score/score.sql.ts` — the `ov` CTE is gone.** `agg` reads `FROM position_nodes pn`
+   directly. `scoringCtes` now scores every Position with a tagged skill; a zero-overlap
+   Position falls out as `relevance IS NULL` (that column has no `COALESCE`).
+2. **The Scorer port is reverted** (owner's "variant 2"). `score/scorer.port.ts` is
+   deleted; `RankingService.rankByRefs` / `buildItems` assemble the scoring SQL inline
+   again, exactly as on `main` before `5d105c8`. Reason: with `ov` gone and the unified
+   endpoint deferred, the port had one implementation and one caller — an abstraction
+   with nothing sitting on it. It comes back in the follow-up PR, when the feed becomes
+   a real second consumer and Part 2 / MET-104 a real second implementation, and it can
+   be shaped to what those two actually need.
 
-1. Delete the `ov` CTE; `agg` reads `position_nodes` directly.
-2. Collapse both paths onto the single query shape from Part 1 above.
-3. **Preserve legacy output:** zero-overlap positions now score `relevance IS NULL`, which
-   would change what `/ranking/match` and `/cv/:id/matches` return — and the frontend is
-   untouched by design. So the two legacy wrappers pass `requireOverlap: true`, which
-   `scorer.filter()` renders as `relevance IS NOT NULL`. The unified path leaves it off.
+   **Stage 3 stays.** `RankingService.buildFilters` is still deleted; both paths still
+   filter through `FeedService.buildWhere`. That was a clean deletion and is unaffected.
 
-**Gate 4:** full gate green + **golden diff still empty** — that is exactly what
-`requireOverlap` buys, and it is the proof the wrappers are honest. A non-empty diff here
-means the flag is not wired.
+**Preserving legacy output.** Deleting `ov` would let zero-overlap Positions into
+`/ranking/match` and `/cv/:id/matches` with a null score — a visible change, and the
+frontend is untouched here by design. So `rankByRefs` adds `AND rk.relevance IS NOT NULL`
+to `ranked_positions` (and to `emitMatchScored`). That predicate **is** the old `ov`
+membership test: `ov` = "Position shares ≥1 skill with the CV", and a Position that
+shares no skill sums `relevance` over nothing → `NULL`. Both current callers are the
+legacy wrappers, so the guard is unconditional for now; the unified feed path in the
+follow-up PR is where it comes off (a `requireOverlap` flag, or the feed simply not
+passing it).
 
-Commit: `refactor(score): drop the overlap probe, unify the query shape`.
+**Gate 4 — green.** `pnpm lint` · `test:etl` (542) · `test:etl:int` (122) · `build` all
+pass. **Golden diff empty across 50 `/cv/samples/:id/matches` captures** — 5 sample CVs ×
+10 filter/sort/paging combos (`""`, `sort=date`, `minFitTier=GOOD`, `minFitTier=STRONG`,
+`includeOffStack=true`, `page=2`, `sort=date&minFitTier=GOOD`, `seniorities=SENIOR`,
+`workFormats=REMOTE&sort=date`, `includeOffStack=true&sort=date`). Byte-identical before
+and after — captures in `.scratch/met-144/v2/{pre,post}-*.json`. That empty diff is the
+proof the `relevance IS NOT NULL` guard reproduces `ov` exactly.
+
+**Re-measurement** (`.scratch/met-144/v2/measure-no-ov.sql`, same candidate as Stage 1 —
+`b932cafb…`, 45 skills; proxy caveat: `cand` via subquery, not the inlined VALUES):
+
+| query | Stage 1 / 6 | now |
+|---|---|---|
+| match page query, **`ov` + Scorer port** (old) | 167–172 ms | — |
+| match page query, **`ov` removed + `relevance IS NOT NULL` guard** (this PR) | — | **~170 ms** (166.4 / 167.0 / 168.3 / **169.9** / 172.5 / 174.0 / 174.5) |
+| pure no-`ov`, no guard — the *future feed* shape (Stage 1 "(B)") | ~150 ms | unchanged, not on any endpoint yet |
+
+So for the match endpoints this PR is a **wash on speed** (~170 vs ~167 ms, inside noise)
+and a **simplification**: one fewer CTE, one fewer file, no port indirection. The ~150 ms
+shape only appears once the follow-up drops the overlap guard for the cold feed. The
+`HashAggregate` over the whole `position_nodes` fan-out (~144k rows → ~1.9k groups,
+~145 ms) is still the floor and still what score materialisation would remove.
+
+Commit: `refactor(score): drop the overlap probe and the Scorer port`.
+
+### Stage 5 — not in this PR
+
+Its three round-trip cuts (feed's separate `count` → window; delete
+`hydratePositionsByIds`; drop `buildItems`' `skillRows` query) only remove duplication
+the *unified endpoint* creates. `rankByRefs` already windows its count and hydrates only
+its 20-row page, and the feed path is still separate — nothing to collapse yet. Moves to
+the follow-up PR with the merge.
 
 ---
 
-## Stage 5 — the round trips
+## Stage 5 — the round trips (original plan — moved to the follow-up PR)
 
 1. Feed's separate `count` query → `count(*) OVER ()` on the page query.
 2. Delete `hydratePositionsByIds`; the feed hydrates its own page.
@@ -620,12 +661,14 @@ Commit: `docs(met-144): record the merge outcome`.
 | `5d105c8` | Stage 2 — Scorer port (`score/scorer.port.ts`) |
 | `7d9a76b` | Stage 3 — one `buildWhere` for both paths |
 | `16f7ac6` | Stage 6 — review fixes (see below) |
-| _this_ | Stage 6 — close-out record |
+| `8fbf70e` | Stage 6 — close-out record |
+| _(later, owner call)_ | Stage 4 — `refactor(score): drop the overlap probe and the Scorer port` |
 
-**What did NOT ship:** Stage 4 (`ov` deletion + unified query shape) — Gate 1
-measured the `ov`-removed query at a 150.7–151.3 ms median, above the 150 ms line.
-Stage 5 (round-trip reductions) went with it — those cuts only remove duplication
-the Stage 4 merge introduces.
+**Update 2026-09-02 (later the same day):** the owner reopened Stage 4. `ov` is
+deleted, the Scorer port is reverted (Stage 4 section above has the full write-up and
+re-measurement). Stage 2 / `16f7ac6`'s code is undone by that commit but stays in
+history. Stage 3 (`7d9a76b`, one `buildWhere`) is kept. The unified endpoint and the
+cheap path are a **follow-up PR** — last section.
 
 **Re-measurement (Stage 1 queries, on the post-refactor code — `ov` still in place):**
 
@@ -677,10 +720,67 @@ Findings **not** actioned, with reason:
   dummy `page:1,pageSize:1` — nice, but touches `listForSitemap`'s literal call site.
   Deferred; low value.
 
-**Net for the owner:** the two standalone wins of Part 1 — scoring behind a port,
-one filter builder — are on the branch, green, behaviour-identical, reviewed. The
-`ov` deletion and the single-query merge wait for a decision: ship the merge without
-the `ov` win, or leave it. Nothing is pushed.
+**Net for the owner:** superseded by the 2026-09-02 update above — `ov` is now gone and
+the port with it. What ships in this PR: `ov` deleted, one `buildWhere`, match output
+byte-identical. What's left: the unified endpoint + the cheap path, below.
+
+---
+
+## Follow-up PR — the unified endpoint + the cheap path
+
+Not in the `ov` PR. This is where the feed and match paths actually become one, and
+where the cheap path earns its keep.
+
+### Why it's a separate PR
+
+The cheap path — score only the ~20 Positions on the page instead of the whole filtered
+set — pays off **only** when the score decides neither the result set nor its order:
+`sort=date`, no `minFitTier`, no off-stack hiding. No endpoint is in that state today:
+warm `/match` defaults to `sort=score`, and `/match?sort=date` still hides off-stack
+rows, which needs the whole set scored to count them. So the cheap path is dead code
+until the cold feed exists — it belongs with the merge, not before it.
+
+### Shape
+
+`resolveFeedQuery(candidateId | null, urlFilters) → { filters, sort, cand, page }` — the
+one place aware candidates exist. `GET /feed` gains an optional authenticated-candidate
+resolve; `FeedService.search` (or a thin sibling) takes `cand: SQL | null`.
+
+- **`cand === null`** (anonymous): today's feed query, untouched. No scoring CTE.
+- **`cand !== null`, `sort=date`, no `minFitTier`** — the **cheap path**:
+  1. page = `positions p WHERE buildWhere ORDER BY last_source_activity_at DESC LIMIT 20`
+     — the cold query, ~12 ms.
+  2. score those ≤20 ids: `scoringCtes(cand)` with `agg` scoped
+     `WHERE pn.position_id IN (:pageIds)` — needs a `scopeIds?: SQL` param on
+     `scoringCtes` / `rankedCte` (the one new knob).
+  3. overlay each card; a zero-overlap Position renders with no Fit badge (null
+     overlay), it is not hidden.
+  - `total` = the cold `count(*)` (already windowed). No `off_stack_hidden` — the cold
+    feed does not hide off-stack.
+- **`cand !== null`, `sort=score` OR `minFitTier` set** — the **full path**: today's
+  `rankByRefs` query minus the `relevance IS NOT NULL` guard (or with it behind a
+  `requireOverlap` flag the feed leaves off). ~150–170 ms, unavoidable without score
+  materialisation. This is the deliberate "rank the whole radar for me" action.
+
+### Also folds in
+
+- **Bring the Scorer port back**, shaped to two real consumers (the feed's nullable
+  overlay, `rankByRefs`' full overlay) and — if Part 2 has started — a second
+  implementation. Not the six-fragment version; whatever those callers actually need.
+- **`requireOverlap` flag** instead of the unconditional `AND rk.relevance IS NOT NULL`.
+  Legacy `/ranking/match` + `/cv/:id/matches` keep passing it (byte-identical); the feed
+  path does not.
+- **Stage 5 round trips:** feed's separate `count` → window; delete
+  `hydratePositionsByIds`; `buildItems`' `skillRows` → TS from `fetchSkills` + cand ids.
+- **Frontend:** the feed page shows the Fit badge on a card when the viewer has a CV.
+  Telegram digest overlay is a later step again.
+
+### Gate
+
+Full gate + golden `/cv/samples/:id/matches` still byte-identical (legacy wrappers) +
+a new golden set for `GET /feed?<candidate>` + `total` parity across filter combos +
+the cheap path's EXPLAIN back near the cold ~12 ms. Measure both sorts on a prod-sized
+restore.
 
 ---
 
