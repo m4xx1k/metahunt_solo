@@ -530,9 +530,41 @@ role positions leak into matches.
 
 Commit: `refactor(feed): one filter builder for both paths`.
 
+### Stage 3 result — 2026-09-02 — Gate 3 GREEN
+
+`buildWhere` in `feed.service.ts` is now `export`ed; `RankingService.buildFilters`
+is deleted; `rankByRefs` maps `MatchFilters → FeedSearchParams` and calls
+`buildWhere({ …, includeRoleless: false })`. The `includeRoleless: false` is the
+trap the plan flags — `buildWhere` gates `ELIGIBLE_POSITION` on it.
+
+Field-by-field the two builders were already equivalent (`buildWhere` is the
+superset): same predicates for seniority/format/english/employment/domain/role/
+excluded-skill/experience/test/reservation/source/postedWithin/loadedAfter/
+excludeIds — only cosmetic differences (`::text` casts vs `uuidList` casts, alias
+names, `and(...)` parens).
+
+- Gate: `pnpm lint` ✓ · `test:etl` 79/**542** ✓ · `test:etl:int` 18/**122** ✓ ·
+  `build` ✓. One prettier-only fix (a stray blank line where `buildFilters` was).
+- **Golden diff empty** on all 5 captures.
+- **Extra proof** for the filter paths the 5 captures don't touch: stashed Stage 3,
+  rebuilt, captured `.scratch/met-144/fpre-*` from the old `buildFilters`; restored,
+  rebuilt, captured `fpost-*`. Byte-identical for `seniorities=SENIOR`,
+  `seniorities=SENIOR,MIDDLE&workFormats=REMOTE`, `experienceYears=6+`,
+  `postedWithinDays=7`, `hasReservation=true`, `minFitTier=STRONG&sort=date`.
+
 ---
 
-## Stage 4 — delete `ov`, unify the query shape
+## Stage 4 — delete `ov`, unify the query shape — SKIPPED (Gate 1)
+
+Not taken — Gate 1's `ov`-removed median was above 150 ms. `ov` stays; the unified
+single-query shape stays deferred with it.
+
+**Knock-on: Stage 5 is deferred too.** Its three items (feed's separate `count` →
+window count; delete `hydratePositionsByIds`; drop `buildItems`' `skillRows` query)
+only remove duplication that the Stage 4 merge creates the conditions for — with the
+feed and scoring paths still separate, there is nothing to collapse. `rankByRefs`
+already uses a `count(*) … OVER ()` window; `buildItems` already hydrates only its
+own 20-row page. Re-scope these with Stage 4 if the owner revives it.
 
 **Only if Gate 1 was green.**
 

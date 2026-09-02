@@ -8,7 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
-import { FeedService } from "../feed/feed.service";
+import { buildWhere, FeedService } from "../feed/feed.service";
 import { scoringCtes } from "../score/score.sql";
 import { FitScorer, type ScoreRow } from "../score/scorer.port";
 
@@ -162,7 +162,29 @@ export class RankingService {
       sql`, `,
     );
     const candIds = uuidList(nodeIds);
-    const where = this.buildFilters(filters);
+    // One filter builder for both paths: buildWhere is a strict superset of the
+    // old buildFilters. `includeRoleless: false` is load-bearing — buildWhere
+    // gates ELIGIBLE_POSITION on it, buildFilters applied it unconditionally.
+    const where =
+      buildWhere({
+        page: 1,
+        pageSize: 1,
+        seniorities: filters.seniorities,
+        workFormats: filters.workFormats,
+        englishLevels: filters.englishLevels,
+        employmentTypes: filters.employmentTypes,
+        domainIds: filters.domainIds,
+        roleIds: filters.roleNodeIds,
+        excludedSkillIds: filters.excludedSkillNodeIds,
+        experienceYears: filters.experienceYears,
+        hasTestAssignment: filters.hasTestAssignment,
+        hasReservation: filters.hasReservation,
+        sourceId: filters.sourceId,
+        postedWithinDays: filters.postedWithinDays,
+        loadedAfter: filters.loadedAfter,
+        excludeIds: filters.excludeIds,
+        includeRoleless: false,
+      }) ?? sql`true`;
     const offset = (page - 1) * pageSize;
 
     // Scoring lives behind the port: the CTE, the score columns, the tier gate
@@ -417,101 +439,5 @@ export class RankingService {
       });
     }
     return items;
-  }
-
-  // ELIGIBLE_POSITION mirrors the feed (only VERIFIED-role Positions are
-  // browsable) so the matcher ranks what the user can actually open. All the
-  // enum filters are OR-within / AND-across (any listed seniority AND any
-  // listed english …). The Fit-tier filter is NOT here — it reads the computed
-  // tier_bucket, so it's applied against the `ranked` CTE in rankByRefs.
-  private buildFilters(f: MatchFilters): SQL {
-    const conds: SQL[] = [ELIGIBLE_POSITION];
-    const inText = (col: SQL, vals: readonly string[]) =>
-      conds.push(
-        sql`${col}::text IN (${sql.join(
-          vals.map((v) => sql`${v}`),
-          sql`, `,
-        )})`,
-      );
-
-    if (f.seniorities?.length) inText(sql`p.seniority`, f.seniorities);
-    if (f.workFormats?.length) inText(sql`p.work_format`, f.workFormats);
-    if (f.englishLevels?.length) inText(sql`p.english_level`, f.englishLevels);
-    if (f.employmentTypes?.length) inText(sql`p.employment_type`, f.employmentTypes);
-
-    // Domain (OR): keep vacancies tagged with any listed DOMAIN node — a vacancy
-    // filter, mirroring the feed (the candidate stays the query).
-    if (f.domainIds?.length) inText(sql`p.domain_node_id`, f.domainIds);
-
-    // Role (OR, hard filter): the user's explicit role choice — unlike the
-    // inferred on_stack signal, it filters instead of demoting.
-    if (f.roleNodeIds?.length) inText(sql`p.role_node_id`, f.roleNodeIds);
-
-    // An explicit skill exclusion means "do not show a vacancy that requires
-    // this stack". Optional mentions stay visible; they are not a job's ask.
-    if (f.excludedSkillNodeIds?.length) {
-      conds.push(sql`
-        NOT EXISTS (
-          SELECT 1 FROM position_nodes excluded_skill
-          WHERE excluded_skill.position_id = p.position_id
-            AND excluded_skill.is_required
-            AND excluded_skill.node_id IN (${uuidList(f.excludedSkillNodeIds)})
-        )
-      `);
-    }
-
-    // Discrete experience buttons (OR): exact tokens + "6+" (≥6). Lenient on NULL
-    // — unstated experience always passes; only explicit non-matches drop. Mirrors
-    // feed.service buildWhere.
-    if (f.experienceYears?.length) {
-      const exact = f.experienceYears.filter((t) => /^\d+$/.test(t)).map(Number);
-      const openEnded = f.experienceYears.includes("6+");
-      const arms: SQL[] = [sql`p.experience_years IS NULL`];
-      if (exact.length > 0) {
-        arms.push(
-          sql`p.experience_years IN (${sql.join(
-            exact.map((n) => sql`${n}`),
-            sql`, `,
-          )})`,
-        );
-      }
-      if (openEnded) arms.push(sql`p.experience_years >= 6`);
-      // No real token → skip, don't collapse results to NULL-only rows.
-      if (arms.length > 1) conds.push(sql`(${sql.join(arms, sql` OR `)})`);
-    }
-
-    // Test task: "without" (false) keeps unknowns — a null (unscored) vacancy
-    // still counts as no-test, so only a confirmed true is excluded (mirrors
-    // the feed). "with" (true) stays strict.
-    if (f.hasTestAssignment === true) {
-      conds.push(sql`p.has_test_assignment = true`);
-    } else if (f.hasTestAssignment === false) {
-      conds.push(sql`(p.has_test_assignment = false OR p.has_test_assignment IS NULL)`);
-    }
-    if (f.hasReservation !== undefined) {
-      conds.push(sql`p.has_reservation = ${f.hasReservation}`);
-    }
-
-    if (f.sourceId) {
-      conds.push(sql`EXISTS (
-        SELECT 1 FROM postings po
-        WHERE po.position_id = p.position_id AND po.source_id = ${f.sourceId}::uuid
-      )`);
-    }
-    if (f.postedWithinDays !== undefined) {
-      conds.push(
-        sql`p.last_source_activity_at > now() - make_interval(days => ${f.postedWithinDays})`,
-      );
-    }
-
-    // Digest-only window (page UI never sets these).
-    if (f.loadedAfter) conds.push(sql`p.first_observed_at > ${f.loadedAfter}`);
-    if (f.excludeIds?.length) {
-      conds.push(sql`p.position_id NOT IN (
-        SELECT po.position_id FROM postings po
-        WHERE po.posting_id IN (${uuidList(f.excludeIds)})
-      )`);
-    }
-    return sql.join(conds, sql` AND `);
   }
 }
