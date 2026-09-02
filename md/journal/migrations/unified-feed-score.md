@@ -264,3 +264,26 @@ Sample CVs are public fixtures, not user data, so the rule can bend for them and
 them: `GET /feed?sample=<sampleId>` resolves a scorer **only** if the id is in the
 sample-candidate allowlist, and 404s otherwise. That keeps one endpoint instead of two
 and leaks nothing. Do not generalise it to real candidate ids.
+
+---
+
+## Progress (branch `feat/met-144-unified-feed-score`, off `main` after PR #205)
+
+**Step 1 — done, `9c27c76`.** `scopeIds?: SQL` on `scoringCtes` / `rankedCte`
+(`score/score.sql.ts`): narrows `agg`'s FROM to an id list before the GROUP BY.
+`overlayFor(db, candidateNodeIds, positionIds)` (new `score/scorer.port.ts`) is the
+CHEAP PATH primitive from §3 — no caller yet. **Proven** against the full path: a new
+`test/int/score.int.spec.ts` scores the same candidate + position through both
+`overlayFor` (scoped) and `rankByRefs` (unscoped) and asserts relevance, coverage,
+tier and on_stack match exactly, plus a scoping check (a second, out-of-scope id gets
+no row) and an off-stack case. Unit suite (`scorer.port.spec.ts`) covers the pure
+row→`MatchOverlay` projection and the empty-input short-circuits. Gate: lint ·
+test:etl · test:etl:int · build · build:all — all green.
+
+One decision made filling a spec gap: `MatchOverlay` (§3's return type) lives in the
+new `scorer.port.ts`, not `score.contract.ts` — putting `tier: FitTier` there would
+import from `ranking.contract.ts`, which already imports `ScoreBreakdown` the other
+way (circular). Revisit when step 6 wires `match` onto `VacancyDto` (web hand-mirrors
+the type per ADR-0005 either way, so this is a backend-only call).
+
+Next: step 2 — single vacancy page gets `match`.
