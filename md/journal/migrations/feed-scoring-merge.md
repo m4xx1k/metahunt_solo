@@ -417,6 +417,51 @@ Five warm runs each, median reported.
 
 Commit: the measurement table appended to this file. `docs(met-144): re-measure scoring cost`.
 
+### Stage 1 result — 2026-09-02 — Gate 1 RED, Stage 4 NOT taken
+
+Local restore: none — measured against the live local DB (14 547 Positions,
+82 605-ish `position_nodes`). Candidate: `b932cafb-fb21-4bc9-965a-7c74671eb69a`
+(**45 skills — the highest `candidate_nodes` count in the corpus**, per the Stage 1
+picker query). Machine under normal dev load (native etl `nest --watch`, a Next dev
+server) — absolute numbers run a little hot, but (B) vs the 150 ms line is the call.
+
+Measurement proxy caveats, as the plan flags: candidate fed via
+`cand(node_id) AS (SELECT node_id FROM candidate_nodes WHERE candidate_id = …)`
+instead of the inlined `VALUES` list; the full `rankByRefs` pipeline
+(`ranked` → `ranked_positions` filtered to `tier_bucket >= 1` → `counted` window →
+`WHERE on_stack` → `ORDER BY posted_at DESC, id DESC` LIMIT 20) reproduced by hand.
+Query files: `.scratch/met-144/s1-{A,B,C}-*.sql`; full plans `s1-plan-{A,B,C}.txt`.
+
+| query | runs (ms), sorted | median |
+|---|---|---|
+| **(A)** feed page, no scoring | 11.5 11.6 12.1 12.4 15.0 | **12.1 ms** |
+| **(B)** full scoring, `ov` removed, `sort=date`, `minFitTier=GOOD` — batch 1 (5) | 148.0 150.5 151.3 158.2 167.9 | **151.3 ms** |
+| **(B)** — batch 2 (9, after 2 warmups) | 149.3 149.5 149.6 149.8 150.7 151.3 151.5 152.6 154.1 | **150.7 ms** |
+| **(C)** control, `ov` kept — batch 1 (5) | 157.8 165.6 167.7 168.4 169.8 | **167.7 ms** |
+| **(C)** — batch 2 (9) | 164.7 164.7 166.0 167.5 172.4 178.3 194.1 197.5 214.9 | **172.4 ms** |
+
+Context, not the gate: a ~15-skill candidate (`ddac44f3…`) runs (B) at a **~143 ms**
+median — still within a rounding error of the line.
+
+**Verdict.** (B) median is **150.7–151.3 ms across two independent batches — above the
+150 ms threshold.** Per the owner's standing instruction ("Gate 1 вирішує, чи взагалі
+робиться Stage 4 — не видаляй `ov`, якщо медіана > 150 ms"):
+
+- **Stage 4 is NOT taken.** `ov` stays. The unified single-query shape from Part 1 is
+  deferred with it.
+- **The run continues** through the stages that do not depend on removing `ov` —
+  Stage 2 (Scorer port, wraps `rankedCte` including `ov` verbatim), Stage 3 (one
+  `buildWhere`), Stage 5 (round-trip reductions inside `buildItems`), Stage 6
+  (close-out). Each still gated on `pnpm` green + an empty golden diff.
+- `ov` beats no-`ov` here only because the designated candidate is the corpus maximum
+  (45 skills) — for it, the overlap probe still trims enough `position_nodes` rows to
+  pay for itself. The plan's earlier table (measured on a different corpus snapshot)
+  had it the other way around. Whether to revisit the `ov` deletion on a quieter box
+  is the owner's call.
+
+Branch `feat/MET-144-feed-scoring-merge` after Stage 1: two commits — the tracker
+(`cb3da11`) and this measurement (`a443a70`, `docs(met-144): re-measure scoring cost`).
+
 ---
 
 ## Stage 2 — the Scorer port, behaviour-identical
