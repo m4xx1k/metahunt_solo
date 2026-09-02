@@ -54,9 +54,9 @@ export class PostHogQueryClient {
     this.configured = this.validateConfig();
   }
 
-  // Mirrors scripts/posthog-founder-setup.ts's checks (phx_ prefix, private
-  // host is not the ingest host) but logs + degrades instead of throwing —
-  // this runs inside a live request path, not a one-shot CLI script.
+  // Same checks a setup script would run (phx_ prefix, private host is not
+  // the ingest host) but logs + degrades instead of throwing — this runs
+  // inside a live request path, not a CLI.
   private validateConfig(): boolean {
     if (
       this.personalApiKey.length === 0 ||
