@@ -5,39 +5,32 @@ import { type FitTier } from "../ranking/ranking.contract";
 import { buildScoreBreakdown, fitPercent, type ScoreBreakdown } from "./score.contract";
 import { rankedCte } from "./score.sql";
 
-// The seam MET-144 Part 1 leaves the feed with: it knows a nullable overlay and
-// nothing else. The words `coverage`, `tier_bucket`, `relevance`, `on_stack`
-// live behind this port — `FitScorer` owns the scoring SQL, the caller only
-// splices its fragments into an otherwise score-free query.
-//
-//   WITH <cte()>                              -- absent for the anonymous path
-//   page AS (SELECT p.…, <select()> FROM positions p <join()>
-//            WHERE <buildWhere(filters)> [AND <filter()>])
-//   SELECT * FROM page ORDER BY <order()>
-//
-// `overlay(row)` turns one page row back into the per-card match overlay.
+// Fragments, not a query builder: the caller owns the query shape, the scorer
+// owns every score column, predicate and sort key that goes into it. MET-144
+// Part 1 leaves the feed knowing a nullable overlay and nothing else.
 export interface Scorer {
-  // The scoring CTE block for the leading WITH; null when there is no scoring.
+  // Leading WITH block; null when there is no scoring.
   cte(): SQL | null;
-  // JOIN that attaches the score to `positions p`; empty for NullScorer.
+  // JOIN onto `positions p`, in the page/ranked-positions scope.
   join(): SQL;
-  // Extra SELECT columns (leading comma included); empty for NullScorer.
+  // Extra SELECT columns for the page scope; the caller supplies the commas.
   select(): SQL;
-  // Extra WHERE predicate (tier gate / overlap gate); null when none.
+  // Extra predicate for the page scope (alias `rk`); null when none.
   filter(): SQL | null;
-  // ORDER BY expression for `sort=score`.
+  // ORDER BY expression for `sort=score` — the OUTER projection, bare columns.
   order(): SQL;
   // Per-row match overlay, or null when the row has no score.
   overlay(row: ScoreRow): MatchOverlay | null;
 }
 
-// One page row's scoring columns, as returned by `select()`.
-export interface ScoreRow {
+// One page row's scoring columns, as returned by `select()`. A type alias, not
+// an interface, so `& ScoreRow` still satisfies db.execute's Record constraint.
+export type ScoreRow = {
   relevance: number | null;
   coverage: number | null;
   on_stack: boolean | null;
   tier_bucket: number | null;
-}
+};
 
 // The score-derived half of a ranked card. `matchedRequired` / `requiredTotal`
 // are the per-page skill-diff's job, not the scorer's.
@@ -55,34 +48,11 @@ export const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRON
 // Inverse: SQL tier_bucket ordinal → Fit badge (index = bucket).
 export const TIER_BY_BUCKET = ["STRETCH", "GOOD", "STRONG"] as const;
 
-// The anonymous / cold path: no scoring at all.
-export class NullScorer implements Scorer {
-  cte(): SQL | null {
-    return null;
-  }
-  join(): SQL {
-    return sql``;
-  }
-  select(): SQL {
-    return sql``;
-  }
-  filter(): SQL | null {
-    return null;
-  }
-  order(): SQL {
-    return sql``;
-  }
-  overlay(): MatchOverlay | null {
-    return null;
-  }
-}
-
 export interface FitScorerOptions {
   minFitTier?: FitTier;
 }
 
-// Today's live Fit scorer. Wraps `rankedCte` verbatim (the `ov` overlap probe
-// included) — this port is a seam, not a rewrite of the formula.
+// Today's live Fit scorer. Wraps `rankedCte` verbatim, `ov` probe included.
 export class FitScorer implements Scorer {
   constructor(
     private readonly cand: SQL,
@@ -114,6 +84,8 @@ export class FitScorer implements Scorer {
   overlay(row: ScoreRow): MatchOverlay {
     const breakdown = buildScoreBreakdown(row.coverage ?? 0);
     return {
+      // relevance is the one agg column with no COALESCE (score.sql.ts) — NULL
+      // only if node_stats drops every matched row; render it as 0, not a lie.
       relevance: row.relevance ?? 0,
       onStack: row.on_stack ?? true,
       tier: TIER_BY_BUCKET[row.tier_bucket ?? 0],

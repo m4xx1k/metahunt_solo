@@ -162,9 +162,8 @@ export class RankingService {
       sql`, `,
     );
     const candIds = uuidList(nodeIds);
-    // One filter builder for both paths: buildWhere is a strict superset of the
-    // old buildFilters. `includeRoleless: false` is load-bearing — buildWhere
-    // gates ELIGIBLE_POSITION on it, buildFilters applied it unconditionally.
+    // The match path filters through the feed's own builder so the two cannot
+    // drift. `includeRoleless: false` keeps the VERIFIED-role gate on.
     const where =
       buildWhere({
         page: 1,
@@ -187,10 +186,8 @@ export class RankingService {
       }) ?? sql`true`;
     const offset = (page - 1) * pageSize;
 
-    // Scoring lives behind the port: the CTE, the score columns, the tier gate
-    // and the score sort are all its fragments — this method only orchestrates
-    // paging and the off-stack window. `ranked` (from cte()) is still the name
-    // the count and match_scored queries below select from.
+    // The port owns every score fragment; this method only pages and windows.
+    // `cte()` still defines the CTE named `ranked` that the queries below read.
     const scorer = new FitScorer(cand, { minFitTier: filters.minFitTier });
     const scoreCte = scorer.cte();
     const scorerFilter = scorer.filter();
@@ -217,15 +214,9 @@ export class RankingService {
         WHERE ${where}${tierCond}
       )`;
 
-    const ranked = await this.db.execute<{
-      id: string;
-      relevance: number;
-      coverage: number;
-      on_stack: boolean;
-      tier_bucket: number;
-      total: number;
-      off_stack_hidden: number;
-    }>(sql`
+    const ranked = await this.db.execute<
+      { id: string; total: number; off_stack_hidden: number } & ScoreRow
+    >(sql`
       WITH ${scoreCte}, ${rankedPositionsCte},
       -- Both counts come off the same window pass, before the off-stack rows
       -- are filtered away (a window function can't see what WHERE removed).
@@ -417,20 +408,20 @@ export class RankingService {
         }
       }
       const bonus = candidate.filter((c) => !vacancyNodeIds.has(c.id));
-      // The score-derived half of the card (tier, %, relevance, on-stack) is the
-      // port's; the counts and the diff are this method's.
-      const ov = scorer.overlay(row);
+      // The port supplies the score-derived half of the card; the counts and
+      // the skill diff are this method's.
+      const overlay = scorer.overlay(row);
       items.push({
         vacancy,
-        relevance: ov.relevance,
-        onStack: ov.onStack,
+        relevance: overlay.relevance,
+        onStack: overlay.onStack,
         fit: {
-          tier: ov.tier,
-          percent: ov.fitPercent,
+          tier: overlay.tier,
+          percent: overlay.fitPercent,
           matchedRequired,
           requiredTotal,
         },
-        breakdown: ov.breakdown,
+        breakdown: overlay.breakdown,
         diff: {
           have: have.sort(byWeight),
           missing: missing.sort(byWeight),
