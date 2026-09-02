@@ -16,13 +16,14 @@ import type { FiltersApi, OptionRow } from "./types";
 
 type Lens = "cold" | "warm";
 
-// The shared closed-enum filter rail — one widget, both lenses, one FiltersApi.
-// Freshness leads (always applied, defaults to the last month). Both lenses share
-// the same section order (seniority · format · english · employment · domain ·
-// experience · perks); they differ only in data (seniority/format counts vs
-// static) and the warm-only fit gate. Domain renders whenever a catalog is passed
-// (both lenses filter vacancies by domain); the fit gate needs a ranked result.
-// Section labels are English on both.
+// The shared filter rail — one widget, both lenses, one FiltersApi. Freshness
+// leads (always applied, defaults to the last month), then the searchable
+// role / skill catalogs (each renders only when its `*Options` prop is passed:
+// role on both lenses, skill cold-only — the warm candidate IS the skill query),
+// then the closed enums (seniority · format · english · employment · domain ·
+// experience · perks). Lenses differ only in data (seniority/format counts vs
+// static), the cold-only skill axis, and the warm-only fit gate (needs a ranked
+// result). Section labels are English on both.
 export function FilterRail({
   api,
   lens,
@@ -31,6 +32,8 @@ export function FilterRail({
   domainOptions,
   roleOptions,
   roleExtra,
+  skillOptions,
+  skillExtra,
   seniorityToneFor,
 }: {
   api: FiltersApi;
@@ -43,6 +46,10 @@ export function FilterRail({
   roleOptions?: OptionRow[];
   /** Caller-owned note under the role chips (e.g. reduced-estimate hint). */
   roleExtra?: ReactNode;
+  /** Searchable must-have skill catalog (cold only); omitted → not rendered. */
+  skillOptions?: OptionRow[];
+  /** Caller-owned control under the skill chips (e.g. the nice-to-have toggle). */
+  skillExtra?: ReactNode;
   /** Cold seniority pills carry the per-level card tone; warm omits it. */
   seniorityToneFor?: (id: string) => string | undefined;
 }) {
@@ -68,6 +75,17 @@ export function FilterRail({
           searchable
           searchPlaceholder="search role…"
           extra={roleExtra}
+        />
+      ) : null}
+      {skillOptions ? (
+        <MultiSelect
+          title="skills"
+          options={skillOptions}
+          selected={filters.skillIds}
+          onToggle={api.toggleSkill}
+          searchable
+          searchPlaceholder="search skill…"
+          extra={skillExtra}
         />
       ) : null}
       <EnumSection

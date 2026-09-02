@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
 import { FilterRail } from "@/features/vacancy-filters/FilterRail";
-import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import { type TrackAxis, TrackAxisSection } from "@/features/tracks/TrackAxisSection";
 import { SourceSection } from "@/features/vacancy-filters/SourceSection";
 import { TrackTree } from "@/features/tracks/TrackTree";
@@ -26,15 +25,16 @@ import { toFilterAggregates } from "./to-filter-aggregates";
 // it never pushes the list off the first screen; on lg+ it is a sticky
 // always-visible column.
 
-// Two layouts share this component:
-// - Landing (no `tracks`): role + skill MultiSelects (both multi, searchable;
-//   the nice-to-have toggle rides the skill section's `extra` slot), with the
-//   ActiveFiltersBar summary on top.
-// - Track route (`tracks` passed): leads with the browse tree; once a track is
-//   active, both axes render as unified TrackAxisSections (preset chips on by
-//   default, contextual suggestions, search-add) writing ?roles / ?skills.
-//   The feed is driven by those explicit axes, so the bar is dropped here —
-//   each section shows its own state.
+// The role/skill axes render one of two ways:
+// - No active track (landing + the merged home): the shared FilterRail's own
+//   searchable role + skill catalogs (the nice-to-have toggle rides the skill
+//   section's `extra` slot), summarised by the ActiveFiltersBar on top.
+// - Active track (`tracks` passed and `activeTrackSlug` set): both axes render
+//   as unified TrackAxisSections (preset chips on by default, contextual
+//   suggestions, search-add) writing ?roles / ?skills, each showing its own
+//   state; FilterRail's own role/skill catalogs are suppressed. The standalone
+//   track route also leads with the browse tree (dropped when `hideTrackTree` —
+//   the merged route has a top-band instead).
 export function FeedFilters({
   aggregates,
   tracks,
@@ -46,7 +46,6 @@ export function FeedFilters({
   skillCatalog,
   domainCatalog,
   hideTrackTree = false,
-  isFetching = false,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -65,25 +64,20 @@ export function FeedFilters({
   domainCatalog?: TrackAxis[];
   /** Drop the browse tree (the merged route drives tracks from a top-band). */
   hideTrackTree?: boolean;
-  /** The results query's fetching state — dims the rail while a refetch runs. */
-  isFetching?: boolean;
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   // Role/skill options come from the full /feed catalog (search reaches every
   // node), not the aggregates top-N. Counts only order the empty-query view.
   const roleOptions = useMemo<OptionRow[]>(
-    () =>
-      (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
+    () => (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
     [roleCatalog],
   );
   const skillOptions = useMemo<OptionRow[]>(
-    () =>
-      (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
+    () => (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
     [skillCatalog],
   );
   const domainOptions = useMemo<OptionRow[]>(
-    () =>
-      (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
+    () => (domainCatalog ?? []).map((d) => ({ id: d.id, label: d.name, count: d.count ?? 0 })),
     [domainCatalog],
   );
   const api = useUrlFilters();
@@ -102,12 +96,7 @@ export function FeedFilters({
   const handleToggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-3 transition-opacity",
-        isFetching && "pointer-events-none opacity-50",
-      )}
-    >
+    <div className="flex flex-col gap-3">
       <button
         type="button"
         onClick={handleToggleMobile}
@@ -136,67 +125,50 @@ export function FeedFilters({
           />
         )}
         <aside className="flex flex-col border border-border bg-bg-card">
-          {trackMode ? (
+          {trackMode && !hideTrackTree ? (
+            <TrackTree
+              tracks={tracks}
+              activeSlug={activeTrackSlug ?? null}
+              onSelect={handleSelectTrack}
+            />
+          ) : null}
+          {/* An active track drives the feed from its own preset axes → unified
+              TrackAxisSections here. With no active track (landing + the merged
+              home) roles and skills are just the FilterRail's searchable
+              catalogs below — one widget for both lenses. */}
+          {showFacets ? (
             <>
-              {hideTrackTree ? null : (
-                <TrackTree
-                  tracks={tracks}
-                  activeSlug={activeTrackSlug ?? null}
-                  onSelect={handleSelectTrack}
-                />
-              )}
-              {showFacets ? (
-                <>
-                  <TrackAxisSection
-                    title="refine · roles"
-                    urlKey="roles"
-                    addLabel="add role…"
-                    presets={presetRoles ?? []}
-                    catalog={roleCatalog ?? []}
-                  />
-                  <TrackAxisSection
-                    title="skills"
-                    urlKey="skills"
-                    addLabel="add skill…"
-                    presets={presetSkills ?? []}
-                    catalog={skillCatalog ?? []}
-                    suggestions={contextualSkills ?? []}
-                  />
-                  <div className="border-b border-border px-4 py-3 last:border-b-0">
-                    <SkillScopeToggle />
-                  </div>
-                </>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <MultiSelect
-                title="role"
-                options={roleOptions}
-                selected={api.filters.roleIds}
-                onToggle={api.toggleRole}
-                searchable
-                searchPlaceholder="search role…"
+              <TrackAxisSection
+                title="refine · roles"
+                urlKey="roles"
+                addLabel="add role…"
+                presets={presetRoles ?? []}
+                catalog={roleCatalog ?? []}
               />
-              <MultiSelect
+              <TrackAxisSection
                 title="skills"
-                options={skillOptions}
-                selected={api.filters.skillIds}
-                onToggle={api.toggleSkill}
-                searchable
-                searchPlaceholder="search skill…"
-                extra={
-                  api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : null
-                }
+                urlKey="skills"
+                addLabel="add skill…"
+                presets={presetSkills ?? []}
+                catalog={skillCatalog ?? []}
+                suggestions={contextualSkills ?? []}
               />
+              <div className="border-b border-border px-4 py-3 last:border-b-0">
+                <SkillScopeToggle />
+              </div>
             </>
-          )}
+          ) : null}
           <FilterRail
             api={api}
             lens="cold"
             seniorityOptions={agg.seniorities}
             workFormatOptions={agg.workFormats}
             domainOptions={domainOptions}
+            roleOptions={showFacets ? undefined : roleOptions}
+            skillOptions={showFacets ? undefined : skillOptions}
+            skillExtra={
+              !showFacets && api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : undefined
+            }
             seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
           />
           <SourceSection

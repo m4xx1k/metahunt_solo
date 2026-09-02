@@ -7,6 +7,7 @@ import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { countActiveFilters, DEFAULT_FRESHNESS } from "./types";
 import type { FiltersApi } from "./types";
 import { LIST_SEP, readFilterState, readList } from "./url-params";
+import { useStableFilters } from "./use-stable-filters";
 
 // URL-backed FiltersApi — the one filter store. State lives in the query string
 // so a server component can seed it and the client refetches on change; a local
@@ -19,10 +20,13 @@ export function useUrlFilters(): FiltersApi {
   const searchParams = useSearchParams();
   const push = useShallowSearchParams();
 
-  const filters = useMemo(() => readFilterState(searchParams), [searchParams]);
+  const parsed = useMemo(() => readFilterState(searchParams), [searchParams]);
+  const filters = useStableFilters(parsed);
 
   // Any filter change clears ?offset: a new filter context makes the current
-  // page number meaningless.
+  // page number meaningless. `push` is a bare pushState — Next 16 patches that
+  // and runs its own router update in a transition, so there's nothing here to
+  // wrap.
   const commit = useCallback(
     (mutate: (next: URLSearchParams) => void) =>
       push((next) => {

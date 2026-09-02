@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, memo } from "react";
 
 import Link from "next/link";
 import { ClipboardList, ShieldCheck } from "lucide-react";
@@ -27,7 +27,9 @@ type Props = {
   feedbackSlot?: React.ReactNode;
 };
 
-export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
+// Memoized: a filter toggle re-renders the list shell, but the page's rows keep
+// their identity from the query cache, so every card would reconcile for nothing.
+export const VacancyCard = memo(function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
   const role = v.role?.name ?? "untitled role";
   const company = v.company?.name ?? null;
   const domain = v.domain?.name ?? null;
@@ -172,4 +174,4 @@ export function VacancyCard({ vacancy: v, match, feedbackSlot }: Props) {
       </div>
     </article>
   );
-}
+});
