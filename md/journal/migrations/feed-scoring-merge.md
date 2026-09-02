@@ -728,8 +728,10 @@ byte-identical. What's left: the unified endpoint + the cheap path, below.
 
 ## Follow-up PR — the unified endpoint + the cheap path
 
-Not in the `ov` PR. This is where the feed and match paths actually become one, and
-where the cheap path earns its keep.
+**Full implementation spec: [`unified-feed-score.md`](unified-feed-score.md).** That file
+owns the design (overlap as a lens flag, the two paths, the scorer's two entry points,
+single-vacancy + Telegram scoring, the order of work, the open decisions). What follows
+here is the summary as it stood when the `ov` PR closed.
 
 ### Why it's a separate PR
 
