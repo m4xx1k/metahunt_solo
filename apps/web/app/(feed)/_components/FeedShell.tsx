@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import { cn, STICKY_RAIL } from "@/lib/utils";
 import { useResults } from "@/features/vacancy-filters/use-results";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
@@ -14,6 +15,8 @@ import { buildFeedListQuery, PAGE_SIZE, toSubscriptionParams } from "./feed-quer
 import { FeedFilters } from "./market/FeedFilters";
 import { SubscribeButton } from "./subscribe/SubscribeButton";
 import { VacancyList } from "./vacancy-list/VacancyList";
+
+const FILTER_SETTLE_MS = 200;
 
 // The interactive feed grid: server-seeded, client-driven. Reads the URL, reads
 // the list from the react-query cache the server dehydrated for this URL, and
@@ -51,14 +54,8 @@ export function FeedShell({
   const searchParams = useSearchParams();
   const push = useShallowSearchParams();
 
-  const presetRoleIds = useMemo(
-    () => (presetRoles ?? []).map((r) => r.id),
-    [presetRoles],
-  );
-  const presetSkillIds = useMemo(
-    () => (presetSkills ?? []).map((s) => s.id),
-    [presetSkills],
-  );
+  const presetRoleIds = useMemo(() => (presetRoles ?? []).map((r) => r.id), [presetRoles]);
+  const presetSkillIds = useMemo(() => (presetSkills ?? []).map((s) => s.id), [presetSkills]);
 
   const { query, offset } = useMemo(
     () =>
@@ -71,15 +68,26 @@ export function FeedShell({
     [searchParams, activeTrackSlug, presetRoleIds, presetSkillIds, aggregates.sources],
   );
 
+  // Ticking three skills in a row is one intent, not three: settle the filters
+  // before fetching so rapid toggles cost one request. Pagination is a single
+  // deliberate click, so splice the live page back in — that also keeps the
+  // pager, the header count and the rows on the same page during the window.
+  const settledFilters = useDebouncedValue(query, FILTER_SETTLE_MS);
+  const settledQuery = useMemo(
+    () => (settledFilters && query ? { ...settledFilters, page: query.page } : settledFilters),
+    [settledFilters, query],
+  );
+  const settling = query != null && settledFilters !== query;
+
   // A track with no effective axes matches nothing — render empty, don't query.
   const { data, isFetching } = useResults({
     lens: "cold",
-    query: query ?? { page: 1, pageSize: PAGE_SIZE },
-    enabled: query != null,
+    query: settledQuery ?? { page: 1, pageSize: PAGE_SIZE },
+    enabled: settledQuery != null,
   });
 
   const result: ListVacanciesResponse =
-    query == null
+    settledQuery == null
       ? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0 }
       : (data ?? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0 });
 
@@ -118,14 +126,13 @@ export function FeedShell({
           skillCatalog={skillCatalog}
           domainCatalog={domainCatalog}
           hideTrackTree={hideTrackTree}
-          isFetching={isFetching}
         />
       </div>
       <VacancyList
         result={result}
         offset={offset}
         onNavigate={goToOffset}
-        isFetching={isFetching}
+        isFetching={isFetching || settling}
       />
       {threeCol ? <div className={STICKY_RAIL}>{rightRail}</div> : null}
     </div>

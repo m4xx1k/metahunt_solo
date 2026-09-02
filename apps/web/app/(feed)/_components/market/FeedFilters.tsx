@@ -46,7 +46,6 @@ export function FeedFilters({
   skillCatalog,
   domainCatalog,
   hideTrackTree = false,
-  isFetching = false,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -65,8 +64,6 @@ export function FeedFilters({
   domainCatalog?: TrackAxis[];
   /** Drop the browse tree (the merged route drives tracks from a top-band). */
   hideTrackTree?: boolean;
-  /** The results query's fetching state — dims the rail while a refetch runs. */
-  isFetching?: boolean;
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   // Role/skill options come from the full /feed catalog (search reaches every
@@ -99,12 +96,7 @@ export function FeedFilters({
   const handleToggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-3 transition-opacity",
-        isFetching && "pointer-events-none opacity-50",
-      )}
-    >
+    <div className="flex flex-col gap-3">
       <button
         type="button"
         onClick={handleToggleMobile}
