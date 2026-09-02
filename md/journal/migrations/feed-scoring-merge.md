@@ -609,6 +609,79 @@ Commit: `perf(feed): one round trip fewer per page`.
 
 Commit: `docs(met-144): record the merge outcome`.
 
+### Stage 6 result — 2026-09-02
+
+**What shipped on `feat/MET-144-feed-scoring-merge`** (local branch, not pushed):
+
+| commit | stage |
+|---|---|
+| `cb3da11` | Stage 0 — tracker + baseline |
+| `2ab9e32` | Stage 1 — re-measure, Gate 1 verdict |
+| `5d105c8` | Stage 2 — Scorer port (`score/scorer.port.ts`) |
+| `7d9a76b` | Stage 3 — one `buildWhere` for both paths |
+| `16f7ac6` | Stage 6 — review fixes (see below) |
+| _this_ | Stage 6 — close-out record |
+
+**What did NOT ship:** Stage 4 (`ov` deletion + unified query shape) — Gate 1
+measured the `ov`-removed query at a 150.7–151.3 ms median, above the 150 ms line.
+Stage 5 (round-trip reductions) went with it — those cuts only remove duplication
+the Stage 4 merge introduces.
+
+**Re-measurement (Stage 1 queries, on the post-refactor code — `ov` still in place):**
+
+| query | Stage 1 median | Stage 6 median |
+|---|---|---|
+| (A) feed page, no scoring | 12.1 ms | **12.6 ms** |
+| (C) live scoring shape, `ov` kept | 167.7 / 172.4 ms | **166.8 ms** |
+
+Endpoint wall-time for the sample candidate: ~160–175 ms, flat. The port + the
+`buildWhere` swap add **no measurable cost** — the generated SQL is semantically
+identical.
+
+**Verification:** `pnpm lint` · `test:etl` (542) · `test:etl:int` (122) · `build` ·
+`build:all` (web included) — all green. Golden `/cv/samples/:id/matches` output
+byte-identical before/after across 11 query/filter combinations. `pnpm seo:audit`
+skipped (no web change). `pnpm analytics:catalog` not required (`emitMatchScored`
+unchanged).
+
+**`code-reviewer` pass (step 4)** — verdict COMMENT, 0 critical / 0 high, 4 medium /
+5 low. Fixed in `16f7ac6`:
+
+- **`NullScorer` deleted.** It was unused *and* broken — the caller owns the SELECT
+  commas and never null-checks `cte()`, so splicing `NullScorer` would emit invalid
+  SQL. The `Scorer` interface alone documents the anonymous-path seam.
+- `select()` doc corrected (caller supplies commas); each fragment method now names
+  its SQL scope (`rk.` inside the CTE vs bare columns in the outer `ORDER BY`).
+- Duplicated row shape collapsed onto one `ScoreRow` (made a `type` alias so
+  `& ScoreRow` still satisfies `db.execute`'s `Record` constraint).
+- `buildItems` local `ov` → `overlay` (`ov` is the SQL overlap probe).
+- Comments trimmed to `STYLE.md` budget (the port file banner, the `buildFilters`
+  history note).
+
+Findings **not** actioned, with reason:
+
+- **`domainIds` / `roleNodeIds` now compare as `uuid`, not `text`** (`buildWhere` uses
+  `uuidList`). Two deltas neither golden combo can see: an uppercase-UUID `?roles=`
+  link that silently matched nothing now matches; a malformed id raises `22P02`
+  instead of returning empty. Both are gated by `NodeSlugResolver.toIds`, which only
+  emits DB ids or `isUuid`-validated pass-throughs — unreachable as a bug, and delta 1
+  is a latent fix. Left as-is; noted here.
+- **`relevance: null → 0`** in `overlay()`. `relevance` is the one `agg` column with no
+  `COALESCE`; if `node_stats` drops every matched row it is `NULL`. Old code put
+  `null` on the wire (already a lie against `RankedVacancy.relevance: number`); new
+  code puts `0`. Improvement, not a regression. A `COALESCE(...,0)` in `score.sql.ts`
+  is the real fix — deferred (it is a `score/` edit).
+- **`emitMatchScored` still hand-rolls `FROM ranked rk JOIN positions p`** rather than
+  `scorer.join()`. Cosmetic; flagged so Stage 4 doesn't miss it.
+- **`FeedFilterParams = Omit<FeedSearchParams, "page"|"pageSize"|"sort">`** to drop the
+  dummy `page:1,pageSize:1` — nice, but touches `listForSitemap`'s literal call site.
+  Deferred; low value.
+
+**Net for the owner:** the two standalone wins of Part 1 — scoring behind a port,
+one filter builder — are on the branch, green, behaviour-identical, reviewed. The
+`ov` deletion and the single-query merge wait for a decision: ship the merge without
+the `ov` win, or leave it. Nothing is pushed.
+
 ---
 
 ## If Linear is connected
@@ -616,3 +689,7 @@ Commit: `docs(met-144): record the merge outcome`.
 Close **MET-120** (PR #157 merged 2026-08-02, the issue still reads "In Progress" and is
 MET-144's only recorded blocker), then move MET-144 to In Progress. If the Linear MCP
 server is not authenticated, skip it and note it here — it is not worth a detour.
+
+**Done 2026-09-02:** MET-120 → **Done** (`completedAt` set). MET-144 → **In Progress**,
+with a comment recording what shipped (port + one `buildWhere`), what Gate 1 stopped
+(`ov` deletion + the single-query merge), and the decision left to the owner.
