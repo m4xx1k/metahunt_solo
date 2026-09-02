@@ -1,6 +1,6 @@
 # Unified feed ⊕ score — implementation
 
-**Status:** design, not started. Follows PR #205 (MET-144 Part 1: `ov` deleted, one
+**Status:** design, decisions locked 2026-09-02 (§8). Follows PR #205 (MET-144 Part 1: `ov` deleted, one
 `buildWhere`). **Tickets:** MET-144 (the merge) · MET-104 (Part 2, the ranker model).
 **Date:** 2026-09-02
 
@@ -52,10 +52,12 @@ is nearly free. That is the whole optimisation.
 ```
 
 **Cheap path fires when all of:** `sort=date` · no `minFitTier` · `requireOverlap=false`
-· no off-stack hiding. In practice: the cold feed, with or without a CV.
+· no off-stack hiding. In practice: the cold feed, with or without a CV — and per §8.1
+that is the **default page load** for everyone, so this is the common case, not the
+exception.
 
 **Full path fires otherwise:** `sort=score`, or any score-derived filter. In practice:
-the warm "rank the radar for me" action, and both legacy match endpoints.
+the warm "rank the radar for me" toggle, and the legacy match endpoints until they go.
 
 ### 2.1 Cheap path — two small queries
 
@@ -162,9 +164,12 @@ the composition root. `FeedService` never takes a `candidateId` — it takes an 
 scorer or `null`. Candidate identity comes from the authenticated user, **never** a query
 param, so this adds no new public surface.
 
-**Legacy endpoints stay.** `POST /ranking/match` and `GET /cv/:id/matches` become thin
-wrappers over the same path with `requireOverlap: true`. Deleting them is a later branch,
-after the web app has moved.
+**Legacy endpoints are wrappers, then they go** (§8.3). `POST /ranking/match` and
+`GET /cv/:id/matches` first become thin wrappers with `requireOverlap: true` — that is
+what keeps the 50-capture golden diff meaningful while the unified path is built. Once
+`apps/web` no longer calls them (§7 step 7) they are deleted along with
+`MatchResponse`, `RankingController.match` and the `/cv/:id/matches` handler.
+`/cv/samples/:id/matches` is replaced by `GET /feed?sample=<id>` — see §8.
 
 **Stage 5 round trips**, folded in here because the merge is what creates them: feed's
 separate `count` → `count(*) OVER ()`; delete `hydratePositionsByIds`; drop `buildItems`'
@@ -181,10 +186,18 @@ Small, because the contract change is additive.
 - The vacancy card renders the Fit badge when `match` is non-null, nothing when null. One
   component, one conditional — the same card already exists on the `/match` page.
 - `/radar` (feed) gains a sort toggle: **freshest** (`sort=date`, cheap) ⇄ **best fit**
-  (`sort=score`, full). Default is a product call — see §8.
+  (`sort=score`, full). **Freshest is the default** (§8.1), including for a signed-in CV
+  user — so the default page load takes the cheap path.
 - The vacancy detail page shows the badge + the skill-diff panel when `match` is present.
-- `/match` keeps working unchanged throughout; migrating it onto `/radar?sort=score` and
-  deleting it is a follow-up.
+- **The warm lens folds into `/radar`.** `use-results.ts` already carries a
+  `ColdOpts | WarmOpts` union over `ListVacanciesResponse | MatchResponse`; the migration
+  collapses it to one branch and one type. `features/vacancy-filters/warm-query.ts`
+  (`fetchMatch`), `lib/api/ranking.ts`'s `match()`, and `lib/api/cv.ts`'s `matches()` /
+  `sampleMatches()` are deleted with it.
+- `CandidateProfile.tsx` reads `matched` / `unmatched` from `GET /cv/:id`
+  (`CandidateView`) instead of `MatchResponse.resolved` — the data is already there.
+- The off-stack control (`defaultIncludeOffStack`) stays, but only on the best-fit lens;
+  the freshest lens has no off-stack hiding at all (§8.2).
 
 ---
 
@@ -197,29 +210,57 @@ Each step ships green and is independently revertible.
    riskiest correctness claim in the whole plan — prove it first.*
 2. **Single vacancy page** gets `match`. Smallest real consumer, exercises `overlayFor`
    end to end, no feed changes.
-3. **`resolveFeedQuery` + cheap path** on `GET /feed`. Golden: a new capture set for
-   `/feed` with and without a CV; `total` parity against today's feed across filter combos.
-4. **Full path through the same root**; `requireOverlap` becomes a flag; legacy wrappers
-   pass `true`. Golden `/cv/samples/:id/matches` must stay byte-identical — same 50-capture
-   harness as PR #205.
+3. **`resolveFeedQuery` + cheap path** on `GET /feed`, incl. `?sample=<id>` (§8). Golden:
+   a new capture set for `/feed` with and without a CV; `total` parity against today's
+   feed across filter combos; `EXPLAIN ANALYZE` back near the cold ~12 ms.
+4. **Full path through the same root**; `requireOverlap` becomes a flag; the legacy
+   endpoints become wrappers passing `true`. Golden `/cv/samples/:id/matches` must stay
+   byte-identical — same 50-capture harness as PR #205.
 5. **Stage 5 round trips.** State the per-page count in the commit body.
-6. **Frontend**: badge on feed cards + sort toggle.
-7. **Telegram** card renderer reads `match`.
+6. **Frontend — the feed side**: `match` on cards, badge, sort toggle defaulting to
+   freshest, vacancy-detail badge + diff panel.
+7. **Frontend — retire the warm lens**: collapse `use-results.ts` onto one type, point
+   `/match` at `/radar?sort=score`, move `CandidateProfile` onto `GET /cv/:id`, delete
+   `warm-query.ts` / `ranking.ts:match()` / `cv.ts:matches(),sampleMatches()`.
+   **Before deleting anything server-side, prove equivalence**: for each of the 50 golden
+   captures, `/radar?sort=score&…` must return the same item ids in the same order as
+   `/cv/samples/:id/matches` did. That check *replaces* the byte-diff harness, which
+   retires with the endpoints.
+8. **Backend — delete the legacy endpoints**: `RankingController.match`,
+   `/cv/:id/matches`, `/cv/samples/:id/matches`, `MatchResponse`, and whatever in
+   `RankingService` no longer has a caller.
+9. **Telegram** card renderer reads `match` off the DTO.
 
-**Gate, every step:** `pnpm lint · test:etl · test:etl:int · build · build:all` +
-the golden diffs named above + an `EXPLAIN ANALYZE` showing the cheap path back near the
-cold ~12 ms.
+**Gate, every step:** `pnpm lint · test:etl · test:etl:int · build · build:all` + the
+golden diff / equivalence check named for that step. Steps 1–6 are additive and each is
+independently revertible; **7 and 8 are the one-way door** — do not start 8 until 7 is
+merged and the web has been exercised against it.
 
 ---
 
-## 8. Open decisions (owner)
+## 8. Decisions — locked 2026-09-02 (owner)
 
-1. **What does a logged-in user with a CV see by default on `/radar` — freshest or best
-   fit?** This is the single biggest perf lever in the plan. `date` → the cheap path is
-   the default and the feed stays ~15 ms. `score` → every feed load is ~150 ms and the
-   cheap path only fires when a user opts into freshness.
-2. **Does the cold feed hide off-stack vacancies?** Recommendation: no. Off-stack hiding
-   forces the full path (the hidden-count needs the whole set scored), so keeping it on
-   the cold feed would defeat the cheap path. Keep it as a warm-lens affordance only.
-3. **Migrate and delete `/match`, or keep it forever as a wrapper?** Keeping it costs one
-   thin adapter; deleting it touches `apps/web`.
+1. **Default lens for a logged-in CV user on `/radar` is `sort=date` — freshest.**
+   So the cheap path is the *default* page load and the feed stays ~15 ms. "Best fit"
+   (`sort=score`, full path, ~150 ms) is an explicit toggle the user opts into.
+2. **The cold feed does not hide off-stack vacancies.** `on_stack` filtering and the
+   `off_stack_hidden` count come off the cold path entirely — that is precisely what
+   keeps it cheap (the hidden-count needs the whole set scored). Off-stack stays a
+   **warm-lens** affordance, unchanged from today: hidden by default, count reported,
+   `includeOffStack` unhides.
+3. **`/ranking/match` and `/cv/:id/matches` get deleted**, not kept as wrappers. Order
+   matters — see §7 steps 6–8: build the unified path, migrate `apps/web` onto it,
+   *then* delete. Nothing is lost: `MatchResponse.resolved` is already duplicated on
+   `GET /cv/:id` (`CandidateView.matched` / `.unmatched`), and `use-results.ts` already
+   carries a `ColdOpts | WarmOpts` union that collapses to one branch.
+
+### The one wrinkle: public sample CVs
+
+`GET /cv/samples/:id/matches` is `@Public()` and backs the sample-CV demo. The unified
+feed resolves the candidate from the JWT and **never** from a query param — that rule
+exists so nobody can rank someone else's CV by guessing an id.
+
+Sample CVs are public fixtures, not user data, so the rule can bend for them and only
+them: `GET /feed?sample=<sampleId>` resolves a scorer **only** if the id is in the
+sample-candidate allowlist, and 404s otherwise. That keeps one endpoint instead of two
+and leaks nothing. Do not generalise it to real candidate ids.
