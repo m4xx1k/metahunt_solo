@@ -3,6 +3,10 @@
 // Hand-mirrored per ADR-0005 (no shared libs/contracts/ until 2nd consumer).
 
 import { apiGet, buildQs } from "./client";
+// FitTier/MatchSort live in ranking.ts, which already imports VacancyDto from
+// here — a type-only import back is fine (erased at compile time, no runtime
+// cycle) and avoids a second copy of the tier union.
+import type { FitTier, MatchSort } from "./ranking";
 
 // ───────────────────────────── Enums ─────────────────────────────
 
@@ -88,6 +92,18 @@ export interface VacancySalary {
   currency: Currency | null;
 }
 
+// The viewer's personalized Fit overlay — null for an anonymous visitor, one
+// with no CV, or nothing scored for this vacancy. See unified-feed-score.md:
+// "A Fit score is optional data attached to a vacancy card, not a different
+// endpoint."
+export interface MatchOverlay {
+  relevance: number;
+  coverage: number;
+  tier: FitTier;
+  percent: number;
+  onStack: boolean;
+}
+
 // ─────────────────────────── Vacancy DTO ─────────────────────────
 
 export interface VacancyDto {
@@ -129,6 +145,21 @@ export interface VacancyDto {
   duplicateCount: number | null;
   /** Distinct sources in that group; non-null on the same rows as `duplicateCount`. */
   duplicateSourceCount: number | null;
+
+  match: MatchOverlay | null;
+}
+
+// The ✅/❌/➕ skill diff on the vacancy detail page — computed server-side
+// from the vacancy's own skills + the viewer's, no weight (nothing here
+// ranks skills against each other, unlike the warm-lens `RankedVacancy.diff`).
+export interface VacancySkillDiff {
+  have: NodeRef[];
+  missing: NodeRef[];
+  bonus: NodeRef[];
+}
+
+export interface VacancyDetailDto extends VacancyDto {
+  diff: VacancySkillDiff | null;
 }
 
 // ─────────────────────── Dedup group (drawer) ──────────────────────
@@ -231,6 +262,19 @@ export interface ListVacanciesQuery {
   includeRoleless?: boolean;
   /** When false (default), only VERIFIED skills appear in `skills`. */
   includeAllSkills?: boolean;
+
+  /**
+   * Page order: freshest (default, the CHEAP PATH) or best-Fit-first (the
+   * FULL PATH — needs a signed-in CV or `sample`; without one it silently
+   * stays freshest, same result set).
+   */
+  sort?: MatchSort;
+  /** Hide vacancies below this coverage tier. Forces the FULL PATH, same as sort=score. */
+  minFitTier?: FitTier;
+  /** FULL PATH only — off-stack hiding is a warm-lens affordance the cheap path never had. */
+  includeOffStack?: boolean;
+  /** A seeded sample candidate id — scores the page against it like a signed-in viewer's CV. */
+  sample?: string;
 }
 
 export interface ListVacanciesResponse {
@@ -238,6 +282,8 @@ export interface ListVacanciesResponse {
   page: number;
   pageSize: number;
   total: number;
+  /** FULL PATH + off-stack hidden (the default) only: 0 on the cheap path. */
+  offStackHidden: number;
 }
 
 // ─────────────────────────── Fetcher ────────────────────────────
@@ -248,5 +294,5 @@ export const vacanciesApi = {
   group: (uniqueVacancyId: string) => apiGet<FeedDuplicateGroup>(`/feed/group/${uniqueVacancyId}`),
   /** Full detail for one vacancy, including `description` (the public detail page). */
   byId: (vacancyId: string, init?: RequestInit) =>
-    apiGet<VacancyDto>(`/feed/vacancy/${vacancyId}`, init),
+    apiGet<VacancyDetailDto>(`/feed/vacancy/${vacancyId}`, init),
 };

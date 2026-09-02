@@ -6,30 +6,57 @@ import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import type { VacancyDto } from "@/lib/api/vacancies";
 
-// Cold card: the same Fit slot the warm card has, but locked. A cold visitor is
-// the majority of the traffic and today sees no score at all — showing the slot
-// (rather than hiding it) is what makes the missing number ask for the CV.
-export function LabColdCard({ vacancy }: { vacancy: VacancyDto }) {
+import { FitBadge } from "./FitBadge";
+
+// Cold card: the same Fit slot the warm card has. `vacancy.match` is real now
+// (MET-144 — the unified feed scores the cheap path too), so three states:
+//   - no CV/sample selected at all → locked, asks for one (unchanged);
+//   - one selected and this Position scored → the real badge;
+//   - one selected but nothing scored (no tagged skills) → no slot at all,
+//     same as a warm card would show nothing to claim.
+export function LabColdCard({
+  vacancy,
+  hasViewer,
+}: {
+  vacancy: VacancyDto;
+  /** A CV or sample is selected — even if this particular card scored null. */
+  hasViewer: boolean;
+}) {
   const analytics = useAnalytics();
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-wrap items-center gap-3 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
-        <span
-          aria-hidden
-          className="inline-flex items-baseline gap-1.5 border border-dashed border-border-strong px-2 py-[2px] text-text-muted"
-        >
-          <span className="text-sm font-bold leading-none">— %</span>
-          <span className="text-2xs font-bold uppercase tracking-wider">fit · locked</span>
-        </span>
-        <Link
-          href="/match"
-          onClick={() => analytics.feedScoreLocked(vacancy.id)}
-          className="uppercase tracking-wider text-accent underline underline-offset-2 hover:text-text-primary"
-        >
-          add your CV to see the fit
-        </Link>
-      </div>
+      {!hasViewer ? (
+        <div className="flex flex-wrap items-center gap-3 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
+          <span
+            aria-hidden
+            className="inline-flex items-baseline gap-1.5 border border-dashed border-border-strong px-2 py-[2px] text-text-muted"
+          >
+            <span className="text-sm font-bold leading-none">— %</span>
+            <span className="text-2xs font-bold uppercase tracking-wider">fit · locked</span>
+          </span>
+          <Link
+            href="/match"
+            onClick={() => analytics.feedScoreLocked(vacancy.id)}
+            className="uppercase tracking-wider text-accent underline underline-offset-2 hover:text-text-primary"
+          >
+            add your CV to see the fit
+          </Link>
+        </div>
+      ) : vacancy.match ? (
+        <div className="flex flex-wrap items-center gap-3 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
+          <FitBadge
+            tier={vacancy.match.tier}
+            percent={vacancy.match.percent}
+            tooltip={<span className="font-bold">Fit {vacancy.match.percent}%</span>}
+          />
+          {!vacancy.match.onStack ? (
+            <span className="border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
+              off-stack
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       <VacancyCard vacancy={vacancy} />
     </div>

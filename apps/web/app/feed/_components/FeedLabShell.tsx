@@ -141,7 +141,16 @@ export function FeedLabShell({
                   />
                 ))
               : cold.data?.items.map((vacancy) => (
-                  <LabColdCard key={vacancy.id} vacancy={vacancy} />
+                  // hasViewer=false: this lens only renders when cv == null
+                  // (see `lens` above), so there is never a CV/sample context
+                  // here yet — LabColdCard always shows the locked CTA,
+                  // unchanged from before this prop existed. Routing a
+                  // selected *sample* onto this cold/unified path (real Fit,
+                  // no lock) is the remaining, deliberately deferred part of
+                  // step 6 — see the journal: it needs LabColdCard/this shell
+                  // to reach diff-count parity with LabWarmCard first, or
+                  // picking "try <sample>" regresses the sample experience.
+                  <LabColdCard key={vacancy.id} vacancy={vacancy} hasViewer={false} />
                 ))}
           </div>
 

@@ -86,10 +86,15 @@ export function FeedShell({
     enabled: settledQuery != null,
   });
 
+  const EMPTY_RESULT: ListVacanciesResponse = {
+    items: [],
+    page: 1,
+    pageSize: PAGE_SIZE,
+    total: 0,
+    offStackHidden: 0,
+  };
   const result: ListVacanciesResponse =
-    settledQuery == null
-      ? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0 }
-      : (data ?? { items: [], page: 1, pageSize: PAGE_SIZE, total: 0 });
+    settledQuery == null ? EMPTY_RESULT : (data ?? EMPTY_RESULT);
 
   const subscriptionParams = query ? toSubscriptionParams(query) : null;
 

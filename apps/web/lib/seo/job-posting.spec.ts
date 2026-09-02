@@ -34,6 +34,7 @@ function vacancy(over: Partial<VacancyDto> = {}): VacancyDto {
     uniqueVacancyId: null,
     duplicateCount: null,
     duplicateSourceCount: null,
+    match: null,
     ...over,
   };
 }

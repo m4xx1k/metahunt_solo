@@ -1,7 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
-import type { FitTier, RankedVacancy, ScoreSignal } from "@/lib/api/ranking";
+import type { FitTier } from "@/lib/api/ranking";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
 // Tier is derived from the number, so it only colours it — the percentage is
@@ -12,51 +14,42 @@ const TIER: Record<FitTier, { text: string; border: string; label: string }> = {
   STRETCH: { text: "text-text-muted", border: "border-text-muted", label: "stretch" },
 };
 
-const SIGNAL_LABEL: Record<ScoreSignal["kind"], string> = {
-  "skill-overlap": "skill overlap",
-};
-
-// The warm Fit slot: the number, its tier colour, and a tooltip that itemises
-// the breakdown. Rendering from `signals` means the next scoring signal shows up
-// here on its own.
-export function FitBadge({ item }: { item: RankedVacancy }) {
-  const tier = TIER[item.fit.tier];
+// The Fit slot: the number, its tier colour, and a caller-supplied tooltip —
+// the warm lens (full breakdown + diff counts) and the cold lens (MatchOverlay,
+// no per-skill breakdown) each know what they can actually itemise, so neither
+// is forced into the other's shape.
+export function FitBadge({
+  tier,
+  percent,
+  detail,
+  tooltip,
+}: {
+  tier: FitTier;
+  percent: number;
+  /** Appended to the built-in aria-label, e.g. "2 of 3 required skills covered". */
+  detail?: string;
+  tooltip: ReactNode;
+}) {
+  const t = TIER[tier];
+  const ariaLabel = `${percent}% fit — ${t.label}${detail ? `, ${detail}` : ""}`;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span
           tabIndex={0}
-          aria-label={`${item.fit.percent}% fit — ${tier.label}, ${item.fit.matchedRequired} of ${item.fit.requiredTotal} required skills covered`}
+          aria-label={ariaLabel}
           className={cn(
             "inline-flex cursor-help items-baseline gap-1.5 border px-2 py-[2px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-            tier.border,
+            t.border,
           )}
         >
-          <span className={cn("font-mono text-sm font-bold leading-none", tier.text)}>
-            {item.fit.percent}%
-          </span>
-          <span
-            aria-hidden
-            className={cn("text-2xs font-bold uppercase tracking-wider", tier.text)}
-          >
-            fit · {tier.label}
+          <span className={cn("font-mono text-sm font-bold leading-none", t.text)}>{percent}%</span>
+          <span aria-hidden className={cn("text-2xs font-bold uppercase tracking-wider", t.text)}>
+            fit · {t.label}
           </span>
         </span>
       </TooltipTrigger>
-      <TooltipContent>
-        <span className="flex flex-col gap-1">
-          <span className="font-bold">Fit {item.fit.percent}%</span>
-          {item.breakdown.signals.map((signal) => (
-            <span key={signal.kind}>
-              {SIGNAL_LABEL[signal.kind]} {Math.round(signal.raw * 100)}% × weight {signal.weight}
-            </span>
-          ))}
-          <span className="text-text-muted">
-            {item.fit.matchedRequired} of {item.fit.requiredTotal} required skills, weighted by how
-            rare each one is.
-          </span>
-        </span>
-      </TooltipContent>
+      <TooltipContent>{tooltip}</TooltipContent>
     </Tooltip>
   );
 }
