@@ -379,9 +379,10 @@ corpus, this diff stashed in between) — 50/50 identical.
 
 Gate: lint · test:etl · test:etl:int · build · build:all — all green.
 
-**Step 6 — IN PROGRESS, interrupted mid-work. Read this whole section before touching
-anything.** "Frontend — the feed side: `match` on cards, badge, sort toggle defaulting
-to freshest, vacancy-detail badge + diff panel."
+**Step 6 — IN PROGRESS, handed off between sessions. Working tree is clean and every
+commit below is green — this is a checkpoint, not a break. Read this whole section
+before touching anything.** "Frontend — the feed side: `match` on cards, badge, sort
+toggle defaulting to freshest, vacancy-detail badge + diff panel."
 
 **Backend half — done, `6789814`, pushed.** §4 promised a skill diff on
 `GET /feed/vacancy/:id` that step 2 never actually built (it only attached `match`).
@@ -393,84 +394,78 @@ VacancyDto` with `diff`; `feed.controller.ts`'s `vacancy()` builds it from the
 vacancy's own already-fetched `skills.required`/`.optional` — no extra query for the
 vacancy side. Full gate green, pushed to origin.
 
-**Frontend half — UNCOMMITTED, working tree is currently BROKEN. Do not run
-`pnpm build:web` and be surprised.** `git status` on this branch right now shows:
-```
-M apps/web/app/(feed)/_components/FeedShell.tsx
-M apps/web/app/feed/_components/FitBadge.tsx
-M apps/web/app/feed/_components/LabColdCard.tsx
-M apps/web/app/feed/_components/LabWarmCard.tsx
-M apps/web/lib/api/vacancies.ts
-M apps/web/lib/seo/job-posting.spec.ts
-```
-What each one is:
-- `lib/api/vacancies.ts` — hand-mirrored (ADR-0005) `MatchOverlay`, `VacancySkillDiff`,
-  `VacancyDetailDto`; `ListVacanciesQuery` gained `sort`/`minFitTier`/`includeOffStack`/
-  `sample`; `ListVacanciesResponse` gained `offStackHidden`; `byId` now returns
-  `VacancyDetailDto`. **Done, typechecks clean on its own.**
-- `FeedShell.tsx`, `job-posting.spec.ts` — trivial fallout fixes for the new required
-  fields (`offStackHidden`, `match: null`). **Done.**
-- `FitBadge.tsx` — refactored from `{ item: RankedVacancy }` (warm-only shape) to a
-  generic `{ tier, percent, detail?, tooltip }` API, since the new `MatchOverlay` has
-  no per-skill breakdown to itemise. **Done**, and `LabWarmCard.tsx` updated to call it
-  with the old rich tooltip (moved `SIGNAL_LABEL` in locally). **Done.**
-- `LabColdCard.tsx` — rewritten to take a new required `hasViewer: boolean` prop:
-  locked CTA when `!hasViewer` (unchanged behavior), the real `FitBadge` when
-  `vacancy.match` is non-null, nothing when `hasViewer` but nothing scored (no tagged
-  skills). **Done in isolation, but its only caller wasn't updated yet** — this is
-  the actual break:
-  ```
-  app/feed/_components/FeedLabShell.tsx(144,20): error TS2741:
-    Property 'hasViewer' is missing in type '{ key: string; vacancy: VacancyDto; }'
-  ```
+**Frontend half — `2fca478`, pushed. Compiles, but is a partial, honestly-scoped
+slice, not the finished step.** `apps/web` tsc clean, `pnpm exec jest` 180/180,
+eslint clean, `pnpm build:web` green — all reverified after this commit.
 
-**What's NOT done, in order:**
-1. **`app/feed/_components/lab-query.ts`** — `toLabColdQuery` needs `sort`,
-   `minFitTier`, `includeOffStack` (straight off `FilterState`, which already carries
-   all three — `LabControls.tsx`/`FiltersApi` already read/write them, they just never
-   reached the cold query) and a new `sample?: string` param.
-2. **`app/feed/_components/FeedLabShell.tsx`** — the actual wiring, and the one open
-   design decision:
-   - `?cv=<id>` on this route can be EITHER a seeded sample OR an arbitrary real
-     candidate id (`CvSelect`/upload) — `isSample = samples.some(s =>
-     s.candidateId === cv)` already computes which. **`GET /feed?sample=` only
-     accepts allowlisted samples and 404s on anything else (§8's security boundary:
-     "never a real candidate id, so nobody can rank someone else's CV by guessing
-     one")** — so a real `cv` id CANNOT be passed as `?sample=`. Decision taken but
-     not yet implemented: keep `lens = cv && !isSample ? "warm" : "cold"` — a real
-     arbitrary candidateId stays on the untouched warm `/ranking/match` path (step 7's
-     job to retire); only a *sample* `cv` moves onto the cold/unified path. Revisit
-     this split only if it turns out wrong, don't just paper over the 404.
-   - Pass `sample: isSample ? cv : undefined` into `toLabColdQuery`'s call.
-   - Pass `hasViewer={cv != null}` to every `LabColdCard`.
-   - Show `LabControls` (sort/off-stack toggle) in the cold lens too when a sample is
-     selected, not just in "warm" — read `offStackHidden` off `cold.data` there.
-3. Re-run `pnpm exec tsc --noEmit` in `apps/web` (must go clean), then `pnpm exec
-   jest` there (180 tests before this work started — must still be 180+ green).
-4. **Visual check before calling step 6 done** — this session never launched the app.
-   Use the `run` skill (or `pnpm docker:up` + a browser) to actually look at `/feed`
-   with a sample selected: does the real Fit badge render, does sort toggle between
-   freshest/best-fit actually reorder cards, does off-stack unhide work. Nothing here
-   has been visually verified, only typechecked.
+What it actually does:
+- `lib/api/vacancies.ts` — hand-mirrored (ADR-0005) `MatchOverlay`,
+  `VacancySkillDiff`, `VacancyDetailDto`; `ListVacanciesQuery` gained
+  `sort`/`minFitTier`/`includeOffStack`/`sample`; `ListVacanciesResponse` gained
+  `offStackHidden`; `byId` now returns `VacancyDetailDto`. `FeedShell.tsx` and
+  `job-posting.spec.ts` fixed for the new required fields.
+- `FitBadge.tsx` — refactored from `{ item: RankedVacancy }` (warm-only shape) to a
+  generic `{ tier, percent, detail?, tooltip }` API, since `MatchOverlay` has no
+  per-skill breakdown to itemise. `LabWarmCard.tsx` updated to call it with the same
+  rich tooltip as before (moved `SIGNAL_LABEL` in locally) — no behavior change there.
+- `LabColdCard.tsx` — takes a new `hasViewer: boolean` prop: locked CTA when
+  `!hasViewer` (today's behavior), the real `FitBadge` when `vacancy.match` is
+  non-null, nothing when `hasViewer` but nothing scored. **Its only caller
+  (`FeedLabShell.tsx`) always passes `hasViewer={false}` right now** — that lens
+  only renders when `cv == null` (see `lens` below), so this is a no-op today, not
+  new behavior. It's the seam the next step wires up, not a finished toggle.
+- `lab-query.ts` — `toLabColdQuery` gained `sample` (unused by its caller so far)
+  and `includeOffStack`. **Deliberately NOT wired to `sort`/`minFitTier`**:
+  `FilterState.sort: null` means "score is the default" for the warm lens it was
+  designed for (`LabControls`'s "fit" button just resets to `null`), but §8.1 locks
+  freshest as the *cold*-lens default — mapping `null → sort=score` here would
+  silently invert a locked decision the first time someone loads the page with no
+  explicit choice made. Fixing this needs `FilterState`/`LabControls` to tell "never
+  touched" apart from "explicitly clicked fit", which they can't today — that's real
+  design work, not a mechanical pass.
+
+**What's NOT done, in order — this is the actual remaining step 6 work:**
+1. **Resolve the `FilterState.sort` ambiguity above**, then wire `sort`/`minFitTier`
+   into `toLabColdQuery` and show `LabControls` in the cold lens too (today it's
+   `warm`-only).
+2. **Route a selected *sample* onto the cold/unified path.** `?cv=<id>` on this route
+   can be either a seeded sample or an arbitrary real candidate id (`CvSelect`/
+   upload) — `isSample = samples.some(s => s.candidateId === cv)` already computes
+   which. `GET /feed?sample=` only accepts allowlisted samples and 404s on anything
+   else (§8: "never a real candidate id, so nobody can rank someone else's CV by
+   guessing one") — so a real `cv` id can never go through `?sample=`; it has to stay
+   on the untouched warm `/ranking/match` path until step 7 retires it. **Before
+   flipping `lens` for samples**, give `LabColdCard` diff have/missing/bonus counts
+   at parity with `LabWarmCard` — otherwise picking "try `<sample>`" regresses the
+   current sample-browsing experience (loses the diff, gains nothing yet since sort
+   isn't wired either). Only after both (1) and this parity work land does flipping
+   `lens = cv && !isSample ? "warm" : "cold"` actually make sense; it was deliberately
+   NOT done this session because doing it earlier was a straight-up UX regression.
+3. Re-run `apps/web`'s tsc/jest/eslint/build:web after each of the above.
+4. **Visual check before calling step 6 done** — never done this session. Use the
+   `run` skill (or `pnpm docker:up` + a browser) to actually look at `/feed`: locked
+   state with no CV, real Fit badges with a sample once (2) lands, sort/off-stack
+   toggles actually reordering/unhiding once (1) lands.
 5. **The vacancy detail page — NOT STARTED AT ALL.** `app/vacancy/[slug]/page.tsx` +
-   `_components/` need the Fit badge + diff panel (have/missing/bonus) using the
-   `VacancyDetailDto.match`/`.diff` the backend half already ships. No exploration of
-   this page's current structure has happened yet.
+   `_components/` need the Fit badge + diff panel using `VacancyDetailDto.match`/
+   `.diff`, which the backend half already ships. No exploration of this page's
+   current structure has happened yet.
 6. **Production `(feed)` route group — deliberately not touched, undecided.** The
    home feed (`app/(feed)/[[...slug]]/page.tsx`, the real traffic) still uses the old
    split cold/warm split (`use-results.ts`'s `ColdOpts | WarmOpts`, `warm-query.ts`'s
-   `fetchMatch`) untouched. This session chose to prototype step 6 on `/feed` (the
-   existing noindex lab route — it already had the sort toggle, off-stack toggle and
-   `useResults` hook built, seemingly anticipating exactly this migration) rather than
+   `fetchMatch`) untouched. This session prototyped step 6 on `/feed` (the existing
+   noindex lab route — it already had the sort toggle, off-stack toggle and
+   `useResults` hook built, seemingly anticipating exactly this migration) instead of
    the production route, to keep risk contained on a live, launched product. Whether
    step 6 needs to *also* reach the production route before step 7 collapses
    `use-results.ts` to one branch, or whether the lab is a sufficient step 6 and
    production migration happens as part of step 7, is **not decided — ask the owner**
-   if it's not obvious once the lab route is finished and visually verified.
+   once the lab route is finished and visually verified.
 
-**Full gate has NOT been run since the frontend edits started** (`pnpm test:etl:int`,
-`pnpm build`, `pnpm build:all` from `.scratch/met-144/run-gate.sh` — reuse it once web
-typechecks clean again).
+**Full gate (`pnpm test:etl:int`, `pnpm build`, `pnpm build:all` from
+`.scratch/met-144/run-gate.sh`) has NOT been re-run since the backend half landed** —
+only `apps/web`'s own tsc/jest/eslint/build:web were reverified for this frontend
+commit. Run the full gate once step 6 is actually complete.
 
 **Verification technique reminder for whatever's next (steps 7's item-id equivalence,
 step 8's byte-identical proof isn't needed there but similar rigor might help):** the
