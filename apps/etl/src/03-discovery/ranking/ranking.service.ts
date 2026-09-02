@@ -9,13 +9,12 @@ import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { FeedService } from "../feed/feed.service";
-import { buildScoreBreakdown, fitPercent } from "../score/score.contract";
-import { rankedCte, scoringCtes } from "../score/score.sql";
+import { scoringCtes } from "../score/score.sql";
+import { FitScorer, type ScoreRow } from "../score/scorer.port";
 
 import {
   FIT_GOOD_MIN,
   ROLE_SUGGEST_WINDOW_DAYS,
-  type FitTier,
   type MatchFilters,
   type MatchResponse,
   type RankedVacancy,
@@ -24,12 +23,6 @@ import {
   type SkillRef,
 } from "./ranking.contract";
 import { deriveRoleSuggestions } from "./role-suggestions.derive";
-
-// Ordinal of each Fit tier, mirroring the SQL tier_bucket CASE. The minFitTier
-// filter keeps rows with tier_bucket >= the requested tier's ordinal.
-const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRONG: 2 };
-// Inverse of TIER_BUCKET: SQL tier_bucket ordinal → Fit badge (index = bucket).
-const TIER_BY_BUCKET = ["STRETCH", "GOOD", "STRONG"] as const;
 
 const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
 
@@ -172,12 +165,14 @@ export class RankingService {
     const where = this.buildFilters(filters);
     const offset = (page - 1) * pageSize;
 
-    // Per-Position relevance + coverage + tier_bucket + on_stack, owned by the
-    // score module. Shared by page + count + match_scored query.
-    const scoreCte = rankedCte(cand);
-
-    const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
-    const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
+    // Scoring lives behind the port: the CTE, the score columns, the tier gate
+    // and the score sort are all its fragments — this method only orchestrates
+    // paging and the off-stack window. `ranked` (from cte()) is still the name
+    // the count and match_scored queries below select from.
+    const scorer = new FitScorer(cand, { minFitTier: filters.minFitTier });
+    const scoreCte = scorer.cte();
+    const scorerFilter = scorer.filter();
+    const tierCond = scorerFilter ? sql` AND ${scorerFilter}` : sql``;
 
     // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
     // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page
@@ -189,17 +184,14 @@ export class RankingService {
     // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
     // date-sorted page, because the Fit number is on every card either way.
     const byDate = filters.sort === "date";
-    // round so exact-IDF ties break by id (raw float-sum order is plan noise).
-    const pageOrder = byDate
-      ? sql`posted_at DESC, id DESC`
-      : sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
+    const pageOrder = byDate ? sql`posted_at DESC, id DESC` : scorer.order();
 
     const rankedPositionsCte = sql`
       ranked_positions AS (
-        SELECT p.position_id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
+        SELECT p.position_id::text AS id, ${scorer.select()},
                p.last_source_activity_at AS posted_at
-        FROM ranked rk
-        JOIN positions p ON p.position_id = rk.id
+        FROM positions p
+        ${scorer.join()}
         WHERE ${where}${tierCond}
       )`;
 
@@ -248,7 +240,7 @@ export class RankingService {
     // match starts at page 1, so this sees each scoring context once.
     if (page === 1) void this.emitMatchScored(scoreCte, where, nodeIds.length);
 
-    const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
+    const items = await this.buildItems(scorer, ranked.rows, candIds, resolved.matched);
     return {
       resolved,
       items,
@@ -347,13 +339,8 @@ export class RankingService {
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
   private async buildItems(
-    rows: {
-      id: string;
-      relevance: number;
-      coverage: number;
-      on_stack: boolean;
-      tier_bucket: number;
-    }[],
+    scorer: FitScorer,
+    rows: ({ id: string } & ScoreRow)[],
     candIds: SQL,
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
@@ -408,18 +395,20 @@ export class RankingService {
         }
       }
       const bonus = candidate.filter((c) => !vacancyNodeIds.has(c.id));
-      const breakdown = buildScoreBreakdown(row.coverage);
+      // The score-derived half of the card (tier, %, relevance, on-stack) is the
+      // port's; the counts and the diff are this method's.
+      const ov = scorer.overlay(row);
       items.push({
         vacancy,
-        relevance: row.relevance,
-        onStack: row.on_stack,
+        relevance: ov.relevance,
+        onStack: ov.onStack,
         fit: {
-          tier: TIER_BY_BUCKET[row.tier_bucket],
-          percent: fitPercent(breakdown.total),
+          tier: ov.tier,
+          percent: ov.fitPercent,
           matchedRequired,
           requiredTotal,
         },
-        breakdown,
+        breakdown: ov.breakdown,
         diff: {
           have: have.sort(byWeight),
           missing: missing.sort(byWeight),

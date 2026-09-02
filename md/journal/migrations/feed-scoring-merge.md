@@ -492,6 +492,28 @@ stage, not an improvement.
 
 Commit: `refactor(score): put scoring behind a Scorer port`.
 
+### Stage 2 result — 2026-09-02 — Gate 2 GREEN
+
+New file `apps/etl/src/03-discovery/score/scorer.port.ts`: `Scorer` interface
+(`cte / join / select / filter / order / overlay`), `NullScorer` (all no-ops,
+`overlay → null`, for the future anonymous feed path), `FitScorer` (wraps
+`rankedCte` verbatim — `ov` included — and owns `TIER_BUCKET` / `TIER_BY_BUCKET`).
+`RankingService.rankByRefs` + `buildItems` now drive `FitScorer`; the local
+`TIER_*` tables and the `rankedCte` / `buildScoreBreakdown` / `fitPercent` imports
+are gone from `ranking.service.ts`.
+
+- Gate: `pnpm lint` ✓ · `test:etl` 79/**542** ✓ · `test:etl:int` 18/**122** ✓ ·
+  `build` ✓.
+- **Golden diff empty** on all 5 captures (`.scratch/met-144/after-*` vs `golden-*`),
+  confirmed against the live `nest --watch` etl serving the rebuilt code.
+- **Invariant — partial, by design.** The scoring *definitions* (`ov`, the coverage /
+  tier_bucket / on_stack CASEs, the weight math) are now entirely inside `score/`.
+  What still names `on_stack` / `tier_bucket` / `relevance` in `ranking.service.ts` is
+  the off-stack **paging policy** (`keep` filter + the `counted` window that reports
+  `offStackHidden`) — it consumes the port's columns but defines no scoring. Folding
+  that residue away is Stage 4's job (the `counted` CTE collapses into
+  `count(*) OVER ()` there); with Stage 4 skipped it stays.
+
 ---
 
 ## Stage 3 — one `buildWhere`
