@@ -166,10 +166,16 @@ export class FeedService {
   async search(
     params: FeedSearchParams,
     scorer: CandidateScorer | null = null,
+    viewerSkills: NodeRef[] | null = null,
   ): Promise<FeedResponse> {
     const usesFullPath =
       scorer !== null && (params.sort === "score" || params.minFitTier !== undefined);
-    return usesFullPath ? this.searchScored(params, scorer) : this.searchCheap(params, scorer);
+    const res = usesFullPath
+      ? await this.searchScored(params, scorer)
+      : await this.searchCheap(params, scorer);
+    // Ships once per page — the cold card derives its diff counts from it
+    // (§6), same role as `MatchResponse.resolved.matched` on the warm side.
+    return { ...res, viewerSkills };
   }
 
   // CHEAP PATH (§2.1, §7 step 3): the page query below is untouched, and one

@@ -8,14 +8,20 @@ import { LAB_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 // actually hidden: an unhide control next to "0 hidden" is noise.
 export function LabControls({
   api,
+  defaultSort,
   offStackHidden,
   disabled = false,
 }: {
   api: FiltersApi;
+  /** The lens's order when the user hasn't chosen one (§8.1: cold → "date",
+   *  warm → "score"). Drives which button reads as active for `sort === null`. */
+  defaultSort: "score" | "date";
   offStackHidden: number;
   disabled?: boolean;
 }) {
-  const byDate = api.filters.sort === "date";
+  // `null` = untouched → the lens default; only "score"/"date" are explicit.
+  const effectiveSort = api.filters.sort ?? defaultSort;
+  const byDate = effectiveSort === "date";
   const includeOffStack = api.filters.includeOffStack ?? LAB_INCLUDE_OFF_STACK;
   const showOffStackToggle = offStackHidden > 0 || includeOffStack;
 
@@ -28,7 +34,7 @@ export function LabControls({
     >
       <span className="flex items-center gap-2">
         <span className="text-text-muted">sort</span>
-        <SortButton active={!byDate} onClick={() => api.setSort(null)}>
+        <SortButton active={!byDate} onClick={() => api.setSort("score")}>
           fit
         </SortButton>
         <SortButton active={byDate} onClick={() => api.setSort("date")}>

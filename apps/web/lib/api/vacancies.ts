@@ -284,6 +284,13 @@ export interface ListVacanciesResponse {
   total: number;
   /** FULL PATH + off-stack hidden (the default) only: 0 on the cheap path. */
   offStackHidden: number;
+  /**
+   * The scored viewer's own resolved skills — present when a card could carry
+   * `match` (signed-in CV or allowlisted `sample`), absent/null otherwise.
+   * Lets the cold card compute the ✅/❌/➕ skill diff per card with no
+   * per-card request, like the warm lens's `MatchResponse.resolved.matched`.
+   */
+  viewerSkills?: NodeRef[] | null;
 }
 
 // ─────────────────────────── Fetcher ────────────────────────────

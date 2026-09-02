@@ -1,12 +1,21 @@
 import type { DrizzleDB } from "@metahunt/database";
 
-import { createCandidateScorer, type CandidateScorer } from "../score/scorer.port";
+import type { NodeRef } from "../../platform/shared/contract";
+import {
+  createCandidateScorer,
+  resolveCandidateSkills,
+  type CandidateScorer,
+} from "../score/scorer.port";
 
 import type { FeedSearchParams } from "./feed.service";
 
 export interface ResolvedFeedQuery {
   filters: FeedSearchParams;
   scorer: CandidateScorer | null;
+  /** The candidate's resolved skills (id + name), for the cold card's
+   *  client-side have/missing/bonus counts (§6). `null` when there is no
+   *  candidate — the cards render `match: null` and no diff either way. */
+  viewerSkills: NodeRef[] | null;
 }
 
 // The composition root for a candidate-aware feed query (unified-feed-score.md
@@ -27,6 +36,10 @@ export async function resolveFeedQuery(
   candidateId: string | null,
   filters: FeedSearchParams,
 ): Promise<ResolvedFeedQuery> {
-  const scorer = candidateId ? await createCandidateScorer(db, candidateId) : null;
-  return { filters, scorer };
+  if (!candidateId) return { filters, scorer: null, viewerSkills: null };
+  const [scorer, viewerSkills] = await Promise.all([
+    createCandidateScorer(db, candidateId),
+    resolveCandidateSkills(db, candidateId),
+  ]);
+  return { filters, scorer, viewerSkills };
 }

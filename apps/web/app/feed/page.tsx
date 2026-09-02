@@ -45,18 +45,21 @@ export default async function FeedLabPage({
     cvApi.samples().catch(() => []),
   ]);
 
-  // Seed the lens the URL asks for, so first paint is the real list.
+  // Seed the lens the URL asks for, so first paint is the real list. A seeded
+  // sample rides the unified cold path (?sample=); only an arbitrary uploaded
+  // CV id stays on the warm /ranking/match path (§8 — /feed?sample= 404s on
+  // non-samples). Must match FeedLabShell's `lens` split exactly.
   const cv = typeof sp.cv === "string" ? sp.cv : null;
+  const isSample = cv != null && samples.some((s) => s.candidateId === cv);
   const queryClient = new QueryClient();
   try {
-    if (cv) {
-      const isSample = samples.some((s) => s.candidateId === cv);
+    if (cv && !isSample) {
       queryClient.setQueryData(
         warmKey(cv, filters, 1, LAB_INCLUDE_OFF_STACK),
-        await fetchMatch(cv, filters, 1, isSample, LAB_INCLUDE_OFF_STACK),
+        await fetchMatch(cv, filters, 1, false, LAB_INCLUDE_OFF_STACK),
       );
     } else {
-      const query = toLabColdQuery(filters, 1);
+      const query = toLabColdQuery(filters, 1, isSample ? (cv ?? undefined) : undefined);
       queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
     }
   } catch {

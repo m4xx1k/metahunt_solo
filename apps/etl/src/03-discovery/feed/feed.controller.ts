@@ -98,11 +98,11 @@ export class FeedController {
         this.resolveCompany(dto.companySlug),
       ]);
     const candidateId = await this.resolveViewerCandidateId(req, dto.sample);
-    const { filters, scorer } = await resolveFeedQuery(this.db, candidateId, {
+    const { filters, scorer, viewerSkills } = await resolveFeedQuery(this.db, candidateId, {
       ...toSearchParams(dto),
       companyId,
     });
-    return this.feed.search(filters, scorer);
+    return this.feed.search(filters, scorer, viewerSkills);
   }
 
   // Companies aren't taxonomy nodes, so they don't go through NodeSlugResolver.

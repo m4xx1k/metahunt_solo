@@ -488,3 +488,95 @@ server-side** — for each of the 50, `/radar?sort=score&…` (or whatever the p
 route ends up being) must return the same item ids in the same order as
 `/cv/samples/:id/matches` did; that check replaces the byte-diff harness. Steps 7 and
 8 are the one-way door — do not start 8 until 7 is merged.
+
+---
+
+**Step 6 — continued, next session. The two open design questions are now
+resolved (below); the lab-route frontend is finished bar the visual check and the
+vacancy-detail page.**
+
+### Design decision 1 — `FilterState.sort`'s null ambiguity → an explicit `"score"` token
+
+The conflict: `sort: null` meant *both* "user never chose" and "user clicked fit"
+(`LabControls`' fit button called `setSort(null)`), and the warm mapper read
+`null → score`. §8.1 locks freshest as the *cold* default, so the cold mapper
+could not also read `null → score`.
+
+**Resolved by making the two states distinct in the URL.** `sort` now round-trips
+three values: `null` (untouched → each lens's own locked default: warm → score,
+cold → freshest), `"score"` (explicit best-fit → full path), `"date"` (explicit
+freshest). `LabControls`' fit button sets `"score"`, not `null`; it takes a
+`defaultSort` prop so the right button reads as active when `sort === null`.
+`toLabColdQuery` sends `sort=score` only for an explicit `"score"` — `null` and
+`"date"` both stay on the cheap path. `warm-query.ts` was already
+`(f.sort) ?? undefined`, so `"score"` passes straight through with no behaviour
+change (it was relying on the match endpoint's `score` default). `url-params.ts`
++ `types.ts` doc updated. This is the "tell never-touched from explicitly-clicked"
+distinction the previous handoff said was needed — done as a codec change, not a
+`FilterState`-shape change.
+
+### Design decision 2 — sample routing → `viewerSkills` on `FeedResponse`, so the cold card reaches diff parity
+
+The conflict: flipping a seeded sample from the warm lens to the unified cold
+path lost `LabWarmCard`'s have/missing/bonus counts, because `MatchOverlay` (what
+the cheap path returns per card) has no per-skill breakdown.
+
+**Resolved by shipping the scored viewer's resolved skills once per page**, the
+same role `MatchResponse.resolved.matched` plays for the warm lens.
+`GET /feed` → `FeedResponse.viewerSkills: NodeRef[] | null` (present iff a card
+could carry `match`). `resolveFeedQuery` resolves them alongside the scorer via a
+new `resolveCandidateSkills` (`resolveViewerSkills` now delegates to it).
+`LabColdCard` takes `viewerSkillIds` and computes ✅/❌/➕ counts in TS with
+`countSkillDiff` — a client twin of `feed.controller.ts`'s `buildSkillDiff`
+(§4). `DiffCounts` is now shared between both lab cards. Only then is
+`lens = cv && !isSample ? "warm" : "cold"` safe — an arbitrary uploaded-CV id
+still can't go through `?sample=` (§8), so it stays warm until step 7.
+
+### What landed this session (not yet committed at time of writing — one commit, gated)
+
+- **Backend:** `resolveCandidateSkills` + `resolveViewerSkills` split
+  (`scorer.port.ts`); `ResolvedFeedQuery.viewerSkills` + resolution
+  (`resolve-feed-query.ts`); `FeedResponse.viewerSkills?` (`feed.contract.ts`);
+  `FeedService.search(params, scorer, viewerSkills)` echoes it
+  (`feed.service.ts`); controller threads it through. New int assertion in
+  `feed.int.spec.ts` (viewerSkills present for a candidate, null otherwise);
+  `feed.controller.spec.ts` mock added.
+- **Web:** `ListVacanciesResponse.viewerSkills?` mirror; `sort` codec + docs
+  (`url-params.ts`, `types.ts`); `LabControls` `defaultSort` prop + fit→`"score"`;
+  `toLabColdQuery` wires `sort`/`minFitTier`; new `skill-diff.ts` + `DiffCounts.tsx`;
+  `LabColdCard` diff parity; `FeedLabShell` sample→cold routing, controls on both
+  lenses, `viewerSkills` plumbed; `app/feed/page.tsx` SSR seed matches the split.
+- **Gate:** web tsc/jest(180)/eslint/… green; full `run-gate.sh` + `build:all`
+  run before the commit.
+
+### Still open for step 6 (the checklist that remains)
+
+1. **Visual check** — the `run` skill / a browser against `/feed`: locked (no CV),
+   real badges + counts with `?cv=<sample>`, the fit/newest toggle actually
+   reordering, off-stack unhide. *Never done — do this before calling step 6 done.*
+2. **Vacancy detail page badge + diff panel — NOT started, and it conflicts with
+   an existing decision.** `app/vacancy/[slug]/page.tsx` is `export const dynamic =
+   "force-static"` *on purpose* (crawl budget — the comment there is explicit:
+   "renders identically for everyone, signed in or not; force-static makes
+   cookies() return empty"). A per-viewer Fit badge cannot come from the static
+   render. The only way that keeps the ISR win is a **client island** that fetches
+   `/feed/vacancy/:id` with credentials after hydration and renders the badge +
+   `VacancyDetailDto.diff` panel then. That is the recommended approach but it is a
+   real design choice on a live SEO-critical page — **confirm with the owner
+   before building it.**
+3. **Production `(feed)` route group** — still deliberately untouched. Whether step
+   6 must also migrate `app/(feed)/[[...slug]]/page.tsx` before step 7 collapses
+   `use-results.ts`, or the lab route is a sufficient step 6 and production moves
+   as part of step 7 — **owner decision, unchanged from the previous handoff.**
+
+Steps 7–9 unchanged. 8 and 9 need step 7 *merged* first (one-way door), and the
+merge is owner-only — a session can take step 7 to a green PR but not past it.
+
+**Stale-process note (updated):** the abandoned native `pnpm dev:etl` /
+`next-server` on :3333/:4000 (code-server terminal children, 15–22 h old) were
+killed this session — they were serving stale pre-branch code and silently
+breaking every live check. `pnpm docker:up` then `docker compose up -d -V --build`
+rebuilt both containers from the branch tip; live checks after that matched the
+int suite (cheap path scores the page; `sort=score` drops total to overlap-only +
+reports `offStackHidden`; bad `?sample=` 404s). If they reappear, kill them again
+before trusting a browser check.

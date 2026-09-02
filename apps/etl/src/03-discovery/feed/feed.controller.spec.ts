@@ -13,6 +13,7 @@ import {
   createCandidateScorer,
   overlayForUser,
   resolveActiveCandidateId,
+  resolveCandidateSkills,
   resolveSampleCandidateId,
   resolveViewerSkills,
   type CandidateScorer,
@@ -28,6 +29,7 @@ const overlayForUserMock = jest.mocked(overlayForUser);
 const resolveActiveCandidateIdMock = jest.mocked(resolveActiveCandidateId);
 const resolveSampleCandidateIdMock = jest.mocked(resolveSampleCandidateId);
 const resolveViewerSkillsMock = jest.mocked(resolveViewerSkills);
+const resolveCandidateSkillsMock = jest.mocked(resolveCandidateSkills);
 const createCandidateScorerMock = jest.mocked(createCandidateScorer);
 
 const EMPTY: FeedResponse = {
@@ -66,6 +68,7 @@ describe("FeedController", () => {
     resolveCompanySlug.mockReset().mockResolvedValue(null);
     overlayForUserMock.mockReset().mockResolvedValue(new Map());
     resolveViewerSkillsMock.mockReset().mockResolvedValue([]);
+    resolveCandidateSkillsMock.mockReset().mockResolvedValue([]);
     resolveActiveCandidateIdMock.mockReset().mockResolvedValue(null);
     resolveSampleCandidateIdMock.mockReset().mockResolvedValue(null);
     createCandidateScorerMock.mockReset().mockResolvedValue(null);
@@ -105,6 +108,7 @@ describe("FeedController", () => {
         skillIds: undefined,
       }),
       null,
+      null,
     );
   });
 
@@ -133,6 +137,7 @@ describe("FeedController", () => {
         page: 2,
       }),
       null,
+      null,
     );
   });
 
@@ -145,6 +150,7 @@ describe("FeedController", () => {
       expect(resolveCompanySlug).toHaveBeenCalledWith("acme");
       expect(search).toHaveBeenCalledWith(
         expect.objectContaining({ companyId: "company-uuid" }),
+        null,
         null,
       );
     });
@@ -164,7 +170,11 @@ describe("FeedController", () => {
       await controller.search(dto(), anon);
 
       expect(resolveCompanySlug).not.toHaveBeenCalled();
-      expect(search).toHaveBeenCalledWith(expect.objectContaining({ companyId: undefined }), null);
+      expect(search).toHaveBeenCalledWith(
+        expect.objectContaining({ companyId: undefined }),
+        null,
+        null,
+      );
     });
   });
 
@@ -176,7 +186,7 @@ describe("FeedController", () => {
 
       expect(resolveActiveCandidateIdMock).not.toHaveBeenCalled();
       expect(resolveSampleCandidateIdMock).not.toHaveBeenCalled();
-      expect(search).toHaveBeenLastCalledWith(expect.anything(), null);
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), null, null);
     });
 
     it("scores the page against the signed-in viewer's active CV", async () => {
@@ -188,7 +198,7 @@ describe("FeedController", () => {
 
       expect(resolveActiveCandidateIdMock).toHaveBeenCalledWith(expect.anything(), "user-1");
       expect(createCandidateScorerMock).toHaveBeenCalledWith(expect.anything(), "candidate-1");
-      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer);
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer, []);
     });
 
     it("scores against an allowlisted ?sample= id, ignoring the signed-in viewer", async () => {
@@ -200,7 +210,7 @@ describe("FeedController", () => {
 
       expect(resolveSampleCandidateIdMock).toHaveBeenCalledWith(expect.anything(), "sample-1");
       expect(resolveActiveCandidateIdMock).not.toHaveBeenCalled();
-      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer);
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer, []);
     });
 
     it("404s for a ?sample= id that isn't an allowlisted sample candidate", async () => {

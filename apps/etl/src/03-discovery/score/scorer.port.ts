@@ -117,20 +117,31 @@ async function candidateNodeIds(db: DrizzleDB, candidateId: string): Promise<str
   return rows.map((r) => r.nodeId);
 }
 
-// The viewer's resolved skill set (id + name), not just ids — §4's vacancy-
-// detail skill diff needs the candidate's own names for its "➕ bonus" column
-// (skills the candidate has that this vacancy doesn't ask for), which the
-// vacancy's own already-fetched skills can't supply. One query, same shape
-// as `overlayForUser`'s candidateId resolution, just a richer SELECT.
-export async function resolveViewerSkills(db: DrizzleDB, userId: string): Promise<NodeRef[]> {
-  const candidateId = await resolveActiveCandidateId(db, userId);
-  if (!candidateId) return [];
+// The candidate's resolved skill set (id + name), not just ids. Two consumers:
+// §4's vacancy-detail skill diff needs the candidate's own names for its "➕
+// bonus" column (skills the candidate has that this vacancy doesn't ask for),
+// which the vacancy's own already-fetched skills can't supply; and the unified
+// feed (§6) ships the same list once per page (`FeedResponse.viewerSkills`) so
+// the cold card can compute have/missing/bonus counts client-side at parity
+// with the warm card.
+export async function resolveCandidateSkills(
+  db: DrizzleDB,
+  candidateId: string,
+): Promise<NodeRef[]> {
   const rows = await db
     .select({ id: schema.nodes.id, name: schema.nodes.canonicalName })
     .from(schema.candidateNodes)
     .innerJoin(schema.nodes, eq(schema.nodes.id, schema.candidateNodes.nodeId))
     .where(eq(schema.candidateNodes.candidateId, candidateId));
   return rows;
+}
+
+// The viewer-facing wrapper: resolve the JWT user's active CV, then its skills.
+// No account / no active CV → empty, same as an anonymous visitor.
+export async function resolveViewerSkills(db: DrizzleDB, userId: string): Promise<NodeRef[]> {
+  const candidateId = await resolveActiveCandidateId(db, userId);
+  if (!candidateId) return [];
+  return resolveCandidateSkills(db, candidateId);
 }
 
 // The FULL PATH's SQL-splice half of §3 — what a consumer already running its

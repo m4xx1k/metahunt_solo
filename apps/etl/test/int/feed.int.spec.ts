@@ -5,6 +5,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { FacetsService } from "../../src/03-discovery/feed/facets.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
+import { resolveFeedQuery } from "../../src/03-discovery/feed/resolve-feed-query";
 import { createCandidateScorer } from "../../src/03-discovery/score/scorer.port";
 
 import { makeTestDb, truncateAll } from "./db";
@@ -451,6 +452,35 @@ describe("FeedService.search — scorer / CHEAP PATH (integration)", () => {
     const res = await feed.search({ page: 1, pageSize: 20 });
 
     expect(res.items.every((i) => i.match === null)).toBe(true);
+  });
+
+  // §6: the response carries the scored viewer's own resolved skills once per
+  // page, so the cold card can compute ✅/❌/➕ counts client-side — null when
+  // there is no candidate, mirroring `match`.
+  it("ships viewerSkills for a resolved candidate and null otherwise", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedRole();
+    await seedVacancy({ sourceId, ingestId, roleNodeId: role, publishedAt: new Date() });
+    const [skill] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "Rust", status: "VERIFIED" })
+      .returning({ id: schema.nodes.id, canonicalName: schema.nodes.canonicalName });
+    const [candidate] = await db
+      .insert(schema.candidates)
+      .values({ contentHash: "cand-viewer-skills", sourceText: "", extracted: {} })
+      .returning({ id: schema.candidates.id });
+    await db.insert(schema.candidateNodes).values({ candidateId: candidate.id, nodeId: skill.id });
+
+    const params = { page: 1, pageSize: 20 };
+    const anon = await resolveFeedQuery(db, null, params);
+    expect(anon.viewerSkills).toBeNull();
+    const anonRes = await feed.search(anon.filters, anon.scorer, anon.viewerSkills);
+    expect(anonRes.viewerSkills).toBeNull();
+
+    const scored = await resolveFeedQuery(db, candidate.id, params);
+    expect(scored.viewerSkills).toEqual([{ id: skill.id, name: "Rust" }]);
+    const res = await feed.search(scored.filters, scored.scorer, scored.viewerSkills);
+    expect(res.viewerSkills).toEqual([{ id: skill.id, name: "Rust" }]);
   });
 });
 

@@ -257,6 +257,14 @@ export interface FeedResponse {
    * where off-stack is never hidden in the first place.
    */
   offStackHidden: number;
+  /**
+   * The scored viewer's own resolved skills (id + name) — present exactly
+   * when a card could carry `match` (signed-in CV or allowlisted `?sample=`),
+   * absent otherwise. Lets a client compute the ✅/❌/➕ skill diff per card
+   * without a per-card query, the same way the warm lens ships
+   * `MatchResponse.resolved.matched` (unified-feed-score.md §6).
+   */
+  viewerSkills?: NodeRef[] | null;
 }
 
 // ─────────────────────────── Facets ───────────────────────────

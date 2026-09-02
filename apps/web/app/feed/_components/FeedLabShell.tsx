@@ -40,7 +40,12 @@ export function FeedLabShell({
 
   const rawCv = searchParams.get("cv");
   const cv = rawCv && isUuid(rawCv) ? rawCv : null;
-  const lens = cv ? "warm" : "cold";
+  // A seeded sample goes through the unified cold path (GET /feed?sample=) —
+  // real Fit on every card, score/date toggle, off-stack unhide. An arbitrary
+  // uploaded CV id can't (§8: /feed?sample= 404s on non-samples), so it stays
+  // on the warm /ranking/match path until step 7 retires it.
+  const isSample = cv != null && samples.some((s) => s.candidateId === cv);
+  const lens = cv != null && !isSample ? "warm" : "cold";
 
   const setCv = useCallback(
     (id: string | null) => {
@@ -57,21 +62,30 @@ export function FeedLabShell({
     setPage(1);
   }
 
-  const coldQuery = useMemo(() => toLabColdQuery(api.filters, page), [api.filters, page]);
-  const cold = useResults({ lens: "cold", query: coldQuery, enabled: cv == null });
+  const coldQuery = useMemo(
+    () => toLabColdQuery(api.filters, page, isSample ? (cv ?? undefined) : undefined),
+    [api.filters, page, cv, isSample],
+  );
+  const cold = useResults({ lens: "cold", query: coldQuery, enabled: lens === "cold" });
   const warm = useResults({
     lens: "warm",
     candidateId: cv ?? "",
-    isSample: samples.some((s) => s.candidateId === cv),
+    isSample,
     filters: api.filters,
     page,
     defaultIncludeOffStack: LAB_INCLUDE_OFF_STACK,
-    enabled: cv != null,
+    enabled: lens === "warm",
   });
 
   const busy = lens === "warm" ? warm.isFetching : cold.isFetching;
   const total = (lens === "warm" ? warm.data?.total : cold.data?.total) ?? 0;
+  const offStackHidden =
+    (lens === "warm" ? warm.data?.offStackHidden : cold.data?.offStackHidden) ?? 0;
   const candidateSkillIds = warm.data?.resolved.matched.map((s) => s.id) ?? [];
+  // The scored viewer's skills for the cold card's ✅/❌/➕ counts — parity
+  // with the warm card, which reads the same set off `resolved.matched`.
+  const coldViewerSkillIds = cold.data?.viewerSkills?.map((s) => s.id) ?? [];
+  const hasViewer = cv != null;
   const goToOffset = useCallback(
     (offset: number) => setPage(Math.floor(offset / LAB_PAGE_SIZE) + 1),
     [],
@@ -81,7 +95,11 @@ export function FeedLabShell({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3 border border-border bg-bg-card px-4 py-2.5 font-mono text-2xs uppercase tracking-wider">
         <span className="text-text-muted">
-          {lens === "warm" ? "scored against your CV" : "no CV — scores locked"}
+          {lens === "warm"
+            ? "scored against your CV"
+            : hasViewer
+              ? "scored against the sample CV"
+              : "no CV — scores locked"}
         </span>
         {cv ? (
           <button
@@ -118,13 +136,15 @@ export function FeedLabShell({
         </aside>
 
         <div className="flex flex-col gap-4">
-          {lens === "warm" ? (
-            <LabControls
-              api={api}
-              offStackHidden={warm.data?.offStackHidden ?? 0}
-              disabled={busy}
-            />
-          ) : null}
+          {/* Both lenses now: the cold lens is freshest-by-default (§8.1) and
+              its "best fit" button opts into the full path. Off-stack only
+              hides on the full path, so the toggle self-suppresses at 0. */}
+          <LabControls
+            api={api}
+            defaultSort={lens === "warm" ? "score" : "date"}
+            offStackHidden={offStackHidden}
+            disabled={busy}
+          />
 
           <p className="font-mono text-xs text-text-muted">
             <span className="text-text-secondary">{total}</span> jobs
@@ -141,16 +161,15 @@ export function FeedLabShell({
                   />
                 ))
               : cold.data?.items.map((vacancy) => (
-                  // hasViewer=false: this lens only renders when cv == null
-                  // (see `lens` above), so there is never a CV/sample context
-                  // here yet — LabColdCard always shows the locked CTA,
-                  // unchanged from before this prop existed. Routing a
-                  // selected *sample* onto this cold/unified path (real Fit,
-                  // no lock) is the remaining, deliberately deferred part of
-                  // step 6 — see the journal: it needs LabColdCard/this shell
-                  // to reach diff-count parity with LabWarmCard first, or
-                  // picking "try <sample>" regresses the sample experience.
-                  <LabColdCard key={vacancy.id} vacancy={vacancy} hasViewer={false} />
+                  // hasViewer: no CV/sample → locked CTA; a seeded sample →
+                  // real Fit badge + ✅/❌/➕ counts from `viewerSkills`, at
+                  // parity with LabWarmCard.
+                  <LabColdCard
+                    key={vacancy.id}
+                    vacancy={vacancy}
+                    hasViewer={hasViewer}
+                    viewerSkillIds={coldViewerSkillIds}
+                  />
                 ))}
           </div>
 

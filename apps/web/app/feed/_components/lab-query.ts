@@ -1,5 +1,6 @@
 import { asEnums, FRESHNESS_DAYS, DEFAULT_FRESHNESS } from "@/features/vacancy-filters/types";
 import type { FilterState } from "@/features/vacancy-filters/types";
+import type { FitTier } from "@/lib/api/ranking";
 import { MATCH_PAGE_SIZE } from "@/features/vacancy-filters/warm-query";
 import type {
   EmploymentType,
@@ -36,14 +37,12 @@ export function toLabColdQuery(f: FilterState, page: number, sample?: string): L
     hasReservation: f.reservation ?? undefined,
     postedWithinDays: FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
     sample,
-    // NOT wired to f.sort/minFitTier yet — see the journal's step 6 note.
-    // FilterState.sort: null means "score is the default" for the WARM lens
-    // it was designed for (LabControls' "fit" button just resets to null);
-    // §8.1 locks freshest as the COLD-lens default, so null must NOT become
-    // sort=score here without first telling "never touched" apart from
-    // "explicitly clicked fit" — FilterState can't do that today. Leaving
-    // this undefined (→ freshest) is the safe default; wiring the toggle
-    // needs that distinction resolved first, not a silent guess.
+    // §8.1: freshest is the cold-lens default. `sort: null` (untouched) and
+    // `"date"` both stay on the cheap path — only an explicit "best fit"
+    // click (`sort === "score"`) opts into the full path. `minFitTier` also
+    // forces the full path server-side, so it passes straight through.
+    sort: f.sort === "score" ? "score" : undefined,
+    minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
     includeOffStack: f.includeOffStack,
   };
 }

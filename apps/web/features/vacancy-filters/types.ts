@@ -66,7 +66,14 @@ export interface FilterState {
   reservation: boolean | null;
   /** Warm-only: minimum coverage tier; needs a ranked (CV) result. */
   minFitTier: string | null;
-  /** Warm-only page order: null = the Fit score default, "date" = freshness. */
+  /**
+   * Page order. `null` = untouched, so each lens applies its own locked
+   * default (warm → Fit score, cold → freshest per unified-feed-score.md
+   * §8.1). `"score"` = the user explicitly asked for best-fit (the full
+   * path); `"date"` = explicitly freshest. The `null`/`"score"` split is
+   * what lets the cold lens keep freshest-by-default while still offering a
+   * working best-fit toggle.
+   */
   sort: string | null;
   /** Warm-only: undefined = no stated preference, so the route's own default wins. */
   includeOffStack: boolean | undefined;
@@ -140,7 +147,7 @@ export interface FiltersApi {
   setReservation: (v: boolean | null) => void;
   /** Warm-only coverage gate; a no-op source on the cold feed. */
   setMinFitTier: (v: string | null) => void;
-  /** Warm-only page order ("date"; null = the Fit score default). */
+  /** Page order: "score" | "date"; null clears it back to the lens default. */
   setSort: (v: string | null) => void;
   /** Warm-only: unhide vacancies outside the candidate's stack. */
   setIncludeOffStack: (v: boolean) => void;
