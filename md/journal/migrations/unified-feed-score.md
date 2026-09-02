@@ -551,9 +551,21 @@ still can't go through `?sample=` (§8), so it stays warm until step 7.
 
 ### Still open for step 6 (the checklist that remains)
 
-1. **Visual check** — the `run` skill / a browser against `/feed`: locked (no CV),
-   real badges + counts with `?cv=<sample>`, the fit/newest toggle actually
-   reordering, off-stack unhide. *Never done — do this before calling step 6 done.*
+1. **Visual check — DONE for the lab route** (`ef5f25a`), via SSR-HTML inspection
+   against the running Docker stack (no headless browser in this env — no
+   chromium-cli / Playwright / chromium binary, and installing one needs sudo
+   apt). For `/feed` this still exercises the real path: the server runs the live
+   API, dehydrates react-query, renders `FeedLabShell` to full HTML.
+   - no CV → 20 `— % fit · locked` slots + "add your CV"; toggle `newest` active
+     (`aria-pressed=true`), `fit` inactive — cold freshest-by-default ✓
+   - `?cv=<python sample>` → "scored against the sample CV"; 20 real FitBadges
+     (20% / 0% / 14% … stretch, matching the API's date page); ✅/❌/➕ diff
+     glyphs on every card; `newest` still active ✓
+   - `…&sort=score` → `fit` active; badges reorder to `100% strong` / `84%
+     strong` first; "show 963 other-stack jobs" checkbox appears ✓
+   - all 4 variants HTTP 200, no error markers, no etl/web log errors.
+   **Not covered:** a real-browser hydration + console-error pass — needs a
+   headless Chromium this box lacks. The SSR render path is clean.
 2. **Vacancy detail page badge + diff panel — NOT started, and it conflicts with
    an existing decision.** `app/vacancy/[slug]/page.tsx` is `export const dynamic =
    "force-static"` *on purpose* (crawl budget — the comment there is explicit:
