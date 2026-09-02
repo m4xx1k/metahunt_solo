@@ -307,4 +307,32 @@ with stash/re-run before landing the fix; full `test:etl:int` green 3/3 after.
 
 Gate: lint · test:etl · test:etl:int · build · build:all — all green, both steps.
 
-Next: step 3 — `resolveFeedQuery` + the cheap path on `GET /feed`.
+**Step 3 — done, `c640037`.** `GET /feed` scores its page against the viewer's active
+CV (JWT via `OptionalAuthGuard`, same as `vacancy/:id`) or an allowlisted
+`?sample=<id>` (§8's wrinkle — `?sample=` wins over auth if both are present; anything
+whose `candidates.type ≠ 'sample'` 404s rather than silently falling back to
+anonymous). CHEAP PATH only, as the step demands: the page query, its `ORDER BY` and
+`total` are byte-identical to before this step — `resolveFeedQuery` (new
+`feed/resolve-feed-query.ts`, the composition root) only turns a candidateId into a
+`CandidateScorer`, and `FeedService.search(params, scorer?)` runs one
+`scorer.overlayFor(pageIds)` alongside the existing row/skills fetch (`Promise.all`,
+no added round trip). `CandidateScorer` (§3) is currently just the bound `overlayFor`
+— `fragments()` (the FULL PATH half) waits for step 4, its first real consumer.
+
+**Verified without a live server:** `total`/result-set parity between a scored and
+unscored call with identical filters (structurally guaranteed too — the total/page
+queries never see the scorer) + `createCandidateScorer`'s overlay matching `overlayFor`
+called directly + `resolveSampleCandidateId`'s type boundary, all against a real DB
+(`test/int/feed.int.spec.ts`, `test/int/score.int.spec.ts`). Timing: `EXPLAIN ANALYZE`
+against the local dev DB (14547 real positions) — page query (untouched) ~15.5 ms, the
+new scoped overlay ~6.5 ms, nowhere near the ~150–170 ms full path. (A native
+`nest --watch` instance was already running on :3333 from an earlier/other session and
+turned out stale — rather than touch a process this session didn't start, verification
+went through psql + the int-test harness instead.)
+
+Gate: lint · test:etl · test:etl:int · build · build:all — all green.
+
+Next: step 4 — the full path through the same root; `requireOverlap` becomes a flag;
+`/ranking/match` + `/cv/:id/matches` become thin wrappers passing `true`. Golden
+`/cv/samples/:id/matches` must stay byte-identical to the 50-capture harness from
+PR #205.
