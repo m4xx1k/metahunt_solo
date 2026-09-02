@@ -1,10 +1,10 @@
 "use client";
 
+import { FitBadge } from "@/entities/vacancy/FitBadge";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import type { RankedVacancy, ScoreSignal } from "@/lib/api/ranking";
 
 import { DiffCounts } from "./DiffCounts";
-import { FitBadge } from "./FitBadge";
 
 const SIGNAL_LABEL: Record<ScoreSignal["kind"], string> = {
   "skill-overlap": "skill overlap",

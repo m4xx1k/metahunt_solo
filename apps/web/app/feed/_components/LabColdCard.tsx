@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 
+import { FitBadge } from "@/entities/vacancy/FitBadge";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import type { VacancyDto } from "@/lib/api/vacancies";
 
 import { DiffCounts } from "./DiffCounts";
-import { FitBadge } from "./FitBadge";
 import { countSkillDiff } from "./skill-diff";
 
 // Cold card: the same Fit slot the warm card has. `vacancy.match` is real now
