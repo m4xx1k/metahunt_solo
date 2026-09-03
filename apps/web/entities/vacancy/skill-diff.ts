@@ -2,7 +2,7 @@ import type { NodeRef, VacancySkills } from "@/lib/api/vacancies";
 
 // The one ✅ have / ❌ missing / ➕ bonus skill diff, shared by every surface
 // that shows one: the vacancy detail page's FitPanel (full lists — it prints
-// skill names) and every list card (LabColdCard/DiffCounts — just the
+// skill names) and every list card (VacancyMatchCard/DiffCounts — just the
 // lengths). Both inputs already ride on the wire: a vacancy's own
 // `skills.required`/`.optional`, and the viewer's resolved skills
 // (`FeedResponse.viewerSkills` on a list, `VacancyDetailDto.viewerSkills` on

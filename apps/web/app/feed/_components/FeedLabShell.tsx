@@ -13,8 +13,8 @@ import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { isUuid } from "@/lib/uuid";
 import type { SampleCandidate } from "@/lib/api/cv";
 import { Pagination } from "@/ui/navigation/Pagination";
+import { VacancyMatchCard } from "@/entities/vacancy/VacancyMatchCard";
 
-import { LabColdCard } from "./LabColdCard";
 import { LabControls } from "./LabControls";
 import { LAB_PAGE_SIZE, toLabColdQuery } from "./lab-query";
 
@@ -136,7 +136,7 @@ export function FeedLabShell({
             {cold.data?.items.map((vacancy) => (
               // hasViewer: no sample → locked CTA; a seeded sample → real Fit
               // badge + ✅/❌/➕ counts from `viewerSkills`.
-              <LabColdCard
+              <VacancyMatchCard
                 key={vacancy.id}
                 vacancy={vacancy}
                 hasViewer={hasViewer}

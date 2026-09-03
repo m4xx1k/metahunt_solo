@@ -10,14 +10,13 @@ import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
 
 import { DiffCounts } from "./DiffCounts";
 
-// The lab feed's one card (MET-144 step 7: the lab's warm branch — and
-// LabWarmCard — retired, since it had no reachable UI entry point; every
-// card runs through the unified `vacancy.match` now). Three states:
-//   - no sample selected at all → locked, asks for one;
-//   - one selected and this Position scored → the real badge + diff counts
-//     (`viewerSkills` off the page response, via skillDiff);
-//   - one selected but nothing scored (no tagged skills) → no slot at all.
-export function LabColdCard({
+// The one feed card, both routes (MET-144 step 7b: no more cold/warm fork).
+// A Fit badge + diff counts when this vacancy scored, computed client-side
+// from `viewerSkills` (off the /feed response) via skillDiff. Three states:
+//   - no viewer at all → locked, asks for a CV;
+//   - a viewer and this vacancy scored → the badge + diff counts;
+//   - a viewer but nothing scored (no tagged skills) → no slot at all.
+export function VacancyMatchCard({
   vacancy,
   hasViewer,
   viewerSkills = [],

@@ -3,10 +3,8 @@
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
 
-// The have / missing / bonus trio that explains a Fit %. Shared by both lab
-// cards: the warm card feeds it `RankedVacancy.diff` lengths, the cold card
-// feeds it `countSkillDiff(...)` — same three numbers, same look, so flipping
-// a sample from the warm lens to the unified cold path keeps the diff.
+// The have / missing / bonus trio that explains a Fit %. Fed the three
+// `skillDiff()` lengths by VacancyMatchCard.
 export function DiffCounts({
   have,
   missing,
