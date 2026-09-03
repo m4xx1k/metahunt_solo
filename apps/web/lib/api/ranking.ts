@@ -1,5 +1,4 @@
-import { apiPost } from "./client";
-import type { EmploymentType, EnglishLevel, Seniority, VacancyDto, WorkFormat } from "./vacancies";
+import type { VacancyDto } from "./vacancies";
 
 // reverse-ATS matcher client — mirrors apps/etl .../ranking/ranking.contract.ts.
 // A ranked card = the full feed VacancyDto + a personalized match overlay.
@@ -52,29 +51,6 @@ export interface MatchResponse {
   /** Off-stack rows the filter removed — drives the "show them" toggle. */
   offStackHidden: number;
 }
-
-export interface MatchBody {
-  skills: string[];
-  seniorities?: Seniority[]; // OR — middle ∪ senior etc.
-  workFormats?: WorkFormat[]; // OR — REMOTE ∪ HYBRID
-  englishLevels?: EnglishLevel[];
-  employmentTypes?: EmploymentType[];
-  domainIds?: string[]; // OR — DOMAIN node slugs (resolved -> ids server-side)
-  roleIds?: string[]; // OR — ROLE node slugs, hard filter (resolved -> ids server-side)
-  experienceYears?: string[]; // discrete tokens "0".."5" + "6+"
-  hasTestAssignment?: boolean; // false keeps unknowns; true strict
-  hasReservation?: boolean;
-  minFitTier?: FitTier; // hide below this coverage tier
-  includeOffStack?: boolean; // default false — off-stack rows are filtered out, not demoted
-  sort?: MatchSort; // ORDER BY only — same result set either way
-  postedWithinDays?: number; // freshness
-  page?: number;
-  pageSize?: number;
-}
-
-export const rankingApi = {
-  match: (body: MatchBody) => apiPost<MatchResponse>("/ranking/match", body),
-};
 
 // "What to learn next" — mirrors ranking.contract RecommendItem/RecommendResponse.
 export interface RecommendItem {
