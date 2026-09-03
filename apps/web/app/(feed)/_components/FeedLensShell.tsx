@@ -159,9 +159,11 @@ export function FeedLensShell({
           addedAt: Date.now(),
         });
         // The upload already made this the active CV server-side
-        // (CandidateLoaderService.setActiveCv) — just catch the switcher up.
+        // (CandidateLoaderService.setActiveCv) — catch the switcher up, and
+        // drop any list scored against the CV this one just replaced.
         saved.setActiveCv(info.candidateId);
         void qc.invalidateQueries({ queryKey: ["me", "cv"] });
+        void qc.invalidateQueries({ queryKey: ["match"] });
         setSample(null);
         setManualLens("warm");
         scrollToControls();
@@ -175,16 +177,25 @@ export function FeedLensShell({
     [analytics, saved, setSample, qc, scrollToControls, isLoggedIn],
   );
 
+  // Pessimistic on purpose. The feed's cards are scored server-side against
+  // the JWT's ACTIVE CV — the picked id never travels with the list request —
+  // so flipping local state first would render one CV's profile beside the
+  // other CV's cards until the mutation lands. Activate, then let the
+  // invalidations pull both halves forward together.
   const onPickCv = useCallback(
     (id: string) => {
-      saved.setActiveCv(id);
       const link = myCvs?.find((c) => c.candidateId === id);
-      if (link) {
-        void meApi
-          .activateCv(link.id)
-          .then(() => qc.invalidateQueries({ queryKey: ["me", "cv"] }))
-          .catch(() => toast.error("Couldn't switch CV"));
-      }
+      if (!link) return;
+      void meApi
+        .activateCv(link.id)
+        .then(() => {
+          saved.setActiveCv(id);
+          return Promise.all([
+            qc.invalidateQueries({ queryKey: ["me", "cv"] }),
+            qc.invalidateQueries({ queryKey: ["match"] }),
+          ]);
+        })
+        .catch(() => toast.error("Couldn't switch CV"));
     },
     [saved, myCvs, qc],
   );
