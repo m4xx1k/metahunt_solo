@@ -72,6 +72,21 @@ export class MeController {
     return { ok: true };
   }
 
+  // Makes this CV the one `GET /feed` scores against (MET-144: the feed
+  // resolves the viewer's active CV from the JWT, no `?cv=` param) — what the
+  // CV switcher calls when the user picks a different one of their own CVs.
+  @Patch("cv/:id/activate")
+  @ApiOperation({ summary: "Make one account CV the active one" })
+  @ApiOkResponse({ type: OkResponseDto })
+  @ApiNotFoundResponse({ description: "CV link was not found.", type: ApiErrorResponseDto })
+  async activateCv(
+    @CurrentUser() user: JwtUser,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<{ ok: true }> {
+    if (!(await this.me.activateCv(user.userId, id))) throw new NotFoundException();
+    return { ok: true };
+  }
+
   @Get("subscriptions")
   @ApiOperation({ summary: "List the current account Telegram subscriptions" })
   @ApiOkResponse({ description: "Current account subscriptions." })

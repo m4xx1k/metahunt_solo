@@ -151,4 +151,38 @@ describe("CandidateLoaderService.loadForUser (integration)", () => {
     expect(candidates.map((candidate) => candidate.sourceText)).toEqual(["", ""]);
     expect(new Set(candidates.map((candidate) => candidate.contentHash)).size).toBe(2);
   });
+
+  // MET-144: `?cv=` is gone, so GET /feed's resolveActiveCandidateId +
+  // `.limit(1)` (no ORDER BY) is the only way a signed-in viewer's feed picks
+  // a CV — it silently picked an arbitrary one of several "active" rows
+  // before this, since a second upload never flipped the first back off
+  // (the schema comment's "replace = new row + old isActive=false" wasn't
+  // actually enforced).
+  it("deactivates the previous CV when a second, different one is uploaded", async () => {
+    await seedUser(OWNER_A);
+    const { loader } = buildLoader(async () => extracted());
+
+    const first = await loader.loadForUser(OWNER_A, "first cv text");
+    await loader.loadForUser(OWNER_A, "second, different cv text");
+
+    const links = await db.select().from(schema.userCvs);
+    expect(links).toHaveLength(2);
+    expect(links.find((l) => l.candidateId === first.candidateId)?.isActive).toBe(false);
+    expect(links.filter((l) => l.isActive)).toHaveLength(1);
+  });
+
+  it("reactivates a CV re-uploaded by content hash after a newer one took over", async () => {
+    await seedUser(OWNER_A);
+    const { loader } = buildLoader(async () => extracted());
+
+    const first = await loader.loadForUser(OWNER_A, "the original cv");
+    await loader.loadForUser(OWNER_A, "a different cv");
+    const reupload = await loader.loadForUser(OWNER_A, "the original cv");
+
+    expect(reupload.reused).toBe(true);
+    expect(reupload.candidateId).toBe(first.candidateId);
+    const links = await db.select().from(schema.userCvs);
+    expect(links.find((l) => l.candidateId === first.candidateId)?.isActive).toBe(true);
+    expect(links.filter((l) => l.isActive)).toHaveLength(1);
+  });
 });

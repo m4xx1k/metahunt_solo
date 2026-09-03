@@ -55,6 +55,30 @@ export class MeService {
     return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
   }
 
+  // Makes `id` (a user_cvs row, not a candidate id) the user's one active
+  // CV — the schema comment's invariant ("replace = new row + old
+  // isActive=false") made real for the CV switcher, not just a fresh
+  // upload. One UPDATE, CASE-atomic, so there's never a moment with two
+  // active rows: MET-144 dropped the `?cv=` URL param, so `GET /feed`'s
+  // JWT-resolved active CV (`resolveActiveCandidateId`) is now the only way
+  // a signed-in viewer's feed gets scored — this is what the "switch CV"
+  // control in the UI calls.
+  async activateCv(userId: string, id: string): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const [link] = await tx
+        .select({ candidateId: userCvs.candidateId })
+        .from(userCvs)
+        .where(and(eq(userCvs.id, id), eq(userCvs.userId, userId)));
+      if (!link) return false;
+
+      await tx
+        .update(userCvs)
+        .set({ isActive: sql`${userCvs.candidateId} = ${link.candidateId}` })
+        .where(eq(userCvs.userId, userId));
+      return true;
+    });
+  }
+
   async deleteCv(userId: string, id: string): Promise<boolean> {
     return this.db.transaction(async (tx) => {
       const [link] = await tx

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -48,7 +48,10 @@ export class CandidateLoaderService {
       .where(
         and(eq(schema.candidates.contentHash, contentHash), eq(schema.userCvs.userId, userId)),
       );
-    if (existing[0]) return this.buildResult(existing[0].id, true);
+    if (existing[0]) {
+      await this.setActiveCv(userId, existing[0].id);
+      return this.buildResult(existing[0].id, true);
+    }
 
     const extracted = await this.extractor.extract(sourceText);
     const skills = [...(extracted.skills?.required ?? []), ...(extracted.skills?.optional ?? [])];
@@ -97,11 +100,30 @@ export class CandidateLoaderService {
           label: extracted.role ?? "CV",
           isActive: true,
         });
+        await this.setActiveCv(userId, candidateId, tx);
       }
       return candidateId;
     });
 
     return this.buildResult(id, false);
+  }
+
+  // Makes `candidateId` this user's one active CV, deactivating any other —
+  // the schema comment's "replace = new row + old isActive=false" invariant,
+  // which neither the fresh-insert nor the content-hash-reuse path above
+  // actually enforced before this (MET-144 audit: `resolveActiveCandidateId`
+  // + `.limit(1)` with no ORDER BY silently picked an arbitrary one of
+  // several "active" rows). One UPDATE, CASE-atomic. `executor` defaults to
+  // `this.db`; pass a transaction's `tx` to run inside a caller's own.
+  private async setActiveCv(
+    userId: string,
+    candidateId: string,
+    executor: Pick<DrizzleDB, "update"> = this.db,
+  ): Promise<void> {
+    await executor
+      .update(schema.userCvs)
+      .set({ isActive: sql`${schema.userCvs.candidateId} = ${candidateId}` })
+      .where(eq(schema.userCvs.userId, userId));
   }
 
   // User rows are private. Samples contain only seeded non-user data and are

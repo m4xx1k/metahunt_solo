@@ -52,10 +52,10 @@ async function seedCandidate(role = "Backend Developer"): Promise<string> {
   return candidate.id;
 }
 
-async function link(userId: string, candidateId: string): Promise<string> {
+async function link(userId: string, candidateId: string, isActive = true): Promise<string> {
   const [row] = await db
     .insert(userCvs)
-    .values({ userId, candidateId, label: "CV", isActive: true })
+    .values({ userId, candidateId, label: "CV", isActive })
     .returning({ id: userCvs.id });
   return row.id;
 }
@@ -439,5 +439,50 @@ describe("MeService.deleteCv (integration)", () => {
     expect(await db.select().from(candidates).where(eq(candidates.id, candidateId))).toHaveLength(
       1,
     );
+  });
+});
+
+// MET-144: `?cv=` is gone from every route, so the CV switcher (and a
+// content-hash re-upload — see CandidateLoaderService's own setActiveCv)
+// is the only way a signed-in viewer's active CV changes; GET /feed's
+// resolveActiveCandidateId + `.limit(1)` relies on there always being at
+// most one.
+describe("MeService.activateCv (integration)", () => {
+  it("activates the target CV and deactivates every other one for the account", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const first = await seedCandidate();
+    const second = await seedCandidate();
+    await link(userId, first, true);
+    const secondLink = await link(userId, second, false);
+
+    await expect(me.activateCv(userId, secondLink)).resolves.toBe(true);
+
+    const rows = await db.select().from(userCvs).where(eq(userCvs.userId, userId));
+    expect(rows.find((r) => r.candidateId === first)?.isActive).toBe(false);
+    expect(rows.find((r) => r.candidateId === second)?.isActive).toBe(true);
+  });
+
+  it("does not activate a CV link owned by another account", async () => {
+    const me = makeService();
+    const owner = await seedUser();
+    const otherUser = await seedUser();
+    const candidateId = await seedCandidate();
+    const linkId = await link(owner, candidateId, false);
+
+    await expect(me.activateCv(otherUser, linkId)).resolves.toBe(false);
+    const [row] = await db.select().from(userCvs).where(eq(userCvs.id, linkId));
+    expect(row.isActive).toBe(false);
+  });
+
+  it("is a no-op on the account's other CVs when the target is already active", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const candidateId = await seedCandidate();
+    const linkId = await link(userId, candidateId, true);
+
+    await expect(me.activateCv(userId, linkId)).resolves.toBe(true);
+    const [row] = await db.select().from(userCvs).where(eq(userCvs.id, linkId));
+    expect(row.isActive).toBe(true);
   });
 });
