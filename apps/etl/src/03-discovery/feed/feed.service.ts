@@ -207,27 +207,11 @@ export class FeedService {
       const totalRes = await this.db.execute<{ count: number }>(sql`
         SELECT count(*)::int AS count ${base}
       `);
-      const total = totalRes.rows[0]?.count ?? 0;
-      return { items: [], page: params.page, pageSize: params.pageSize, total, offStackHidden: 0 };
+      return this.hydrate(params, [], null, totalRes.rows[0]?.count ?? 0, 0);
     }
     const total = pageRes.rows[0].total;
-
-    const [rows, overlay] = await Promise.all([
-      this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
-      scorer ? scorer.overlayFor(positionIds) : null,
-    ]);
-    const byPositionId = new Map(rows.map((r) => [r.positionId, r]));
-    const skills = await this.fetchSkills(positionIds, params.includeAllSkills === true);
-    const items = positionIds
-      .map((positionId) => {
-        const row = byPositionId.get(positionId);
-        if (!row) return null;
-        const dto = toDto(row, skills.get(positionId));
-        return overlay ? { ...dto, match: overlay.get(positionId) ?? null } : dto;
-      })
-      .filter((x): x is VacancyDto => x !== null);
-
-    return { items, page: params.page, pageSize: params.pageSize, total, offStackHidden: 0 };
+    const overlay = scorer ? scorer.overlayFor(positionIds) : null;
+    return this.hydrate(params, positionIds, overlay, total, 0);
   }
 
   // FULL PATH (§2.2, §7 step 4): `sort=score` and/or `minFitTier` — the
@@ -254,30 +238,59 @@ export class FeedService {
       pageSize: params.pageSize,
     });
 
-    const positionIds = ranked.map((r) => r.id);
+    // The full path already scored every row it kept — reshape it into the
+    // same `Map<positionId, MatchOverlay>` overlayFor returns, so hydrate()
+    // can attach `match` identically for both paths.
+    const overlay = new Map(
+      ranked.map((r): [string, MatchOverlay] => [
+        r.id,
+        {
+          relevance: r.relevance,
+          coverage: r.coverage,
+          tier: TIER_BY_BUCKET[r.tier_bucket],
+          percent: fitPercent(buildScoreBreakdown(r.coverage).total),
+          onStack: r.on_stack,
+        },
+      ]),
+    );
+    return this.hydrate(
+      params,
+      ranked.map((r) => r.id),
+      Promise.resolve(overlay),
+      total,
+      offStackHidden,
+    );
+  }
+
+  // The shared tail of both paths (§7 step 5): given an already-decided,
+  // ordered list of position ids, hydrate them into full feed VacancyDtos
+  // and attach each one's `match` from `overlay` (or leave it null when
+  // there is none). `overlay` is a Promise so the cheap path's
+  // `scorer.overlayFor(pageIds)` runs concurrently with `selectPositions` /
+  // `fetchSkills` instead of being awaited up front.
+  private async hydrate(
+    params: FeedSearchParams,
+    positionIds: string[],
+    overlay: Promise<Map<string, MatchOverlay>> | null,
+    total: number,
+    offStackHidden: number,
+  ): Promise<FeedResponse> {
     if (positionIds.length === 0) {
       return { items: [], page: params.page, pageSize: params.pageSize, total, offStackHidden };
     }
 
-    const scoreByPosition = new Map(ranked.map((r) => [r.id, r]));
-    const [rows, skills] = await Promise.all([
+    const [rows, skills, resolvedOverlay] = await Promise.all([
       this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
       this.fetchSkills(positionIds, params.includeAllSkills === true),
+      overlay,
     ]);
     const byPositionId = new Map(rows.map((r) => [r.positionId, r]));
     const items = positionIds
-      .map((positionId): VacancyDto | null => {
+      .map((positionId) => {
         const row = byPositionId.get(positionId);
-        const scoreRow = scoreByPosition.get(positionId);
-        if (!row || !scoreRow) return null;
-        const match: MatchOverlay = {
-          relevance: scoreRow.relevance,
-          coverage: scoreRow.coverage,
-          tier: TIER_BY_BUCKET[scoreRow.tier_bucket],
-          percent: fitPercent(buildScoreBreakdown(scoreRow.coverage).total),
-          onStack: scoreRow.on_stack,
-        };
-        return { ...toDto(row, skills.get(positionId)), match };
+        if (!row) return null;
+        const dto = toDto(row, skills.get(positionId));
+        return resolvedOverlay ? { ...dto, match: resolvedOverlay.get(positionId) ?? null } : dto;
       })
       .filter((x): x is VacancyDto => x !== null);
 
