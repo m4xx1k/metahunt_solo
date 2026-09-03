@@ -1,11 +1,7 @@
 import type { DrizzleDB } from "@metahunt/database";
 
 import type { NodeRef } from "../../platform/shared/contract";
-import {
-  createCandidateScorer,
-  resolveCandidateSkills,
-  type CandidateScorer,
-} from "../score/scorer.port";
+import { resolveViewer, scorerForNodeIds, type CandidateScorer } from "../score/scorer.port";
 
 import type { FeedSearchParams } from "./feed.service";
 
@@ -36,10 +32,7 @@ export async function resolveFeedQuery(
   candidateId: string | null,
   filters: FeedSearchParams,
 ): Promise<ResolvedFeedQuery> {
-  if (!candidateId) return { filters, scorer: null, viewerSkills: null };
-  const [scorer, viewerSkills] = await Promise.all([
-    createCandidateScorer(db, candidateId),
-    resolveCandidateSkills(db, candidateId),
-  ]);
-  return { filters, scorer, viewerSkills };
+  const viewer = candidateId ? await resolveViewer(db, candidateId) : null;
+  if (!viewer) return { filters, scorer: null, viewerSkills: null };
+  return { filters, scorer: scorerForNodeIds(db, viewer.nodeIds), viewerSkills: viewer.skills };
 }

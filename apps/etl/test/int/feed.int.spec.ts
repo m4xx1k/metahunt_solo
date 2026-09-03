@@ -6,7 +6,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 import { FacetsService } from "../../src/03-discovery/feed/facets.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { resolveFeedQuery } from "../../src/03-discovery/feed/resolve-feed-query";
-import { createCandidateScorer } from "../../src/03-discovery/score/scorer.port";
+import { resolveViewer, scorerForNodeIds } from "../../src/03-discovery/score/scorer.port";
 
 import { makeTestDb, truncateAll } from "./db";
 import { insertVacancyWithGroup, mergeIntoGroup } from "./vacancy-fixture";
@@ -431,7 +431,8 @@ describe("FeedService.search — scorer / CHEAP PATH (integration)", () => {
 
     const params = { page: 1, pageSize: 20 };
     const unscored = await feed.search(params);
-    const scorer = await createCandidateScorer(db, candidate.id);
+    const viewer = await resolveViewer(db, candidate.id);
+    const scorer = viewer ? scorerForNodeIds(db, viewer.nodeIds) : null;
     const scored = await feed.search(params, scorer);
 
     expect(scored.total).toBe(unscored.total);
@@ -547,7 +548,8 @@ describe("FeedService.search — sort=score / FULL PATH (integration)", () => {
     // Candidate has only `go` — weakFit: 1 of 2 required (GOOD); strongFit:
     // 1 of 1 required (STRONG). k8s on weakFit is the unmatched "❌".
     const candidateId = await seedCandidateWithSkills([go.id]);
-    const scorer = await createCandidateScorer(db, candidateId);
+    const viewer = await resolveViewer(db, candidateId);
+    const scorer = viewer ? scorerForNodeIds(db, viewer.nodeIds) : null;
 
     // Cheap path (sort=date): unfiltered, so the 12 skill-less fillers ride
     // along too — assert relative order, not the exact list.
@@ -598,7 +600,8 @@ describe("FeedService.search — sort=score / FULL PATH (integration)", () => {
     }
     await db.execute(sql`REFRESH MATERIALIZED VIEW node_stats`);
     const candidateId = await seedCandidateWithSkills([go.id]);
-    const scorer = await createCandidateScorer(db, candidateId);
+    const viewer = await resolveViewer(db, candidateId);
+    const scorer = viewer ? scorerForNodeIds(db, viewer.nodeIds) : null;
 
     const good = await feed.search(
       { page: 1, pageSize: 20, sort: "date", minFitTier: "GOOD" },
@@ -665,7 +668,8 @@ describe("FeedService.search — sort=score / FULL PATH (integration)", () => {
     }
     await db.execute(sql`REFRESH MATERIALIZED VIEW node_stats`);
     const candidateId = await seedCandidateWithSkills([node.id, docker.id]);
-    const scorer = await createCandidateScorer(db, candidateId);
+    const viewer = await resolveViewer(db, candidateId);
+    const scorer = viewer ? scorerForNodeIds(db, viewer.nodeIds) : null;
 
     const hidden = await feed.search({ page: 1, pageSize: 20, sort: "score" }, scorer);
     const shown = await feed.search(

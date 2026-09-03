@@ -29,10 +29,10 @@ import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE, isUuid, parseDays } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import {
-  overlayForUser,
+  overlayFor,
   resolveActiveCandidateId,
   resolveSampleCandidateId,
-  resolveViewerSkills,
+  resolveViewer,
 } from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
@@ -176,8 +176,7 @@ export class FeedController {
   // a signed-in viewer, one `overlayFor([positionId])` scores this single
   // Position against their active CV — MET-144 §7 step 2, the smallest real
   // overlayFor consumer — plus the §4 skill diff for step 6's detail-page
-  // panel. Provisional: step 3's resolveFeedQuery becomes "the only code
-  // that knows candidates exist" and this inlined resolve folds into it then.
+  // panel.
   @Get("vacancy/:id")
   @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: "Read full detail for one vacancy" })
@@ -194,12 +193,14 @@ export class FeedController {
     userId: string | undefined,
   ): Promise<VacancyDetailDto> {
     if (!userId || !vacancy.uniqueVacancyId) return { ...vacancy, diff: null };
-    const [overlay, viewerSkills] = await Promise.all([
-      overlayForUser(this.db, userId, [vacancy.uniqueVacancyId]),
-      resolveViewerSkills(this.db, userId),
-    ]);
+    // One resolve for both halves — the overlay's scoring input and the diff's
+    // skill names come off the same `resolveViewer` read.
+    const candidateId = await resolveActiveCandidateId(this.db, userId);
+    const viewer = candidateId ? await resolveViewer(this.db, candidateId) : null;
+    if (!viewer) return { ...vacancy, diff: null };
+    const overlay = await overlayFor(this.db, viewer.nodeIds, [vacancy.uniqueVacancyId]);
     const match = overlay.get(vacancy.uniqueVacancyId) ?? null;
-    return { ...vacancy, match, diff: match ? buildSkillDiff(vacancy, viewerSkills) : null };
+    return { ...vacancy, match, diff: match ? buildSkillDiff(vacancy, viewer.skills) : null };
   }
 
   // Members + "why merged" reasons for one dedup group — backs the feed's

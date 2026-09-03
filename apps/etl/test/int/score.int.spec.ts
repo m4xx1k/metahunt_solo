@@ -6,11 +6,11 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
 import {
-  createCandidateScorer,
   overlayFor,
-  overlayForUser,
+  resolveActiveCandidateId,
   resolveSampleCandidateId,
-  resolveViewerSkills,
+  resolveViewer,
+  scorerForNodeIds,
 } from "../../src/03-discovery/score/scorer.port";
 
 import { noopAnalytics } from "./analytics";
@@ -247,9 +247,10 @@ describe("overlayFor vs the full path (integration)", () => {
   });
 });
 
-// §7 step 2: the viewer-facing wrapper — resolves a userId's ACTIVE CV, then
-// runs the same overlayFor primitive proven above.
-describe("overlayForUser (integration)", () => {
+// §7 step 2: resolveActiveCandidateId (a userId's ACTIVE CV) composed with
+// resolveViewer + overlayFor — the same two-call chain feed.controller.ts's
+// withMatch() runs.
+describe("resolveActiveCandidateId + resolveViewer + overlayFor (integration)", () => {
   it("scores against the user's active CV", async () => {
     const { sourceId, ingestId } = await seedSource();
     const role = await seedNode("ROLE", "Backend Developer");
@@ -264,45 +265,32 @@ describe("overlayForUser (integration)", () => {
     await linkActiveCv(userId, candidateId);
 
     const vacPos = await positionIdOf(vac);
-    const overlay = await overlayForUser(db, userId, [vacPos]);
+    const activeCandidateId = await resolveActiveCandidateId(db, userId);
+    const viewer = activeCandidateId ? await resolveViewer(db, activeCandidateId) : null;
+    const overlay = viewer ? await overlayFor(db, viewer.nodeIds, [vacPos]) : new Map();
 
     expect(overlay.get(vacPos)).toMatchObject({ tier: "STRONG", percent: 100 });
   });
 
-  it("returns an empty map for a user with no linked CV", async () => {
-    const { sourceId, ingestId } = await seedSource();
-    const role = await seedNode("ROLE", "Backend Developer");
-    const vac = await seedVacancy(sourceId, ingestId, role);
-    await seedFillers(sourceId, ingestId, role);
+  it("resolves no candidate for a user with no linked CV", async () => {
     const userId = await seedUser();
 
-    const overlay = await overlayForUser(db, userId, [await positionIdOf(vac)]);
-
-    expect(overlay.size).toBe(0);
+    await expect(resolveActiveCandidateId(db, userId)).resolves.toBeNull();
   });
 
   it("ignores a CV the user marked inactive", async () => {
-    const { sourceId, ingestId } = await seedSource();
-    const role = await seedNode("ROLE", "Backend Developer");
     const go = await seedNode("SKILL", "Go");
-    const vac = await seedVacancy(sourceId, ingestId, role);
-    await linkSkill(vac, go, true);
-    await seedFillers(sourceId, ingestId, role);
-    await refreshNodeStats();
-
     const candidateId = await seedCandidate([go]);
     const userId = await seedUser();
     await linkActiveCv(userId, candidateId, false);
 
-    const overlay = await overlayForUser(db, userId, [await positionIdOf(vac)]);
-
-    expect(overlay.size).toBe(0);
+    await expect(resolveActiveCandidateId(db, userId)).resolves.toBeNull();
   });
 });
 
 // §7 step 3: what resolveFeedQuery hands FeedService.search once a
 // candidateId is resolved (JWT active CV, or an allowlisted ?sample=).
-describe("createCandidateScorer (integration)", () => {
+describe("resolveViewer + scorerForNodeIds (integration)", () => {
   it("scores through the bound CandidateScorer the same as calling overlayFor directly", async () => {
     const { sourceId, ingestId } = await seedSource();
     const role = await seedNode("ROLE", "Backend Developer");
@@ -314,17 +302,18 @@ describe("createCandidateScorer (integration)", () => {
     const candidateId = await seedCandidate([go]);
     const vacPos = await positionIdOf(vac);
 
-    const scorer = await createCandidateScorer(db, candidateId);
+    const viewer = await resolveViewer(db, candidateId);
     const direct = await overlayFor(db, [go], [vacPos]);
 
-    expect(scorer).not.toBeNull();
-    await expect(scorer?.overlayFor([vacPos])).resolves.toEqual(direct);
+    expect(viewer).not.toBeNull();
+    const scorer = scorerForNodeIds(db, viewer!.nodeIds);
+    await expect(scorer.overlayFor([vacPos])).resolves.toEqual(direct);
   });
 
   it("returns null for a candidate with no skill nodes at all", async () => {
     const candidateId = await seedCandidate([]);
 
-    await expect(createCandidateScorer(db, candidateId)).resolves.toBeNull();
+    await expect(resolveViewer(db, candidateId)).resolves.toBeNull();
   });
 });
 
@@ -349,8 +338,9 @@ describe("resolveSampleCandidateId (integration)", () => {
 });
 
 // §4 / §7 step 6: the candidate's own resolved skills (id + name), for the
-// vacancy-detail diff's "➕ bonus" column.
-describe("resolveViewerSkills (integration)", () => {
+// vacancy-detail diff's "➕ bonus" column — now `resolveViewer(candidateId)
+// .skills`, off the same read `overlayFor`'s `nodeIds` come from.
+describe("resolveViewer skills (integration)", () => {
   it("resolves the active CV's skills, id and name both", async () => {
     const go = await seedNode("SKILL", "Go");
     const k8s = await seedNode("SKILL", "Kubernetes");
@@ -358,16 +348,17 @@ describe("resolveViewerSkills (integration)", () => {
     const userId = await seedUser();
     await linkActiveCv(userId, candidateId);
 
-    const skills = await resolveViewerSkills(db, userId);
+    const activeCandidateId = await resolveActiveCandidateId(db, userId);
+    const viewer = activeCandidateId ? await resolveViewer(db, activeCandidateId) : null;
 
-    expect(skills.map((s) => s.id).sort()).toEqual([go, k8s].sort());
-    expect(skills.find((s) => s.id === go)?.name).toBe("Go");
+    expect(viewer?.skills.map((s) => s.id).sort()).toEqual([go, k8s].sort());
+    expect(viewer?.skills.find((s) => s.id === go)?.name).toBe("Go");
   });
 
-  it("returns empty for a user with no CV at all", async () => {
+  it("resolves no candidate for a user with no CV at all", async () => {
     const userId = await seedUser();
 
-    await expect(resolveViewerSkills(db, userId)).resolves.toEqual([]);
+    await expect(resolveActiveCandidateId(db, userId)).resolves.toBeNull();
   });
 
   it("ignores a CV the user marked inactive", async () => {
@@ -376,6 +367,6 @@ describe("resolveViewerSkills (integration)", () => {
     const userId = await seedUser();
     await linkActiveCv(userId, candidateId, false);
 
-    await expect(resolveViewerSkills(db, userId)).resolves.toEqual([]);
+    await expect(resolveActiveCandidateId(db, userId)).resolves.toBeNull();
   });
 });

@@ -10,13 +10,13 @@ import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { FeedQueryDto } from "../../platform/shared/filter-params.dto";
 import type { MatchOverlay } from "../score/score.contract";
 import {
-  createCandidateScorer,
-  overlayForUser,
+  overlayFor,
   resolveActiveCandidateId,
-  resolveCandidateSkills,
   resolveSampleCandidateId,
-  resolveViewerSkills,
+  resolveViewer,
+  scorerForNodeIds,
   type CandidateScorer,
+  type Viewer,
 } from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
@@ -25,12 +25,11 @@ import { FeedController } from "./feed.controller";
 import { FeedService } from "./feed.service";
 
 jest.mock("../score/scorer.port");
-const overlayForUserMock = jest.mocked(overlayForUser);
+const overlayForMock = jest.mocked(overlayFor);
 const resolveActiveCandidateIdMock = jest.mocked(resolveActiveCandidateId);
 const resolveSampleCandidateIdMock = jest.mocked(resolveSampleCandidateId);
-const resolveViewerSkillsMock = jest.mocked(resolveViewerSkills);
-const resolveCandidateSkillsMock = jest.mocked(resolveCandidateSkills);
-const createCandidateScorerMock = jest.mocked(createCandidateScorer);
+const resolveViewerMock = jest.mocked(resolveViewer);
+const scorerForNodeIdsMock = jest.mocked(scorerForNodeIds);
 
 const EMPTY: FeedResponse = {
   items: [],
@@ -66,12 +65,11 @@ describe("FeedController", () => {
     getById.mockReset();
     listForSitemap.mockReset().mockResolvedValue([]);
     resolveCompanySlug.mockReset().mockResolvedValue(null);
-    overlayForUserMock.mockReset().mockResolvedValue(new Map());
-    resolveViewerSkillsMock.mockReset().mockResolvedValue([]);
-    resolveCandidateSkillsMock.mockReset().mockResolvedValue([]);
+    overlayForMock.mockReset().mockResolvedValue(new Map());
+    resolveViewerMock.mockReset().mockResolvedValue(null);
     resolveActiveCandidateIdMock.mockReset().mockResolvedValue(null);
     resolveSampleCandidateIdMock.mockReset().mockResolvedValue(null);
-    createCandidateScorerMock.mockReset().mockResolvedValue(null);
+    scorerForNodeIdsMock.mockReset();
     const moduleRef = await Test.createTestingModule({
       controllers: [FeedController],
       providers: [
@@ -191,26 +189,31 @@ describe("FeedController", () => {
 
     it("scores the page against the signed-in viewer's active CV", async () => {
       resolveActiveCandidateIdMock.mockResolvedValue("candidate-1");
+      const viewer: Viewer = { nodeIds: ["node-1"], skills: [] };
+      resolveViewerMock.mockResolvedValue(viewer);
       const scorer: CandidateScorer = { overlayFor: jest.fn(), fragments: jest.fn() };
-      createCandidateScorerMock.mockResolvedValue(scorer);
+      scorerForNodeIdsMock.mockReturnValue(scorer);
 
       await controller.search(dto(), asUser("user-1"));
 
       expect(resolveActiveCandidateIdMock).toHaveBeenCalledWith(expect.anything(), "user-1");
-      expect(createCandidateScorerMock).toHaveBeenCalledWith(expect.anything(), "candidate-1");
-      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer, []);
+      expect(resolveViewerMock).toHaveBeenCalledWith(expect.anything(), "candidate-1");
+      expect(scorerForNodeIdsMock).toHaveBeenCalledWith(expect.anything(), viewer.nodeIds);
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer, viewer.skills);
     });
 
     it("scores against an allowlisted ?sample= id, ignoring the signed-in viewer", async () => {
       resolveSampleCandidateIdMock.mockResolvedValue("sample-1");
+      const viewer: Viewer = { nodeIds: ["node-1"], skills: [] };
+      resolveViewerMock.mockResolvedValue(viewer);
       const scorer: CandidateScorer = { overlayFor: jest.fn(), fragments: jest.fn() };
-      createCandidateScorerMock.mockResolvedValue(scorer);
+      scorerForNodeIdsMock.mockReturnValue(scorer);
 
       await controller.search(dto({ sample: "sample-1" }), asUser("user-1"));
 
       expect(resolveSampleCandidateIdMock).toHaveBeenCalledWith(expect.anything(), "sample-1");
       expect(resolveActiveCandidateIdMock).not.toHaveBeenCalled();
-      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer, []);
+      expect(search).toHaveBeenLastCalledWith(expect.anything(), scorer, viewer.skills);
     });
 
     it("404s for a ?sample= id that isn't an allowlisted sample candidate", async () => {
@@ -279,8 +282,8 @@ describe("FeedController", () => {
 
       await controller.vacancy("v1", anon);
 
-      expect(overlayForUserMock).not.toHaveBeenCalled();
-      expect(resolveViewerSkillsMock).not.toHaveBeenCalled();
+      expect(resolveActiveCandidateIdMock).not.toHaveBeenCalled();
+      expect(overlayForMock).not.toHaveBeenCalled();
     });
 
     it("attaches the signed-in viewer's match overlay, keyed off the Position id", async () => {
@@ -291,6 +294,8 @@ describe("FeedController", () => {
         skills: NO_SKILLS,
       } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
+      resolveActiveCandidateIdMock.mockResolvedValue("candidate-1");
+      resolveViewerMock.mockResolvedValue({ nodeIds: ["node-1"], skills: [] });
       const overlay: MatchOverlay = {
         relevance: 1,
         coverage: 0.5,
@@ -298,11 +303,11 @@ describe("FeedController", () => {
         percent: 50,
         onStack: true,
       };
-      overlayForUserMock.mockResolvedValue(new Map([["pos-1", overlay]]));
+      overlayForMock.mockResolvedValue(new Map([["pos-1", overlay]]));
 
       const result = await controller.vacancy("v1", asUser("user-1"));
 
-      expect(overlayForUserMock).toHaveBeenCalledWith(expect.anything(), "user-1", ["pos-1"]);
+      expect(overlayForMock).toHaveBeenCalledWith(expect.anything(), ["node-1"], ["pos-1"]);
       expect(result.match).toBe(overlay);
     });
 
@@ -314,10 +319,11 @@ describe("FeedController", () => {
         skills: NO_SKILLS,
       } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
-      overlayForUserMock.mockResolvedValue(new Map());
+      // resolveActiveCandidateIdMock defaults to null (beforeEach) — no active CV.
 
       const result = await controller.vacancy("v1", asUser("user-1"));
 
+      expect(overlayForMock).not.toHaveBeenCalled();
       expect(result.match).toBeNull();
       expect(result.diff).toBeNull();
     });
@@ -334,12 +340,16 @@ describe("FeedController", () => {
         skills: { required: [required1, required2], optional: [optional1] },
       } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
-      overlayForUserMock.mockResolvedValue(
+      resolveActiveCandidateIdMock.mockResolvedValue("candidate-1");
+      resolveViewerMock.mockResolvedValue({
+        nodeIds: ["node-1"],
+        skills: [required1, optional1, bonusSkill],
+      });
+      overlayForMock.mockResolvedValue(
         new Map([
           ["pos-1", { relevance: 1, coverage: 0.5, tier: "GOOD", percent: 50, onStack: true }],
         ]),
       );
-      resolveViewerSkillsMock.mockResolvedValue([required1, optional1, bonusSkill]);
 
       const result = await controller.vacancy("v1", asUser("user-1"));
 

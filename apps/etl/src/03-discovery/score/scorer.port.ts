@@ -16,6 +16,15 @@ import {
 } from "./score.contract";
 import { rankedCte } from "./score.sql";
 
+// The resolved viewer of a scored surface: one candidate's skill nodes, read
+// once. Both halves come from the same row set — see `resolveViewer` below.
+export interface Viewer {
+  /** Skill-node ids, the input to every scoring query. */
+  nodeIds: string[];
+  /** The same nodes with their names, for the skill diff and `viewerSkills`. */
+  skills: NodeRef[];
+}
+
 // CHEAP PATH primitive (unified-feed-score.md §2.1, §3): score a fixed,
 // already-chosen set of positions — ~2 ms for a page of 20. Every non-ranked
 // surface (feed page, single vacancy, Telegram digest) is one call to this.
@@ -62,21 +71,6 @@ export async function overlayFor(
   return overlay;
 }
 
-// The viewer-facing wrapper: resolve the JWT user's ACTIVE CV (`user_cvs.
-// isActive` — MVP is one active CV per user, ADR-0010-adjacent) and score
-// against it. No account, or no CV linked, or no active one → empty map,
-// same as an anonymous visitor. §7 step 2's "resolve the viewer's CV from
-// the JWT" step for the single-vacancy page.
-export async function overlayForUser(
-  db: DrizzleDB,
-  userId: string,
-  positionIds: string[],
-): Promise<Map<string, MatchOverlay>> {
-  const candidateId = await resolveActiveCandidateId(db, userId);
-  if (!candidateId) return new Map();
-  return overlayFor(db, await candidateNodeIds(db, candidateId), positionIds);
-}
-
 // Exported for callers that need the candidateId itself, not just the
 // overlay — resolve-feed-query.ts's `?sample=` fallback (§8) resolves a
 // candidateId either way and wants one composition path for both sources.
@@ -109,39 +103,22 @@ export async function resolveSampleCandidateId(
   return row?.type === "sample" ? sampleId : null;
 }
 
-async function candidateNodeIds(db: DrizzleDB, candidateId: string): Promise<string[]> {
-  const rows = await db
-    .select({ nodeId: schema.candidateNodes.nodeId })
-    .from(schema.candidateNodes)
-    .where(eq(schema.candidateNodes.candidateId, candidateId));
-  return rows.map((r) => r.nodeId);
-}
-
-// The candidate's resolved skill set (id + name), not just ids. Two consumers:
-// §4's vacancy-detail skill diff needs the candidate's own names for its "➕
-// bonus" column (skills the candidate has that this vacancy doesn't ask for),
-// which the vacancy's own already-fetched skills can't supply; and the unified
-// feed (§6) ships the same list once per page (`FeedResponse.viewerSkills`) so
-// the cold card can compute have/missing/bonus counts client-side at parity
-// with the warm card.
-export async function resolveCandidateSkills(
-  db: DrizzleDB,
-  candidateId: string,
-): Promise<NodeRef[]> {
-  const rows = await db
+// One resolve, one query: everything a scored surface needs to know about the
+// viewer. `nodeIds` drives the scoring SQL (`overlayFor`, `scorerForNodeIds`);
+// `skills` carries the names the diff's "bonus" column needs and the feed ships
+// once per page as `FeedResponse.viewerSkills`.
+//
+// `null` when the candidate resolves to no skill nodes at all — the same
+// "nothing to score" outcome as no candidate, so every caller treats both the
+// same way and renders `match: null`.
+export async function resolveViewer(db: DrizzleDB, candidateId: string): Promise<Viewer | null> {
+  const skills = await db
     .select({ id: schema.nodes.id, name: schema.nodes.canonicalName })
     .from(schema.candidateNodes)
     .innerJoin(schema.nodes, eq(schema.nodes.id, schema.candidateNodes.nodeId))
     .where(eq(schema.candidateNodes.candidateId, candidateId));
-  return rows;
-}
-
-// The viewer-facing wrapper: resolve the JWT user's active CV, then its skills.
-// No account / no active CV → empty, same as an anonymous visitor.
-export async function resolveViewerSkills(db: DrizzleDB, userId: string): Promise<NodeRef[]> {
-  const candidateId = await resolveActiveCandidateId(db, userId);
-  if (!candidateId) return [];
-  return resolveCandidateSkills(db, candidateId);
+  if (skills.length === 0) return null;
+  return { nodeIds: skills.map((s) => s.id), skills };
 }
 
 // The FULL PATH's SQL-splice half of §3 — what a consumer already running its
@@ -166,11 +143,11 @@ export interface CandidateScorer {
   fragments(opts: { minFitTier?: FitTier; requireOverlap?: boolean }): ScoringFragments;
 }
 
-// The lower-level factory: build a scorer straight from resolved node ids,
-// no candidateId / DB lookup needed. `rankByRefs`'s plain-text-skills path
-// (`RankingService.match`) never creates a `candidates` row, so it can't go
-// through `createCandidateScorer` below — this is what it (and that below)
-// both drive.
+// The lower-level factory: build a scorer straight from resolved node ids, no
+// candidateId / DB lookup needed. `rankByRefs`'s plain-text-skills path
+// (`RankingService.match`) never creates a `candidates` row, so it drives
+// this directly; every other caller resolves a `Viewer` first and passes its
+// `nodeIds` here (`resolveFeedQuery`, `feed.controller.ts`'s `withMatch`).
 export function scorerForNodeIds(db: DrizzleDB, candidateNodeIds: string[]): CandidateScorer {
   const cand = sql.join(
     candidateNodeIds.map((id) => sql`(${id}::uuid)`),
@@ -193,16 +170,4 @@ export function scorerForNodeIds(db: DrizzleDB, candidateNodeIds: string[]): Can
       };
     },
   };
-}
-
-// null when the candidate resolves to no skill nodes at all — same
-// "nothing to score" outcome as no candidate, so callers can treat both
-// uniformly (`scorer: CandidateScorer | null`).
-export async function createCandidateScorer(
-  db: DrizzleDB,
-  candidateId: string,
-): Promise<CandidateScorer | null> {
-  const nodeIds = await candidateNodeIds(db, candidateId);
-  if (nodeIds.length === 0) return null;
-  return scorerForNodeIds(db, nodeIds);
 }
