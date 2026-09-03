@@ -13,6 +13,7 @@ import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { SENIORITY_OUTLINE_TONE } from "@/entities/vacancy/SeniorityBadge";
 import type { Seniority } from "@/lib/extracted-vacancy";
 import type { OptionRow } from "@/features/vacancy-filters/types";
+import type { RoleSuggestionsResponse } from "@/lib/api/cv";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import { DedupeToggle } from "./DedupeToggle";
@@ -46,6 +47,8 @@ export function FeedFilters({
   skillCatalog,
   domainCatalog,
   hideTrackTree = false,
+  hasViewer = false,
+  roleSuggestions,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -64,14 +67,31 @@ export function FeedFilters({
   domainCatalog?: TrackAxis[];
   /** Drop the browse tree (the merged route drives tracks from a top-band). */
   hideTrackTree?: boolean;
+  /** A scoring viewer is in view → show the min-fit gate + boost suggested roles. */
+  hasViewer?: boolean;
+  /** Candidate role fit — suggested roles lead the picker with an "N/M fit" label. */
+  roleSuggestions?: RoleSuggestionsResponse;
 }) {
   const agg = useMemo(() => toFilterAggregates(aggregates), [aggregates]);
   // Role/skill options come from the full /feed catalog (search reaches every
   // node), not the aggregates top-N. Counts only order the empty-query view.
-  const roleOptions = useMemo<OptionRow[]>(
-    () => (roleCatalog ?? []).map((r) => ({ id: r.id, label: r.name, count: r.count ?? 0 })),
-    [roleCatalog],
-  );
+  // Suggested roles first (label carries the honest "N/M fit" numerator), then
+  // the searchable catalog. MultiSelect orders unselected chips by count desc,
+  // so a synthetic count floats suggestions to the top in suggestion order.
+  const roleOptions = useMemo<OptionRow[]>(() => {
+    const byId = new Map<string, OptionRow>();
+    for (const r of roleCatalog ?? [])
+      byId.set(r.id, { id: r.id, label: r.name, count: r.count ?? 0 });
+    (roleSuggestions?.items ?? []).forEach((sug, i) => {
+      const id = sug.slug ?? sug.roleId;
+      byId.set(id, {
+        id,
+        label: `${sug.name} · ${sug.goodCount}/${sug.totalCount} fit`,
+        count: 1_000_000 - i,
+      });
+    });
+    return [...byId.values()];
+  }, [roleCatalog, roleSuggestions]);
   const skillOptions = useMemo<OptionRow[]>(
     () => (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
     [skillCatalog],
@@ -160,11 +180,18 @@ export function FeedFilters({
           ) : null}
           <FilterRail
             api={api}
-            lens="cold"
+            lens={hasViewer ? "warm" : "cold"}
             seniorityOptions={agg.seniorities}
             workFormatOptions={agg.workFormats}
             domainOptions={domainOptions}
             roleOptions={showFacets ? undefined : roleOptions}
+            roleExtra={
+              hasViewer && roleSuggestions?.reduced ? (
+                <p className="font-mono text-2xs text-text-muted">
+                  rough estimate — add more skills for a sharper role fit
+                </p>
+              ) : null
+            }
             skillOptions={showFacets ? undefined : skillOptions}
             skillExtra={
               !showFacets && api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : undefined

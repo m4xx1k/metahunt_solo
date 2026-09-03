@@ -13,8 +13,13 @@ import {
   type ListVacanciesQuery,
 } from "@/lib/api/vacancies";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
-import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "@/features/vacancy-filters/types";
-import { readList, type ParamReader } from "@/features/vacancy-filters/url-params";
+import {
+  DEFAULT_FRESHNESS,
+  FRESHNESS_DAYS,
+  HOME_INCLUDE_OFF_STACK,
+} from "@/features/vacancy-filters/types";
+import { readBool, readList, type ParamReader } from "@/features/vacancy-filters/url-params";
+import { isUuid } from "@/lib/uuid";
 
 export const PAGE_SIZE = 20;
 
@@ -34,6 +39,8 @@ export interface FeedQueryResult {
   offset: number;
   page: number;
 }
+
+const isSample = (raw: string | null): boolean => raw != null && isUuid(raw);
 
 function asNonNegativeInt(raw: string | null, fallback: number): number {
   if (!raw) return fallback;
@@ -86,6 +93,15 @@ export function buildFeedListQuery(
     hasReservation: coerceBool(p.get("reservation") ?? undefined),
     hasDuplicates: p.get("dupes") === "true" ? true : undefined,
     postedWithinDays,
+    // Scoring params — mirror toLabColdQuery. Only an explicit "score" click
+    // (or minFitTier) opts into the full path; null/"date" stay on the cheap
+    // freshness path (unified-feed-score.md §8.1).
+    sort: p.get("sort") === "score" ? "score" : undefined,
+    minFitTier: (p.get("minFitTier") as ListVacanciesQuery["minFitTier"]) ?? undefined,
+    // MET-120: the home feed shows off-stack matches by default; an explicit
+    // false opts out. || undefined so the request omits the key at the default.
+    includeOffStack: (readBool(p.get("offStack")) ?? HOME_INCLUDE_OFF_STACK) || undefined,
+    sample: isSample(p.get("sample")) ? (p.get("sample") as string) : undefined,
   };
   return { query, offset, page };
 }

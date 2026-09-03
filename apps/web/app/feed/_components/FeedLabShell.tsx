@@ -8,14 +8,14 @@ import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
-import type { OptionRow } from "@/features/vacancy-filters/types";
+import { LAB_INCLUDE_OFF_STACK, type OptionRow } from "@/features/vacancy-filters/types";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { isUuid } from "@/lib/uuid";
 import type { SampleCandidate } from "@/lib/api/cv";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { VacancyMatchCard } from "@/entities/vacancy/VacancyMatchCard";
 
-import { LabControls } from "./LabControls";
+import { SortControls } from "@/features/vacancy-filters/SortControls";
 import { LAB_PAGE_SIZE, toLabColdQuery } from "./lab-query";
 
 // The lab feed's one island — the unified path, always (MET-144 step 7: this
@@ -64,7 +64,7 @@ export function FeedLabShell({
     () => toLabColdQuery(api.filters, page, sample ?? undefined),
     [api.filters, page, sample],
   );
-  const cold = useResults({ lens: "cold", query: coldQuery });
+  const cold = useResults({ query: coldQuery });
 
   const busy = cold.isFetching;
   const total = cold.data?.total ?? 0;
@@ -120,9 +120,10 @@ export function FeedLabShell({
           {/* Freshest-by-default (§8.1); "best fit" opts into the full path.
               Off-stack only hides on the full path, so the toggle
               self-suppresses at 0. */}
-          <LabControls
+          <SortControls
             api={api}
             defaultSort="date"
+            defaultIncludeOffStack={LAB_INCLUDE_OFF_STACK}
             offStackHidden={offStackHidden}
             disabled={busy}
           />

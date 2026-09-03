@@ -16,6 +16,7 @@ export function useRoleSuggestions(candidateId: string, isSample: boolean) {
     queryKey: ["role-suggestions", candidateId],
     queryFn: () =>
       isSample ? cvApi.sampleRoleSuggestions(candidateId) : cvApi.roleSuggestions(candidateId),
+    enabled: candidateId !== "",
     staleTime: 30_000,
   });
 

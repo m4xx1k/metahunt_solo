@@ -1,7 +1,12 @@
-import { asEnums, FRESHNESS_DAYS, DEFAULT_FRESHNESS } from "@/features/vacancy-filters/types";
+import {
+  asEnums,
+  DEFAULT_FRESHNESS,
+  FEED_PAGE_SIZE,
+  FRESHNESS_DAYS,
+  LAB_INCLUDE_OFF_STACK,
+} from "@/features/vacancy-filters/types";
 import type { FilterState } from "@/features/vacancy-filters/types";
 import type { FitTier } from "@/lib/api/ranking";
-import { MATCH_PAGE_SIZE } from "@/features/vacancy-filters/warm-query";
 import type {
   EmploymentType,
   EnglishLevel,
@@ -10,9 +15,8 @@ import type {
   WorkFormat,
 } from "@/lib/api/vacancies";
 
-// Same page size as the warm fetch — the shell computes offsets from this while
-// fetchMatch requests MATCH_PAGE_SIZE, so they cannot be allowed to drift.
-export const LAB_PAGE_SIZE = MATCH_PAGE_SIZE;
+// The shell computes offsets from this, so it must match the query it sends.
+export const LAB_PAGE_SIZE = FEED_PAGE_SIZE;
 
 // FilterState → the cold list query. The lab route has no track presets, so this
 // is a straight projection (unlike the home feed, where a track seeds the axes).
@@ -44,6 +48,8 @@ export function toLabColdQuery(f: FilterState, page: number, sample?: string): L
     // forces the full path server-side, so it passes straight through.
     sort: f.sort === "score" ? "score" : undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
-    includeOffStack: f.includeOffStack,
+    // MET-120: the lab hides off-stack until asked; || undefined so the default
+    // omits the key (server hides) and only an explicit opt-in sends true.
+    includeOffStack: (f.includeOffStack ?? LAB_INCLUDE_OFF_STACK) || undefined,
   };
 }

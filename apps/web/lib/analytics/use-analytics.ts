@@ -24,8 +24,6 @@ const ANALYTICS_EVENTS = {
   feedScoreLocked: "feed_score_locked",
 } as const;
 
-// The feed lens, kept here because it predates any better home.
-export type Lens = "cold" | "warm";
 export type TelegramLoginMethod = "deeplink";
 export type LoginProvider = "telegram" | "google";
 export type SubscriptionProfile = "feed" | "cv";

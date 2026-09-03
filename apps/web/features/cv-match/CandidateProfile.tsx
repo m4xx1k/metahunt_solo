@@ -64,8 +64,9 @@ export function CandidateProfile({
       toast.error(`Couldn't confirm "${s.name}"`);
     },
     onSuccess: () => {
-      // Re-rank the feed against the now-larger skill set.
-      void qc.invalidateQueries({ queryKey: ["match", candidateId] });
+      // Re-rank the feed against the now-larger skill set, and refresh this CV.
+      void qc.invalidateQueries({ queryKey: ["feed"] });
+      void qc.invalidateQueries({ queryKey: ["cv", candidateId] });
     },
   });
 

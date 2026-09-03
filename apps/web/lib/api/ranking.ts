@@ -1,7 +1,6 @@
-import type { VacancyDto } from "./vacancies";
-
-// reverse-ATS matcher client — mirrors apps/etl .../ranking/ranking.contract.ts.
-// A ranked card = the full feed VacancyDto + a personalized match overlay.
+// reverse-ATS matcher client types — mirrors apps/etl .../ranking/ranking.contract.ts
+// and .../score/score.contract.ts. The match overlay itself rides VacancyDto
+// (lib/api/vacancies); these are the surrounding fit/recommendation shapes.
 
 export interface SkillRef {
   id: string;
@@ -31,25 +30,6 @@ export interface ScoreSignal {
 export interface ScoreBreakdown {
   total: number; // 0..1 — `fit.percent` is its display form
   signals: ScoreSignal[];
-}
-
-export interface RankedVacancy {
-  vacancy: VacancyDto;
-  relevance: number;
-  onStack: boolean; // false = off-stack, ranked below in-stack matches
-  fit: { tier: FitTier; percent: number; matchedRequired: number; requiredTotal: number };
-  breakdown: ScoreBreakdown;
-  diff: { have: SkillRef[]; missing: SkillRef[]; bonus: SkillRef[] };
-}
-
-export interface MatchResponse {
-  resolved: { matched: SkillRef[]; unmatched: string[] };
-  items: RankedVacancy[];
-  page: number;
-  pageSize: number;
-  total: number;
-  /** Off-stack rows the filter removed — drives the "show them" toggle. */
-  offStackHidden: number;
 }
 
 // "What to learn next" — mirrors ranking.contract RecommendItem/RecommendResponse.

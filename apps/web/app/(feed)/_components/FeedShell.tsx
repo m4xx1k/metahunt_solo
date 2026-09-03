@@ -5,6 +5,9 @@ import { useSearchParams } from "next/navigation";
 
 import { cn, STICKY_RAIL } from "@/lib/utils";
 import { useResults } from "@/features/vacancy-filters/use-results";
+import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
+import { SortControls } from "@/features/vacancy-filters/SortControls";
+import { HOME_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/types";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
@@ -13,10 +16,23 @@ import type { TrackDto } from "@/lib/api/tracks";
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
 import { buildFeedListQuery, PAGE_SIZE, toSubscriptionParams } from "./feed-query";
 import { FeedFilters } from "./market/FeedFilters";
+import { FeedRail } from "./FeedRail";
 import { SubscribeButton } from "./subscribe/SubscribeButton";
 import { VacancyList } from "./vacancy-list/VacancyList";
+import { useRoleSuggestions } from "../_hooks/use-role-suggestions";
 
 const FILTER_SETTLE_MS = 200;
+
+// The scoring viewer in view (a real active CV or a `?sample=`), or null. Drives
+// the sort controls, the scored cards and the CV rail; the scores themselves
+// still come from the `/feed` response, not from here (MET-144).
+export interface FeedViewer {
+  candidateId: string;
+  isSample: boolean;
+  profile: { title: string; role?: string | null; seniority?: string | null };
+  onPickCv: (candidateId: string) => void;
+  onCandidateGone: (candidateId: string) => void;
+}
 
 // The interactive feed grid: server-seeded, client-driven. Reads the URL, reads
 // the list from the react-query cache the server dehydrated for this URL, and
@@ -34,7 +50,8 @@ export function FeedShell({
   skillCatalog,
   domainCatalog,
   hideTrackTree,
-  rightRail,
+  viewer = null,
+  coldRail,
 }: {
   aggregates: VacancyAggregates;
   tracks?: TrackDto[];
@@ -47,12 +64,18 @@ export function FeedShell({
   domainCatalog?: TrackAxis[];
   /** Drop the sidebar browse tree (the merged route uses a top-band instead). */
   hideTrackTree?: boolean;
-  /** Optional third column (merged cold lens: the CV-recs teaser). Its presence
-   *  switches the grid to 3-col and makes both side rails self-scroll. */
-  rightRail?: ReactNode;
+  /** A scoring viewer → sort controls, scored cards and the CV rail. */
+  viewer?: FeedViewer | null;
+  /** Third column when there is no viewer (the CV-recs teaser + sample picks). */
+  coldRail?: ReactNode;
 }) {
   const searchParams = useSearchParams();
   const push = useShallowSearchParams();
+  const filterApi = useUrlFilters();
+
+  // Role fit for the active candidate — also seeds ?roles with the top picks on
+  // first resolve (the hook's own side effect); no-op without a viewer.
+  const roleSuggestions = useRoleSuggestions(viewer?.candidateId ?? "", viewer?.isSample ?? false);
 
   const presetRoleIds = useMemo(() => (presetRoles ?? []).map((r) => r.id), [presetRoles]);
   const presetSkillIds = useMemo(() => (presetSkills ?? []).map((s) => s.id), [presetSkills]);
@@ -81,7 +104,6 @@ export function FeedShell({
 
   // A track with no effective axes matches nothing — render empty, don't query.
   const { data, isFetching } = useResults({
-    lens: "cold",
     query: settledQuery ?? { page: 1, pageSize: PAGE_SIZE },
     enabled: settledQuery != null,
   });
@@ -95,6 +117,8 @@ export function FeedShell({
   };
   const result: ListVacanciesResponse =
     settledQuery == null ? EMPTY_RESULT : (data ?? EMPTY_RESULT);
+  // Present only when the server actually scored the viewer (JWT CV or sample).
+  const viewerSkills = data?.viewerSkills ?? null;
 
   const subscriptionParams = query ? toSubscriptionParams(query) : null;
 
@@ -107,7 +131,7 @@ export function FeedShell({
     [push],
   );
 
-  const threeCol = rightRail != null;
+  const threeCol = viewer != null || coldRail != null;
 
   return (
     <div
@@ -119,7 +143,8 @@ export function FeedShell({
       )}
     >
       <div className={cn("flex flex-col gap-4", threeCol && STICKY_RAIL)}>
-        {subscriptionParams ? <SubscribeButton params={subscriptionParams} /> : null}
+        {/* The plain feed digest — the CV-ranked one lives in the viewer rail. */}
+        {!viewer && subscriptionParams ? <SubscribeButton params={subscriptionParams} /> : null}
         <FeedFilters
           aggregates={aggregates}
           tracks={tracks}
@@ -131,15 +156,41 @@ export function FeedShell({
           skillCatalog={skillCatalog}
           domainCatalog={domainCatalog}
           hideTrackTree={hideTrackTree}
+          hasViewer={viewer != null}
+          roleSuggestions={roleSuggestions}
         />
       </div>
-      <VacancyList
-        result={result}
-        offset={offset}
-        onNavigate={goToOffset}
-        isFetching={isFetching || settling}
-      />
-      {threeCol ? <div className={STICKY_RAIL}>{rightRail}</div> : null}
+      <div className="flex min-w-0 flex-col gap-4">
+        {viewer ? (
+          <SortControls
+            api={filterApi}
+            defaultSort="date"
+            defaultIncludeOffStack={HOME_INCLUDE_OFF_STACK}
+            offStackHidden={result.offStackHidden}
+            disabled={isFetching || settling}
+          />
+        ) : null}
+        <VacancyList
+          result={result}
+          offset={offset}
+          onNavigate={goToOffset}
+          isFetching={isFetching || settling}
+          viewerSkills={viewerSkills}
+        />
+      </div>
+      {viewer ? (
+        <FeedRail
+          candidateId={viewer.candidateId}
+          viewerSkills={viewerSkills ?? []}
+          isSample={viewer.isSample}
+          profile={viewer.profile}
+          totalVacancies={result.total}
+          onPickCv={viewer.onPickCv}
+          onCandidateGone={viewer.onCandidateGone}
+        />
+      ) : coldRail != null ? (
+        <div className={STICKY_RAIL}>{coldRail}</div>
+      ) : null}
     </div>
   );
 }

@@ -1,28 +1,32 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { FiltersApi } from "@/features/vacancy-filters/types";
-import { LAB_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
+import type { FiltersApi } from "./types";
 
-// Sort + the off-stack escape hatch. The toggle only exists when something is
-// actually hidden: an unhide control next to "0 hidden" is noise.
-export function LabControls({
+// Sort + the off-stack escape hatch, above the scored feed list. The toggle
+// only exists when something is actually hidden: an unhide control next to
+// "0 hidden" is noise.
+export function SortControls({
   api,
   defaultSort,
+  defaultIncludeOffStack,
   offStackHidden,
   disabled = false,
 }: {
   api: FiltersApi;
-  /** The lens's order when the user hasn't chosen one (§8.1: cold → "date",
-   *  warm → "score"). Drives which button reads as active for `sort === null`. */
+  /** The route's order when the user hasn't chosen one — drives which button
+   *  reads as active for `sort === null` (unified-feed-score.md §8.1). */
   defaultSort: "score" | "date";
+  /** The route's off-stack default when the filter states no preference
+   *  (MET-120: home shows them, the lab hides them). */
+  defaultIncludeOffStack: boolean;
   offStackHidden: number;
   disabled?: boolean;
 }) {
-  // `null` = untouched → the lens default; only "score"/"date" are explicit.
+  // `null` = untouched → the route default; only "score"/"date" are explicit.
   const effectiveSort = api.filters.sort ?? defaultSort;
   const byDate = effectiveSort === "date";
-  const includeOffStack = api.filters.includeOffStack ?? LAB_INCLUDE_OFF_STACK;
+  const includeOffStack = api.filters.includeOffStack ?? defaultIncludeOffStack;
   const showOffStackToggle = offStackHidden > 0 || includeOffStack;
 
   return (
