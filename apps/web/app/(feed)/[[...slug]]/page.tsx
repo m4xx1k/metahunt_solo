@@ -42,8 +42,8 @@ import { FeedLensShell } from "../_components/FeedLensShell";
 export const dynamic = "force-dynamic";
 
 // force-dynamic makes every fetch no-store, so these hourly-changing catalogs hit
-// the ETL each request. Cache them in the Data Cache (the list + ?cv seed below
-// stay live, per-request).
+// the ETL each request. Cache them in the Data Cache (the list + ?sample seed
+// below stay live, per-request).
 const CATALOG_TTL = 3600;
 const getAggregates = unstable_cache(() => aggregatesApi.get(), ["feed:aggregates"], {
   revalidate: CATALOG_TTL,

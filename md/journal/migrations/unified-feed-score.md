@@ -623,3 +623,11 @@ rebuilt both containers from the branch tip; live checks after that matched the
 int suite (cheap path scores the page; `sort=score` drops total to overlap-only +
 reports `offStackHidden`; bad `?sample=` 404s). If they reappear, kill them again
 before trusting a browser check.
+
+---
+
+**This file hit the 600-line migration-tracker cap (`md/README.md#size-caps`).**
+Step 7's refactor pass + the rest of step 7 (the `?cv=` removal, the CV-switcher
+work, the step 7→8 handoff) continue in
+[`unified-feed-score-step7.md`](unified-feed-score-step7.md) — read that file for
+everything after "Item-id equivalence — PROVEN, 70/70" above.
