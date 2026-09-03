@@ -28,11 +28,11 @@ describe("buildMatchHref", () => {
     expect(params.get("excludeSkills")).toBe("php");
   });
 
-  it("preserves an explicit empty role selection for a CV", () => {
+  it("omits ?roles when the user picked none, even with a CV", () => {
     const href = buildMatchHref("candidate-1", [], new Set(), []);
     const params = new URL(href, "https://metahunt.app").searchParams;
 
-    expect(params.has("roles")).toBe(true);
-    expect(params.get("roles")).toBe("");
+    expect(params.get("open")).toBe("cv");
+    expect(params.has("roles")).toBe(false);
   });
 });

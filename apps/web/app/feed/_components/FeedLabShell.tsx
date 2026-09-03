@@ -8,7 +8,7 @@ import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
-import { LAB_INCLUDE_OFF_STACK, type OptionRow } from "@/features/vacancy-filters/types";
+import type { OptionRow } from "@/features/vacancy-filters/types";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { isUuid } from "@/lib/uuid";
 import type { SampleCandidate } from "@/lib/api/cv";
@@ -123,7 +123,6 @@ export function FeedLabShell({
           <SortControls
             api={api}
             defaultSort="date"
-            defaultIncludeOffStack={LAB_INCLUDE_OFF_STACK}
             offStackHidden={offStackHidden}
             disabled={busy}
           />

@@ -43,12 +43,12 @@ export const DEFAULT_FRESHNESS = "month";
 // Page size for the feed list (both the home feed and the /feed lab).
 export const FEED_PAGE_SIZE = 20;
 
-// Off-stack has no single default: the home feed has always shown those matches
-// and has no toggle to bring them back, while the /feed lab hides them until
-// asked (that opt-in IS the lab's point). So each route states its default and
-// the filter only overrides it once the user has an opinion (MET-120).
-export const HOME_INCLUDE_OFF_STACK = true;
-export const LAB_INCLUDE_OFF_STACK = false;
+// Off-stack (a match whose required core tech is outside the viewer's stack) is
+// only ever hidden on the FULL scoring path (sort=score / minFitTier). The
+// default freshness feed never hides anything, so "include off-stack" is a
+// pure opt-in there: absent = the server decides (hide on the full path), an
+// explicit ?offStack=true brings them back. No per-route default (MET-120's
+// home/lab split is moot now that home defaults to the freshness path).
 
 // One superset shared by the feed (cold) and reverse-ATS (warm). Every field is
 // cold-available except `minFitTier`, which needs a ranked result — so it is the

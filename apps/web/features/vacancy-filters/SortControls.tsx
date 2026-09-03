@@ -9,7 +9,6 @@ import type { FiltersApi } from "./types";
 export function SortControls({
   api,
   defaultSort,
-  defaultIncludeOffStack,
   offStackHidden,
   disabled = false,
 }: {
@@ -17,16 +16,14 @@ export function SortControls({
   /** The route's order when the user hasn't chosen one — drives which button
    *  reads as active for `sort === null` (unified-feed-score.md §8.1). */
   defaultSort: "score" | "date";
-  /** The route's off-stack default when the filter states no preference
-   *  (MET-120: home shows them, the lab hides them). */
-  defaultIncludeOffStack: boolean;
   offStackHidden: number;
   disabled?: boolean;
 }) {
   // `null` = untouched → the route default; only "score"/"date" are explicit.
   const effectiveSort = api.filters.sort ?? defaultSort;
   const byDate = effectiveSort === "date";
-  const includeOffStack = api.filters.includeOffStack ?? defaultIncludeOffStack;
+  // Off-stack is opt-in: unchecked unless the user ticked it.
+  const includeOffStack = api.filters.includeOffStack === true;
   const showOffStackToggle = offStackHidden > 0 || includeOffStack;
 
   return (

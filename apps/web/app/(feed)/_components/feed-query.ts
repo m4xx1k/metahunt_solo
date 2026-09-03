@@ -13,11 +13,7 @@ import {
   type ListVacanciesQuery,
 } from "@/lib/api/vacancies";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
-import {
-  DEFAULT_FRESHNESS,
-  FRESHNESS_DAYS,
-  HOME_INCLUDE_OFF_STACK,
-} from "@/features/vacancy-filters/types";
+import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "@/features/vacancy-filters/types";
 import { readBool, readList, type ParamReader } from "@/features/vacancy-filters/url-params";
 import { isUuid } from "@/lib/uuid";
 
@@ -98,9 +94,9 @@ export function buildFeedListQuery(
     // freshness path (unified-feed-score.md §8.1).
     sort: p.get("sort") === "score" ? "score" : undefined,
     minFitTier: (p.get("minFitTier") as ListVacanciesQuery["minFitTier"]) ?? undefined,
-    // MET-120: the home feed shows off-stack matches by default; an explicit
-    // false opts out. || undefined so the request omits the key at the default.
-    includeOffStack: (readBool(p.get("offStack")) ?? HOME_INCLUDE_OFF_STACK) || undefined,
+    // Opt-in only: absent → the server hides off-stack on the full path, an
+    // explicit ?offStack=true brings them back. The freshness path ignores it.
+    includeOffStack: readBool(p.get("offStack")) || undefined,
     sample: isSample(p.get("sample")) ? (p.get("sample") as string) : undefined,
   };
   return { query, offset, page };

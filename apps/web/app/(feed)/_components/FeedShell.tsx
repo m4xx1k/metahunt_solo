@@ -7,7 +7,6 @@ import { cn, STICKY_RAIL } from "@/lib/utils";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { SortControls } from "@/features/vacancy-filters/SortControls";
-import { HOME_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/types";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
@@ -73,8 +72,7 @@ export function FeedShell({
   const push = useShallowSearchParams();
   const filterApi = useUrlFilters();
 
-  // Role fit for the active candidate — also seeds ?roles with the top picks on
-  // first resolve (the hook's own side effect); no-op without a viewer.
+  // Role fit for the picker only (no URL side effect); undefined without a viewer.
   const roleSuggestions = useRoleSuggestions(viewer?.candidateId ?? "", viewer?.isSample ?? false);
 
   const presetRoleIds = useMemo(() => (presetRoles ?? []).map((r) => r.id), [presetRoles]);
@@ -165,7 +163,6 @@ export function FeedShell({
           <SortControls
             api={filterApi}
             defaultSort="date"
-            defaultIncludeOffStack={HOME_INCLUDE_OFF_STACK}
             offStackHidden={result.offStackHidden}
             disabled={isFetching || settling}
           />

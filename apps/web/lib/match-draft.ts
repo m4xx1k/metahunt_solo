@@ -17,7 +17,9 @@ export function buildMatchHref(
   if (!candidateId && manualSkills.length > 0) {
     params.set("skills", manualSkills.map((skill) => skill.id).join(","));
   }
-  if (candidateId || roleIds.size > 0) params.set("roles", [...roleIds].join(","));
+  // Only the roles the user actually picked in the flow — never an empty
+  // ?roles= just because a CV rode along.
+  if (roleIds.size > 0) params.set("roles", [...roleIds].join(","));
   if (excludedSkills.length > 0) {
     params.set("excludeSkills", excludedSkills.map((skill) => skill.id).join(","));
   }

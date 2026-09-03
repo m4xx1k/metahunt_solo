@@ -3,7 +3,6 @@ import {
   DEFAULT_FRESHNESS,
   FEED_PAGE_SIZE,
   FRESHNESS_DAYS,
-  LAB_INCLUDE_OFF_STACK,
 } from "@/features/vacancy-filters/types";
 import type { FilterState } from "@/features/vacancy-filters/types";
 import type { FitTier } from "@/lib/api/ranking";
@@ -48,8 +47,7 @@ export function toLabColdQuery(f: FilterState, page: number, sample?: string): L
     // forces the full path server-side, so it passes straight through.
     sort: f.sort === "score" ? "score" : undefined,
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
-    // MET-120: the lab hides off-stack until asked; || undefined so the default
-    // omits the key (server hides) and only an explicit opt-in sends true.
-    includeOffStack: (f.includeOffStack ?? LAB_INCLUDE_OFF_STACK) || undefined,
+    // Opt-in only: omit unless the user ticked "show other-stack jobs".
+    includeOffStack: f.includeOffStack || undefined,
   };
 }
