@@ -204,3 +204,81 @@ rendering. Before merge:
   the parent file's own rule — a session can take this to a green PR, not past it.
 - **Step 9** (Telegram digest reads `match` off the DTO) — untouched this session, as
   instructed.
+
+---
+
+## 6. Step 7b — the lens fork actually collapsed (later session)
+
+Handoff spec: `.scratch/met-144/collapse-lenses-plan.md`. The adapter §2 built was
+always meant to be temporary; this is the UI collapse it deferred. Three commits on
+`feat/met-144-unified-feed-score` (PR #206, still draft):
+
+1. **`6823524` refactor(vacancy): promote the scored feed card to entities/** — pure
+   move: `app/feed/_components/LabColdCard.tsx` → `entities/vacancy/VacancyMatchCard.tsx`
+   (+ `DiffCounts.tsx` alongside). Card body unchanged.
+2. **`9f3f354` refactor(feed): collapse the cold/warm lens into one feed body**
+   (28 files, +413 −1212). One `["feed"]` query, one card, no lens.
+   - `feed-query.ts` `buildFeedListQuery` now carries `sort`/`minFitTier`/
+     `includeOffStack`/`sample` (mirrors `toLabColdQuery`); home off-stack default
+     stays `true` (MET-120).
+   - `VacancyList` renders `VacancyMatchCard` with the response's `viewerSkills`.
+     `FeedShell` gained a `viewer` prop: when the server scored a viewer it shows
+     `SortControls` (moved from `LabControls` → `features/vacancy-filters/`) + a new
+     `FeedRail` (CvSelect · CandidateProfile · SkillRecommendations · CvSubscribe);
+     otherwise the cold `ColdRecsTeaser` + sample buttons.
+   - `FeedFilters` gained the min-fit gate + the "N/M fit" role-suggestion boost
+     (ported from `MatchFilters`), driven by `hasViewer`.
+   - `FeedLensShell` → `FeedShellIsland`: no `manualLens` / `LensTabs` / `WarmBody`.
+     It owns upload, CV switching (still pessimistic — `0c7854c`), sample picking and
+     what goes in the rail. `?open=cv` is now only stripped (no lens to land in).
+   - `CandidateProfile.matched` comes from `viewerSkills`; `unmatched` from one
+     `GET /cv/:id` in `FeedRail`, whose 404 is the staleness signal.
+   - Deleted: `WarmBody`, `WarmCard`, `LensTabs`, `MatchFilters`, `use-feed-warm`,
+     `warm-query`(+spec), `to-match-response`(+spec). `use-results` collapsed to one
+     cold signature; `query-keys` lost `warmKey`; `ranking.ts` lost `MatchResponse` /
+     `RankedVacancy`; `use-analytics` lost the `Lens` type. `WarmSubscribe` →
+     `CvSubscribe`. The `?sample=` SSR seed is now the one cold seed.
+   - Web jest 190 → 183: the two deleted adapter specs (−12), the MET-120 per-route
+     off-stack assertion ported to `features/vacancy-filters/off-stack-defaults.spec.ts`
+     (+5).
+3. **`72e4544` refactor(ranking): drop the retired match HTTP endpoints** — removed
+   `POST /ranking/match`, `GET /cv/:id/matches`, `GET /cv/samples/:id/matches` and
+   their controller-only glue (`matchCandidate`, `MatchDto`). etl unit 561 → 557.
+
+### Deviation from the plan (commit 3)
+
+The plan (and §5 above) said step 8 also deletes `RankingService.rankByRefs` + callers
+and `MatchResponse`/`RankedVacancy`. It **doesn't** here: the Telegram CV-digest path
+(`04-notify/telegram/subscription-matcher` → `CandidateMatchService.match` →
+`ranking.rankByRefs`) still uses all of it, and `04-notify` is step 9, out of scope.
+`RankingService.match` also keeps its 6 integration tests. The service-layer deletion
+moves to **step 9**, when the digest is migrated onto the unified feed path.
+
+### Deviation from the plan (card visual)
+
+`collapse-lenses-plan.md` step 1.2 asked to add `WarmCard`'s pip strip + a richer
+tooltip to the promoted card. Not done — the card is `LabColdCard` as-is (`FitBadge`
+percent + tier, `DiffCounts`, locked state). Pips and `DiffCounts` encode nearly the
+same fact; the badge is the simplest form and was already visually reviewed on `/feed`.
+
+### Also deviated: the must-have skill axis
+
+With a viewer, the merged sidebar keeps the "must-have skills" search axis. The old
+warm lens hid it ("the candidate IS the skill query"). Kept as a small, defensible
+behavior change, not a regression.
+
+### Verification status (this session)
+
+- **Gate green on every commit**: `.scratch/met-144/run-gate.sh` (lint · test:etl
+  557 · test:etl:int 147 · build) + web `tsc` / `eslint` / `jest` 183 / `build:web`.
+- **Runtime smoke (curl against the running stack)**: `GET /feed?sample=<id>&sort=score`
+  returns scored items + `viewerSkills` + `offStackHidden`; `sort=date` returns the
+  freshness order with low/zero scores; the `/` page SSR-renders `FitBadge`s for a
+  `?sample=` URL.
+- **NOT done this session — the owner's checklist before merge**:
+  1. Browser: (a) anon no-sample → locked slots; (b) `?sample=` → badges + diff counts
+     + `CandidateProfile`; (c) signed-in active CV, no URL param → scored; (d) CV
+     switcher moves profile + card scores together (`0c7854c` regression).
+  2. `/match` onboarding lands scored via `?open=cv`.
+  3. Rebuild the etl container (`docker compose build etl && docker compose up -d
+     --force-recreate etl`) and confirm the three removed routes now 404.
