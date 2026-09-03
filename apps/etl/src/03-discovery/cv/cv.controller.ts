@@ -6,13 +6,10 @@ import {
   Get,
   Param,
   Post,
-  Query,
   Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  UsePipes,
-  ValidationPipe,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiExcludeController } from "@nestjs/swagger";
@@ -24,19 +21,13 @@ import { Public } from "../../platform/auth/decorators/public.decorator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { OptionalAuthGuard } from "../../platform/auth/optional-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
-import { CandidateMatchParamsDto } from "../../platform/shared/filter-params.dto";
-import { DEFAULT_PAGE_SIZE, parseId } from "../../platform/shared/query-parsing";
-import {
-  type MatchResponse,
-  type RecommendResponse,
-  type RoleSuggestionsResponse,
-} from "../ranking/ranking.contract";
+import { parseId } from "../../platform/shared/query-parsing";
+import { type RecommendResponse, type RoleSuggestionsResponse } from "../ranking/ranking.contract";
 import { RankingService } from "../ranking/ranking.service";
 import { RecommendationService } from "../ranking/recommendation.service";
 
 import { AdditionalSkillsService } from "./additional-skills.service";
 import { CandidateLoaderService } from "./candidate-loader.service";
-import { CandidateMatchService } from "./candidate-match.service";
 import type {
   CandidateNodeRef,
   CandidateView,
@@ -62,7 +53,6 @@ const CV_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 export class CvController {
   constructor(
     private readonly loader: CandidateLoaderService,
-    private readonly candidateMatch: CandidateMatchService,
     private readonly ranking: RankingService,
     private readonly recommendation: RecommendationService,
     private readonly additionalSkills: AdditionalSkillsService,
@@ -97,17 +87,6 @@ export class CvController {
     return this.loader.listSamples();
   }
 
-  @Get("samples/:id/matches")
-  @Public()
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async sampleMatches(
-    @Param("id") id: string,
-    @Query() query: CandidateMatchParamsDto,
-  ): Promise<MatchResponse> {
-    await this.loader.assertSampleCandidate(id);
-    return this.matchCandidate(id, query);
-  }
-
   @Get("samples/:id/role-suggestions")
   @Public()
   async sampleRoleSuggestions(@Param("id") id: string): Promise<RoleSuggestionsResponse> {
@@ -126,43 +105,6 @@ export class CvController {
   async get(@Req() req: RequestWithUser, @Param("id") id: string): Promise<CandidateView> {
     await this.loader.assertAccessibleCandidate(req.user?.userId, id);
     return this.loader.getById(id);
-  }
-
-  // Rank all vacancies for a stored candidate.
-  @Get(":id/matches")
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  async matches(
-    @CurrentUser() user: JwtUser,
-    @Param("id") id: string,
-    @Query() query: CandidateMatchParamsDto,
-  ): Promise<MatchResponse> {
-    await this.loader.assertAccessibleCandidate(user.userId, id);
-    return this.matchCandidate(id, query);
-  }
-
-  private matchCandidate(id: string, query: CandidateMatchParamsDto): Promise<MatchResponse> {
-    return this.candidateMatch.match(
-      id,
-      {
-        seniorities: query.seniorities,
-        workFormats: query.workFormats,
-        englishLevels: query.englishLevels,
-        employmentTypes: query.employmentTypes,
-        domainRefs: query.domainIds,
-        roleRefs: query.roleIds,
-        excludedSkillRefs: query.excludedSkillIds,
-        experienceYears: query.experienceYears,
-        hasTestAssignment: query.hasTestAssignment,
-        hasReservation: query.hasReservation,
-        minFitTier: query.minFitTier,
-        includeOffStack: query.includeOffStack,
-        sort: query.sort,
-        sourceId: query.sourceId,
-        postedWithinDays: query.postedWithinDays,
-      },
-      query.page ?? 1,
-      query.pageSize ?? DEFAULT_PAGE_SIZE,
-    );
   }
 
   // "Which roles fit my skills": top-5 ROLE nodes by covered share of their

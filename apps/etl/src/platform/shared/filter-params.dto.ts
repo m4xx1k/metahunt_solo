@@ -339,18 +339,3 @@ export class CandidateMatchParamsDto extends FilterParamsDto {
   @Max(100)
   pageSize?: number;
 }
-
-export class MatchDto extends CandidateMatchParamsDto {
-  @ApiPropertyOptional({
-    type: [String],
-    description: "Plain-text candidate skills to resolve and rank vacancies against.",
-    example: ["TypeScript", "NestJS", "PostgreSQL"],
-  })
-  @IsOptional()
-  @Transform(({ value }) =>
-    Array.isArray(value) ? value.map((v) => String(v).trim()).filter((v) => v.length > 0) : [],
-  )
-  @IsArray()
-  @IsString({ each: true })
-  skills?: string[];
-}
