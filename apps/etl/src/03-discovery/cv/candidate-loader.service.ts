@@ -127,8 +127,10 @@ export class CandidateLoaderService {
   }
 
   // User rows are private. Samples contain only seeded non-user data and are
-  // available to authenticated users, but remain immutable below.
-  async assertAccessibleCandidate(userId: string, candidateId: string): Promise<void> {
+  // available to anyone, authenticated or not (MET-144: an anonymous visitor
+  // previewing a sample on the feed reads its profile — GET /cv/:id — with
+  // no JWT at all), but remain immutable below.
+  async assertAccessibleCandidate(userId: string | undefined, candidateId: string): Promise<void> {
     const [candidate] = await this.db
       .select({ type: schema.candidates.type })
       .from(schema.candidates)

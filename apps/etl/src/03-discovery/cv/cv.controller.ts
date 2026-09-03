@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,10 +18,11 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiExcludeController } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 
-import type { JwtUser } from "../../platform/auth/auth.types";
+import type { JwtUser, RequestWithUser } from "../../platform/auth/auth.types";
 import { CurrentUser } from "../../platform/auth/decorators/current-user.decorator";
 import { Public } from "../../platform/auth/decorators/public.decorator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { OptionalAuthGuard } from "../../platform/auth/optional-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { CandidateMatchParamsDto } from "../../platform/shared/filter-params.dto";
 import { DEFAULT_PAGE_SIZE, parseId } from "../../platform/shared/query-parsing";
@@ -113,9 +115,16 @@ export class CvController {
     return this.roleSuggestionsFor(id);
   }
 
+  // Public + OptionalAuthGuard (not JwtAuthGuard's default): a sample
+  // candidate's profile is readable by anyone, so an anonymous visitor
+  // previewing a sample CV on the feed (MET-144: no login required to try
+  // one) can still fetch it. assertAccessibleCandidate still 404s an
+  // anonymous or wrong-owner request for a real (non-sample) candidate.
   @Get(":id")
-  async get(@CurrentUser() user: JwtUser, @Param("id") id: string): Promise<CandidateView> {
-    await this.loader.assertAccessibleCandidate(user.userId, id);
+  @Public()
+  @UseGuards(OptionalAuthGuard)
+  async get(@Req() req: RequestWithUser, @Param("id") id: string): Promise<CandidateView> {
+    await this.loader.assertAccessibleCandidate(req.user?.userId, id);
     return this.loader.getById(id);
   }
 

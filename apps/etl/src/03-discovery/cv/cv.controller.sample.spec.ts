@@ -2,6 +2,7 @@ import { NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
+import { OptionalAuthGuard } from "../../platform/auth/optional-auth.guard";
 import { NodeSlugResolver } from "../../platform/nodes/node-slug.resolver";
 import { RankingService } from "../ranking/ranking.service";
 import { RecommendationService } from "../ranking/recommendation.service";
@@ -42,6 +43,7 @@ describe("CvController sample matches", () => {
       ],
     });
     moduleBuilder.overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true });
+    moduleBuilder.overrideGuard(OptionalAuthGuard).useValue({ canActivate: () => true });
     const moduleRef = await moduleBuilder.compile();
     controller = moduleRef.get(CvController);
   });
