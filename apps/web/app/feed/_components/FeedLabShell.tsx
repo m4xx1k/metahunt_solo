@@ -8,7 +8,6 @@ import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
-import { LAB_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 import type { OptionRow } from "@/features/vacancy-filters/types";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { isUuid } from "@/lib/uuid";
@@ -17,13 +16,14 @@ import { Pagination } from "@/ui/navigation/Pagination";
 
 import { LabColdCard } from "./LabColdCard";
 import { LabControls } from "./LabControls";
-import { LabWarmCard } from "./LabWarmCard";
 import { LAB_PAGE_SIZE, toLabColdQuery } from "./lab-query";
 
-// The lab feed's one island. Lens comes from ?cv (same convention as the home
-// feed): cold shows locked score slots, warm shows the real Fit %. Both lenses
-// run through the shared FiltersApi, so the sort and off-stack knobs are just
-// two more URL params.
+// The lab feed's one island — the unified path, always (MET-144 step 7: this
+// route never had a UI entry point into the warm lens, only "try <sample>"
+// buttons, so there was nothing to collapse here — the lab was already the
+// prototype for the unified shape). `?sample=` scores the page against an
+// allowlisted seeded sample; there's no `?cv=` — a real CV is a production
+// concern (login, upload, the CV switcher), not this dev/QA route's.
 export function FeedLabShell({
   roleOptions,
   domainOptions,
@@ -38,19 +38,17 @@ export function FeedLabShell({
   const push = useShallowSearchParams();
   const [page, setPage] = useState(1);
 
-  const rawCv = searchParams.get("cv");
-  const cv = rawCv && isUuid(rawCv) ? rawCv : null;
-  // A seeded sample goes through the unified cold path (GET /feed?sample=) —
-  // real Fit on every card, score/date toggle, off-stack unhide. An arbitrary
-  // uploaded CV id can't (§8: /feed?sample= 404s on non-samples), so it stays
-  // on the warm /ranking/match path until step 7 retires it.
-  const isSample = cv != null && samples.some((s) => s.candidateId === cv);
-  const lens = cv != null && !isSample ? "warm" : "cold";
+  const rawSample = searchParams.get("sample");
+  const sample =
+    rawSample && isUuid(rawSample) && samples.some((s) => s.candidateId === rawSample)
+      ? rawSample
+      : null;
+  const hasViewer = sample != null;
 
-  const setCv = useCallback(
+  const setSample = useCallback(
     (id: string | null) => {
       setPage(1);
-      push((n) => (id ? n.set("cv", id) : n.delete("cv")));
+      push((n) => (id ? n.set("sample", id) : n.delete("sample")));
     },
     [push],
   );
@@ -63,30 +61,16 @@ export function FeedLabShell({
   }
 
   const coldQuery = useMemo(
-    () => toLabColdQuery(api.filters, page, isSample ? (cv ?? undefined) : undefined),
-    [api.filters, page, cv, isSample],
+    () => toLabColdQuery(api.filters, page, sample ?? undefined),
+    [api.filters, page, sample],
   );
-  const cold = useResults({ lens: "cold", query: coldQuery, enabled: lens === "cold" });
-  const warm = useResults({
-    lens: "warm",
-    candidateId: cv ?? "",
-    isSample,
-    filters: api.filters,
-    page,
-    defaultIncludeOffStack: LAB_INCLUDE_OFF_STACK,
-    enabled: lens === "warm",
-  });
+  const cold = useResults({ lens: "cold", query: coldQuery });
 
-  const busy = lens === "warm" ? warm.isFetching : cold.isFetching;
-  const total = (lens === "warm" ? warm.data?.total : cold.data?.total) ?? 0;
-  const offStackHidden =
-    (lens === "warm" ? warm.data?.offStackHidden : cold.data?.offStackHidden) ?? 0;
-  const candidateSkillIds = warm.data?.resolved.matched.map((s) => s.id) ?? [];
-  // The scored viewer's skills for the cold card's ✅/❌/➕ counts (via
-  // skillDiff) — parity with the warm card, which reads the same set off
-  // `resolved.matched`.
-  const coldViewerSkills = cold.data?.viewerSkills ?? [];
-  const hasViewer = cv != null;
+  const busy = cold.isFetching;
+  const total = cold.data?.total ?? 0;
+  const offStackHidden = cold.data?.offStackHidden ?? 0;
+  // The scored viewer's skills for the card's ✅/❌/➕ counts (via skillDiff).
+  const viewerSkills = cold.data?.viewerSkills ?? [];
   const goToOffset = useCallback(
     (offset: number) => setPage(Math.floor(offset / LAB_PAGE_SIZE) + 1),
     [],
@@ -96,16 +80,12 @@ export function FeedLabShell({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3 border border-border bg-bg-card px-4 py-2.5 font-mono text-2xs uppercase tracking-wider">
         <span className="text-text-muted">
-          {lens === "warm"
-            ? "scored against your CV"
-            : hasViewer
-              ? "scored against the sample CV"
-              : "no CV — scores locked"}
+          {hasViewer ? "scored against the sample CV" : "no CV — scores locked"}
         </span>
-        {cv ? (
+        {sample ? (
           <button
             type="button"
-            onClick={() => setCv(null)}
+            onClick={() => setSample(null)}
             className="border border-border px-2 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"
           >
             browse without a CV
@@ -115,7 +95,7 @@ export function FeedLabShell({
             <button
               key={s.candidateId}
               type="button"
-              onClick={() => setCv(s.candidateId)}
+              onClick={() => setSample(s.candidateId)}
               className="border border-border px-2 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"
             >
               try {s.label}
@@ -128,21 +108,21 @@ export function FeedLabShell({
         <aside className={cn("flex flex-col border border-border bg-bg-card", STICKY_RAIL)}>
           <FilterRail
             api={api}
-            lens={lens}
+            lens="cold"
             seniorityOptions={SENIORITY_OPTIONS}
             workFormatOptions={WORK_FORMAT_OPTIONS}
             domainOptions={domainOptions}
-            roleOptions={lens === "warm" ? roleOptions : undefined}
+            roleOptions={roleOptions}
           />
         </aside>
 
         <div className="flex flex-col gap-4">
-          {/* Both lenses now: the cold lens is freshest-by-default (§8.1) and
-              its "best fit" button opts into the full path. Off-stack only
-              hides on the full path, so the toggle self-suppresses at 0. */}
+          {/* Freshest-by-default (§8.1); "best fit" opts into the full path.
+              Off-stack only hides on the full path, so the toggle
+              self-suppresses at 0. */}
           <LabControls
             api={api}
-            defaultSort={lens === "warm" ? "score" : "date"}
+            defaultSort="date"
             offStackHidden={offStackHidden}
             disabled={busy}
           />
@@ -153,25 +133,16 @@ export function FeedLabShell({
           </p>
 
           <div className={cn("flex flex-col gap-4 transition-opacity", busy && "opacity-60")}>
-            {lens === "warm"
-              ? warm.data?.items.map((item) => (
-                  <LabWarmCard
-                    key={item.vacancy.id}
-                    item={item}
-                    candidateSkillIds={candidateSkillIds}
-                  />
-                ))
-              : cold.data?.items.map((vacancy) => (
-                  // hasViewer: no CV/sample → locked CTA; a seeded sample →
-                  // real Fit badge + ✅/❌/➕ counts from `viewerSkills`, at
-                  // parity with LabWarmCard.
-                  <LabColdCard
-                    key={vacancy.id}
-                    vacancy={vacancy}
-                    hasViewer={hasViewer}
-                    viewerSkills={coldViewerSkills}
-                  />
-                ))}
+            {cold.data?.items.map((vacancy) => (
+              // hasViewer: no sample → locked CTA; a seeded sample → real Fit
+              // badge + ✅/❌/➕ counts from `viewerSkills`.
+              <LabColdCard
+                key={vacancy.id}
+                vacancy={vacancy}
+                hasViewer={hasViewer}
+                viewerSkills={viewerSkills}
+              />
+            ))}
           </div>
 
           {total === 0 && !busy ? (

@@ -10,20 +10,20 @@ import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
 
 import { DiffCounts } from "./DiffCounts";
 
-// Cold card: the same Fit slot the warm card has. `vacancy.match` is real now
-// (MET-144 — the unified feed scores the cheap path too), so three states:
-//   - no CV/sample selected at all → locked, asks for one (unchanged);
-//   - one selected and this Position scored → the real badge + diff counts,
-//     at parity with LabWarmCard (counts come from the page's `viewerSkills`);
-//   - one selected but nothing scored (no tagged skills) → no slot at all,
-//     same as a warm card would show nothing to claim.
+// The lab feed's one card (MET-144 step 7: the lab's warm branch — and
+// LabWarmCard — retired, since it had no reachable UI entry point; every
+// card runs through the unified `vacancy.match` now). Three states:
+//   - no sample selected at all → locked, asks for one;
+//   - one selected and this Position scored → the real badge + diff counts
+//     (`viewerSkills` off the page response, via skillDiff);
+//   - one selected but nothing scored (no tagged skills) → no slot at all.
 export function LabColdCard({
   vacancy,
   hasViewer,
   viewerSkills = [],
 }: {
   vacancy: VacancyDto;
-  /** A CV or sample is selected — even if this particular card scored null. */
+  /** A sample is selected — even if this particular card scored null. */
   hasViewer: boolean;
   /** The scored viewer's resolved skills (`FeedResponse.viewerSkills`), for
    *  the ✅/❌/➕ counts. Empty when there is no viewer. */
