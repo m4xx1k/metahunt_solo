@@ -8,6 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
+import { rankedPage } from "../score/ranked-page";
 import {
   buildScoreBreakdown,
   fitPercent,
@@ -240,72 +241,25 @@ export class FeedService {
     params: FeedSearchParams,
     scorer: CandidateScorer,
   ): Promise<FeedResponse> {
-    const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params) ?? sql`true`;
-    const frag = scorer.fragments({ minFitTier: params.minFitTier, requireOverlap: true });
+    const {
+      rows: ranked,
+      total,
+      offStackHidden,
+    } = await rankedPage(this.db, scorer, where, {
+      minFitTier: params.minFitTier,
+      includeOffStack: params.includeOffStack === true,
+      byScore: params.sort === "score",
+      page: params.page,
+      pageSize: params.pageSize,
+    });
 
-    const includeOffStack = params.includeOffStack === true;
-    const keep = includeOffStack ? sql`true` : sql`on_stack`;
-    const byScore = params.sort === "score";
-    const pageOrder = byScore ? frag.order : sql`posted_at DESC, id DESC`;
-
-    const rankedPositionsCte = sql`
-      ranked_positions AS (
-        SELECT p.position_id::text AS id, ${frag.select},
-               p.last_source_activity_at AS posted_at
-        FROM ranked rk
-        ${frag.join}
-        WHERE ${where}${frag.filter ? sql` AND ${frag.filter}` : sql``}
-      )`;
-
-    const ranked = await this.db.execute<{
-      id: string;
-      relevance: number;
-      coverage: number;
-      on_stack: boolean;
-      tier_bucket: number;
-      total: number;
-      off_stack_hidden: number;
-    }>(sql`
-      WITH ${frag.cte}, ${rankedPositionsCte},
-      counted AS (
-        SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
-               (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
-               (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
-        FROM ranked_positions
-      )
-      SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
-      FROM counted
-      WHERE ${keep}
-      ORDER BY ${pageOrder}
-      LIMIT ${params.pageSize} OFFSET ${offset}
-    `);
-
-    let total = ranked.rows[0]?.total ?? 0;
-    let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
-    if (ranked.rows.length === 0) {
-      const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
-        WITH ${frag.cte}, ${rankedPositionsCte}
-        SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
-               (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
-        FROM ranked_positions
-      `);
-      total = totalRes.rows[0]?.count ?? 0;
-      offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
-    }
-
-    const positionIds = ranked.rows.map((r) => r.id);
+    const positionIds = ranked.map((r) => r.id);
     if (positionIds.length === 0) {
-      return {
-        items: [],
-        page: params.page,
-        pageSize: params.pageSize,
-        total,
-        offStackHidden: includeOffStack ? 0 : offStackHidden,
-      };
+      return { items: [], page: params.page, pageSize: params.pageSize, total, offStackHidden };
     }
 
-    const scoreByPosition = new Map(ranked.rows.map((r) => [r.id, r]));
+    const scoreByPosition = new Map(ranked.map((r) => [r.id, r]));
     const [rows, skills] = await Promise.all([
       this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
       this.fetchSkills(positionIds, params.includeAllSkills === true),
@@ -327,13 +281,7 @@ export class FeedService {
       })
       .filter((x): x is VacancyDto => x !== null);
 
-    return {
-      items,
-      page: params.page,
-      pageSize: params.pageSize,
-      total,
-      offStackHidden: includeOffStack ? 0 : offStackHidden,
-    };
+    return { items, page: params.page, pageSize: params.pageSize, total, offStackHidden };
   }
 
   /**

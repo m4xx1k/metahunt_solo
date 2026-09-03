@@ -9,6 +9,7 @@ import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
 import { buildWhere, FeedService, toDto } from "../feed/feed.service";
+import { rankedPage } from "../score/ranked-page";
 import { buildScoreBreakdown, fitPercent, TIER_BY_BUCKET } from "../score/score.contract";
 import { scoringCtes } from "../score/score.sql";
 import { scorerForNodeIds } from "../score/scorer.port";
@@ -181,92 +182,44 @@ export class RankingService {
         excludeIds: filters.excludeIds,
         includeRoleless: false,
       }) ?? sql`true`;
-    const offset = (page - 1) * pageSize;
 
     // Per-Position relevance + coverage + tier_bucket + on_stack, owned by the
-    // score module — driven through fragments() (§7 step 4) instead of built
-    // inline. `requireOverlap: true` is what keeps this endpoint the "shares
-    // ≥1 skill" set the old `ov` probe used to gate; the unified feed path
-    // (GET /feed) is the one place that leaves it off.
-    const scorer = scorerForNodeIds(this.db, nodeIds);
-    const frag = scorer.fragments({ minFitTier: filters.minFitTier, requireOverlap: true });
-
+    // score module — driven through `rankedPage` (§7 step 4), the shared full
+    // path both this endpoint and `FeedService.searchScored` assemble
+    // fragments() into. `requireOverlap: true` (baked into `rankedPage`) is
+    // what keeps this endpoint the "shares ≥1 skill" set the old `ov` probe
+    // used to gate; the unified feed path (GET /feed) is the one place that
+    // leaves it off.
+    //
     // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
     // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page
-    // order contradicted the number printed on it. Hidden by default; the count
-    // of what's hidden rides the page query so the UI can offer to unhide.
+    // order contradicted the number printed on it. Hidden by default; the
+    // count of what's hidden rides the page query so the UI can offer to
+    // unhide. Sort swaps ORDER BY and nothing else — the scoring CTE still
+    // runs for a date-sorted page, because the Fit number is on every card
+    // either way.
+    const scorer = scorerForNodeIds(this.db, nodeIds);
     const includeOffStack = filters.includeOffStack === true;
-    const keep = includeOffStack ? sql`true` : sql`on_stack`;
-
-    // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
-    // date-sorted page, because the Fit number is on every card either way.
-    const byDate = filters.sort === "date";
-    // round so exact-IDF ties break by id (raw float-sum order is plan noise).
-    const pageOrder = byDate ? sql`posted_at DESC, id DESC` : frag.order;
-
-    const rankedPositionsCte = sql`
-      ranked_positions AS (
-        SELECT p.position_id::text AS id, ${frag.select},
-               p.last_source_activity_at AS posted_at
-        FROM ranked rk
-        ${frag.join}
-        WHERE ${where}${frag.filter ? sql` AND ${frag.filter}` : sql``}
-      )`;
-
-    const ranked = await this.db.execute<{
-      id: string;
-      relevance: number;
-      coverage: number;
-      on_stack: boolean;
-      tier_bucket: number;
-      total: number;
-      off_stack_hidden: number;
-    }>(sql`
-      WITH ${frag.cte}, ${rankedPositionsCte},
-      -- Both counts come off the same window pass, before the off-stack rows
-      -- are filtered away (a window function can't see what WHERE removed).
-      counted AS (
-        SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
-               (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
-               (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
-        FROM ranked_positions
-      )
-      SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
-      FROM counted
-      WHERE ${keep}
-      ORDER BY ${pageOrder}
-      LIMIT ${pageSize} OFFSET ${offset}
-    `);
-
-    // The counts ride the page query — no second pass in the common case. An
-    // empty page (all filtered out, or OFFSET past the end) returns no row and
-    // thus no counts, so fall back to a dedicated count there.
-    let total = ranked.rows[0]?.total ?? 0;
-    let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
-    if (ranked.rows.length === 0) {
-      const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
-        WITH ${frag.cte}, ${rankedPositionsCte}
-        SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
-               (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
-        FROM ranked_positions
-      `);
-      total = totalRes.rows[0]?.count ?? 0;
-      offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
-    }
+    const { rows, total, offStackHidden } = await rankedPage(this.db, scorer, where, {
+      minFitTier: filters.minFitTier,
+      includeOffStack,
+      byScore: filters.sort !== "date",
+      page,
+      pageSize,
+    });
 
     // Calibration raw data (design §8): sampled to first pages — every fresh
     // match starts at page 1, so this sees each scoring context once.
-    if (page === 1) void this.emitMatchScored(frag.cte, where, nodeIds.length);
+    if (page === 1) {
+      void this.emitMatchScored(
+        scorer.fragments({ requireOverlap: true }).cte,
+        where,
+        nodeIds.length,
+      );
+    }
 
-    const items = await this.buildItems(ranked.rows, nodeIds, resolved.matched);
-    return {
-      resolved,
-      items,
-      page,
-      pageSize,
-      total,
-      offStackHidden: includeOffStack ? 0 : offStackHidden,
-    };
+    const items = await this.buildItems(rows, nodeIds, resolved.matched);
+    return { resolved, items, page, pageSize, total, offStackHidden };
   }
 
   // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
