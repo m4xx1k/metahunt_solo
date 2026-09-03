@@ -1,7 +1,7 @@
 import { buildMatchHref } from "./match-draft";
 
 describe("buildMatchHref", () => {
-  it("keeps CV criteria in the resulting feed URL", () => {
+  it("signals open=cv (never a candidateId) in the resulting feed URL", () => {
     const href = buildMatchHref(
       "candidate-1",
       [{ id: "ignored-manual-skill" }],
@@ -10,19 +10,20 @@ describe("buildMatchHref", () => {
     );
     const params = new URL(href, "https://metahunt.app").searchParams;
 
-    expect(params.get("cv")).toBe("candidate-1");
+    expect(params.get("open")).toBe("cv");
+    expect(params.has("cv")).toBe(false);
     expect(params.has("skills")).toBe(false);
     expect(params.get("roles")).toBe("backend,full-stack");
     expect(params.get("excludeSkills")).toBe("php");
   });
 
-  it("keeps manual skills and exclusions without adding a CV", () => {
+  it("keeps manual skills and exclusions without an open=cv signal", () => {
     const href = buildMatchHref(null, [{ id: "typescript" }, { id: "react" }], new Set(), [
       { id: "php" },
     ]);
     const params = new URL(href, "https://metahunt.app").searchParams;
 
-    expect(params.has("cv")).toBe(false);
+    expect(params.has("open")).toBe(false);
     expect(params.get("skills")).toBe("typescript,react");
     expect(params.get("excludeSkills")).toBe("php");
   });

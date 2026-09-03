@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { FeedShell } from "@/app/(feed)/_components/FeedShell";
 import { cn } from "@/lib/utils";
 import { cvApi, type CvIngestResult, type SampleCandidate } from "@/lib/api/cv";
+import { meApi } from "@/lib/api/me";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
+import type { Lens } from "@/lib/analytics/use-analytics";
 import { useSaved } from "@/lib/hooks/use-saved";
+import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { useSession } from "@/features/auth/use-session";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { OptionRow } from "@/features/vacancy-filters/types";
@@ -20,10 +25,14 @@ import { CvDropzone } from "./CvDropzone";
 import { LensTabs, LENS_PANEL_ID, lensTabId } from "./LensTabs";
 import { WarmBody } from "./WarmBody";
 
-// The merged route's interactive island. The lens is derived from ?cv: cold =
-// the feed body reused via <FeedShell> (no fork; hideTrackTree — the top-band
-// replaces the sidebar tree); warm = the ranked <WarmBody> under the active CV.
-// Upload/sample selection sets ?cv (→ warm); the browse tab drops it (→ cold).
+// The merged route's interactive island. `?sample` forces the warm lens onto
+// an allowlisted seeded candidate, open to anyone; a real CV never lives in
+// the URL (MET-144 step 7) — `myCvs`'s `isActive` row (the JWT-resolved one
+// GET /feed itself scores against) is the source of truth, and `manualLens`
+// is only which tab the user last clicked (mirrors the old ?cv-present /
+// ?cv-absent split, just without a URL round trip). cold = the feed body
+// reused via <FeedShell> (no fork; hideTrackTree — the top-band replaces the
+// sidebar tree); warm = the ranked <WarmBody> under the resolved candidate.
 export function FeedLensShell({
   aggregates,
   tracks,
@@ -50,10 +59,28 @@ export function FeedLensShell({
   samples: SampleCandidate[];
 }) {
   const search = useFeedSearch();
-  const { lens, cv, setCv } = search;
+  const { sample, setSample } = search;
   const analytics = useAnalytics();
   const saved = useSaved();
   const { isLoggedIn } = useSession();
+  const qc = useQueryClient();
+  const searchParams = useSearchParams();
+  const pushShallow = useShallowSearchParams();
+
+  // Which tab the user last clicked, independent of the URL — "warm" only
+  // ever renders when a candidate actually resolves (see `candidateId` below).
+  // `?open=cv` (buildMatchHref, the /match onboarding flow's completion
+  // redirect) seeds it once, id-free — not a capability token, just "land in
+  // the ranked view instead of a second click" — then gets stripped so it
+  // isn't a lingering fossil.
+  const [manualLens, setManualLens] = useState<Lens>(() =>
+    searchParams.get("open") === "cv" ? "warm" : "cold",
+  );
+  useEffect(() => {
+    if (searchParams.has("open")) pushShallow((n) => n.delete("open"));
+    // Only ever runs for the one-shot redirect landing — not a searchParams sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -80,22 +107,38 @@ export function FeedLensShell({
     );
   }, []);
 
-  // The "how it works" CTA lives in the hero (a server subtree above this
-  // island), so it reaches upload via a window event rather than a shared store.
-  useEffect(() => {
-    window.addEventListener("feed:upload-cv", triggerUpload);
-    return () => window.removeEventListener("feed:upload-cv", triggerUpload);
-  }, [triggerUpload]);
+  // The signed-in owner's own CVs, `isActive` included — the same row
+  // GET /feed's JWT resolution scores against. Shares its cache key with
+  // useMyCvs() (CvSelect's own read), so this costs no extra request.
+  const { data: myCvs } = useQuery({
+    queryKey: ["me", "cv"],
+    queryFn: meApi.listCvs,
+    enabled: isLoggedIn,
+    staleTime: 60_000,
+  });
+  const activeServerCv = myCvs?.find((c) => c.isActive) ?? null;
+  // A CV uploaded THIS render beats the (not-yet-refetched) server list; a
+  // `saved.activeCv` local hint covers the same brief window on first paint.
+  const realCandidateId =
+    uploadInfo?.candidateId ?? activeServerCv?.candidateId ?? saved.activeCv ?? null;
+  const candidateId = sample ?? realCandidateId;
+  const isSample = sample != null;
+  const lens: Lens = isSample || (manualLens === "warm" && candidateId != null) ? "warm" : "cold";
 
-  // Browse drops ?cv (keeps activeCv); the CV tab, unlocked by a remembered
-  // activeCv, re-ranks it in one click.
+  // Browse drops any lens choice back to cold; the CV tab needs a resolved
+  // candidate to mean anything (LensTabs disables it via `cvLocked` until
+  // then).
   const onLens = useCallback(
-    (to: "cold" | "warm") => {
-      if (to === "cold") setCv(null);
-      else if (cv == null && saved.activeCv) setCv(saved.activeCv);
+    (to: Lens) => {
+      if (to === "cold") {
+        setSample(null);
+        setManualLens("cold");
+      } else {
+        setManualLens("warm");
+      }
       scrollToControls();
     },
-    [setCv, cv, saved.activeCv, scrollToControls],
+    [setSample, scrollToControls],
   );
 
   const onFile = useCallback(
@@ -115,8 +158,12 @@ export function FeedLensShell({
           label: info.role ?? "Your CV",
           addedAt: Date.now(),
         });
-        // The API creates the ownership link atomically with the upload.
-        setCv(info.candidateId);
+        // The upload already made this the active CV server-side
+        // (CandidateLoaderService.setActiveCv) — just catch the switcher up.
+        saved.setActiveCv(info.candidateId);
+        void qc.invalidateQueries({ queryKey: ["me", "cv"] });
+        setSample(null);
+        setManualLens("warm");
         scrollToControls();
       } catch (e) {
         analytics.cvUploadFailed();
@@ -125,25 +172,32 @@ export function FeedLensShell({
         setUploading(false);
       }
     },
-    [analytics, saved, setCv, scrollToControls, isLoggedIn],
+    [analytics, saved, setSample, qc, scrollToControls, isLoggedIn],
   );
 
   const onPickCv = useCallback(
     (id: string) => {
       saved.setActiveCv(id);
-      setCv(id);
+      const link = myCvs?.find((c) => c.candidateId === id);
+      if (link) {
+        void meApi
+          .activateCv(link.id)
+          .then(() => qc.invalidateQueries({ queryKey: ["me", "cv"] }))
+          .catch(() => toast.error("Couldn't switch CV"));
+      }
     },
-    [saved, setCv],
+    [saved, myCvs, qc],
   );
 
   // A saved CV whose row no longer resolves (DB reset / GC): drop it + fall back.
   const onCandidateGone = useCallback(
     (id: string) => {
       saved.removeCv(id);
-      setCv(null);
+      void qc.invalidateQueries({ queryKey: ["me", "cv"] });
+      setManualLens("cold");
       toast.error("This CV is no longer available");
     },
-    [saved, setCv],
+    [saved, qc],
   );
 
   const warmRoleOptions = useMemo<OptionRow[] | undefined>(
@@ -156,9 +210,8 @@ export function FeedLensShell({
     [skillCatalog],
   );
 
-  const isSample = cv != null && samples.some((s) => s.candidateId === cv);
-  const uploaded = uploadInfo?.candidateId === cv ? uploadInfo : null;
-  const sampleLabel = samples.find((s) => s.candidateId === cv)?.label;
+  const uploaded = uploadInfo?.candidateId === candidateId ? uploadInfo : null;
+  const sampleLabel = samples.find((s) => s.candidateId === sample)?.label;
   const profileTitle = uploaded ? "Your CV" : sampleLabel ? `Profile · ${sampleLabel}` : "Your CV";
 
   return (
@@ -186,7 +239,7 @@ export function FeedLensShell({
           dragging ? "border-accent bg-accent/5" : "border-border bg-bg-card",
         )}
       >
-        <LensTabs lens={lens} cvLocked={cv == null && saved.activeCv == null} onSelect={onLens} />
+        <LensTabs lens={lens} cvLocked={candidateId == null} onSelect={onLens} />
         <div className="ml-auto">
           <CvDropzone onClick={triggerUpload} busy={uploading} />
         </div>
@@ -214,10 +267,10 @@ export function FeedLensShell({
           </p>
         ) : null}
 
-        {lens === "warm" && cv ? (
+        {lens === "warm" && candidateId ? (
           <WarmBody
             api={search}
-            candidateId={cv}
+            candidateId={candidateId}
             domainOptions={domainOptions}
             roleOptions={warmRoleOptions}
             skillOptions={warmSkillOptions}
@@ -243,7 +296,7 @@ export function FeedLensShell({
             rightRail={
               <div className="flex flex-col gap-4">
                 <ColdRecsTeaser
-                  savedCvId={saved.activeCv}
+                  savedCvId={realCandidateId}
                   onUnlock={onPickCv}
                   onUpload={triggerUpload}
                 />
@@ -255,7 +308,7 @@ export function FeedLensShell({
                         key={s.candidateId}
                         type="button"
                         onClick={() => {
-                          setCv(s.candidateId);
+                          setSample(s.candidateId);
                           scrollToControls();
                         }}
                         className="border border-border px-2.5 py-1 text-text-secondary transition-colors hover:border-accent hover:text-accent"

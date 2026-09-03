@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -68,12 +69,32 @@ function CvRow({
   onDelete: (id: string) => void;
   deleting: boolean;
 }) {
+  const qc = useQueryClient();
+  const router = useRouter();
   const [managingSkills, setManagingSkills] = useState(false);
   const handleSkills = () => setManagingSkills((visible) => !visible);
   const handleDelete = () => onDelete(cv.id);
   const facts = [cv.seniority, cv.role, cv.experienceYears ? `${cv.experienceYears} yr` : null]
     .filter(Boolean)
     .join(" · ");
+
+  // MET-144: the feed scores against the JWT's active CV, never a URL param
+  // — so viewing a non-active CV's matches means activating it first. Already
+  // active → skip the round trip and just navigate (`?open=cv` lands the
+  // completed flow in the warm lens the same way /match's redirect does).
+  const activate = useMutation({
+    mutationFn: () => meApi.activateCv(cv.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEYS.cvs }),
+    onError: () => toast.error("Не вдалося переключити CV"),
+  });
+  const handleViewJobs = () => {
+    if (cv.isActive) {
+      router.push("/?open=cv");
+      return;
+    }
+    activate.mutate(undefined, { onSuccess: () => router.push("/?open=cv") });
+  };
+
   return (
     <li className="flex flex-col gap-3 border border-border bg-bg p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -93,11 +114,14 @@ function CvRow({
           )}
         </div>
         <div className="flex flex-wrap gap-2 sm:shrink-0">
-          <Link href={`/?cv=${cv.candidateId}`}>
-            <Button variant="secondary" size="sm">
-              вакансії
-            </Button>
-          </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleViewJobs}
+            disabled={activate.isPending}
+          >
+            вакансії
+          </Button>
           <Button
             variant="secondary"
             size="sm"

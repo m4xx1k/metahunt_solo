@@ -1,6 +1,11 @@
-// The home feed. Cold = the market feed body (<FeedShell>); warm (?cv) = the
-// ranked list under a CV, seeded server-side so a shared /?cv=X link renders
-// warm on first paint. The lens is derived from ?cv inside <FeedLensShell>.
+// The home feed. Cold = the market feed body (<FeedShell>); warm = the ranked
+// list under a candidate — a real signed-in viewer's active CV (never a URL
+// param, MET-144 step 7) or an allowlisted `?sample=`. Only a sample seeds
+// server-side: a real CV's identity depends on the JWT, and the warm lens
+// never auto-opens for a returning CV owner (mirrors the pre-existing UX —
+// the CV tab still needs an explicit click), so there is nothing to seed for
+// it on an ordinary page load. The lens itself is derived inside
+// <FeedLensShell>.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -77,9 +82,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const trackSlug = slug?.[0];
-  // `?cv` is a capability token for someone's uploaded CV. Indexing one would
-  // publish it, so any URL carrying it is noindex (robots.txt blocks it too).
-  const noindex = typeof sp.cv === "string" && sp.cv.length > 0;
+  // `?sample` renders a demo preview, not the canonical page — noindex so it
+  // never competes with (or dilutes) the base URL in search.
+  const noindex = typeof sp.sample === "string" && sp.sample.length > 0;
 
   if (!trackSlug) {
     return pageMetadata({
@@ -155,16 +160,16 @@ export default async function FeedPage({
     queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
   }
 
-  // Warm seed: a shared /?cv=X link should render ranked on first paint.
+  // Warm seed: a shared /?sample=X link should render ranked on first paint.
   // Tolerate a bad id / backend gap — the client degrades to an empty warm list.
-  const cv = typeof sp.cv === "string" ? sp.cv : null;
-  if (cv) {
+  const rawSample = typeof sp.sample === "string" ? sp.sample : null;
+  const sample = rawSample && samples.some((s) => s.candidateId === rawSample) ? rawSample : null;
+  if (sample) {
     const filters = readFilterState(readerFrom(sp));
-    const isSample = samples.some((sample) => sample.candidateId === cv);
     try {
       queryClient.setQueryData(
-        warmKey(cv, filters, 1, HOME_INCLUDE_OFF_STACK),
-        await fetchMatch(cv, filters, 1, isSample, HOME_INCLUDE_OFF_STACK),
+        warmKey(sample, filters, 1, HOME_INCLUDE_OFF_STACK),
+        await fetchMatch(sample, filters, 1, true, HOME_INCLUDE_OFF_STACK),
       );
     } catch {
       /* no seed */

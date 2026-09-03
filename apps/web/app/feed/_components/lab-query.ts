@@ -17,8 +17,9 @@ export const LAB_PAGE_SIZE = MATCH_PAGE_SIZE;
 // FilterState → the cold list query. The lab route has no track presets, so this
 // is a straight projection (unlike the home feed, where a track seeds the axes).
 // `sample` scores the page against an allowlisted sample candidate (§8) — the
-// caller (FeedLabShell) only ever passes one when `?cv=` resolved to a seeded
-// sample, never an arbitrary real candidate id (GET /feed?sample= 404s on those).
+// caller (FeedLabShell) reads it straight from `?sample=`, allowlist-checked
+// against the seeded samples the route already has (GET /feed?sample= 404s
+// on anything else, so this route has no way to reach an arbitrary real id).
 export function toLabColdQuery(f: FilterState, page: number, sample?: string): ListVacanciesQuery {
   const list = (v: string[]) => (v.length > 0 ? v : undefined);
   return {
