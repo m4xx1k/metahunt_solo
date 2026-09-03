@@ -82,9 +82,10 @@ export function FeedLabShell({
   const offStackHidden =
     (lens === "warm" ? warm.data?.offStackHidden : cold.data?.offStackHidden) ?? 0;
   const candidateSkillIds = warm.data?.resolved.matched.map((s) => s.id) ?? [];
-  // The scored viewer's skills for the cold card's ✅/❌/➕ counts — parity
-  // with the warm card, which reads the same set off `resolved.matched`.
-  const coldViewerSkillIds = cold.data?.viewerSkills?.map((s) => s.id) ?? [];
+  // The scored viewer's skills for the cold card's ✅/❌/➕ counts (via
+  // skillDiff) — parity with the warm card, which reads the same set off
+  // `resolved.matched`.
+  const coldViewerSkills = cold.data?.viewerSkills ?? [];
   const hasViewer = cv != null;
   const goToOffset = useCallback(
     (offset: number) => setPage(Math.floor(offset / LAB_PAGE_SIZE) + 1),
@@ -168,7 +169,7 @@ export function FeedLabShell({
                     key={vacancy.id}
                     vacancy={vacancy}
                     hasViewer={hasViewer}
-                    viewerSkillIds={coldViewerSkillIds}
+                    viewerSkills={coldViewerSkills}
                   />
                 ))}
           </div>

@@ -36,13 +36,7 @@ import {
 } from "../score/scorer.port";
 
 import { FacetsService } from "./facets.service";
-import type {
-  NodeRef,
-  VacancyDetailDto,
-  VacancySkillDiff,
-  SitemapResponse,
-  VacancyDto,
-} from "./feed.contract";
+import type { VacancyDetailDto, SitemapResponse, VacancyDto } from "./feed.contract";
 import { FeedService, type FeedSearchParams } from "./feed.service";
 import { resolveFeedQuery } from "./resolve-feed-query";
 
@@ -175,8 +169,9 @@ export class FeedController {
   // session token rides along, but never rejects an anonymous request. With
   // a signed-in viewer, one `overlayFor([positionId])` scores this single
   // Position against their active CV — MET-144 §7 step 2, the smallest real
-  // overlayFor consumer — plus the §4 skill diff for step 6's detail-page
-  // panel.
+  // overlayFor consumer. `viewerSkills` rides along so the client can derive
+  // the ✅/❌/➕ diff itself (§4/R4) — no server-side diff build, one
+  // implementation instead of a server copy and a client copy.
   @Get("vacancy/:id")
   @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: "Read full detail for one vacancy" })
@@ -192,15 +187,13 @@ export class FeedController {
     vacancy: VacancyDto,
     userId: string | undefined,
   ): Promise<VacancyDetailDto> {
-    if (!userId || !vacancy.uniqueVacancyId) return { ...vacancy, diff: null };
-    // One resolve for both halves — the overlay's scoring input and the diff's
-    // skill names come off the same `resolveViewer` read.
+    if (!userId || !vacancy.uniqueVacancyId) return { ...vacancy, viewerSkills: null };
     const candidateId = await resolveActiveCandidateId(this.db, userId);
     const viewer = candidateId ? await resolveViewer(this.db, candidateId) : null;
-    if (!viewer) return { ...vacancy, diff: null };
+    if (!viewer) return { ...vacancy, viewerSkills: null };
     const overlay = await overlayFor(this.db, viewer.nodeIds, [vacancy.uniqueVacancyId]);
     const match = overlay.get(vacancy.uniqueVacancyId) ?? null;
-    return { ...vacancy, match, diff: match ? buildSkillDiff(vacancy, viewer.skills) : null };
+    return { ...vacancy, match, viewerSkills: viewer.skills };
   }
 
   // Members + "why merged" reasons for one dedup group — backs the feed's
@@ -215,27 +208,6 @@ export class FeedController {
     if (!group) throw new NotFoundException();
     return group;
   }
-}
-
-// §4: have = any of the vacancy's own listed skills (required or optional)
-// the viewer has; missing = required skills the viewer lacks; bonus = the
-// viewer's skills the vacancy doesn't ask for at all. No weight — nothing
-// here ranks skills against each other, unlike the ranked list's diff.
-function buildSkillDiff(vacancy: VacancyDto, viewerSkills: NodeRef[]): VacancySkillDiff {
-  const viewerIds = new Set(viewerSkills.map((s) => s.id));
-  const have: NodeRef[] = [];
-  const missing: NodeRef[] = [];
-  for (const skill of vacancy.skills.required) {
-    (viewerIds.has(skill.id) ? have : missing).push(skill);
-  }
-  for (const skill of vacancy.skills.optional) {
-    if (viewerIds.has(skill.id)) have.push(skill);
-  }
-  const vacancyIds = new Set(
-    [...vacancy.skills.required, ...vacancy.skills.optional].map((s) => s.id),
-  );
-  const bonus = viewerSkills.filter((s) => !vacancyIds.has(s.id));
-  return { have, missing, bonus };
 }
 
 function toSearchParams(dto: FeedQueryDto): FeedSearchParams {

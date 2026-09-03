@@ -254,7 +254,7 @@ describe("FeedController", () => {
   describe("vacancy", () => {
     const NO_SKILLS = { required: [], optional: [] };
 
-    it("returns the vacancy plus diff: null when found", async () => {
+    it("returns the vacancy plus viewerSkills: null when found", async () => {
       const vacancy = {
         id: "v1",
         uniqueVacancyId: "pos-1",
@@ -262,7 +262,10 @@ describe("FeedController", () => {
       } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
 
-      await expect(controller.vacancy("v1", anon)).resolves.toEqual({ ...vacancy, diff: null });
+      await expect(controller.vacancy("v1", anon)).resolves.toEqual({
+        ...vacancy,
+        viewerSkills: null,
+      });
       expect(getById).toHaveBeenCalledWith("v1");
     });
 
@@ -311,7 +314,7 @@ describe("FeedController", () => {
       expect(result.match).toBe(overlay);
     });
 
-    it("leaves match and diff null for a signed-in viewer with nothing scored (no CV)", async () => {
+    it("leaves match and viewerSkills null for a signed-in viewer with nothing scored (no CV)", async () => {
       const vacancy = {
         id: "v1",
         uniqueVacancyId: "pos-1",
@@ -325,26 +328,26 @@ describe("FeedController", () => {
 
       expect(overlayForMock).not.toHaveBeenCalled();
       expect(result.match).toBeNull();
-      expect(result.diff).toBeNull();
+      expect(result.viewerSkills).toBeNull();
     });
 
-    it("builds the have/missing/bonus diff from the vacancy's skills and the viewer's own", async () => {
-      const required1 = { id: "req-1", name: "Go" }; // viewer has it → have
-      const required2 = { id: "req-2", name: "Kubernetes" }; // viewer lacks it → missing
-      const optional1 = { id: "opt-1", name: "Docker" }; // viewer has it → have
-      const bonusSkill = { id: "bonus-1", name: "Rust" }; // not on the vacancy → bonus
+    // The ✅/❌/➕ diff itself is no longer built server-side (R4): the
+    // response ships the viewer's resolved skills verbatim, and
+    // entities/vacancy/skill-diff.ts's skillDiff() (unit-tested there)
+    // derives have/missing/bonus from these plus `vacancy.skills` on the
+    // client — one diff implementation instead of a server copy and a
+    // client copy.
+    it("ships the signed-in viewer's resolved skills alongside the match", async () => {
+      const viewerSkills = [{ id: "req-1", name: "Go" }];
       const vacancy = {
         id: "v1",
         uniqueVacancyId: "pos-1",
         match: null,
-        skills: { required: [required1, required2], optional: [optional1] },
+        skills: NO_SKILLS,
       } as unknown as VacancyDto;
       getById.mockResolvedValue(vacancy);
       resolveActiveCandidateIdMock.mockResolvedValue("candidate-1");
-      resolveViewerMock.mockResolvedValue({
-        nodeIds: ["node-1"],
-        skills: [required1, optional1, bonusSkill],
-      });
+      resolveViewerMock.mockResolvedValue({ nodeIds: ["node-1"], skills: viewerSkills });
       overlayForMock.mockResolvedValue(
         new Map([
           ["pos-1", { relevance: 1, coverage: 0.5, tier: "GOOD", percent: 50, onStack: true }],
@@ -353,11 +356,7 @@ describe("FeedController", () => {
 
       const result = await controller.vacancy("v1", asUser("user-1"));
 
-      expect(result.diff).toEqual({
-        have: [required1, optional1],
-        missing: [required2],
-        bonus: [bonusSkill],
-      });
+      expect(result.viewerSkills).toEqual(viewerSkills);
     });
   });
 });

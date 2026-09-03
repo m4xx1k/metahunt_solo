@@ -149,17 +149,13 @@ export interface VacancyDto {
   match: MatchOverlay | null;
 }
 
-// The ✅/❌/➕ skill diff on the vacancy detail page — computed server-side
-// from the vacancy's own skills + the viewer's, no weight (nothing here
-// ranks skills against each other, unlike the warm-lens `RankedVacancy.diff`).
-export interface VacancySkillDiff {
-  have: NodeRef[];
-  missing: NodeRef[];
-  bonus: NodeRef[];
-}
-
+// The viewer's own resolved skills, verbatim — same role as
+// `ListVacanciesResponse.viewerSkills` below. The vacancy detail page's
+// ✅/❌/➕ diff is computed client-side (entities/vacancy/skill-diff.ts) from
+// these plus `skills.required`/`.optional`, one implementation shared with
+// every list card instead of a server copy and a client copy.
 export interface VacancyDetailDto extends VacancyDto {
-  diff: VacancySkillDiff | null;
+  viewerSkills: NodeRef[] | null;
 }
 
 // ─────────────────────── Dedup group (drawer) ──────────────────────

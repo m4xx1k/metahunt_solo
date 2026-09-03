@@ -3,12 +3,12 @@
 import Link from "next/link";
 
 import { FitBadge } from "@/entities/vacancy/FitBadge";
+import { skillDiff } from "@/entities/vacancy/skill-diff";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
-import type { VacancyDto } from "@/lib/api/vacancies";
+import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
 
 import { DiffCounts } from "./DiffCounts";
-import { countSkillDiff } from "./skill-diff";
 
 // Cold card: the same Fit slot the warm card has. `vacancy.match` is real now
 // (MET-144 — the unified feed scores the cheap path too), so three states:
@@ -20,17 +20,18 @@ import { countSkillDiff } from "./skill-diff";
 export function LabColdCard({
   vacancy,
   hasViewer,
-  viewerSkillIds = [],
+  viewerSkills = [],
 }: {
   vacancy: VacancyDto;
   /** A CV or sample is selected — even if this particular card scored null. */
   hasViewer: boolean;
-  /** The scored viewer's resolved skill ids (`FeedResponse.viewerSkills`),
-   *  for the ✅/❌/➕ counts. Empty when there is no viewer. */
-  viewerSkillIds?: readonly string[];
+  /** The scored viewer's resolved skills (`FeedResponse.viewerSkills`), for
+   *  the ✅/❌/➕ counts. Empty when there is no viewer. */
+  viewerSkills?: readonly NodeRef[];
 }) {
   const analytics = useAnalytics();
-  const diff = vacancy.match ? countSkillDiff(vacancy.skills, viewerSkillIds) : null;
+  const diff = vacancy.match ? skillDiff(vacancy.skills, viewerSkills) : null;
+  const viewerSkillIds = viewerSkills.map((s) => s.id);
 
   return (
     <div className="flex flex-col">
@@ -58,7 +59,13 @@ export function LabColdCard({
             percent={vacancy.match.percent}
             tooltip={<span className="font-bold">Fit {vacancy.match.percent}%</span>}
           />
-          {diff ? <DiffCounts have={diff.have} missing={diff.missing} bonus={diff.bonus} /> : null}
+          {diff ? (
+            <DiffCounts
+              have={diff.have.length}
+              missing={diff.missing.length}
+              bonus={diff.bonus.length}
+            />
+          ) : null}
           {!vacancy.match.onStack ? (
             <span className="border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
               off-stack

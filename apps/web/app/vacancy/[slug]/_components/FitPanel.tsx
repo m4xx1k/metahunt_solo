@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { FitBadge } from "@/entities/vacancy/FitBadge";
+import { skillDiff } from "@/entities/vacancy/skill-diff";
 import { useSession } from "@/features/auth/use-session";
 import { vacanciesApi, type NodeRef } from "@/lib/api/vacancies";
 
@@ -11,7 +12,9 @@ import { vacanciesApi, type NodeRef } from "@/lib/api/vacancies";
 // badge + skill diff are per-viewer, so they can't come from that render:
 // this island fetches `/feed/vacancy/:id` again on the client, where the
 // localStorage Bearer token is available, and shows the panel only when the
-// signed-in viewer has an active CV that scored this Position.
+// signed-in viewer has an active CV that scored this Position. The diff
+// itself is computed here, off `viewerSkills` + the vacancy's own skills —
+// same `skillDiff` every list card uses (MET-144 R4).
 export function FitPanel({ vacancyId }: { vacancyId: string }) {
   const { isLoggedIn } = useSession();
 
@@ -23,7 +26,7 @@ export function FitPanel({ vacancyId }: { vacancyId: string }) {
   });
 
   const match = data?.match ?? null;
-  const diff = data?.diff ?? null;
+  const diff = data && data.viewerSkills ? skillDiff(data.skills, data.viewerSkills) : null;
   if (!match) return null;
 
   return (
