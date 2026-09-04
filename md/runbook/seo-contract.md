@@ -23,12 +23,14 @@ are exempt** — two near-identical postings legitimately share a headline, and
 asserting otherwise would make the test cry wolf.
 
 Sitemap: no duplicate `<loc>`, every entry on the canonical origin, and none
-carrying a `?cv=` token.
+carrying a `?sample=` token.
 
-Must stay out of the index: `/welcome`, and any URL with `?cv=`. Their canonical
-must not leak the token either.
+Must stay out of the index: `/welcome`, `/match`, and any URL with `?sample=`
+(the scored demo preview — MET-144 retired the old `?cv=`). Their canonical must
+not leak the token either. `?sample=` is deliberately *not* disallowed in
+`robots.txt` — a Disallow would stop a crawler ever seeing the `noindex`.
 
-`robots.txt`: disallows `/dashboard`, `/me`, `/*cv=`, and advertises the sitemap.
+`robots.txt`: disallows `/dashboard`, `/me`, and advertises the sitemap.
 
 Favicon surfaces resolve: `/favicon.ico`, `/icon.png`, `/apple-icon.png`,
 `/manifest.webmanifest`.

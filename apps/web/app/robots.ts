@@ -11,10 +11,10 @@ export default function robots(): MetadataRoute.Robots {
         // Every operator screen lives under /dashboard; /me is the account page.
         "/dashboard",
         "/me",
-        // `?cv=` carries a capability token for an uploaded CV. The pages also
-        // send noindex, but a shared link must not even be crawled.
-        "/*cv=",
       ],
+      // `?sample=` (the retired `?cv=`'s successor) is deliberately not disallowed:
+      // its pages send noindex, and a Disallow would stop a crawler ever seeing
+      // that directive. Shareable-but-unindexed is the intent.
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
