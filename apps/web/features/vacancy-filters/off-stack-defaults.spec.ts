@@ -6,7 +6,13 @@ import { EMPTY_FILTERS } from "./types";
 // path never hides anything, and the full scoring path hides off-stack itself
 // by default — so the client omits the param entirely unless the user ticks
 // "show other-stack jobs", and only then sends offStack=true.
-const feedInputs = { trackActive: false, presetRoleIds: [], presetSkillIds: [], sources: [] };
+const feedInputs = {
+  trackActive: false,
+  presetRoleIds: [],
+  presetSkillIds: [],
+  sources: [],
+  sampleIds: [],
+};
 const homeOffStack = (search: string) =>
   buildFeedListQuery(new URLSearchParams(search), feedInputs).query?.includeOffStack;
 

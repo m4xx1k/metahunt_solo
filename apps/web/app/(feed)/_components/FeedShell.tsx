@@ -49,6 +49,7 @@ export function FeedShell({
   skillCatalog,
   domainCatalog,
   hideTrackTree,
+  sampleIds,
   viewer = null,
   coldRail,
 }: {
@@ -63,6 +64,8 @@ export function FeedShell({
   domainCatalog?: TrackAxis[];
   /** Drop the sidebar browse tree (the merged route uses a top-band instead). */
   hideTrackTree?: boolean;
+  /** Allowlisted sample candidate ids — a `?sample` outside this set is ignored. */
+  sampleIds: string[];
   /** A scoring viewer → sort controls, scored cards and the CV rail. */
   viewer?: FeedViewer | null;
   /** Third column when there is no viewer (the CV-recs teaser + sample picks). */
@@ -85,8 +88,9 @@ export function FeedShell({
         presetRoleIds,
         presetSkillIds,
         sources: aggregates.sources,
+        sampleIds,
       }),
-    [searchParams, activeTrackSlug, presetRoleIds, presetSkillIds, aggregates.sources],
+    [searchParams, activeTrackSlug, presetRoleIds, presetSkillIds, aggregates.sources, sampleIds],
   );
 
   // Ticking three skills in a row is one intent, not three: settle the filters
@@ -163,6 +167,7 @@ export function FeedShell({
         offset={offset}
         onNavigate={goToOffset}
         isFetching={isFetching || settling}
+        hasViewer={viewer != null}
         viewerSkills={viewerSkills}
         controls={
           <FeedListControls

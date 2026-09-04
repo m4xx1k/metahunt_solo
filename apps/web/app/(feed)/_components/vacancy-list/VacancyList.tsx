@@ -14,8 +14,11 @@ type Props = {
   // From the results query; dims the (kept-visible) previous page while the
   // next one loads.
   isFetching?: boolean;
-  // The scored viewer's resolved skills (`/feed` response) for the card's Fit
-  // badge + diff counts, or null when the server scored no viewer.
+  // True when a CV/sample is in view — the card shows the Fit slot (badge or a
+  // "nothing scored" gap), not the "add your CV" lock. Independent of whether
+  // THIS card scored, and of the transient window before viewerSkills lands.
+  hasViewer?: boolean;
+  // The scored viewer's resolved skills (`/feed` response) for the diff counts.
   viewerSkills?: NodeRef[] | null;
   // View controls (freshness / sort / off-stack) shown inline in the header row.
   controls?: ReactNode;
@@ -26,6 +29,7 @@ export function VacancyList({
   offset,
   onNavigate,
   isFetching,
+  hasViewer = false,
   viewerSkills = null,
   controls,
 }: Props) {
@@ -59,7 +63,7 @@ export function VacancyList({
             <VacancyMatchCard
               key={v.id}
               vacancy={v}
-              hasViewer={viewerSkills != null}
+              hasViewer={hasViewer}
               viewerSkills={viewerSkills ?? []}
             />
           ))}

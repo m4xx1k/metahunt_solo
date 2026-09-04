@@ -227,6 +227,7 @@ export function FeedShellIsland({
           aggregates={aggregates}
           tracks={tracks}
           activeTrackSlug={activeTrackSlug}
+          sampleIds={samples.map((s) => s.candidateId)}
           presetRoles={presetRoles}
           presetSkills={presetSkills}
           contextualSkills={contextualSkills}

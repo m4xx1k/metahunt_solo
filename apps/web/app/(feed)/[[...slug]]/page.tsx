@@ -147,12 +147,18 @@ export default async function FeedPage({
     presetRoleIds: preset.roles.map((r) => r.id),
     presetSkillIds: preset.skills.map((s) => s.id),
     sources: aggregates.sources,
+    sampleIds: samples.map((c) => c.candidateId),
   });
-  // The one list seed — buildFeedListQuery carries ?sample through, so a shared
-  // /?sample=X link renders scored on first paint under the same key.
+  // The one list seed — buildFeedListQuery carries an allowlisted ?sample
+  // through, so a shared /?sample=X link renders scored on first paint under
+  // the same key. Tolerate a backend hiccup: no seed just means a client fetch.
   const queryClient = new QueryClient();
   if (query) {
-    queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
+    try {
+      queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
+    } catch {
+      /* no seed */
+    }
   }
 
   return (
