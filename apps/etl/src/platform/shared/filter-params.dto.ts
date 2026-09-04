@@ -231,6 +231,49 @@ export class FeedQueryDto extends FilterParamsDto {
   @Min(1)
   @Max(100)
   pageSize?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "A seeded sample candidate id — scores this page against it, same as a signed-in " +
+      "viewer's own CV. Public demo fixtures only; 404s for anything else, real candidate " +
+      "ids included (unified-feed-score.md §8).",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsUUID()
+  sample?: string;
+
+  @ApiPropertyOptional({
+    enum: MATCH_SORT_VALUES,
+    default: "date",
+    description:
+      'Page order: freshest (default) or best Fit first. "score" needs a signed-in CV ' +
+      "or `sample` — without one it falls back to freshest, same result set.",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsIn([...MATCH_SORT_VALUES])
+  sort?: MatchSort;
+
+  @ApiPropertyOptional({
+    enum: FIT_TIER_VALUES,
+    description: "Hide vacancies below this coverage tier. Needs a scorer, same as sort=score.",
+  })
+  @IsOptional()
+  @trimmed()
+  @IsIn([...FIT_TIER_VALUES])
+  minFitTier?: FitTier;
+
+  @ApiPropertyOptional({
+    default: false,
+    description:
+      "Include vacancies whose required core tech is outside the viewer's stack. Only " +
+      "meaningful together with sort=score or minFitTier.",
+  })
+  @IsOptional()
+  @toBool()
+  @IsBoolean()
+  includeOffStack?: boolean;
 }
 
 // Filters shared by stored-CV matching and plain-text matching.
@@ -295,19 +338,4 @@ export class CandidateMatchParamsDto extends FilterParamsDto {
   @Min(1)
   @Max(100)
   pageSize?: number;
-}
-
-export class MatchDto extends CandidateMatchParamsDto {
-  @ApiPropertyOptional({
-    type: [String],
-    description: "Plain-text candidate skills to resolve and rank vacancies against.",
-    example: ["TypeScript", "NestJS", "PostgreSQL"],
-  })
-  @IsOptional()
-  @Transform(({ value }) =>
-    Array.isArray(value) ? value.map((v) => String(v).trim()).filter((v) => v.length > 0) : [],
-  )
-  @IsArray()
-  @IsString({ each: true })
-  skills?: string[];
 }

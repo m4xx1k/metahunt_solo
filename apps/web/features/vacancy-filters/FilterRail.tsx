@@ -35,9 +35,12 @@ export function FilterRail({
   skillOptions,
   skillExtra,
   seniorityToneFor,
+  hideFreshness = false,
 }: {
   api: FiltersApi;
   lens: Lens;
+  /** The feed shows freshness in its results-header strip instead. */
+  hideFreshness?: boolean;
   seniorityOptions: OptionRow[];
   workFormatOptions: OptionRow[];
   /** Searchable domain catalog; omitted → the section is not rendered. */
@@ -58,14 +61,16 @@ export function FilterRail({
   return (
     <>
       {/* Single-select, no "any": re-clicking the active window keeps it. */}
-      <EnumSection
-        title="freshness"
-        options={FRESHNESS_OPTIONS}
-        activeId={filters.freshness}
-        onChange={(id) => {
-          if (id) api.setFreshness(id);
-        }}
-      />
+      {hideFreshness ? null : (
+        <EnumSection
+          title="freshness"
+          options={FRESHNESS_OPTIONS}
+          activeId={filters.freshness}
+          onChange={(id) => {
+            if (id) api.setFreshness(id);
+          }}
+        />
+      )}
       {roleOptions ? (
         <MultiSelect
           title="role"

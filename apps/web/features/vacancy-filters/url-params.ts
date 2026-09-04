@@ -46,7 +46,9 @@ export function readFilterState(p: ParamReader): FilterState {
     test: readBool(p.get("test")),
     reservation: readBool(p.get("reservation")),
     minFitTier: p.get("minFitTier"),
-    sort: p.get("sort") === "date" ? "date" : null,
+    // Only the two explicit tokens round-trip; anything else (absent, junk) is
+    // "untouched" → the lens default (see FilterState.sort).
+    sort: p.get("sort") === "date" ? "date" : p.get("sort") === "score" ? "score" : null,
     includeOffStack: readBool(p.get("offStack")) ?? undefined,
   };
 }

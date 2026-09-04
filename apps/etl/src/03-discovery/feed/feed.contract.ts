@@ -21,13 +21,25 @@ import type {
   Seniority,
   WorkFormat,
 } from "../../platform/shared/contract";
+// score.contract.ts is framework-free like this file, so these stay plain
+// value/type imports — no NestJS/Drizzle leaks into the web client.
+import {
+  FIT_TIER_VALUES,
+  MATCH_SORT_VALUES,
+  type FitTier,
+  type MatchOverlay,
+  type MatchSort,
+} from "../score/score.contract";
 
-export { SENIORITY_VALUES, WORK_FORMAT_VALUES };
+export { FIT_TIER_VALUES, MATCH_SORT_VALUES, SENIORITY_VALUES, WORK_FORMAT_VALUES };
 export type {
   Currency,
   EmploymentType,
   EngagementType,
   EnglishLevel,
+  FitTier,
+  MatchOverlay,
+  MatchSort,
   NodeRef,
   Seniority,
   WorkFormat,
@@ -118,6 +130,25 @@ export interface VacancyDto {
   duplicateCount: number | null;
   /** Distinct sources across the same group; non-null on the same rows as `duplicateCount`. */
   duplicateSourceCount: number | null;
+
+  /**
+   * The viewer's personalized Fit overlay — null for an anonymous visitor OR
+   * a signed-in one with no CV OR nothing scored for this position. See
+   * md/journal/migrations/unified-feed-score.md: "A Fit score is optional
+   * data attached to a vacancy card, not a different endpoint."
+   */
+  match: MatchOverlay | null;
+}
+
+// `GET /feed/vacancy/:id`'s response: the same card every list uses, plus the
+// viewer's own resolved skills — the ✅ have / ❌ missing / ➕ bonus diff is
+// computed client-side from these plus `skills.required`/`.optional`
+// (already on `VacancyDto`), the same `skillDiff` util that computes it for
+// every list card off `FeedResponse.viewerSkills`. One diff implementation
+// instead of a server copy and a client copy. `null` exactly when `match` is
+// (no viewer, no CV, or nothing scored for this Position).
+export interface VacancyDetailDto extends VacancyDto {
+  viewerSkills: NodeRef[] | null;
 }
 
 // ─────────────────────── Search endpoint ───────────────────────
@@ -183,6 +214,27 @@ export interface FeedQuery {
    * skill is returned regardless of status.
    */
   includeAllSkills?: boolean;
+
+  /**
+   * Page order: freshest (default, the CHEAP PATH) or best-Fit-first (the
+   * FULL PATH — needs a signed-in CV or `sample`; falls back to freshest
+   * without one, same result set, just unscored). See
+   * md/journal/migrations/unified-feed-score.md §2.
+   */
+  sort?: MatchSort;
+  /**
+   * Hide vacancies below this coverage tier. Forces the FULL PATH regardless
+   * of `sort` (there is no cheap way to know a Position's tier without
+   * scoring it) — needs a scorer the same way `sort=score` does.
+   */
+  minFitTier?: FitTier;
+  /**
+   * FULL PATH only — off-stack hiding is a warm-lens affordance the cold
+   * feed never had (§8.2). Ignored on the cheap path.
+   */
+  includeOffStack?: boolean;
+  /** A seeded sample candidate id — see `sample` on `FeedQueryDto`. */
+  sample?: string;
 }
 
 export interface FeedResponse {
@@ -191,6 +243,20 @@ export interface FeedResponse {
   pageSize: number;
   /** Total matching rows across all pages. */
   total: number;
+  /**
+   * FULL PATH + off-stack hidden (the default) only: how many otherwise-
+   * matching rows `includeOffStack` would add back. 0 on the cheap path,
+   * where off-stack is never hidden in the first place.
+   */
+  offStackHidden: number;
+  /**
+   * The scored viewer's own resolved skills (id + name) — present exactly
+   * when a card could carry `match` (signed-in CV or allowlisted `?sample=`),
+   * absent otherwise. Lets a client compute the ✅/❌/➕ skill diff per card
+   * without a per-card query, the same way the warm lens ships
+   * `MatchResponse.resolved.matched` (unified-feed-score.md §6).
+   */
+  viewerSkills?: NodeRef[] | null;
 }
 
 // ─────────────────────────── Facets ───────────────────────────

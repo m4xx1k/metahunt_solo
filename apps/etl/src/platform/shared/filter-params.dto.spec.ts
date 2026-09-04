@@ -1,7 +1,7 @@
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
-import { FeedQueryDto, MatchDto } from "./filter-params.dto";
+import { FeedQueryDto } from "./filter-params.dto";
 
 const feed = (raw: Record<string, unknown>) => plainToInstance(FeedQueryDto, raw);
 const feedErrors = async (raw: Record<string, unknown>) => (await validate(feed(raw))).length;
@@ -53,23 +53,5 @@ describe("FeedQueryDto validation", () => {
 
   it("rejects a pageSize over the cap", async () => {
     expect(await feedErrors({ pageSize: "500" })).toBeGreaterThan(0);
-  });
-});
-
-describe("MatchDto", () => {
-  it("trims the CV skill list and validates a fit tier", async () => {
-    const dto = plainToInstance(MatchDto, {
-      skills: [" React ", ""],
-      minFitTier: "GOOD",
-      seniorities: ["MIDDLE"],
-    });
-    expect(dto.skills).toEqual(["React"]);
-    expect((await validate(dto)).length).toBe(0);
-  });
-
-  it("rejects an unknown fit tier", async () => {
-    expect(
-      (await validate(plainToInstance(MatchDto, { minFitTier: "PERFECT" }))).length,
-    ).toBeGreaterThan(0);
   });
 });

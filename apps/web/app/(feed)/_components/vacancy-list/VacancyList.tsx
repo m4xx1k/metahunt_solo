@@ -1,7 +1,9 @@
-import type { ListVacanciesResponse } from "@/lib/api/vacancies";
+import type { ReactNode } from "react";
+
+import type { ListVacanciesResponse, NodeRef } from "@/lib/api/vacancies";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/ui/navigation/Pagination";
-import { VacancyCard } from "@/entities/vacancy/VacancyCard";
+import { VacancyMatchCard } from "@/entities/vacancy/VacancyMatchCard";
 
 type Props = {
   result: ListVacanciesResponse;
@@ -12,9 +14,25 @@ type Props = {
   // From the results query; dims the (kept-visible) previous page while the
   // next one loads.
   isFetching?: boolean;
+  // True when a CV/sample is in view — the card shows the Fit slot (badge or a
+  // "nothing scored" gap), not the "add your CV" lock. Independent of whether
+  // THIS card scored, and of the transient window before viewerSkills lands.
+  hasViewer?: boolean;
+  // The scored viewer's resolved skills (`/feed` response) for the diff counts.
+  viewerSkills?: NodeRef[] | null;
+  // View controls (freshness / sort / off-stack) shown inline in the header row.
+  controls?: ReactNode;
 };
 
-export function VacancyList({ result, offset, onNavigate, isFetching }: Props) {
+export function VacancyList({
+  result,
+  offset,
+  onNavigate,
+  isFetching,
+  hasViewer = false,
+  viewerSkills = null,
+  controls,
+}: Props) {
   return (
     <section
       id="list"
@@ -23,14 +41,14 @@ export function VacancyList({ result, offset, onNavigate, isFetching }: Props) {
         isFetching && "opacity-60",
       )}
     >
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">
-          jobs
-        </h2>
-        <span className="font-mono text-xs text-text-muted">
-          <span className="text-text-secondary">{result.total}</span> found ·
-          page {result.page}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">jobs</h2>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {controls}
+          <span className="font-mono text-xs text-text-muted">
+            <span className="text-text-secondary">{result.total}</span> found · page {result.page}
+          </span>
+        </div>
       </div>
 
       {result.items.length === 0 ? (
@@ -42,7 +60,12 @@ export function VacancyList({ result, offset, onNavigate, isFetching }: Props) {
       ) : (
         <div className="flex flex-col gap-4">
           {result.items.map((v) => (
-            <VacancyCard key={v.id} vacancy={v} />
+            <VacancyMatchCard
+              key={v.id}
+              vacancy={v}
+              hasViewer={hasViewer}
+              viewerSkills={viewerSkills ?? []}
+            />
           ))}
         </div>
       )}

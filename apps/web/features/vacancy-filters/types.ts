@@ -13,6 +13,8 @@ export interface OptionRow {
   id: string;
   label: string;
   count: number;
+  /** Optional muted suffix in the chip (suggested-role fit count). */
+  hint?: string;
 }
 
 export interface SourceOption extends OptionRow {
@@ -40,6 +42,16 @@ export const FRESHNESS_DAYS: Record<string, number> = {
 };
 export const DEFAULT_FRESHNESS = "month";
 
+// Page size for the feed list (both the home feed and the /feed lab).
+export const FEED_PAGE_SIZE = 20;
+
+// Off-stack (a match whose required core tech is outside the viewer's stack) is
+// only ever hidden on the FULL scoring path (sort=score / minFitTier). The
+// default freshness feed never hides anything, so "include off-stack" is a
+// pure opt-in there: absent = the server decides (hide on the full path), an
+// explicit ?offStack=true brings them back. No per-route default (MET-120's
+// home/lab split is moot now that home defaults to the freshness path).
+
 // One superset shared by the feed (cold) and reverse-ATS (warm). Every field is
 // cold-available except `minFitTier`, which needs a ranked result — so it is the
 // only warm-only field. Enum arrays stay string-typed; the API client narrows
@@ -66,7 +78,14 @@ export interface FilterState {
   reservation: boolean | null;
   /** Warm-only: minimum coverage tier; needs a ranked (CV) result. */
   minFitTier: string | null;
-  /** Warm-only page order: null = the Fit score default, "date" = freshness. */
+  /**
+   * Page order. `null` = untouched, so each lens applies its own locked
+   * default (warm → Fit score, cold → freshest per unified-feed-score.md
+   * §8.1). `"score"` = the user explicitly asked for best-fit (the full
+   * path); `"date"` = explicitly freshest. The `null`/`"score"` split is
+   * what lets the cold lens keep freshest-by-default while still offering a
+   * working best-fit toggle.
+   */
   sort: string | null;
   /** Warm-only: undefined = no stated preference, so the route's own default wins. */
   includeOffStack: boolean | undefined;
@@ -140,7 +159,7 @@ export interface FiltersApi {
   setReservation: (v: boolean | null) => void;
   /** Warm-only coverage gate; a no-op source on the cold feed. */
   setMinFitTier: (v: string | null) => void;
-  /** Warm-only page order ("date"; null = the Fit score default). */
+  /** Page order: "score" | "date"; null clears it back to the lens default. */
   setSort: (v: string | null) => void;
   /** Warm-only: unhide vacancies outside the candidate's stack. */
   setIncludeOffStack: (v: boolean) => void;

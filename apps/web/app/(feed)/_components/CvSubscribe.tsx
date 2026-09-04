@@ -16,11 +16,11 @@ import {
 import type { EmploymentType, EnglishLevel, Seniority, WorkFormat } from "@/lib/api/vacancies";
 import type { FitTier } from "@/lib/api/ranking";
 
-// Warm subscribe: replays the on-screen CV filters — including domain +
-// experience (the replay-gap fix) — into a Telegram digest ranked by the CV.
+// CV subscribe: replays the on-screen filters — including domain + experience
+// (the replay-gap fix) — into a Telegram digest ranked by the active CV.
 // Disabled on demo samples (no owner to notify). The tab opens inside the click
 // gesture so the popup blocker doesn't eat the post-fetch navigation.
-export function WarmSubscribe({
+export function CvSubscribe({
   candidateId,
   filters,
   label,

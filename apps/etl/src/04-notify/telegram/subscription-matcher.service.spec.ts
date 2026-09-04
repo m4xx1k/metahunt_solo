@@ -42,11 +42,12 @@ function createVacancy(id: string): VacancyDto {
     uniqueVacancyId: null,
     duplicateCount: null,
     duplicateSourceCount: null,
+    match: null,
   };
 }
 
 function feedResponse(items: VacancyDto[], total = items.length): FeedResponse {
-  return { items, page: 1, pageSize: 50, total };
+  return { items, page: 1, pageSize: 50, total, offStackHidden: 0 };
 }
 
 function matchResponse(items: VacancyDto[], total = items.length): MatchResponse {

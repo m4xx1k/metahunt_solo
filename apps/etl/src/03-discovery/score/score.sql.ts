@@ -13,7 +13,13 @@ import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 // with a tagged skill, and a zero-overlap Position falls out as `relevance IS
 // NULL` (no `COALESCE` on that column). Callers that need the old "shares ≥1
 // skill" set add `relevance IS NOT NULL` downstream (MET-144).
-export function scoringCtes(cand: SQL): SQL {
+//
+// `scopeIds` — an `IN (...)` id list, e.g. `uuidList(positionIds)` — narrows
+// `agg`'s FROM to just those Positions before the GROUP BY. This is the one
+// knob that makes scoring a fixed, already-chosen page (`overlayFor`) cheap:
+// without it, `agg` fans out over the full ~144k-row position_nodes table.
+export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
+  const scope = scopeIds ? sql` WHERE pn.position_id IN (${scopeIds})` : sql``;
   return sql`
       cand(node_id) AS (VALUES ${cand}),
       -- candidate stack-set; empty => on_stack uniformly true (no-op). ADR-0010.
@@ -37,6 +43,7 @@ export function scoringCtes(cand: SQL): SQL {
         JOIN node_stats ns ON ns.node_id = pn.node_id
         LEFT JOIN cand c ON c.node_id = pn.node_id
         LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id
+        ${scope}
         GROUP BY pn.position_id
       ),
       -- weighted required coverage; all-skills share when nothing is required.
@@ -55,9 +62,9 @@ export function scoringCtes(cand: SQL): SQL {
 // scoringCtes + the `ranked` projection every ranked query selects from:
 // relevance + coverage + tier_bucket (mirrors fitTierWeighted: STRONG=2/GOOD=1/
 // STRETCH=0) + the ADR-0010 on_stack flag.
-export function rankedCte(cand: SQL): SQL {
+export function rankedCte(cand: SQL, scopeIds?: SQL): SQL {
   return sql`
-      ${scoringCtes(cand)},
+      ${scoringCtes(cand, scopeIds)},
       ranked AS (
         SELECT id, relevance, coverage,
                CASE

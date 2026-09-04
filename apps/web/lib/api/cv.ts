@@ -1,6 +1,6 @@
-import { apiBase, apiDelete, apiGet, apiPost, buildQs } from "./client";
+import { apiBase, apiDelete, apiGet, apiPost } from "./client";
 import { getToken } from "./auth-token";
-import type { FitTier, MatchResponse, MatchSort, RecommendResponse, SkillRef } from "./ranking";
+import type { RecommendResponse, SkillRef } from "./ranking";
 
 // CV ingestion + stored-candidate matching — mirrors apps/etl .../cv/.
 
@@ -25,33 +25,6 @@ export interface SampleCandidate {
   candidateId: string;
   label: string;
   hint: string;
-}
-
-// Multi-value filters travel as CSV (e.g. "MIDDLE,SENIOR") to keep the GET URL
-// flat; booleans/enums as-is (buildQs stringifies them).
-export interface CvMatchQuery {
-  seniorities?: string;
-  workFormats?: string;
-  englishLevels?: string;
-  employmentTypes?: string;
-  /** CSV of DOMAIN node slugs (resolved -> ids server-side). */
-  domainIds?: string;
-  /** CSV of ROLE node slugs — hard filter (resolved -> ids server-side). */
-  roleIds?: string;
-  excludedSkillIds?: string;
-  /** CSV of experience tokens ("0".."5" exact, "6+" = ≥6). */
-  experienceYears?: string;
-  hasTestAssignment?: boolean;
-  hasReservation?: boolean;
-  minFitTier?: FitTier;
-  /** Include vacancies outside the candidate's stack (default false). */
-  includeOffStack?: boolean;
-  /** Page order: Fit score (default) or posting date. */
-  sort?: MatchSort;
-  postedWithinDays?: number;
-  sourceId?: string;
-  pageSize?: number;
-  page?: number;
 }
 
 // A skill implied by one the candidate already listed (e.g. TypeScript ->
@@ -104,12 +77,6 @@ export const cvApi = {
   // Read-back for a stored candidate (role/seniority + current skill set) —
   // powers the account-side skill manager.
   get: (id: string) => apiGet<CandidateView>(`/cv/${id}`),
-
-  matches: (id: string, query: CvMatchQuery = {}) =>
-    apiGet<MatchResponse>(`/cv/${id}/matches${buildQs(query)}`),
-
-  sampleMatches: (id: string, query: CvMatchQuery = {}) =>
-    apiGet<MatchResponse>(`/cv/samples/${id}/matches${buildQs(query)}`),
 
   roleSuggestions: (id: string) => apiGet<RoleSuggestionsResponse>(`/cv/${id}/role-suggestions`),
 

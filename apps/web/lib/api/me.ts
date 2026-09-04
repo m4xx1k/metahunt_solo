@@ -47,6 +47,9 @@ export const meApi = {
   listCvs: () => apiGet<MeCv[]>("/me/cv"),
   claimCv: (candidateId: string) => apiPost<{ ok: true }>("/me/cv", { candidateId }),
   deleteCv: (id: string) => apiDelete<{ ok: true }>(`/me/cv/${id}`),
+  // Makes this CV the one GET /feed scores against (MET-144: no `?cv=` param
+  // — the CV switcher calls this instead of encoding the pick in the URL).
+  activateCv: (id: string) => apiPatch<{ ok: true }>(`/me/cv/${id}/activate`, {}),
   listSubscriptions: () => apiGet<MeSubscription[]>("/me/subscriptions"),
   updateSubscription: (id: string, patch: UpdateSubscription) =>
     apiPatch<{ ok: true }>(`/me/subscriptions/${id}`, patch),

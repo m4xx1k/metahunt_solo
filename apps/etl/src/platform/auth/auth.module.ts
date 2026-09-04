@@ -7,6 +7,7 @@ import { AnalyticsModule } from "../analytics/analytics.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { OptionalAuthGuard } from "./optional-auth.guard";
 import { RolesGuard } from "./roles.guard";
 import { TelegramLoginGc } from "./telegram-login.gc";
 import { TelegramLoginService } from "./telegram-login.service";
@@ -25,10 +26,24 @@ import { TelegramLoginService } from "./telegram-login.service";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TelegramLoginService, TelegramLoginGc, JwtAuthGuard, RolesGuard],
+  providers: [
+    AuthService,
+    TelegramLoginService,
+    TelegramLoginGc,
+    JwtAuthGuard,
+    OptionalAuthGuard,
+    RolesGuard,
+  ],
   // Guards declared on controllers are resolved in the consuming module's DI
   // context. Export AuthService with them so JwtAuthGuard's account-existence
   // recheck remains resolvable outside AuthModule (for example TaxonomyModule).
-  exports: [AuthService, TelegramLoginService, JwtAuthGuard, RolesGuard, JwtModule],
+  exports: [
+    AuthService,
+    TelegramLoginService,
+    JwtAuthGuard,
+    OptionalAuthGuard,
+    RolesGuard,
+    JwtModule,
+  ],
 })
 export class AuthModule {}

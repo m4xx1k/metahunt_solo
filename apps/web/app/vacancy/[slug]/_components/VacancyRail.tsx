@@ -5,6 +5,7 @@ import type { VacancyDto } from "@/lib/api/vacancies";
 import { formatRelative } from "@/lib/format";
 import { InfoHint } from "@/ui/overlay/InfoHint";
 
+import { FitPanel } from "./FitPanel";
 import { SimilarVacancyCard } from "./SimilarVacancyCard";
 import { VacancyPanel } from "./VacancyPanel";
 
@@ -41,6 +42,11 @@ export function VacancyRail({
   return (
     <div className={className}>
       <div className="flex flex-col gap-4">
+        {/* Per-viewer Fit — a client island: the page itself is force-static,
+            so this fetches /feed/vacancy/:id again where the token is readable
+            and renders nothing until a signed-in viewer's CV scores it. */}
+        <FitPanel vacancyId={vacancy.id} />
+
         {vacancy.link ? (
           <VacancyPanel>
             <ApplyLink vacancyId={vacancy.id} sourceName={sourceName} variant="button" />

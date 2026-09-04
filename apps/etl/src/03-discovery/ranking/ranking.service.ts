@@ -8,14 +8,15 @@ import type { DrizzleDB } from "@metahunt/database";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
-import { buildWhere, FeedService } from "../feed/feed.service";
-import { buildScoreBreakdown, fitPercent } from "../score/score.contract";
-import { rankedCte, scoringCtes } from "../score/score.sql";
+import { buildWhere, FeedService, toDto } from "../feed/feed.service";
+import { rankedPage } from "../score/ranked-page";
+import { buildScoreBreakdown, fitPercent, TIER_BY_BUCKET } from "../score/score.contract";
+import { scoringCtes } from "../score/score.sql";
+import { scorerForNodeIds } from "../score/scorer.port";
 
 import {
   FIT_GOOD_MIN,
   ROLE_SUGGEST_WINDOW_DAYS,
-  type FitTier,
   type MatchFilters,
   type MatchResponse,
   type RankedVacancy,
@@ -25,11 +26,8 @@ import {
 } from "./ranking.contract";
 import { deriveRoleSuggestions } from "./role-suggestions.derive";
 
-// Ordinal of each Fit tier, mirroring the SQL tier_bucket CASE. The minFitTier
-// filter keeps rows with tier_bucket >= the requested tier's ordinal.
-const TIER_BUCKET: Record<FitTier, number> = { STRETCH: 0, GOOD: 1, STRONG: 2 };
-// Inverse of TIER_BUCKET: SQL tier_bucket ordinal → Fit badge (index = bucket).
-const TIER_BY_BUCKET = ["STRETCH", "GOOD", "STRONG"] as const;
+// TIER_BUCKET / TIER_BY_BUCKET now live in score.contract.ts, shared with
+// scorer.port.ts's overlayFor — one table each direction, not one per consumer.
 
 const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
 
@@ -162,13 +160,6 @@ export class RankingService {
       return { resolved, items: [], page, pageSize, total: 0, offStackHidden: 0 };
     }
 
-    // `cand` is a VALUES row list `(uuid), (uuid)`; `candIds` is a flat
-    // `uuid, uuid` for an IN (...) membership test.
-    const cand = sql.join(
-      nodeIds.map((id) => sql`(${id}::uuid)`),
-      sql`, `,
-    );
-    const candIds = uuidList(nodeIds);
     // The match path filters through the feed's own builder so the two cannot
     // drift. `includeRoleless: false` keeps the VERIFIED-role gate on.
     const where =
@@ -191,97 +182,47 @@ export class RankingService {
         excludeIds: filters.excludeIds,
         includeRoleless: false,
       }) ?? sql`true`;
-    const offset = (page - 1) * pageSize;
 
     // Per-Position relevance + coverage + tier_bucket + on_stack, owned by the
-    // score module. Shared by page + count + match_scored query.
-    const scoreCte = rankedCte(cand);
-
-    const minBucket = filters.minFitTier !== undefined ? TIER_BUCKET[filters.minFitTier] : 0;
-    const tierCond = minBucket > 0 ? sql` AND rk.tier_bucket >= ${minBucket}` : sql``;
-
+    // score module — driven through `rankedPage` (§7 step 4), the shared full
+    // path both this endpoint and `FeedService.searchScored` assemble
+    // fragments() into. `requireOverlap: true` is baked into `rankedPage`
+    // (ranked-page.ts) for every caller, so this endpoint and the feed's full
+    // path (sort=score / minFitTier) are both the "shares ≥1 skill" set the old
+    // `ov` probe used to gate. Only the feed's cheap path — date sort, no
+    // minFitTier — skips `rankedPage`: it overlays a Fit number on the plain
+    // feed query, so a zero-overlap vacancy can still appear there, just scored
+    // low.
+    //
     // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
     // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page
-    // order contradicted the number printed on it. Hidden by default; the count
-    // of what's hidden rides the page query so the UI can offer to unhide.
+    // order contradicted the number printed on it. Hidden by default; the
+    // count of what's hidden rides the page query so the UI can offer to
+    // unhide. Sort swaps ORDER BY and nothing else — the scoring CTE still
+    // runs for a date-sorted page, because the Fit number is on every card
+    // either way.
+    const scorer = scorerForNodeIds(this.db, nodeIds);
     const includeOffStack = filters.includeOffStack === true;
-    const keep = includeOffStack ? sql`true` : sql`on_stack`;
-
-    // Sort swaps ORDER BY and nothing else — the scoring CTE still runs for a
-    // date-sorted page, because the Fit number is on every card either way.
-    const byDate = filters.sort === "date";
-    // round so exact-IDF ties break by id (raw float-sum order is plan noise).
-    const pageOrder = byDate
-      ? sql`posted_at DESC, id DESC`
-      : sql`tier_bucket DESC, round(relevance::numeric, 9) DESC, id`;
-
-    // `rk.relevance IS NOT NULL` is the old `ov` overlap probe: MET-144 dropped
-    // it from scoringCtes, so `ranked` now spans every Position and a
-    // zero-overlap one arrives with a NULL relevance. Both match consumers want
-    // the "shares ≥1 skill" set — the unified feed path is where this comes off.
-    const rankedPositionsCte = sql`
-      ranked_positions AS (
-        SELECT p.position_id::text AS id, rk.relevance, rk.coverage, rk.on_stack, rk.tier_bucket,
-               p.last_source_activity_at AS posted_at
-        FROM ranked rk
-        JOIN positions p ON p.position_id = rk.id
-        WHERE ${where} AND rk.relevance IS NOT NULL${tierCond}
-      )`;
-
-    const ranked = await this.db.execute<{
-      id: string;
-      relevance: number;
-      coverage: number;
-      on_stack: boolean;
-      tier_bucket: number;
-      total: number;
-      off_stack_hidden: number;
-    }>(sql`
-      WITH ${scoreCte}, ${rankedPositionsCte},
-      -- Both counts come off the same window pass, before the off-stack rows
-      -- are filtered away (a window function can't see what WHERE removed).
-      counted AS (
-        SELECT id, relevance, coverage, on_stack, tier_bucket, posted_at,
-               (count(*) FILTER (WHERE ${keep}) OVER ())::int AS total,
-               (count(*) FILTER (WHERE NOT on_stack) OVER ())::int AS off_stack_hidden
-        FROM ranked_positions
-      )
-      SELECT id, relevance, coverage, on_stack, tier_bucket, total, off_stack_hidden
-      FROM counted
-      WHERE ${keep}
-      ORDER BY ${pageOrder}
-      LIMIT ${pageSize} OFFSET ${offset}
-    `);
-
-    // The counts ride the page query — no second pass in the common case. An
-    // empty page (all filtered out, or OFFSET past the end) returns no row and
-    // thus no counts, so fall back to a dedicated count there.
-    let total = ranked.rows[0]?.total ?? 0;
-    let offStackHidden = ranked.rows[0]?.off_stack_hidden ?? 0;
-    if (ranked.rows.length === 0) {
-      const totalRes = await this.db.execute<{ count: number; off_stack_hidden: number }>(sql`
-        WITH ${scoreCte}, ${rankedPositionsCte}
-        SELECT (count(*) FILTER (WHERE ${keep}))::int AS count,
-               (count(*) FILTER (WHERE NOT on_stack))::int AS off_stack_hidden
-        FROM ranked_positions
-      `);
-      total = totalRes.rows[0]?.count ?? 0;
-      offStackHidden = totalRes.rows[0]?.off_stack_hidden ?? 0;
-    }
+    const { rows, total, offStackHidden } = await rankedPage(this.db, scorer, where, {
+      minFitTier: filters.minFitTier,
+      includeOffStack,
+      byScore: filters.sort !== "date",
+      page,
+      pageSize,
+    });
 
     // Calibration raw data (design §8): sampled to first pages — every fresh
     // match starts at page 1, so this sees each scoring context once.
-    if (page === 1) void this.emitMatchScored(scoreCte, where, nodeIds.length);
+    if (page === 1) {
+      void this.emitMatchScored(
+        scorer.fragments({ requireOverlap: true }).cte,
+        where,
+        nodeIds.length,
+      );
+    }
 
-    const items = await this.buildItems(ranked.rows, candIds, resolved.matched);
-    return {
-      resolved,
-      items,
-      page,
-      pageSize,
-      total,
-      offStackHidden: includeOffStack ? 0 : offStackHidden,
-    };
+    const items = await this.buildItems(rows, nodeIds, resolved.matched);
+    return { resolved, items, page, pageSize, total, offStackHidden };
   }
 
   // match_scored: coverage histogram (10 buckets over [0,1]) + tier counts for
@@ -371,6 +312,10 @@ export class RankingService {
 
   // Per-page assembly: hydrate full feed DTOs + compute the ✅/❌/➕ diff over
   // the page's ~20 vacancies (tracker: diff is per-page, not corpus-wide).
+  // §7 step 5: one shared skill-row fetch (feed.fetchSkillRows) drives both
+  // the vacancy DTO's `skills` (VERIFIED-only, filtered in TS below) and the
+  // diff — `hydratePositionsByIds` + this method's own skillRows query used
+  // to be two separate round trips for what is really one superset read.
   private async buildItems(
     rows: {
       id: string;
@@ -379,56 +324,45 @@ export class RankingService {
       on_stack: boolean;
       tier_bucket: number;
     }[],
-    candIds: SQL,
+    nodeIds: string[],
     candidate: SkillRef[],
   ): Promise<RankedVacancy[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);
-    const dtos = await this.feed.hydratePositionsByIds(ids);
+    const candidateNodeIds = new Set(nodeIds);
 
-    const pageIds = uuidList(ids);
-    const skillRows = await this.db.execute<{
-      position_id: string;
-      node_id: string;
-      name: string;
-      is_required: boolean;
-      weight: number | null;
-      in_candidate: boolean;
-    }>(sql`
-      SELECT pn.position_id::text AS position_id, pn.node_id::text AS node_id,
-             n.canonical_name AS name, pn.is_required,
-             ns.weight AS weight,
-             (pn.node_id IN (${candIds})) AS in_candidate
-      FROM position_nodes pn
-      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
-      LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
-      WHERE pn.position_id IN (${pageIds})
-    `);
+    const [positionRows, skillRowsByPosition] = await Promise.all([
+      this.feed.selectPositions(sql`p.position_id IN (${uuidList(ids)})`),
+      this.feed.fetchSkillRows(ids),
+    ]);
+    const positionsById = new Map(positionRows.map((r) => [r.positionId, r]));
 
-    const byPosition = new Map<string, typeof skillRows.rows>();
-    for (const r of skillRows.rows) {
-      const arr = byPosition.get(r.position_id) ?? [];
-      arr.push(r);
-      byPosition.set(r.position_id, arr);
-    }
     const items: RankedVacancy[] = [];
     for (const row of rows) {
-      const vacancy = dtos.get(row.id);
-      if (!vacancy) continue;
-      const vskills = byPosition.get(row.id) ?? [];
-      const vacancyNodeIds = new Set(vskills.map((s) => s.node_id));
+      const positionRow = positionsById.get(row.id);
+      if (!positionRow) continue;
+      const skillRows = skillRowsByPosition.get(row.id) ?? [];
+      const verified = skillRows.filter((s) => s.status === "VERIFIED");
+      const vacancy = toDto(positionRow, {
+        required: verified.filter((s) => s.isRequired).map((s) => ({ id: s.nodeId, name: s.name })),
+        optional: verified
+          .filter((s) => !s.isRequired)
+          .map((s) => ({ id: s.nodeId, name: s.name })),
+      });
+
+      const vacancyNodeIds = new Set(skillRows.map((s) => s.nodeId));
       const have: SkillRef[] = [];
       const missing: SkillRef[] = [];
       // Counts feed the "X of Y required" label; the badge is the SQL tier_bucket.
       let requiredTotal = 0;
       let matchedRequired = 0;
-      for (const s of vskills) {
-        const ref: SkillRef = { id: s.node_id, name: s.name, weight: s.weight ?? 0 };
-        if (s.is_required) requiredTotal += 1;
-        if (s.in_candidate) {
+      for (const s of skillRows) {
+        const ref: SkillRef = { id: s.nodeId, name: s.name, weight: s.weight };
+        if (s.isRequired) requiredTotal += 1;
+        if (candidateNodeIds.has(s.nodeId)) {
           have.push(ref);
-          if (s.is_required) matchedRequired += 1;
-        } else if (s.is_required) {
+          if (s.isRequired) matchedRequired += 1;
+        } else if (s.isRequired) {
           missing.push(ref);
         }
       }

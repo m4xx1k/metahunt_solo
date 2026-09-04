@@ -5,9 +5,8 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
 import { HeaderAuth } from "@/features/auth/header-auth";
-import { coldKey, warmKey } from "@/features/vacancy-filters/query-keys";
+import { coldKey } from "@/features/vacancy-filters/query-keys";
 import { readerFrom, readFilterState } from "@/features/vacancy-filters/url-params";
-import { fetchMatch, LAB_INCLUDE_OFF_STACK } from "@/features/vacancy-filters/warm-query";
 import { cvApi } from "@/lib/api/cv";
 import { facetsApi } from "@/lib/api/facets";
 import { vacanciesApi } from "@/lib/api/vacancies";
@@ -45,20 +44,16 @@ export default async function FeedLabPage({
     cvApi.samples().catch(() => []),
   ]);
 
-  // Seed the lens the URL asks for, so first paint is the real list.
-  const cv = typeof sp.cv === "string" ? sp.cv : null;
+  // Seed first paint with the real list — always the unified path (MET-144
+  // step 7: this route has no `?cv=`, only `?sample=` against an allowlisted
+  // seeded candidate). Must match FeedLabShell's own resolution exactly.
+  const rawSample = typeof sp.sample === "string" ? sp.sample : null;
+  const sample =
+    rawSample && samples.some((s) => s.candidateId === rawSample) ? rawSample : undefined;
   const queryClient = new QueryClient();
   try {
-    if (cv) {
-      const isSample = samples.some((s) => s.candidateId === cv);
-      queryClient.setQueryData(
-        warmKey(cv, filters, 1, LAB_INCLUDE_OFF_STACK),
-        await fetchMatch(cv, filters, 1, isSample, LAB_INCLUDE_OFF_STACK),
-      );
-    } else {
-      const query = toLabColdQuery(filters, 1);
-      queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
-    }
+    const query = toLabColdQuery(filters, 1, sample);
+    queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
   } catch {
     /* no seed — the client fetches it */
   }

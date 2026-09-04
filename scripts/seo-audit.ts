@@ -22,7 +22,9 @@ if (!BASE) {
 const ALWAYS_CHECK = ["/", "/how-it-works", "/privacy", "/radar", "/releases"];
 /** Routes that must be reachable but must NOT be indexable. */
 // /match is an unfinished draft; it must stay out of the index until it ships.
-const MUST_NOINDEX = ["/welcome", "/match", "/?cv=00000000-0000-0000-0000-000000000000"];
+// `?sample=` renders a scored demo preview (MET-144, replaced the retired `?cv=`)
+// — reachable and shareable, but noindex so it never competes with the base URL.
+const MUST_NOINDEX = ["/welcome", "/match", "/?sample=00000000-0000-0000-0000-000000000000"];
 /** How many sitemap URLs of each shape to sample. */
 const SAMPLE = 12;
 
@@ -97,7 +99,7 @@ function checkIndexable(route: string, h: Head, expectPath: string) {
   if (canonical && canonical !== `${CANONICAL_ORIGIN}${expectPath === "/" ? "" : expectPath}`) {
     fail(route, `canonical is ${canonical}, expected ${CANONICAL_ORIGIN}${expectPath}`);
   }
-  if (canonical?.includes("cv=")) fail(route, "canonical leaks the ?cv capability token");
+  if (canonical?.includes("sample=")) fail(route, "canonical leaks the ?sample demo token");
 
   if (h.h1.length !== 1) fail(route, `${h.h1.length} h1 elements, expected 1`);
   if (!h.title) fail(route, "no <title>");
@@ -144,7 +146,7 @@ async function main() {
   if (dupes > 0) fail("/sitemap.xml", `${dupes} duplicate <loc> entries`);
   for (const loc of locs) {
     if (!loc.startsWith(CANONICAL_ORIGIN)) fail("/sitemap.xml", `off-origin <loc>: ${loc}`);
-    if (loc.includes("cv=")) fail("/sitemap.xml", `<loc> carries a ?cv token: ${loc}`);
+    if (loc.includes("sample=")) fail("/sitemap.xml", `<loc> carries a ?sample token: ${loc}`);
   }
   notes.push(`sitemap: ${locs.length} URLs`);
 
@@ -189,12 +191,12 @@ async function main() {
     const h = await head(`${BASE}${path}`);
     if (h.status !== 200) fail(path, `status ${h.status}`);
     if (!h.robots.some((r) => r.includes("noindex"))) fail(path, "expected noindex, got none");
-    if (h.canonical[0]?.includes("cv=")) fail(path, "canonical leaks the ?cv token");
+    if (h.canonical[0]?.includes("sample=")) fail(path, "canonical leaks the ?sample token");
   }
 
   // ── robots.txt ───────────────────────────────────────────────────────────
   const robots = await (await fetch(`${BASE}/robots.txt`, { headers: HEADERS })).text();
-  for (const rule of ["Disallow: /dashboard", "Disallow: /me", "Disallow: /*cv="]) {
+  for (const rule of ["Disallow: /dashboard", "Disallow: /me"]) {
     if (!robots.includes(rule)) fail("/robots.txt", `missing "${rule}"`);
   }
   if (!robots.includes(`Sitemap: ${CANONICAL_ORIGIN}/sitemap.xml`)) {

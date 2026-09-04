@@ -14,7 +14,7 @@ import {
 } from "@/lib/api/vacancies";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "@/features/vacancy-filters/types";
-import { readList, type ParamReader } from "@/features/vacancy-filters/url-params";
+import { readBool, readList, type ParamReader } from "@/features/vacancy-filters/url-params";
 
 export const PAGE_SIZE = 20;
 
@@ -26,6 +26,9 @@ export interface FeedQueryInputs {
   presetSkillIds: string[];
   /** Source catalog for the ?source code → sourceId resolution. */
   sources: { id: string; code: string }[];
+  /** Allowlisted sample candidate ids — `?sample` is honoured only if it is one
+   *  (a stale/forged id would otherwise 404 the whole feed request). */
+  sampleIds: string[];
 }
 
 export interface FeedQueryResult {
@@ -43,10 +46,11 @@ function asNonNegativeInt(raw: string | null, fallback: number): number {
 
 export function buildFeedListQuery(
   p: ParamReader,
-  { trackActive, presetRoleIds, presetSkillIds, sources }: FeedQueryInputs,
+  { trackActive, presetRoleIds, presetSkillIds, sources, sampleIds }: FeedQueryInputs,
 ): FeedQueryResult {
   const offset = asNonNegativeInt(p.get("offset"), 0);
   const page = Math.floor(offset / PAGE_SIZE) + 1;
+  const rawSample = p.get("sample");
 
   // Axis params: absent → the track's preset; present (even "") → the explicit set.
   const roleIds = p.has("roles") ? readList(p.get("roles")) : presetRoleIds;
@@ -86,6 +90,15 @@ export function buildFeedListQuery(
     hasReservation: coerceBool(p.get("reservation") ?? undefined),
     hasDuplicates: p.get("dupes") === "true" ? true : undefined,
     postedWithinDays,
+    // Scoring params — mirror toLabColdQuery. Only an explicit "score" click
+    // (or minFitTier) opts into the full path; null/"date" stay on the cheap
+    // freshness path (unified-feed-score.md §8.1).
+    sort: p.get("sort") === "score" ? "score" : undefined,
+    minFitTier: (p.get("minFitTier") as ListVacanciesQuery["minFitTier"]) ?? undefined,
+    // Opt-in only: absent → the server hides off-stack on the full path, an
+    // explicit ?offStack=true brings them back. The freshness path ignores it.
+    includeOffStack: readBool(p.get("offStack")) || undefined,
+    sample: rawSample && sampleIds.includes(rawSample) ? rawSample : undefined,
   };
   return { query, offset, page };
 }

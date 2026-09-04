@@ -8,6 +8,16 @@ import type { DrizzleDB } from "@metahunt/database";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
+import { rankedPage } from "../score/ranked-page";
+import {
+  buildScoreBreakdown,
+  fitPercent,
+  TIER_BY_BUCKET,
+  type FitTier,
+  type MatchOverlay,
+  type MatchSort,
+} from "../score/score.contract";
+import type { CandidateScorer } from "../score/scorer.port";
 
 import type {
   EmploymentType,
@@ -79,6 +89,14 @@ export interface FeedSearchParams {
    *  already-sent) — matches on the group, so a repost of an already-sent
    *  Position under a different Posting id is still excluded. */
   excludeIds?: string[];
+
+  /** ORDER BY only when a scorer is present — ignored otherwise, same as
+   *  today. "score" (+ `minFitTier` set) forces the FULL PATH. */
+  sort?: MatchSort;
+  /** Hide Positions below this coverage tier. FULL PATH only. */
+  minFitTier?: FitTier;
+  /** FULL PATH only — off-stack hiding never applied on the cheap path (§8.2). */
+  includeOffStack?: boolean;
 }
 
 interface PositionRow {
@@ -142,39 +160,141 @@ function positionsFrom(where: SQL | undefined): SQL {
 export class FeedService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async search(params: FeedSearchParams): Promise<FeedResponse> {
+  // §2 "Two paths": the score decides neither the result SET nor its ORDER BY
+  // unless the caller asked for `sort=score` or `minFitTier` — those need a
+  // scorer, so without one this always takes the cheap path (unscored, same
+  // as an anonymous visitor).
+  async search(
+    params: FeedSearchParams,
+    scorer: CandidateScorer | null = null,
+    viewerSkills: NodeRef[] | null = null,
+  ): Promise<FeedResponse> {
+    const usesFullPath =
+      scorer !== null && (params.sort === "score" || params.minFitTier !== undefined);
+    const res = usesFullPath
+      ? await this.searchScored(params, scorer)
+      : await this.searchCheap(params, scorer);
+    // Ships once per page — the cold card derives its diff counts from it
+    // (§6), same role as `MatchResponse.resolved.matched` on the warm side.
+    return { ...res, viewerSkills };
+  }
+
+  // CHEAP PATH (§2.1, §7 step 3): the page query below is untouched, and one
+  // `scorer.overlayFor(pageIds)` call after the page is chosen scores just
+  // these ≤`pageSize` positions. `null` (anonymous, or a candidate with
+  // nothing scored) leaves every card's `match: null`, same as `toDto`'s default.
+  private async searchCheap(
+    params: FeedSearchParams,
+    scorer: CandidateScorer | null,
+  ): Promise<FeedResponse> {
     const offset = (params.page - 1) * params.pageSize;
     const where = buildWhere(params);
     const base = positionsFrom(where);
 
-    const pageRes = await this.db.execute<{ position_id: string }>(sql`
-      SELECT p.position_id
+    // §7 step 5: total rides the page query's own window pass — one round
+    // trip, not two — the same shape rankByRefs/searchScored already use.
+    const pageRes = await this.db.execute<{ position_id: string; total: number }>(sql`
+      SELECT p.position_id, (count(*) OVER ())::int AS total
       ${base}
       ORDER BY p.last_source_activity_at DESC, p.position_id DESC
       LIMIT ${params.pageSize} OFFSET ${offset}
     `);
     const positionIds = pageRes.rows.map((r) => r.position_id);
 
-    const totalRes = await this.db.execute<{ count: number }>(sql`
-      SELECT count(*)::int AS count ${base}
-    `);
-    const total = totalRes.rows[0]?.count ?? 0;
-
     if (positionIds.length === 0) {
-      return { items: [], page: params.page, pageSize: params.pageSize, total };
+      // Empty page (all filtered out, or OFFSET past the end): no row, so
+      // no window total either — fall back to a dedicated count.
+      const totalRes = await this.db.execute<{ count: number }>(sql`
+        SELECT count(*)::int AS count ${base}
+      `);
+      return this.hydrate(params, [], null, totalRes.rows[0]?.count ?? 0, 0);
+    }
+    const total = pageRes.rows[0].total;
+    const overlay = scorer ? scorer.overlayFor(positionIds) : null;
+    return this.hydrate(params, positionIds, overlay, total, 0);
+  }
+
+  // FULL PATH (§2.2, §7 step 4): `sort=score` and/or `minFitTier` — the
+  // score decides the result SET and/or its ORDER BY, so it runs inside the
+  // page query itself via `scorer.fragments()`, `requireOverlap: true` (a
+  // zero-overlap Position is not a match — §1). Off-stack hidden by default
+  // here — a warm-lens affordance the cheap path never had (§8.2). Cost is
+  // the accepted ~150–170 ms of scoring every tagged Position; this runs only
+  // for an explicit "best fit" toggle, never a page load.
+  private async searchScored(
+    params: FeedSearchParams,
+    scorer: CandidateScorer,
+  ): Promise<FeedResponse> {
+    const where = buildWhere(params) ?? sql`true`;
+    const {
+      rows: ranked,
+      total,
+      offStackHidden,
+    } = await rankedPage(this.db, scorer, where, {
+      minFitTier: params.minFitTier,
+      includeOffStack: params.includeOffStack === true,
+      byScore: params.sort === "score",
+      page: params.page,
+      pageSize: params.pageSize,
+    });
+
+    // The full path already scored every row it kept — reshape it into the
+    // same `Map<positionId, MatchOverlay>` overlayFor returns, so hydrate()
+    // can attach `match` identically for both paths.
+    const overlay = new Map(
+      ranked.map((r): [string, MatchOverlay] => [
+        r.id,
+        {
+          relevance: r.relevance,
+          coverage: r.coverage,
+          tier: TIER_BY_BUCKET[r.tier_bucket],
+          percent: fitPercent(buildScoreBreakdown(r.coverage).total),
+          onStack: r.on_stack,
+        },
+      ]),
+    );
+    return this.hydrate(
+      params,
+      ranked.map((r) => r.id),
+      Promise.resolve(overlay),
+      total,
+      offStackHidden,
+    );
+  }
+
+  // The shared tail of both paths (§7 step 5): given an already-decided,
+  // ordered list of position ids, hydrate them into full feed VacancyDtos
+  // and attach each one's `match` from `overlay` (or leave it null when
+  // there is none). `overlay` is a Promise so the cheap path's
+  // `scorer.overlayFor(pageIds)` runs concurrently with `selectPositions` /
+  // `fetchSkills` instead of being awaited up front.
+  private async hydrate(
+    params: FeedSearchParams,
+    positionIds: string[],
+    overlay: Promise<Map<string, MatchOverlay>> | null,
+    total: number,
+    offStackHidden: number,
+  ): Promise<FeedResponse> {
+    if (positionIds.length === 0) {
+      return { items: [], page: params.page, pageSize: params.pageSize, total, offStackHidden };
     }
 
-    const rows = await this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`);
+    const [rows, skills, resolvedOverlay] = await Promise.all([
+      this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`),
+      this.fetchSkills(positionIds, params.includeAllSkills === true),
+      overlay,
+    ]);
     const byPositionId = new Map(rows.map((r) => [r.positionId, r]));
-    const skills = await this.fetchSkills(positionIds, params.includeAllSkills === true);
     const items = positionIds
       .map((positionId) => {
         const row = byPositionId.get(positionId);
-        return row ? toDto(row, skills.get(positionId)) : null;
+        if (!row) return null;
+        const dto = toDto(row, skills.get(positionId));
+        return resolvedOverlay ? { ...dto, match: resolvedOverlay.get(positionId) ?? null } : dto;
       })
       .filter((x): x is VacancyDto => x !== null);
 
-    return { items, page: params.page, pageSize: params.pageSize, total };
+    return { items, page: params.page, pageSize: params.pageSize, total, offStackHidden };
   }
 
   /**
@@ -210,18 +330,6 @@ export class FeedService {
       publishedAt: r.published_at ? new Date(r.published_at).toISOString() : null,
       updatedAt: new Date(r.updated_at).toISOString(),
     }));
-  }
-
-  // One feed-identical card per canonical Position. The DTO keeps the current
-  // representative Posting id for URLs and source links, while facts and skills
-  // remain the Position's canonical ones.
-  async hydratePositionsByIds(positionIds: string[]): Promise<Map<string, VacancyDto>> {
-    const out = new Map<string, VacancyDto>();
-    if (positionIds.length === 0) return out;
-    const rows = await this.selectPositions(sql`p.position_id IN (${uuidList(positionIds)})`);
-    const skills = await this.fetchSkills(positionIds, false);
-    for (const row of rows) out.set(row.positionId, toDto(row, skills.get(row.positionId)));
-    return out;
   }
 
   /**
@@ -287,7 +395,10 @@ export class FeedService {
 
   // Base Position projection: canonical facts + the representative Posting's
   // link/freshness/identity, keyed by `p.position_id`.
-  private async selectPositions(where: SQL): Promise<PositionRow[]> {
+  // Public: RankingService.buildItems drives this directly (§7 step 5) —
+  // `hydratePositionsByIds` used to wrap this + `fetchSkills`, but that was
+  // one round trip buildItems didn't need on top of its own skill-row fetch.
+  async selectPositions(where: SQL): Promise<PositionRow[]> {
     const res = await this.db.execute<{
       position_id: string;
       id: string;
@@ -452,6 +563,54 @@ export class FeedService {
     }
     return out;
   }
+
+  // Public: the ✅/❌/➕ skill diff's data source (RankingService.buildItems,
+  // §7 step 5) — a wider projection than `fetchSkills` above (weight +
+  // node status, so the diff can rank by IDF and the caller can still
+  // derive a VERIFIED-only view in TS) over the same HIDDEN-excluded set.
+  // Deliberately its own query, not a `fetchSkills` mode: that method's
+  // `includeAllSkills` intentionally includes HIDDEN nodes for operator/
+  // debug use, and this must not.
+  async fetchSkillRows(positionIds: string[]): Promise<Map<string, SkillRow[]>> {
+    const out = new Map<string, SkillRow[]>();
+    if (positionIds.length === 0) return out;
+
+    const rows = await this.db.execute<{
+      position_id: string;
+      node_id: string;
+      name: string;
+      status: "NEW" | "VERIFIED";
+      is_required: boolean;
+      weight: number | null;
+    }>(sql`
+      SELECT pn.position_id, pn.node_id, n.canonical_name AS name, n.status,
+             pn.is_required, ns.weight
+      FROM position_nodes pn
+      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
+      LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
+      WHERE pn.position_id IN (${uuidList(positionIds)})
+    `);
+
+    for (const id of positionIds) out.set(id, []);
+    for (const r of rows.rows) {
+      out.get(r.position_id)?.push({
+        nodeId: r.node_id,
+        name: r.name,
+        status: r.status,
+        isRequired: r.is_required,
+        weight: r.weight ?? 0,
+      });
+    }
+    return out;
+  }
+}
+
+export interface SkillRow {
+  nodeId: string;
+  name: string;
+  status: "NEW" | "VERIFIED";
+  isRequired: boolean;
+  weight: number;
 }
 
 // Exported so the scoring path (RankingService) filters through the exact same
@@ -582,7 +741,9 @@ export function buildWhere(params: FeedSearchParams): SQL | undefined {
   return and(...conds);
 }
 
-function toDto(
+// Exported for RankingService.buildItems (§7 step 5) — the same DTO shape a
+// feed card gets, built from `selectPositions` rows it fetches directly now.
+export function toDto(
   row: PositionRow,
   skills: { required: NodeRef[]; optional: NodeRef[] } | undefined,
 ): VacancyDto {
@@ -637,6 +798,10 @@ function toDto(
     uniqueVacancyId: row.positionId,
     duplicateCount: row.postingCount > 1 ? row.postingCount : null,
     duplicateSourceCount: row.postingCount > 1 ? row.sourceCount : null,
+
+    // toDto doesn't know about viewers/candidates — every caller gets `null`
+    // here; a caller with a scorer overlays it afterward (feed.controller.ts).
+    match: null,
   };
 }
 
