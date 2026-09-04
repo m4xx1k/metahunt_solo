@@ -186,10 +186,13 @@ export class RankingService {
     // Per-Position relevance + coverage + tier_bucket + on_stack, owned by the
     // score module — driven through `rankedPage` (§7 step 4), the shared full
     // path both this endpoint and `FeedService.searchScored` assemble
-    // fragments() into. `requireOverlap: true` (baked into `rankedPage`) is
-    // what keeps this endpoint the "shares ≥1 skill" set the old `ov` probe
-    // used to gate; the unified feed path (GET /feed) is the one place that
-    // leaves it off.
+    // fragments() into. `requireOverlap: true` is baked into `rankedPage`
+    // (ranked-page.ts) for every caller, so this endpoint and the feed's full
+    // path (sort=score / minFitTier) are both the "shares ≥1 skill" set the old
+    // `ov` probe used to gate. Only the feed's cheap path — date sort, no
+    // minFitTier — skips `rankedPage`: it overlays a Fit number on the plain
+    // feed query, so a zero-overlap vacancy can still appear there, just scored
+    // low.
     //
     // Off-stack is a FILTER, not a sort demote: while it sat in ORDER BY, a
     // 64%-fit in-stack card outranked an 87%-fit off-stack one and the page

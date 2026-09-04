@@ -252,11 +252,7 @@ export function FeedShellIsland({
           }
           coldRail={
             <div className="flex flex-col gap-4">
-              <ColdRecsTeaser
-                savedCvId={realCandidateId}
-                onUnlock={onPickCv}
-                onUpload={triggerUpload}
-              />
+              <ColdRecsTeaser onUpload={triggerUpload} />
               {samples.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
                   <span>…or try a sample profile:</span>

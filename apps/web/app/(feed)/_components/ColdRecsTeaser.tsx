@@ -1,57 +1,25 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-
-import { cvApi } from "@/lib/api/cv";
-import { SkillRecommendations } from "@/features/cv-match/SkillRecommendations";
 import { UPLOAD_BTN } from "./CvDropzone";
 
-// Cold-lens teaser for the ranked experience. With a saved CV we blur its real
-// "what to learn next" recs behind an unlock CTA (a genuine preview of the
-// user's own data); with no saved CV we show a skeleton + an upload prompt.
-// Shares the ["recs", id] query key with the warm hook, so unlocking reuses the
-// cached fetch. Upload is routed through the shell's central picker.
-export function ColdRecsTeaser({
-  savedCvId,
-  onUnlock,
-  onUpload,
-}: {
-  savedCvId: string | null;
-  onUnlock: (candidateId: string) => void;
-  onUpload: () => void;
-}) {
-  const { data: rec } = useQuery({
-    queryKey: ["recs", savedCvId],
-    queryFn: () => cvApi.recommendations(savedCvId as string),
-    enabled: savedCvId != null,
-    staleTime: 30_000,
-  });
-
+// Cold-lens teaser for the ranked experience: a blurred skeleton of the "what
+// to learn next" recs behind an upload prompt. The shell only mounts this when
+// there's no viewer, so there's never a saved CV to preview real recs from —
+// it's always the skeleton. Upload is routed through the shell's central picker.
+export function ColdRecsTeaser({ onUpload }: { onUpload: () => void }) {
   return (
     <div className="relative overflow-hidden">
       <div aria-hidden className="pointer-events-none select-none blur-[3px]">
-        {rec ? <SkillRecommendations rec={rec} /> : <TeaserSkeleton />}
+        <TeaserSkeleton />
       </div>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg/80 px-5 text-center">
         <p className="font-mono text-xs leading-relaxed text-text-secondary">
-          {savedCvId
-            ? "See your ranked matches and the skills that unlock the most jobs."
-            : "Upload your CV to unlock the ranked list and skill recommendations."}
+          Upload your CV to unlock the ranked list and skill recommendations.
         </p>
-        {savedCvId ? (
-          <button
-            type="button"
-            onClick={() => onUnlock(savedCvId)}
-            className="border border-accent bg-accent px-4 py-2 font-mono text-2xs font-bold uppercase tracking-wider text-bg shadow-brut-xs transition-transform hover:-translate-x-px hover:-translate-y-px"
-          >
-            Unlock your matches
-          </button>
-        ) : (
-          <button type="button" onClick={onUpload} className={UPLOAD_BTN}>
-            + Upload CV
-          </button>
-        )}
+        <button type="button" onClick={onUpload} className={UPLOAD_BTN}>
+          + Upload CV
+        </button>
       </div>
     </div>
   );

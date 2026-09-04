@@ -202,6 +202,10 @@ rendering. Before merge:
   `MatchResponse`/`RankedVacancy` if nothing else ends up wanting them) — only after step 7
   is merged and the production route has been exercised for real (§4.3). One-way door, per
   the parent file's own rule — a session can take this to a green PR, not past it.
+  **Partially done in §6 commit `72e4544`:** the three HTTP endpoints are gone; the
+  service-layer deletion (`rankByRefs`, `CandidateMatchService`, `MatchResponse`/
+  `RankedVacancy`) stayed, because the Telegram CV-digest still calls it — that half moves
+  to step 9 with the digest migration (see §6 "Deviation from the plan (commit 3)").
 - **Step 9** (Telegram digest reads `match` off the DTO) — untouched this session, as
   instructed.
 
