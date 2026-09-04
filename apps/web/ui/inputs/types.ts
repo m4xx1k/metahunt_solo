@@ -6,4 +6,6 @@ export interface SelectOption {
   id: string;
   label: string;
   count?: number;
+  /** Optional muted suffix inside the chip (e.g. "33 fits" on a suggested role). */
+  hint?: string;
 }

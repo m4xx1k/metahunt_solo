@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { ListVacanciesResponse, NodeRef } from "@/lib/api/vacancies";
 import { cn } from "@/lib/utils";
 import { Pagination } from "@/ui/navigation/Pagination";
@@ -15,6 +17,8 @@ type Props = {
   // The scored viewer's resolved skills (`/feed` response) for the card's Fit
   // badge + diff counts, or null when the server scored no viewer.
   viewerSkills?: NodeRef[] | null;
+  // View controls (freshness / sort / off-stack) shown inline in the header row.
+  controls?: ReactNode;
 };
 
 export function VacancyList({
@@ -23,6 +27,7 @@ export function VacancyList({
   onNavigate,
   isFetching,
   viewerSkills = null,
+  controls,
 }: Props) {
   return (
     <section
@@ -32,11 +37,14 @@ export function VacancyList({
         isFetching && "opacity-60",
       )}
     >
-      <div className="flex items-baseline justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">jobs</h2>
-        <span className="font-mono text-xs text-text-muted">
-          <span className="text-text-secondary">{result.total}</span> found · page {result.page}
-        </span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {controls}
+          <span className="font-mono text-xs text-text-muted">
+            <span className="text-text-secondary">{result.total}</span> found · page {result.page}
+          </span>
+        </div>
       </div>
 
       {result.items.length === 0 ? (

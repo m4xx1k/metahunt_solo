@@ -86,7 +86,9 @@ export function FeedFilters({
       const id = sug.slug ?? sug.roleId;
       byId.set(id, {
         id,
-        label: `${sug.name} · ${sug.goodCount}/${sug.totalCount} fit`,
+        label: sug.name,
+        // A concrete, positive number: jobs in this role your CV already fits.
+        hint: `${sug.goodCount} ${sug.goodCount === 1 ? "fit" : "fits"}`,
         count: 1_000_000 - i,
       });
     });
@@ -181,6 +183,7 @@ export function FeedFilters({
           <FilterRail
             api={api}
             lens={hasViewer ? "warm" : "cold"}
+            hideFreshness
             seniorityOptions={agg.seniorities}
             workFormatOptions={agg.workFormats}
             domainOptions={domainOptions}

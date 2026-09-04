@@ -27,16 +27,17 @@ export function FitPanel({ vacancyId }: { vacancyId: string }) {
 
   const match = data?.match ?? null;
   const diff = data && data.viewerSkills ? skillDiff(data.skills, data.viewerSkills) : null;
-  if (!match) return null;
+  if (!data || !match) return null;
+  const requiredTotal = data.skills.required.length;
+  const fitDetail =
+    diff && requiredTotal > 0
+      ? `${requiredTotal - diff.missing.length} of ${requiredTotal} required skills`
+      : undefined;
 
   return (
     <section className="flex flex-col gap-3 border border-border bg-bg-card p-4">
       <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-        <FitBadge
-          tier={match.tier}
-          percent={match.percent}
-          tooltip={<span className="font-bold">Fit {match.percent}%</span>}
-        />
+        <FitBadge tier={match.tier} percent={match.percent} detail={fitDetail} />
         {!match.onStack ? (
           <span className="border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
             off-stack

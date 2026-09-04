@@ -101,6 +101,7 @@ export function MultiSelect({
               className={chipClass(false)}
             >
               {o.label}
+              {o.hint ? <span className="ml-1.5 text-2xs text-text-muted">{o.hint}</span> : null}
             </button>
           ))}
           {showNoMatches ? (

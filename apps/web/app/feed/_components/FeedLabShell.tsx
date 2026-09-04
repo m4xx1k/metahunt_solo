@@ -15,7 +15,7 @@ import type { SampleCandidate } from "@/lib/api/cv";
 import { Pagination } from "@/ui/navigation/Pagination";
 import { VacancyMatchCard } from "@/entities/vacancy/VacancyMatchCard";
 
-import { SortControls } from "@/features/vacancy-filters/SortControls";
+import { FeedListControls } from "@/features/vacancy-filters/FeedListControls";
 import { LAB_PAGE_SIZE, toLabColdQuery } from "./lab-query";
 
 // The lab feed's one island — the unified path, always (MET-144 step 7: this
@@ -109,6 +109,7 @@ export function FeedLabShell({
           <FilterRail
             api={api}
             lens="cold"
+            hideFreshness
             seniorityOptions={SENIORITY_OPTIONS}
             workFormatOptions={WORK_FORMAT_OPTIONS}
             domainOptions={domainOptions}
@@ -117,20 +118,13 @@ export function FeedLabShell({
         </aside>
 
         <div className="flex flex-col gap-4">
-          {/* Freshest-by-default (§8.1); "best fit" opts into the full path.
-              Off-stack only hides on the full path, so the toggle
-              self-suppresses at 0. */}
-          <SortControls
-            api={api}
-            defaultSort="date"
-            offStackHidden={offStackHidden}
-            disabled={busy}
-          />
-
-          <p className="font-mono text-xs text-text-muted">
-            <span className="text-text-secondary">{total}</span> jobs
-            {busy ? " · loading…" : ""}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <FeedListControls api={api} hasViewer={hasViewer} offStackHidden={offStackHidden} />
+            <p className="font-mono text-xs text-text-muted">
+              <span className="text-text-secondary">{total}</span> jobs
+              {busy ? " · loading…" : ""}
+            </p>
+          </div>
 
           <div className={cn("flex flex-col gap-4 transition-opacity", busy && "opacity-60")}>
             {cold.data?.items.map((vacancy) => (

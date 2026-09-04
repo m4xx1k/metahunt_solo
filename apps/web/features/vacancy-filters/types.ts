@@ -13,6 +13,8 @@ export interface OptionRow {
   id: string;
   label: string;
   count: number;
+  /** Optional muted suffix in the chip (suggested-role fit count). */
+  hint?: string;
 }
 
 export interface SourceOption extends OptionRow {

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { cn, STICKY_RAIL } from "@/lib/utils";
 import { useResults } from "@/features/vacancy-filters/use-results";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
-import { SortControls } from "@/features/vacancy-filters/SortControls";
+import { FeedListControls } from "@/features/vacancy-filters/FeedListControls";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
@@ -158,23 +158,20 @@ export function FeedShell({
           roleSuggestions={roleSuggestions}
         />
       </div>
-      <div className="flex min-w-0 flex-col gap-4">
-        {viewer ? (
-          <SortControls
+      <VacancyList
+        result={result}
+        offset={offset}
+        onNavigate={goToOffset}
+        isFetching={isFetching || settling}
+        viewerSkills={viewerSkills}
+        controls={
+          <FeedListControls
             api={filterApi}
-            defaultSort="date"
+            hasViewer={viewer != null}
             offStackHidden={result.offStackHidden}
-            disabled={isFetching || settling}
           />
-        ) : null}
-        <VacancyList
-          result={result}
-          offset={offset}
-          onNavigate={goToOffset}
-          isFetching={isFetching || settling}
-          viewerSkills={viewerSkills}
-        />
-      </div>
+        }
+      />
       {viewer ? (
         <FeedRail
           candidateId={viewer.candidateId}

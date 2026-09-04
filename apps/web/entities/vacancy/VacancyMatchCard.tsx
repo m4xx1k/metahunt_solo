@@ -31,6 +31,11 @@ export function VacancyMatchCard({
   const analytics = useAnalytics();
   const diff = vacancy.match ? skillDiff(vacancy.skills, viewerSkills) : null;
   const viewerSkillIds = viewerSkills.map((s) => s.id);
+  const requiredTotal = vacancy.skills.required.length;
+  const fitDetail =
+    diff && requiredTotal > 0
+      ? `${requiredTotal - diff.missing.length} of ${requiredTotal} required skills`
+      : undefined;
 
   return (
     <div className="flex flex-col">
@@ -53,11 +58,7 @@ export function VacancyMatchCard({
         </div>
       ) : vacancy.match ? (
         <div className="flex flex-wrap items-center gap-3 border border-b-0 border-border bg-bg-card px-5 py-2.5 font-mono text-xs">
-          <FitBadge
-            tier={vacancy.match.tier}
-            percent={vacancy.match.percent}
-            tooltip={<span className="font-bold">Fit {vacancy.match.percent}%</span>}
-          />
+          <FitBadge tier={vacancy.match.tier} percent={vacancy.match.percent} detail={fitDetail} />
           {diff ? (
             <DiffCounts
               have={diff.have.length}
