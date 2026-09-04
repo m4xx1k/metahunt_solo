@@ -286,3 +286,9 @@ behavior change, not a regression.
   2. `/match` onboarding lands scored via `?open=cv`.
   3. Rebuild the etl container (`docker compose build etl && docker compose up -d
      --force-recreate etl`) and confirm the three removed routes now 404.
+
+---
+
+**Step 8, the pre-merge review pass, and the merge itself continue in
+[`unified-feed-score-step8-merge.md`](unified-feed-score-step8-merge.md)** — read
+that file for what shipped in PR #206 and the step 9 (Telegram digest) hand-off.
