@@ -1,7 +1,8 @@
 # taxonomy-kind-map — one `kind` column, one direction map, curation that scales
 
 **Branch:** `feat/taxonomy-kind-map`
-**Status:** planned 2026-09-05 — steps 0-2 ready to implement, 3-4 need a checkpoint
+**Status:** steps 0-3 landed 2026-09-05 (`beac7b8`, `8a0c30b`, `e6335ba`), local only —
+step 4 (the map page) is the open piece, run sheet under it
 **Linear:** MET-145 (the `kind` split), MET-121 (the map UI), MET-27 (subsumption — explicitly NOT in scope)
 
 ## Why
@@ -248,6 +249,41 @@ shift+click  merge into...     (reuse VerifiedSearch)
 **The load-bearing detail:** setting a `kind` on a tile that is currently
 `HIDDEN` also calls `verify`. Un-junking `HIDDEN` is then a side effect of
 laying out the map, not a separate pass. One gesture, both problems.
+
+### Run sheet
+
+Steps 0-3 already landed (`beac7b8`, `8a0c30b`, `e6335ba`); the API is live and
+unused. This is the remaining piece, in order.
+
+1. **Stack up, API first.** `git checkout feat/taxonomy-kind-map`, `pnpm docker:dev`,
+   `pnpm dev:jwt`. Confirm the shape before writing any UI:
+   `curl -H "Authorization: Bearer $(cat .dev-admin.jwt)" "localhost:3333/admin/taxonomy/map?track=backend&limit=150"`
+   → 150 rows, highest `df` first. `?track=nonsense` → 404, `?limit=9999` → 400.
+2. **Page shell.** `apps/web/app/dashboard/taxonomy/map/page.tsx` — server component,
+   `force-dynamic`, `PageHeader` + `PageBody`. Tracks from the existing
+   `tracksApi.get()`, tiles from `taxonomyApi.map()`. State lives in the URL
+   (`?track=&size=`), same posture as the sibling curator page
+   (`_lib/taxonomy-page-state.ts`, `_hooks/use-url-state.ts`).
+3. **Selectors.** Track: the 11 `parentSlug === null` disciplines, each expandable
+   to its children (55 total). Size: 50 / 150 / 300, default 150. Both write the URL.
+4. **Tile grid.** Client component. CSS grid with `grid-auto-flow: dense`; each tile
+   spans `ceil(sqrt(df) / k)` columns *and* rows, so side ∝ `sqrt(df)`. Colours from
+   existing tokens only — TECH `accent`, CONCEPT `accent-secondary`, SOFT `success`,
+   NULL grey (`border` / `text-muted`); dashed border for `HIDDEN`. Header counter
+   `classified N / M`. **No charting or treemap dependency** — if the layout seems to
+   need one, say so instead of adding it.
+5. **Interactions.** Click cycles TECH → CONCEPT → NULL via `taxonomyApi.setKind`;
+   `s` sets SOFT; `h` calls `taxonomyApi.hide`; shift+click opens the merge target
+   search, reusing `../_components/VerifiedSearch`. Optimistic local update, then
+   `router.refresh()` — mirror `ModerationActions`' error handling.
+6. **Green before hand-off.** `pnpm lint`, `pnpm test:etl`, `pnpm test:web`,
+   `pnpm db:check`. Screenshot the `backend` map.
+7. **Stop and hand over.** Leave the stack running, give the owner the screenshot and
+   the URL, and let them click through it themselves. **Commit only after they say go** —
+   the final commit is theirs to trigger, not yours.
+
+Constraints throughout: reuse the dashboard ui kit, no new component library, no new
+colour tokens, `md/engineering/STYLE.md` for the rest.
 
 ## Step 5 — curation (no code)
 
