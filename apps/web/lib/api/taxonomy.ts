@@ -10,6 +10,8 @@ export type NodeType = "ROLE" | "SKILL" | "DOMAIN";
 
 export type NodeStatus = "NEW" | "VERIFIED" | "HIDDEN";
 
+export type NodeKind = "TECH" | "CONCEPT" | "SOFT";
+
 export interface AxisCoverage {
   verified: number;
   new: number;
@@ -44,7 +46,7 @@ export interface TaxonomyCoverage {
     fullyVerified: number;
   };
   skillBuckets: SkillBucket[];
-  byKind: Record<"required" | "optional", KindCoverage>;
+  byRequirement: Record<"required" | "optional", KindCoverage>;
   bySource: SourceCoverage[];
 }
 
@@ -125,6 +127,7 @@ export interface TrimmedNode {
   canonicalName: string;
   type: NodeType;
   status: NodeStatus;
+  kind: NodeKind | null;
 }
 
 // 409 from PATCH /nodes/:id/rename includes a merge suggestion the UI uses

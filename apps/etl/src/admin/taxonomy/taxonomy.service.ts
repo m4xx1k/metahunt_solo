@@ -109,13 +109,13 @@ export class TaxonomyService {
       GROUP BY bucket
     `);
 
-    const byKind = await this.db.execute<{
-      kind: string;
+    const byRequirement = await this.db.execute<{
+      requirement: string;
       links: string;
       verified: string;
     }>(sql`
       SELECT
-        CASE WHEN vn.is_required THEN 'required' ELSE 'optional' END AS kind,
+        CASE WHEN vn.is_required THEN 'required' ELSE 'optional' END AS requirement,
         COUNT(*)::text AS links,
         COUNT(*) FILTER (WHERE n.status = 'VERIFIED')::text AS verified
       FROM vacancy_nodes vn JOIN nodes n ON n.id = vn.node_id
@@ -161,9 +161,9 @@ export class TaxonomyService {
         vacancies: Number(r.vacancies),
         avgSkillCount: Number(r.avg_skill_count),
       })),
-      byKind: Object.fromEntries(
-        byKind.rows.map((r) => [
-          r.kind,
+      byRequirement: Object.fromEntries(
+        byRequirement.rows.map((r) => [
+          r.requirement,
           {
             links: Number(r.links),
             verified: Number(r.verified),
@@ -662,12 +662,19 @@ function pct(num: number, denom: number): number {
   return Number(((num / denom) * 100).toFixed(1));
 }
 
-function trimNode(n: { id: string; canonicalName: string; type: string; status: string }) {
+function trimNode(n: {
+  id: string;
+  canonicalName: string;
+  type: string;
+  status: string;
+  kind: string | null;
+}) {
   return {
     id: n.id,
     canonicalName: n.canonicalName,
     type: n.type,
     status: n.status,
+    kind: n.kind,
   };
 }
 

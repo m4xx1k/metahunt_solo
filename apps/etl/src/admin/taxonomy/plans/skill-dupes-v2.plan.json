@@ -1,0 +1,223 @@
+{
+  "name": "skill-dupes-v2",
+  "description": "Sweep the mechanical duplicate residue found by md/journal/migrations/taxonomy-kind-map.md step 0: nodes whose own normalizeAliasName key already matches a *different* node's existing alias (self-alias from before alias normalisation landed, or an old name kept as an alias across a rename/merge). Every op below has an already-VERIFIED target — the non-VERIFIED sibling merges into it, which is the same direction the existing alias already encodes. Pairs where neither side is VERIFIED are left untouched (no valid merge target under TaxonomyService.mergeInto's own rule) and are not part of this plan.",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "alias-normalization residue",
+      "why": "Each pair's alias table already resolves the two names to one concept (via a prior rename or an earlier merge); the extractor re-created the non-VERIFIED side after that fact. Merging closes the gap without asserting anything new.",
+      "ops": [
+        {
+          "op": "merge",
+          "type": "DOMAIN",
+          "from": "Defence-tech",
+          "into": "DefTech",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "DOMAIN",
+          "from": "mil-tech",
+          "into": "DefTech",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "AlpineJS",
+          "into": "Alpine.js",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Async IO",
+          "into": "asyncio",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "AutoLayout",
+          "into": "Auto Layout",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Browser Dev Tools",
+          "into": "Chrome DevTools",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "C / C++",
+          "into": "C++",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "ClaudeCode",
+          "into": "Claude Code",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "CosmosDB",
+          "into": "Cosmos DB",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Dagger2",
+          "into": "Dagger 2",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Data Flow",
+          "into": "Dataflow",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "ERC-20",
+          "into": "Smart Contracts",
+          "why": "FLAG: alias-driven, but this reads more like subsumption (a token standard folded into the general category) than a spelling duplicate — worth a second look in step 5 curation"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "ERC-721",
+          "into": "Smart Contracts",
+          "why": "FLAG: alias-driven, but this reads more like subsumption (a token standard folded into the general category) than a spelling duplicate — worth a second look in step 5 curation"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Fusion360",
+          "into": "Fusion 360",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "H264",
+          "into": "H.264",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "H265",
+          "into": "H.265",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "MIPI-CSI",
+          "into": "MIPI CSI",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "MS-SQL",
+          "into": "Microsoft SQL Server",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "MissionPlanner",
+          "into": "Mission Planner",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Multi-threading",
+          "into": "Multithreading",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "OAuth2.0",
+          "into": "OAuth 2.0",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "OPC UA",
+          "into": "OPC-UA",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "QlikSense",
+          "into": "Qlik Sense",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "ReactQuery",
+          "into": "TanStack Query",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "WP Bakery",
+          "into": "WPBakery",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "X-Ray",
+          "into": "Xray",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "Yii 2",
+          "into": "Yii",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "react-query",
+          "into": "TanStack Query",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "react-testing-library",
+          "into": "React Testing Library",
+          "why": "normalized name already matched an existing alias of the target"
+        },
+        {
+          "op": "merge",
+          "type": "SKILL",
+          "from": "rest-assured",
+          "into": "REST Assured",
+          "why": "normalized name already matched an existing alias of the target"
+        }
+      ]
+    }
+  ]
+}
