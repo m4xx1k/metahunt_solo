@@ -12,6 +12,9 @@ import {
 import {
   TAXONOMY_LIST_DEFAULT,
   TAXONOMY_LIST_MAX,
+  TAXONOMY_MAP_DEFAULT,
+  TAXONOMY_MAP_MAX,
+  type MapFilters,
   type NodeListFilters,
   type NodeStatusValue,
 } from "./taxonomy.contract";
@@ -42,6 +45,17 @@ export function parseNodeListFilters(raw: RawNodeListFilters): NodeListFilters {
       default: TAXONOMY_LIST_DEFAULT,
       max: TAXONOMY_LIST_MAX,
     }),
+  };
+}
+
+// Existence against `tracks.slug` is a DB check — left to the service, which
+// 400s a track that doesn't resolve to any row.
+export function parseMapFilters(raw: { track?: string; limit?: string }): MapFilters {
+  const track = raw.track?.trim();
+  if (!track) throw new BadRequestException("track is required");
+  return {
+    track,
+    limit: parseLimit(raw.limit, TAXONOMY_MAP_DEFAULT, TAXONOMY_MAP_MAX),
   };
 }
 

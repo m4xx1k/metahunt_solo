@@ -15,8 +15,12 @@ import { ApiBadRequestResponse, ApiBody, ApiOkResponse, ApiOperation } from "@ne
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
-import { parseNodeListFilters, parseVerifiedNodeSearch } from "./taxonomy-query.parser";
-import { RenameTaxonomyNodeDto } from "./taxonomy.contract";
+import {
+  parseMapFilters,
+  parseNodeListFilters,
+  parseVerifiedNodeSearch,
+} from "./taxonomy-query.parser";
+import { RenameTaxonomyNodeDto, SetNodeKindDto } from "./taxonomy.contract";
 import { TaxonomyService } from "./taxonomy.service";
 
 @Controller("admin/taxonomy")
@@ -55,6 +59,14 @@ export class TaxonomyController {
       pageSize: rawPageSize,
     });
     return this.service.listNodes(filters);
+  }
+
+  @Get("map")
+  @ApiOperation({ summary: "Read the taxonomy curation map for a track" })
+  @ApiOkResponse({ description: "Top-N skill nodes by df within the track." })
+  getMap(@Query("track") rawTrack?: string, @Query("limit") rawLimit?: string) {
+    const filters = parseMapFilters({ track: rawTrack, limit: rawLimit });
+    return this.service.getMap(filters);
   }
 
   @Get("nodes/search")
@@ -99,6 +111,15 @@ export class TaxonomyController {
   @ApiOkResponse({ description: "Updated taxonomy node." })
   hideNode(@Param("id", ParseUUIDPipe) id: string) {
     return this.service.setStatus(id, "HIDDEN");
+  }
+
+  @Patch("nodes/:id/kind")
+  @ApiOperation({ summary: "Set a taxonomy node's kind" })
+  @ApiBody({ type: SetNodeKindDto })
+  @ApiOkResponse({ description: "Updated taxonomy node." })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  setKind(@Param("id", ParseUUIDPipe) id: string, @Body() body: SetNodeKindDto) {
+    return this.service.setKind(id, body.kind);
   }
 
   @Patch("nodes/:id/rename")
