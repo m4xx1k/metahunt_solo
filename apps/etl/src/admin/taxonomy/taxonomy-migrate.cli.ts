@@ -37,6 +37,7 @@ import {
   describeDbTarget,
 } from "../../platform/config/db-target";
 import { validateEnv } from "../../platform/config/env.validation";
+import { SubscriptionRepairService } from "../../platform/subscriptions/subscription-repair.service";
 
 import { TaxonomyService } from "./taxonomy.service";
 
@@ -45,7 +46,7 @@ import { TaxonomyService } from "./taxonomy.service";
     ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate: validateEnv }),
     DatabaseModule.forRoot(),
   ],
-  providers: [TaxonomyService],
+  providers: [TaxonomyService, SubscriptionRepairService],
 })
 class TaxonomyMigrateCliModule {}
 
@@ -120,6 +121,7 @@ async function main(): Promise<void> {
   try {
     const db = app.get<DrizzleDB>(DRIZZLE);
     const svc = app.get(TaxonomyService);
+    const subscriptionRepair = app.get(SubscriptionRepairService);
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const logPath = `.private/journal/taxonomy-migration-${plan.name}-${stamp}.jsonl`;
 
@@ -190,14 +192,35 @@ async function main(): Promise<void> {
       }
     }
 
-    // The merge map only exists in this process: once mergeInto deletes a source
-    // node, nothing in the database can map its uuid to the target any more. So
-    // the subscription repair and the matview refresh happen here, in the same
-    // run, rather than as a follow-up someone has to remember.
-    await repairSubscriptions(
+    // mergeInto already repairs subscriptions for the merge(s) it just ran
+    // (same SubscriptionRepairService the map/admin API calls, inside its own
+    // transaction). This second pass catches drift from *other* runs — any
+    // subscription still holding a uuid that isn't VERIFIED right now, not
+    // just the ones this plan touched — and refreshes the matviews that key
+    // on nodes.id with no FK.
+    const repair = await subscriptionRepair.repointMergedNodes(
       db,
-      resolvedByPhase.flatMap((p) => p.items),
+      new Map(
+        resolvedByPhase
+          .flatMap((p) => p.items)
+          .filter((r) => r.op.op === "merge" && r.verdict !== "SKIP" && r.verdict !== "REFUSE")
+          .map((r): [string, string] => [r.sourceId as string, r.targetId as string]),
+      ),
     );
+    process.stdout.write(`\nsubscription repair (${repair.inspected} row(s) inspected):\n`);
+    process.stdout.write(`  rewritten: ${repair.rewritten}\n`);
+    if (repair.narrowed.length > 0) {
+      process.stdout.write(
+        `  narrowed (worth telling these users):\n` +
+          repair.narrowed.map((n) => `    ${n}\n`).join(""),
+      );
+    }
+    if (repair.wouldSilence.length > 0) {
+      process.stdout.write(
+        `  !! LEFT ALONE — repairing would empty the filter, decide by hand:\n` +
+          repair.wouldSilence.map((n) => `    ${n}\n`).join(""),
+      );
+    }
     await refreshDerived(db);
 
     const after = await totals(db);
@@ -363,93 +386,6 @@ async function reportImpact(db: DrizzleDB, all: Resolved[]) {
   process.stdout.write(`         vacancies moving or leaving: ${r?.vacancies ?? 0}\n`);
 }
 
-// Rewrites subscriptions.params in place: merged node uuids follow their target,
-// uuids with no surviving VERIFIED node are dropped, and the result is deduped.
-// `params` is JSONB with no FK, so nothing else in the system would ever notice a
-// dead uuid — the filter arm just silently stops matching.
-async function repairSubscriptions(db: DrizzleDB, items: Resolved[]): Promise<void> {
-  const remap = new Map<string, string>();
-  for (const r of items) {
-    if (r.op.op === "merge" && r.verdict !== "SKIP" && r.verdict !== "REFUSE" && r.sourceId) {
-      remap.set(r.sourceId, r.targetId as string);
-    }
-  }
-
-  const { rows: live } = await db.execute<{ id: string }>(sql`
-    SELECT id::text FROM nodes WHERE status = 'VERIFIED'
-  `);
-  const verified = new Set(live.map((r) => r.id));
-
-  const { rows: subs } = await db.execute<{
-    id: string;
-    is_active: boolean;
-    role_ids: string[] | null;
-    skill_ids: string[] | null;
-  }>(sql`
-    SELECT id::text, is_active,
-           CASE WHEN params ? 'roleIds'
-                THEN ARRAY(SELECT jsonb_array_elements_text(params->'roleIds')) END AS role_ids,
-           CASE WHEN params ? 'skillIds'
-                THEN ARRAY(SELECT jsonb_array_elements_text(params->'skillIds')) END AS skill_ids
-    FROM subscriptions
-  `);
-
-  process.stdout.write(`\nsubscription repair (${subs.length} row(s) inspected):\n`);
-  let rewritten = 0;
-  const narrowed: string[] = [];
-  const wouldSilence: string[] = [];
-
-  for (const s of subs) {
-    const fix = (ids: string[] | null) => {
-      if (!ids) return null;
-      const out: string[] = [];
-      for (const id of ids) {
-        const mapped = remap.get(id) ?? id;
-        if (verified.has(mapped) && !out.includes(mapped)) out.push(mapped);
-      }
-      return out;
-    };
-    const roles = fix(s.role_ids);
-    const skills = fix(s.skill_ids);
-    const roleChanged = roles !== null && !sameIds(roles, s.role_ids ?? []);
-    const skillChanged = skills !== null && !sameIds(skills, s.skill_ids ?? []);
-    if (!roleChanged && !skillChanged) continue;
-
-    // Refuse to empty a filter that had arms: that silences a live user with no
-    // trace. Report it and leave the row for a human instead.
-    const emptiesRoles = roles !== null && roles.length === 0 && (s.role_ids?.length ?? 0) > 0;
-    const emptiesSkills = skills !== null && skills.length === 0 && (s.skill_ids?.length ?? 0) > 0;
-    if (s.is_active && (emptiesRoles || emptiesSkills)) {
-      wouldSilence.push(s.id);
-      continue;
-    }
-
-    await db.execute(sql`
-      UPDATE subscriptions SET params = params
-        ${roles === null ? sql`` : sql`|| jsonb_build_object('roleIds', ${JSON.stringify(roles)}::jsonb)`}
-        ${skills === null ? sql`` : sql`|| jsonb_build_object('skillIds', ${JSON.stringify(skills)}::jsonb)`}
-      WHERE id = ${s.id}::uuid
-    `);
-    rewritten += 1;
-    const lostRoles = (s.role_ids?.length ?? 0) - (roles?.length ?? 0);
-    if (s.is_active && lostRoles > 0) narrowed.push(`${s.id} (-${lostRoles} role arm(s))`);
-  }
-
-  process.stdout.write(`  rewritten: ${rewritten}\n`);
-  if (narrowed.length > 0) {
-    process.stdout.write(
-      `  narrowed (arms had no successor — worth telling these users):\n` +
-        narrowed.map((n) => `    ${n}\n`).join(""),
-    );
-  }
-  if (wouldSilence.length > 0) {
-    process.stdout.write(
-      `  !! LEFT ALONE — repairing would empty the filter, decide by hand:\n` +
-        wouldSilence.map((n) => `    ${n}\n`).join(""),
-    );
-  }
-}
-
 // node_stats drives the matcher's IDF weights and node_skill_cooc its substitute
 // gate; both are matviews keyed on nodes.id with no FK, so after a merge they
 // quietly score against deleted nodes until refreshed.
@@ -460,9 +396,6 @@ async function refreshDerived(db: DrizzleDB): Promise<void> {
   await db.execute(sql`REFRESH MATERIALIZED VIEW node_skill_cooc`);
   process.stdout.write(`  node_skill_cooc OK\n`);
 }
-
-const sameIds = (a: string[], b: string[]) =>
-  a.length === b.length && a.every((x, i) => x === b[i]);
 
 async function postChecks(db: DrizzleDB) {
   process.stdout.write(`\npost-checks (all must be 0):\n`);

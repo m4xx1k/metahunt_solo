@@ -3,6 +3,8 @@ import { Test } from "@nestjs/testing";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 
+import { SubscriptionRepairService } from "../../platform/subscriptions/subscription-repair.service";
+
 import { TaxonomyService } from "./taxonomy.service";
 
 type Row = Record<string, unknown>;
@@ -25,7 +27,7 @@ function emptyDbMock(): DbMock {
 
 async function bootstrap(db: DbMock): Promise<TaxonomyService> {
   const moduleRef = await Test.createTestingModule({
-    providers: [TaxonomyService, { provide: DRIZZLE, useValue: db }],
+    providers: [TaxonomyService, SubscriptionRepairService, { provide: DRIZZLE, useValue: db }],
   }).compile();
   return moduleRef.get(TaxonomyService);
 }
@@ -299,7 +301,11 @@ describe("TaxonomyService", () => {
       const select = jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({ where: selectWhere }),
       });
-      const execute = jest.fn().mockResolvedValue(undefined);
+      // { rows: [] } (not `undefined`): the subscription repair step at the end
+      // of the merge does two SELECTs on this same `execute` and destructures
+      // `{ rows }` off the result — an empty result set is the correct default
+      // for tests that aren't exercising subscription repair itself.
+      const execute = jest.fn().mockResolvedValue({ rows: [] });
       const update = jest.fn().mockReturnValue({
         set: jest.fn().mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) }),
       });
@@ -340,7 +346,12 @@ describe("TaxonomyService", () => {
 
       const out = await svc.mergeInto(SRC, DST);
 
-      expect(out).toEqual({ mergedInto: DST, source: "React.js", target: "React" });
+      expect(out).toEqual({
+        mergedInto: DST,
+        source: "React.js",
+        target: "React",
+        subscriptionRepair: { inspected: 0, rewritten: 0, narrowed: [], wouldSilence: [] },
+      });
       // candidate_nodes must be repointed alongside vacancy_nodes — else the
       // final node delete trips the candidate_nodes FK and aborts the merge for
       // any skill a CV has already matched.
@@ -401,6 +412,51 @@ describe("TaxonomyService", () => {
       // vacancy_nodes onto a feed-invisible node with no error.
       await expect(svc.mergeInto(SRC, DST)).rejects.toBeInstanceOf(BadRequestException);
       expect(tx.update).not.toHaveBeenCalled();
+    });
+
+    it("repoints a subscription's roleIds, skillIds, and excludedSkillIds onto the target", async () => {
+      const db = emptyDbMock();
+      const tx = buildMergeTx(
+        { id: SRC, canonicalName: "Old Skill", type: "SKILL", status: "NEW" },
+        { id: DST, canonicalName: "New Skill", type: "SKILL", status: "VERIFIED" },
+      );
+      // `execute` here is doing double duty: the merge's own raw statements
+      // (which never inspect the result) plus SubscriptionRepairService's two
+      // reads (which do) — route by query text like the "carries the source
+      // classification" test above does for table names.
+      tx.execute.mockImplementation(async (query: unknown) => {
+        const text = JSON.stringify(query);
+        if (text.includes("status = 'VERIFIED'") && text.includes("FROM nodes")) {
+          return { rows: [{ id: DST }] };
+        }
+        if (text.includes("FROM subscriptions")) {
+          return {
+            rows: [
+              {
+                id: "sub-1",
+                is_active: true,
+                role_ids: null,
+                skill_ids: [SRC, "other-skill"],
+                excluded_skill_ids: [SRC],
+              },
+            ],
+          };
+        }
+        return { rows: [] };
+      });
+      wireMergeTx(db, tx);
+      const svc = await bootstrap(db);
+
+      const out = await svc.mergeInto(SRC, DST);
+
+      // Both arms held the merged-away source id and both got fixed onto the
+      // target in the same pass — one rewritten row, nothing left ambiguous.
+      expect(out.subscriptionRepair).toEqual({
+        inspected: 1,
+        rewritten: 1,
+        narrowed: [],
+        wouldSilence: [],
+      });
     });
   });
 });

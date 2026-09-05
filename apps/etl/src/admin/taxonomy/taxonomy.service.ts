@@ -12,6 +12,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import { normalizeAliasName } from "../../platform/shared/normalize-alias";
+import { SubscriptionRepairService } from "../../platform/subscriptions/subscription-repair.service";
 
 import type {
   MapFilters,
@@ -40,7 +41,10 @@ const FUZZY: Record<NodeType, FuzzyThreshold> = {
 
 @Injectable()
 export class TaxonomyService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly subscriptionRepair: SubscriptionRepairService,
+  ) {}
 
   async getCoverage() {
     const byAxis = await this.db.execute<{
@@ -720,7 +724,20 @@ export class TaxonomyService {
       await tx.delete(schema.nodeAliases).where(and(eq(schema.nodeAliases.nodeId, sourceId)));
       await tx.delete(schema.nodes).where(eq(schema.nodes.id, sourceId));
 
-      return { mergedInto: targetId, source: source.canonicalName, target: target.canonicalName };
+      // 6) Re-point subscriptions.params (jsonb, no FK — see the service). Same
+      // call the CLI plan-apply path makes, so a merge from the map and a merge
+      // from a replayed plan file can never drift apart on this.
+      const subscriptionRepair = await this.subscriptionRepair.repointMergedNodes(
+        tx,
+        new Map([[sourceId, targetId]]),
+      );
+
+      return {
+        mergedInto: targetId,
+        source: source.canonicalName,
+        target: target.canonicalName,
+        subscriptionRepair,
+      };
     });
   }
 }
