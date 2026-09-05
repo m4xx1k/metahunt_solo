@@ -12,8 +12,16 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB, NodeType } from "@metahunt/database";
 
 import { normalizeAliasName } from "../../platform/shared/normalize-alias";
+import { SubscriptionRepairService } from "../../platform/subscriptions/subscription-repair.service";
 
-import type { NodeListFilters, NodeListResult, NodeStatusValue } from "./taxonomy.contract";
+import type {
+  MapFilters,
+  MapNodeItem,
+  NodeKindValue,
+  NodeListFilters,
+  NodeListResult,
+  NodeStatusValue,
+} from "./taxonomy.contract";
 
 const RENAME_MIN_LEN = 2;
 
@@ -33,7 +41,10 @@ const FUZZY: Record<NodeType, FuzzyThreshold> = {
 
 @Injectable()
 export class TaxonomyService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly subscriptionRepair: SubscriptionRepairService,
+  ) {}
 
   async getCoverage() {
     const byAxis = await this.db.execute<{
@@ -109,13 +120,13 @@ export class TaxonomyService {
       GROUP BY bucket
     `);
 
-    const byKind = await this.db.execute<{
-      kind: string;
+    const byRequirement = await this.db.execute<{
+      requirement: string;
       links: string;
       verified: string;
     }>(sql`
       SELECT
-        CASE WHEN vn.is_required THEN 'required' ELSE 'optional' END AS kind,
+        CASE WHEN vn.is_required THEN 'required' ELSE 'optional' END AS requirement,
         COUNT(*)::text AS links,
         COUNT(*) FILTER (WHERE n.status = 'VERIFIED')::text AS verified
       FROM vacancy_nodes vn JOIN nodes n ON n.id = vn.node_id
@@ -161,9 +172,9 @@ export class TaxonomyService {
         vacancies: Number(r.vacancies),
         avgSkillCount: Number(r.avg_skill_count),
       })),
-      byKind: Object.fromEntries(
-        byKind.rows.map((r) => [
-          r.kind,
+      byRequirement: Object.fromEntries(
+        byRequirement.rows.map((r) => [
+          r.requirement,
           {
             links: Number(r.links),
             verified: Number(r.verified),
@@ -434,6 +445,67 @@ export class TaxonomyService {
     return trimNode(updated);
   }
 
+  // Top-N skill nodes by df within a track — the curation map's tile data.
+  // `limit` is top-N, not a df threshold (see taxonomy-kind-map.md): a fixed
+  // threshold gives every track a different-sized screen.
+  async getMap(filters: MapFilters): Promise<MapNodeItem[]> {
+    const trackRows = await this.db.execute<{ slug: string }>(sql`
+      SELECT slug FROM tracks WHERE slug = ${filters.track}
+    `);
+    if (trackRows.rows.length === 0) {
+      throw new NotFoundException(`track "${filters.track}" not found`);
+    }
+
+    const rows = await this.db.execute<{
+      id: string;
+      canonical_name: string;
+      kind: NodeKindValue | null;
+      status: NodeStatusValue;
+      df: number;
+      alias_count: string;
+    }>(sql`
+      SELECT n.id, n.canonical_name, n.kind::text AS kind, n.status::text AS status,
+             tns.df,
+             COALESCE(a.c, 0)::text AS alias_count
+      FROM track_node_stats tns
+      JOIN nodes n ON n.id = tns.node_id
+      LEFT JOIN (
+        SELECT node_id, COUNT(*) AS c FROM node_aliases GROUP BY node_id
+      ) a ON a.node_id = n.id
+      WHERE tns.track_slug = ${filters.track}
+      ORDER BY tns.df DESC, n.canonical_name ASC
+      LIMIT ${filters.limit}
+    `);
+
+    return rows.rows.map((r) => ({
+      id: r.id,
+      name: r.canonical_name,
+      kind: r.kind,
+      status: r.status,
+      df: r.df,
+      aliasCount: Number(r.alias_count),
+    }));
+  }
+
+  // Setting a real kind on a HIDDEN node also verifies it — the mechanism
+  // that clears junk (NumPy, Zustand, ...) out of HIDDEN as a side effect of
+  // laying out the map, rather than a separate pass. Clearing back to NULL
+  // is not an assertion that the node is real, so it leaves status alone.
+  async setKind(id: string, kind: NodeKindValue | null) {
+    return this.db.transaction(async (tx) => {
+      const [node] = await tx.select().from(schema.nodes).where(eq(schema.nodes.id, id));
+      if (!node) throw new NotFoundException(`Node ${id} not found`);
+
+      const nextStatus = kind !== null && node.status === "HIDDEN" ? "VERIFIED" : node.status;
+      const [updated] = await tx
+        .update(schema.nodes)
+        .set({ kind, status: nextStatus })
+        .where(eq(schema.nodes.id, id))
+        .returning();
+      return trimNode(updated);
+    });
+  }
+
   // Promote NEW skills that have proven themselves by usage: linked from
   // enough distinct vacancies AND seen at more than one company, so a single
   // employer's jargon can't self-verify. Vacancies without a company count as
@@ -652,7 +724,20 @@ export class TaxonomyService {
       await tx.delete(schema.nodeAliases).where(and(eq(schema.nodeAliases.nodeId, sourceId)));
       await tx.delete(schema.nodes).where(eq(schema.nodes.id, sourceId));
 
-      return { mergedInto: targetId, source: source.canonicalName, target: target.canonicalName };
+      // 6) Re-point subscriptions.params (jsonb, no FK — see the service). Same
+      // call the CLI plan-apply path makes, so a merge from the map and a merge
+      // from a replayed plan file can never drift apart on this.
+      const subscriptionRepair = await this.subscriptionRepair.repointMergedNodes(
+        tx,
+        new Map([[sourceId, targetId]]),
+      );
+
+      return {
+        mergedInto: targetId,
+        source: source.canonicalName,
+        target: target.canonicalName,
+        subscriptionRepair,
+      };
     });
   }
 }
@@ -662,12 +747,19 @@ function pct(num: number, denom: number): number {
   return Number(((num / denom) * 100).toFixed(1));
 }
 
-function trimNode(n: { id: string; canonicalName: string; type: string; status: string }) {
+function trimNode(n: {
+  id: string;
+  canonicalName: string;
+  type: string;
+  status: string;
+  kind: string | null;
+}) {
   return {
     id: n.id,
     canonicalName: n.canonicalName,
     type: n.type,
     status: n.status,
+    kind: n.kind,
   };
 }
 

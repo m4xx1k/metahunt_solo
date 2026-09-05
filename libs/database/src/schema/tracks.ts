@@ -108,6 +108,56 @@ export const trackCounts = pgView("track_counts", {
   `,
 );
 
+// Per-track, per-node document frequency for the taxonomy curation map (see
+// md/journal/migrations/taxonomy-kind-map.md). Unlike `track_counts` (one row
+// per track), this is one row per (track, skill node) pair — `df` counted
+// within that track only, which is what sizes a tile on the map. Covers all
+// 55 tracks (disciplines and their children), not just disciplines: hardware
+// vs hw-embedded vs hw-hardware are genuinely different skill populations.
+// Track resolution mirrors `track_counts` exactly (own preset nodes, else the
+// parent's, role must be VERIFIED). Plain view — measured on prod at 1.1s for
+// 28,931 rows; materialize only if the page is visibly slow.
+export const trackNodeStats = pgView("track_node_stats", {
+  trackSlug: text("track_slug"),
+  nodeId: uuid("node_id"),
+  df: integer("df"),
+}).as(
+  sql`
+    WITH own AS (
+      SELECT tn.track_id,
+             array_agg(tn.node_id) FILTER (WHERE n.type = 'ROLE')  AS role_ids,
+             array_agg(tn.node_id) FILTER (WHERE n.type = 'SKILL') AS skill_ids
+      FROM track_nodes tn JOIN nodes n ON n.id = tn.node_id
+      GROUP BY tn.track_id
+    ),
+    eff AS (
+      SELECT t.id, t.slug,
+             COALESCE(o.role_ids,  po.role_ids)  AS role_ids,
+             COALESCE(o.skill_ids, po.skill_ids) AS skill_ids
+      FROM tracks t
+      LEFT JOIN own o  ON o.track_id  = t.id
+      LEFT JOIN own po ON po.track_id = t.parent_id
+    ),
+    pos AS (
+      SELECT e.slug, p.position_id
+      FROM eff e JOIN positions p ON TRUE
+      WHERE p.role_node_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM nodes rn
+                    WHERE rn.id = p.role_node_id AND rn.status = 'VERIFIED')
+        AND (e.role_ids IS NULL OR p.role_node_id = ANY(e.role_ids))
+        AND (e.skill_ids IS NULL OR EXISTS (
+              SELECT 1 FROM position_nodes pn
+              WHERE pn.position_id = p.position_id
+                AND pn.node_id = ANY(e.skill_ids) AND pn.is_required))
+    )
+    SELECT pos.slug AS track_slug, pn.node_id, count(*)::int AS df
+    FROM pos
+    JOIN position_nodes pn ON pn.position_id = pos.position_id
+    JOIN nodes n ON n.id = pn.node_id AND n.type = 'SKILL'
+    GROUP BY 1, 2
+  `,
+);
+
 export type Track = typeof tracks.$inferSelect;
 export type NewTrack = typeof tracks.$inferInsert;
 export type TrackNode = typeof trackNodes.$inferSelect;

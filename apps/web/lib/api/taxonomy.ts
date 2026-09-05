@@ -10,6 +10,8 @@ export type NodeType = "ROLE" | "SKILL" | "DOMAIN";
 
 export type NodeStatus = "NEW" | "VERIFIED" | "HIDDEN";
 
+export type NodeKind = "TECH" | "CONCEPT" | "SOFT";
+
 export interface AxisCoverage {
   verified: number;
   new: number;
@@ -44,7 +46,7 @@ export interface TaxonomyCoverage {
     fullyVerified: number;
   };
   skillBuckets: SkillBucket[];
-  byKind: Record<"required" | "optional", KindCoverage>;
+  byRequirement: Record<"required" | "optional", KindCoverage>;
   bySource: SourceCoverage[];
 }
 
@@ -125,6 +127,23 @@ export interface TrimmedNode {
   canonicalName: string;
   type: NodeType;
   status: NodeStatus;
+  kind: NodeKind | null;
+}
+
+// One row per skill node, top-N by df within the track — the taxonomy
+// curation map's tile data.
+export interface MapNodeItem {
+  id: string;
+  name: string;
+  kind: NodeKind | null;
+  status: NodeStatus;
+  df: number;
+  aliasCount: number;
+}
+
+export interface MapFilters {
+  track: string;
+  limit?: number;
 }
 
 // 409 from PATCH /nodes/:id/rename includes a merge suggestion the UI uses
@@ -193,6 +212,8 @@ export const taxonomyApi = {
   coverage: () => get<TaxonomyCoverage>("/admin/taxonomy/coverage"),
   list: (filters: NodeListFilters = {}) =>
     get<NodeListResult>("/admin/taxonomy/nodes", listParams(filters)),
+  map: (filters: MapFilters) =>
+    get<MapNodeItem[]>("/admin/taxonomy/map", { track: filters.track, limit: filters.limit }),
   node: (id: string) => get<NodeDetail>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}`),
   fuzzyMatches: (id: string) =>
     get<FuzzyMatchResult>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}/fuzzy-matches`),
@@ -202,6 +223,8 @@ export const taxonomyApi = {
     mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/verify`),
   hide: (id: string) =>
     mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/hide`),
+  setKind: (id: string, kind: NodeKind | null) =>
+    mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/kind`, { kind }),
   rename: (id: string, name: string) =>
     mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/rename`, {
       name,
