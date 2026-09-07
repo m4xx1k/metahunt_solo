@@ -8,4 +8,6 @@ export interface SelectOption {
   count?: number;
   /** Optional muted suffix inside the chip (e.g. "33 fits" on a suggested role). */
   hint?: string;
+  /** SKILL only — a style hint (see chipClass), never a sort key. */
+  kind?: "TECH" | "CONCEPT" | "SOFT" | null;
 }

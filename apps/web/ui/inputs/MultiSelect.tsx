@@ -87,7 +87,7 @@ export function MultiSelect({
               type="button"
               aria-pressed
               onClick={() => onToggle(o.id)}
-              className={chipClass(true)}
+              className={chipClass(true, o.kind)}
             >
               {o.label}
             </button>
@@ -98,7 +98,7 @@ export function MultiSelect({
               type="button"
               aria-pressed={false}
               onClick={() => onToggle(o.id)}
-              className={chipClass(false)}
+              className={chipClass(false, o.kind)}
             >
               {o.label}
               {o.hint ? <span className="ml-1.5 text-2xs text-text-muted">{o.hint}</span> : null}

@@ -15,6 +15,8 @@ export interface OptionRow {
   count: number;
   /** Optional muted suffix in the chip (suggested-role fit count). */
   hint?: string;
+  /** SKILL only — a style hint for the chip, never a sort key. */
+  kind?: "TECH" | "CONCEPT" | "SOFT" | null;
 }
 
 export interface SourceOption extends OptionRow {

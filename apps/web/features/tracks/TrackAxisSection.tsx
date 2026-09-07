@@ -26,7 +26,14 @@ const SEP = ",";
 const MAX_MATCHES = 8;
 const MAX_SUGGEST = 8;
 
-export type TrackAxis = { id: string; name: string; count?: number };
+export type TrackAxis = {
+  id: string;
+  name: string;
+  count?: number;
+  /** SKILL only, and only ever populated on `catalog` (facetsApi carries it;
+   *  presets/suggestions don't) — resolved per-id via kindOf() below. */
+  kind?: "TECH" | "CONCEPT" | "SOFT" | null;
+};
 
 export function TrackAxisSection({
   title,
@@ -65,15 +72,22 @@ export function TrackAxisSection({
     suggestions.find((s) => s.id === id)?.name ??
     id;
 
+  // Only `catalog` (facetsApi.skills) actually carries `kind` — presets and
+  // suggestions come from track-specific endpoints that don't. A preset or
+  // suggested skill still colors correctly here because it's virtually always
+  // also present in the full catalog.
+  const kindOf = (id: string) =>
+    presets.find((p) => p.id === id)?.kind ??
+    catalog.find((c) => c.id === id)?.kind ??
+    suggestions.find((s) => s.id === id)?.kind;
+
   // Chips = every preset (so a removed one can be turned back on) + any added
   // id not in the preset, in selection order.
   const addedIds = selected.filter((id) => !presetSet.has(id));
   const chips = [...presetIds, ...addedIds];
   const chipSet = new Set(chips);
 
-  const visibleSuggest = suggestions
-    .filter((s) => !chipSet.has(s.id))
-    .slice(0, MAX_SUGGEST);
+  const visibleSuggest = suggestions.filter((s) => !chipSet.has(s.id)).slice(0, MAX_SUGGEST);
 
   const q = query.trim().toLowerCase();
   const matches = q
@@ -84,8 +98,7 @@ export function TrackAxisSection({
 
   const commit = (nextIds: string[]) => {
     const isPreset =
-      nextIds.length === presetIds.length &&
-      presetIds.every((id) => nextIds.includes(id));
+      nextIds.length === presetIds.length && presetIds.every((id) => nextIds.includes(id));
     push((next) => {
       if (isPreset) next.delete(urlKey);
       else next.set(urlKey, nextIds.join(SEP)); // [] → "" (explicit empty)
@@ -94,11 +107,7 @@ export function TrackAxisSection({
   };
 
   const toggle = (id: string) =>
-    commit(
-      selectedSet.has(id)
-        ? selected.filter((x) => x !== id)
-        : [...selected, id],
-    );
+    commit(selectedSet.has(id) ? selected.filter((x) => x !== id) : [...selected, id]);
 
   const add = (id: string) => {
     setQuery("");
@@ -110,8 +119,7 @@ export function TrackAxisSection({
     [],
   );
 
-  const summary =
-    selected.length === 0 ? "any" : `${selected.length} selected`;
+  const summary = selected.length === 0 ? "any" : `${selected.length} selected`;
 
   return (
     <CollapsibleSection title={title} summary={summary}>
@@ -126,7 +134,7 @@ export function TrackAxisSection({
                   type="button"
                   aria-pressed={active}
                   onClick={() => toggle(id)}
-                  className={chipClass(active)}
+                  className={chipClass(active, kindOf(id))}
                 >
                   {nameOf(id)}
                 </button>
@@ -143,7 +151,7 @@ export function TrackAxisSection({
                 type="button"
                 aria-pressed={false}
                 onClick={() => add(s.id)}
-                className={chipClass(false)}
+                className={chipClass(false, kindOf(s.id))}
               >
                 + {s.name}
               </button>
@@ -182,9 +190,7 @@ export function TrackAxisSection({
               ))}
             </ul>
           ) : (
-            <p className="px-1 py-2 font-mono text-xs text-text-muted">
-              no matches
-            </p>
+            <p className="px-1 py-2 font-mono text-xs text-text-muted">no matches</p>
           )
         ) : null}
       </div>
