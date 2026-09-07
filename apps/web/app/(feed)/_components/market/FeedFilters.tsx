@@ -62,9 +62,10 @@ export function FeedFilters({
   /** Full verified-role catalog — search-and-add in the role facet. */
   roleCatalog?: TrackAxis[];
   /** Full verified-skill catalog — search-and-add in the skill facet. `kind`
-   *  only ever arrives from facetsApi.skills() (non-track mode); the track-mode
-   *  source (tracksApi.skills) doesn't carry it, and that's fine — it's optional. */
-  skillCatalog?: (TrackAxis & { kind?: "TECH" | "CONCEPT" | "SOFT" | null })[];
+   *  rides on TrackAxis already; it only ever arrives from facetsApi.skills()
+   *  (non-track mode), the track-mode source (tracksApi.skills) leaves it
+   *  undefined — and that's fine, it's optional. */
+  skillCatalog?: TrackAxis[];
   /** Full verified-domain catalog. */
   domainCatalog?: TrackAxis[];
   /** Drop the browse tree (the merged route drives tracks from a top-band). */

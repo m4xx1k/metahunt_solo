@@ -385,6 +385,39 @@ describe("FeedService.search — excluded skills (integration)", () => {
   });
 });
 
+describe("FacetsService.getSkillFacets — kind round-trip (integration)", () => {
+  it("carries nodes.kind through to the rail, a NULL kind as null", async () => {
+    const facets = new FacetsService(db);
+    const s = await seedSource();
+    const role = await seedRole();
+    const [concept] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "RAG", status: "VERIFIED", kind: "CONCEPT" })
+      .returning({ id: schema.nodes.id });
+    const [unclassified] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "PostgreSQL", status: "VERIFIED" })
+      .returning({ id: schema.nodes.id });
+    const vacancy = await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(),
+    });
+    await db.insert(schema.vacancyNodes).values([
+      { vacancyId: vacancy, nodeId: concept.id, isRequired: true },
+      { vacancyId: vacancy, nodeId: unclassified.id, isRequired: true },
+    ]);
+
+    const { skills } = await facets.getSkillFacets();
+    const kindByName = Object.fromEntries(skills.map((row) => [row.name, row.kind]));
+
+    // kind is a passthrough style hint: seeded value survives, absent = null
+    // (never coerced to a default), and it never reorders the df-sorted list.
+    expect(kindByName).toEqual({ RAG: "CONCEPT", PostgreSQL: null });
+  });
+});
+
 // §7 step 3: the CHEAP PATH — a scorer attaches `match` to the page FeedService
 // already chose; it must never change WHICH rows come back or `total`.
 describe("FeedService.search — scorer / CHEAP PATH (integration)", () => {
