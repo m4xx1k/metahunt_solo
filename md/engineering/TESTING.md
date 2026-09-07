@@ -50,9 +50,15 @@ Build domain objects through small `createX(overrides)` helpers. Promotes shared
 
 Mock at the seam — the interface, not the SDK.
 
-- Drizzle: build a chained mock around `select` / `insert` / `update`.
+- Drizzle: **do not** fake a `select().from().where()` chain of `jest.fn()`s —
+  that test passes even when the SQL is wrong, and it breaks on every query
+  refactor. Use an integration test on real Postgres (`test/int/*`,
+  Testcontainers), or put a repository interface in front of the query and mock
+  *that* (see `company.repository.ts` / `company-resolver.service.spec.ts`).
 - External APIs: mock the client, not `fetch`.
 - LLM: the `VACANCY_EXTRACTOR` token + impls is the testable seam; preserve that shape for new pluggable boundaries.
+
+Antipatterns and the guard that catches them: [`test-slop-cleanup.md`](../journal/migrations/test-slop-cleanup.md).
 
 ## Naming
 

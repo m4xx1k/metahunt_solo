@@ -22,7 +22,7 @@ import type {
 } from "./vacancy-extractor";
 
 /** A dashboard label only; spec_hash is the correctness boundary. */
-export const PROMPT_VERSION = 4;
+export const PROMPT_VERSION = 5;
 
 const TAXONOMY_CACHE_TTL_MS = 60_000;
 

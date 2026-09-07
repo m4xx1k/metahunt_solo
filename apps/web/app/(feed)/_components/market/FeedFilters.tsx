@@ -61,7 +61,10 @@ export function FeedFilters({
   contextualSkills?: TrackAxis[];
   /** Full verified-role catalog — search-and-add in the role facet. */
   roleCatalog?: TrackAxis[];
-  /** Full verified-skill catalog — search-and-add in the skill facet. */
+  /** Full verified-skill catalog — search-and-add in the skill facet. `kind`
+   *  rides on TrackAxis already; it only ever arrives from facetsApi.skills()
+   *  (non-track mode), the track-mode source (tracksApi.skills) leaves it
+   *  undefined — and that's fine, it's optional. */
   skillCatalog?: TrackAxis[];
   /** Full verified-domain catalog. */
   domainCatalog?: TrackAxis[];
@@ -95,7 +98,13 @@ export function FeedFilters({
     return [...byId.values()];
   }, [roleCatalog, roleSuggestions]);
   const skillOptions = useMemo<OptionRow[]>(
-    () => (skillCatalog ?? []).map((s) => ({ id: s.id, label: s.name, count: s.count ?? 0 })),
+    () =>
+      (skillCatalog ?? []).map((s) => ({
+        id: s.id,
+        label: s.name,
+        count: s.count ?? 0,
+        kind: s.kind,
+      })),
     [skillCatalog],
   );
   const domainOptions = useMemo<OptionRow[]>(

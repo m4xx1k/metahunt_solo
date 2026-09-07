@@ -28,19 +28,23 @@ export class FacetsService {
       id: string;
       name: string;
       count: number;
+      kind: "TECH" | "CONCEPT" | "SOFT" | null;
     }>(sql`
       SELECT COALESCE(n.slug, n.id::text) AS id,
              n.canonical_name AS name,
-             COUNT(DISTINCT pn.position_id)::int AS count
+             COUNT(DISTINCT pn.position_id)::int AS count,
+             n.kind::text AS kind
       FROM position_nodes pn
       JOIN nodes n ON n.id = pn.node_id AND n.type = 'SKILL' AND n.status = 'VERIFIED'
       JOIN positions p ON p.position_id = pn.position_id
       WHERE ${ELIGIBLE_POSITION}
-      GROUP BY n.id, n.canonical_name
+      GROUP BY n.id, n.canonical_name, n.kind
       ORDER BY COUNT(DISTINCT pn.position_id) DESC, n.canonical_name
     `);
     return {
-      skills: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count })),
+      // Sort stays df-only — kind is a style hint, not a rank: a rare TECH
+      // chip must never outrank a common CONCEPT one just because of kind.
+      skills: rows.rows.map((r) => ({ id: r.id, name: r.name, count: r.count, kind: r.kind })),
     };
   }
 

@@ -10,6 +10,8 @@ export interface NodeFacet {
   id: string;
   name: string;
   count: number;
+  /** SKILL only (mirrors nodes.kind) — a style hint, never a sort key. */
+  kind?: "TECH" | "CONCEPT" | "SOFT" | null;
 }
 
 export interface RoleFacetsResponse {

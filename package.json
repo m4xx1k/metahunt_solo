@@ -64,6 +64,9 @@
     ],
     "**/*.json": [
       "prettier --write"
+    ],
+    "{apps,libs}/**/*.spec.{ts,tsx}": [
+      "node scripts/test-slop-check.mjs"
     ]
   },
   "devDependencies": {

@@ -268,6 +268,9 @@ export interface NodeFacet {
   id: string;
   name: string;
   count: number;
+  /** SKILL only (mirrors nodes.kind) — lets the rail style a practice/concept
+   *  chip differently without changing its position in the df-sorted list. */
+  kind?: "TECH" | "CONCEPT" | "SOFT" | null;
 }
 
 export interface RoleFacetsResponse {
