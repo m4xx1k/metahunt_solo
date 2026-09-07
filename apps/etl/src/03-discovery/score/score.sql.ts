@@ -1,5 +1,6 @@
 import { sql, type SQL } from "drizzle-orm";
 
+import { scorableKind } from "../../platform/shared/eligible";
 import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 
 // The live scoring pass, extracted from RankingService so every
@@ -30,6 +31,8 @@ export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
       ),
       -- one pass per Position: relevance + weighted denominators + stack flags.
       -- node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
+      -- The nodes join gates out CONCEPT/SOFT (scorableKind) — they never enter
+      -- any denominator, so extracting them from a JD cannot move Fit.
       agg AS (
         SELECT pn.position_id AS id,
                SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
@@ -41,6 +44,7 @@ export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
                bool_or(tm.is_core AND pn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
         FROM position_nodes pn
         JOIN node_stats ns ON ns.node_id = pn.node_id
+        JOIN nodes nd ON nd.id = pn.node_id AND ${scorableKind("nd")}
         LEFT JOIN cand c ON c.node_id = pn.node_id
         LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id
         ${scope}

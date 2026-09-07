@@ -5,7 +5,7 @@ import { and, sql, type SQL } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
+import { ELIGIBLE_POSITION, scorableKind } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
 import { rankedPage } from "../score/ranked-page";
@@ -541,7 +541,12 @@ export class FeedService {
     const out = new Map<string, { required: NodeRef[]; optional: NodeRef[] }>();
     if (positionIds.length === 0) return out;
 
+    // CONCEPT/SOFT nodes are hidden from the card skill lists (scorableKind) the
+    // same as they are dropped from Fit — they live in the filter rail, the
+    // taxonomy map and analytics, not as a per-vacancy ✅/❌ chip. The operator
+    // view (`includeAllSkills`) still sees everything.
     const statusGate = includeAllSkills ? sql`` : sql`AND n.status = 'VERIFIED'`;
+    const kindGate = includeAllSkills ? sql`` : sql`AND ${scorableKind("n")}`;
     const rows = await this.db.execute<{
       position_id: string;
       node_id: string;
@@ -550,7 +555,7 @@ export class FeedService {
     }>(sql`
       SELECT pn.position_id, n.id AS node_id, n.canonical_name, pn.is_required
       FROM position_nodes pn
-      JOIN nodes n ON n.id = pn.node_id ${statusGate}
+      JOIN nodes n ON n.id = pn.node_id ${statusGate} ${kindGate}
       WHERE pn.position_id IN (${uuidList(positionIds)})
     `);
 
@@ -570,7 +575,8 @@ export class FeedService {
   // derive a VERIFIED-only view in TS) over the same HIDDEN-excluded set.
   // Deliberately its own query, not a `fetchSkills` mode: that method's
   // `includeAllSkills` intentionally includes HIDDEN nodes for operator/
-  // debug use, and this must not.
+  // debug use, and this must not. CONCEPT/SOFT are excluded (scorableKind) so
+  // the diff and Fit denominator stay the same set.
   async fetchSkillRows(positionIds: string[]): Promise<Map<string, SkillRow[]>> {
     const out = new Map<string, SkillRow[]>();
     if (positionIds.length === 0) return out;
@@ -586,7 +592,7 @@ export class FeedService {
       SELECT pn.position_id, pn.node_id, n.canonical_name AS name, n.status,
              pn.is_required, ns.weight
       FROM position_nodes pn
-      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
+      JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN' AND ${scorableKind("n")}
       LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
       WHERE pn.position_id IN (${uuidList(positionIds)})
     `);
