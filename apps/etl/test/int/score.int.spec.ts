@@ -43,11 +43,10 @@ async function seedNode(
   type: "ROLE" | "SKILL",
   name: string,
   status: "NEW" | "VERIFIED" | "HIDDEN" = "VERIFIED",
-  kind?: "TECH" | "CONCEPT" | "SOFT",
 ): Promise<string> {
   const [n] = await db
     .insert(schema.nodes)
-    .values({ type, canonicalName: name, status, kind })
+    .values({ type, canonicalName: name, status })
     .returning({ id: schema.nodes.id });
   return n.id;
 }
@@ -315,66 +314,6 @@ describe("resolveViewer + scorerForNodeIds (integration)", () => {
     const candidateId = await seedCandidate([]);
 
     await expect(resolveViewer(db, candidateId)).resolves.toBeNull();
-  });
-});
-
-// The taxonomy-kind cut (md/todo/taxonomy-kind-review-audit.md §4): CONCEPT and
-// SOFT nodes are extracted from JDs and filterable, but must never enter the Fit
-// denominator or the ✅/❌ diff — a CV that never spells out "Microservices"
-// cannot be made to read as failing that requirement. This is the behavioural
-// guard the deleted source-scan spec used to stand in for.
-describe("CONCEPT / SOFT nodes are inert in Fit (integration)", () => {
-  it("a required CONCEPT node changes nothing — same coverage, tier, percent, relevance", async () => {
-    const { sourceId, ingestId } = await seedSource();
-    const role = await seedNode("ROLE", "Backend Developer");
-    const go = await seedNode("SKILL", "Go");
-    const k8s = await seedNode("SKILL", "Kubernetes");
-    const micro = await seedNode("SKILL", "Microservices", "VERIFIED", "CONCEPT");
-
-    const techOnly = await seedVacancy(sourceId, ingestId, role, "Tech only");
-    await linkSkill(techOnly, go, true);
-    await linkSkill(techOnly, k8s, true);
-
-    const withConcept = await seedVacancy(sourceId, ingestId, role, "Tech plus concept");
-    await linkSkill(withConcept, go, true);
-    await linkSkill(withConcept, k8s, true);
-    await linkSkill(withConcept, micro, true); // required — but CONCEPT, so not a 3rd requirement
-
-    await seedFillers(sourceId, ingestId, role);
-    await refreshNodeStats();
-
-    const res = await ranking.match(["Go"], {}, 1, 20);
-    const byId = new Map(res.items.map((i) => [i.vacancy.id, i]));
-    const a = byId.get(techOnly);
-    const b = byId.get(withConcept);
-
-    expect(a).toBeDefined();
-    expect(b).toBeDefined();
-    // 1 of 2 real required skills for both — the concept is neither counted nor missing.
-    expect(a?.fit).toMatchObject({ tier: "GOOD", percent: 50, requiredTotal: 2 });
-    expect(b?.fit).toMatchObject({ tier: "GOOD", percent: 50, requiredTotal: 2 });
-    expect(b?.relevance).toBeCloseTo(a!.relevance, 9);
-    expect(b?.diff.missing.map((s) => s.name)).toEqual(["Kubernetes"]);
-    // and it never reaches the card's skill list
-    expect(b?.vacancy.skills.required.map((s) => s.name).sort()).toEqual(["Go", "Kubernetes"]);
-  });
-
-  it("a vacancy whose only required node is a CONCEPT drops out — nothing to score", async () => {
-    const { sourceId, ingestId } = await seedSource();
-    const role = await seedNode("ROLE", "Backend Developer");
-    const go = await seedNode("SKILL", "Go");
-    const ddd = await seedNode("SKILL", "DDD", "VERIFIED", "CONCEPT");
-
-    const conceptOnly = await seedVacancy(sourceId, ingestId, role, "Concept only");
-    await linkSkill(conceptOnly, ddd, true);
-    const real = await seedVacancy(sourceId, ingestId, role, "Real");
-    await linkSkill(real, go, true);
-    await seedFillers(sourceId, ingestId, role);
-    await refreshNodeStats();
-
-    const ids = (await ranking.match(["Go"], {}, 1, 20)).items.map((i) => i.vacancy.id);
-    expect(ids).toContain(real);
-    expect(ids).not.toContain(conceptOnly);
   });
 });
 

@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
-import { ELIGIBLE_POSITION, scorableKind } from "../../platform/shared/eligible";
+import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 
 import {
   FIT_GOOD_MIN,
@@ -104,7 +104,7 @@ export class RecommendationService {
                (pn.node_id IN (SELECT node_id FROM cand)) AS in_cand
         FROM cohort c
         JOIN position_nodes pn ON pn.position_id = c.position_id AND pn.is_required
-        JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN' AND ${scorableKind("n")}
+        JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
         JOIN node_stats ns ON ns.node_id = pn.node_id
       ),
       vcov AS (
