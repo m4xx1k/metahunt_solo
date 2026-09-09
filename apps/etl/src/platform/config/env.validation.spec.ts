@@ -26,24 +26,6 @@ describe("validateEnv", () => {
     );
   });
 
-  it("defaults the digest resend lookback to 1 day", () => {
-    const result = validateEnv(requiredEnv);
-
-    expect(result.DIGEST_RESEND_LOOKBACK_DAYS).toBe(1);
-  });
-
-  it("accepts a configured digest resend lookback", () => {
-    const result = validateEnv({ ...requiredEnv, DIGEST_RESEND_LOOKBACK_DAYS: "7" });
-
-    expect(result.DIGEST_RESEND_LOOKBACK_DAYS).toBe(7);
-  });
-
-  it("rejects a digest resend lookback below 1", () => {
-    expect(() => validateEnv({ ...requiredEnv, DIGEST_RESEND_LOOKBACK_DAYS: "0" })).toThrow(
-      'DIGEST_RESEND_LOOKBACK_DAYS must be an integer in range 1..30, got "0"',
-    );
-  });
-
   describe("PostHog query vars (analytics page)", () => {
     it("validates the explicit local test-traffic switch", () => {
       expect(() => validateEnv({ ...requiredEnv, ANALYTICS_TEST_TRAFFIC: "sometimes" })).toThrow(

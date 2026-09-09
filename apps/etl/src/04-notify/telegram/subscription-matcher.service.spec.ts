@@ -108,15 +108,15 @@ describe("SubscriptionMatcherService", () => {
       const sub = target();
       await service.matchNew(sub);
 
-      expect(sentVacancyIds).toHaveBeenCalledWith(sub.id);
-      expect(search.mock.calls[0][0].activeAfter).toBe(sub.createdAt);
+      expect(sentVacancyIds).toHaveBeenCalledWith(sub.id, sub.createdAt);
+      expect(search.mock.calls[0][0].loadedAfter).toBe(sub.createdAt);
     });
 
     it("floors the scan at the window when the sub is older", async () => {
       await service.matchNew(target({ createdAt: new Date(Date.now() - 100 * DAY_MS) }));
 
       const expected = Date.now() - SCAN_WINDOW_DAYS * DAY_MS;
-      expect(Math.abs(search.mock.calls[0][0].activeAfter.getTime() - expected)).toBeLessThan(5000);
+      expect(Math.abs(search.mock.calls[0][0].loadedAfter.getTime() - expected)).toBeLessThan(5000);
     });
 
     it("passes the already-sent ids as the anti-join exclusion", async () => {
@@ -131,7 +131,7 @@ describe("SubscriptionMatcherService", () => {
       const sub = target();
       await service.matchNew(sub, "chat-1");
 
-      expect(sentVacancyIdsForChat).toHaveBeenCalledWith("chat-1");
+      expect(sentVacancyIdsForChat).toHaveBeenCalledWith("chat-1", sub.createdAt);
       expect(sentVacancyIds).not.toHaveBeenCalled();
       expect(search.mock.calls[0][0].excludeIds).toEqual(["a", "b"]);
     });
@@ -158,7 +158,7 @@ describe("SubscriptionMatcherService", () => {
 
       const [, filters] = matchCandidate.mock.calls[0];
       expect(filters.minFitTier).toBe("GOOD");
-      expect(filters.activeAfter).toBe(sub.createdAt);
+      expect(filters.loadedAfter).toBe(sub.createdAt);
       expect(filters.excludeIds).toEqual(["x"]);
       // MET-120: off-stack became opt-in on the web UI, but a digest has no
       // toggle to unhide them — it must keep sending every match it finds.
@@ -221,7 +221,7 @@ describe("SubscriptionMatcherService", () => {
       const arg = search.mock.calls[0][0];
       expect(arg.excludeIds).toEqual([]);
       const expected = Date.now() - 7 * DAY_MS;
-      expect(Math.abs(arg.activeAfter.getTime() - expected)).toBeLessThan(5000);
+      expect(Math.abs(arg.loadedAfter.getTime() - expected)).toBeLessThan(5000);
     });
   });
 });

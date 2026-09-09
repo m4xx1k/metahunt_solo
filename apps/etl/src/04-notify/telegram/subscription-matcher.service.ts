@@ -57,8 +57,8 @@ export class SubscriptionMatcherService {
   async matchNew(sub: SubscriptionMatchTarget, chatId?: string): Promise<DigestMatch> {
     const floor = candidateFloor(sub.createdAt);
     const excludeIds = chatId
-      ? await this.sentNotifications.sentVacancyIdsForChat(chatId)
-      : await this.sentNotifications.sentVacancyIds(sub.id);
+      ? await this.sentNotifications.sentVacancyIdsForChat(chatId, floor)
+      : await this.sentNotifications.sentVacancyIds(sub.id, floor);
     return this.match(sub, floor, excludeIds);
   }
 
@@ -70,28 +70,28 @@ export class SubscriptionMatcherService {
   // CV subs rank against the resume; filter subs replay the feed query.
   private async match(
     sub: SubscriptionMatchTarget,
-    activeAfter: Date,
+    loadedAfter: Date,
     excludeIds: string[],
   ): Promise<DigestMatch> {
     const result = sub.candidateId
-      ? await this.matchByCv(sub, sub.candidateId, activeAfter, excludeIds)
-      : await this.matchByFilters(sub, activeAfter, excludeIds);
+      ? await this.matchByCv(sub, sub.candidateId, loadedAfter, excludeIds)
+      : await this.matchByFilters(sub, loadedAfter, excludeIds);
     this.logger.log(
-      `match sub ${sub.id}: ${sub.candidateId ? "cv" : "filter"} → ${result.total} since ${activeAfter.toISOString()}`,
+      `match sub ${sub.id}: ${sub.candidateId ? "cv" : "filter"} → ${result.total} since ${loadedAfter.toISOString()}`,
     );
     return result;
   }
 
   private async matchByFilters(
     sub: SubscriptionMatchTarget,
-    activeAfter: Date,
+    loadedAfter: Date,
     excludeIds: string[],
   ): Promise<DigestMatch> {
     const page = await this.feed.search({
       ...(sub.params as Partial<FeedSearchParams>),
       page: 1,
       pageSize: MAX_VACANCIES_PER_RUN,
-      activeAfter,
+      loadedAfter,
       excludeIds,
     });
     return { items: page.items, total: page.total, label: subscriptionLabel(sub) };
@@ -100,7 +100,7 @@ export class SubscriptionMatcherService {
   private async matchByCv(
     sub: SubscriptionMatchTarget,
     candidateId: string,
-    activeAfter: Date,
+    loadedAfter: Date,
     excludeIds: string[],
   ): Promise<DigestMatch> {
     const criteria = paramsToCandidateCriteria(sub.params);
@@ -109,7 +109,7 @@ export class SubscriptionMatcherService {
       {
         ...criteria,
         minFitTier: criteria.minFitTier ?? DEFAULT_CV_MIN_FIT,
-        activeAfter,
+        loadedAfter,
         excludeIds,
       },
       1,
