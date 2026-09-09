@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 import { and, asc, eq, gt, sql } from "drizzle-orm";
 
@@ -9,7 +10,9 @@ import type { SubscriberIdentity } from "../../platform/analytics/analytics.port
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { PostHogClient } from "../../platform/analytics/posthog.client";
 
-const { digestDeliveries, sentNotifications, subscriptions, vacancies } = schema;
+const { digestDeliveries, sentNotifications, subscriptions } = schema;
+
+const DAY_MS = 86_400_000;
 
 export interface CreateDigestDelivery {
   id: string;
@@ -33,39 +36,49 @@ export class SentNotificationsService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly analytics: AnalyticsService,
     private readonly posthog: PostHogClient,
+    private readonly config: ConfigService,
   ) {}
 
+  // Bump-time candidacy (feed.service.ts buildWhere) means a Position loaded
+  // long ago but bumped yesterday is a fresh candidate — bounding "already
+  // sent" by vacancy load time would then exclude nothing and the digest
+  // re-sends it every run. Bound by `sent_at` instead: a re-bump may notify
+  // again only after DIGEST_RESEND_LOOKBACK_DAYS have passed since the send.
+  private resendFloor(): Date {
+    const days = this.config.get<number>("DIGEST_RESEND_LOOKBACK_DAYS", 1);
+    return new Date(Date.now() - days * DAY_MS);
+  }
+
   /**
-   * Vacancy ids already sent for this subscription among vacancies loaded after
-   * `loadedAfter` — i.e. the ones that could still be candidates this run.
-   * Bounded by the scan window so the exclusion list stays small.
+   * Vacancy ids already sent for this subscription within the resend lookback
+   * window — i.e. still off-limits for a repeat notification.
    */
-  async sentVacancyIds(subscriptionId: string, loadedAfter: Date): Promise<string[]> {
+  async sentVacancyIds(subscriptionId: string): Promise<string[]> {
     const rows = await this.db
       .select({ vacancyId: sentNotifications.vacancyId })
       .from(sentNotifications)
-      .innerJoin(vacancies, eq(vacancies.id, sentNotifications.vacancyId))
       .where(
         and(
           eq(sentNotifications.subscriptionId, subscriptionId),
-          gt(vacancies.loadedAt, loadedAfter),
+          gt(sentNotifications.sentAt, this.resendFloor()),
         ),
       );
     return rows.map((r) => r.vacancyId);
   }
 
   /**
-   * Vacancy ids already sent to ANY subscription belonging to this chat, among
-   * vacancies loaded after `loadedAfter`. Feeds the chat-scoped anti-join so a
-   * chat with overlapping subscriptions never receives the same vacancy twice.
+   * Vacancy ids already sent to ANY subscription belonging to this chat within
+   * the resend lookback window. Feeds the chat-scoped anti-join so a chat with
+   * overlapping subscriptions never receives the same vacancy twice.
    */
-  async sentVacancyIdsForChat(chatId: string, loadedAfter: Date): Promise<string[]> {
+  async sentVacancyIdsForChat(chatId: string): Promise<string[]> {
     const rows = await this.db
       .select({ vacancyId: sentNotifications.vacancyId })
       .from(sentNotifications)
-      .innerJoin(vacancies, eq(vacancies.id, sentNotifications.vacancyId))
       .innerJoin(subscriptions, eq(subscriptions.id, sentNotifications.subscriptionId))
-      .where(and(eq(subscriptions.chatId, chatId), gt(vacancies.loadedAt, loadedAfter)));
+      .where(
+        and(eq(subscriptions.chatId, chatId), gt(sentNotifications.sentAt, this.resendFloor())),
+      );
     return rows.map((r) => r.vacancyId);
   }
 

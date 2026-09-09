@@ -140,8 +140,8 @@ function fixtureMatcher(
   return {
     async matchNew(sub, chatId) {
       const alreadySent = chatId
-        ? await sent.sentVacancyIdsForChat(chatId, sub.createdAt)
-        : await sent.sentVacancyIds(sub.id, sub.createdAt);
+        ? await sent.sentVacancyIdsForChat(chatId)
+        : await sent.sentVacancyIds(sub.id);
       const items = alreadySent.includes(vacancyId) ? [] : [fixtureVacancy(vacancyId)];
       return { items, total: items.length, label: "fixture" };
     },
@@ -190,6 +190,7 @@ describe("digest fixture flow", () => {
       db,
       { enqueueDigestSent: jest.fn() } as never,
       dormantPostHog(),
+      { get: () => 1 } as never,
     );
     const service = makeDigest(
       new SubscriptionsService(
@@ -227,6 +228,7 @@ describe("digest fixture flow", () => {
       db,
       { enqueueDigestSent: jest.fn() } as never,
       dormantPostHog(),
+      { get: () => 1 } as never,
     );
     const telegram = new FixtureTelegram();
     const service = makeDigest(
@@ -255,6 +257,7 @@ describe("digest fixture flow", () => {
       db,
       { enqueueDigestSent: jest.fn() } as never,
       dormantPostHog(),
+      { get: () => 1 } as never,
     );
     const telegram = new FixtureTelegram();
     telegram.failNext = true;
@@ -295,6 +298,7 @@ describe("digest fixture flow", () => {
       db,
       { enqueueDigestSent: jest.fn() } as never,
       dormantPostHog(),
+      { get: () => 1 } as never,
     );
     const telegram = new FixtureTelegram();
     const service = makeDigest(
@@ -316,5 +320,45 @@ describe("digest fixture flow", () => {
     await expect(service.deliver(subscription.id)).resolves.toBe(0);
     expect(telegram.messages).toHaveLength(0);
     expect(await db.select().from(sentNotifications)).toHaveLength(0);
+  });
+});
+
+describe("SentNotificationsService — resend lookback (integration)", () => {
+  const DAY_MS = 86_400_000;
+
+  it("excludes a vacancy sent within the lookback window", async () => {
+    const subscription = await seedActiveSubscription();
+    const vacancyId = await seedVacancy();
+    const sent = new SentNotificationsService(
+      db,
+      { enqueueDigestSent: jest.fn() } as never,
+      dormantPostHog(),
+      { get: () => 1 } as never, // N = 1 day
+    );
+    await db.insert(sentNotifications).values({
+      subscriptionId: subscription.id,
+      vacancyId,
+      sentAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12h ago, inside N=1
+    });
+
+    await expect(sent.sentVacancyIds(subscription.id)).resolves.toEqual([vacancyId]);
+  });
+
+  it("re-allows a vacancy once the lookback window has passed", async () => {
+    const subscription = await seedActiveSubscription();
+    const vacancyId = await seedVacancy();
+    const sent = new SentNotificationsService(
+      db,
+      { enqueueDigestSent: jest.fn() } as never,
+      dormantPostHog(),
+      { get: () => 1 } as never, // N = 1 day
+    );
+    await db.insert(sentNotifications).values({
+      subscriptionId: subscription.id,
+      vacancyId,
+      sentAt: new Date(Date.now() - 2 * DAY_MS), // 2d ago, past N=1
+    });
+
+    await expect(sent.sentVacancyIds(subscription.id)).resolves.toEqual([]);
   });
 });

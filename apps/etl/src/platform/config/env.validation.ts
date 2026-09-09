@@ -121,6 +121,18 @@ export function validateEnv(config: RawEnv): RawEnv {
     );
   }
 
+  // How many days after sending a vacancy before a re-bump of the same listing
+  // may notify the same subscriber again (digest anti-join). Low N = a
+  // re-bump re-notifies sooner; high N = at most one notification per N days
+  // no matter how often the listing bumps.
+  const digestResendLookbackDays = parseIntInRange(
+    "DIGEST_RESEND_LOOKBACK_DAYS",
+    asString(config.DIGEST_RESEND_LOOKBACK_DAYS),
+    1,
+    1,
+    30,
+  );
+
   // Optional: empty string disables the Telegram poller (the bot module logs a
   // warning and stays dormant) so the app boots fine before the token is set.
   // The bot @username is derived from the token via getMe — no separate var.
@@ -196,6 +208,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     OPENAI_API_KEY: openaiApiKey,
     OPENAI_MODEL: openaiModel,
     EXTRACTOR_PROVIDER: extractorProvider,
+    DIGEST_RESEND_LOOKBACK_DAYS: digestResendLookbackDays,
     TELEGRAM_BOT_TOKEN: telegramBotToken,
     PUBLIC_BASE_URL: publicBaseUrl,
     WEB_BASE_URL: webBaseUrl,
