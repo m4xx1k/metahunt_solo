@@ -28,7 +28,7 @@ export interface CandidateMatchCriteria {
   sort?: MatchSort;
   sourceId?: string;
   postedWithinDays?: number;
-  loadedAfter?: Date;
+  activeAfter?: Date;
   excludeIds?: string[];
 }
 
@@ -71,7 +71,7 @@ export class CandidateMatchService {
         sort: criteria.sort,
         sourceId: criteria.sourceId,
         postedWithinDays: criteria.postedWithinDays,
-        loadedAfter: criteria.loadedAfter,
+        activeAfter: criteria.activeAfter,
         excludeIds: criteria.excludeIds,
       },
       page,

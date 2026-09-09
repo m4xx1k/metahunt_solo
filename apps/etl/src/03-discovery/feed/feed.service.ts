@@ -83,8 +83,10 @@ export interface FeedSearchParams {
   hasDuplicates?: boolean;
   /** Freshness gate: last_source_activity_at within N days. */
   postedWithinDays?: number;
-  /** Only Positions first observed after this instant (the digest "new since" window). */
-  loadedAfter?: Date;
+  /** Only Positions with source activity (bump or first load) after this instant
+   *  (the digest "new since" window) — matches on `last_source_activity_at`, not
+   *  first load, so a re-dated ("bumped") listing re-enters the window. */
+  activeAfter?: Date;
   /** Drop Positions that any of these Posting ids belongs to (digest anti-join:
    *  already-sent) — matches on the group, so a repost of an already-sent
    *  Position under a different Posting id is still excluded. */
@@ -701,7 +703,7 @@ export function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.hasReservation !== undefined) {
     conds.push(sql`p.has_reservation = ${params.hasReservation}`);
   }
-  if (params.loadedAfter) conds.push(sql`p.first_observed_at > ${params.loadedAfter}`);
+  if (params.activeAfter) conds.push(sql`p.last_source_activity_at > ${params.activeAfter}`);
   if (params.excludeIds && params.excludeIds.length > 0) {
     conds.push(sql`p.position_id NOT IN (
       SELECT position_id FROM postings WHERE posting_id IN (${uuidList(params.excludeIds)})

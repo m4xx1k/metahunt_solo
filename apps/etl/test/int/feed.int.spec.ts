@@ -1,8 +1,9 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
 
+import { repairUniqueVacancy } from "../../src/02-enrich/dedup/unique-vacancy-rollup";
 import { FacetsService } from "../../src/03-discovery/feed/facets.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { resolveFeedQuery } from "../../src/03-discovery/feed/resolve-feed-query";
@@ -191,6 +192,58 @@ describe("FeedService.search — dedup collapse (integration)", () => {
 
     expect(res.items.map((i) => i.id)).toEqual([newer]);
     expect(res.total).toBe(1);
+  });
+});
+
+describe("FeedService.search — activeAfter (digest bump-awareness, integration)", () => {
+  it("includes a Position bumped after activeAfter even though it first published long before", async () => {
+    const s = await seedSource();
+    const role = await seedRole();
+    const firstPublishedAt = new Date(Date.now() - 30 * DAY);
+    const bumpedAt = new Date(Date.now() - 1 * DAY);
+    const activeAfter = new Date(Date.now() - 5 * DAY);
+
+    const vacancyId = await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: firstPublishedAt,
+    });
+
+    // Recruiter bump: source re-dates the listing, the real loader updates
+    // vacancies.published_at and repairUniqueVacancy recomputes last_seen_at.
+    await db
+      .update(schema.vacancies)
+      .set({ publishedAt: bumpedAt })
+      .where(eq(schema.vacancies.id, vacancyId));
+    const [{ groupId }] = await db
+      .select({ groupId: schema.vacancies.uniqueVacancyId })
+      .from(schema.vacancies)
+      .where(eq(schema.vacancies.id, vacancyId));
+    await repairUniqueVacancy(groupId, db);
+
+    const result = await feed.search({ page: 1, pageSize: 10, activeAfter });
+
+    expect(result.items.map((i) => i.id)).toEqual([vacancyId]);
+  });
+
+  it("excludes a Position that never bumped and first published before activeAfter", async () => {
+    const s = await seedSource();
+    const role = await seedRole();
+    await seedVacancy({
+      sourceId: s.sourceId,
+      ingestId: s.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(Date.now() - 30 * DAY),
+    });
+
+    const result = await feed.search({
+      page: 1,
+      pageSize: 10,
+      activeAfter: new Date(Date.now() - 5 * DAY),
+    });
+
+    expect(result.items).toEqual([]);
   });
 });
 

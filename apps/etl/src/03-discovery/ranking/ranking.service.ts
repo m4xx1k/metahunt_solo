@@ -178,7 +178,7 @@ export class RankingService {
         hasReservation: filters.hasReservation,
         sourceId: filters.sourceId,
         postedWithinDays: filters.postedWithinDays,
-        loadedAfter: filters.loadedAfter,
+        activeAfter: filters.activeAfter,
         excludeIds: filters.excludeIds,
         includeRoleless: false,
       }) ?? sql`true`;

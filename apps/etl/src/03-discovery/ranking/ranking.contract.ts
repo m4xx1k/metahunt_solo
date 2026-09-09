@@ -73,7 +73,7 @@ export interface MatchFilters {
   sourceId?: string;
   excludedSkillNodeIds?: string[]; // hard exclusion when a vacancy requires any listed skill
   postedWithinDays?: number; // freshness — coalesce(published_at, loaded_at) within N days
-  loadedAfter?: Date; // digest only: new-since floor
+  activeAfter?: Date; // digest only: new-since floor (source bump or first load)
   excludeIds?: string[]; // digest only: already-sent anti-join
 }
 
