@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { DataTable, type Column } from "@/ui/data/DataTable";
 import { EmptyState } from "@/ui/feedback/EmptyState";
 import { Panel } from "@/ui/layout/Panel";
+import { HintText } from "@/ui/overlay/InfoHint";
 
 type SortKey = "lastAction" | "joined" | "clicks";
 
@@ -133,12 +134,18 @@ export function RosterPanel({
     },
   ];
 
-  return (
-    <Panel
-      title="Subscribers"
-      meta={`${subscribers.length} active or joined · ${period}`}
-      scope="period"
+  const meta = (
+    <HintText
+      label="who's in this window"
+      text={`${subscribers.length} active or joined · ${period}`}
     >
+      Joined in the window OR acted in it — so an old subscriber who clicked today still shows on
+      24h, not just people who signed up recently.
+    </HintText>
+  );
+
+  return (
+    <Panel title="Subscribers" meta={meta} scope="period">
       {subscribers.length === 0 ? (
         <EmptyState
           title="nobody in this window"

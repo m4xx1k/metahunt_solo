@@ -34,7 +34,6 @@ const PERIOD_DAYS: Record<AnalyticsPagePeriod, number> = {
 const FUNNEL_STEP_META: Array<{ step: string; label: string }> = [
   { step: "visited", label: "Visited" },
   { step: "started", label: "Started subscription" },
-  { step: "handoff", label: "Opened handoff" },
   { step: "linked", label: "Linked Telegram" },
 ];
 
@@ -108,7 +107,6 @@ export class AnalyticsPageService {
       behaviorStatus: this.posthogQueryClient.isAvailable() ? "unavailable" : "unconfigured",
       activeUsers: { dau: 0, wau: 0, mau: 0 },
       funnel: FUNNEL_STEP_META.map((meta) => ({ ...meta, people: 0, conversionFromPrev: null })),
-      ctaClicks: 0,
       sources: [],
     };
     if (!this.posthogQueryClient.isAvailable()) return empty;
@@ -152,9 +150,7 @@ export class AnalyticsPageService {
     const funnelRow = funnelRows?.[0];
     const visited = toNumber(funnelRow?.visited);
     const started = toNumber(funnelRow?.started);
-    const handoff = toNumber(funnelRow?.handoff);
     const linked = toNumber(funnelRow?.linked);
-    const cta = toNumber(funnelRow?.cta);
 
     const funnel: AnalyticsPageFunnelStep[] = [
       { ...FUNNEL_STEP_META[0], people: visited, conversionFromPrev: null },
@@ -165,13 +161,8 @@ export class AnalyticsPageService {
       },
       {
         ...FUNNEL_STEP_META[2],
-        people: handoff,
-        conversionFromPrev: conversionRate(started, handoff),
-      },
-      {
-        ...FUNNEL_STEP_META[3],
         people: linked,
-        conversionFromPrev: conversionRate(handoff, linked),
+        conversionFromPrev: conversionRate(started, linked),
       },
     ];
 
@@ -185,7 +176,6 @@ export class AnalyticsPageService {
       behaviorStatus: "ready",
       activeUsers,
       funnel,
-      ctaClicks: cta,
       sources,
     };
   }
@@ -247,10 +237,8 @@ export class AnalyticsPageService {
     return `
       SELECT
           uniqIf(distinct_id, event = '$pageview') AS visited,
-          uniqIf(distinct_id, event = 'subscription_create_started') AS started,
-          uniqIf(distinct_id, event = 'subscription_handoff_opened') AS handoff,
-          uniqIf(distinct_id, event = 'telegram_linked') AS linked,
-          uniqIf(distinct_id, event = 'landing_cta_clicked') AS cta
+          uniqIf(distinct_id, event = 'subscription_created') AS started,
+          uniqIf(distinct_id, event = 'telegram_linked') AS linked
       FROM events
       WHERE timestamp >= now() - INTERVAL ${periodDays} DAY
         AND ${HUMAN_TRAFFIC}${sourceFilter}

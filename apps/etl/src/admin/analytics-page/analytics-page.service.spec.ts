@@ -10,8 +10,8 @@ type Row = Record<string, unknown>;
 
 type DbMock = { execute: jest.Mock };
 
-function emptyDbMock(): DbMock {
-  return { execute: jest.fn().mockResolvedValue({ rows: [] }) };
+function dbMock(rows: Row[] = []): DbMock {
+  return { execute: jest.fn().mockResolvedValue({ rows }) };
 }
 
 type PostHogMock = { isAvailable: jest.Mock; query: jest.Mock; queryWithStatus: jest.Mock };
@@ -46,7 +46,7 @@ async function bootstrap(db: DbMock, postHog: PostHogMock): Promise<AnalyticsPag
 describe("AnalyticsPageService", () => {
   describe("metrics", () => {
     it("returns available:false with zeroed defaults when PostHog is unconfigured, without calling query", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(false);
       const svc = await bootstrap(db, postHog);
 
@@ -59,24 +59,22 @@ describe("AnalyticsPageService", () => {
         funnel: [
           { step: "visited", label: "Visited", people: 0, conversionFromPrev: null },
           { step: "started", label: "Started subscription", people: 0, conversionFromPrev: null },
-          { step: "handoff", label: "Opened handoff", people: 0, conversionFromPrev: null },
           { step: "linked", label: "Linked Telegram", people: 0, conversionFromPrev: null },
         ],
-        ctaClicks: 0,
         sources: [],
       });
       expect(postHog.query).not.toHaveBeenCalled();
     });
 
-    it("maps active users, funnel (with cta split out), and sources when available", async () => {
-      const db = emptyDbMock();
+    it("maps active users, funnel, and sources when available", async () => {
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockImplementation((hogql: string) => {
         if (hogql.includes("uniqIf(distinct_id, timestamp")) {
           return Promise.resolve([{ dau: 10, wau: 40, mau: 478 }]);
         }
-        if (hogql.includes("subscription_create_started")) {
-          return Promise.resolve([{ visited: 478, started: 26, handoff: 25, linked: 31, cta: 20 }]);
+        if (hogql.includes("subscription_created")) {
+          return Promise.resolve([{ visited: 478, started: 26, linked: 20 }]);
         }
         return Promise.resolve([
           { source: "direct", people: 300 },
@@ -89,12 +87,10 @@ describe("AnalyticsPageService", () => {
 
       expect(result.available).toBe(true);
       expect(result.activeUsers).toEqual({ dau: 10, wau: 40, mau: 478 });
-      expect(result.ctaClicks).toBe(20);
       expect(result.funnel).toEqual([
         { step: "visited", label: "Visited", people: 478, conversionFromPrev: null },
         { step: "started", label: "Started subscription", people: 26, conversionFromPrev: 5.4 },
-        { step: "handoff", label: "Opened handoff", people: 25, conversionFromPrev: 96.2 },
-        { step: "linked", label: "Linked Telegram", people: 31, conversionFromPrev: 124 },
+        { step: "linked", label: "Linked Telegram", people: 20, conversionFromPrev: 76.9 },
       ]);
       expect(result.sources).toEqual([
         { source: "direct", people: 300 },
@@ -103,7 +99,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("adds a $referring_domain filter to active-users and funnel queries when source is set", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockResolvedValue([]);
       const svc = await bootstrap(db, postHog);
@@ -120,7 +116,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("never queries a window wider than the picker for a narrow period", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockResolvedValue([]);
       const svc = await bootstrap(db, postHog);
@@ -134,7 +130,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("scales the mau window up to 90 days so 90d and 30d emit different active-users queries", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockResolvedValue([]);
       const svc = await bootstrap(db, postHog);
@@ -152,7 +148,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("escapes a backslash before a quote so it cannot uncomment out of the HogQL string literal", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockResolvedValue([]);
       const svc = await bootstrap(db, postHog);
@@ -164,7 +160,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("returns available:false with zeroed defaults when every PostHog query fails", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockResolvedValue(null);
       const svc = await bootstrap(db, postHog);
@@ -178,16 +174,14 @@ describe("AnalyticsPageService", () => {
         funnel: [
           { step: "visited", label: "Visited", people: 0, conversionFromPrev: null },
           { step: "started", label: "Started subscription", people: 0, conversionFromPrev: null },
-          { step: "handoff", label: "Opened handoff", people: 0, conversionFromPrev: null },
           { step: "linked", label: "Linked Telegram", people: 0, conversionFromPrev: null },
         ],
-        ctaClicks: 0,
         sources: [],
       });
     });
 
     it("reports unavailable rather than presenting partial metrics as complete", async () => {
-      const db = emptyDbMock();
+      const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockImplementation((hogql: string) =>
         hogql.includes("uniqIf(distinct_id, timestamp")
@@ -205,7 +199,7 @@ describe("AnalyticsPageService", () => {
   });
 
   it("uses users.id-compatible distinct_id and excludes test/bot traffic from every KPI query", async () => {
-    const db = emptyDbMock();
+    const db = dbMock();
     const postHog = postHogMock(true);
     postHog.query.mockResolvedValue([]);
     const svc = await bootstrap(db, postHog);
@@ -234,7 +228,7 @@ describe("AnalyticsPageService", () => {
           total: 1,
         },
       ];
-      const db = { execute: jest.fn().mockResolvedValue({ rows }) };
+      const db = dbMock(rows);
       const postHog = postHogMock(false);
       const svc = await bootstrap(db, postHog);
 
@@ -297,7 +291,7 @@ describe("AnalyticsPageService", () => {
           total: 2,
         },
       ];
-      const db = { execute: jest.fn().mockResolvedValue({ rows }) };
+      const db = dbMock(rows);
       const postHog = postHogMock(true);
       // Returned in the OPPOSITE order of the roster rows above.
       postHog.query.mockResolvedValue([
@@ -345,7 +339,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("caps the page size at 100 regardless of a larger requested limit", async () => {
-      const db = { execute: jest.fn().mockResolvedValue({ rows: [] }) };
+      const db = dbMock();
       const postHog = postHogMock(false);
       const svc = await bootstrap(db, postHog);
 
@@ -357,7 +351,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("builds the account roster as a valid CTE query", async () => {
-      const db = { execute: jest.fn().mockResolvedValue({ rows: [] }) };
+      const db = dbMock();
       const postHog = postHogMock(false);
       const svc = await bootstrap(db, postHog);
 
@@ -368,9 +362,7 @@ describe("AnalyticsPageService", () => {
     });
 
     it("keeps the total when the requested offset has no rows", async () => {
-      const db = {
-        execute: jest.fn().mockResolvedValue({ rows: [{ user_id: null, total: 2 }] }),
-      };
+      const db = dbMock([{ user_id: null, total: 2 }]);
       const postHog = postHogMock(false);
       const svc = await bootstrap(db, postHog);
 

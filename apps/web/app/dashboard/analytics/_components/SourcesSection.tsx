@@ -4,6 +4,7 @@ import type { AnalyticsPagePeriod, AnalyticsPageSource } from "@/lib/api/analyti
 import { formatCount } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Panel } from "@/ui/layout/Panel";
+import { HintText } from "@/ui/overlay/InfoHint";
 
 const TOP_N = 10;
 
@@ -29,17 +30,23 @@ export function SourcesSection({
 }) {
   const top = sources.slice(0, TOP_N);
   const max = top[0]?.people ?? 0;
+  const meta = (
+    <HintText label="what counts as a source" text="top 10 · by people">
+      $referring_domain of a $pageview — the site the tab came from, not a UTM. &ldquo;direct&rdquo;
+      means no referrer: typed URL, bookmark, or a UTM link where the referrer header was stripped.
+    </HintText>
+  );
 
   if (top.length === 0) {
     return (
-      <Panel title="Traffic sources" meta="top 10 · by people" scope="period">
+      <Panel title="Traffic sources" meta={meta} scope="period">
         <p className="font-mono text-xs text-text-muted">no pageviews in this period</p>
       </Panel>
     );
   }
 
   return (
-    <Panel title="Traffic sources" meta="top 10 · by people" scope="period">
+    <Panel title="Traffic sources" meta={meta} scope="period">
       <div className="flex flex-col gap-2">
         {top.map((row) => {
           const active = row.source === activeSource;

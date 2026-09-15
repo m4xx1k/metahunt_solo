@@ -1,9 +1,12 @@
 /**
- * Guards the analytics event names against three kinds of drift:
+ * Guards the analytics event names against four kinds of drift:
  *   1. a name is produced but missing from the console's catalog,
  *   2. a name is in the catalog but no producer declares it,
  *   3. a name is declared but nothing can emit it — the failure that let a
  *      no-op stub survive while the check still reported "34 events documented".
+ *   4. a *consumer* — a dashboard query, not a registry — filters on a name
+ *      nothing emits, the failure that let the analytics-page funnel silently
+ *      report 0 for two steps for a month after their producers were deleted.
  *
  *   pnpm analytics:catalog
  *
@@ -57,6 +60,26 @@ const PRODUCERS: Producer[] = [
     reference: "key",
   },
 ];
+
+// A reader that filters on an event name by string literal — a dashboard or
+// report query, not a registry. Unlike a Producer, it has nothing to declare;
+// it only has to stay honest about what it queries.
+interface Consumer {
+  label: string;
+  path: string;
+}
+
+const CONSUMERS: Consumer[] = [
+  {
+    label: "analytics dashboard funnel",
+    path: "apps/etl/src/admin/analytics-page/analytics-page.service.ts",
+  },
+];
+
+function consumedEvents(consumer: Consumer): string[] {
+  const matches = read(consumer.path).matchAll(/event\s*=\s*'([$a-z0-9_]+)'/g);
+  return [...new Set([...matches].map((match) => match[1]))];
+}
 
 interface DeclaredEvent {
   name: string;
@@ -136,6 +159,18 @@ function main(): void {
   for (const entry of catalog) {
     if (!declared.has(entry.name)) {
       problems.push(`in the catalog but no producer declares it: ${entry.name}`);
+    }
+  }
+
+  for (const consumer of CONSUMERS) {
+    for (const name of consumedEvents(consumer)) {
+      const events = declared.get(name);
+      if (!events || !events.some(hasEmitter)) {
+        problems.push(
+          `${consumer.label} (${consumer.path}) filters on "${name}", which no live producer ` +
+            `sends. Point the query at a live event or wire one.`,
+        );
+      }
     }
   }
 

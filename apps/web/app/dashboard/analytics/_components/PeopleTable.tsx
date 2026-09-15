@@ -228,25 +228,25 @@ export function PeopleTable({
       <div className="hidden overflow-hidden border border-border md:block">
         <table className="w-full table-fixed border-collapse text-left font-mono text-xs">
           <thead className="bg-bg text-2xs uppercase tracking-[0.12em] text-text-muted">
-            <tr className="border-b border-border">
-              <th className="w-[31%] px-4 py-3 font-normal">{sortLink("displayName", "person")}</th>
-              <th className="w-[19%] px-4 py-3 font-normal">
+            <tr className="divide-x divide-border/60 border-b border-border">
+              <th className="w-[29%] px-4 py-3 font-normal">{sortLink("displayName", "person")}</th>
+              <th className="w-[18%] px-4 py-3 font-normal">
                 {sortLink("registeredAt", "registered")}
               </th>
-              <th className="w-[15%] px-4 py-3 text-right font-normal">
+              <th className="w-[14%] px-4 py-3 text-right font-normal">
                 {sortLink("subscriptions", "subs")}
               </th>
               <th className="w-[23%] px-4 py-3 font-normal">
                 {sortLink("firstSubscriptionAt", "first sub")}
               </th>
-              <th className="w-14 px-3 py-3" aria-label="Details" />
+              <th className="w-16 px-3 py-3" aria-label="Details" />
             </tr>
           </thead>
           <tbody>
             {people.rows.map((row) => (
               <tr
                 key={row.userId}
-                className="border-b border-border/60 last:border-0 hover:bg-accent/[0.035]"
+                className="divide-x divide-border/60 border-b border-border/60 last:border-0 hover:bg-accent/[0.035]"
               >
                 <td className="px-4 py-3">
                   <PersonIdentity row={row} />
@@ -258,7 +258,7 @@ export function PeopleTable({
                   <span className="font-medium">{row.activeSubscriptions}</span>
                   <span className="text-text-muted"> / {row.subscriptions}</span>
                 </td>
-                <td className="px-4 py-3 text-text-secondary">
+                <td className="whitespace-nowrap px-4 py-3 text-text-secondary">
                   {formatDateTime(row.firstSubscriptionAt)}
                 </td>
                 <td className="px-3 py-3 text-right">
