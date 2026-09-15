@@ -35,11 +35,15 @@ export function DataTable<T>({
     <div className={cn("-mx-5 overflow-x-auto px-5", className)}>
       <table className="w-full border-collapse text-left font-mono text-xs" style={{ minWidth }}>
         <thead className="text-2xs uppercase tracking-[0.12em] text-text-muted">
-          <tr className="border-b border-border">
+          <tr className="divide-x divide-border/60 border-b border-border">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={cn("pb-3 pr-4 font-normal", col.align === "right" && "pr-0 text-right")}
+                className={cn(
+                  "px-4 pb-3 first:pl-0 last:pr-0",
+                  "font-normal",
+                  col.align === "right" && "text-right",
+                )}
               >
                 {col.header}
               </th>
@@ -48,13 +52,17 @@ export function DataTable<T>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-border/60 align-top">
+            <tr
+              key={rowKey(row)}
+              className="divide-x divide-border/60 border-b border-border/60 align-top"
+            >
               {columns.map((col) => (
                 <td
                   key={col.key}
                   className={cn(
-                    "py-3 pr-4 text-text-secondary",
-                    col.align === "right" && "pr-0 text-right tabular-nums",
+                    "px-4 py-3 first:pl-0 last:pr-0",
+                    "text-text-secondary",
+                    col.align === "right" && "text-right tabular-nums",
                   )}
                 >
                   {col.render(row)}

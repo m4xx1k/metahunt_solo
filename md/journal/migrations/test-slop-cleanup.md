@@ -90,7 +90,7 @@ in `lint-staged` pre-commit. `[BAD]` → exit 2 (nudge / block on commit);
 - [ ] T4 — port the posting-grain invariant to an ESLint rule
       `no-untagged-posting-read` — *done when:* a new raw `vacancies` read with no
       `POSTING-GRAIN-EXEMPT` comment fails `pnpm --filter @metahunt/etl lint`
-- [ ] T5 — the 10 `[BAD]` Drizzle-chain specs: for each, int test or repository
+- [ ] T5 — the 9 `[BAD]` Drizzle-chain specs: for each, int test or repository
       seam, then delete the chain mock — *done when:* `test-slop-check.mjs` over
       the suite reports 0 `[BAD]`
 - [ ] T6 — the ~14 `[REVIEW]` specs: strengthen or accept-and-annotate
@@ -107,7 +107,6 @@ apps/etl/src/02-enrich/loader/services/loader-backfill.service.spec.ts   (18 cha
 apps/etl/src/admin/taxonomy/taxonomy.service.spec.ts                     (16)
 apps/etl/src/01-ingest/rss/activities/rss-fetch.activity.spec.ts         (9)
 apps/etl/src/admin/monitoring/monitoring.service.spec.ts                 (8)
-apps/etl/src/admin/analytics-page/analytics-page.service.spec.ts         (7)
 apps/etl/src/01-ingest/rss/activities/rss-extract.activity.spec.ts       (6)
 apps/etl/src/01-ingest/rss/rss-backfill.service.spec.ts                  (6)
 apps/etl/src/01-ingest/rss/rss-ingest.service.spec.ts                    (5)

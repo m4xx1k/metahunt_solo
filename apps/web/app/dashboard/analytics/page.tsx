@@ -121,7 +121,7 @@ export default async function AnalyticsPage({
         ) : (
           <>
             <MetricsTiles activeUsers={metrics.activeUsers} period={period} />
-            <FunnelSection funnel={metrics.funnel} ctaClicks={metrics.ctaClicks} />
+            <FunnelSection funnel={metrics.funnel} />
             <SourcesSection sources={metrics.sources} activeSource={source} period={period} />
           </>
         )}

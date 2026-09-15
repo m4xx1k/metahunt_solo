@@ -1,5 +1,13 @@
 # First-user funnel
 
+> ⚠️ **Stale (2026-09-15).** The event contract below (`landing_view`, `landing_cta_clicked`,
+> `subscription_create_started`, `subscription_handoff_opened`, `activation_value_shown`,
+> `digest_evaluated`, `digest_delivery_failed`, `digest_link_clicked`) was retired in PR #187
+> (2026-08-17) — none of it has a producer anymore. Live event set:
+> `apps/web/entities/analytics/event-catalog.ts`. Live funnel (3 steps —
+> `visited → started → linked`): `apps/etl/src/admin/analytics-page/analytics-page.service.ts`.
+> This file is kept for the deploy-verification checklist shape, not the event names.
+
 ## Event contract
 
 The browser aliases its current PostHog visitor to the opaque subscription UUID

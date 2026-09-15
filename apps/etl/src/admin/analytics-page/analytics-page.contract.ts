@@ -30,9 +30,6 @@ export interface AnalyticsPageMetrics {
   behaviorStatus: "unconfigured" | "denied" | "unavailable" | "empty" | "ready";
   activeUsers: AnalyticsPageActiveUsers;
   funnel: AnalyticsPageFunnelStep[];
-  // landing_cta_clicked people — shown beside the funnel, not inside it (see
-  // spec: fewer people hit this than reach the form, so it's not a gate).
-  ctaClicks: number;
   sources: AnalyticsPageSource[];
 }
 

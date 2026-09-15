@@ -2,6 +2,7 @@ import type { AnalyticsPageActiveUsers, AnalyticsPagePeriod } from "@/lib/api/an
 import { formatCount } from "@/lib/format";
 import { StatCard } from "@/ui/data/StatCard";
 import { StatGrid } from "@/ui/data/StatGrid";
+import { HintText } from "@/ui/overlay/InfoHint";
 
 // MAU scales to the selected period; DAU and WAU keep their natural windows.
 const NATURAL_WINDOW_DAYS = { dau: 1, wau: 7 } as const;
@@ -31,17 +32,29 @@ export function MetricsTiles({
       <StatCard
         label="DAU"
         value={formatCount(activeUsers.dau)}
-        hint={windowLabel("dau", period)}
+        hint={
+          <HintText label="why DAU's window is fixed" text={windowLabel("dau", period)}>
+            Always a 24h window, not the picker — a fixed daily pulse to compare across periods.
+          </HintText>
+        }
       />
       <StatCard
         label="WAU"
         value={formatCount(activeUsers.wau)}
-        hint={windowLabel("wau", period)}
+        hint={
+          <HintText label="why WAU's window is fixed" text={windowLabel("wau", period)}>
+            Always a 7d window (capped to the picker on 24h) — same reason as DAU.
+          </HintText>
+        }
       />
       <StatCard
         label="MAU"
         value={formatCount(activeUsers.mau)}
-        hint={windowLabel("mau", period)}
+        hint={
+          <HintText label="why MAU scales with the picker" text={windowLabel("mau", period)}>
+            The one tile that scales with the picker — 90d reads distinctly from 30d here.
+          </HintText>
+        }
       />
     </StatGrid>
   );

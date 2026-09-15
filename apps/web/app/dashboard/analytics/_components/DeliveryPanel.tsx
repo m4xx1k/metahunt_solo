@@ -4,6 +4,7 @@ import { DataTable, type Column } from "@/ui/data/DataTable";
 import { StatCard } from "@/ui/data/StatCard";
 import { StatGrid } from "@/ui/data/StatGrid";
 import { Panel } from "@/ui/layout/Panel";
+import { HintText } from "@/ui/overlay/InfoHint";
 
 type DeliveryDay = ProductDeliveryHealth["daily"][number];
 
@@ -29,8 +30,15 @@ export function DeliveryPanel({
   delivery: ProductDeliveryHealth;
   period: string;
 }) {
+  const meta = (
+    <HintText label="what counts as a digest" text={`digests sent · ${period}`}>
+      Counted from sent_notifications — one digest is one send to one subscription. The schedule is
+      hourly, so a send is one chat&rsquo;s one hour.
+    </HintText>
+  );
+
   return (
-    <Panel title="Delivery" meta={`digests sent · ${period}`} scope="period">
+    <Panel title="Delivery" meta={meta} scope="period">
       <StatGrid cols={3}>
         <StatCard label="digests" value={formatCount(delivery.digestsSent)} hint={period} />
         <StatCard label="chats reached" value={formatCount(delivery.chatsReached)} hint={period} />

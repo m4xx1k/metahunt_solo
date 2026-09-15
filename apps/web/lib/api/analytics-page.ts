@@ -50,9 +50,6 @@ export interface AnalyticsPageMetrics {
   behaviorStatus: "unconfigured" | "denied" | "unavailable" | "empty" | "ready";
   activeUsers: AnalyticsPageActiveUsers;
   funnel: AnalyticsPageFunnelStep[];
-  // landing_cta_clicked people — deliberately outside `funnel`: fewer people
-  // fire it than reach the form, so gating on it would undercount.
-  ctaClicks: number;
   sources: AnalyticsPageSource[];
 }
 
