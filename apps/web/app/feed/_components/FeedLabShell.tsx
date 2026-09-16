@@ -128,14 +128,7 @@ export function FeedLabShell({
 
           <div className={cn("flex flex-col gap-4 transition-opacity", busy && "opacity-60")}>
             {cold.data?.items.map((vacancy) => (
-              // hasViewer: no sample → locked CTA; a seeded sample → real Fit
-              // badge + ✅/❌/➕ counts from `viewerSkills`.
-              <VacancyMatchCard
-                key={vacancy.id}
-                vacancy={vacancy}
-                hasViewer={hasViewer}
-                viewerSkills={viewerSkills}
-              />
+              <VacancyMatchCard key={vacancy.id} vacancy={vacancy} viewerSkills={viewerSkills} />
             ))}
           </div>
 

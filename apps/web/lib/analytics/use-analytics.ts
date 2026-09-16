@@ -21,7 +21,6 @@ const ANALYTICS_EVENTS = {
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
   matchFlowCompleted: "match_flow_completed",
-  feedScoreLocked: "feed_score_locked",
 } as const;
 
 export type TelegramLoginMethod = "deeplink";
@@ -101,13 +100,6 @@ export function useAnalytics() {
 
       baitClick(feature: "cover_letter" | "tune_cv", vacancyId?: string) {
         capture(posthog, ANALYTICS_EVENTS.baitClick, { feature, vacancy_id: vacancyId });
-      },
-
-      // A cold visitor tapped the locked Fit slot on a /feed card. The whole
-      // point of showing a locked score is to find out whether the number is
-      // what people actually want — this is that measurement.
-      feedScoreLocked(vacancyId: string) {
-        capture(posthog, ANALYTICS_EVENTS.feedScoreLocked, { vacancy_id: vacancyId });
       },
 
       matchFlowCompleted(props: {

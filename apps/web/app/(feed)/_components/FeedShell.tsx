@@ -167,7 +167,6 @@ export function FeedShell({
         offset={offset}
         onNavigate={goToOffset}
         isFetching={isFetching || settling}
-        hasViewer={viewer != null}
         viewerSkills={viewerSkills}
         controls={
           <FeedListControls

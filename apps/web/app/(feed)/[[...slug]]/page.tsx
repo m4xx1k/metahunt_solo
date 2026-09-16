@@ -23,8 +23,7 @@ import { cvApi } from "@/lib/api/cv";
 import { readerFrom } from "@/features/vacancy-filters/url-params";
 import { coldKey } from "@/features/vacancy-filters/query-keys";
 import { FeedHero } from "@/app/(feed)/_components/market/FeedHero";
-import { TrackIntro } from "@/app/(feed)/_components/market/TrackIntro";
-import { TrackPicker } from "@/app/(feed)/_components/market/TrackPicker";
+import { TrackStrip } from "@/app/(feed)/_components/market/TrackStrip";
 import { HowItWorks } from "@/app/(feed)/_components/how/HowItWorks";
 import { buildFeedListQuery } from "@/app/(feed)/_components/feed-query";
 import {
@@ -183,15 +182,7 @@ export default async function FeedPage({
               : undefined
           }
         />
-        {track ? <TrackIntro track={track} /> : null}
-        {!track ? (
-          <TrackPicker
-            key={trackSlug ?? "all"}
-            tracks={tracks}
-            activeSlug={trackSlug ?? null}
-            lastSyncAt={aggregates.lastSyncAt}
-          />
-        ) : null}
+        <TrackStrip tracks={tracks} activeSlug={trackSlug ?? null} />
         <div className="mx-auto w-full max-w-[1536px] px-6 pb-24 sm:pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <FeedShellIsland
@@ -209,7 +200,7 @@ export default async function FeedPage({
           </HydrationBoundary>
         </div>
         {!track ? (
-          <section className="border-t border-border px-6 py-16 md:px-12 md:py-20">
+          <section className="border-t border-border px-6 py-16 lg:px-12 lg:py-20">
             <div className="mx-auto flex w-full max-w-[1536px] flex-col gap-6">
               <p className="font-mono text-2xs uppercase tracking-[0.18em] text-text-muted">
                 &gt; як це працює
