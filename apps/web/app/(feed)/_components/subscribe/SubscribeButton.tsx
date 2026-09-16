@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/ui";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptions";
+import { formatMatchRate, useMatchRate } from "../../_hooks/use-match-rate";
 
 // Single tap: create a fresh pending subscription from the current facet filter
 // and hand off straight to Telegram, where `/start <id>` links the chat and
@@ -16,6 +17,7 @@ import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptio
 export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
+  const rateLabel = formatMatchRate(useMatchRate(params));
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
@@ -39,15 +41,20 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   }, [isSubmitting, params, analytics]);
 
   return (
-    <Button
-      type="button"
-      variant="primary"
-      size="sm"
-      className="w-full"
-      disabled={isSubmitting}
-      onClick={handleSubscribe}
-    >
-      Get alerts on Telegram
-    </Button>
+    <div className="flex flex-col gap-1.5">
+      {rateLabel ? (
+        <p className="text-center font-mono text-2xs text-text-muted">{rateLabel} new matches</p>
+      ) : null}
+      <Button
+        type="button"
+        variant="primary"
+        size="sm"
+        className="w-full"
+        disabled={isSubmitting}
+        onClick={handleSubscribe}
+      >
+        Get alerts on Telegram
+      </Button>
+    </div>
   );
 }

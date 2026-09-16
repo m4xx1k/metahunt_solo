@@ -13,8 +13,15 @@ import {
   asEnums,
   type FilterState,
 } from "@/features/vacancy-filters/types";
-import type { EmploymentType, EnglishLevel, Seniority, WorkFormat } from "@/lib/api/vacancies";
+import type {
+  EmploymentType,
+  EnglishLevel,
+  ListVacanciesQuery,
+  Seniority,
+  WorkFormat,
+} from "@/lib/api/vacancies";
 import type { FitTier } from "@/lib/api/ranking";
+import { formatMatchRate, useMatchRate } from "../_hooks/use-match-rate";
 
 // CV subscribe: replays the on-screen filters — including domain + experience
 // (the replay-gap fix) — into a Telegram digest ranked by the active CV.
@@ -34,6 +41,9 @@ export function CvSubscribe({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
   const { addSub } = useSaved();
+  // The rate only needs the real, JWT-resolved CV (this component is disabled
+  // for a sample profile below), so it never has to pass a candidateId.
+  const rateLabel = formatMatchRate(useMatchRate(disabled ? null : toRateQuery(filters)));
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
@@ -74,16 +84,21 @@ export function CvSubscribe({
   }
 
   return (
-    <Button
-      type="button"
-      variant="primary"
-      size="sm"
-      className="w-full"
-      disabled={isSubmitting}
-      onClick={handleSubscribe}
-    >
-      Get alerts on Telegram
-    </Button>
+    <div className="flex flex-col gap-1.5">
+      {rateLabel ? (
+        <p className="text-center font-mono text-2xs text-text-muted">{rateLabel} new matches</p>
+      ) : null}
+      <Button
+        type="button"
+        variant="primary"
+        size="sm"
+        className="w-full"
+        disabled={isSubmitting}
+        onClick={handleSubscribe}
+      >
+        Get alerts on Telegram
+      </Button>
+    </div>
   );
 }
 
@@ -102,4 +117,12 @@ function toCvMatchParams(f: FilterState): CvMatchParams {
     minFitTier: (f.minFitTier as FitTier | null) ?? undefined,
     postedWithinDays: FRESHNESS_DAYS[f.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS],
   };
+}
+
+// Same criteria as the subscription itself — its `postedWithinDays` is
+// overridden by the rate hook's own fixed window (see use-match-rate).
+function toRateQuery(
+  f: FilterState,
+): Omit<ListVacanciesQuery, "page" | "pageSize" | "postedWithinDays"> {
+  return toCvMatchParams(f);
 }
