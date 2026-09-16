@@ -4,7 +4,10 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/ui";
+import { AuthChoice } from "@/features/auth/auth-choice";
+import { useSession } from "@/features/auth/use-session";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
+import { ApiError } from "@/lib/api/client";
 import { useSaved } from "@/lib/hooks/use-saved";
 import { subscriptionsApi, type CvMatchParams } from "@/lib/api/subscriptions";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
@@ -32,6 +35,9 @@ export function SubscribeCard({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const analytics = useAnalytics();
+  // Both subscribe endpoints are behind the JWT guard, so an anonymous click
+  // could only ever 401 — offer the login that unblocks it instead.
+  const { isLoggedIn, isLoading: sessionLoading } = useSession();
   const { addSub } = useSaved();
   const isSample = viewer?.isSample ?? false;
   const candidateId = viewer && !isSample ? viewer.candidateId : null;
@@ -58,10 +64,16 @@ export function SubscribeCard({
       } else {
         window.location.href = res.deepLink;
       }
-    } catch {
+    } catch (e) {
       analytics.subscriptionCreateFailed(candidateId ? "cv" : "feed");
       tab?.close();
-      toast.error("Failed to create alert");
+      // A dormant bot (no TELEGRAM_BOT_TOKEN) is the one 400 here, and it is the
+      // server's problem, not a filter the user can fix — say so.
+      toast.error(
+        e instanceof ApiError && e.status === 400
+          ? "Telegram is unavailable right now"
+          : "Failed to create alert",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -86,16 +98,20 @@ export function SubscribeCard({
           {rateLabel} new matches
         </p>
       ) : null}
-      <Button
-        type="button"
-        variant="primary"
-        size="md"
-        className="w-full"
-        disabled={isSubmitting}
-        onClick={handleSubscribe}
-      >
-        Get alerts on Telegram
-      </Button>
+      {isLoggedIn || sessionLoading ? (
+        <Button
+          type="button"
+          variant="primary"
+          size="md"
+          className="w-full"
+          disabled={isSubmitting || sessionLoading}
+          onClick={handleSubscribe}
+        >
+          Get alerts on Telegram
+        </Button>
+      ) : (
+        <AuthChoice label="Get alerts on Telegram" size="md" className="w-full" align="start" />
+      )}
     </div>
   );
 }
