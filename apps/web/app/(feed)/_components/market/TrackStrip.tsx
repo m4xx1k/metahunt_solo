@@ -91,7 +91,7 @@ export function TrackStrip({ tracks, activeSlug }: Props) {
       </div>
 
       {children.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-2">
           {children.map((child) => {
             const isActive = active?.slug === child.slug;
             return (
@@ -104,7 +104,7 @@ export function TrackStrip({ tracks, activeSlug }: Props) {
                 }
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "border px-2 py-1 font-mono text-2xs uppercase tracking-wider transition-colors",
+                  "border px-3.5 py-2 font-mono text-xs uppercase tracking-wider transition-colors sm:text-sm",
                   isActive
                     ? "border-accent bg-accent text-bg"
                     : "border-border text-text-secondary hover:border-accent hover:text-accent",
