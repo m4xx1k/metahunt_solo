@@ -183,7 +183,7 @@ export default async function FeedPage({
           }
         />
         <TrackStrip tracks={tracks} activeSlug={trackSlug ?? null} />
-        <div className="mx-auto w-full max-w-[1536px] px-6 pb-24 sm:pb-20 lg:px-12">
+        <div className="mx-auto w-full max-w-[1536px] px-6 pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <FeedShellIsland
               aggregates={aggregates}

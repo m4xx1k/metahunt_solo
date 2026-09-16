@@ -13,10 +13,15 @@ import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
-import { buildFeedListQuery, PAGE_SIZE, toSubscriptionParams } from "./feed-query";
+import {
+  buildFeedListQuery,
+  PAGE_SIZE,
+  toCvSubscriptionParams,
+  toSubscriptionParams,
+} from "./feed-query";
 import { FeedFilters } from "./market/FeedFilters";
 import { FeedRail } from "./FeedRail";
-import { SubscribeButton } from "./subscribe/SubscribeButton";
+import { SubscribeCard } from "./subscribe/SubscribeCard";
 import { VacancyList } from "./vacancy-list/VacancyList";
 import { useRoleSuggestions } from "../_hooks/use-role-suggestions";
 
@@ -31,6 +36,9 @@ export interface FeedViewer {
   profile: { title: string; role?: string | null; seniority?: string | null };
   onPickCv: (candidateId: string) => void;
   onCandidateGone: (candidateId: string) => void;
+  /** Open the file picker — the CV rail owns the only "+ upload" on the page. */
+  onUpload: () => void;
+  uploading: boolean;
 }
 
 // The interactive feed grid: server-seeded, client-driven. Reads the URL, reads
@@ -122,7 +130,12 @@ export function FeedShell({
   // Present only when the server actually scored the viewer (JWT CV or sample).
   const viewerSkills = data?.viewerSkills ?? null;
 
-  const subscriptionParams = query ? toSubscriptionParams(query) : null;
+  // One subscribe control for both states; only the payload differs.
+  const subscriptionParams = query
+    ? viewer && !viewer.isSample
+      ? toCvSubscriptionParams(query)
+      : toSubscriptionParams(query)
+    : null;
 
   const goToOffset = useCallback(
     (target: number) =>
@@ -139,14 +152,29 @@ export function FeedShell({
     <div
       className={cn(
         "grid grid-cols-1 gap-8 lg:items-start",
+        // The third column only fits from xl. Below it the rail wraps under the
+        // filters, but the feed keeps its sidebar — a viewer used to collapse
+        // the whole page into one stacked column for every lg-width screen.
         threeCol
-          ? "xl:grid-cols-[300px_minmax(0,1fr)_300px]"
+          ? "lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_300px]"
           : "lg:grid-cols-[300px_minmax(0,1fr)]",
       )}
     >
       <div className={cn("flex flex-col gap-4", threeCol && STICKY_RAIL)}>
-        {/* The plain feed digest — the CV-ranked one lives in the viewer rail. */}
-        {!viewer && subscriptionParams ? <SubscribeButton params={subscriptionParams} /> : null}
+        {subscriptionParams ? (
+          <SubscribeCard
+            params={subscriptionParams}
+            viewer={
+              viewer
+                ? {
+                    candidateId: viewer.candidateId,
+                    label: viewer.profile.title,
+                    isSample: viewer.isSample,
+                  }
+                : null
+            }
+          />
+        ) : null}
         <FeedFilters
           aggregates={aggregates}
           tracks={tracks}
@@ -185,6 +213,8 @@ export function FeedShell({
           totalVacancies={result.total}
           onPickCv={viewer.onPickCv}
           onCandidateGone={viewer.onCandidateGone}
+          onUpload={viewer.onUpload}
+          uploading={viewer.uploading}
         />
       ) : coldRail != null ? (
         <div className={STICKY_RAIL}>{coldRail}</div>

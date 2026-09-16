@@ -1,24 +1,26 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import { cn, STICKY_RAIL } from "@/lib/utils";
 import { SaveCvNudge } from "@/features/auth/save-cv-nudge";
 import { CandidateProfile } from "@/features/cv-match/CandidateProfile";
 import { SkillRecommendations } from "@/features/cv-match/SkillRecommendations";
-import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { cvApi } from "@/lib/api/cv";
 import type { NodeRef } from "@/lib/api/vacancies";
+import { CvDropzone } from "./CvDropzone";
 import { CvSelect } from "./CvSelect";
-import { CvSubscribe } from "./CvSubscribe";
 
 // The right rail once a CV (or a sample) is in view: switch CV, sanity-check the
-// extraction, see what to learn next, subscribe. The scored skills come from the
+// extraction, see what to learn next. The scored skills come from the
 // feed response (`viewerSkills`) so the profile and the cards can never disagree
-// on which CV they reflect (MET-144). `unmatched` is the candidate's own
-// extraction gap, not per-vacancy — one GET /cv/:id carries it, and its 404 is
-// the staleness signal a deleted/GC'd CV trips.
+// on which CV they reflect (MET-144). Subscribing is not here: it belongs to the
+// filter, not to the CV, so it lives in the filter column (SubscribeCard).
+// `unmatched` is the candidate's own extraction gap, not per-vacancy — one
+// GET /cv/:id carries it, and its 404 is the staleness signal a deleted/GC'd
+// CV trips.
 export function FeedRail({
   candidateId,
   viewerSkills,
@@ -27,6 +29,8 @@ export function FeedRail({
   totalVacancies,
   onPickCv,
   onCandidateGone,
+  onUpload,
+  uploading,
 }: {
   candidateId: string;
   viewerSkills: readonly NodeRef[];
@@ -35,9 +39,9 @@ export function FeedRail({
   totalVacancies: number;
   onPickCv: (candidateId: string) => void;
   onCandidateGone: (candidateId: string) => void;
+  onUpload: () => void;
+  uploading: boolean;
 }) {
-  const { filters } = useUrlFilters();
-
   const {
     data: cv,
     isError,
@@ -71,6 +75,17 @@ export function FeedRail({
     <div className={cn("flex flex-col gap-4", STICKY_RAIL)}>
       {!isSample ? <SaveCvNudge /> : null}
       <CvSelect activeId={candidateId} onPick={onPickCv} />
+      {/* The page's one upload control once a CV is in view (ColdRecsTeaser is
+          its cold twin), with the privacy print attached to it. */}
+      <div className="flex flex-col items-end gap-1">
+        <CvDropzone onClick={onUpload} busy={uploading} />
+        <Link
+          href="/privacy#cv"
+          className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+        >
+          AI processed · raw text not stored
+        </Link>
+      </div>
       <CandidateProfile
         candidateId={candidateId}
         title={profile.title}
@@ -82,12 +97,6 @@ export function FeedRail({
         isSample={isSample}
       />
       {!isSample && rec ? <SkillRecommendations rec={rec} /> : null}
-      <CvSubscribe
-        candidateId={candidateId}
-        filters={filters}
-        label={profile.title}
-        disabled={isSample}
-      />
     </div>
   );
 }
