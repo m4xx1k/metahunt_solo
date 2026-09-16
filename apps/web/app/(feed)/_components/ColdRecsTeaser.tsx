@@ -8,8 +8,8 @@ import { UPLOAD_BTN } from "./CvDropzone";
 // to learn next" recs behind an upload prompt. The shell only mounts this when
 // there's no viewer, so there's never a saved CV to preview real recs from —
 // it's always the skeleton. Upload is routed through the shell's central picker,
-// but at xl+ that top bar hides (see FeedShellIsland) so this is the only CTA
-// on screen — carries its own privacy print rather than relying on the hidden one.
+// whose own bar stays hidden without a viewer (see FeedShellIsland) — this is
+// the one CTA, at every width, so it carries its own privacy print too.
 export function ColdRecsTeaser({ onUpload }: { onUpload: () => void }) {
   return (
     <div className="relative overflow-hidden">

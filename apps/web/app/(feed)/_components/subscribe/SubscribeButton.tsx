@@ -41,14 +41,19 @@ export function SubscribeButton({ params }: { params: SubscriptionParams }) {
   }, [isSubmitting, params, analytics]);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    // Sticky (not fixed) to its own containing block, so it rides along while
+    // the (often long) filter panel below it scrolls, without ever leaving
+    // document flow or overlaying the page like a fixed bar would.
+    <div className="sticky top-24 z-10 flex flex-col gap-2 border-2 border-accent bg-accent-subtle-bg p-3 shadow-brut">
       {rateLabel ? (
-        <p className="text-center font-mono text-2xs text-text-muted">{rateLabel} new matches</p>
+        <p className="text-center font-mono text-2xs text-text-secondary">
+          {rateLabel} new matches
+        </p>
       ) : null}
       <Button
         type="button"
         variant="primary"
-        size="sm"
+        size="md"
         className="w-full"
         disabled={isSubmitting}
         onClick={handleSubscribe}

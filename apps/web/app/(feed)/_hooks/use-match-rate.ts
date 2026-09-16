@@ -20,13 +20,13 @@ export function useMatchRate(
   return data?.total;
 }
 
-// Never surfaces "~0" — a filter with nothing to show over a month isn't worth
-// quantifying, it's just quiet.
+// Weekly, not daily — a daily count reads as unimpressively small for most
+// filters even when the weekly one is a healthy number. Never surfaces "~0":
+// a filter with nothing to show over a month isn't worth quantifying, it's
+// just quiet.
 export function formatMatchRate(total: number | undefined): string | null {
   if (total == null || total <= 0) return null;
-  const perDay = total / RATE_WINDOW_DAYS;
-  if (perDay >= 1) return `~${Math.round(perDay)}/day`;
-  const perWeek = perDay * 7;
+  const perWeek = (total / RATE_WINDOW_DAYS) * 7;
   if (perWeek >= 1) return `~${Math.round(perWeek)}/week`;
   return `~${total} in the last month`;
 }

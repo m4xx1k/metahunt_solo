@@ -142,7 +142,6 @@ export function FeedFilters({
       </button>
 
       <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
-        <DedupeToggle />
         {/* Track-mode drops the bar (axis sections show their own state) —
             except when the tree is hidden (merged), where it is the only
             active-filter summary + clear-all. */}
@@ -216,6 +215,7 @@ export function FeedFilters({
             onChange={api.setSource}
           />
         </aside>
+        <DedupeToggle />
       </div>
     </div>
   );
