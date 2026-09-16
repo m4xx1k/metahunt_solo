@@ -198,8 +198,11 @@ export function FeedShellIsland({
         }}
         className={cn(
           // Fixed thumb-bar at the bottom on mobile; a static top bar from sm up.
+          // Without a CV, xl+ hides this — the rail's ColdRecsTeaser is the
+          // only ask there, so the two CTAs don't compete on the same screen.
           "z-40 sm:z-30 flex items-center gap-3 border-t px-3 py-2.5 transition-colors",
           "fixed inset-x-0 bottom-0 sm:static sm:border sm:scroll-mt-24",
+          !candidateId && "xl:hidden",
           dragging ? "border-accent bg-accent/5" : "border-border bg-bg-card",
         )}
       >
@@ -210,10 +213,14 @@ export function FeedShellIsland({
 
       <div ref={contentRef} className="flex scroll-mt-24 flex-col gap-4">
         {/* CV-privacy print attached to the upload control — kept out of the
-            control bar's flex row so it can't stretch it. */}
+            control bar's flex row so it can't stretch it. Hidden together with
+            the bar at xl+ without a CV — ColdRecsTeaser carries its own copy. */}
         <Link
           href="/privacy#cv"
-          className="-mt-2 self-end font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+          className={cn(
+            "-mt-2 self-end font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent",
+            !candidateId && "xl:hidden",
+          )}
         >
           AI processed · raw text not stored
         </Link>
