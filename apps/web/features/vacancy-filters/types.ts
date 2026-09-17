@@ -165,6 +165,8 @@ export interface FiltersApi {
   setSort: (v: string | null) => void;
   /** Warm-only: unhide vacancies outside the candidate's stack. */
   setIncludeOffStack: (v: boolean) => void;
+  /** Replace every filter at once — replaying a saved subscription. */
+  replace: (next: FilterState) => void;
   clear: () => void;
   activeCount: number;
 }

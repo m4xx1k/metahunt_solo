@@ -1,4 +1,5 @@
-import type { CvMatchParams } from "@/lib/api/subscriptions";
+import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
+import type { MeSubscription } from "@/lib/api/me";
 import type { EmploymentType, EnglishLevel, Seniority, WorkFormat } from "@/lib/api/vacancies";
 import type { FitTier } from "@/lib/api/ranking";
 
@@ -15,9 +16,17 @@ function freshnessFor(days: number | undefined): string {
   return entry?.[0] ?? DEFAULT_FRESHNESS;
 }
 
-export function subscriptionCriteriaToFilters(params: CvMatchParams): FilterState {
+// `sources` resolves a persisted sourceId back to the code the URL carries;
+// without it (the CV editor, which has no source facet) that filter stays off.
+export function subscriptionCriteriaToFilters(
+  params: CvMatchParams | SubscriptionParams,
+  sources: { id: string; code: string }[] = [],
+): FilterState {
+  const p = params as SubscriptionParams;
   return {
     ...EMPTY_FILTERS,
+    skillIds: p.skillIds ?? [],
+    sourceCode: sources.find((s) => s.id === p.sourceId)?.code ?? null,
     roleIds: params.roleIds ?? [],
     excludedSkillIds: params.excludedSkillIds ?? [],
     domainIds: params.domainIds ?? [],
@@ -83,5 +92,35 @@ export function areFiltersEqual(left: FilterState, right: FilterState): boolean 
     // Digests always include off-stack matches, so "no preference" means
     // included on both sides of the comparison.
     (left.includeOffStack ?? true) === (right.includeOffStack ?? true)
+  );
+}
+
+type Params = SubscriptionParams | CvMatchParams;
+
+// Compare at the params level, not the FilterState level: params are what the
+// digest actually replays, and they round-trip through the API unchanged. Going
+// via FilterState would have to invent a sourceId→sourceCode lookup and would
+// silently drop the fields that shape has no room for.
+function normalize(p: Params): string {
+  const entries = Object.entries(p as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0))
+    .map(([k, v]): [string, unknown] => [k, Array.isArray(v) ? [...v].sort() : v])
+    .sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(entries);
+}
+
+// The subscription that already delivers exactly what is on screen, or null. A
+// CV digest and a plain one are never the same subscription even with identical
+// filters — they rank differently — so the candidate has to match too.
+export function findMatchingSubscription(
+  subs: MeSubscription[] | undefined,
+  params: Params,
+  candidateId: string | null,
+): MeSubscription | null {
+  if (!subs) return null;
+  const wanted = normalize(params);
+  return (
+    subs.find((s) => (s.candidateId ?? null) === candidateId && normalize(s.params) === wanted) ??
+    null
   );
 }

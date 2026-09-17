@@ -5,8 +5,8 @@ import { useCallback, useMemo } from "react";
 
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
 import { countActiveFilters, DEFAULT_FRESHNESS } from "./types";
-import type { FiltersApi } from "./types";
-import { LIST_SEP, readFilterState, readList } from "./url-params";
+import type { FilterState, FiltersApi } from "./types";
+import { LIST_SEP, readFilterState, readList, writeFilterState } from "./url-params";
 import { useStableFilters } from "./use-stable-filters";
 
 // URL-backed FiltersApi — the one filter store. State lives in the query string
@@ -67,6 +67,11 @@ export function useUrlFilters(): FiltersApi {
     [commit],
   );
 
+  const replace = useCallback(
+    (next: FilterState) => commit((n) => writeFilterState(n, next)),
+    [commit],
+  );
+
   const clear = useCallback(
     () =>
       commit((n) => {
@@ -120,6 +125,7 @@ export function useUrlFilters(): FiltersApi {
       (v: boolean) => commit((n) => (v ? n.set("offStack", "true") : n.delete("offStack"))),
       [commit],
     ),
+    replace,
     clear,
     activeCount,
   };

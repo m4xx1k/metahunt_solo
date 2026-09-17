@@ -53,6 +53,35 @@ export function readFilterState(p: ParamReader): FilterState {
   };
 }
 
+// The inverse of readFilterState: stamp a whole FilterState onto a live
+// URLSearchParams, clearing every key it owns first so applying a saved filter
+// can't leave one from the previous one behind. Paging is not ours to touch.
+export function writeFilterState(n: URLSearchParams, f: FilterState): void {
+  const list = (key: string, v: string[]) =>
+    v.length > 0 ? n.set(key, v.join(LIST_SEP)) : n.delete(key);
+  const value = (key: string, v: string | null | undefined) => (v ? n.set(key, v) : n.delete(key));
+  const tristate = (key: string, v: boolean | null) =>
+    v === null ? n.delete(key) : n.set(key, String(v));
+
+  list("roles", f.roleIds);
+  list("skills", f.skillIds);
+  list("excludeSkills", f.excludedSkillIds);
+  list("domains", f.domainIds);
+  value("source", f.sourceCode);
+  list("seniorities", f.seniorities);
+  list("workFormats", f.workFormats);
+  list("english", f.englishLevels);
+  list("employment", f.employmentTypes);
+  list("experience", f.experienceYears);
+  value("fresh", f.freshness === DEFAULT_FRESHNESS ? null : f.freshness);
+  tristate("test", f.test);
+  tristate("reservation", f.reservation);
+  value("minFitTier", f.minFitTier);
+  value("sort", f.sort);
+  if (f.includeOffStack === true) n.set("offStack", "true");
+  else n.delete("offStack");
+}
+
 // Adapt Next's server `searchParams` (a record of string | string[]) to a
 // ParamReader. Absent → has() false (an axis param falls back to its preset);
 // present-but-empty ("") → has() true (an explicit empty axis).

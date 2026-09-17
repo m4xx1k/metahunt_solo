@@ -164,6 +164,7 @@ export function FeedShell({
         {subscriptionParams ? (
           <SubscribeCard
             params={subscriptionParams}
+            sources={aggregates.sources}
             viewer={
               viewer
                 ? {
