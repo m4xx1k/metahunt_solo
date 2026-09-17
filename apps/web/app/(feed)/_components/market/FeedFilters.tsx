@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
@@ -110,6 +110,7 @@ export function FeedFilters({
   const api = useUrlFilters();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const dupesOn = useSearchParams().get("dupes") === "true";
 
   const trackMode = tracks != null;
   const showFacets = trackMode && activeTrackSlug != null;
@@ -197,14 +198,21 @@ export function FeedFilters({
               !showFacets && api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : undefined
             }
             seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
-          />
-          <SourceSection
-            sources={agg.sources}
-            activeCode={api.filters.sourceCode}
-            onChange={api.setSource}
+            hiddenActiveExtra={dupesOn ? 1 : 0}
+            hiddenExtra={
+              <>
+                <SourceSection
+                  sources={agg.sources}
+                  activeCode={api.filters.sourceCode}
+                  onChange={api.setSource}
+                />
+                <div className="border-b border-border px-4 py-3 last:border-b-0">
+                  <DedupeToggle />
+                </div>
+              </>
+            }
           />
         </aside>
-        <DedupeToggle />
       </div>
     </div>
   );
