@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr";
 
-import { subscriptionsApi, type SubscriptionParams } from "@/lib/api/subscriptions";
+import { subscriptionsApi, type SubscriptionFilter } from "@/lib/api/subscriptions";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { Button } from "@/ui";
 
@@ -15,7 +15,7 @@ export function SubscribeCta({
   params,
   label = "Отримувати в Telegram →",
 }: {
-  params: SubscriptionParams;
+  params: SubscriptionFilter;
   label?: string;
 }) {
   const analytics = useAnalytics();
