@@ -400,6 +400,13 @@
       "when": 1789667130293,
       "tag": "0056_sudden_nebula",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1789688240133,
+      "tag": "0057_strip_unstored_subscription_params",
+      "breakpoints": true
     }
   ]
 }
