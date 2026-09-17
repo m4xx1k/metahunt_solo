@@ -34,7 +34,6 @@ import {
 import { JsonLd } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { organizationJsonLd, webSiteJsonLd } from "@/lib/seo/organization";
-import { FeedCountProvider } from "../_components/feed-count";
 import { FeedShellIsland } from "../_components/FeedShellIsland";
 
 export const dynamic = "force-dynamic";
@@ -152,12 +151,9 @@ export default async function FeedPage({
   // through, so a shared /?sample=X link renders scored on first paint under
   // the same key. Tolerate a backend hiccup: no seed just means a client fetch.
   const queryClient = new QueryClient();
-  let seedTotal: number | null = null;
   if (query) {
     try {
-      const seed = await vacanciesApi.list(query);
-      queryClient.setQueryData(coldKey(query), seed);
-      seedTotal = seed.total;
+      queryClient.setQueryData(coldKey(query), await vacanciesApi.list(query));
     } catch {
       /* no seed */
     }
@@ -174,36 +170,34 @@ export default async function FeedPage({
       ) : null}
       <Header cta={<HeaderAuth />} />
       <main className="page-dot-grid flex min-h-screen flex-col bg-bg">
-        <FeedCountProvider initialTotal={seedTotal}>
-          <FeedHero
-            aggregates={aggregates}
-            heading={
-              track
-                ? {
-                    title: trackTitle(track.label),
-                    subtitle: "Свіжі вакансії з DOU і Djinni. Дублі згорнуті, фільтри поруч.",
-                  }
-                : undefined
-            }
-          />
-          <TrackStrip tracks={tracks} activeSlug={trackSlug ?? null} />
-          <div className="mx-auto w-full max-w-[1536px] px-6 pb-20 lg:px-12">
-            <HydrationBoundary state={dehydrate(queryClient)}>
-              <FeedShellIsland
-                aggregates={aggregates}
-                tracks={tracks}
-                activeTrackSlug={trackSlug ?? null}
-                presetRoles={preset.roles}
-                presetSkills={preset.skills}
-                contextualSkills={contextualSkills}
-                roleCatalog={roleCatalog}
-                skillCatalog={skillCatalog}
-                domainCatalog={domainCatalog}
-                samples={samples}
-              />
-            </HydrationBoundary>
-          </div>
-        </FeedCountProvider>
+        <FeedHero
+          aggregates={aggregates}
+          heading={
+            track
+              ? {
+                  title: trackTitle(track.label),
+                  subtitle: "Свіжі вакансії з DOU і Djinni. Дублі згорнуті, фільтри поруч.",
+                }
+              : undefined
+          }
+        />
+        <TrackStrip tracks={tracks} activeSlug={trackSlug ?? null} />
+        <div className="mx-auto w-full max-w-[1536px] px-6 pb-20 lg:px-12">
+          <HydrationBoundary state={dehydrate(queryClient)}>
+            <FeedShellIsland
+              aggregates={aggregates}
+              tracks={tracks}
+              activeTrackSlug={trackSlug ?? null}
+              presetRoles={preset.roles}
+              presetSkills={preset.skills}
+              contextualSkills={contextualSkills}
+              roleCatalog={roleCatalog}
+              skillCatalog={skillCatalog}
+              domainCatalog={domainCatalog}
+              samples={samples}
+            />
+          </HydrationBoundary>
+        </div>
       </main>
       <Footer />
     </>
