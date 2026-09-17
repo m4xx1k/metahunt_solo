@@ -72,7 +72,11 @@ export function MultiSelect({
   const summary = selected.length > 0 ? `${selected.length} selected` : "any";
   const showNoMatches = q.length > 0 && filteredRest.length === 0;
   const rows = layout === "rows";
-  const rowClass = rows ? "w-full justify-start px-2.5 py-1.5 text-sm" : undefined;
+  // A label too long for one line wraps and reads left-aligned, like the
+  // list item it is — the chip default centres it, which looks like a cut.
+  const rowClass = rows
+    ? "w-full justify-start whitespace-normal break-words px-2 py-1.5 text-left text-[0.8125rem] leading-snug"
+    : undefined;
 
   return (
     <CollapsibleSection title={title} summary={summary}>
