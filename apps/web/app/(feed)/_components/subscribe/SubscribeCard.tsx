@@ -7,7 +7,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/ui";
 import { AuthChoice } from "@/features/auth/auth-choice";
+import { cn } from "@/lib/utils";
 import { useSession } from "@/features/auth/use-session";
+import { RailCard } from "../RailCard";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { ApiError } from "@/lib/api/client";
 import { meApi } from "@/lib/api/me";
@@ -15,13 +17,14 @@ import { subscriptionsApi, type CvMatchParams } from "@/lib/api/subscriptions";
 import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import {
   findMatchingSubscription,
+  subscriptionCovers,
+  dedupeByFilter,
   subscriptionCriteriaToFilters,
 } from "@/features/vacancy-filters/subscription-criteria";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { formatMatchRate, useMatchRate } from "../../_hooks/use-match-rate";
 
 // A rail, not an inbox: the rest live on /me, which can edit and delete them.
-const SAVED_SHOWN = 4;
 
 // The page's one subscribe control, in the filter column, with or without a CV.
 // A subscription IS the on-screen filter persisted to Telegram — the CV only
@@ -57,31 +60,35 @@ export function SubscribeCard({
   // could only ever 401 — offer the login that unblocks it instead.
   const { isLoggedIn, isLoading: sessionLoading } = useSession();
   const isSample = viewer?.isSample ?? false;
-  const candidateId = viewer && !isSample ? viewer.candidateId : null;
-  const rateLabel = formatMatchRate(useMatchRate(isSample ? null : params, candidateId != null));
+  // A new subscription is always the filter on screen. CV-ranked digests are
+  // legacy: they still run, they are just no longer created here.
+  const rateLabel = formatMatchRate(useMatchRate(isSample ? null : params, false));
 
   // `isLoading` is false while the query is disabled (anonymous / sample), so
   // this only ever gates the logged-in fetch.
-  const { data: subs, isLoading: subsLoading } = useQuery({
+  // `isFetching`, not `isLoading`: the latter is false as soon as there is any
+  // cached list, so the refetch after a create left the button live against a
+  // stale list — every extra click made another identical subscription.
+  const { data: subs, isFetching: subsFetching } = useQuery({
     queryKey: ["me", "subscriptions"],
     queryFn: meApi.listSubscriptions,
     enabled: isLoggedIn && !isSample,
     staleTime: 60_000,
   });
-  const existing = findMatchingSubscription(subs, params, candidateId);
-  // Paused ones are deliberately off — offering them as a filter to jump back
-  // into would read as "here's what you get", which is nothing.
-  const others = (subs ?? []).filter((s) => s.id !== existing?.id && s.isActive);
+  const existing = findMatchingSubscription(subs, params);
+  // Live only (an unconfirmed row is an unfinished tap, and the GC sweeps it),
+  // one row per distinct filter.
+  const saved = dedupeByFilter((subs ?? []).filter((s) => s.status === "live"));
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     const tab = window.open("about:blank", "_blank");
     try {
-      const res = await subscriptionsApi.create(params, candidateId ?? undefined);
-      // Pending until /start, but it already counts as "you have this one" —
-      // refetch so the card stops offering to create it a second time.
-      void qc.invalidateQueries({ queryKey: ["me", "subscriptions"] });
+      const res = await subscriptionsApi.create(params);
+      // Awaited: the card must not re-offer the same subscription while the
+      // list it checks against is still in flight.
+      await qc.invalidateQueries({ queryKey: ["me", "subscriptions"] });
       if (tab) {
         tab.opener = null;
         tab.location.href = res.deepLink;
@@ -89,7 +96,7 @@ export function SubscribeCard({
         window.location.href = res.deepLink;
       }
     } catch (e) {
-      analytics.subscriptionCreateFailed(candidateId ? "cv" : "feed");
+      analytics.subscriptionCreateFailed("feed");
       tab?.close();
       // A dormant bot (no TELEGRAM_BOT_TOKEN) is the one 400 here, and it is the
       // server's problem, not a filter the user can fix — say so.
@@ -101,7 +108,7 @@ export function SubscribeCard({
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, params, candidateId, qc, analytics]);
+  }, [isSubmitting, params, qc, analytics]);
 
   // A sample profile has no owner to notify, so there is nothing to persist.
   if (isSample) {
@@ -113,21 +120,44 @@ export function SubscribeCard({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {/* No sticky of its own: it sits at the top of a rail that is already
-          sticky (STICKY_RAIL) and self-scrolling, where a nested `sticky top-24`
-          sticks to the rail's scrollbox and leaves a 6rem gap above itself. */}
-      <div className="flex flex-col gap-2 border-2 border-accent bg-accent-subtle-bg p-3 shadow-brut">
-        {existing ? (
+    <RailCard
+      title="subscriptions"
+      meta={saved.length > 0 ? saved.length : null}
+      picker={
+        saved.length > 0
+          ? saved.map((s) => {
+              const covers = subscriptionCovers(s, params);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-pressed={covers}
+                  onClick={() =>
+                    filterApi.replace(subscriptionCriteriaToFilters(s.params, sources))
+                  }
+                  className={cn(
+                    "flex w-full items-center gap-2 px-3 py-2 text-left font-mono text-2xs transition-colors",
+                    covers
+                      ? "bg-accent-subtle-bg font-bold text-accent"
+                      : "text-text-secondary hover:bg-bg-elev hover:text-accent",
+                  )}
+                >
+                  <span className="truncate">{s.name || s.label}</span>
+                  {s.isCv ? <span className="ml-auto shrink-0 opacity-60">CV</span> : null}
+                </button>
+              );
+            })
+          : null
+      }
+      action={
+        existing ? (
           <>
-            <p className="text-center font-mono text-2xs text-text-secondary">
-              ✓ subscribed{existing.isActive ? "" : " · confirm in Telegram"}
-            </p>
+            <p className="text-center font-mono text-2xs text-text-secondary">you get this one</p>
             <Link
-              href="/me#subscriptions"
+              href={`/me?sub=${existing.id}#subscriptions`}
               className="border border-accent px-3 py-2 text-center font-mono text-2xs font-bold uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-bg"
             >
-              manage alerts
+              edit it
             </Link>
           </>
         ) : (
@@ -140,14 +170,14 @@ export function SubscribeCard({
                 className="w-full"
                 // Until the list is in, "no identical subscription" is unknown,
                 // not false — offering the button here creates a second digest.
-                disabled={isSubmitting || sessionLoading || subsLoading}
+                disabled={isSubmitting || sessionLoading || subsFetching}
                 onClick={handleSubscribe}
               >
-                Get alerts on Telegram
+                Get these in Telegram
               </Button>
             ) : (
               <AuthChoice
-                label="Get alerts on Telegram"
+                label="Get these in Telegram"
                 size="md"
                 className="w-full"
                 align="start"
@@ -155,39 +185,12 @@ export function SubscribeCard({
             )}
             {rateLabel ? (
               <p className="text-center font-mono text-2xs text-text-secondary">
-                {rateLabel} new matches
+                about {rateLabel.replace("~", "")} new jobs
               </p>
             ) : null}
           </>
-        )}
-      </div>
-
-      {others.length > 0 ? (
-        <div className="flex flex-col border border-border bg-bg-card">
-          <p className="border-b border-border px-3 py-1.5 font-mono text-2xs uppercase tracking-wider text-text-muted">
-            your alerts
-          </p>
-          {others.slice(0, SAVED_SHOWN).map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => filterApi.replace(subscriptionCriteriaToFilters(s.params, sources))}
-              className="flex items-center gap-2 px-3 py-2 text-left font-mono text-2xs text-text-secondary transition-colors hover:bg-bg-elev hover:text-accent"
-            >
-              <span className="truncate">{s.name || s.label}</span>
-              {s.isCv ? <span className="ml-auto shrink-0 text-text-muted">cv</span> : null}
-            </button>
-          ))}
-          {others.length > SAVED_SHOWN ? (
-            <Link
-              href="/me#subscriptions"
-              className="border-t border-border px-3 py-2 font-mono text-2xs text-text-muted transition-colors hover:text-accent"
-            >
-              +{others.length - SAVED_SHOWN} more…
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+        )
+      }
+    />
   );
 }

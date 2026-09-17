@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 
-import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -57,6 +57,32 @@ export class SubscriptionsService {
     if (options.candidateId !== undefined && !isUuid(options.candidateId)) {
       throw new Error(`invalid candidateId: ${options.candidateId}`);
     }
+    // Idempotent: the same filter from the same account is the same subscription.
+    // Params are normalized above and stored as jsonb, whose equality ignores key
+    // order, so a second tap re-opens the first deep link instead of littering a
+    // twin. Switched-off rows are skipped — re-subscribing to one is a new intent.
+    const [reusable] = await this.db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.userId, options.userId),
+          // Deliberately not keyed on candidateId: a CV ranks a digest, it does
+          // not change which vacancies it covers, so two rows differing only by
+          // CV are one alert that would deliver twice.
+          sql`${subscriptions.params} = ${JSON.stringify(params)}::jsonb`,
+          or(
+            eq(subscriptions.isActive, true),
+            and(isNull(subscriptions.linkedAt), isNull(subscriptions.deactivatedReason)),
+          ),
+        ),
+      )
+      .limit(1);
+    if (reusable) {
+      this.logger.log(`reuse sub ${reusable.id}: identical params for this account`);
+      return reusable.id;
+    }
+
     const subscriptionId = randomUUID();
 
     const [created] = await this.db

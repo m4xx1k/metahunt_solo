@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPatch, apiPost } from "./client";
+import { apiDelete, apiGet, apiPatch } from "./client";
 import type { CvMatchParams, SubscriptionParams } from "./subscriptions";
 
 export interface MeCv {
@@ -12,11 +12,15 @@ export interface MeCv {
   createdAt: string;
 }
 
+/** `live` delivers; `pending` was never confirmed in Telegram; `off` is switched off. */
+export type MeSubscriptionStatus = "live" | "pending" | "off";
+
 interface MeSubscriptionBase {
   id: string;
   name: string;
   label: string;
   isActive: boolean;
+  status: MeSubscriptionStatus;
   createdAt: string;
   tgUsername: string | null;
   tgFirstName: string | null;
@@ -25,6 +29,9 @@ interface MeSubscriptionBase {
 export interface MeCvSubscription extends MeSubscriptionBase {
   isCv: true;
   candidateId: string;
+  /** The CV this digest ranks against — null once that CV is deleted. */
+  cvLabel: string | null;
+  cvAddedAt: string | null;
   params: CvMatchParams;
 }
 
@@ -45,7 +52,6 @@ export interface UpdateSubscription {
 export const meApi = {
   deleteAccount: () => apiDelete<{ ok: true }>("/me"),
   listCvs: () => apiGet<MeCv[]>("/me/cv"),
-  claimCv: (candidateId: string) => apiPost<{ ok: true }>("/me/cv", { candidateId }),
   deleteCv: (id: string) => apiDelete<{ ok: true }>(`/me/cv/${id}`),
   // Makes this CV the one GET /feed scores against (MET-144: no `?cv=` param
   // — the CV switcher calls this instead of encoding the pick in the URL).

@@ -109,18 +109,36 @@ function normalize(p: Params): string {
   return JSON.stringify(entries);
 }
 
-// The subscription that already delivers exactly what is on screen, or null. A
-// CV digest and a plain one are never the same subscription even with identical
-// filters — they rank differently — so the candidate has to match too.
+// The subscription that already covers what is on screen, or null. A
+// subscription *is* its filter: the CV a legacy digest ranks against changes
+// the order it arrives in, not which vacancies it covers, so an identical
+// filter is the same alert whether or not a CV hangs off it.
+export function subscriptionCovers(sub: MeSubscription, params: Params): boolean {
+  return sub.status === "live" && normalize(sub.params) === normalize(params);
+}
+
+// One row per distinct filter. Legacy rows can differ only by the CV they rank
+// against, which the feed cannot express — two of them would highlight together
+// and leave "manage" pointing at an arbitrary one. Newest wins; the server no
+// longer lets a second one be created.
+export function dedupeByFilter(subs: MeSubscription[]): MeSubscription[] {
+  const seen = new Set<string>();
+  return subs.filter((s) => {
+    const key = normalize(s.params);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function findMatchingSubscription(
   subs: MeSubscription[] | undefined,
   params: Params,
-  candidateId: string | null,
 ): MeSubscription | null {
   if (!subs) return null;
   const wanted = normalize(params);
-  return (
-    subs.find((s) => (s.candidateId ?? null) === candidateId && normalize(s.params) === wanted) ??
-    null
-  );
+  // Only a live one counts: unconfirmed and switched-off subscriptions deliver
+  // nothing, so calling them "subscribed" would be a lie. Tapping Subscribe
+  // again is safe — the server reuses an identical row instead of making a twin.
+  return subs.find((s) => s.status === "live" && normalize(s.params) === wanted) ?? null;
 }

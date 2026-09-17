@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
@@ -67,9 +67,13 @@ export function useUrlFilters(): FiltersApi {
     [commit],
   );
 
+  // The explicit empty axis only means something on a track route, where an
+  // absent key falls back to the preset. On the index it is pure `?roles=&skills=`
+  // noise, so the plain delete is the honest write there.
+  const onTrack = usePathname() !== "/";
   const replace = useCallback(
-    (next: FilterState) => commit((n) => writeFilterState(n, next)),
-    [commit],
+    (next: FilterState) => commit((n) => writeFilterState(n, next, onTrack ? "exact" : "preset")),
+    [commit, onTrack],
   );
 
   // Clearing IS writing the empty filter — going through the codec keeps this

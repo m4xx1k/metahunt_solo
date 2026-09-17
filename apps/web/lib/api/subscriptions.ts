@@ -45,10 +45,9 @@ export interface CreateSubscriptionResponse {
 export const subscriptionsApi = {
   // The journey id ties this subscriber back to the anonymous visit that
   // created them — without it the web and Telegram halves stay two people.
-  create: (params: SubscriptionParams | CvMatchParams, candidateId?: string) =>
-    apiPost<CreateSubscriptionResponse>(candidateId ? "/subscriptions/cv" : "/subscriptions", {
+  create: (params: SubscriptionParams) =>
+    apiPost<CreateSubscriptionResponse>("/subscriptions", {
       params,
-      candidateId,
       journeyId: getOrCreateJourneyId(),
     }),
 };

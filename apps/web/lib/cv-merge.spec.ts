@@ -32,27 +32,45 @@ describe("mergeCvs", () => {
     expect(merged[0]).toEqual({ candidateId: "c1", label: "from-local", addedAt: 5 });
   });
 
-  it("unions server-only and local-only CVs", () => {
+  // The bridge: a CV uploaded seconds ago is not on the server list yet.
+  it("keeps a local-only CV the server has not caught up with", () => {
     const server = [serverCv({ candidateId: "s-only" })];
-    const local = [localCv({ candidateId: "l-only" })];
+    const local = [localCv({ candidateId: "l-only", addedAt: 1_000 })];
 
-    const ids = mergeCvs(server, local).map((c) => c.candidateId).sort();
+    const ids = mergeCvs(server, local, 10_000)
+      .map((c) => c.candidateId)
+      .sort();
 
     expect(ids).toEqual(["l-only", "s-only"]);
   });
 
+  // Past the window it belongs to no account, so nothing can activate it —
+  // offering it in the switcher made a row that silently ignored clicks.
+  it("drops a stale local-only CV once the server list has loaded", () => {
+    const server = [serverCv({ candidateId: "s-only" })];
+    const local = [localCv({ candidateId: "l-only", addedAt: 0 })];
+
+    const ids = mergeCvs(server, local, 10 * 60_000).map((c) => c.candidateId);
+
+    expect(ids).toEqual(["s-only"]);
+  });
+
   it("orders newest first by addedAt (server createdAt → epoch ms)", () => {
-    const server = [
-      serverCv({ candidateId: "old", createdAt: "2026-01-01T00:00:00.000Z" }),
-    ];
+    const server = [serverCv({ candidateId: "old", createdAt: "2026-01-01T00:00:00.000Z" })];
     const local = [localCv({ candidateId: "new", addedAt: Date.parse("2026-06-01") })];
 
-    expect(mergeCvs(server, local).map((c) => c.candidateId)).toEqual(["new", "old"]);
+    expect(
+      mergeCvs(server, local, Date.parse("2026-06-01") + 1_000).map((c) => c.candidateId),
+    ).toEqual(["new", "old"]);
   });
 
   it("returns just the local list when the user is logged out (no server data)", () => {
     const local = [localCv({ candidateId: "l1" }), localCv({ candidateId: "l2" })];
 
-    expect(mergeCvs(undefined, local).map((c) => c.candidateId).sort()).toEqual(["l1", "l2"]);
+    expect(
+      mergeCvs(undefined, local)
+        .map((c) => c.candidateId)
+        .sort(),
+    ).toEqual(["l1", "l2"]);
   });
 });

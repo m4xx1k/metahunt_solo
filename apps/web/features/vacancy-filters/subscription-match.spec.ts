@@ -10,6 +10,7 @@ function feedSub(params: MeSubscription["params"], id = "feed"): MeSubscription 
     name: "feed",
     label: "feed",
     isActive: true,
+    status: "live" as const,
     createdAt: "",
     tgUsername: null,
     tgFirstName: null,
@@ -26,31 +27,28 @@ function cvSub(params: MeSubscription["params"], id = "cv"): MeSubscription {
 describe("findMatchingSubscription", () => {
   it("matches the same filter whatever order its lists arrived in", () => {
     const subs = [feedSub({ roleIds: ["b", "a"], postedWithinDays: 30 })];
-    expect(
-      findMatchingSubscription(subs, { roleIds: ["a", "b"], postedWithinDays: 30 }, null),
-    ).toBe(subs[0]);
-  });
-
-  it("ignores absent vs empty-list differences", () => {
-    const subs = [feedSub({ roleIds: ["a"], skillIds: [], postedWithinDays: 30 })];
-    expect(findMatchingSubscription(subs, { roleIds: ["a"], postedWithinDays: 30 }, null)).toBe(
+    expect(findMatchingSubscription(subs, { roleIds: ["a", "b"], postedWithinDays: 30 })).toBe(
       subs[0],
     );
   });
 
-  it("does not match a narrower filter", () => {
-    const subs = [feedSub({ roleIds: ["a"], postedWithinDays: 30 })];
-    expect(
-      findMatchingSubscription(subs, { roleIds: ["a"], seniorities: ["SENIOR"] }, null),
-    ).toBeNull();
+  it("ignores absent vs empty-list differences", () => {
+    const subs = [feedSub({ roleIds: ["a"], skillIds: [], postedWithinDays: 30 })];
+    expect(findMatchingSubscription(subs, { roleIds: ["a"], postedWithinDays: 30 })).toBe(subs[0]);
   });
 
-  // Same criteria, different digest: one is ranked against the CV, one isn't.
-  it("keeps a CV subscription apart from a plain one", () => {
+  it("does not match a narrower filter", () => {
+    const subs = [feedSub({ roleIds: ["a"], postedWithinDays: 30 })];
+    expect(findMatchingSubscription(subs, { roleIds: ["a"], seniorities: ["SENIOR"] })).toBeNull();
+  });
+
+  // A CV ranks a digest, it does not narrow it, so a legacy CV subscription on
+  // this filter is still "you already have this" — otherwise replaying one from
+  // the saved list left the card offering to create its twin.
+  it("matches a CV subscription on the filter alone", () => {
     const params = { roleIds: ["a"], postedWithinDays: 30 };
-    expect(findMatchingSubscription([cvSub(params)], params, null)).toBeNull();
-    expect(findMatchingSubscription([feedSub(params)], params, CANDIDATE)).toBeNull();
-    expect(findMatchingSubscription([cvSub(params)], params, CANDIDATE)).not.toBeNull();
+    expect(findMatchingSubscription([cvSub(params)], params)).not.toBeNull();
+    expect(findMatchingSubscription([feedSub(params)], params)).not.toBeNull();
   });
 
   // `false` is a filter ("no test assignment"), absence is "don't care" — the
@@ -59,20 +57,20 @@ describe("findMatchingSubscription", () => {
   it("does not treat a false-valued flag as unset", () => {
     const subs = [feedSub({ roleIds: ["a"], postedWithinDays: 30 })];
     expect(
-      findMatchingSubscription(
-        subs,
-        { roleIds: ["a"], postedWithinDays: 30, hasReservation: false },
-        null,
-      ),
+      findMatchingSubscription(subs, {
+        roleIds: ["a"],
+        postedWithinDays: 30,
+        hasReservation: false,
+      }),
     ).toBeNull();
   });
 
   it("matches a false-valued flag on both sides", () => {
     const params = { roleIds: ["a"], postedWithinDays: 30, hasReservation: false };
-    expect(findMatchingSubscription([feedSub(params)], { ...params }, null)).not.toBeNull();
+    expect(findMatchingSubscription([feedSub(params)], { ...params })).not.toBeNull();
   });
 
   it("has nothing to match before the list loads", () => {
-    expect(findMatchingSubscription(undefined, { roleIds: ["a"] }, null)).toBeNull();
+    expect(findMatchingSubscription(undefined, { roleIds: ["a"] })).toBeNull();
   });
 });

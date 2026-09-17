@@ -13,8 +13,8 @@ import { TelegramLoginButton } from "@/features/auth/telegram-login-button";
 import { useSession } from "@/features/auth/use-session";
 
 const ROLE: Record<AuthProvider, string> = {
-  telegram: "дайджести",
-  google: "вхід без месенджера",
+  telegram: "job messages",
+  google: "login only",
 };
 const PROVIDERS = Object.keys(ROLE) as AuthProvider[];
 
@@ -33,9 +33,9 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
     try {
       const result = await authApi.startAccountMerge();
       setIssuedMergeCode(result.code);
-      toast.success("Код створено на 10 хвилин");
+      toast.success("Code made. It works for 10 minutes");
     } catch {
-      toast.error("Не вдалося створити код");
+      toast.error("Could not make a code");
     }
   }, []);
 
@@ -43,12 +43,12 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
     try {
       setUser(await authApi.confirmAccountMerge(mergeCode));
       setMergeCode("");
-      toast.success("Акаунти об’єднано");
+      toast.success("Accounts joined");
     } catch (err) {
       toast.error(
         err instanceof ApiError && err.status === 409
-          ? "Ці акаунти не можна об’єднати"
-          : "Недійсний або прострочений код",
+          ? "These accounts cannot be joined"
+          : "Bad or old code",
       );
     }
   }, [mergeCode, setUser]);
@@ -77,9 +77,9 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
         // error the user can act on, and the one worth counting (MET-82).
         if (err instanceof ApiError && err.status === 409) {
           analytics.identityLinkConflict(provider);
-          toast.error(`${provider} уже підключено до іншого акаунта`);
+          toast.error(`${provider} is already on another account`);
         } else {
-          toast.error("Не вдалося оновити");
+          toast.error("Could not save");
         }
       } finally {
         setBusy(null);
@@ -89,7 +89,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
   );
 
   return (
-    <Panel title="вхід">
+    <Panel title="login">
       {account.email ? (
         <p className="break-all font-mono text-2xs text-text-secondary">{account.email}</p>
       ) : null}
@@ -105,10 +105,10 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-primary">
                   {provider}
-                  {identity ? null : <span className="ml-2 text-text-muted">не підключено</span>}
+                  {identity ? null : <span className="ml-2 text-text-muted">not connected</span>}
                 </span>
                 <span className="truncate font-mono text-2xs text-text-muted">
-                  {identity ? who || "підключено" : ROLE[provider]}
+                  {identity ? who || "connected" : ROLE[provider]}
                 </span>
               </div>
 
@@ -118,7 +118,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                     variant="secondary"
                     size="sm"
                     disabled={!canUnlink || busy !== null}
-                    title={canUnlink ? undefined : "єдиний спосіб входу"}
+                    title={canUnlink ? undefined : "your only login"}
                     onClick={() =>
                       void apply(
                         provider,
@@ -127,11 +127,11 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                           analytics.identityUnlinked(provider);
                           return next;
                         },
-                        `${provider} відключено`,
+                        `${provider} disconnected`,
                       )
                     }
                   >
-                    відключити
+                    disconnect
                   </Button>
                 ) : provider === "google" ? (
                   <GoogleLoginButton
@@ -144,7 +144,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
                           analytics.identityLinked("google");
                           return next;
                         },
-                        "Google підключено",
+                        "Google connected",
                       )
                     }
                   />
@@ -163,22 +163,22 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
 
       {!linked.has("telegram") ? (
         <p className="font-mono text-2xs leading-relaxed text-accent">
-          Підключи Telegram для дайджестів
+          Connect Telegram to get job messages
         </p>
       ) : null}
 
       <p className="font-mono text-2xs leading-relaxed text-text-muted">
-        Уже підключений профіль не переноситься автоматично.
+        A profile that is already connected does not move by itself.
       </p>
 
       <div className="border-t border-border pt-4">
         <p className="font-mono text-2xs leading-relaxed text-text-muted">
-          Якщо Telegram і Google створили різні акаунти: увійди в той, який треба перенести, створи
-          код, потім увійди сюди й підтвердь його. Дані source account перейдуть у цей.
+          If Telegram and Google made two accounts: log in to the one you want to move, make a code,
+          then log in here and use it. The data moves to this account.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" onClick={handleStartMergeClick}>
-            створити код злиття
+            make a code
           </Button>
           {issuedMergeCode ? (
             <code className="border border-border bg-bg px-2 py-1 font-mono text-xs text-accent">
@@ -190,8 +190,8 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
           <input
             value={mergeCode}
             onChange={handleMergeCodeChange}
-            placeholder="код іншого акаунта"
-            aria-label="код злиття"
+            placeholder="code from the other account"
+            aria-label="merge code"
             className="border border-border bg-bg px-2 py-1.5 font-mono text-xs text-text-primary outline-none focus:border-accent"
           />
           <Button
@@ -200,7 +200,7 @@ export function ConnectionsPanel({ user }: { user: AuthUser }) {
             disabled={mergeCode.trim().length === 0}
             onClick={handleConfirmMergeClick}
           >
-            об’єднати сюди
+            move it here
           </Button>
         </div>
       </div>

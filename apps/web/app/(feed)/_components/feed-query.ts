@@ -12,7 +12,7 @@ import {
   WORK_FORMAT_VALUES,
   type ListVacanciesQuery,
 } from "@/lib/api/vacancies";
-import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
+import type { SubscriptionParams } from "@/lib/api/subscriptions";
 import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "@/features/vacancy-filters/types";
 import { readBool, readList, type ParamReader } from "@/features/vacancy-filters/url-params";
 
@@ -101,27 +101,6 @@ export function buildFeedListQuery(
     sample: rawSample && sampleIds.includes(rawSample) ? rawSample : undefined,
   };
   return { query, offset, page };
-}
-
-// The CV digest's replay of the same filter. Two deliberate differences from
-// the plain one: the skill facet is dropped (a CV digest matches on the CV's
-// own skills), and the fit gate rides along (it only exists with a CV).
-export function toCvSubscriptionParams(q: ListVacanciesQuery): CvMatchParams {
-  return {
-    roleIds: q.roleIds,
-    excludedSkillIds: q.excludedSkillIds,
-    domainIds: q.domainIds,
-    sourceId: q.sourceId,
-    seniorities: q.seniorities,
-    workFormats: q.workFormats,
-    englishLevels: q.englishLevels,
-    employmentTypes: q.employmentTypes,
-    experienceYears: q.experienceYears,
-    hasTestAssignment: q.hasTestAssignment,
-    hasReservation: q.hasReservation,
-    minFitTier: q.minFitTier,
-    postedWithinDays: q.postedWithinDays,
-  };
 }
 
 // The effective query a subscription replays — the list query minus pagination

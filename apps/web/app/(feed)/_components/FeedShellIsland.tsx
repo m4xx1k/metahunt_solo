@@ -148,7 +148,14 @@ export function FeedShellIsland({
   const onPickCv = useCallback(
     (id: string) => {
       const link = myCvs?.find((c) => c.candidateId === id);
-      if (!link) return;
+      // Only the account's own CVs can be activated. A local entry the server
+      // never heard of is stale — say so and drop it instead of ignoring the
+      // click, which read as a dead row in the switcher.
+      if (!link) {
+        saved.removeCv(id);
+        toast.error("This CV is no longer available");
+        return;
+      }
       void meApi
         .activateCv(link.id)
         .then(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import Link from "next/link";
 
 import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
@@ -62,7 +63,7 @@ export function SubscriptionEditor({
     <li>
       <form onSubmit={handleSubmit} className="border border-accent/60 bg-bg-elev p-4 sm:p-5">
         <label className="flex flex-col gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
-          назва
+          name
           <input
             value={name}
             onChange={handleName}
@@ -73,6 +74,19 @@ export function SubscriptionEditor({
 
         {subscription.isCv ? (
           <div className="mt-5 border-t border-border">
+            <p className="py-3 font-mono text-2xs text-text-muted">
+              * old type · sorted by CV{" "}
+              {subscription.cvLabel ? (
+                <Link
+                  href={`/me?cv=${subscription.candidateId}#cv`}
+                  className="normal-case text-text-secondary underline-offset-2 hover:text-accent hover:underline"
+                >
+                  {subscription.cvLabel}
+                </Link>
+              ) : (
+                <span className="text-danger">(deleted)</span>
+              )}
+            </p>
             <FilterRail
               api={filters}
               lens="warm"
@@ -82,26 +96,26 @@ export function SubscriptionEditor({
               domainOptions={domains}
             />
             <MultiSelect
-              title="без навичок"
+              title="excluded skills"
               options={skills}
               selected={filters.filters.excludedSkillIds}
               onToggle={filters.toggleExcludedSkill}
               searchable
-              searchPlaceholder="знайти навичку…"
+              searchPlaceholder="find a skill…"
             />
           </div>
         ) : (
           <p className="mt-4 font-mono text-2xs text-text-muted">
-            Фільтри цієї підписки поки редагуються у стрічці.
+            Change this filter on the main page.
           </p>
         )}
 
         <div className="mt-5 flex gap-2">
           <Button type="submit" size="sm" disabled={busy || name.trim().length === 0}>
-            {busy ? "зберігаю…" : "зберегти"}
+            {busy ? "saving…" : "save"}
           </Button>
           <Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={busy}>
-            скасувати
+            cancel
           </Button>
         </div>
       </form>

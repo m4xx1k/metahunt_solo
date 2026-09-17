@@ -4,7 +4,6 @@ import {
   type OnApplicationBootstrap,
   type OnModuleDestroy,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 
 import { SubscriptionsService } from "./subscriptions.service";
 
@@ -15,24 +14,19 @@ const PENDING_TTL_HOURS = 48;
 const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 // Background GC for abandoned web "Subscribe" taps. An in-process interval (not
-// Temporal) deliberately: it only runs where the bot does — and the bot's
-// long-poller already pins the etl service to one replica, so this timer is
-// single-instance too. No token → no `POST /subscriptions` → no pending rows to
-// sweep, so we don't even start the timer.
+// Temporal) deliberately: the bot's long-poller already pins the etl service to
+// one replica, so this timer is single-instance too.
 @Injectable()
 export class PendingSubscriptionsGc implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(PendingSubscriptionsGc.name);
   private cleanupTimer?: NodeJS.Timeout;
 
-  constructor(
-    private readonly config: ConfigService,
-    private readonly subscriptions: SubscriptionsService,
-  ) {}
+  constructor(private readonly subscriptions: SubscriptionsService) {}
 
   onApplicationBootstrap(): void {
-    const token = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
-    if (token.length === 0) return;
-
+    // Sweeping needs no bot. Gating this on the token left every environment
+    // that runs without one (local, per compose.override.yaml) accumulating
+    // pending rows forever — the ghosts the account page then had to explain.
     void this.purge();
     this.cleanupTimer = setInterval(() => void this.purge(), CLEANUP_INTERVAL_MS);
     this.cleanupTimer.unref();

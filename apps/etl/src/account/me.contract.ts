@@ -31,11 +31,19 @@ export class EditableMatchCriteriaDto extends OmitType(CandidateMatchParamsDto, 
   "pageSize",
 ] as const) {}
 
+/**
+ * `live` delivers. `pending` was created but never confirmed through the
+ * Telegram deep link. `off` was switched off — by the owner, or by the bot
+ * being blocked. Only the first two are things the account actually has.
+ */
+export type MeSubscriptionStatus = "live" | "pending" | "off";
+
 interface MeSubscriptionBase {
   id: string;
   name: string;
   label: string;
   isActive: boolean;
+  status: MeSubscriptionStatus;
   createdAt: string;
   tgUsername: string | null;
   tgFirstName: string | null;
@@ -44,6 +52,10 @@ interface MeSubscriptionBase {
 export interface MeCvSubscription extends MeSubscriptionBase {
   isCv: true;
   candidateId: string;
+  /** The CV this digest ranks against — null once that CV is deleted. */
+  cvLabel: string | null;
+  /** Upload time, the only thing telling two same-named CVs apart. */
+  cvAddedAt: string | null;
   params: EditableMatchCriteriaDto;
 }
 
