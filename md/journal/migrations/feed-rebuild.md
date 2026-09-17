@@ -263,21 +263,27 @@ The task's other half (one container width) shipped.
 
 ### Shipped 2026-09-17 — how much is on screen
 
-Items 1–3 of the list below, one commit each, verified at 1440/1100/390 signed
-out and signed in.
+Two of the three items attempted, one commit each, verified at 1440/1100/390
+signed out and signed in. The third was built and reverted.
 
 - **`HowItWorks` off the index.** The component tree had no other consumer
   (`/welcome` keeps its own copy), so it is deleted, not just unmounted.
-- **One number.** The hero counter is the filtered total, seeded server-side
-  from the same response that seeds the list — so it renders filtered on first
-  paint. It counts up from zero once, then tweens from the number on screen and
-  dims while the query settles. The index reads **3,105**, not the corpus 14,592:
-  the default freshness window and dedupe are part of what the list returns, and
-  the page now says so.
+- **One number — built, then reverted.** The hero counter was wired to the
+  filtered total (seeded server-side so it never snapped on hydration). It
+  worked, and it was wrong: on an untouched index it shrank 14,592 → 3,105,
+  because the default freshness window and dedupe are part of what the list
+  returns. The 6xl figure is the hero — it lands the size of the corpus on a
+  first-time visitor. Trading that for a number the list can carry is a bad
+  swap. Reverted in `0d3632a`.
 - **Filter rail: 13 headers → 4.** Role, skills and seniority stay open; the
   rest sit behind one `more filters` disclosure carrying a count of what is set
   inside it. No auto-expand on a hidden active filter. `FilterRail` has three
   consumers, so `/me`'s subscription editor and `/feed` inherit the same shape.
+
+**Still open, and now the design item to solve:** with `N found` gone from the
+list header and the pager hiding itself below one page, a narrow filter shows
+no total anywhere. It belongs in the list header beside the sort control — as
+§5 of the original plan said — not in the hero.
 
 Left deliberately: `min fit` is behind the disclosure even in the warm lens
 (arguably the one control a CV owner wants open), and the control reads
