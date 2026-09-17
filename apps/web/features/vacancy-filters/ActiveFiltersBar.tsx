@@ -30,13 +30,10 @@ export function ActiveFiltersBar({
 }) {
   const chips = buildChips(api, agg, roles, skills, domains);
 
+  if (api.activeCount === 0) return null;
+
   return (
-    <div
-      className={cn(
-        "flex flex-wrap items-center gap-2 border border-border bg-bg-card px-3 py-2.5 transition-opacity",
-        api.activeCount === 0 && "opacity-50",
-      )}
-    >
+    <div className="flex flex-wrap items-center gap-2 border border-border bg-bg-card px-3 py-2.5">
       <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
         &gt; active filters · {api.activeCount}
       </span>
@@ -57,17 +54,13 @@ export function ActiveFiltersBar({
         </button>
       ))}
       <ExcludedSkillChips api={api} skills={skills} />
-      {api.activeCount === 0 ? (
-        <span className="font-mono text-2xs text-text-muted">nothing selected</span>
-      ) : (
-        <button
-          type="button"
-          onClick={api.clear}
-          className="ml-auto font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
-        >
-          [clear all]
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={api.clear}
+        className="ml-auto font-mono text-2xs uppercase tracking-wider text-text-secondary hover:text-accent"
+      >
+        [clear all]
+      </button>
     </div>
   );
 }
