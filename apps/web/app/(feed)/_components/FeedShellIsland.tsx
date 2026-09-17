@@ -108,7 +108,7 @@ export function FeedShellIsland({
   const onFile = useCallback(
     async (file: File) => {
       if (!isLoggedIn) {
-        toast.error("Log in with Telegram before uploading a CV");
+        toast.error("Log in to upload a CV");
         return;
       }
       setUploadError(null);

@@ -107,7 +107,7 @@ export function SubscribeCard({
   if (isSample) {
     return (
       <p className="border border-border bg-bg-card px-3 py-2 font-mono text-2xs leading-relaxed text-text-muted">
-        Upload your own CV to subscribe to matches
+        Upload a CV to subscribe
       </p>
     );
   }

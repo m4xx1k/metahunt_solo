@@ -19,7 +19,7 @@ export function ColdRecsTeaser({ onUpload }: { onUpload: () => void }) {
 
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg/80 px-5 text-center">
         <p className="font-mono text-xs leading-relaxed text-text-secondary">
-          Upload your CV to unlock the ranked list and skill recommendations.
+          Upload a CV to rank this list.
         </p>
         <button type="button" onClick={onUpload} className={UPLOAD_BTN}>
           + Upload CV

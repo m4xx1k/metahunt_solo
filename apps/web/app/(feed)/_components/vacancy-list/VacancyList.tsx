@@ -45,9 +45,7 @@ export function VacancyList({
 
       {result.items.length === 0 ? (
         <div className="border border-border bg-bg-card p-8 text-center font-mono text-sm text-text-secondary">
-          {result.total === 0
-            ? "Nothing found with the current filters — try removing some."
-            : "This page is empty — go back to the previous one."}
+          {result.total === 0 ? "Nothing found — loosen a filter" : "Empty page"}
         </div>
       ) : (
         <div className="flex flex-col gap-4">

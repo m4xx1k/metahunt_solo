@@ -105,7 +105,7 @@ export function TrackStrip({ tracks, activeSlug }: Props) {
           active ? "sr-only" : "mb-5",
         )}
       >
-        Обери свій напрям.
+        select track
       </h2>
 
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-6">
