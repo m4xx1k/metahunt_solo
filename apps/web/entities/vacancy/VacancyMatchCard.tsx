@@ -1,6 +1,7 @@
 "use client";
 
 import { FitBadge } from "@/entities/vacancy/FitBadge";
+import { OffStackBadge } from "@/entities/vacancy/OffStackBadge";
 import { skillDiff } from "@/entities/vacancy/skill-diff";
 import { VacancyCard } from "@/entities/vacancy/VacancyCard";
 import type { NodeRef, VacancyDto } from "@/lib/api/vacancies";
@@ -41,11 +42,7 @@ export function VacancyMatchCard({
               bonus={diff.bonus.length}
             />
           ) : null}
-          {!vacancy.match.onStack ? (
-            <span className="border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
-              off-stack
-            </span>
-          ) : null}
+          {!vacancy.match.onStack ? <OffStackBadge /> : null}
         </div>
       ) : null}
 
