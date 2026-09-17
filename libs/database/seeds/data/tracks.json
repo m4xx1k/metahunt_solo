@@ -51,7 +51,7 @@
   {
     "slug": "fullstack",
     "label": "Fullstack",
-    "sortOrder": 2,
+    "sortOrder": 5,
     "nodes": [{ "type": "ROLE", "canonicalName": "Full Stack Engineer" }]
   },
   {
@@ -128,7 +128,7 @@
   {
     "slug": "frontend",
     "label": "Frontend",
-    "sortOrder": 3,
+    "sortOrder": 7,
     "nodes": [{ "type": "ROLE", "canonicalName": "Frontend Engineer" }]
   },
   {
@@ -156,7 +156,7 @@
   {
     "slug": "data-ai",
     "label": "Data & AI",
-    "sortOrder": 4,
+    "sortOrder": 3,
     "nodes": [
       { "type": "ROLE", "canonicalName": "Data Engineer" },
       { "type": "ROLE", "canonicalName": "Analytics Engineer" },
@@ -224,7 +224,7 @@
   {
     "slug": "qa",
     "label": "QA",
-    "sortOrder": 5,
+    "sortOrder": 2,
     "nodes": [
       { "type": "ROLE", "canonicalName": "QA Engineer" },
       { "type": "ROLE", "canonicalName": "Manual QA Engineer" },
@@ -253,7 +253,7 @@
   {
     "slug": "devops",
     "label": "DevOps & Infrastructure",
-    "sortOrder": 6,
+    "sortOrder": 4,
     "nodes": [
       { "type": "ROLE", "canonicalName": "DevOps Engineer" },
       { "type": "ROLE", "canonicalName": "Cloud Engineer" },
@@ -292,7 +292,7 @@
   {
     "slug": "mobile",
     "label": "Mobile",
-    "sortOrder": 7,
+    "sortOrder": 8,
     "nodes": [
       { "type": "ROLE", "canonicalName": "Mobile Developer" },
       { "type": "ROLE", "canonicalName": "iOS Engineer" },
@@ -332,7 +332,7 @@
   {
     "slug": "hardware",
     "label": "Hardware",
-    "sortOrder": 8,
+    "sortOrder": 6,
     "nodes": [
       { "type": "ROLE", "canonicalName": "Embedded Engineer" },
       { "type": "ROLE", "canonicalName": "Hardware Engineer" },
