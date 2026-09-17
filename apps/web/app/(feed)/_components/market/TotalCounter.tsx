@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
 
+import { cn } from "@/lib/utils";
 import type { AggregateSourceCount } from "@/lib/api/aggregates";
+import { useFeedCount } from "../feed-count";
 
 type Props = {
   total: number;
@@ -23,9 +25,7 @@ function relativeMinutes(iso: string | null): string {
   return `updated ${d}d ago`;
 }
 
-// Computes the relative-time label on the client only, avoiding a
-// server/client hydration mismatch when Date.now() differs across the
-// SSR/CSR boundary. Refreshes every minute so the label stays accurate.
+// Client-only so Date.now() can't differ across the SSR/CSR boundary.
 function RelativeTime({ iso }: { iso: string | null }) {
   const [label, setLabel] = useState("updating…");
   useEffect(() => {
@@ -39,23 +39,28 @@ function RelativeTime({ iso }: { iso: string | null }) {
 
 const FORMATTER = new Intl.NumberFormat("en-US");
 
+// First paint counts up from zero; every later change tweens from the number
+// already on screen, so a filter toggle never drops the hero back to 0.
 function CountUp({ value }: { value: number }) {
   const reduced = useReducedMotion();
-  const skip = reduced || value < 50;
-  const mv = useMotionValue(0);
-  const [animated, setAnimated] = useState(0);
+  const mv = useMotionValue(value);
+  const [shown, setShown] = useState(value);
+  const mounted = useRef(false);
 
   useEffect(() => {
-    if (skip) return;
+    if (reduced) return;
+    const from = mounted.current ? mv.get() : 0;
+    mounted.current = true;
+    mv.set(from);
     const controls = animate(mv, value, {
-      duration: 0.8,
+      duration: from === 0 ? 0.8 : 0.35,
       ease: "easeOut",
-      onUpdate: (v) => setAnimated(Math.round(v)),
+      onUpdate: (v) => setShown(Math.round(v)),
     });
     return () => controls.stop();
-  }, [value, skip, mv]);
+  }, [value, reduced, mv]);
 
-  return <>{FORMATTER.format(skip ? value : animated)}</>;
+  return <>{FORMATTER.format(reduced ? value : shown)}</>;
 }
 
 function StatusDot() {
@@ -76,20 +81,23 @@ function StatusDot() {
 const SOURCES_SHOWN = 3;
 
 export function TotalCounter({ total, lastSyncAt, sources }: Props) {
+  const live = useFeedCount();
   const shown = sources.slice(0, SOURCES_SHOWN).map((s) => s.displayName);
   const extra = sources.length - shown.length;
   const sourceLabel =
-    shown.length === 0
-      ? "—"
-      : shown.join(" + ") + (extra > 0 ? ` +${extra}` : "");
+    shown.length === 0 ? "—" : shown.join(" + ") + (extra > 0 ? ` +${extra}` : "");
   return (
     <div className="flex flex-col items-start gap-2 md:items-end md:justify-center md:text-right">
-      <span className="font-display text-6xl font-bold leading-none text-accent md:text-7xl">
-        <CountUp value={total} />
+      <span
+        aria-live="polite"
+        className={cn(
+          "font-display text-6xl font-bold leading-none text-accent transition-opacity duration-200 md:text-7xl",
+          live?.pending && "opacity-50",
+        )}
+      >
+        <CountUp value={live?.total ?? total} />
       </span>
-      <span className="font-body text-sm text-text-secondary">
-        jobs tracked
-      </span>
+      <span className="font-body text-sm text-text-secondary">вакансій</span>
       <span className="flex items-center gap-2 font-mono text-xs text-text-muted">
         <StatusDot />
         <RelativeTime iso={lastSyncAt} /> · {sourceLabel}

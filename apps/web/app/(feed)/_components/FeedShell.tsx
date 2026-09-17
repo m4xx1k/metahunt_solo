@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { cn, STICKY_RAIL } from "@/lib/utils";
@@ -19,6 +19,7 @@ import {
   toCvSubscriptionParams,
   toSubscriptionParams,
 } from "./feed-query";
+import { usePublishFeedCount } from "./feed-count";
 import { FeedFilters } from "./market/FeedFilters";
 import { FeedRail } from "./FeedRail";
 import { SubscribeCard } from "./subscribe/SubscribeCard";
@@ -150,6 +151,12 @@ export function FeedShell({
 
   const threeCol = viewer != null || coldRail != null;
 
+  const pending = isFetching || settling;
+  const publishCount = usePublishFeedCount();
+  useEffect(() => {
+    publishCount({ total: result.total, pending });
+  }, [result.total, pending, publishCount]);
+
   return (
     <div
       className={cn(
@@ -197,7 +204,7 @@ export function FeedShell({
         result={result}
         offset={offset}
         onNavigate={goToOffset}
-        isFetching={isFetching || settling}
+        isFetching={pending}
         viewerSkills={viewerSkills}
         controls={
           <FeedListControls
