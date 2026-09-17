@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import { cn, STICKY_RAIL } from "@/lib/utils";
@@ -10,7 +9,6 @@ import { CandidateProfile } from "@/features/cv-match/CandidateProfile";
 import { SkillRecommendations } from "@/features/cv-match/SkillRecommendations";
 import { cvApi } from "@/lib/api/cv";
 import type { NodeRef } from "@/lib/api/vacancies";
-import { CvDropzone } from "./CvDropzone";
 import { CvSelect } from "./CvSelect";
 
 // The right rail once a CV (or a sample) is in view: switch CV, sanity-check the
@@ -74,18 +72,12 @@ export function FeedRail({
   return (
     <div className={cn("flex flex-col gap-4", STICKY_RAIL)}>
       {!isSample ? <SaveCvNudge /> : null}
-      <CvSelect activeId={candidateId} onPick={onPickCv} />
-      {/* The page's one upload control once a CV is in view (ColdRecsTeaser is
-          its cold twin), with the privacy print attached to it. */}
-      <div className="flex flex-col items-end gap-1">
-        <CvDropzone onClick={onUpload} busy={uploading} />
-        <Link
-          href="/privacy#cv"
-          className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
-        >
-          AI processed · raw text not stored
-        </Link>
-      </div>
+      <CvSelect
+        activeId={candidateId}
+        onPick={onPickCv}
+        onUpload={onUpload}
+        uploading={uploading}
+      />
       <CandidateProfile
         candidateId={candidateId}
         title={profile.title}
