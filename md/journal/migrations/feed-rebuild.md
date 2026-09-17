@@ -144,9 +144,11 @@ Track strip               ← task 4
 Kept short on purpose; this is a direction, not a spec.
 
 - **One number on the page.** Today the hero counter (6xl) and any result count
-  compete. Let the hero number *become* the filtered count as the filter
-  narrows — one giant figure that reacts is both simpler and the closest thing
-  here to a wow moment.
+  compete. ~~Let the hero number *become* the filtered count.~~ **Tried and
+  rejected 2026-09-17** (`0d3632a`): the hero exists to land the size of the
+  corpus on a first-time visitor, and a filtered hero shrinks 14,592 → 3,105
+  before anyone touches anything. The result count goes in the list header
+  instead; the hero keeps the corpus.
 - **Three filter sections open, the rest behind one control.** Роль, скіли,
   рівень carry nearly every real query; ten collapsed headers read as work.
 - **Let the card breathe.** Headline, company, three facts, skills. The eyebrow
