@@ -26,7 +26,10 @@ function setAxis(
   key: (typeof EDITABLE_AXES)[number][0],
   ids: string[] | undefined,
 ): void {
-  if (ids && ids.length > 0) params[key] = ids;
+  // Sorted so two selections of the same ids in a different order normalize
+  // to identical jsonb — the raw `params = ...::jsonb` equality the create()
+  // idempotency check and dedup GC rely on is order-sensitive otherwise.
+  if (ids && ids.length > 0) params[key] = [...ids].sort();
   else delete params[key];
 }
 

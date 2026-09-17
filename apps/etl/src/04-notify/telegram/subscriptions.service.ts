@@ -71,10 +71,11 @@ export class SubscriptionsService {
           // not change which vacancies it covers, so two rows differing only by
           // CV are one alert that would deliver twice.
           sql`${subscriptions.params} = ${JSON.stringify(params)}::jsonb`,
-          or(
-            eq(subscriptions.isActive, true),
-            and(isNull(subscriptions.linkedAt), isNull(subscriptions.deactivatedReason)),
-          ),
+          // Pending = never activated, which `chatId` alone tells us: it is set
+          // only by linkChat's activation update and never cleared afterward, so
+          // it survives rows deactivated before `deactivatedReason` existed
+          // (null on both `linkedAt` and `deactivatedReason` for those too).
+          or(eq(subscriptions.isActive, true), isNull(subscriptions.chatId)),
         ),
       )
       .limit(1);

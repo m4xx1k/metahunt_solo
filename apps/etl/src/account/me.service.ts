@@ -32,15 +32,17 @@ interface SubscriptionUpdate {
 
 // Read + manage the logged-in user's owned CVs and subscriptions. Every query is
 // scoped to userId so one user can never touch another's rows.
-// Never linked and never switched off = created but not confirmed, which is a
-// different thing from paused: the account has it, Telegram does not yet.
+// Never activated = created but not confirmed, which is a different thing
+// from paused: the account has it, Telegram does not yet. `chatId` is the
+// signal, not `linkedAt`/`deactivatedReason` — both of those are null on
+// legacy rows deactivated before those columns existed, which would
+// otherwise misclassify a real "off" row as "pending".
 function subscriptionStatus(row: {
   isActive: boolean;
-  linkedAt: Date | null;
-  deactivatedReason: string | null;
+  chatId: string | null;
 }): MeSubscriptionStatus {
   if (row.isActive) return "live";
-  if (row.linkedAt === null && row.deactivatedReason === null) return "pending";
+  if (row.chatId === null) return "pending";
   return "off";
 }
 
@@ -138,8 +140,7 @@ export class MeService {
         createdAt: subscriptions.createdAt,
         tgUsername: subscriptions.tgUsername,
         tgFirstName: subscriptions.tgFirstName,
-        linkedAt: subscriptions.linkedAt,
-        deactivatedReason: subscriptions.deactivatedReason,
+        chatId: subscriptions.chatId,
       })
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
