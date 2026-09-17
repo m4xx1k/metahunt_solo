@@ -27,7 +27,7 @@ export const subscriptions = pgTable(
     // optional + mutable, so firstName is the more durable identifier.
     tgUsername: text("tg_username"),
     tgFirstName: text("tg_first_name"),
-    candidateId: text("candidate_id"),
+    candidateId: uuid("candidate_id"),
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     personId: uuid("person_id").notNull().defaultRandom(),
     // A browser journey id, kept after `analytics_journeys` was dropped: it is
