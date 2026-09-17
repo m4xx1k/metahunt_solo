@@ -130,11 +130,13 @@ export function FeedShell({
   // Present only when the server actually scored the viewer (JWT CV or sample).
   const viewerSkills = data?.viewerSkills ?? null;
 
-  // One subscribe control for both states; only the payload differs.
-  const subscriptionParams = query
+  // One subscribe control for both states; only the payload differs. Built off
+  // the settled filters, not the live ones — the match-rate count behind this
+  // would otherwise fire a request per toggle while the list waits.
+  const subscriptionParams = settledQuery
     ? viewer && !viewer.isSample
-      ? toCvSubscriptionParams(query)
-      : toSubscriptionParams(query)
+      ? toCvSubscriptionParams(settledQuery)
+      : toSubscriptionParams(settledQuery)
     : null;
 
   const goToOffset = useCallback(

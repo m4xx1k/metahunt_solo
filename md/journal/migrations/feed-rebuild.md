@@ -294,6 +294,23 @@ The task's other half (one container width) shipped.
   every CV subscription's activation (`isCvSubscriptionOwner` requires exactly
   one), and `/start` cannot tell "no such row" from "owned by another account",
   so both say "недійсне або застаріле".
-- **No round-trip test** over the URL codec (`readFilterState` →
-  `writeFilterState` → `readFilterState`), and the params matcher has no case
-  for a `false`-valued flag.
+### Closed by the review pass (2026-09-17)
+
+- **URL codec round-trip** is covered (`url-params.spec.ts`), and the params
+  matcher now has its `false`-valued flag cases. Both were clean as written.
+- **`writeFilterState` left three keys behind.** `nice`/`dupes` (the scope
+  toggles) survived a replay, and an emptied `roles`/`skills` was *deleted* —
+  which on a track route means "use the preset", so replaying a saved alert on
+  `/backend` silently re-added the backend roles and then offered a second
+  subscription because the params no longer matched. `replace` now writes an
+  empty axis explicitly; `clear` keeps the delete, which is what it wants.
+- **The match rate ignored the CV fit gate.** A CV digest notifies on
+  STRONG+GOOD (`DEFAULT_CV_MIN_FIT`); the count under the button didn't, so it
+  promised several times what Telegram sends. It also rode the live filters
+  instead of the settled ones, firing a request per toggle.
+- **A duplicate-subscription window.** Between session-ready and
+  `/me/subscriptions` landing, the card offered "Get alerts" to someone who
+  already had that exact subscription.
+
+Still open from the list above: nothing on the codec; see §Remaining for the
+layout work.

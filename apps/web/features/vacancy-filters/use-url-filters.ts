@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
-import { countActiveFilters, DEFAULT_FRESHNESS } from "./types";
+import { countActiveFilters, DEFAULT_FRESHNESS, EMPTY_FILTERS } from "./types";
 import type { FilterState, FiltersApi } from "./types";
 import { LIST_SEP, readFilterState, readList, writeFilterState } from "./url-params";
 import { useStableFilters } from "./use-stable-filters";
@@ -72,30 +72,10 @@ export function useUrlFilters(): FiltersApi {
     [commit],
   );
 
+  // Clearing IS writing the empty filter — going through the codec keeps this
+  // from drifting into a second key list that a new filter can be left out of.
   const clear = useCallback(
-    () =>
-      commit((n) => {
-        for (const key of [
-          "roles",
-          "skills",
-          "excludeSkills",
-          "domains",
-          "source",
-          "seniorities",
-          "workFormats",
-          "english",
-          "employment",
-          "experience",
-          "fresh",
-          "test",
-          "reservation",
-          "minFitTier",
-          "sort",
-          "offStack",
-        ]) {
-          n.delete(key);
-        }
-      }),
+    () => commit((n) => writeFilterState(n, EMPTY_FILTERS, "preset")),
     [commit],
   );
 

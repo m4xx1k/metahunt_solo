@@ -10,11 +10,24 @@ import type { ListVacanciesQuery } from "@/lib/api/vacancies";
 // actually appear).
 export const RATE_WINDOW_DAYS = 30;
 
+// A CV digest notifies on STRONG+GOOD unless the subscription stores its own
+// gate — mirrors DEFAULT_CV_MIN_FIT in the ETL's subscription-matcher. Counting
+// without it promises several times what Telegram will actually send.
+const DEFAULT_CV_MIN_FIT = "GOOD" as const;
+
 export function useMatchRate(
   criteria: Omit<ListVacanciesQuery, "page" | "pageSize" | "postedWithinDays"> | null,
+  /** Set when the digest is ranked against a CV, so it inherits the fit gate. */
+  isCv = false,
 ): number | undefined {
   const { data } = useResults({
-    query: { ...criteria, page: 1, pageSize: 1, postedWithinDays: RATE_WINDOW_DAYS },
+    query: {
+      ...criteria,
+      page: 1,
+      pageSize: 1,
+      postedWithinDays: RATE_WINDOW_DAYS,
+      ...(isCv ? { minFitTier: criteria?.minFitTier ?? DEFAULT_CV_MIN_FIT } : {}),
+    },
     enabled: criteria != null,
   });
   return data?.total;

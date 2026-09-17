@@ -58,9 +58,11 @@ export function SubscribeCard({
   const { isLoggedIn, isLoading: sessionLoading } = useSession();
   const isSample = viewer?.isSample ?? false;
   const candidateId = viewer && !isSample ? viewer.candidateId : null;
-  const rateLabel = formatMatchRate(useMatchRate(isSample ? null : params));
+  const rateLabel = formatMatchRate(useMatchRate(isSample ? null : params, candidateId != null));
 
-  const { data: subs } = useQuery({
+  // `isLoading` is false while the query is disabled (anonymous / sample), so
+  // this only ever gates the logged-in fetch.
+  const { data: subs, isLoading: subsLoading } = useQuery({
     queryKey: ["me", "subscriptions"],
     queryFn: meApi.listSubscriptions,
     enabled: isLoggedIn && !isSample,
@@ -136,7 +138,9 @@ export function SubscribeCard({
                 variant="primary"
                 size="md"
                 className="w-full"
-                disabled={isSubmitting || sessionLoading}
+                // Until the list is in, "no identical subscription" is unknown,
+                // not false — offering the button here creates a second digest.
+                disabled={isSubmitting || sessionLoading || subsLoading}
                 onClick={handleSubscribe}
               >
                 Get alerts on Telegram

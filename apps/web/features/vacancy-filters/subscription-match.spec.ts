@@ -53,6 +53,25 @@ describe("findMatchingSubscription", () => {
     expect(findMatchingSubscription([cvSub(params)], params, CANDIDATE)).not.toBeNull();
   });
 
+  // `false` is a filter ("no test assignment"), absence is "don't care" — the
+  // normalizer drops null/undefined/[] but must keep false, or the card would
+  // call a wider subscription an exact match and never offer the narrow one.
+  it("does not treat a false-valued flag as unset", () => {
+    const subs = [feedSub({ roleIds: ["a"], postedWithinDays: 30 })];
+    expect(
+      findMatchingSubscription(
+        subs,
+        { roleIds: ["a"], postedWithinDays: 30, hasReservation: false },
+        null,
+      ),
+    ).toBeNull();
+  });
+
+  it("matches a false-valued flag on both sides", () => {
+    const params = { roleIds: ["a"], postedWithinDays: 30, hasReservation: false };
+    expect(findMatchingSubscription([feedSub(params)], { ...params }, null)).not.toBeNull();
+  });
+
   it("has nothing to match before the list loads", () => {
     expect(findMatchingSubscription(undefined, { roleIds: ["a"] }, null)).toBeNull();
   });
