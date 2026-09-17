@@ -17,6 +17,8 @@ type Props = {
   // The scored viewer's resolved skills (`/feed` response) for the diff counts.
   viewerSkills?: NodeRef[] | null;
   // View controls (freshness / sort / off-stack) shown inline in the header row.
+  // The result count is NOT here: the pager below already prints
+  // "showing 1–20 of N", and two counts in one column read as two numbers.
   controls?: ReactNode;
 };
 
@@ -38,12 +40,7 @@ export function VacancyList({
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">jobs</h2>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {controls}
-          <span className="font-mono text-xs text-text-muted">
-            <span className="text-text-secondary">{result.total}</span> found · page {result.page}
-          </span>
-        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{controls}</div>
       </div>
 
       {result.items.length === 0 ? (

@@ -31,7 +31,6 @@ export function FilterRail({
   workFormatOptions,
   domainOptions,
   roleOptions,
-  roleExtra,
   skillOptions,
   skillExtra,
   seniorityToneFor,
@@ -48,7 +47,6 @@ export function FilterRail({
   /** Searchable role catalog (warm hard filter); omitted → not rendered. */
   roleOptions?: OptionRow[];
   /** Caller-owned note under the role chips (e.g. reduced-estimate hint). */
-  roleExtra?: ReactNode;
   /** Searchable must-have skill catalog (cold only); omitted → not rendered. */
   skillOptions?: OptionRow[];
   /** Caller-owned control under the skill chips (e.g. the nice-to-have toggle). */
@@ -79,7 +77,7 @@ export function FilterRail({
           onToggle={api.toggleRole}
           searchable
           searchPlaceholder="search role…"
-          extra={roleExtra}
+          layout="rows"
         />
       ) : null}
       {skillOptions ? (

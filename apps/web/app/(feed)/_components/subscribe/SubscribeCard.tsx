@@ -67,7 +67,9 @@ export function SubscribeCard({
     staleTime: 60_000,
   });
   const existing = findMatchingSubscription(subs, params, candidateId);
-  const others = (subs ?? []).filter((s) => s.id !== existing?.id);
+  // Paused ones are deliberately off — offering them as a filter to jump back
+  // into would read as "here's what you get", which is nothing.
+  const others = (subs ?? []).filter((s) => s.id !== existing?.id && s.isActive);
 
   const handleSubscribe = useCallback(async () => {
     if (isSubmitting) return;
@@ -128,11 +130,6 @@ export function SubscribeCard({
           </>
         ) : (
           <>
-            {rateLabel ? (
-              <p className="text-center font-mono text-2xs text-text-secondary">
-                {rateLabel} new matches
-              </p>
-            ) : null}
             {isLoggedIn || sessionLoading ? (
               <Button
                 type="button"
@@ -152,6 +149,11 @@ export function SubscribeCard({
                 align="start"
               />
             )}
+            {rateLabel ? (
+              <p className="text-center font-mono text-2xs text-text-secondary">
+                {rateLabel} new matches
+              </p>
+            ) : null}
           </>
         )}
       </div>

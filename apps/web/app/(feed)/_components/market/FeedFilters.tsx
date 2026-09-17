@@ -87,13 +87,9 @@ export function FeedFilters({
       byId.set(r.id, { id: r.id, label: r.name, count: r.count ?? 0 });
     (roleSuggestions?.items ?? []).forEach((sug, i) => {
       const id = sug.slug ?? sug.roleId;
-      byId.set(id, {
-        id,
-        label: sug.name,
-        // A concrete, positive number: jobs in this role your CV already fits.
-        hint: `${sug.goodCount} ${sug.goodCount === 1 ? "fit" : "fits"}`,
-        count: 1_000_000 - i,
-      });
+      // Fit only orders the picker — a per-chip count beside a list we already
+      // sort by fit is a second claim about the same thing.
+      byId.set(id, { id, label: sug.name, count: 1_000_000 - i });
     });
     return [...byId.values()];
   }, [roleCatalog, roleSuggestions]);
@@ -196,13 +192,6 @@ export function FeedFilters({
             workFormatOptions={agg.workFormats}
             domainOptions={domainOptions}
             roleOptions={showFacets ? undefined : roleOptions}
-            roleExtra={
-              hasViewer && roleSuggestions?.reduced ? (
-                <p className="font-mono text-2xs text-text-muted">
-                  rough estimate — add more skills for a sharper role fit
-                </p>
-              ) : null
-            }
             skillOptions={showFacets ? undefined : skillOptions}
             skillExtra={
               !showFacets && api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : undefined
