@@ -13,7 +13,7 @@ import type { TrackAxis } from "@/features/tracks/TrackAxisSection";
 import type { VacancyAggregates } from "@/lib/api/aggregates";
 import type { TrackDto } from "@/lib/api/tracks";
 import type { ListVacanciesResponse } from "@/lib/api/vacancies";
-import { buildFeedListQuery, PAGE_SIZE, toSubscriptionParams } from "./feed-query";
+import { buildFeedListQuery, PAGE_SIZE, toSubscriptionFilter } from "./feed-query";
 import { FeedFilters } from "./market/FeedFilters";
 import { FeedRail } from "./FeedRail";
 import { SubscribeCard } from "./subscribe/SubscribeCard";
@@ -128,7 +128,7 @@ export function FeedShell({
   // A subscription is the filter on screen, never the CV — a CV ranks, it does
   // not narrow. Built off the settled filters, not the live ones, so the rate
   // behind the button doesn't fire a request per toggle.
-  const subscriptionParams = settledQuery ? toSubscriptionParams(settledQuery) : null;
+  const subscriptionParams = settledQuery ? toSubscriptionFilter(settledQuery) : null;
 
   const goToOffset = useCallback(
     (target: number) =>

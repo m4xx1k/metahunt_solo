@@ -1,107 +1,65 @@
-import type { CvMatchParams, SubscriptionParams } from "@/lib/api/subscriptions";
+import type { SubscriptionFilter } from "@/lib/api/subscriptions";
 import type { MeSubscription } from "@/lib/api/me";
 import type { EmploymentType, EnglishLevel, Seniority, WorkFormat } from "@/lib/api/vacancies";
-import type { FitTier } from "@/lib/api/ranking";
 
-import {
-  asEnums,
-  DEFAULT_FRESHNESS,
-  EMPTY_FILTERS,
-  FRESHNESS_DAYS,
-  type FilterState,
-} from "./types";
+import { asEnums, EMPTY_FILTERS, type FilterState } from "./types";
 
-function freshnessFor(days: number | undefined): string {
-  const entry = Object.entries(FRESHNESS_DAYS).find(([, value]) => value === days);
-  return entry?.[0] ?? DEFAULT_FRESHNESS;
-}
-
-// `sources` resolves a persisted sourceId back to the code the URL carries;
-// without it (the CV editor, which has no source facet) that filter stays off.
-export function subscriptionCriteriaToFilters(
-  params: CvMatchParams | SubscriptionParams,
+// The stored filter → the rail's own shape. `sources` resolves a persisted
+// sourceId back to the code the URL carries; without it (the subscription
+// editor, which has no source section) that filter shows as off — `stateToFilter`
+// carries the id across instead of letting the round-trip drop it.
+export function filterToState(
+  filter: SubscriptionFilter,
   sources: { id: string; code: string }[] = [],
 ): FilterState {
-  const p = params as SubscriptionParams;
   return {
     ...EMPTY_FILTERS,
-    skillIds: p.skillIds ?? [],
-    sourceCode: sources.find((s) => s.id === p.sourceId)?.code ?? null,
-    roleIds: params.roleIds ?? [],
-    excludedSkillIds: params.excludedSkillIds ?? [],
-    domainIds: params.domainIds ?? [],
-    seniorities: params.seniorities ?? [],
-    workFormats: params.workFormats ?? [],
-    englishLevels: params.englishLevels ?? [],
-    employmentTypes: params.employmentTypes ?? [],
-    experienceYears: params.experienceYears ?? [],
-    freshness: freshnessFor(params.postedWithinDays),
-    test: params.hasTestAssignment ?? null,
-    reservation: params.hasReservation ?? null,
-    minFitTier: params.minFitTier ?? null,
+    roleIds: filter.roleIds ?? [],
+    skillIds: filter.skillIds ?? [],
+    excludedSkillIds: filter.excludedSkillIds ?? [],
+    domainIds: filter.domainIds ?? [],
+    sourceCode: sources.find((s) => s.id === filter.sourceId)?.code ?? null,
+    seniorities: filter.seniorities ?? [],
+    workFormats: filter.workFormats ?? [],
+    englishLevels: filter.englishLevels ?? [],
+    employmentTypes: filter.employmentTypes ?? [],
+    experienceYears: filter.experienceYears ?? [],
+    test: filter.hasTestAssignment ?? null,
+    reservation: filter.hasReservation ?? null,
   };
 }
 
-// includeOffStack is deliberately NOT persisted yet: giving subscribers real
-// control over it is MET-122; until then every digest includes off-stack.
-export function filtersToSubscriptionCriteria(
-  filters: FilterState,
-  current: CvMatchParams,
-  initial: FilterState,
-): CvMatchParams {
+/**
+ * The rail's shape → the stored filter. The inverse of `filterToState`, and the
+ * one place an edited subscription is written.
+ *
+ * `sourceId` is carried rather than read off the state: the rail has no source
+ * section, so the state cannot express it, and deriving it would silently widen
+ * a subscription on every save. Freshness, ranking and paging are not written at
+ * all — they are not part of a subscription (see lib/api/filters.ts).
+ */
+export function stateToFilter(state: FilterState, sourceId?: string): SubscriptionFilter {
   return {
-    ...current,
-    roleIds: filters.roleIds.length > 0 ? filters.roleIds : undefined,
-    excludedSkillIds: filters.excludedSkillIds.length > 0 ? filters.excludedSkillIds : undefined,
-    seniorities: asEnums<Seniority>(filters.seniorities),
-    workFormats: asEnums<WorkFormat>(filters.workFormats),
-    englishLevels: asEnums<EnglishLevel>(filters.englishLevels),
-    employmentTypes: asEnums<EmploymentType>(filters.employmentTypes),
-    domainIds: filters.domainIds.length > 0 ? filters.domainIds : undefined,
-    experienceYears: filters.experienceYears.length > 0 ? filters.experienceYears : undefined,
-    hasTestAssignment: filters.test ?? undefined,
-    hasReservation: filters.reservation ?? undefined,
-    minFitTier: filters.minFitTier ? (filters.minFitTier as FitTier) : undefined,
-    postedWithinDays:
-      filters.freshness === initial.freshness
-        ? current.postedWithinDays
-        : (FRESHNESS_DAYS[filters.freshness] ?? FRESHNESS_DAYS[DEFAULT_FRESHNESS]),
+    sourceId,
+    roleIds: state.roleIds.length > 0 ? state.roleIds : undefined,
+    skillIds: state.skillIds.length > 0 ? state.skillIds : undefined,
+    excludedSkillIds: state.excludedSkillIds.length > 0 ? state.excludedSkillIds : undefined,
+    domainIds: state.domainIds.length > 0 ? state.domainIds : undefined,
+    seniorities: asEnums<Seniority>(state.seniorities),
+    workFormats: asEnums<WorkFormat>(state.workFormats),
+    englishLevels: asEnums<EnglishLevel>(state.englishLevels),
+    employmentTypes: asEnums<EmploymentType>(state.employmentTypes),
+    experienceYears: state.experienceYears.length > 0 ? state.experienceYears : undefined,
+    hasTestAssignment: state.test ?? undefined,
+    hasReservation: state.reservation ?? undefined,
   };
 }
 
-function sameValues(left: string[], right: string[]): boolean {
-  return left.length === right.length && left.every((value) => right.includes(value));
-}
-
-export function areFiltersEqual(left: FilterState, right: FilterState): boolean {
-  return (
-    sameValues(left.roleIds, right.roleIds) &&
-    sameValues(left.skillIds, right.skillIds) &&
-    sameValues(left.excludedSkillIds, right.excludedSkillIds) &&
-    sameValues(left.domainIds, right.domainIds) &&
-    left.sourceCode === right.sourceCode &&
-    sameValues(left.seniorities, right.seniorities) &&
-    sameValues(left.workFormats, right.workFormats) &&
-    sameValues(left.englishLevels, right.englishLevels) &&
-    sameValues(left.employmentTypes, right.employmentTypes) &&
-    sameValues(left.experienceYears, right.experienceYears) &&
-    left.freshness === right.freshness &&
-    left.test === right.test &&
-    left.reservation === right.reservation &&
-    left.minFitTier === right.minFitTier &&
-    // Digests always include off-stack matches, so "no preference" means
-    // included on both sides of the comparison.
-    (left.includeOffStack ?? true) === (right.includeOffStack ?? true)
-  );
-}
-
-type Params = SubscriptionParams | CvMatchParams;
-
-// Compare at the params level, not the FilterState level: params are what the
-// digest actually replays, and they round-trip through the API unchanged. Going
-// via FilterState would have to invent a sourceId→sourceCode lookup and would
-// silently drop the fields that shape has no room for.
-function normalize(p: Params): string {
+// Compare at the filter level, not the FilterState level: the filter is what
+// the digest actually replays and what the server's dedup keys on, and it has
+// no room for the rail-only axes (freshness, sort, off-stack) that would
+// otherwise report a subscription as changed when nothing savable changed.
+function normalize(p: SubscriptionFilter): string {
   const entries = Object.entries(p as Record<string, unknown>)
     .filter(([, v]) => v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0))
     .map(([k, v]): [string, unknown] => [k, Array.isArray(v) ? [...v].sort() : v])
@@ -113,7 +71,7 @@ function normalize(p: Params): string {
 // subscription *is* its filter: the CV a legacy digest ranks against changes
 // the order it arrives in, not which vacancies it covers, so an identical
 // filter is the same alert whether or not a CV hangs off it.
-export function subscriptionCovers(sub: MeSubscription, params: Params): boolean {
+export function subscriptionCovers(sub: MeSubscription, params: SubscriptionFilter): boolean {
   return sub.status === "live" && normalize(sub.params) === normalize(params);
 }
 
@@ -133,7 +91,7 @@ export function dedupeByFilter(subs: MeSubscription[]): MeSubscription[] {
 
 export function findMatchingSubscription(
   subs: MeSubscription[] | undefined,
-  params: Params,
+  params: SubscriptionFilter,
 ): MeSubscription | null {
   if (!subs) return null;
   const wanted = normalize(params);
@@ -141,4 +99,9 @@ export function findMatchingSubscription(
   // nothing, so calling them "subscribed" would be a lie. Tapping Subscribe
   // again is safe — the server reuses an identical row instead of making a twin.
   return subs.find((s) => s.status === "live" && normalize(s.params) === wanted) ?? null;
+}
+
+/** Did anything the server would store actually change? */
+export function filtersDiffer(left: SubscriptionFilter, right: SubscriptionFilter): boolean {
+  return normalize(left) !== normalize(right);
 }

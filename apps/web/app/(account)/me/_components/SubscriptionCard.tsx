@@ -38,14 +38,12 @@ export function SubscriptionCard({
   onToggle,
   onDelete,
   onEdit,
-  editable,
   busy,
 }: {
   sub: MeSubscription;
   onToggle: (id: string, isActive: boolean) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
-  editable: boolean;
   busy: boolean;
 }) {
   const handleToggle = () => onToggle(sub.id, !sub.isActive);
@@ -71,11 +69,9 @@ export function SubscriptionCard({
         </p>
       </div>
       <div className="flex flex-wrap gap-2 sm:shrink-0">
-        {editable ? (
-          <Button variant="secondary" size="sm" onClick={handleEdit} disabled={busy}>
-            edit
-          </Button>
-        ) : null}
+        <Button variant="secondary" size="sm" onClick={handleEdit} disabled={busy}>
+          edit
+        </Button>
         <Button variant="secondary" size="sm" onClick={handleToggle} disabled={busy}>
           {sub.isActive ? "pause" : "turn on"}
         </Button>

@@ -243,20 +243,44 @@ describe("MeService.updateSubscription (integration)", () => {
     });
   });
 
-  it("keeps feed subscription criteria read-only", async () => {
+  // A subscription is its filter, so the filter is the thing you edit. This used
+  // to be refused for anything without a candidateId, which by then was almost
+  // every subscription there was.
+  it("edits a feed subscription's criteria", async () => {
     const me = makeService();
     const userId = await seedUser();
-    const subscriptionId = await seedSubscription({ userId, params: { q: "nestjs" } });
+    const subscriptionId = await seedSubscription({ userId, params: { seniorities: ["MIDDLE"] } });
 
     await expect(
       me.updateSubscription(userId, subscriptionId, { params: { seniorities: ["SENIOR"] } }),
-    ).rejects.toMatchObject({ status: 400 });
+    ).resolves.toBe(true);
 
     const [subscription] = await db
       .select({ params: subscriptions.params })
       .from(subscriptions)
       .where(eq(subscriptions.id, subscriptionId));
-    expect(subscription.params).toEqual({ q: "nestjs" });
+    expect(subscription.params).toEqual({ seniorities: ["SENIOR"] });
+  });
+
+  // Editing writes params straight over the row, bypassing the identity check
+  // create() makes — without the conflict guard the account would quietly end up
+  // with two live rows delivering the same digest.
+  it("refuses an edit that collides with another live subscription", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const twinId = await seedSubscription({ userId, params: { seniorities: ["SENIOR"] } });
+    const editedId = await seedSubscription({ userId, params: { seniorities: ["MIDDLE"] } });
+
+    await expect(
+      me.updateSubscription(userId, editedId, { params: { seniorities: ["SENIOR"] } }),
+    ).rejects.toMatchObject({ status: 409 });
+
+    const [unchanged] = await db
+      .select({ params: subscriptions.params })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, editedId));
+    expect(unchanged.params).toEqual({ seniorities: ["MIDDLE"] });
+    expect(twinId).not.toBe(editedId);
   });
 
   it("rejects unknown public refs without changing stored criteria", async () => {
@@ -275,7 +299,9 @@ describe("MeService.updateSubscription (integration)", () => {
       }),
     ).rejects.toMatchObject({ status: 400 });
     await expect(
-      me.updateSubscription(userId, subscriptionId, { params: { roleIds: null } }),
+      me.updateSubscription(userId, subscriptionId, {
+        params: { roleIds: null } as unknown as Record<string, unknown>,
+      }),
     ).rejects.toMatchObject({ status: 400 });
 
     const [subscription] = await db

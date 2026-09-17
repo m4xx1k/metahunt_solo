@@ -1,4 +1,4 @@
-import { ApiPropertyOptional, OmitType } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 
 import { Transform, Type } from "class-transformer";
 import type { TransformFnParams } from "class-transformer";
@@ -12,7 +12,7 @@ import {
   ValidateNested,
 } from "class-validator";
 
-import { CandidateMatchParamsDto } from "../platform/shared/filter-params.dto";
+import { SubscriptionFilterDto } from "../platform/shared/filter-params.dto";
 import type { SubscriptionParams } from "../platform/subscriptions/subscription.contract";
 
 export interface MeCv {
@@ -25,11 +25,6 @@ export interface MeCv {
   experienceYears: number | null;
   createdAt: string;
 }
-
-export class EditableMatchCriteriaDto extends OmitType(CandidateMatchParamsDto, [
-  "page",
-  "pageSize",
-] as const) {}
 
 /**
  * `live` delivers. `pending` was created but never confirmed through the
@@ -56,7 +51,8 @@ export interface MeCvSubscription extends MeSubscriptionBase {
   cvLabel: string | null;
   /** Upload time, the only thing telling two same-named CVs apart. */
   cvAddedAt: string | null;
-  params: EditableMatchCriteriaDto;
+  /** Same filter as a feed subscription: the CV ranks it, it does not narrow it. */
+  params: SubscriptionParams;
 }
 
 export interface MeFeedSubscription extends MeSubscriptionBase {
@@ -83,10 +79,10 @@ export class UpdateSubscriptionDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ type: EditableMatchCriteriaDto })
+  @ApiPropertyOptional({ type: SubscriptionFilterDto })
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsObject()
   @ValidateNested()
-  @Type(() => EditableMatchCriteriaDto)
-  params?: EditableMatchCriteriaDto;
+  @Type(() => SubscriptionFilterDto)
+  params?: SubscriptionFilterDto;
 }

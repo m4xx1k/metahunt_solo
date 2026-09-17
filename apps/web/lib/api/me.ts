@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch } from "./client";
-import type { CvMatchParams, SubscriptionParams } from "./subscriptions";
+import type { SubscriptionFilter } from "./filters";
 
 export interface MeCv {
   id: string;
@@ -32,13 +32,14 @@ export interface MeCvSubscription extends MeSubscriptionBase {
   /** The CV this digest ranks against — null once that CV is deleted. */
   cvLabel: string | null;
   cvAddedAt: string | null;
-  params: CvMatchParams;
+  /** Same filter as a feed subscription: the CV ranks it, it does not narrow it. */
+  params: SubscriptionFilter;
 }
 
 export interface MeFeedSubscription extends MeSubscriptionBase {
   isCv: false;
   candidateId: null;
-  params: SubscriptionParams;
+  params: SubscriptionFilter;
 }
 
 export type MeSubscription = MeCvSubscription | MeFeedSubscription;
@@ -46,7 +47,7 @@ export type MeSubscription = MeCvSubscription | MeFeedSubscription;
 export interface UpdateSubscription {
   name?: string;
   isActive?: boolean;
-  params?: CvMatchParams;
+  params?: SubscriptionFilter;
 }
 
 export const meApi = {

@@ -47,7 +47,7 @@ export default function MePage() {
       <div className="min-w-0 space-y-8">
         <AccountHeader user={user} onLogout={handleLogout} />
         <section id="subscriptions" className="scroll-mt-24">
-          <SubscriptionList canEdit={user.roles.includes("admin")} />
+          <SubscriptionList />
         </section>
         <section id="cv" className="scroll-mt-24">
           <MyCvPanel />

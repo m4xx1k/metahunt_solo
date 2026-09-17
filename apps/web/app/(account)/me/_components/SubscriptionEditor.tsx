@@ -6,14 +6,13 @@ import Link from "next/link";
 import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
 import {
-  areFiltersEqual,
-  filtersToSubscriptionCriteria,
-  subscriptionCriteriaToFilters,
+  filtersDiffer,
+  filterToState,
+  stateToFilter,
 } from "@/features/vacancy-filters/subscription-criteria";
 import { useLocalFilters } from "@/features/vacancy-filters/use-local-filters";
 import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { MeSubscription, UpdateSubscription } from "@/lib/api/me";
-import type { CvMatchParams } from "@/lib/api/subscriptions";
 import { Button } from "@/ui";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 
@@ -35,11 +34,8 @@ export function SubscriptionEditor({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(subscription.name || subscription.label);
-  const params = useMemo<CvMatchParams>(
-    () => (subscription.isCv ? subscription.params : {}),
-    [subscription],
-  );
-  const initialFilters = useMemo(() => subscriptionCriteriaToFilters(params), [params]);
+  const params = subscription.params;
+  const initialFilters = useMemo(() => filterToState(params), [params]);
   const filters = useLocalFilters(initialFilters);
 
   const handleName = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -51,12 +47,12 @@ export function SubscriptionEditor({
       const nextName = name.trim();
       if (!nextName) return;
       const patch: UpdateSubscription = { name: nextName };
-      if (subscription.isCv && !areFiltersEqual(filters.filters, initialFilters)) {
-        patch.params = filtersToSubscriptionCriteria(filters.filters, params, initialFilters);
-      }
+      // The rail has no source section, so the stored id rides across untouched.
+      const next = stateToFilter(filters.filters, params.sourceId);
+      if (filtersDiffer(next, params)) patch.params = next;
       onSave(subscription.id, patch);
     },
-    [filters.filters, initialFilters, name, onSave, params, subscription.id, subscription.isCv],
+    [filters.filters, name, onSave, params, subscription.id],
   );
 
   return (
@@ -72,8 +68,8 @@ export function SubscriptionEditor({
           />
         </label>
 
-        {subscription.isCv ? (
-          <div className="mt-5 border-t border-border">
+        <div className="mt-5 border-t border-border">
+          {subscription.isCv ? (
             <p className="py-3 font-mono text-2xs text-text-muted">
               * old type · sorted by CV{" "}
               {subscription.cvLabel ? (
@@ -87,28 +83,29 @@ export function SubscriptionEditor({
                 <span className="text-danger">(deleted)</span>
               )}
             </p>
-            <FilterRail
-              api={filters}
-              lens="warm"
-              seniorityOptions={SENIORITY_OPTIONS}
-              workFormatOptions={WORK_FORMAT_OPTIONS}
-              roleOptions={roles}
-              domainOptions={domains}
-            />
-            <MultiSelect
-              title="excluded skills"
-              options={skills}
-              selected={filters.filters.excludedSkillIds}
-              onToggle={filters.toggleExcludedSkill}
-              searchable
-              searchPlaceholder="find a skill…"
-            />
-          </div>
-        ) : (
-          <p className="mt-4 font-mono text-2xs text-text-muted">
-            Change this filter on the main page.
-          </p>
-        )}
+          ) : null}
+          {/* cold: a subscription carries no fit gate — that needs a ranked page.
+              Freshness is hidden for the same reason, its window is the digest's
+              own age rather than anything stored. */}
+          <FilterRail
+            api={filters}
+            lens="cold"
+            hideFreshness
+            seniorityOptions={SENIORITY_OPTIONS}
+            workFormatOptions={WORK_FORMAT_OPTIONS}
+            roleOptions={roles}
+            skillOptions={skills}
+            domainOptions={domains}
+          />
+          <MultiSelect
+            title="excluded skills"
+            options={skills}
+            selected={filters.filters.excludedSkillIds}
+            onToggle={filters.toggleExcludedSkill}
+            searchable
+            searchPlaceholder="find a skill…"
+          />
+        </div>
 
         <div className="mt-5 flex gap-2">
           <Button type="submit" size="sm" disabled={busy || name.trim().length === 0}>

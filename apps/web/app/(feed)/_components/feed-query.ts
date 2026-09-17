@@ -12,7 +12,7 @@ import {
   WORK_FORMAT_VALUES,
   type ListVacanciesQuery,
 } from "@/lib/api/vacancies";
-import type { SubscriptionParams } from "@/lib/api/subscriptions";
+import type { SubscriptionFilter } from "@/lib/api/subscriptions";
 import { DEFAULT_FRESHNESS, FRESHNESS_DAYS } from "@/features/vacancy-filters/types";
 import { readBool, readList, type ParamReader } from "@/features/vacancy-filters/url-params";
 
@@ -103,9 +103,12 @@ export function buildFeedListQuery(
   return { query, offset, page };
 }
 
-// The effective query a subscription replays — the list query minus pagination
-// and the two scope toggles (dupes/nice) a feed digest doesn't carry.
-export function toSubscriptionParams(q: ListVacanciesQuery): SubscriptionParams {
+// The filter a subscription replays. Freshness is deliberately not carried
+// over: the feed always sends one (it defaults to a month), so inheriting it
+// stamped a window nobody chose onto every subscription — and since the window
+// is part of the stored identity, browsing at "week" and at "month" then
+// subscribing twice made two alerts out of one filter.
+export function toSubscriptionFilter(q: ListVacanciesQuery): SubscriptionFilter {
   return {
     roleIds: q.roleIds,
     skillIds: q.skillIds,
@@ -119,6 +122,5 @@ export function toSubscriptionParams(q: ListVacanciesQuery): SubscriptionParams 
     experienceYears: q.experienceYears,
     hasTestAssignment: q.hasTestAssignment,
     hasReservation: q.hasReservation,
-    postedWithinDays: q.postedWithinDays,
   };
 }

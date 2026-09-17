@@ -9,7 +9,11 @@ import { NodeSlugResolver } from "../nodes/node-slug.resolver";
 import { asString, asStringArray } from "../shared/coerce";
 import { isUuid } from "../shared/query-parsing";
 
-import { SUBSCRIPTION_PARAM_KEYS, type SubscriptionParams } from "./subscription.contract";
+import {
+  SUBSCRIPTION_PARAM_KEYS,
+  type SubscriptionParamKey,
+  type SubscriptionParams,
+} from "./subscription.contract";
 
 const MAX_SUMMARY_NAMES = 2;
 const EDITABLE_AXES = [
@@ -31,13 +35,6 @@ function setAxis(
   // idempotency check and dedup GC rely on is order-sensitive otherwise.
   if (ids && ids.length > 0) params[key] = [...ids].sort();
   else delete params[key];
-}
-
-function asEnumList(arrayValue: unknown, scalarValue: unknown): string[] {
-  const values = asStringArray(arrayValue);
-  if (values.length > 0) return values;
-  const scalar = asString(scalarValue);
-  return scalar ? [scalar] : [];
 }
 
 @Injectable()
@@ -88,17 +85,14 @@ export class SubscriptionCriteriaService {
 
     const skillCount = asStringArray(params.skillIds).length;
     if (skillCount > 0) parts.push(`${skillCount} скіл.`);
-    const seniorities = asEnumList(params.seniorities, params.seniority);
+    const seniorities = asStringArray(params.seniorities);
     if (seniorities.length > 0)
       parts.push(seniorities.map((value) => value.toLowerCase()).join("/"));
-    const formats = asEnumList(params.workFormats, params.workFormat);
+    const formats = asStringArray(params.workFormats);
     if (formats.length > 0) parts.push(formats.map((value) => value.toLowerCase()).join("/"));
     const experience = asStringArray(params.experienceYears);
     if (experience.length > 0) parts.push(`досвід ${experience.join("/")}р`);
     if (params.hasReservation === true) parts.push("бронь");
-    if (typeof params.minFitTier === "string") {
-      parts.push(`fit≥${params.minFitTier.toLowerCase()}`);
-    }
     return parts.length > 0 ? parts.join(" · ") : "усі вакансії";
   }
 
@@ -107,9 +101,12 @@ export class SubscriptionCriteriaService {
     strict: boolean,
   ): Promise<SubscriptionParams> {
     const params: SubscriptionParams = {};
+    // The one cast in this file, and it sits where jsonb enters: the key and the
+    // value are correlated at runtime but TS cannot prove it across a union key.
+    const write = params as Record<SubscriptionParamKey, unknown>;
     for (const key of SUBSCRIPTION_PARAM_KEYS) {
       const value = raw[key];
-      if (value !== undefined && value !== null) params[key] = value;
+      if (value !== undefined && value !== null) write[key] = value;
     }
 
     await Promise.all(

@@ -1,6 +1,6 @@
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -14,12 +14,7 @@ import {
 import { createSubscriptionName } from "../platform/subscriptions/subscription-name";
 import type { SubscriptionParams } from "../platform/subscriptions/subscription.contract";
 
-import type {
-  EditableMatchCriteriaDto,
-  MeCv,
-  MeSubscription,
-  MeSubscriptionStatus,
-} from "./me.contract";
+import type { MeCv, MeSubscription, MeSubscriptionStatus } from "./me.contract";
 
 const { authIdentities, userCvs, users, candidates, subscriptions } = schema;
 const TELEGRAM_PROVIDER = "telegram";
@@ -188,7 +183,7 @@ export class MeService {
             candidateId: r.candidateId,
             cvLabel: cvMeta.get(r.candidateId)?.label ?? null,
             cvAddedAt: cvMeta.get(r.candidateId)?.addedAt ?? null,
-            params: params as EditableMatchCriteriaDto,
+            params,
           };
         }
         return { ...base, isCv: false as const, candidateId: null, params };
@@ -227,8 +222,30 @@ export class MeService {
         .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
         .for("update");
       if (!existing) return false;
-      if (params && existing.candidateId === null) {
-        throw new BadRequestException("Only CV subscription criteria can be edited");
+
+      // Editing writes `params` straight over the row, which is the same
+      // identity `create()` refuses to duplicate — without this an edit could
+      // reach a filter the account already has and quietly deliver it twice.
+      // Live only: a pending twin delivers nothing, and linkChat drops it.
+      if (params !== undefined) {
+        const [conflict] = await tx
+          .select({ id: subscriptions.id, name: subscriptions.name })
+          .from(subscriptions)
+          .where(
+            and(
+              eq(subscriptions.userId, userId),
+              ne(subscriptions.id, existing.id),
+              eq(subscriptions.isActive, true),
+              sql`${subscriptions.params} = ${JSON.stringify(params)}::jsonb`,
+            ),
+          )
+          .limit(1);
+        if (conflict) {
+          throw new ConflictException({
+            message: "You already have an alert with these filters",
+            conflictsWith: { id: conflict.id, name: conflict.name },
+          });
+        }
       }
 
       if (patch.name !== undefined) {

@@ -13,13 +13,12 @@ import { RailCard } from "../RailCard";
 import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { ApiError } from "@/lib/api/client";
 import { meApi } from "@/lib/api/me";
-import { subscriptionsApi, type CvMatchParams } from "@/lib/api/subscriptions";
-import type { SubscriptionParams } from "@/lib/api/subscriptions";
+import { subscriptionsApi, type SubscriptionFilter } from "@/lib/api/subscriptions";
 import {
   findMatchingSubscription,
   subscriptionCovers,
   dedupeByFilter,
-  subscriptionCriteriaToFilters,
+  filterToState,
 } from "@/features/vacancy-filters/subscription-criteria";
 import { useUrlFilters } from "@/features/vacancy-filters/use-url-filters";
 import { formatMatchRate, useMatchRate } from "../../_hooks/use-match-rate";
@@ -46,7 +45,7 @@ export function SubscribeCard({
   sources,
 }: {
   /** The current filter, already stripped of pagination + scope toggles. */
-  params: SubscriptionParams | CvMatchParams;
+  params: SubscriptionFilter;
   /** A real CV in view → the digest is ranked against it. Samples can't own one. */
   viewer?: { candidateId: string; label: string; isSample: boolean } | null;
   /** Source catalog — replaying a saved filter needs sourceId → ?source=code. */
@@ -132,9 +131,7 @@ export function SubscribeCard({
                   key={s.id}
                   type="button"
                   aria-pressed={covers}
-                  onClick={() =>
-                    filterApi.replace(subscriptionCriteriaToFilters(s.params, sources))
-                  }
+                  onClick={() => filterApi.replace(filterToState(s.params, sources))}
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 text-left font-mono text-2xs transition-colors",
                     covers

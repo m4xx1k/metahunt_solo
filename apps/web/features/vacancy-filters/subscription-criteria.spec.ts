@@ -1,83 +1,79 @@
-import type { CvMatchParams } from "@/lib/api/subscriptions";
+import type { SubscriptionFilter } from "@/lib/api/subscriptions";
 
-import {
-  areFiltersEqual,
-  filtersToSubscriptionCriteria,
-  subscriptionCriteriaToFilters,
-} from "./subscription-criteria";
+import { filtersDiffer, filterToState, stateToFilter } from "./subscription-criteria";
+import { DEFAULT_FRESHNESS } from "./types";
 
-describe("subscription criteria adapter", () => {
+describe("subscription filter codec", () => {
   const sourceId = "11111111-1111-1111-1111-111111111111";
 
-  it("maps persisted criteria into editable filters", () => {
+  it("maps a stored filter into the rail's state", () => {
     expect(
-      subscriptionCriteriaToFilters({
+      filterToState({
         roleIds: ["backend-developer"],
         excludedSkillIds: ["php"],
         seniorities: ["SENIOR"],
-        postedWithinDays: 14,
         hasReservation: false,
       }),
     ).toMatchObject({
       roleIds: ["backend-developer"],
       excludedSkillIds: ["php"],
       seniorities: ["SENIOR"],
-      freshness: "2weeks",
       reservation: false,
     });
   });
 
-  it("keeps hidden criteria and removes cleared values", () => {
-    const filters = subscriptionCriteriaToFilters({
-      sourceId,
-      roleIds: ["backend-developer"],
-      seniorities: ["MIDDLE"],
-    });
-    filters.roleIds = [];
-    filters.seniorities = [];
-    filters.excludedSkillIds = ["php"];
+  // Regression: skillIds had no writer, so the rail let you edit the skills of a
+  // subscription and silently saved the old ones back.
+  it("round-trips must-have skills", () => {
+    const stored: SubscriptionFilter = { skillIds: ["typescript", "nestjs"] };
 
-    expect(
-      filtersToSubscriptionCriteria(
-        filters,
-        {
-          sourceId,
-          roleIds: ["backend-developer"],
-          seniorities: ["MIDDLE"],
-        },
-        subscriptionCriteriaToFilters({
-          sourceId,
-          roleIds: ["backend-developer"],
-          seniorities: ["MIDDLE"],
-        }),
-      ),
-    ).toEqual({
+    expect(filterToState(stored).skillIds).toEqual(["typescript", "nestjs"]);
+    expect(stateToFilter(filterToState(stored)).skillIds).toEqual(["typescript", "nestjs"]);
+  });
+
+  it("carries sourceId across a round-trip the rail cannot express", () => {
+    const stored: SubscriptionFilter = { sourceId, roleIds: ["backend-developer"] };
+    const state = filterToState(stored);
+
+    expect(state.sourceCode).toBeNull();
+    expect(stateToFilter(state, stored.sourceId).sourceId).toBe(sourceId);
+  });
+
+  it("drops cleared axes instead of storing empty arrays", () => {
+    const state = filterToState({ roleIds: ["backend-developer"], seniorities: ["MIDDLE"] });
+    state.roleIds = [];
+    state.seniorities = [];
+    state.excludedSkillIds = ["php"];
+
+    expect(stateToFilter(state, sourceId)).toEqual({
       sourceId,
       roleIds: undefined,
+      skillIds: undefined,
       excludedSkillIds: ["php"],
+      domainIds: undefined,
       seniorities: undefined,
       workFormats: undefined,
       englishLevels: undefined,
       employmentTypes: undefined,
-      domainIds: undefined,
       experienceYears: undefined,
       hasTestAssignment: undefined,
       hasReservation: undefined,
-      minFitTier: undefined,
-      postedWithinDays: undefined,
     });
   });
 
-  it("preserves custom freshness while another filter changes", () => {
-    const current: CvMatchParams = { postedWithinDays: 60, seniorities: ["MIDDLE"] };
-    const initial = subscriptionCriteriaToFilters(current);
-    const edited = { ...initial, excludedSkillIds: ["php"] };
+  // Freshness, sort and the fit gate are rail-only: none of them is stored, so
+  // touching one must not report the subscription as edited.
+  it("ignores rail-only axes when deciding whether anything changed", () => {
+    const stored: SubscriptionFilter = { seniorities: ["MIDDLE"] };
+    const state = filterToState(stored);
 
-    expect(areFiltersEqual(initial, subscriptionCriteriaToFilters(current))).toBe(true);
-    expect(filtersToSubscriptionCriteria(edited, current, initial)).toMatchObject({
-      postedWithinDays: 60,
-      seniorities: ["MIDDLE"],
-      excludedSkillIds: ["php"],
-    });
+    expect(filtersDiffer(stateToFilter(state), stored)).toBe(false);
+
+    const noisy = { ...state, freshness: "week", minFitTier: "STRONG", sort: "score" };
+    expect(noisy.freshness).not.toBe(DEFAULT_FRESHNESS);
+    expect(filtersDiffer(stateToFilter(noisy), stored)).toBe(false);
+
+    const real = { ...state, excludedSkillIds: ["php"] };
+    expect(filtersDiffer(stateToFilter(real), stored)).toBe(true);
   });
 });

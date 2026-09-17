@@ -6,7 +6,8 @@ import { apiGet, buildQs } from "./client";
 // FitTier/MatchSort live in ranking.ts, which already imports VacancyDto from
 // here — a type-only import back is fine (erased at compile time, no runtime
 // cycle) and avoids a second copy of the tier union.
-import type { FitTier, MatchSort } from "./ranking";
+import type { FitTier } from "./ranking";
+import type { ListVacanciesQuery } from "./filters";
 
 // ───────────────────────────── Enums ─────────────────────────────
 
@@ -211,67 +212,9 @@ export interface FeedDuplicateGroup {
 
 // ───────────────────────── List endpoint ─────────────────────────
 
-export interface ListVacanciesQuery {
-  page?: number;
-  pageSize?: number;
-  q?: string;
-  sourceId?: string;
-  companyId?: string;
-  /** Hiring company slug — resolved to an id at the feed boundary. */
-  companySlug?: string;
-  roleId?: string;
-  /**
-   * Match ANY of these ROLE node slugs (OR). With `trackSlug` it overrides the
-   * track's role axis (lazy-refine to specific roles) while the track's skill
-   * preset still applies. Serialized as repeated ?roleIds= params; the feed
-   * controller resolves slugs -> node ids at the boundary.
-   */
-  roleIds?: string[];
-  skillIds?: string[];
-  excludedSkillIds?: string[];
-  /** Match ANY of these DOMAIN node slugs (OR). Serialized as repeated ?domainIds=. */
-  domainIds?: string[];
-  /**
-   * Skill-match scope. Omitted/false: a skill matches only when it's a
-   * required (must-have) skill on the vacancy. true: nice-to-have skills also
-   * satisfy the filter.
-   */
-  includeOptionalSkills?: boolean;
-  /** Match ANY listed value (OR). Serialized as repeated params. */
-  seniorities?: Seniority[];
-  workFormats?: WorkFormat[];
-  employmentTypes?: EmploymentType[];
-  englishLevels?: EnglishLevel[];
-  engagementType?: EngagementType;
-  /** Discrete experience tokens ("0".."5" exact, "6+" = ≥6); OR-combined. */
-  experienceYears?: string[];
-  salaryFloor?: number;
-  currency?: Currency;
-  hasTestAssignment?: boolean;
-  hasReservation?: boolean;
-  /** Freshness gate — posted within the last N days. */
-  postedWithinDays?: number;
-  /** When true, show ONLY deduped vacancies (representative card of a multi-member group). */
-  hasDuplicates?: boolean;
-
-  /** When false (default), exclude vacancies that lack a VERIFIED role. */
-  includeRoleless?: boolean;
-  /** When false (default), only VERIFIED skills appear in `skills`. */
-  includeAllSkills?: boolean;
-
-  /**
-   * Page order: freshest (default, the CHEAP PATH) or best-Fit-first (the
-   * FULL PATH — needs a signed-in CV or `sample`; without one it silently
-   * stays freshest, same result set).
-   */
-  sort?: MatchSort;
-  /** Hide vacancies below this coverage tier. Forces the FULL PATH, same as sort=score. */
-  minFitTier?: FitTier;
-  /** FULL PATH only — off-stack hiding is a warm-lens affordance the cheap path never had. */
-  includeOffStack?: boolean;
-  /** A seeded sample candidate id — scores the page against it like a signed-in viewer's CV. */
-  sample?: string;
-}
+// The query shape lives in filters.ts, split into composable axes (a type-only
+// import back is fine — erased at compile time, same as ranking.ts above).
+export type { ListVacanciesQuery, SubscriptionFilter, VacancyFilter } from "./filters";
 
 export interface ListVacanciesResponse {
   items: VacancyDto[];

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { Panel } from "@/ui/layout/Panel";
 import { EmptyState } from "@/ui/feedback/EmptyState";
+import { ApiError } from "@/lib/api/client";
 import { facetsApi, type NodeFacet } from "@/lib/api/facets";
 import { meApi, type UpdateSubscription } from "@/lib/api/me";
 import type { OptionRow } from "@/features/vacancy-filters/types";
@@ -20,14 +21,7 @@ function toOptions(nodes: NodeFacet[]): OptionRow[] {
   return nodes.map((node) => ({ id: node.id, label: node.name, count: node.count }));
 }
 
-function supportsEditing(
-  subscription: { name?: string; params?: unknown },
-  canEdit: boolean,
-): boolean {
-  return canEdit && typeof subscription.name === "string" && subscription.params !== undefined;
-}
-
-export function SubscriptionList({ canEdit }: { canEdit: boolean }) {
+export function SubscriptionList() {
   const qc = useQueryClient();
   // Which subscription is open is state, not a document fragment, so it rides a
   // query param: `/me?sub=<id>` lets "manage alerts" land on the right one.
@@ -85,7 +79,14 @@ export function SubscriptionList({ canEdit }: { canEdit: boolean }) {
       toast.success("Saved");
       void qc.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEYS.subscriptions });
     },
-    onError: () => toast.error("Could not save"),
+    // 409: these filters are already another live alert. Saying so beats saving
+    // a second copy of a digest the account already gets.
+    onError: (error) =>
+      toast.error(
+        error instanceof ApiError && error.status === 409
+          ? "You already have an alert with these filters"
+          : "Could not save",
+      ),
   });
 
   const handleToggle = useCallback(
@@ -139,7 +140,6 @@ export function SubscriptionList({ canEdit }: { canEdit: boolean }) {
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 onEdit={handleEdit}
-                editable={supportsEditing(sub, canEdit)}
                 busy={busy}
               />
             ),

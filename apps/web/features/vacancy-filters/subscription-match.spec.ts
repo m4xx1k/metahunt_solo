@@ -26,19 +26,17 @@ function cvSub(params: MeSubscription["params"], id = "cv"): MeSubscription {
 
 describe("findMatchingSubscription", () => {
   it("matches the same filter whatever order its lists arrived in", () => {
-    const subs = [feedSub({ roleIds: ["b", "a"], postedWithinDays: 30 })];
-    expect(findMatchingSubscription(subs, { roleIds: ["a", "b"], postedWithinDays: 30 })).toBe(
-      subs[0],
-    );
+    const subs = [feedSub({ roleIds: ["b", "a"] })];
+    expect(findMatchingSubscription(subs, { roleIds: ["a", "b"] })).toBe(subs[0]);
   });
 
   it("ignores absent vs empty-list differences", () => {
-    const subs = [feedSub({ roleIds: ["a"], skillIds: [], postedWithinDays: 30 })];
-    expect(findMatchingSubscription(subs, { roleIds: ["a"], postedWithinDays: 30 })).toBe(subs[0]);
+    const subs = [feedSub({ roleIds: ["a"], skillIds: [] })];
+    expect(findMatchingSubscription(subs, { roleIds: ["a"] })).toBe(subs[0]);
   });
 
   it("does not match a narrower filter", () => {
-    const subs = [feedSub({ roleIds: ["a"], postedWithinDays: 30 })];
+    const subs = [feedSub({ roleIds: ["a"] })];
     expect(findMatchingSubscription(subs, { roleIds: ["a"], seniorities: ["SENIOR"] })).toBeNull();
   });
 
@@ -46,7 +44,7 @@ describe("findMatchingSubscription", () => {
   // this filter is still "you already have this" — otherwise replaying one from
   // the saved list left the card offering to create its twin.
   it("matches a CV subscription on the filter alone", () => {
-    const params = { roleIds: ["a"], postedWithinDays: 30 };
+    const params = { roleIds: ["a"] };
     expect(findMatchingSubscription([cvSub(params)], params)).not.toBeNull();
     expect(findMatchingSubscription([feedSub(params)], params)).not.toBeNull();
   });
@@ -55,18 +53,17 @@ describe("findMatchingSubscription", () => {
   // normalizer drops null/undefined/[] but must keep false, or the card would
   // call a wider subscription an exact match and never offer the narrow one.
   it("does not treat a false-valued flag as unset", () => {
-    const subs = [feedSub({ roleIds: ["a"], postedWithinDays: 30 })];
+    const subs = [feedSub({ roleIds: ["a"] })];
     expect(
       findMatchingSubscription(subs, {
         roleIds: ["a"],
-        postedWithinDays: 30,
         hasReservation: false,
       }),
     ).toBeNull();
   });
 
   it("matches a false-valued flag on both sides", () => {
-    const params = { roleIds: ["a"], postedWithinDays: 30, hasReservation: false };
+    const params = { roleIds: ["a"], hasReservation: false };
     expect(findMatchingSubscription([feedSub(params)], { ...params })).not.toBeNull();
   });
 
