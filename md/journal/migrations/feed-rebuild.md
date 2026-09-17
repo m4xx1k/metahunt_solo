@@ -1,7 +1,7 @@
 # feed rebuild — one page, one filter
 
 **Status:** in progress — tasks 3–5 partly shipped on `feat/feed-homepage`
-(12 commits). Tasks 1 and 2 not started. See §Where this stands.
+(16 commits). Tasks 1 and 2 not started. See §Where this stands.
 **Date:** 2026-09-16, updated 2026-09-17
 **Sits atop:** the `(feed)` catch-all route (`/` + ~40 track slugs), MET-159
 (partially superseded — see §Disposition), MET-50, MET-149.
@@ -261,25 +261,42 @@ deleted.
 time, each verified — a second indexable copy of the homepage was never needed.
 The task's other half (one container width) shipped.
 
+### Shipped 2026-09-17 — how much is on screen
+
+Items 1–3 of the list below, one commit each, verified at 1440/1100/390 signed
+out and signed in.
+
+- **`HowItWorks` off the index.** The component tree had no other consumer
+  (`/welcome` keeps its own copy), so it is deleted, not just unmounted.
+- **One number.** The hero counter is the filtered total, seeded server-side
+  from the same response that seeds the list — so it renders filtered on first
+  paint. It counts up from zero once, then tweens from the number on screen and
+  dims while the query settles. The index reads **3,105**, not the corpus 14,592:
+  the default freshness window and dedupe are part of what the list returns, and
+  the page now says so.
+- **Filter rail: 13 headers → 4.** Role, skills and seniority stay open; the
+  rest sit behind one `more filters` disclosure carrying a count of what is set
+  inside it. No auto-expand on a hidden active filter. `FilterRail` has three
+  consumers, so `/me`'s subscription editor and `/feed` inherit the same shape.
+
+Left deliberately: `min fit` is behind the disclosure even in the warm lens
+(arguably the one control a CV owner wants open), and the control reads
+`more filters` in English because the whole rail still does — task 7 turns the
+chrome Ukrainian in one sweep rather than leaving one bilingual rail.
+
 ### Remaining, in the order worth doing
 
-1. **`HowItWorks` off the index.** `/how-it-works` is a route already, linked
-   from the hero and the footer. Costs nothing, takes a section and the last
-   duplicate CV ask off the page.
-2. **One number.** The 6xl hero counter should become the filtered count. Now
-   urgent rather than cosmetic: with `N found` removed from the list header, a
-   filter narrow enough to fit one page shows no total anywhere (the pager hides
-   itself below one page).
-3. **Filter rail: 3 sections open, the rest behind one control.**
-4. **Right rail, one subject.** `CandidateProfile` + `SkillRecommendations` +
+1. **Right rail, one subject.** `CandidateProfile` + `SkillRecommendations` +
    `SaveCvNudge` are three cards about one CV.
-5. **Track strip in one row** + "всі напрями".
-6. **Mobile sticky row** — `N вакансій · [фільтри] · [резюме]` with sheets. The
+2. **Track strip in one row** + "всі напрями". Its tile counts are now the only
+   number on the page with a different denominator than the hero — they ignore
+   freshness, so `Blockchain 28` sits above a hero reading `6`.
+3. **Mobile sticky row** — `N вакансій · [фільтри] · [резюме]` with sheets. The
    largest piece of the original plan still unbuilt.
-7. **Task 1 — the label convention.** The chrome is still mixed
+4. **Task 1 — the label convention.** The chrome is still mixed
    (`Get alerts on Telegram` beside `Обери свій напрям`) and the rule is not in
    `STYLE.md` yet.
-8. **Task 2 — `source_text` again.** Needs the ADR superseding the current
+5. **Task 2 — `source_text` again.** Needs the ADR superseding the current
    privacy clause; nothing started.
 
 ### Loose ends this branch leaves
