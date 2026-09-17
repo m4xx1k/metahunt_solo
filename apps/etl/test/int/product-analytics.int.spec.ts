@@ -100,6 +100,15 @@ async function seedDigest(subscriptionId: string, at: Date, count: number): Prom
   }
 }
 
+// The daily buckets are cut by the DB clock, so the anchor has to come from there too.
+async function yesterdayMorning(): Promise<{ at: Date; date: string }> {
+  const { rows } = await db.execute<{ at: string; date: string }>(sql`
+    SELECT (date_trunc('day', now()) - interval '14 hours') AS at,
+           to_char(date_trunc('day', now()) - interval '1 day', 'YYYY-MM-DD') AS date
+  `);
+  return { at: new Date(rows[0].at), date: rows[0].date };
+}
+
 beforeAll(async () => {
   ({ db, pool } = makeTestDb());
   const moduleRef = await Test.createTestingModule({
@@ -291,16 +300,19 @@ describe("delivery health", () => {
       .insert(subscriptions)
       .values({ personId: PERSON_A, chatId: CHAT_A, params: {}, isActive: true })
       .returning({ id: subscriptions.id });
-    const morning = new Date(Date.now() - 4 * 60 * 60 * 1000);
-    const later = new Date(morning.getTime() + 2 * 60 * 60 * 1000);
-    await seedDigest(sub.id, morning, 4);
-    await seedDigest(sub.id, later, 2);
+    const { at, date } = await yesterdayMorning();
+    await seedDigest(sub.id, at, 4);
+    await seedDigest(sub.id, new Date(at.getTime() + 2 * 60 * 60 * 1000), 2);
 
     const overview = await service.overview("all");
 
     expect(overview.delivery.digestsSent).toEqual(2);
     expect(overview.delivery.chatsReached).toEqual(1);
-    expect(overview.delivery.daily.at(-1)).toMatchObject({ digests: 2, chats: 1, perChat: 2 });
+    expect(overview.delivery.daily.find((day) => day.date === date)).toMatchObject({
+      digests: 2,
+      chats: 1,
+      perChat: 2,
+    });
   });
 
   it("reports seven daily buckets and leaves a quiet day at zero", async () => {
