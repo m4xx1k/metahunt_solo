@@ -37,6 +37,18 @@ export function SubscriptionEditor({
   const params = subscription.params;
   const initialFilters = useMemo(() => filterToState(params), [params]);
   const filters = useLocalFilters(initialFilters);
+  // The catalogs below only list refs that have vacancies today, so a saved
+  // filter naming a quiet role would render as a bare slug. The subscription
+  // ships its own names for exactly that gap.
+  const savedOptions = useMemo<OptionRow[]>(
+    () =>
+      Object.entries(subscription.refNames ?? {}).map(([id, label]) => ({
+        id,
+        label,
+        count: 0,
+      })),
+    [subscription.refNames],
+  );
 
   const handleName = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
@@ -96,11 +108,13 @@ export function SubscriptionEditor({
             roleOptions={roles}
             skillOptions={skills}
             domainOptions={domains}
+            selectedOptions={savedOptions}
           />
           <MultiSelect
             title="excluded skills"
             options={skills}
             selected={filters.filters.excludedSkillIds}
+            selectedOptions={savedOptions}
             onToggle={filters.toggleExcludedSkill}
             searchable
             searchPlaceholder="find a skill…"

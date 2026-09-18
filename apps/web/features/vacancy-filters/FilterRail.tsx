@@ -27,6 +27,7 @@ export function FilterRail({
   domainOptions,
   roleOptions,
   skillOptions,
+  selectedOptions,
   skillExtra,
   seniorityToneFor,
   hideFreshness = false,
@@ -45,6 +46,13 @@ export function FilterRail({
   roleOptions?: OptionRow[];
   /** Searchable must-have skill catalog (cold only); omitted → not rendered. */
   skillOptions?: OptionRow[];
+  /**
+   * Labels for refs that may sit outside the catalogs above — a saved filter can
+   * name a role or skill with no vacancies right now, and the catalogs only
+   * carry ones that have them. Each section reads only its own selected ids, so
+   * one combined list is safe to pass to all of them.
+   */
+  selectedOptions?: OptionRow[];
   /** Caller-owned control under the skill chips (e.g. the nice-to-have toggle). */
   skillExtra?: ReactNode;
   /** Cold seniority pills carry the per-level card tone; warm omits it. */
@@ -74,6 +82,7 @@ export function FilterRail({
           title="role"
           options={roleOptions}
           selected={filters.roleIds}
+          selectedOptions={selectedOptions}
           onToggle={api.toggleRole}
           searchable
           searchPlaceholder="search role…"
@@ -85,6 +94,7 @@ export function FilterRail({
           title="skills"
           options={skillOptions}
           selected={filters.skillIds}
+          selectedOptions={selectedOptions}
           onToggle={api.toggleSkill}
           searchable
           searchPlaceholder="search skill…"
@@ -126,6 +136,7 @@ export function FilterRail({
             title="domain"
             options={domainOptions}
             selected={filters.domainIds}
+            selectedOptions={selectedOptions}
             onToggle={api.toggleDomain}
             searchable
             searchPlaceholder="search domain…"

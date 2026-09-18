@@ -42,6 +42,12 @@ interface MeSubscriptionBase {
   createdAt: string;
   tgUsername: string | null;
   tgFirstName: string | null;
+  /**
+   * Display name for each node ref in `params`, keyed as `params` spells it.
+   * The account editor labels a stored selection from this rather than from the
+   * feed catalog, which only lists roles/skills that have vacancies today.
+   */
+  refNames: Record<string, string>;
 }
 
 export interface MeCvSubscription extends MeSubscriptionBase {

@@ -162,9 +162,10 @@ export class MeService {
     return Promise.all(
       rows.map(async (r) => {
         const storedParams = r.params as SubscriptionParams;
-        const [label, params] = await Promise.all([
+        const [label, params, refNames] = await Promise.all([
           this.criteria.describe(storedParams),
           this.criteria.toPublic(storedParams),
+          this.criteria.resolveRefNames(storedParams),
         ]);
         const base = {
           id: r.id,
@@ -175,6 +176,7 @@ export class MeService {
           createdAt: r.createdAt.toISOString(),
           tgUsername: r.tgUsername,
           tgFirstName: r.tgFirstName,
+          refNames,
         };
         if (r.candidateId) {
           return {

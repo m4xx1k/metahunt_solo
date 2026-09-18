@@ -24,6 +24,13 @@ interface MeSubscriptionBase {
   createdAt: string;
   tgUsername: string | null;
   tgFirstName: string | null;
+  /**
+   * Display name per node ref in `params` — the editor labels its selection
+   * from this, since the feed catalogs only carry refs that have vacancies.
+   * Optional so a web deploy that lands before the API one still parses; an
+   * absent map just falls back to the catalogs, i.e. the old behaviour.
+   */
+  refNames?: Record<string, string>;
 }
 
 export interface MeCvSubscription extends MeSubscriptionBase {

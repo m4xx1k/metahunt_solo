@@ -76,6 +76,27 @@ export class SubscriptionCriteriaService {
     return params;
   }
 
+  /**
+   * Display names for the node refs this filter stores, keyed exactly as
+   * `toPublic` emits them. The editor needs them because its option catalogs
+   * only carry nodes that currently have vacancies, while a subscription may
+   * legitimately name one that has none — which is half the point of
+   * subscribing. Without a name such a ref renders as a bare slug.
+   */
+  async resolveRefNames(stored: SubscriptionParams): Promise<Record<string, string>> {
+    const ids = EDITABLE_AXES.flatMap(([key]) => asStringArray(stored[key])).filter(isUuid);
+    if (ids.length === 0) return {};
+    const rows = await this.db
+      .select({
+        id: schema.nodes.id,
+        slug: schema.nodes.slug,
+        name: schema.nodes.canonicalName,
+      })
+      .from(schema.nodes)
+      .where(inArray(schema.nodes.id, ids));
+    return Object.fromEntries(rows.map((row) => [row.slug ?? row.id, row.name]));
+  }
+
   async describe(params: SubscriptionParams): Promise<string> {
     const roleNames = await this.resolveNames(asStringArray(params.roleIds));
     const domainNames = await this.resolveNames(asStringArray(params.domainIds));

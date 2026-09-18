@@ -196,6 +196,29 @@ describe("MeService.updateSubscription (integration)", () => {
     );
   });
 
+  // The account editor labels a saved selection from the feed catalogs, which
+  // only list refs that have vacancies right now. A subscription may name a role
+  // that has none — that is half the reason to subscribe — and such a ref used
+  // to render in the editor as its bare slug.
+  it("ships display names for refs the feed catalogs do not carry", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    // Seeded, never attached to a position: invisible to /feed/roles by design.
+    const quietRoleId = await seedNode(
+      "ROLE",
+      "Site Reliability Engineer",
+      "site-reliability-engineer",
+    );
+    const subscriptionId = await seedSubscription({ userId, params: { roleIds: [quietRoleId] } });
+
+    const [listed] = (await me.listSubscriptions(userId)).filter((s) => s.id === subscriptionId);
+
+    expect(listed.params.roleIds).toEqual(["site-reliability-engineer"]);
+    expect(listed.refNames).toEqual({
+      "site-reliability-engineer": "Site Reliability Engineer",
+    });
+  });
+
   it("replaces criteria on one CV subscription and returns public slugs", async () => {
     const me = makeService();
     const userId = await seedUser();
