@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { ActiveFiltersBar } from "@/features/vacancy-filters/ActiveFiltersBar";
@@ -87,13 +87,9 @@ export function FeedFilters({
       byId.set(r.id, { id: r.id, label: r.name, count: r.count ?? 0 });
     (roleSuggestions?.items ?? []).forEach((sug, i) => {
       const id = sug.slug ?? sug.roleId;
-      byId.set(id, {
-        id,
-        label: sug.name,
-        // A concrete, positive number: jobs in this role your CV already fits.
-        hint: `${sug.goodCount} ${sug.goodCount === 1 ? "fit" : "fits"}`,
-        count: 1_000_000 - i,
-      });
+      // Fit only orders the picker — a per-chip count beside a list we already
+      // sort by fit is a second claim about the same thing.
+      byId.set(id, { id, label: sug.name, count: 1_000_000 - i });
     });
     return [...byId.values()];
   }, [roleCatalog, roleSuggestions]);
@@ -114,6 +110,7 @@ export function FeedFilters({
   const api = useUrlFilters();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const dupesOn = useSearchParams().get("dupes") === "true";
 
   const trackMode = tracks != null;
   const showFacets = trackMode && activeTrackSlug != null;
@@ -142,7 +139,6 @@ export function FeedFilters({
       </button>
 
       <div className={cn("flex-col gap-3 lg:flex", mobileOpen ? "flex" : "hidden")}>
-        <DedupeToggle />
         {/* Track-mode drops the bar (axis sections show their own state) —
             except when the tree is hidden (merged), where it is the only
             active-filter summary + clear-all. */}
@@ -197,23 +193,24 @@ export function FeedFilters({
             workFormatOptions={agg.workFormats}
             domainOptions={domainOptions}
             roleOptions={showFacets ? undefined : roleOptions}
-            roleExtra={
-              hasViewer && roleSuggestions?.reduced ? (
-                <p className="font-mono text-2xs text-text-muted">
-                  rough estimate — add more skills for a sharper role fit
-                </p>
-              ) : null
-            }
             skillOptions={showFacets ? undefined : skillOptions}
             skillExtra={
               !showFacets && api.filters.skillIds.length > 0 ? <SkillScopeToggle /> : undefined
             }
             seniorityToneFor={(id) => SENIORITY_OUTLINE_TONE[id as Seniority]}
-          />
-          <SourceSection
-            sources={agg.sources}
-            activeCode={api.filters.sourceCode}
-            onChange={api.setSource}
+            hiddenActiveExtra={dupesOn ? 1 : 0}
+            hiddenExtra={
+              <>
+                <SourceSection
+                  sources={agg.sources}
+                  activeCode={api.filters.sourceCode}
+                  onChange={api.setSource}
+                />
+                <div className="border-b border-border px-4 py-3 last:border-b-0">
+                  <DedupeToggle />
+                </div>
+              </>
+            }
           />
         </aside>
       </div>

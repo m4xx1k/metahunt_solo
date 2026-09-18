@@ -1,12 +1,12 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import { useShallowSearchParams } from "@/lib/hooks/use-shallow-search-params";
-import { countActiveFilters, DEFAULT_FRESHNESS } from "./types";
-import type { FiltersApi } from "./types";
-import { LIST_SEP, readFilterState, readList } from "./url-params";
+import { countActiveFilters, DEFAULT_FRESHNESS, EMPTY_FILTERS } from "./types";
+import type { FilterState, FiltersApi } from "./types";
+import { LIST_SEP, readFilterState, readList, writeFilterState } from "./url-params";
 import { useStableFilters } from "./use-stable-filters";
 
 // URL-backed FiltersApi — the one filter store. State lives in the query string
@@ -67,30 +67,19 @@ export function useUrlFilters(): FiltersApi {
     [commit],
   );
 
+  // The explicit empty axis only means something on a track route, where an
+  // absent key falls back to the preset. On the index it is pure `?roles=&skills=`
+  // noise, so the plain delete is the honest write there.
+  const onTrack = usePathname() !== "/";
+  const replace = useCallback(
+    (next: FilterState) => commit((n) => writeFilterState(n, next, onTrack ? "exact" : "preset")),
+    [commit, onTrack],
+  );
+
+  // Clearing IS writing the empty filter — going through the codec keeps this
+  // from drifting into a second key list that a new filter can be left out of.
   const clear = useCallback(
-    () =>
-      commit((n) => {
-        for (const key of [
-          "roles",
-          "skills",
-          "excludeSkills",
-          "domains",
-          "source",
-          "seniorities",
-          "workFormats",
-          "english",
-          "employment",
-          "experience",
-          "fresh",
-          "test",
-          "reservation",
-          "minFitTier",
-          "sort",
-          "offStack",
-        ]) {
-          n.delete(key);
-        }
-      }),
+    () => commit((n) => writeFilterState(n, EMPTY_FILTERS, "preset")),
     [commit],
   );
 
@@ -120,6 +109,7 @@ export function useUrlFilters(): FiltersApi {
       (v: boolean) => commit((n) => (v ? n.set("offStack", "true") : n.delete("offStack"))),
       [commit],
     ),
+    replace,
     clear,
     activeCount,
   };

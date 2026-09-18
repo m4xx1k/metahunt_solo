@@ -165,10 +165,14 @@ describe("SubscriptionMatcherService", () => {
       expect(filters.includeOffStack).toBe(true);
     });
 
-    it("respects a subscription's own minFitTier override", async () => {
+    // minFitTier left the persisted filter: it is a no-op without a scorer, yet
+    // it still counted toward the subscription's identity, so two otherwise
+    // identical filters deduped as different alerts. A legacy row that still
+    // carries one must not resurrect that override.
+    it("ignores a legacy stored minFitTier and keeps the GOOD gate", async () => {
       await service.matchNew(cvSub({ minFitTier: "STRONG" }));
 
-      expect(matchCandidate.mock.calls[0][1].minFitTier).toBe("STRONG");
+      expect(matchCandidate.mock.calls[0][1].minFitTier).toBe("GOOD");
     });
 
     // Replay-gap regression: a warm sub's stored domain + experience must reach

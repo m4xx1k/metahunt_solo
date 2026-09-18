@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { FitBadge } from "@/entities/vacancy/FitBadge";
+import { OffStackBadge } from "@/entities/vacancy/OffStackBadge";
 import { skillDiff } from "@/entities/vacancy/skill-diff";
 import { useSession } from "@/features/auth/use-session";
 import { vacanciesApi, type NodeRef } from "@/lib/api/vacancies";
@@ -38,11 +39,7 @@ export function FitPanel({ vacancyId }: { vacancyId: string }) {
     <section className="flex flex-col gap-3 border border-border bg-bg-card p-4">
       <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
         <FitBadge tier={match.tier} percent={match.percent} detail={fitDetail} />
-        {!match.onStack ? (
-          <span className="border border-text-muted px-2 py-[2px] uppercase tracking-wider text-text-muted">
-            off-stack
-          </span>
-        ) : null}
+        {!match.onStack ? <OffStackBadge /> : null}
       </div>
 
       {diff ? (

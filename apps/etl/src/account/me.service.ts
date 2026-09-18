@@ -1,6 +1,6 @@
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -14,7 +14,7 @@ import {
 import { createSubscriptionName } from "../platform/subscriptions/subscription-name";
 import type { SubscriptionParams } from "../platform/subscriptions/subscription.contract";
 
-import type { EditableMatchCriteriaDto, MeCv, MeSubscription } from "./me.contract";
+import type { MeCv, MeSubscription, MeSubscriptionStatus } from "./me.contract";
 
 const { authIdentities, userCvs, users, candidates, subscriptions } = schema;
 const TELEGRAM_PROVIDER = "telegram";
@@ -27,6 +27,20 @@ interface SubscriptionUpdate {
 
 // Read + manage the logged-in user's owned CVs and subscriptions. Every query is
 // scoped to userId so one user can never touch another's rows.
+// Never activated = created but not confirmed, which is a different thing
+// from paused: the account has it, Telegram does not yet. `chatId` is the
+// signal, not `linkedAt`/`deactivatedReason` — both of those are null on
+// legacy rows deactivated before those columns existed, which would
+// otherwise misclassify a real "off" row as "pending".
+function subscriptionStatus(row: {
+  isActive: boolean;
+  chatId: string | null;
+}): MeSubscriptionStatus {
+  if (row.isActive) return "live";
+  if (row.chatId === null) return "pending";
+  return "off";
+}
+
 @Injectable()
 export class MeService {
   constructor(
@@ -121,32 +135,57 @@ export class MeService {
         createdAt: subscriptions.createdAt,
         tgUsername: subscriptions.tgUsername,
         tgFirstName: subscriptions.tgFirstName,
+        chatId: subscriptions.chatId,
       })
       .from(subscriptions)
       .where(eq(subscriptions.userId, userId))
       .orderBy(desc(subscriptions.createdAt));
+
+    // Two CVs can carry the same role, so the filter description alone renders
+    // two different subscriptions identically. The CV's own label is the only
+    // thing that tells them apart.
+    const cvMeta = new Map<string, { label: string; addedAt: string }>();
+    const candidateIds = rows.map((r) => r.candidateId).filter((id): id is string => id != null);
+    if (candidateIds.length > 0) {
+      const cvRows = await this.db
+        .select({
+          candidateId: userCvs.candidateId,
+          label: userCvs.label,
+          createdAt: userCvs.createdAt,
+        })
+        .from(userCvs)
+        .where(and(eq(userCvs.userId, userId), inArray(userCvs.candidateId, candidateIds)));
+      for (const c of cvRows)
+        cvMeta.set(c.candidateId, { label: c.label, addedAt: c.createdAt.toISOString() });
+    }
+
     return Promise.all(
       rows.map(async (r) => {
         const storedParams = r.params as SubscriptionParams;
-        const [label, params] = await Promise.all([
+        const [label, params, refNames] = await Promise.all([
           this.criteria.describe(storedParams),
           this.criteria.toPublic(storedParams),
+          this.criteria.resolveRefNames(storedParams),
         ]);
         const base = {
           id: r.id,
           name: r.name ?? createSubscriptionName(r.id),
           label,
           isActive: r.isActive,
+          status: subscriptionStatus(r),
           createdAt: r.createdAt.toISOString(),
           tgUsername: r.tgUsername,
           tgFirstName: r.tgFirstName,
+          refNames,
         };
         if (r.candidateId) {
           return {
             ...base,
             isCv: true as const,
             candidateId: r.candidateId,
-            params: params as EditableMatchCriteriaDto,
+            cvLabel: cvMeta.get(r.candidateId)?.label ?? null,
+            cvAddedAt: cvMeta.get(r.candidateId)?.addedAt ?? null,
+            params,
           };
         }
         return { ...base, isCv: false as const, candidateId: null, params };
@@ -185,8 +224,30 @@ export class MeService {
         .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, userId)))
         .for("update");
       if (!existing) return false;
-      if (params && existing.candidateId === null) {
-        throw new BadRequestException("Only CV subscription criteria can be edited");
+
+      // Editing writes `params` straight over the row, which is the same
+      // identity `create()` refuses to duplicate — without this an edit could
+      // reach a filter the account already has and quietly deliver it twice.
+      // Live only: a pending twin delivers nothing, and linkChat drops it.
+      if (params !== undefined) {
+        const [conflict] = await tx
+          .select({ id: subscriptions.id, name: subscriptions.name })
+          .from(subscriptions)
+          .where(
+            and(
+              eq(subscriptions.userId, userId),
+              ne(subscriptions.id, existing.id),
+              eq(subscriptions.isActive, true),
+              sql`${subscriptions.params} = ${JSON.stringify(params)}::jsonb`,
+            ),
+          )
+          .limit(1);
+        if (conflict) {
+          throw new ConflictException({
+            message: "You already have an alert with these filters",
+            conflictsWith: { id: conflict.id, name: conflict.name },
+          });
+        }
       }
 
       if (patch.name !== undefined) {

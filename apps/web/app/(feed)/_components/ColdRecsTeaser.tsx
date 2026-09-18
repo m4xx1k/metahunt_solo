@@ -1,11 +1,15 @@
 "use client";
 
+import Link from "next/link";
+
 import { UPLOAD_BTN } from "./CvDropzone";
 
 // Cold-lens teaser for the ranked experience: a blurred skeleton of the "what
 // to learn next" recs behind an upload prompt. The shell only mounts this when
 // there's no viewer, so there's never a saved CV to preview real recs from —
-// it's always the skeleton. Upload is routed through the shell's central picker.
+// it's always the skeleton. Upload is routed through the shell's central picker,
+// whose own bar stays hidden without a viewer (see FeedShellIsland) — this is
+// the one CTA, at every width, so it carries its own privacy print too.
 export function ColdRecsTeaser({ onUpload }: { onUpload: () => void }) {
   return (
     <div className="relative overflow-hidden">
@@ -15,11 +19,17 @@ export function ColdRecsTeaser({ onUpload }: { onUpload: () => void }) {
 
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-bg/80 px-5 text-center">
         <p className="font-mono text-xs leading-relaxed text-text-secondary">
-          Upload your CV to unlock the ranked list and skill recommendations.
+          Upload a CV to rank this list.
         </p>
         <button type="button" onClick={onUpload} className={UPLOAD_BTN}>
           + Upload CV
         </button>
+        <Link
+          href="/privacy#cv"
+          className="font-mono text-[9px] uppercase tracking-wider text-text-muted transition-colors hover:text-accent"
+        >
+          AI processed · raw text not stored
+        </Link>
       </div>
     </div>
   );

@@ -14,12 +14,12 @@ import { useSaved, type SavedCv } from "@/lib/hooks/use-saved";
 export function useMyCvs(): SavedCv[] {
   const { isLoggedIn } = useSession();
   const { cvs: local } = useSaved();
-  const { data: server } = useQuery({
+  const { data: server, dataUpdatedAt } = useQuery({
     queryKey: ["me", "cv"],
     queryFn: meApi.listCvs,
     enabled: isLoggedIn,
     staleTime: 60_000,
   });
 
-  return useMemo(() => mergeCvs(server, local), [server, local]);
+  return useMemo(() => mergeCvs(server, local, dataUpdatedAt), [server, local, dataUpdatedAt]);
 }

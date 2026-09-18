@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiPropertyOptional, IntersectionType } from "@nestjs/swagger";
 
 import { Transform, Type } from "class-transformer";
 import {
@@ -33,11 +33,16 @@ import {
 
 const EXPERIENCE_YEAR_VALUES = ["0", "1", "2", "3", "4", "5", "6+"] as const;
 
-// Shared, validated filter contract for the endpoints that consume the vacancy
-// filters — GET /feed (query) and POST /ranking/match (body). One transport
-// serves both: a repeated query param arrives as string[], a single value as a
-// string, a POST field as a JSON array — the normalisers below flatten all three
-// (and CSV) to a trimmed list, so the same decorators validate every source.
+// The vacancy query, split into the axes that actually differ between the
+// things that consume it, so each consumer composes the pieces it honours
+// instead of inheriting a superset and omitting the rest.
+//
+//   GET /feed          filter + skills + freshness + paging + ranking + browsing
+//   a subscription     filter + skills          (subscription.contract.ts)
+//
+// One transport serves query strings and JSON bodies alike: a repeated query
+// param arrives as string[], a single value as a string, a POST field as a JSON
+// array — the normalisers below flatten all three (and CSV) to a trimmed list.
 
 // null/blank → undefined ("no filter"); string | string[] | CSV → trimmed list.
 const toList = () =>
@@ -62,13 +67,47 @@ const trimmed = () =>
     typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined,
   );
 
-// Fields both endpoints share. Subclasses add their transport-specific extras.
-export class FilterParamsDto {
+// ───────────────────────────── The axes ─────────────────────────────
+
+/** Narrows which vacancies match. Every consumer honours all of it. */
+export class VacancyFilterDto {
   @ApiPropertyOptional({ description: "Vacancy source id." })
   @IsOptional()
   @trimmed()
   @IsUUID()
   sourceId?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: "ROLE slugs. Multiple values are OR-combined.",
+    example: ["backend-developer", "full-stack-developer"],
+  })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  roleIds?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: "DOMAIN slugs. Multiple values are OR-combined.",
+    example: ["fintech", "ai-ml"],
+  })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  domainIds?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: "SKILL slugs that must not be required by a returned vacancy.",
+  })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsString({ each: true })
+  excludedSkillIds?: string[];
 
   @ApiPropertyOptional({ enum: SENIORITY_VALUES, isArray: true })
   @IsOptional()
@@ -98,6 +137,17 @@ export class FilterParamsDto {
   @IsIn([...EMPLOYMENT_TYPE_VALUES], { each: true })
   employmentTypes?: EmploymentType[];
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: "Experience buckets: exact 0..5 or 6+.",
+    example: ["2", "3", "6+"],
+  })
+  @IsOptional()
+  @toList()
+  @IsArray()
+  @IsIn([...EXPERIENCE_YEAR_VALUES], { each: true })
+  experienceYears?: string[];
+
   @ApiPropertyOptional({ description: "Filter by whether a test assignment is mentioned." })
   @IsOptional()
   @toBool()
@@ -111,68 +161,14 @@ export class FilterParamsDto {
   @toBool()
   @IsBoolean()
   hasReservation?: boolean;
-
-  @ApiPropertyOptional({
-    type: [String],
-    description: "DOMAIN slugs. Multiple values are OR-combined.",
-    example: ["fintech", "ai-ml"],
-  })
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  domainIds?: string[];
-
-  @ApiPropertyOptional({
-    type: [String],
-    description: "Experience buckets: exact 0..5 or 6+.",
-    example: ["2", "3", "6+"],
-  })
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsIn([...EXPERIENCE_YEAR_VALUES], { each: true })
-  experienceYears?: string[];
-
-  @ApiPropertyOptional({ description: "Only vacancies posted within this many days.", example: 30 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  postedWithinDays?: number;
 }
 
-// GET /feed query — browse filters + the feed-only refinements/pagination.
-export class FeedQueryDto extends FilterParamsDto {
-  @ApiPropertyOptional({ description: "Free-text search over vacancy title.", example: "nestjs" })
-  @IsOptional()
-  @trimmed()
-  @IsString()
-  q?: string;
-
-  @ApiPropertyOptional({ description: "Single ROLE slug.", example: "backend-developer" })
-  @IsOptional()
-  @trimmed()
-  @IsString()
-  roleId?: string;
-
-  @ApiPropertyOptional({ description: "Hiring company slug.", example: "softserve" })
-  @IsOptional()
-  @trimmed()
-  @IsString()
-  companySlug?: string;
-
-  @ApiPropertyOptional({
-    type: [String],
-    description: "ROLE slugs. Multiple values are OR-combined.",
-    example: ["backend-developer", "full-stack-developer"],
-  })
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  roleIds?: string[];
-
+/**
+ * Must-have skills, stated explicitly. Its own axis because CV matching has no
+ * equivalent: a CV already declares the skills it is ranked on, so only a
+ * browsed or subscribed filter names them.
+ */
+export class SkillFilterDto {
   @ApiPropertyOptional({
     type: [String],
     description: "SKILL slugs. Vacancies must match all listed skills by default.",
@@ -183,40 +179,24 @@ export class FeedQueryDto extends FilterParamsDto {
   @IsArray()
   @IsString({ each: true })
   skillIds?: string[];
+}
 
-  @ApiPropertyOptional({ type: [String] })
+/**
+ * How far back to look. Browsing only: a digest's window is the later of the
+ * subscription's own createdAt and the scan floor, so a stored freshness would
+ * either duplicate that or silently fight it.
+ */
+export class FreshnessFilterDto {
+  @ApiPropertyOptional({ description: "Only vacancies posted within this many days.", example: 30 })
   @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  excludedSkillIds?: string[];
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  postedWithinDays?: number;
+}
 
-  @ApiPropertyOptional({ description: "Show only representatives of a deduplication group." })
-  @IsOptional()
-  @toBool()
-  @IsBoolean()
-  hasDuplicates?: boolean;
-
-  @ApiPropertyOptional({ description: "Also include vacancies without a verified role." })
-  @IsOptional()
-  @toBool()
-  @IsBoolean()
-  includeRoleless?: boolean;
-
-  @ApiPropertyOptional({
-    description: "Return unverified skills too. Intended for operator/debug use.",
-  })
-  @IsOptional()
-  @toBool()
-  @IsBoolean()
-  includeAllSkills?: boolean;
-
-  @ApiPropertyOptional({ description: "Let optional skills satisfy skill filters." })
-  @IsOptional()
-  @toBool()
-  @IsBoolean()
-  includeOptionalSkills?: boolean;
-
+/** Transport-only. Never persisted — a digest has no pages. */
+export class PaginationDto {
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
   @Type(() => Number)
@@ -231,18 +211,10 @@ export class FeedQueryDto extends FilterParamsDto {
   @Min(1)
   @Max(100)
   pageSize?: number;
+}
 
-  @ApiPropertyOptional({
-    description:
-      "A seeded sample candidate id — scores this page against it, same as a signed-in " +
-      "viewer's own CV. Public demo fixtures only; 404s for anything else, real candidate " +
-      "ids included (unified-feed-score.md §8).",
-  })
-  @IsOptional()
-  @trimmed()
-  @IsUUID()
-  sample?: string;
-
+/** Ordering and the score gate. Needs a scorer (a signed-in CV or `sample`). */
+export class RankingDto {
   @ApiPropertyOptional({
     enum: MATCH_SORT_VALUES,
     default: "date",
@@ -276,66 +248,79 @@ export class FeedQueryDto extends FilterParamsDto {
   includeOffStack?: boolean;
 }
 
-// Filters shared by stored-CV matching and plain-text matching.
-export class CandidateMatchParamsDto extends FilterParamsDto {
-  @ApiPropertyOptional({
-    type: [String],
-    description: "ROLE slugs — hard filter. Multiple values are OR-combined.",
-    example: ["backend-developer", "full-stack-developer"],
-  })
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  roleIds?: string[];
-
-  @ApiPropertyOptional({
-    type: [String],
-    description: "SKILL references that must not be required by a returned vacancy.",
-  })
-  @IsOptional()
-  @toList()
-  @IsArray()
-  @IsString({ each: true })
-  excludedSkillIds?: string[];
-
-  @ApiPropertyOptional({ enum: FIT_TIER_VALUES, description: "Minimum warm-match tier to return." })
+/** Affordances that only make sense while browsing a page of results. */
+export class FeedBrowsingDto {
+  @ApiPropertyOptional({ description: "Free-text search over vacancy title.", example: "nestjs" })
   @IsOptional()
   @trimmed()
-  @IsIn([...FIT_TIER_VALUES])
-  minFitTier?: FitTier;
+  @IsString()
+  q?: string;
+
+  @ApiPropertyOptional({ description: "Single ROLE slug.", example: "backend-developer" })
+  @IsOptional()
+  @trimmed()
+  @IsString()
+  roleId?: string;
+
+  @ApiPropertyOptional({ description: "Hiring company slug.", example: "softserve" })
+  @IsOptional()
+  @trimmed()
+  @IsString()
+  companySlug?: string;
+
+  @ApiPropertyOptional({ description: "Show only representatives of a deduplication group." })
+  @IsOptional()
+  @toBool()
+  @IsBoolean()
+  hasDuplicates?: boolean;
+
+  @ApiPropertyOptional({ description: "Also include vacancies without a verified role." })
+  @IsOptional()
+  @toBool()
+  @IsBoolean()
+  includeRoleless?: boolean;
 
   @ApiPropertyOptional({
-    default: false,
-    description: "Include vacancies whose required core tech is outside the candidate's stack.",
+    description: "Return unverified skills too. Intended for operator/debug use.",
   })
   @IsOptional()
   @toBool()
   @IsBoolean()
-  includeOffStack?: boolean;
+  includeAllSkills?: boolean;
+
+  @ApiPropertyOptional({ description: "Let optional skills satisfy skill filters." })
+  @IsOptional()
+  @toBool()
+  @IsBoolean()
+  includeOptionalSkills?: boolean;
 
   @ApiPropertyOptional({
-    enum: MATCH_SORT_VALUES,
-    default: "score",
-    description: "Page order: Fit score (default) or posting date.",
+    description:
+      "A seeded sample candidate id — scores this page against it, same as a signed-in " +
+      "viewer's own CV. Public demo fixtures only; 404s for anything else, real candidate " +
+      "ids included (unified-feed-score.md §8).",
   })
   @IsOptional()
   @trimmed()
-  @IsIn([...MATCH_SORT_VALUES])
-  sort?: MatchSort;
-
-  @ApiPropertyOptional({ minimum: 1, default: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  pageSize?: number;
+  @IsUUID()
+  sample?: string;
 }
+
+// ────────────────────────── The compositions ──────────────────────────
+
+/** GET /feed query. */
+export class FeedQueryDto extends IntersectionType(
+  VacancyFilterDto,
+  SkillFilterDto,
+  FreshnessFilterDto,
+  PaginationDto,
+  RankingDto,
+  FeedBrowsingDto,
+) {}
+
+/**
+ * What a subscription persists, and the PATCH body that edits one. Paging,
+ * ranking, freshness and browsing are absent by composition rather than
+ * omitted after the fact — see each axis for why it does not belong.
+ */
+export class SubscriptionFilterDto extends IntersectionType(VacancyFilterDto, SkillFilterDto) {}

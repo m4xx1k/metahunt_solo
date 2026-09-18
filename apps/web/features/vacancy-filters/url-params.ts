@@ -53,6 +53,50 @@ export function readFilterState(p: ParamReader): FilterState {
   };
 }
 
+// The inverse of readFilterState: stamp a whole FilterState onto a live
+// URLSearchParams, clearing every key it owns first so applying a saved filter
+// can't leave one from the previous one behind. Paging is not ours to touch.
+export function writeFilterState(
+  n: URLSearchParams,
+  f: FilterState,
+  // On a track route an ABSENT roles/skills means "use the track preset", not
+  // "no role filter" (feed-query.ts). Replaying a saved filter means exactly
+  // these, so an empty axis is written explicitly; clearing wants the preset
+  // back, which is what deleting the key says.
+  axes: "exact" | "preset" = "exact",
+): void {
+  const list = (key: string, v: string[]) =>
+    v.length > 0 ? n.set(key, v.join(LIST_SEP)) : n.delete(key);
+  const axis = (key: string, v: string[]) =>
+    v.length > 0 || axes === "preset" ? list(key, v) : n.set(key, "");
+  const value = (key: string, v: string | null | undefined) => (v ? n.set(key, v) : n.delete(key));
+  const tristate = (key: string, v: boolean | null) =>
+    v === null ? n.delete(key) : n.set(key, String(v));
+
+  axis("roles", f.roleIds);
+  axis("skills", f.skillIds);
+  list("excludeSkills", f.excludedSkillIds);
+  list("domains", f.domainIds);
+  value("source", f.sourceCode);
+  list("seniorities", f.seniorities);
+  list("workFormats", f.workFormats);
+  list("english", f.englishLevels);
+  list("employment", f.employmentTypes);
+  list("experience", f.experienceYears);
+  value("fresh", f.freshness === DEFAULT_FRESHNESS ? null : f.freshness);
+  tristate("test", f.test);
+  tristate("reservation", f.reservation);
+  value("minFitTier", f.minFitTier);
+  value("sort", f.sort);
+  if (f.includeOffStack === true) n.set("offStack", "true");
+  else n.delete("offStack");
+  // Not FilterState's, but they narrow the same result set and no subscription
+  // carries them — a replay that inherited one would show a list the digest
+  // never sends.
+  n.delete("nice");
+  n.delete("dupes");
+}
+
 // Adapt Next's server `searchParams` (a record of string | string[]) to a
 // ParamReader. Absent → has() false (an axis param falls back to its preset);
 // present-but-empty ("") → has() true (an explicit empty axis).

@@ -17,9 +17,9 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
     mutationFn: meApi.deleteAccount,
     onSuccess: async () => {
       await onDeleted();
-      toast.success("Акаунт видалено");
+      toast.success("Account deleted");
     },
-    onError: () => toast.error("Не вдалося видалити акаунт"),
+    onError: () => toast.error("Could not delete the account"),
   });
 
   const handleOpen = useCallback(() => setConfirming(true), []);
@@ -35,15 +35,15 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
   }, [confirmation, remove]);
 
   return (
-    <Panel title="видалити акаунт" tone="danger" className="border-danger/60 shadow-brut-sm">
+    <Panel title="delete account" tone="danger" className="border-danger/60 shadow-brut-sm">
       <p className="max-w-2xl font-mono text-2xs leading-relaxed text-text-secondary">
-        Видалимо акаунт, CV, підписки та історію сповіщень. Це незворотно.
+        This removes your account, CVs, subscriptions and message history. You cannot undo it.
       </p>
 
       {confirming ? (
         <div className="flex max-w-md flex-col gap-3">
           <label htmlFor="account-delete-confirmation" className="font-mono text-xs text-danger">
-            Введи {CONFIRMATION}
+            Type {CONFIRMATION}
           </label>
           <input
             id="account-delete-confirmation"
@@ -62,7 +62,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
               disabled={confirmation !== CONFIRMATION || remove.isPending}
               className="border-danger text-danger hover:bg-danger hover:text-bg"
             >
-              {remove.isPending ? "видаляю…" : "видалити назавжди"}
+              {remove.isPending ? "deleting…" : "delete for ever"}
             </Button>
             <Button
               variant="secondary"
@@ -70,7 +70,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
               onClick={handleCancel}
               disabled={remove.isPending}
             >
-              скасувати
+              cancel
             </Button>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function DeleteAccountPanel({ onDeleted }: { onDeleted: () => Promise<voi
           onClick={handleOpen}
           className="border-danger text-danger hover:bg-danger hover:text-bg"
         >
-          видалити акаунт
+          delete account
         </Button>
       )}
     </Panel>

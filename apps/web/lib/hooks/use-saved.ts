@@ -2,16 +2,16 @@
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
-// Throwaway localStorage: recent uploaded CVs + created subscriptions + the
-// active CV. Lets the CV tab stay unlocked across visits (1-click re-rank) and
-// a saved CV/sub replay in one click. Anonymous + disposable — cleared when
-// Telegram auth ships. Corrupt or old-version data resets to empty; caps evict
-// the oldest. One module-level store so every useSaved() consumer stays in sync.
+// Throwaway localStorage: recent uploaded CVs + the active CV. Lets the CV
+// switcher stay populated across visits (1-click re-rank) before the account's
+// server list loads. Subscriptions are NOT here: they need an account, so
+// GET /me/subscriptions is their only source of truth. Corrupt or old-version
+// data resets to empty; the cap evicts the oldest. One module-level store so
+// every useSaved() consumer stays in sync.
 
 const KEY = "metahunt.saved";
 const VERSION = 1;
 const CV_CAP = 10;
-const SUB_CAP = 20;
 
 export interface SavedCv {
   candidateId: string;
@@ -19,24 +19,13 @@ export interface SavedCv {
   addedAt: number;
 }
 
-export interface SavedSub {
-  id: string;
-  lens: "cold" | "warm";
-  label: string;
-  /** URL query string to replay (filters, and ?cv for warm subs). */
-  query: string;
-  candidateId?: string;
-  addedAt: number;
-}
-
 interface SavedState {
   version: number;
   cvs: SavedCv[];
-  subs: SavedSub[];
   activeCv: string | null;
 }
 
-const EMPTY: SavedState = { version: VERSION, cvs: [], subs: [], activeCv: null };
+const EMPTY: SavedState = { version: VERSION, cvs: [], activeCv: null };
 
 function read(): SavedState {
   try {
@@ -47,7 +36,6 @@ function read(): SavedState {
     return {
       version: VERSION,
       cvs: Array.isArray(p.cvs) ? p.cvs : [],
-      subs: Array.isArray(p.subs) ? p.subs : [],
       activeCv: typeof p.activeCv === "string" ? p.activeCv : null,
     };
   } catch {
@@ -100,18 +88,10 @@ export function useSaved() {
     set({ ...cache, activeCv: candidateId });
   }, []);
 
-  const addSub = useCallback((sub: SavedSub) => {
-    set({ ...cache, subs: [sub, ...cache.subs.filter((s) => s.id !== sub.id)].slice(0, SUB_CAP) });
-  }, []);
-
-  const removeSub = useCallback((id: string) => {
-    set({ ...cache, subs: cache.subs.filter((s) => s.id !== id) });
-  }, []);
-
   // Stable identity across renders (mutators are already stable; state only
   // changes on a real mutation) — consumers list this in effect/callback deps.
   return useMemo(
-    () => ({ ...state, addCv, removeCv, setActiveCv, addSub, removeSub }),
-    [state, addCv, removeCv, setActiveCv, addSub, removeSub],
+    () => ({ ...state, addCv, removeCv, setActiveCv }),
+    [state, addCv, removeCv, setActiveCv],
   );
 }

@@ -14,13 +14,11 @@ type Props = {
   // From the results query; dims the (kept-visible) previous page while the
   // next one loads.
   isFetching?: boolean;
-  // True when a CV/sample is in view — the card shows the Fit slot (badge or a
-  // "nothing scored" gap), not the "add your CV" lock. Independent of whether
-  // THIS card scored, and of the transient window before viewerSkills lands.
-  hasViewer?: boolean;
   // The scored viewer's resolved skills (`/feed` response) for the diff counts.
   viewerSkills?: NodeRef[] | null;
   // View controls (freshness / sort / off-stack) shown inline in the header row.
+  // The result count is NOT here: the pager below already prints
+  // "showing 1–20 of N", and two counts in one column read as two numbers.
   controls?: ReactNode;
 };
 
@@ -29,7 +27,6 @@ export function VacancyList({
   offset,
   onNavigate,
   isFetching,
-  hasViewer = false,
   viewerSkills = null,
   controls,
 }: Props) {
@@ -43,29 +40,17 @@ export function VacancyList({
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h2 className="font-display text-lg font-semibold text-text-primary md:text-xl">jobs</h2>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          {controls}
-          <span className="font-mono text-xs text-text-muted">
-            <span className="text-text-secondary">{result.total}</span> found · page {result.page}
-          </span>
-        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{controls}</div>
       </div>
 
       {result.items.length === 0 ? (
         <div className="border border-border bg-bg-card p-8 text-center font-mono text-sm text-text-secondary">
-          {result.total === 0
-            ? "Nothing found with the current filters — try removing some."
-            : "This page is empty — go back to the previous one."}
+          {result.total === 0 ? "Nothing found — loosen a filter" : "Empty page"}
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {result.items.map((v) => (
-            <VacancyMatchCard
-              key={v.id}
-              vacancy={v}
-              hasViewer={hasViewer}
-              viewerSkills={viewerSkills ?? []}
-            />
+            <VacancyMatchCard key={v.id} vacancy={v} viewerSkills={viewerSkills ?? []} />
           ))}
         </div>
       )}

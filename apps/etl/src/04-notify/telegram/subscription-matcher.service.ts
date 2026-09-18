@@ -7,7 +7,7 @@ import {
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 import { FeedService, type FeedSearchParams } from "../../03-discovery/feed/feed.service";
 import type { FitTier } from "../../03-discovery/ranking/ranking.contract";
-import { asBoolean, asNumber, asString, asStringArray } from "../../platform/shared/coerce";
+import { asBoolean, asString, asStringArray } from "../../platform/shared/coerce";
 import type {
   EmploymentType,
   EnglishLevel,
@@ -27,7 +27,9 @@ const DAY_MS = 86_400_000;
 const SCAN_WINDOW_DAYS = 14;
 const MAX_VACANCIES_PER_RUN = 50;
 
-// CV digests notify on STRONG+GOOD unless the sub overrides via stored minFitTier.
+// CV digests notify on STRONG+GOOD. Not configurable per subscription: a fit
+// gate needs a scorer, so on a filter sub it was a no-op that still changed the
+// stored identity, which split one alert into two.
 const DEFAULT_CV_MIN_FIT: FitTier = "GOOD";
 
 export interface DigestMatch {
@@ -106,12 +108,7 @@ export class SubscriptionMatcherService {
     const criteria = paramsToCandidateCriteria(sub.params);
     const res = await this.candidateMatch.match(
       candidateId,
-      {
-        ...criteria,
-        minFitTier: criteria.minFitTier ?? DEFAULT_CV_MIN_FIT,
-        loadedAfter,
-        excludeIds,
-      },
+      { ...criteria, minFitTier: DEFAULT_CV_MIN_FIT, loadedAfter, excludeIds },
       1,
       MAX_VACANCIES_PER_RUN,
     );
@@ -152,9 +149,7 @@ function paramsToCandidateCriteria(params: SubscriptionParams): CandidateMatchCr
     experienceYears: asStringArray(params.experienceYears),
     hasTestAssignment: asBoolean(params.hasTestAssignment),
     hasReservation: asBoolean(params.hasReservation),
-    minFitTier: asString(params.minFitTier) as FitTier | undefined,
     sourceId: asString(params.sourceId),
-    postedWithinDays: asNumber(params.postedWithinDays),
     // Pre-MET-120, on_stack was an ORDER BY demote, never a filter — every
     // subscriber's digest included off-stack matches. Keep that: no stored
     // subscription has an opinion on this new field, so default it to the

@@ -1,40 +1,14 @@
 // Web-side wire types + fetcher for creating a Telegram subscription
 // (POST /subscriptions). Source of truth:
-// apps/etl/src/telegram/subscriptions.contract.ts. Hand-mirrored per ADR-0005.
+// apps/etl/src/platform/subscriptions/subscription.contract.ts. Hand-mirrored
+// per ADR-0005.
 
 import { getOrCreateJourneyId } from "@/lib/analytics/journey";
 
 import { apiPost } from "./client";
-import type { FitTier } from "./ranking";
-import type {
-  EmploymentType,
-  EnglishLevel,
-  ListVacanciesQuery,
-  Seniority,
-  WorkFormat,
-} from "./vacancies";
+import type { SubscriptionFilter } from "./filters";
 
-// Mirrors apps/etl .../subscriptions.contract.ts. Feed sub = SubscriptionParams;
-// CV sub = CvMatchParams + a candidateId.
-export type SubscriptionParams = Omit<ListVacanciesQuery, "page" | "pageSize">;
-
-export interface CvMatchParams {
-  sourceId?: string;
-  roleIds?: string[];
-  excludedSkillIds?: string[];
-  seniorities?: Seniority[];
-  workFormats?: WorkFormat[];
-  englishLevels?: EnglishLevel[];
-  employmentTypes?: EmploymentType[];
-  // Persisted via FEED_PARAM_KEYS and replayed by the CV digest (paired with the
-  // ETL matcher fix) so a warm sub re-matches on the domain + experience filters.
-  domainIds?: string[];
-  experienceYears?: string[];
-  hasTestAssignment?: boolean;
-  hasReservation?: boolean;
-  minFitTier?: FitTier;
-  postedWithinDays?: number;
-}
+export type { SubscriptionFilter } from "./filters";
 
 export interface CreateSubscriptionResponse {
   id: string;
@@ -45,10 +19,9 @@ export interface CreateSubscriptionResponse {
 export const subscriptionsApi = {
   // The journey id ties this subscriber back to the anonymous visit that
   // created them — without it the web and Telegram halves stay two people.
-  create: (params: SubscriptionParams | CvMatchParams, candidateId?: string) =>
-    apiPost<CreateSubscriptionResponse>(candidateId ? "/subscriptions/cv" : "/subscriptions", {
+  create: (params: SubscriptionFilter) =>
+    apiPost<CreateSubscriptionResponse>("/subscriptions", {
       params,
-      candidateId,
       journeyId: getOrCreateJourneyId(),
     }),
 };

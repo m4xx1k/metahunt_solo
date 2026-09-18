@@ -215,7 +215,6 @@ export function MatchStepper() {
                       skillIds: manualSkills.map((s) => s.id),
                       roleIds: [...roleIds],
                       excludedSkillIds: excludes.map((skill) => skill.id),
-                      postedWithinDays: 30,
                     }}
                     label="Отримувати нові в Telegram →"
                   />

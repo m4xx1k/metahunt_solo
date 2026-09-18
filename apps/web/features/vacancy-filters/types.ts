@@ -165,6 +165,23 @@ export interface FiltersApi {
   setSort: (v: string | null) => void;
   /** Warm-only: unhide vacancies outside the candidate's stack. */
   setIncludeOffStack: (v: boolean) => void;
+  /** Replace every filter at once — replaying a saved subscription. */
+  replace: (next: FilterState) => void;
   clear: () => void;
   activeCount: number;
+}
+
+// The axes the rail keeps behind its "more filters" disclosure.
+export function countHiddenFilters(filters: FilterState): number {
+  return (
+    filters.workFormats.length +
+    filters.englishLevels.length +
+    filters.employmentTypes.length +
+    filters.domainIds.length +
+    filters.experienceYears.length +
+    (filters.sourceCode ? 1 : 0) +
+    (filters.minFitTier ? 1 : 0) +
+    (filters.test !== null ? 1 : 0) +
+    (filters.reservation !== null ? 1 : 0)
+  );
 }

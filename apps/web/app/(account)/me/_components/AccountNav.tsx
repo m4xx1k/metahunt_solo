@@ -1,13 +1,13 @@
 const ITEMS = [
-  { href: "#subscriptions", label: "підписки" },
+  { href: "#subscriptions", label: "subscriptions" },
   { href: "#cv", label: "CV" },
-  { href: "#account", label: "акаунт" },
+  { href: "#account", label: "account" },
 ] as const;
 
 export function AccountNav() {
   return (
-    <nav aria-label="Кабінет" className="lg:sticky lg:top-24 lg:self-start">
-      <p className="mb-3 font-mono text-2xs uppercase tracking-widest text-text-muted">кабінет</p>
+    <nav aria-label="Account" className="lg:sticky lg:top-24 lg:self-start">
+      <p className="mb-3 font-mono text-2xs uppercase tracking-widest text-text-muted">account</p>
       <ul className="flex gap-2 overflow-x-auto lg:flex-col">
         {ITEMS.map((item) => (
           <li key={item.href}>

@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import Link from "next/link";
 
 import { FilterRail } from "@/features/vacancy-filters/FilterRail";
 import { SENIORITY_OPTIONS, WORK_FORMAT_OPTIONS } from "@/features/vacancy-filters/enum-options";
 import {
-  areFiltersEqual,
-  filtersToSubscriptionCriteria,
-  subscriptionCriteriaToFilters,
+  filtersDiffer,
+  filterToState,
+  stateToFilter,
 } from "@/features/vacancy-filters/subscription-criteria";
 import { useLocalFilters } from "@/features/vacancy-filters/use-local-filters";
 import type { OptionRow } from "@/features/vacancy-filters/types";
 import type { MeSubscription, UpdateSubscription } from "@/lib/api/me";
-import type { CvMatchParams } from "@/lib/api/subscriptions";
 import { Button } from "@/ui";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 
@@ -34,12 +34,21 @@ export function SubscriptionEditor({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(subscription.name || subscription.label);
-  const params = useMemo<CvMatchParams>(
-    () => (subscription.isCv ? subscription.params : {}),
-    [subscription],
-  );
-  const initialFilters = useMemo(() => subscriptionCriteriaToFilters(params), [params]);
+  const params = subscription.params;
+  const initialFilters = useMemo(() => filterToState(params), [params]);
   const filters = useLocalFilters(initialFilters);
+  // The catalogs below only list refs that have vacancies today, so a saved
+  // filter naming a quiet role would render as a bare slug. The subscription
+  // ships its own names for exactly that gap.
+  const savedOptions = useMemo<OptionRow[]>(
+    () =>
+      Object.entries(subscription.refNames ?? {}).map(([id, label]) => ({
+        id,
+        label,
+        count: 0,
+      })),
+    [subscription.refNames],
+  );
 
   const handleName = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
@@ -50,19 +59,19 @@ export function SubscriptionEditor({
       const nextName = name.trim();
       if (!nextName) return;
       const patch: UpdateSubscription = { name: nextName };
-      if (subscription.isCv && !areFiltersEqual(filters.filters, initialFilters)) {
-        patch.params = filtersToSubscriptionCriteria(filters.filters, params, initialFilters);
-      }
+      // The rail has no source section, so the stored id rides across untouched.
+      const next = stateToFilter(filters.filters, params.sourceId);
+      if (filtersDiffer(next, params)) patch.params = next;
       onSave(subscription.id, patch);
     },
-    [filters.filters, initialFilters, name, onSave, params, subscription.id, subscription.isCv],
+    [filters.filters, name, onSave, params, subscription.id],
   );
 
   return (
     <li>
       <form onSubmit={handleSubmit} className="border border-accent/60 bg-bg-elev p-4 sm:p-5">
         <label className="flex flex-col gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
-          назва
+          name
           <input
             value={name}
             onChange={handleName}
@@ -71,37 +80,53 @@ export function SubscriptionEditor({
           />
         </label>
 
-        {subscription.isCv ? (
-          <div className="mt-5 border-t border-border">
-            <FilterRail
-              api={filters}
-              lens="warm"
-              seniorityOptions={SENIORITY_OPTIONS}
-              workFormatOptions={WORK_FORMAT_OPTIONS}
-              roleOptions={roles}
-              domainOptions={domains}
-            />
-            <MultiSelect
-              title="без навичок"
-              options={skills}
-              selected={filters.filters.excludedSkillIds}
-              onToggle={filters.toggleExcludedSkill}
-              searchable
-              searchPlaceholder="знайти навичку…"
-            />
-          </div>
-        ) : (
-          <p className="mt-4 font-mono text-2xs text-text-muted">
-            Фільтри цієї підписки поки редагуються у стрічці.
-          </p>
-        )}
+        <div className="mt-5 border-t border-border">
+          {subscription.isCv ? (
+            <p className="py-3 font-mono text-2xs text-text-muted">
+              * old type · sorted by CV{" "}
+              {subscription.cvLabel ? (
+                <Link
+                  href={`/me?cv=${subscription.candidateId}#cv`}
+                  className="normal-case text-text-secondary underline-offset-2 hover:text-accent hover:underline"
+                >
+                  {subscription.cvLabel}
+                </Link>
+              ) : (
+                <span className="text-danger">(deleted)</span>
+              )}
+            </p>
+          ) : null}
+          {/* cold: a subscription carries no fit gate — that needs a ranked page.
+              Freshness is hidden for the same reason, its window is the digest's
+              own age rather than anything stored. */}
+          <FilterRail
+            api={filters}
+            lens="cold"
+            hideFreshness
+            seniorityOptions={SENIORITY_OPTIONS}
+            workFormatOptions={WORK_FORMAT_OPTIONS}
+            roleOptions={roles}
+            skillOptions={skills}
+            domainOptions={domains}
+            selectedOptions={savedOptions}
+          />
+          <MultiSelect
+            title="excluded skills"
+            options={skills}
+            selected={filters.filters.excludedSkillIds}
+            selectedOptions={savedOptions}
+            onToggle={filters.toggleExcludedSkill}
+            searchable
+            searchPlaceholder="find a skill…"
+          />
+        </div>
 
         <div className="mt-5 flex gap-2">
           <Button type="submit" size="sm" disabled={busy || name.trim().length === 0}>
-            {busy ? "зберігаю…" : "зберегти"}
+            {busy ? "saving…" : "save"}
           </Button>
           <Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={busy}>
-            скасувати
+            cancel
           </Button>
         </div>
       </form>

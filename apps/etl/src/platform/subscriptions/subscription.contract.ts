@@ -1,39 +1,34 @@
-export const FEED_PARAM_KEYS = [
-  "q",
+import type { SubscriptionFilterDto } from "../shared/filter-params.dto";
+
+/**
+ * Every key a subscription persists — the jsonb whitelist, and the identity the
+ * create/update dedup compares on. Pinned to `SubscriptionFilterDto` so the
+ * stored shape and the validated shape cannot drift apart.
+ *
+ * Deliberately absent: paging and `sort` (a digest has no page to order),
+ * `minFitTier` (a no-op without a scorer, yet still part of the identity),
+ * `postedWithinDays` (the digest floor already owns time) and the browsing
+ * affordances. See the axes in filter-params.dto.ts.
+ */
+export const SUBSCRIPTION_PARAM_KEYS = [
   "sourceId",
-  "companyId",
-  "roleId",
   "roleIds",
   "skillIds",
   "excludedSkillIds",
   "domainIds",
-  "seniority",
-  "workFormat",
-  "employmentType",
-  "englishLevel",
-  "engagementType",
-  "experienceYears",
-  "salaryFloor",
-  "currency",
-  "hasTestAssignment",
-  "hasReservation",
-  "includeRoleless",
-  "includeAllSkills",
-] as const;
-
-export const CV_MATCH_PARAM_KEYS = [
   "seniorities",
   "workFormats",
   "englishLevels",
   "employmentTypes",
-  "minFitTier",
-  "postedWithinDays",
-] as const;
-
-export const SUBSCRIPTION_PARAM_KEYS = [...FEED_PARAM_KEYS, ...CV_MATCH_PARAM_KEYS] as const;
+  "experienceYears",
+  "hasTestAssignment",
+  "hasReservation",
+] as const satisfies readonly (keyof SubscriptionFilterDto)[];
 
 export type SubscriptionParamKey = (typeof SUBSCRIPTION_PARAM_KEYS)[number];
-export type SubscriptionParams = Partial<Record<SubscriptionParamKey, unknown>>;
+
+/** The stored filter. Values arrive from jsonb, so readers still coerce. */
+export type SubscriptionParams = Partial<Pick<SubscriptionFilterDto, SubscriptionParamKey>>;
 
 export interface CreateSubscriptionRequest {
   params: SubscriptionParams;

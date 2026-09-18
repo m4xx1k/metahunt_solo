@@ -13,7 +13,7 @@ import { Footer } from "@/app/_components/Footer";
 import { Header } from "@/app/_components/Header";
 import { aggregatesApi } from "@/lib/api/aggregates";
 import { publicApiBase } from "@/lib/api/client";
-import type { SubscriptionParams } from "@/lib/api/subscriptions";
+import type { SubscriptionFilter } from "@/lib/api/subscriptions";
 import { tracksApi, type TrackDto } from "@/lib/api/tracks";
 import { vacanciesApi, type VacancyDto } from "@/lib/api/vacancies";
 import { formatSalary, SENIORITY_LABELS } from "@/lib/extracted-vacancy";
@@ -62,13 +62,14 @@ export default async function TrackRadarPage({ params }: { params: Promise<PageP
   if (!track) notFound();
 
   const preset = await tracksApi.preset(slug);
-  const subscriptionParams: SubscriptionParams = {
+  const subscriptionParams: SubscriptionFilter = {
     roleIds: preset.roles.map((role) => role.id),
     skillIds: preset.skills.map((skill) => skill.id),
-    postedWithinDays: DEFAULT_FRESHNESS_DAYS,
   };
+  // Freshness bounds the proof list on this page, not the alert it offers.
   const trackJobs = await vacanciesApi.list({
     ...subscriptionParams,
+    postedWithinDays: DEFAULT_FRESHNESS_DAYS,
     page: 1,
     pageSize: PROOF_VACANCY_COUNT,
   });

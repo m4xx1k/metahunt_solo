@@ -4,9 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 
 import { countActiveFilters, EMPTY_FILTERS, type FiltersApi, type FilterState } from "./types";
 
-export interface LocalFiltersApi extends FiltersApi {
-  replace: (filters: FilterState) => void;
-}
+// Every FiltersApi replaces wholesale now (the URL store writes the query
+// string, this one setState) — no extension left, kept as an alias so the
+// existing consumers keep their name.
+export type LocalFiltersApi = FiltersApi;
 
 function toggle(values: string[], value: string): string[] {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];

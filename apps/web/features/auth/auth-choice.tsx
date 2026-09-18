@@ -12,10 +12,15 @@ export function AuthChoice({
   onDone,
   align = "center",
   className,
+  label = "sign in",
+  size = "sm",
 }: {
   onDone?: () => void;
   align?: "start" | "center" | "end";
   className?: string;
+  /** Trigger copy — a caller that gates one action names that action instead. */
+  label?: string;
+  size?: "sm" | "md";
 }) {
   const [open, setOpen] = useState(false);
   // Closing unmounts the content, which would kill the Telegram poller the user
@@ -44,8 +49,8 @@ export function AuthChoice({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button ref={triggerRef} variant="primary" size="sm" className={className}>
-          sign in
+        <Button ref={triggerRef} variant="primary" size={size} className={className}>
+          {label}
         </Button>
       </PopoverTrigger>
 

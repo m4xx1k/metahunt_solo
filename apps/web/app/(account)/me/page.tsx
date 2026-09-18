@@ -27,15 +27,14 @@ export default function MePage() {
     router.replace("/");
   }, [logout, router]);
 
-  if (isLoading)
-    return <EmptyState title="завантаження…" titleAs="h1" className="mx-auto max-w-md" />;
+  if (isLoading) return <EmptyState title="loading…" titleAs="h1" className="mx-auto max-w-md" />;
 
   if (!isLoggedIn || !user) {
     return (
       <EmptyState
-        title="увійди до кабінету"
+        title="log in to see your account"
         titleAs="h1"
-        hint="тут твої CV, підписки та способи входу"
+        hint="your CVs, subscriptions and logins"
         action={<AuthChoice align="start" />}
         className="mx-auto max-w-md"
       />
@@ -48,7 +47,7 @@ export default function MePage() {
       <div className="min-w-0 space-y-8">
         <AccountHeader user={user} onLogout={handleLogout} />
         <section id="subscriptions" className="scroll-mt-24">
-          <SubscriptionList canEdit={user.roles.includes("admin")} />
+          <SubscriptionList />
         </section>
         <section id="cv" className="scroll-mt-24">
           <MyCvPanel />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import { CollapsibleSection } from "@/ui/layout/CollapsibleSection";
 import { chipClass } from "./pill";
 import type { SelectOption } from "./types";
@@ -28,6 +29,7 @@ export function MultiSelect({
   searchable = false,
   searchPlaceholder = "search…",
   max = DEFAULT_MAX,
+  layout = "wrap",
   extra,
 }: {
   title: string;
@@ -38,6 +40,9 @@ export function MultiSelect({
   searchable?: boolean;
   searchPlaceholder?: string;
   max?: number;
+  /** "rows": one full-width option per line, for multi-word labels that wrap
+   *  badly as chips (roles). "wrap": dense tag flow (skills, domains). */
+  layout?: "wrap" | "rows";
   extra?: ReactNode;
 }) {
   const [query, setQuery] = useState("");
@@ -66,6 +71,12 @@ export function MultiSelect({
 
   const summary = selected.length > 0 ? `${selected.length} selected` : "any";
   const showNoMatches = q.length > 0 && filteredRest.length === 0;
+  const rows = layout === "rows";
+  // A label too long for one line wraps and reads left-aligned, like the
+  // list item it is — the chip default centres it, which looks like a cut.
+  const rowClass = rows
+    ? "w-full justify-start whitespace-normal break-words px-2 py-1.5 text-left text-[0.8125rem] leading-snug"
+    : undefined;
 
   return (
     <CollapsibleSection title={title} summary={summary}>
@@ -80,14 +91,14 @@ export function MultiSelect({
           />
         ) : null}
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className={rows ? "flex flex-col gap-1" : "flex flex-wrap gap-1.5"}>
           {selectedChips.map((o) => (
             <button
               key={o.id}
               type="button"
               aria-pressed
               onClick={() => onToggle(o.id)}
-              className={chipClass(true, o.kind)}
+              className={cn(chipClass(true, o.kind), rowClass)}
             >
               {o.label}
             </button>
@@ -98,7 +109,7 @@ export function MultiSelect({
               type="button"
               aria-pressed={false}
               onClick={() => onToggle(o.id)}
-              className={chipClass(false, o.kind)}
+              className={cn(chipClass(false, o.kind), rowClass)}
             >
               {o.label}
               {o.hint ? <span className="ml-1.5 text-2xs text-text-muted">{o.hint}</span> : null}
