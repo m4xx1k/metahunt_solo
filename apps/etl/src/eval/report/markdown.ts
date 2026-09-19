@@ -18,6 +18,14 @@ export function renderRunMarkdown(run: EvalRun): string {
     ["or_split_errors", summary.orSplitErrors.toFixed(1)],
     ["isTech accuracy", pct(summary.guardAccuracy.isTech)],
     ["role accuracy", pct(summary.guardAccuracy.role)],
+    ...(summary.profileChecked > 0
+      ? ([
+          [
+            "profile fields",
+            `${pct(summary.profileAccuracy)} of ${summary.profileChecked} checked`,
+          ],
+        ] as Array<[string, string]>)
+      : []),
     ["tokens in / out", `${tokens.in} / ${tokens.out}`],
     ["p50 latency", `${latencies[Math.floor(latencies.length / 2)] ?? 0} ms`],
   ];

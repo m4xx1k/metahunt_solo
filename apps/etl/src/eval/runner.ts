@@ -90,6 +90,8 @@ function meanSummary(passes: RequirementsSummary[]): RequirementsSummary {
       role: mean((pass) => pass.guardAccuracy.role),
       seniority: mean((pass) => pass.guardAccuracy.seniority),
     },
+    profileChecked: passes[0].profileChecked,
+    profileAccuracy: mean((pass) => pass.profileAccuracy),
   };
 }
 

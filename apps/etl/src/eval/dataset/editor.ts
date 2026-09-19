@@ -165,6 +165,8 @@ function render() {
               '<option' + (row.metadata.reviewStatus === s ? " selected" : "") + '>' + s + '</option>').join("") +
           '</select></label>' +
         '</div>' +
+        '<label><span>profile — one per line, <code>field: value</code>; omit a line to leave it unreviewed</span>' +
+          '<textarea data-f="profile" style="min-height:120px">' + escapeHtml(profileToText(e.profile)) + '</textarea></label>' +
         '<label><span>requirements</span><textarea data-f="requirements">' +
           escapeHtml(requirementsToText(e.requirements)) + '</textarea></label>' +
         '<p class="hint">One per line: <code>must: Python</code> · <code>must: React | Vue.js</code> for a choice. Empty role or seniority means null.</p>' +
@@ -192,6 +194,35 @@ function vacancyHtml(text) {
     .join("");
 }
 
+const PROFILE_FIELDS = ["workFormat","employmentType","englishLevel","engagementType",
+  "experienceYears","hasTestAssignment","companyName"];
+
+function profileToText(profile) {
+  if (!profile) return "";
+  return PROFILE_FIELDS.filter((f) => f in profile)
+    .map((f) => f + ": " + (profile[f] === null ? "null" : profile[f]))
+    .join("\n");
+}
+
+// An omitted field stays unreviewed; null is the reviewed "posting does not say".
+function textToProfile(text) {
+  const profile = {};
+  text.split("\n").map((l) => l.trim()).filter(Boolean).forEach((line, index) => {
+    const match = /^([A-Za-z]+)\s*:\s*(.+)$/.exec(line);
+    if (!match) throw new Error("profile line " + (index + 1) + ': expected "field: value"');
+    const [, field, raw] = match;
+    if (!PROFILE_FIELDS.includes(field))
+      throw new Error("unknown profile field \"" + field + '"; expected ' + PROFILE_FIELDS.join(", "));
+    profile[field] =
+      raw === "null" ? null
+      : raw === "true" ? true
+      : raw === "false" ? false
+      : /^-?\d+(\.\d+)?$/.test(raw) ? Number(raw)
+      : raw;
+  });
+  return Object.keys(profile).length ? profile : undefined;
+}
+
 function collect() {
   document.querySelectorAll("details").forEach((node) => {
     const row = state.rows[Number(node.dataset.i)];
@@ -201,6 +232,9 @@ function collect() {
     row.expectedOutput.isTech = read("isTech") === "true";
     row.metadata.reviewStatus = read("reviewStatus");
     row.expectedOutput.requirements = textToRequirements(read("requirements"));
+    const profile = textToProfile(read("profile"));
+    if (profile) row.expectedOutput.profile = profile;
+    else delete row.expectedOutput.profile;
   });
 }
 

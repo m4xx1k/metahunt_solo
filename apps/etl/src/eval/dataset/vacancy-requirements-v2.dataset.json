@@ -146,7 +146,12 @@
           "priority": "nice",
           "anyOf": ["Confluence"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "OFFICE",
+        "englishLevel": "INTERMEDIATE",
+        "companyName": "Levi9 Ukraine"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -265,7 +270,12 @@
           "priority": "nice",
           "anyOf": ["Terraform"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "experienceYears": 3,
+        "companyName": "SoftServe"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -332,7 +342,10 @@
           "priority": "nice",
           "anyOf": ["API/UI Test Integration"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 0.5
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -391,7 +404,10 @@
           "priority": "must",
           "anyOf": ["API Testing"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 4
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -486,7 +502,12 @@
           "priority": "nice",
           "anyOf": ["Serverless"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "experienceYears": 5,
+        "companyName": "EPAM"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -545,7 +566,12 @@
           "priority": "nice",
           "anyOf": ["UI/UX"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "experienceYears": 4,
+        "companyName": "SixthSense Technology"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -687,7 +713,12 @@
           "priority": "nice",
           "anyOf": ["Performance Testing"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 4,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "companyName": "Binariks"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -736,7 +767,10 @@
             "Containerized Deployments"
           ]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -807,7 +841,11 @@
           "priority": "nice",
           "anyOf": ["CloudWatch", "Datadog", "Grafana"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 3,
+        "companyName": "Exoft"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -858,7 +896,13 @@
           "priority": "nice",
           "anyOf": ["Automated Testing Pipelines"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "employmentType": "CONTRACT",
+        "englishLevel": "INTERMEDIATE",
+        "companyName": "IT Service Ukraine"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -909,7 +953,12 @@
           "priority": "must",
           "anyOf": ["Python"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "employmentType": "FREELANCE",
+        "experienceYears": 7
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -944,7 +993,12 @@
           "priority": "must",
           "anyOf": ["Web Development"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "employmentType": "FREELANCE",
+        "experienceYears": 10
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -987,7 +1041,10 @@
           "priority": "nice",
           "anyOf": ["Modern Data Stack"]
         }
-      ]
+      ],
+      "profile": {
+        "englishLevel": "UPPER_INTERMEDIATE"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1054,7 +1111,12 @@
           "priority": "must",
           "anyOf": ["Performance Optimization"]
         }
-      ]
+      ],
+      "profile": {
+        "employmentType": "FULL_TIME",
+        "engagementType": "OUTSTAFF",
+        "experienceYears": 5
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1101,7 +1163,13 @@
           "priority": "must",
           "anyOf": ["CI/CD"]
         }
-      ]
+      ],
+      "profile": {
+        "employmentType": "FULL_TIME",
+        "engagementType": "OUTSTAFF",
+        "experienceYears": 4,
+        "englishLevel": "UPPER_INTERMEDIATE"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1196,7 +1264,12 @@
           "priority": "nice",
           "anyOf": ["Automated Device Enrollment"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "experienceYears": 6,
+        "englishLevel": "UPPER_INTERMEDIATE"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1283,7 +1356,10 @@
           "priority": "must",
           "anyOf": ["System Reliability"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 1
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1370,7 +1446,10 @@
           "priority": "must",
           "anyOf": ["System Reliability"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 1
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1457,7 +1536,10 @@
           "priority": "nice",
           "anyOf": ["ClickHouse"]
         }
-      ]
+      ],
+      "profile": {
+        "experienceYears": 3
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1536,7 +1618,13 @@
           "priority": "nice",
           "anyOf": ["Git"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "employmentType": "PART_TIME",
+        "experienceYears": 3,
+        "companyName": "IT Service Ukraine"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1599,7 +1687,10 @@
           "priority": "nice",
           "anyOf": ["Tencent Cloud"]
         }
-      ]
+      ],
+      "profile": {
+        "englishLevel": "INTERMEDIATE"
+      }
     },
     "metadata": {
       "reviewStatus": "draft",
@@ -1856,7 +1947,11 @@
           "priority": "must",
           "anyOf": ["Integration Testing"]
         }
-      ]
+      ],
+      "profile": {
+        "workFormat": "REMOTE",
+        "hasTestAssignment": true
+      }
     },
     "metadata": {
       "reviewStatus": "draft",

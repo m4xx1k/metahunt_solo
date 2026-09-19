@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 import { normalizeAliasName } from "../../platform/shared/normalize-alias";
+import { PROFILE_FIELDS } from "../types";
 import type {
+  ProfileExpectation,
+  ProfileMiss,
   ExtractedVacancyForEval,
   LegacySkills,
   Requirement,
@@ -108,12 +111,15 @@ export function scoreRequirements(
       role: Number(parsed.data.role === expected.role),
       seniority: Number(parsed.data.seniority === expected.seniority),
     },
+    profile: scoreProfile(expected.profile, actual),
     expectedClauses: [...expectedKeys].sort(),
     actualClauses: [...actualKeys].sort(),
   };
 }
 
 export function summarizeRequirements(scores: RequirementScore[]): RequirementsSummary {
+  const profileChecked = scores.reduce((total, item) => total + item.profile.checked, 0);
+  const profileCorrect = scores.reduce((total, item) => total + item.profile.correct, 0);
   return {
     evaluatedCases: scores.length,
     schemaValidRate: average(scores.map((item) => Number(item.schemaValid))),
@@ -129,6 +135,8 @@ export function summarizeRequirements(scores: RequirementScore[]): RequirementsS
       role: average(scores.map((item) => item.guardAccuracy.role)),
       seniority: average(scores.map((item) => item.guardAccuracy.seniority)),
     },
+    profileChecked,
+    profileAccuracy: profileChecked === 0 ? 1 : profileCorrect / profileChecked,
   };
 }
 
@@ -193,10 +201,33 @@ function failureScore(providerFailure: boolean, error: string): RequirementScore
     alternativeAccuracy: 0,
     orSplitErrors: 0,
     guardAccuracy: { isTech: 0, role: 0, seniority: 0 },
+    profile: { checked: 0, correct: 0, wrong: [] },
     expectedClauses: [],
     actualClauses: [],
     error,
   };
+}
+
+/**
+ * Scores only fields the label has reviewed AND the extractor produces, so an
+ * unlabelled field is skipped rather than asserted absent, and requirements-v2
+ * is not punished for a contract it does not implement.
+ */
+export function scoreProfile(
+  expected: ProfileExpectation | undefined,
+  actual: ExtractedVacancyForEval,
+): { checked: number; correct: number; wrong: ProfileMiss[] } {
+  const wrong: ProfileMiss[] = [];
+  let checked = 0;
+  for (const field of PROFILE_FIELDS) {
+    if (!expected || !(field in expected)) continue;
+    if (actual[field] === undefined) continue;
+    checked += 1;
+    const want = expected[field] ?? null;
+    const got = actual[field] ?? null;
+    if (want !== got) wrong.push({ field, expected: want, actual: got });
+  }
+  return { checked, correct: checked - wrong.length, wrong };
 }
 
 function fraction(numerator: number, denominator: number): number {
