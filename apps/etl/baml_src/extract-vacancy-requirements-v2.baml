@@ -50,10 +50,17 @@ class VacancyRequirementV2 {
     One logical requirement, as the list of capabilities, tools, methodologies,
     or named technical concepts that satisfy it, in canonical English.
 
-    An ordinary requirement is a list of ONE: `["PostgreSQL"]`.
-    An explicit choice such as "AWS or GCP" is ONE item with several entries:
-    `["AWS", "GCP"]` — never several singleton requirements. Entries must be
-    distinct.
+    ALMOST ALWAYS A LIST OF ONE: `["PostgreSQL"]`. That is the default and most
+    requirements are this.
+
+    Use more than one entry ONLY when the posting itself marks the items as
+    interchangeable — "AWS or GCP", "one of A/B", "A and/or B", "any of: A, B, C".
+    Then it is ONE item with several entries: `["AWS", "GCP"]`, never several
+    one-entry requirements. Entries must be distinct.
+
+    A comma-separated list of tools the candidate needs is NOT a choice: each
+    item is its own requirement with its own one-entry list. Never put items
+    together because they are similar, related, or listed near each other.
   "#)
 }
 
@@ -100,10 +107,10 @@ class ExtractedVacancyRequirementsV2 {
     Exclude soft skills, generic duties without a technical capability,
     English, years of experience, salary, location, and company marketing.
 
-    Keep `must` vs `nice` faithfully. Every requirement is one `anyOf` list:
-    a plain requirement is a list of one, and an explicit `A or B` choice is one
-    list of several. A one-entry requirement and a longer list containing it may
-    both be correct when the source states them separately.
+    Keep `must` vs `nice` faithfully. Every requirement is one `anyOf` list, and
+    nearly all of them hold exactly one entry. Only an explicit `A or B` in the
+    source produces a longer list. A one-entry requirement and a longer list
+    containing it may both be correct when the source states them separately.
 
     Deduplicate equivalent spellings: JS → JavaScript, TS → TypeScript,
     React.js → React, Vue js → Vue.js, K8s → Kubernetes. Keep distinct
@@ -163,6 +170,10 @@ function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequireme
 
       Requirements: JavaScript and TypeScript. React, Vue, or Angular.
       -> MUST [JavaScript]; MUST [TypeScript]; MUST [React, Vue.js, Angular].
+
+      Nice to have: Jira, Confluence, Git, TeamCity.
+      -> NICE [Jira]; NICE [Confluence]; NICE [Git]; NICE [TeamCity].
+         A plain list is four requirements, not one four-way choice.
 
       Requirements: AWS, Azure, SQL. Experience applying TDD or BDD.
       -> MUST [AWS]; MUST [Azure]; MUST [SQL]; MUST [TDD, BDD].
