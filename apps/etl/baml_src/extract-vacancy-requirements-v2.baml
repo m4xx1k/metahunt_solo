@@ -46,16 +46,21 @@ class VacancyRequirementV2 {
     `MUST` only when the posting explicitly requires the item. `NICE` only
     when it is explicitly a plus, preferred, optional, or nice-to-have.
   "#)
-  value string? @description(#"
-    One required capability, tool, methodology, or named technical concept.
-    Use this for a single requirement. Exactly one of `value` or `anyOf` must
-    be present.
-  "#)
-  anyOf string[]? @description(#"
-    One logical requirement with explicit alternatives, such as "AWS or GCP".
-    Preserve it as a SINGLE item, in the original alternatives' canonical
-    English forms. Do not turn it into multiple singleton requirements.
-    Exactly one of `value` or `anyOf` must be present; `anyOf` needs 2+ items.
+  anyOf string[] @description(#"
+    One logical requirement, as the list of capabilities, tools, methodologies,
+    or named technical concepts that satisfy it, in canonical English.
+
+    ALMOST ALWAYS A LIST OF ONE: `["PostgreSQL"]`. That is the default and most
+    requirements are this.
+
+    Use more than one entry ONLY when the posting itself marks the items as
+    interchangeable — "AWS or GCP", "one of A/B", "A and/or B", "any of: A, B, C".
+    Then it is ONE item with several entries: `["AWS", "GCP"]`, never several
+    one-entry requirements. Entries must be distinct.
+
+    A comma-separated list of tools the candidate needs is NOT a choice: each
+    item is its own requirement with its own one-entry list. Never put items
+    together because they are similar, related, or listed near each other.
   "#)
 }
 
@@ -102,9 +107,10 @@ class ExtractedVacancyRequirementsV2 {
     Exclude soft skills, generic duties without a technical capability,
     English, years of experience, salary, location, and company marketing.
 
-    Keep `must` vs `nice` faithfully. Preserve every explicit `A or B` choice
-    as one `anyOf` requirement. A singleton and an `anyOf` group may both be
-    correct when the source states them as separate requirements.
+    Keep `must` vs `nice` faithfully. Every requirement is one `anyOf` list, and
+    nearly all of them hold exactly one entry. Only an explicit `A or B` in the
+    source produces a longer list. A one-entry requirement and a longer list
+    containing it may both be correct when the source states them separately.
 
     Deduplicate equivalent spellings: JS → JavaScript, TS → TypeScript,
     React.js → React, Vue js → Vue.js, K8s → Kubernetes. Keep distinct
@@ -148,30 +154,35 @@ function ExtractVacancyRequirementsV2(text: string) -> ExtractedVacancyRequireme
       - Nice to have / plus / preferred / optional / advantage → NICE.
 
     Alternative rules:
-      - Preserve one logical choice as one `anyOf`: "AWS or GCP", "one of A/B",
+      - Preserve one logical choice as one list: "AWS or GCP", "one of A/B",
         "A and/or B", or "any framework: A, B, C".
-      - Do not use `anyOf` for a list where every item is required.
+      - Never put items in one list when every item is required — those are
+        separate requirements, each its own list of one.
       - A comma-separated stack is cumulative unless the text explicitly marks
         it as alternatives.
-      - Never split one choice into singleton requirements.
-      - A separately stated singleton and a later `anyOf` containing it may
-        both be correct; they represent different source statements.
+      - Never split one choice into several one-entry requirements.
+      - A separately stated one-entry requirement and a later list containing it
+        may both be correct; they represent different source statements.
 
     Examples:
       Required: AWS or GCP. Terraform is a plus.
-      -> MUST anyOf [AWS, GCP]; NICE Terraform.
+      -> MUST [AWS, GCP]; NICE [Terraform].
 
       Requirements: JavaScript and TypeScript. React, Vue, or Angular.
-      -> MUST JavaScript; MUST TypeScript; MUST anyOf [React, Vue.js, Angular].
+      -> MUST [JavaScript]; MUST [TypeScript]; MUST [React, Vue.js, Angular].
+
+      Nice to have: Jira, Confluence, Git, TeamCity.
+      -> NICE [Jira]; NICE [Confluence]; NICE [Git]; NICE [TeamCity].
+         A plain list is four requirements, not one four-way choice.
 
       Requirements: AWS, Azure, SQL. Experience applying TDD or BDD.
-      -> MUST AWS; MUST Azure; MUST SQL; MUST anyOf [TDD, BDD].
+      -> MUST [AWS]; MUST [Azure]; MUST [SQL]; MUST [TDD, BDD].
 
       We build on Kubernetes. You must administer Linux.
-      -> MUST Linux only; Kubernetes is project context, not a requirement.
+      -> MUST [Linux] only; Kubernetes is project context, not a requirement.
 
       We work in Agile. Experience with CI/CD is required.
-      -> MUST CI/CD only; Agile describes company process, not a requirement.
+      -> MUST [CI/CD] only; Agile describes company process, not a requirement.
 
     {{ ctx.output_format }}
 

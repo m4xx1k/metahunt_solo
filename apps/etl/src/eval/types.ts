@@ -1,9 +1,9 @@
+import type { ExtractionResult, ExtractionUsage } from "../02-enrich/extraction/vacancy-extractor";
+
 export type RequirementPriority = "must" | "nice";
 
-/** The candidate contract. `value` is a single alternative; `anyOf` is an explicit OR. */
-export type Requirement =
-  | { priority: RequirementPriority; value: string }
-  | { priority: RequirementPriority; anyOf: string[] };
+/** One requirement is one choice: an ordinary requirement is `anyOf` with one entry. */
+export type Requirement = { priority: RequirementPriority; anyOf: string[] };
 
 export type RequirementDatasetInput = {
   id: string;
@@ -71,4 +71,32 @@ export type RequirementsSummary = {
   alternativeAccuracy: number;
   orSplitErrors: number;
   guardAccuracy: { isTech: number; role: number; seniority: number };
+};
+
+/** Everything an extractor must do for the eval; `identity()` is the production cache's concern. */
+export type EvalExtractor = { extract(text: string): Promise<ExtractionResult> };
+
+export type RowResult = {
+  id: string;
+  title: string;
+  reviewStatus: RequirementDatasetMetadata["reviewStatus"];
+  score: RequirementScore;
+  actual: ExtractedVacancyForEval | null;
+  usage: ExtractionUsage;
+  error?: string;
+};
+
+export type EvalRun = {
+  startedAt: string;
+  durationMs: number;
+  extractor: string;
+  client: string;
+  model: string;
+  aliasSnapshotSha: string;
+  gated: boolean;
+  /** Mean over `passes`; a single pass carries a few points of model noise. */
+  summary: RequirementsSummary;
+  passes: RequirementsSummary[];
+  /** The last pass only — the per-row view is for reading disagreements. */
+  rows: RowResult[];
 };

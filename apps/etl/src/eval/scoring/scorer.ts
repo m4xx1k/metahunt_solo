@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { normalizeAliasName } from "../platform/shared/normalize-alias";
-
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 import type {
   ExtractedVacancyForEval,
   LegacySkills,
@@ -10,22 +9,12 @@ import type {
   RequirementScore,
   RequirementsSummary,
   ScorerAliasMap,
-} from "./extraction-eval.types";
+} from "../types";
 
-const requirementSchema = z
-  .object({
-    priority: z.enum(["must", "nice"]),
-    value: z.string().min(1).optional(),
-    anyOf: z.array(z.string().min(1)).min(2).optional(),
-  })
-  .superRefine((value, ctx) => {
-    if ((value.value ? 1 : 0) + (value.anyOf ? 1 : 0) !== 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "requirement needs exactly one of value or anyOf",
-      });
-    }
-  });
+const requirementSchema = z.object({
+  priority: z.enum(["must", "nice"]),
+  anyOf: z.array(z.string().min(1)).min(1),
+});
 
 const extractionSchema = z.object({
   isTech: z.boolean(),
@@ -47,8 +36,8 @@ type NormalizedClause = {
 
 export function adaptLegacySkills(skills: LegacySkills | null | undefined): Requirement[] {
   return [
-    ...(skills?.required ?? []).map((value) => ({ priority: "must" as const, value })),
-    ...(skills?.optional ?? []).map((value) => ({ priority: "nice" as const, value })),
+    ...(skills?.required ?? []).map((name) => ({ priority: "must" as const, anyOf: [name] })),
+    ...(skills?.optional ?? []).map((name) => ({ priority: "nice" as const, anyOf: [name] })),
   ];
 }
 
@@ -74,14 +63,13 @@ export function scoreRequirements(
   if (!parsed.success)
     return failureScore(false, parsed.error.issues.map((item) => item.message).join("; "));
 
-  const actualRequirements = (parsed.data.requirements ??
-    adaptLegacySkills(parsed.data.skills)) as Requirement[];
-  const invalidAnyOf = actualRequirements.find(
+  const actualRequirements = parsed.data.requirements ?? adaptLegacySkills(parsed.data.skills);
+  const collapsedChoice = actualRequirements.find(
     (requirement) =>
-      "anyOf" in requirement && new Set(requirement.anyOf.map(normalizeAliasName)).size < 2,
+      requirement.anyOf.length > 1 && new Set(requirement.anyOf.map(normalizeAliasName)).size < 2,
   );
-  if (invalidAnyOf) {
-    return failureScore(false, "anyOf must contain at least two distinct canonical requirements");
+  if (collapsedChoice) {
+    return failureScore(false, "a choice must list distinct alternatives");
   }
   const expectedClauses = normalizeClauses(expected.requirements, aliases);
   const actualClauses = normalizeClauses(actualRequirements, aliases);
@@ -150,7 +138,7 @@ function normalizeClauses(
 ): NormalizedClause[] {
   const byAlternatives = new Map<string, NormalizedClause>();
   for (const requirement of requirements) {
-    const values = "value" in requirement ? [requirement.value] : requirement.anyOf;
+    const values = requirement.anyOf;
     const rawAlternatives = values.map(normalizeAliasName);
     const canonicalAlternatives = values.map((value) => canonicalizeRequirement(value, aliases));
     const canonicalRawValues = canonicalAlternatives.reduce<Map<string, Set<string>>>(

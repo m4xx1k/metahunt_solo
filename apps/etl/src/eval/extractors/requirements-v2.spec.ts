@@ -1,4 +1,4 @@
-jest.mock("../baml_client", () => ({
+jest.mock("../../baml_client", () => ({
   __esModule: true,
   b: { ExtractVacancyRequirementsV2: jest.fn() },
   RequirementPriority: { MUST: "MUST", NICE: "NICE" },
@@ -13,9 +13,11 @@ jest.mock("../baml_client", () => ({
   },
 }));
 
-import { b } from "../baml_client";
+import { b } from "../../baml_client";
 
-import { BamlRequirementsV2Extractor } from "./requirements-v2.baml.extractor";
+import { BamlRequirementsV2Extractor } from "./requirements-v2";
+
+const TEST_CLIENT = { model: "test-model" };
 
 const extractRequirements = b.ExtractVacancyRequirementsV2 as unknown as jest.Mock;
 
@@ -27,10 +29,10 @@ describe("BamlRequirementsV2Extractor", () => {
       seniority: "SENIOR",
       requirements: [
         { priority: "MUST", anyOf: ["AWS", "GCP"] },
-        { priority: "NICE", value: "Terraform" },
+        { priority: "NICE", anyOf: ["Terraform"] },
       ],
     });
-    const extractor = new BamlRequirementsV2Extractor();
+    const extractor = new BamlRequirementsV2Extractor(TEST_CLIENT);
 
     const text = "Title: Senior DevOps Engineer\n\nAWS or GCP. Terraform is a plus.";
     const result = await extractor.extract(text);
@@ -46,7 +48,7 @@ describe("BamlRequirementsV2Extractor", () => {
       seniority: "SENIOR",
       requirements: [
         { priority: "must", anyOf: ["AWS", "GCP"] },
-        { priority: "nice", value: "Terraform" },
+        { priority: "nice", anyOf: ["Terraform"] },
       ],
     });
   });
@@ -69,7 +71,7 @@ describe("BamlRequirementsV2Extractor", () => {
       requirements: [],
     });
 
-    const result = await new BamlRequirementsV2Extractor().extract(text);
+    const result = await new BamlRequirementsV2Extractor(TEST_CLIENT).extract(text);
 
     expect(result.data?.seniority).toBe(expected);
   });
@@ -82,7 +84,7 @@ describe("BamlRequirementsV2Extractor", () => {
       requirements: [],
     });
 
-    const result = await new BamlRequirementsV2Extractor().extract(
+    const result = await new BamlRequirementsV2Extractor(TEST_CLIENT).extract(
       "Title: Software Engineer\\n\\nBuild and maintain product software.",
     );
 

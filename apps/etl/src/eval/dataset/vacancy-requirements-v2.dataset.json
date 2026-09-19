@@ -12,87 +12,87 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Networking"
+          "anyOf": ["Networking"]
         },
         {
           "priority": "must",
-          "value": "Mikrotik"
+          "anyOf": ["Mikrotik"]
         },
         {
           "priority": "must",
-          "value": "Juniper"
+          "anyOf": ["Juniper"]
         },
         {
           "priority": "must",
-          "value": "HP Networking"
+          "anyOf": ["HP Networking"]
         },
         {
           "priority": "must",
-          "value": "Aruba"
+          "anyOf": ["Aruba"]
         },
         {
           "priority": "must",
-          "value": "Ubiquiti"
+          "anyOf": ["Ubiquiti"]
         },
         {
           "priority": "must",
-          "value": "VPN"
+          "anyOf": ["VPN"]
         },
         {
           "priority": "must",
-          "value": "IPSec"
+          "anyOf": ["IPSec"]
         },
         {
           "priority": "must",
-          "value": "EoIP"
+          "anyOf": ["EoIP"]
         },
         {
           "priority": "must",
-          "value": "VLAN"
+          "anyOf": ["VLAN"]
         },
         {
           "priority": "must",
-          "value": "802.1X"
+          "anyOf": ["802.1X"]
         },
         {
           "priority": "must",
-          "value": "RADIUS"
+          "anyOf": ["RADIUS"]
         },
         {
           "priority": "must",
-          "value": "Firewalls"
+          "anyOf": ["Firewalls"]
         },
         {
           "priority": "must",
-          "value": "DNS"
+          "anyOf": ["DNS"]
         },
         {
           "priority": "must",
-          "value": "DHCP"
+          "anyOf": ["DHCP"]
         },
         {
           "priority": "must",
-          "value": "VMware vCenter"
+          "anyOf": ["VMware vCenter"]
         },
         {
           "priority": "must",
-          "value": "Network Security"
+          "anyOf": ["Network Security"]
         },
         {
           "priority": "must",
-          "value": "Load Balancing"
+          "anyOf": ["Load Balancing"]
         },
         {
           "priority": "must",
-          "value": "Proxy Servers"
+          "anyOf": ["Proxy Servers"]
         },
         {
           "priority": "must",
-          "value": "Windows Server"
+          "anyOf": ["Windows Server"]
         },
         {
           "priority": "must",
-          "value": "Linux"
+          "anyOf": ["Linux"]
         },
         {
           "priority": "must",
@@ -104,7 +104,7 @@
         },
         {
           "priority": "nice",
-          "value": "Office 365"
+          "anyOf": ["Office 365"]
         },
         {
           "priority": "nice",
@@ -112,39 +112,39 @@
         },
         {
           "priority": "nice",
-          "value": "Jamf"
+          "anyOf": ["Jamf"]
         },
         {
           "priority": "nice",
-          "value": "Puppet"
+          "anyOf": ["Puppet"]
         },
         {
           "priority": "nice",
-          "value": "Chef"
+          "anyOf": ["Chef"]
         },
         {
           "priority": "nice",
-          "value": "API"
+          "anyOf": ["API"]
         },
         {
           "priority": "nice",
-          "value": "SVN"
+          "anyOf": ["SVN"]
         },
         {
           "priority": "nice",
-          "value": "Git"
+          "anyOf": ["Git"]
         },
         {
           "priority": "nice",
-          "value": "TeamCity"
+          "anyOf": ["TeamCity"]
         },
         {
           "priority": "nice",
-          "value": "Jira"
+          "anyOf": ["Jira"]
         },
         {
           "priority": "nice",
-          "value": "Confluence"
+          "anyOf": ["Confluence"]
         }
       ]
     },
@@ -171,35 +171,35 @@
         },
         {
           "priority": "must",
-          "value": "FinOps"
+          "anyOf": ["FinOps"]
         },
         {
           "priority": "must",
-          "value": "Cost Allocation"
+          "anyOf": ["Cost Allocation"]
         },
         {
           "priority": "must",
-          "value": "Tag Governance"
+          "anyOf": ["Tag Governance"]
         },
         {
           "priority": "must",
-          "value": "Commitment Management"
+          "anyOf": ["Commitment Management"]
         },
         {
           "priority": "must",
-          "value": "Showback/Chargeback"
+          "anyOf": ["Showback/Chargeback"]
         },
         {
           "priority": "must",
-          "value": "Anomaly Detection"
+          "anyOf": ["Anomaly Detection"]
         },
         {
           "priority": "must",
-          "value": "FinOps Operating Model"
+          "anyOf": ["FinOps Operating Model"]
         },
         {
           "priority": "must",
-          "value": "Maturity Scoring"
+          "anyOf": ["Maturity Scoring"]
         },
         {
           "priority": "must",
@@ -211,43 +211,43 @@
         },
         {
           "priority": "must",
-          "value": "Cloud Pricing Models"
+          "anyOf": ["Cloud Pricing Models"]
         },
         {
           "priority": "must",
-          "value": "Reserved Instances"
+          "anyOf": ["Reserved Instances"]
         },
         {
           "priority": "must",
-          "value": "Savings Plans"
+          "anyOf": ["Savings Plans"]
         },
         {
           "priority": "must",
-          "value": "Committed Use Discounts"
+          "anyOf": ["Committed Use Discounts"]
         },
         {
           "priority": "must",
-          "value": "Spot/Preemptible Instances"
+          "anyOf": ["Spot/Preemptible Instances"]
         },
         {
           "priority": "must",
-          "value": "Unified Cost Model"
+          "anyOf": ["Unified Cost Model"]
         },
         {
           "priority": "must",
-          "value": "Budget Management"
+          "anyOf": ["Budget Management"]
         },
         {
           "priority": "must",
-          "value": "Cost Forecasting"
+          "anyOf": ["Cost Forecasting"]
         },
         {
           "priority": "nice",
-          "value": "Multi-cloud"
+          "anyOf": ["Multi-cloud"]
         },
         {
           "priority": "nice",
-          "value": "Kubernetes Cost Management"
+          "anyOf": ["Kubernetes Cost Management"]
         },
         {
           "priority": "nice",
@@ -255,15 +255,15 @@
         },
         {
           "priority": "nice",
-          "value": "SaaS Cost Management"
+          "anyOf": ["SaaS Cost Management"]
         },
         {
           "priority": "nice",
-          "value": "AI/ML Cost Optimization"
+          "anyOf": ["AI/ML Cost Optimization"]
         },
         {
           "priority": "nice",
-          "value": "Terraform"
+          "anyOf": ["Terraform"]
         }
       ]
     },
@@ -286,19 +286,19 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "JavaScript"
+          "anyOf": ["JavaScript"]
         },
         {
           "priority": "must",
-          "value": "Playwright"
+          "anyOf": ["Playwright"]
         },
         {
           "priority": "must",
-          "value": "QA Methodologies"
+          "anyOf": ["QA Methodologies"]
         },
         {
           "priority": "must",
-          "value": "OOP"
+          "anyOf": ["OOP"]
         },
         {
           "priority": "must",
@@ -306,31 +306,31 @@
         },
         {
           "priority": "must",
-          "value": "API Test Automation"
+          "anyOf": ["API Test Automation"]
         },
         {
           "priority": "must",
-          "value": "UI Test Automation"
+          "anyOf": ["UI Test Automation"]
         },
         {
           "priority": "nice",
-          "value": "Linux"
+          "anyOf": ["Linux"]
         },
         {
           "priority": "nice",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "nice",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "nice",
-          "value": "SQL"
+          "anyOf": ["SQL"]
         },
         {
           "priority": "nice",
-          "value": "API/UI Test Integration"
+          "anyOf": ["API/UI Test Integration"]
         }
       ]
     },
@@ -353,43 +353,43 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "OOP"
+          "anyOf": ["OOP"]
         },
         {
           "priority": "must",
-          "value": "UI Test Automation"
+          "anyOf": ["UI Test Automation"]
         },
         {
           "priority": "must",
-          "value": "Service Test Automation"
+          "anyOf": ["Service Test Automation"]
         },
         {
           "priority": "must",
-          "value": "Python"
+          "anyOf": ["Python"]
         },
         {
           "priority": "must",
-          "value": "BDD"
+          "anyOf": ["BDD"]
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Test Reporting"
+          "anyOf": ["Test Reporting"]
         },
         {
           "priority": "must",
-          "value": "Selenium"
+          "anyOf": ["Selenium"]
         },
         {
           "priority": "must",
-          "value": "API Testing"
+          "anyOf": ["API Testing"]
         }
       ]
     },
@@ -412,79 +412,79 @@
       "requirements": [
         {
           "priority": "must",
-          "value": ".NET"
+          "anyOf": [".NET"]
         },
         {
           "priority": "must",
-          "value": "Angular"
+          "anyOf": ["Angular"]
         },
         {
           "priority": "must",
-          "value": "TypeScript"
+          "anyOf": ["TypeScript"]
         },
         {
           "priority": "must",
-          "value": "SQL"
+          "anyOf": ["SQL"]
         },
         {
           "priority": "must",
-          "value": "Shift-left Testing"
+          "anyOf": ["Shift-left Testing"]
         },
         {
           "priority": "must",
-          "value": "TDD"
+          "anyOf": ["TDD"]
         },
         {
           "priority": "must",
-          "value": "BDD"
+          "anyOf": ["BDD"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "DevSecOps"
+          "anyOf": ["DevSecOps"]
         },
         {
           "priority": "must",
-          "value": "Secure Coding"
+          "anyOf": ["Secure Coding"]
         },
         {
           "priority": "must",
-          "value": "Automated Testing"
+          "anyOf": ["Automated Testing"]
         },
         {
           "priority": "must",
-          "value": "Azure"
+          "anyOf": ["Azure"]
         },
         {
           "priority": "nice",
-          "value": "AI/ML"
+          "anyOf": ["AI/ML"]
         },
         {
           "priority": "nice",
-          "value": "LLMs"
+          "anyOf": ["LLMs"]
         },
         {
           "priority": "nice",
-          "value": "Agentic Systems"
+          "anyOf": ["Agentic Systems"]
         },
         {
           "priority": "nice",
-          "value": "MCP"
+          "anyOf": ["MCP"]
         },
         {
           "priority": "nice",
-          "value": "Event-driven Systems"
+          "anyOf": ["Event-driven Systems"]
         },
         {
           "priority": "nice",
-          "value": "Microservices"
+          "anyOf": ["Microservices"]
         },
         {
           "priority": "nice",
-          "value": "Serverless"
+          "anyOf": ["Serverless"]
         }
       ]
     },
@@ -507,43 +507,43 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "C++"
+          "anyOf": ["C++"]
         },
         {
           "priority": "must",
-          "value": "OOP"
+          "anyOf": ["OOP"]
         },
         {
           "priority": "must",
-          "value": "Qt"
+          "anyOf": ["Qt"]
         },
         {
           "priority": "must",
-          "value": "Server-side Development"
+          "anyOf": ["Server-side Development"]
         },
         {
           "priority": "must",
-          "value": "Linux"
+          "anyOf": ["Linux"]
         },
         {
           "priority": "nice",
-          "value": "Distributed Systems"
+          "anyOf": ["Distributed Systems"]
         },
         {
           "priority": "nice",
-          "value": "Networking"
+          "anyOf": ["Networking"]
         },
         {
           "priority": "nice",
-          "value": "Data Visualization"
+          "anyOf": ["Data Visualization"]
         },
         {
           "priority": "nice",
-          "value": "Frontend Development"
+          "anyOf": ["Frontend Development"]
         },
         {
           "priority": "nice",
-          "value": "UI/UX"
+          "anyOf": ["UI/UX"]
         }
       ]
     },
@@ -566,7 +566,7 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "TypeScript"
+          "anyOf": ["TypeScript"]
         },
         {
           "priority": "must",
@@ -574,35 +574,35 @@
         },
         {
           "priority": "must",
-          "value": "Cursor"
+          "anyOf": ["Cursor"]
         },
         {
           "priority": "must",
-          "value": "Manual Testing"
+          "anyOf": ["Manual Testing"]
         },
         {
           "priority": "must",
-          "value": "Exploratory Testing"
+          "anyOf": ["Exploratory Testing"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Defect Tracking"
+          "anyOf": ["Defect Tracking"]
         },
         {
           "priority": "must",
-          "value": "Test Specifications"
+          "anyOf": ["Test Specifications"]
         },
         {
           "priority": "nice",
-          "value": "Agile"
+          "anyOf": ["Agile"]
         },
         {
           "priority": "nice",
-          "value": "Scrum"
+          "anyOf": ["Scrum"]
         }
       ]
     },
@@ -625,15 +625,15 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Playwright"
+          "anyOf": ["Playwright"]
         },
         {
           "priority": "must",
-          "value": "REST Assured"
+          "anyOf": ["REST Assured"]
         },
         {
           "priority": "must",
-          "value": "API Testing"
+          "anyOf": ["API Testing"]
         },
         {
           "priority": "must",
@@ -641,31 +641,31 @@
         },
         {
           "priority": "must",
-          "value": "Java"
+          "anyOf": ["Java"]
         },
         {
           "priority": "must",
-          "value": "Relational Databases"
+          "anyOf": ["Relational Databases"]
         },
         {
           "priority": "must",
-          "value": "Azure DevOps"
+          "anyOf": ["Azure DevOps"]
         },
         {
           "priority": "must",
-          "value": "AI-based Testing"
+          "anyOf": ["AI-based Testing"]
         },
         {
           "priority": "nice",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "nice",
-          "value": "Kubernetes"
+          "anyOf": ["Kubernetes"]
         },
         {
           "priority": "nice",
-          "value": "Data Validation"
+          "anyOf": ["Data Validation"]
         },
         {
           "priority": "nice",
@@ -673,19 +673,19 @@
         },
         {
           "priority": "nice",
-          "value": "Data Mapping"
+          "anyOf": ["Data Mapping"]
         },
         {
           "priority": "nice",
-          "value": "Data Profiling"
+          "anyOf": ["Data Profiling"]
         },
         {
           "priority": "nice",
-          "value": "ETL Scheduling"
+          "anyOf": ["ETL Scheduling"]
         },
         {
           "priority": "nice",
-          "value": "Performance Testing"
+          "anyOf": ["Performance Testing"]
         }
       ]
     },
@@ -708,23 +708,23 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Python"
+          "anyOf": ["Python"]
         },
         {
           "priority": "must",
-          "value": "FastAPI"
+          "anyOf": ["FastAPI"]
         },
         {
           "priority": "must",
-          "value": "Async Programming"
+          "anyOf": ["Async Programming"]
         },
         {
           "priority": "must",
-          "value": "Pydantic"
+          "anyOf": ["Pydantic"]
         },
         {
           "priority": "must",
-          "value": "API Design"
+          "anyOf": ["API Design"]
         },
         {
           "priority": "nice",
@@ -757,7 +757,7 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Playwright"
+          "anyOf": ["Playwright"]
         },
         {
           "priority": "must",
@@ -765,39 +765,39 @@
         },
         {
           "priority": "must",
-          "value": "API Testing"
+          "anyOf": ["API Testing"]
         },
         {
           "priority": "must",
-          "value": "SaaS Testing"
+          "anyOf": ["SaaS Testing"]
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Git"
+          "anyOf": ["Git"]
         },
         {
           "priority": "must",
-          "value": "AI/LLM Tools"
+          "anyOf": ["AI/LLM Tools"]
         },
         {
           "priority": "nice",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "nice",
-          "value": "Microservices"
+          "anyOf": ["Microservices"]
         },
         {
           "priority": "nice",
-          "value": "Performance Testing"
+          "anyOf": ["Performance Testing"]
         },
         {
           "priority": "nice",
@@ -828,35 +828,35 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Playwright"
+          "anyOf": ["Playwright"]
         },
         {
           "priority": "must",
-          "value": "API Test Automation"
+          "anyOf": ["API Test Automation"]
         },
         {
           "priority": "must",
-          "value": "QA Processes"
+          "anyOf": ["QA Processes"]
         },
         {
           "priority": "must",
-          "value": "Software Testing"
+          "anyOf": ["Software Testing"]
         },
         {
           "priority": "nice",
-          "value": "Shopify"
+          "anyOf": ["Shopify"]
         },
         {
           "priority": "nice",
-          "value": "E-commerce Testing"
+          "anyOf": ["E-commerce Testing"]
         },
         {
           "priority": "nice",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "nice",
-          "value": "Automated Testing Pipelines"
+          "anyOf": ["Automated Testing Pipelines"]
         }
       ]
     },
@@ -879,35 +879,35 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "MLOps"
+          "anyOf": ["MLOps"]
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "GCP"
+          "anyOf": ["GCP"]
         },
         {
           "priority": "must",
-          "value": "Azure"
+          "anyOf": ["Azure"]
         },
         {
           "priority": "must",
-          "value": "Kubernetes"
+          "anyOf": ["Kubernetes"]
         },
         {
           "priority": "must",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Python"
+          "anyOf": ["Python"]
         }
       ]
     },
@@ -930,11 +930,11 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "JavaScript"
+          "anyOf": ["JavaScript"]
         },
         {
           "priority": "must",
-          "value": "TypeScript"
+          "anyOf": ["TypeScript"]
         },
         {
           "priority": "must",
@@ -942,7 +942,7 @@
         },
         {
           "priority": "must",
-          "value": "Web Development"
+          "anyOf": ["Web Development"]
         }
       ]
     },
@@ -965,15 +965,15 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Data Engineering"
+          "anyOf": ["Data Engineering"]
         },
         {
           "priority": "must",
-          "value": "Python"
+          "anyOf": ["Python"]
         },
         {
           "priority": "must",
-          "value": "Data Pipelines"
+          "anyOf": ["Data Pipelines"]
         },
         {
           "priority": "nice",
@@ -981,11 +981,11 @@
         },
         {
           "priority": "nice",
-          "value": "Cloud Data Platforms"
+          "anyOf": ["Cloud Data Platforms"]
         },
         {
           "priority": "nice",
-          "value": "Modern Data Stack"
+          "anyOf": ["Modern Data Stack"]
         }
       ]
     },
@@ -1008,7 +1008,7 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Data Engineering"
+          "anyOf": ["Data Engineering"]
         },
         {
           "priority": "must",
@@ -1016,43 +1016,43 @@
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "Azure"
+          "anyOf": ["Azure"]
         },
         {
           "priority": "must",
-          "value": "SQL"
+          "anyOf": ["SQL"]
         },
         {
           "priority": "must",
-          "value": "Relational Database Design"
+          "anyOf": ["Relational Database Design"]
         },
         {
           "priority": "must",
-          "value": "Data Warehousing"
+          "anyOf": ["Data Warehousing"]
         },
         {
           "priority": "must",
-          "value": "Data Lakes"
+          "anyOf": ["Data Lakes"]
         },
         {
           "priority": "must",
-          "value": "Lakehouse Architecture"
+          "anyOf": ["Lakehouse Architecture"]
         },
         {
           "priority": "must",
-          "value": "Data Modeling"
+          "anyOf": ["Data Modeling"]
         },
         {
           "priority": "must",
-          "value": "Data Quality"
+          "anyOf": ["Data Quality"]
         },
         {
           "priority": "must",
-          "value": "Performance Optimization"
+          "anyOf": ["Performance Optimization"]
         }
       ]
     },
@@ -1075,31 +1075,31 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "Terraform"
+          "anyOf": ["Terraform"]
         },
         {
           "priority": "must",
-          "value": "Java"
+          "anyOf": ["Java"]
         },
         {
           "priority": "must",
-          "value": "Spring Boot"
+          "anyOf": ["Spring Boot"]
         },
         {
           "priority": "must",
-          "value": "Cloud Infrastructure"
+          "anyOf": ["Cloud Infrastructure"]
         },
         {
           "priority": "must",
-          "value": "Deployment Automation"
+          "anyOf": ["Deployment Automation"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         }
       ]
     },
@@ -1122,79 +1122,79 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "TypeScript"
+          "anyOf": ["TypeScript"]
         },
         {
           "priority": "must",
-          "value": "NestJS"
+          "anyOf": ["NestJS"]
         },
         {
           "priority": "must",
-          "value": "TypeORM"
+          "anyOf": ["TypeORM"]
         },
         {
           "priority": "must",
-          "value": "MySQL"
+          "anyOf": ["MySQL"]
         },
         {
           "priority": "must",
-          "value": "BullMQ"
+          "anyOf": ["BullMQ"]
         },
         {
           "priority": "must",
-          "value": "Redis"
+          "anyOf": ["Redis"]
         },
         {
           "priority": "must",
-          "value": "REST API Integration"
+          "anyOf": ["REST API Integration"]
         },
         {
           "priority": "must",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "must",
-          "value": "Nginx"
+          "anyOf": ["Nginx"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Cloud Infrastructure"
+          "anyOf": ["Cloud Infrastructure"]
         },
         {
           "priority": "must",
-          "value": "React"
+          "anyOf": ["React"]
         },
         {
           "priority": "must",
-          "value": "React Admin"
+          "anyOf": ["React Admin"]
         },
         {
           "priority": "must",
-          "value": "MUI"
+          "anyOf": ["MUI"]
         },
         {
           "priority": "nice",
-          "value": "MDM"
+          "anyOf": ["MDM"]
         },
         {
           "priority": "nice",
-          "value": "Activation Lock"
+          "anyOf": ["Activation Lock"]
         },
         {
           "priority": "nice",
-          "value": "FileVault"
+          "anyOf": ["FileVault"]
         },
         {
           "priority": "nice",
-          "value": "Apple Business Manager"
+          "anyOf": ["Apple Business Manager"]
         },
         {
           "priority": "nice",
-          "value": "Automated Device Enrollment"
+          "anyOf": ["Automated Device Enrollment"]
         }
       ]
     },
@@ -1217,71 +1217,71 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Python"
+          "anyOf": ["Python"]
         },
         {
           "priority": "must",
-          "value": "Django"
+          "anyOf": ["Django"]
         },
         {
           "priority": "must",
-          "value": "REST API"
+          "anyOf": ["REST API"]
         },
         {
           "priority": "must",
-          "value": "PostgreSQL"
+          "anyOf": ["PostgreSQL"]
         },
         {
           "priority": "must",
-          "value": "OOP"
+          "anyOf": ["OOP"]
         },
         {
           "priority": "must",
-          "value": "Backend Services"
+          "anyOf": ["Backend Services"]
         },
         {
           "priority": "must",
-          "value": "asyncio"
+          "anyOf": ["asyncio"]
         },
         {
           "priority": "must",
-          "value": "Multiprocessing"
+          "anyOf": ["Multiprocessing"]
         },
         {
           "priority": "must",
-          "value": "Third-party API Integration"
+          "anyOf": ["Third-party API Integration"]
         },
         {
           "priority": "must",
-          "value": "Git"
+          "anyOf": ["Git"]
         },
         {
           "priority": "must",
-          "value": "Linux"
+          "anyOf": ["Linux"]
         },
         {
           "priority": "must",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Logging"
+          "anyOf": ["Logging"]
         },
         {
           "priority": "must",
-          "value": "Error Handling"
+          "anyOf": ["Error Handling"]
         },
         {
           "priority": "must",
-          "value": "System Reliability"
+          "anyOf": ["System Reliability"]
         }
       ]
     },
@@ -1304,71 +1304,71 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Node.js"
+          "anyOf": ["Node.js"]
         },
         {
           "priority": "must",
-          "value": "REST API"
+          "anyOf": ["REST API"]
         },
         {
           "priority": "must",
-          "value": "Express"
+          "anyOf": ["Express"]
         },
         {
           "priority": "must",
-          "value": "NestJS"
+          "anyOf": ["NestJS"]
         },
         {
           "priority": "must",
-          "value": "TypeScript"
+          "anyOf": ["TypeScript"]
         },
         {
           "priority": "must",
-          "value": "PostgreSQL"
+          "anyOf": ["PostgreSQL"]
         },
         {
           "priority": "must",
-          "value": "GraphQL"
+          "anyOf": ["GraphQL"]
         },
         {
           "priority": "must",
-          "value": "Async Programming"
+          "anyOf": ["Async Programming"]
         },
         {
           "priority": "must",
-          "value": "Third-party API Integration"
+          "anyOf": ["Third-party API Integration"]
         },
         {
           "priority": "must",
-          "value": "Microservices"
+          "anyOf": ["Microservices"]
         },
         {
           "priority": "must",
-          "value": "Git"
+          "anyOf": ["Git"]
         },
         {
           "priority": "must",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "must",
-          "value": "CI/CD"
+          "anyOf": ["CI/CD"]
         },
         {
           "priority": "must",
-          "value": "Logging"
+          "anyOf": ["Logging"]
         },
         {
           "priority": "must",
-          "value": "Error Handling"
+          "anyOf": ["Error Handling"]
         },
         {
           "priority": "must",
-          "value": "System Reliability"
+          "anyOf": ["System Reliability"]
         }
       ]
     },
@@ -1391,71 +1391,71 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Node.js"
+          "anyOf": ["Node.js"]
         },
         {
           "priority": "must",
-          "value": "NestJS"
+          "anyOf": ["NestJS"]
         },
         {
           "priority": "must",
-          "value": "SQL"
+          "anyOf": ["SQL"]
         },
         {
           "priority": "must",
-          "value": "NoSQL"
+          "anyOf": ["NoSQL"]
         },
         {
           "priority": "must",
-          "value": "Microservices"
+          "anyOf": ["Microservices"]
         },
         {
           "priority": "must",
-          "value": "Payment System Integration"
+          "anyOf": ["Payment System Integration"]
         },
         {
           "priority": "must",
-          "value": "Database Design"
+          "anyOf": ["Database Design"]
         },
         {
           "priority": "must",
-          "value": "Database Indexing"
+          "anyOf": ["Database Indexing"]
         },
         {
           "priority": "must",
-          "value": "Database Migrations"
+          "anyOf": ["Database Migrations"]
         },
         {
           "priority": "must",
-          "value": "SQL Optimization"
+          "anyOf": ["SQL Optimization"]
         },
         {
           "priority": "must",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "must",
-          "value": "Kubernetes"
+          "anyOf": ["Kubernetes"]
         },
         {
           "priority": "must",
-          "value": "AWS"
+          "anyOf": ["AWS"]
         },
         {
           "priority": "nice",
-          "value": "Go"
+          "anyOf": ["Go"]
         },
         {
           "priority": "nice",
-          "value": "Unit Testing"
+          "anyOf": ["Unit Testing"]
         },
         {
           "priority": "nice",
-          "value": "Integration Testing"
+          "anyOf": ["Integration Testing"]
         },
         {
           "priority": "nice",
-          "value": "ClickHouse"
+          "anyOf": ["ClickHouse"]
         }
       ]
     },
@@ -1478,15 +1478,15 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Shopware"
+          "anyOf": ["Shopware"]
         },
         {
           "priority": "must",
-          "value": "PHP"
+          "anyOf": ["PHP"]
         },
         {
           "priority": "must",
-          "value": "Symfony"
+          "anyOf": ["Symfony"]
         },
         {
           "priority": "must",
@@ -1494,31 +1494,31 @@
         },
         {
           "priority": "must",
-          "value": "Shopware Plugin System"
+          "anyOf": ["Shopware Plugin System"]
         },
         {
           "priority": "must",
-          "value": "Shopware DAL"
+          "anyOf": ["Shopware DAL"]
         },
         {
           "priority": "must",
-          "value": "Twig"
+          "anyOf": ["Twig"]
         },
         {
           "priority": "must",
-          "value": "Shopware Storefront Extensions"
+          "anyOf": ["Shopware Storefront Extensions"]
         },
         {
           "priority": "must",
-          "value": "Shopware Admin Extensions"
+          "anyOf": ["Shopware Admin Extensions"]
         },
         {
           "priority": "must",
-          "value": "Shopware Architecture"
+          "anyOf": ["Shopware Architecture"]
         },
         {
           "priority": "must",
-          "value": "REST API Integration"
+          "anyOf": ["REST API Integration"]
         },
         {
           "priority": "nice",
@@ -1526,15 +1526,15 @@
         },
         {
           "priority": "nice",
-          "value": "Vue.js"
+          "anyOf": ["Vue.js"]
         },
         {
           "priority": "nice",
-          "value": "Docker"
+          "anyOf": ["Docker"]
         },
         {
           "priority": "nice",
-          "value": "Git"
+          "anyOf": ["Git"]
         }
       ]
     },
@@ -1557,47 +1557,47 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Terraform"
+          "anyOf": ["Terraform"]
         },
         {
           "priority": "must",
-          "value": "Kubernetes"
+          "anyOf": ["Kubernetes"]
         },
         {
           "priority": "must",
-          "value": "Public Cloud Infrastructure"
+          "anyOf": ["Public Cloud Infrastructure"]
         },
         {
           "priority": "must",
-          "value": "Windows Server"
+          "anyOf": ["Windows Server"]
         },
         {
           "priority": "must",
-          "value": "Active Directory"
+          "anyOf": ["Active Directory"]
         },
         {
           "priority": "must",
-          "value": "Networking"
+          "anyOf": ["Networking"]
         },
         {
           "priority": "must",
-          "value": "Firewalls"
+          "anyOf": ["Firewalls"]
         },
         {
           "priority": "must",
-          "value": "VPN"
+          "anyOf": ["VPN"]
         },
         {
           "priority": "must",
-          "value": "Cloud Peering"
+          "anyOf": ["Cloud Peering"]
         },
         {
           "priority": "nice",
-          "value": "GCP"
+          "anyOf": ["GCP"]
         },
         {
           "priority": "nice",
-          "value": "Tencent Cloud"
+          "anyOf": ["Tencent Cloud"]
         }
       ]
     },
@@ -1620,75 +1620,75 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Python"
+          "anyOf": ["Python"]
         },
         {
           "priority": "must",
-          "value": "Embedded Systems"
+          "anyOf": ["Embedded Systems"]
         },
         {
           "priority": "must",
-          "value": "Linux/UNIX Administration"
+          "anyOf": ["Linux/UNIX Administration"]
         },
         {
           "priority": "must",
-          "value": "Cryptography"
+          "anyOf": ["Cryptography"]
         },
         {
           "priority": "must",
-          "value": "Information Security"
+          "anyOf": ["Information Security"]
         },
         {
           "priority": "must",
-          "value": "Git"
+          "anyOf": ["Git"]
         },
         {
           "priority": "nice",
-          "value": "Linux Boot Process"
+          "anyOf": ["Linux Boot Process"]
         },
         {
           "priority": "nice",
-          "value": "U-Boot"
+          "anyOf": ["U-Boot"]
         },
         {
           "priority": "nice",
-          "value": "Linux Kernel"
+          "anyOf": ["Linux Kernel"]
         },
         {
           "priority": "nice",
-          "value": "initramfs"
+          "anyOf": ["initramfs"]
         },
         {
           "priority": "nice",
-          "value": "systemd"
+          "anyOf": ["systemd"]
         },
         {
           "priority": "nice",
-          "value": "Device Drivers"
+          "anyOf": ["Device Drivers"]
         },
         {
           "priority": "nice",
-          "value": "Device Tree"
+          "anyOf": ["Device Tree"]
         },
         {
           "priority": "nice",
-          "value": "Build Systems"
+          "anyOf": ["Build Systems"]
         },
         {
           "priority": "nice",
-          "value": "CMake"
+          "anyOf": ["CMake"]
         },
         {
           "priority": "nice",
-          "value": "Autotools"
+          "anyOf": ["Autotools"]
         },
         {
           "priority": "nice",
-          "value": "pkg-config"
+          "anyOf": ["pkg-config"]
         },
         {
           "priority": "nice",
-          "value": "Cross-compilation Toolchains"
+          "anyOf": ["Cross-compilation Toolchains"]
         }
       ]
     },
@@ -1715,7 +1715,7 @@
         },
         {
           "priority": "must",
-          "value": "Lua"
+          "anyOf": ["Lua"]
         },
         {
           "priority": "must",
@@ -1723,71 +1723,71 @@
         },
         {
           "priority": "must",
-          "value": "Flight Controller Architecture"
+          "anyOf": ["Flight Controller Architecture"]
         },
         {
           "priority": "must",
-          "value": "RTOS"
+          "anyOf": ["RTOS"]
         },
         {
           "priority": "must",
-          "value": "MAVLink"
+          "anyOf": ["MAVLink"]
         },
         {
           "priority": "must",
-          "value": "Log Analysis"
+          "anyOf": ["Log Analysis"]
         },
         {
           "priority": "must",
-          "value": "Linux/UNIX Administration"
+          "anyOf": ["Linux/UNIX Administration"]
         },
         {
           "priority": "must",
-          "value": "Git"
+          "anyOf": ["Git"]
         },
         {
           "priority": "nice",
-          "value": "UAV"
+          "anyOf": ["UAV"]
         },
         {
           "priority": "nice",
-          "value": "UAV Piloting"
+          "anyOf": ["UAV Piloting"]
         },
         {
           "priority": "nice",
-          "value": "PID Controllers"
+          "anyOf": ["PID Controllers"]
         },
         {
           "priority": "nice",
-          "value": "EKF"
+          "anyOf": ["EKF"]
         },
         {
           "priority": "nice",
-          "value": "Notch Filters"
+          "anyOf": ["Notch Filters"]
         },
         {
           "priority": "nice",
-          "value": "ROS"
+          "anyOf": ["ROS"]
         },
         {
           "priority": "nice",
-          "value": "Python"
+          "anyOf": ["Python"]
         },
         {
           "priority": "nice",
-          "value": "Arduino"
+          "anyOf": ["Arduino"]
         },
         {
           "priority": "nice",
-          "value": "Raspberry Pi"
+          "anyOf": ["Raspberry Pi"]
         },
         {
           "priority": "nice",
-          "value": "Cryptography"
+          "anyOf": ["Cryptography"]
         },
         {
           "priority": "nice",
-          "value": "Information Security"
+          "anyOf": ["Information Security"]
         }
       ]
     },
@@ -1810,51 +1810,51 @@
       "requirements": [
         {
           "priority": "must",
-          "value": "Databases"
+          "anyOf": ["Databases"]
         },
         {
           "priority": "must",
-          "value": "SQL"
+          "anyOf": ["SQL"]
         },
         {
           "priority": "must",
-          "value": "API Testing"
+          "anyOf": ["API Testing"]
         },
         {
           "priority": "must",
-          "value": "Postman"
+          "anyOf": ["Postman"]
         },
         {
           "priority": "must",
-          "value": "Software Testing"
+          "anyOf": ["Software Testing"]
         },
         {
           "priority": "must",
-          "value": "Jira"
+          "anyOf": ["Jira"]
         },
         {
           "priority": "must",
-          "value": "Confluence"
+          "anyOf": ["Confluence"]
         },
         {
           "priority": "must",
-          "value": "Manual Testing"
+          "anyOf": ["Manual Testing"]
         },
         {
           "priority": "must",
-          "value": "JMeter"
+          "anyOf": ["JMeter"]
         },
         {
           "priority": "must",
-          "value": "Load Testing"
+          "anyOf": ["Load Testing"]
         },
         {
           "priority": "must",
-          "value": "Creatio CRM"
+          "anyOf": ["Creatio CRM"]
         },
         {
           "priority": "must",
-          "value": "Integration Testing"
+          "anyOf": ["Integration Testing"]
         }
       ]
     },
