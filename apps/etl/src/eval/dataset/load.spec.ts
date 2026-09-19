@@ -80,8 +80,8 @@ describe("Requirements v2 golden set", () => {
       role: "DevOps Engineer",
       seniority: "SENIOR",
       requirements: [
-        { priority: "must", value: "AWS" },
-        { priority: "must", value: "GCP" },
+        { priority: "must", anyOf: ["AWS"] },
+        { priority: "must", anyOf: ["GCP"] },
       ],
     });
     expect(() => assertReleaseGate([split], [approvedOrCase])).toThrow(

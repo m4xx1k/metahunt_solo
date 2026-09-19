@@ -96,8 +96,10 @@ summary b { flex:1; font-weight:600; }
 @media (max-width:900px) { .cols { grid-template-columns:1fr; } }
 h3 { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
   margin:14px 0 6px; }
-pre { margin:0; white-space:pre-wrap; word-break:break-word; max-height:560px; overflow:auto;
-  font:12px/1.5 ui-monospace,Menlo,monospace; }
+.vacancy { max-height:560px; overflow:auto; font-size:14px; line-height:1.72; }
+.vacancy p { margin:0 0 4px; max-width:68ch; }
+.vacancy p.gap { margin-top:14px; }
+.vacancy p.head { font-weight:650; margin-top:18px; }
 label { display:block; margin-bottom:10px; }
 label span { display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
 input,select,textarea { font:inherit; width:100%; padding:7px 9px; border-radius:7px;
@@ -123,7 +125,7 @@ const el = (id) => document.getElementById(id);
 
 function requirementsToText(requirements) {
   return requirements
-    .map((r) => (r.anyOf ? r.priority + ": " + r.anyOf.join(" | ") : r.priority + ": " + r.value))
+    .map((r) => r.priority + ": " + r.anyOf.join(" | "))
     .join("\n");
 }
 
@@ -138,7 +140,7 @@ function textToRequirements(text) {
       const priority = match[1].toLowerCase();
       const parts = match[2].split("|").map((p) => p.trim()).filter(Boolean);
       if (parts.length === 0) throw new Error("line " + (index + 1) + ": empty requirement");
-      return parts.length === 1 ? { priority, value: parts[0] } : { priority, anyOf: parts };
+      return { priority, anyOf: parts };
     });
 }
 
@@ -148,7 +150,7 @@ function render() {
     return '<details data-i="' + i + '">' +
       '<summary><b>' + escapeHtml(row.input.title) + '</b>' +
       '<span class="tag">' + e.requirements.length + ' reqs · ' + row.metadata.reviewStatus + '</span></summary>' +
-      '<div class="cols"><div><h3>Vacancy</h3><pre>' + escapeHtml(row.input.text) + '</pre></div>' +
+      '<div class="cols"><div><h3>Vacancy</h3><div class="vacancy">' + vacancyHtml(row.input.text) + '</div></div>' +
       '<div>' +
         '<div class="row2">' +
           '<label><span>role</span><input data-f="role" value="' + escapeAttr(e.role ?? "") + '"></label>' +
@@ -168,6 +170,26 @@ function render() {
         '<p class="hint">One per line: <code>must: Python</code> · <code>must: React | Vue.js</code> for a choice. Empty role or seniority means null.</p>' +
       '</div></div></details>';
   }).join("");
+}
+
+// Display only: the scraped text is one blob — every row carries two newlines in
+// ~5k characters. Sentence-per-line is a reading aid, the stored text is untouched.
+function vacancyHtml(text) {
+  return text
+    .split("\n")
+    .filter((block) => block.trim())
+    .flatMap((block, blockIndex) =>
+      block
+        .split(/(?<=[.!?:])\s+(?=[A-ZА-ЯІЇЄҐ0-9🔹✅])/u)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean)
+        .map((sentence, i) => {
+          const heading = /^[A-ZА-ЯІЇЄҐ][A-ZА-ЯІЇЄҐ \-']{3,40}:/u.test(sentence);
+          const cls = heading ? "head" : i === 0 && blockIndex > 0 ? "gap" : "";
+          return '<p class="' + cls + '">' + escapeHtml(sentence) + "</p>";
+        }),
+    )
+    .join("");
 }
 
 function collect() {

@@ -16,7 +16,7 @@ import type {
 import type { EvalClient } from "./clients";
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
-export const REQUIREMENTS_V2_PROMPT_VERSION = 4;
+export const REQUIREMENTS_V2_PROMPT_VERSION = 5;
 
 /** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
 const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
@@ -94,8 +94,7 @@ export class BamlRequirementsV2Extractor {
 function toEvalVacancy(data: ExtractedVacancyRequirementsV2, text: string): ExtractedVacancy {
   const requirements = data.requirements.map((requirement) => ({
     priority: requirement.priority === RequirementPriority.MUST ? "must" : "nice",
-    ...(requirement.value ? { value: requirement.value } : {}),
-    ...(requirement.anyOf ? { anyOf: requirement.anyOf } : {}),
+    anyOf: requirement.anyOf,
   }));
   return {
     ...data,

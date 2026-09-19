@@ -29,7 +29,7 @@ describe("BamlRequirementsV2Extractor", () => {
       seniority: "SENIOR",
       requirements: [
         { priority: "MUST", anyOf: ["AWS", "GCP"] },
-        { priority: "NICE", value: "Terraform" },
+        { priority: "NICE", anyOf: ["Terraform"] },
       ],
     });
     const extractor = new BamlRequirementsV2Extractor(TEST_CLIENT);
@@ -48,7 +48,7 @@ describe("BamlRequirementsV2Extractor", () => {
       seniority: "SENIOR",
       requirements: [
         { priority: "must", anyOf: ["AWS", "GCP"] },
-        { priority: "nice", value: "Terraform" },
+        { priority: "nice", anyOf: ["Terraform"] },
       ],
     });
   });

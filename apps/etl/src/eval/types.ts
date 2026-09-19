@@ -2,10 +2,8 @@ import type { ExtractionResult, ExtractionUsage } from "../02-enrich/extraction/
 
 export type RequirementPriority = "must" | "nice";
 
-/** The candidate contract. `value` is a single alternative; `anyOf` is an explicit OR. */
-export type Requirement =
-  | { priority: RequirementPriority; value: string }
-  | { priority: RequirementPriority; anyOf: string[] };
+/** One requirement is one choice: an ordinary requirement is `anyOf` with one entry. */
+export type Requirement = { priority: RequirementPriority; anyOf: string[] };
 
 export type RequirementDatasetInput = {
   id: string;
