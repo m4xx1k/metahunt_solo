@@ -1,7 +1,8 @@
-import { assertReleaseGate, parseDatasetCase } from "./dataset";
-import { scoreRequirements } from "./extraction.scorer";
-import type { RequirementDatasetCase } from "./extraction-eval.types";
-import { REQUIREMENTS_V2_ROLES } from "./requirements-v2.baml.extractor";
+import { assertReleaseGate } from "../scoring/release-gate";
+import { scoreRequirements } from "../scoring/scorer";
+import { parseDatasetCase } from "./load";
+import type { RequirementDatasetCase } from "../types";
+import { REQUIREMENTS_V2_ROLES } from "../extractors/requirements-v2";
 import draftDataset from "./vacancy-requirements-v2.dataset.json";
 
 const approvedOrCase: RequirementDatasetCase = {

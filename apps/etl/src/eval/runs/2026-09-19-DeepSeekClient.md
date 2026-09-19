@@ -6,15 +6,15 @@
 |---|---|
 | schema valid | 100.0% |
 | provider failures | 0.0% |
-| precision | 69.6% |
-| recall | 65.5% |
-| F1 | 67.0% |
+| precision | 65.8% |
+| recall | 63.5% |
+| F1 | 63.8% |
 | priority accuracy | 100.0% |
-| alternative accuracy | 65.5% |
-| or_split_errors | 2 |
+| alternative accuracy | 63.5% |
+| or_split_errors | 1 |
 | isTech accuracy | 100.0% |
 | role accuracy | 96.0% |
-| tokens in / out | 52806 / 9082 |
-| p50 latency | 1554 ms |
+| tokens in / out | 52806 / 9164 |
+| p50 latency | 1547 ms |
 
 `seniority` is omitted: `advertisedSeniority()` is deterministic, not a model answer.

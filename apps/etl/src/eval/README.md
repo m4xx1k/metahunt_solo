@@ -15,21 +15,39 @@ it is deliberately manual.
 
 ## What is where
 
-- `vacancy-requirements-v2.dataset.json` — the golden set: `input`,
-  `expectedOutput`, `metadata`. `vacancy-requirements-v2.review.md` is its
-  readable GitHub view.
-- `aliases.snapshot.json` — frozen SKILL alias → canonical map, resolved through
-  production `normalizeAliasName`. The scorer reads it instead of the database, so
-  a moving taxonomy cannot silently change scores between runs; its sha is
-  recorded in every run.
-- `extraction.scorer.ts` — precision / recall / F1 over canonicalized clauses,
+```
+run-eval.ts        CLI: flags, extractor choice, writing the run files
+runner.ts          the loop — concurrency, per-row scoring, the aggregate
+types.ts           shared vocabulary: contract, case, score, summary, run
+dataset/           the golden set and the frozen alias map, with their loaders
+scoring/           scorer.ts and release-gate.ts
+extractors/        requirements-v2.ts
+report/            markdown.ts and html.ts
+runs/              generated run artifacts
+```
+
+- `dataset/vacancy-requirements-v2.dataset.json` — the golden set: `input`,
+  `expectedOutput`, `metadata`. `vacancy-requirements-v2.review.md` beside it is
+  its readable GitHub view.
+- `dataset/aliases.snapshot.json` — frozen SKILL alias → canonical map, resolved
+  through production `normalizeAliasName`. The scorer reads it instead of the
+  database, so a moving taxonomy cannot silently change scores between runs; its
+  sha is recorded in every run.
+- `scoring/scorer.ts` — precision / recall / F1 over canonicalized clauses,
   priority and alternative accuracy, `or_split_errors`, and the isTech / role /
   seniority guards. Unknown names keep a stable `unresolved:` key.
-- `run-eval.ts` — the runner. `dataset.ts` — loading, validation, release gate.
 - `runs/<date>-<client>.{json,md,html}` — per-row scores, the aggregate table, and
   a side-by-side HTML view (vacancy text left, missing/extra clauses and the full
   extracted object right, worst rows first). Committed: they are the evidence
   behind a model or prompt decision.
+
+## Run-to-run variance
+
+The scorer is deterministic; the model is not. Two consecutive runs of the same
+extractor on the same rows gave F1 67.0% and 63.8%, with `or_split_errors` 2 and 1.
+A single run therefore carries a few points of noise, and a comparison between two
+models only means something when the gap is clearly wider than that. Repeat a run
+before reading a small difference as a result.
 
 ## Two extractors
 

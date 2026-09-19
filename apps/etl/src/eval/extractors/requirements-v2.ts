@@ -2,13 +2,16 @@ import { Injectable } from "@nestjs/common";
 
 import { Collector } from "@boundaryml/baml";
 
-import type { ExtractionResult, ExtractionUsage } from "../02-enrich/extraction/vacancy-extractor";
-import { b, RequirementPriority, Seniority } from "../baml_client";
+import type {
+  ExtractionResult,
+  ExtractionUsage,
+} from "../../02-enrich/extraction/vacancy-extractor";
+import { b, RequirementPriority, Seniority } from "../../baml_client";
 import type {
   ExtractedVacancy,
   ExtractedVacancyRequirementsV2,
   RequirementsV2Role,
-} from "../baml_client";
+} from "../../baml_client";
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
 export const REQUIREMENTS_V2_PROMPT_VERSION = 4;

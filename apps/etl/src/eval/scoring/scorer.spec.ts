@@ -3,8 +3,8 @@ import {
   canonicalizeRequirement,
   scoreRequirements,
   summarizeRequirements,
-} from "./extraction.scorer";
-import type { ExtractedVacancyForEval, RequirementDatasetCase } from "./extraction-eval.types";
+} from "./scorer";
+import type { ExtractedVacancyForEval, RequirementDatasetCase } from "../types";
 
 const aliases = new Map([
   ["nodejs", "skill-node"],

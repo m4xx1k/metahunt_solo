@@ -1,18 +1,6 @@
-import type { RequirementDatasetCase } from "./extraction-eval.types";
-import type { summarizeRequirements } from "./extraction.scorer";
-import type { RowResult } from "./run-eval";
+import type { EvalRun, RequirementDatasetCase, RowResult } from "../types";
 
-type Run = {
-  startedAt: string;
-  extractor: string;
-  client: string;
-  model: string;
-  aliasSnapshotSha: string;
-  summary: ReturnType<typeof summarizeRequirements>;
-  rows: RowResult[];
-};
-
-export function renderRunHtml(run: Run, cases: RequirementDatasetCase[]): string {
+export function renderRunHtml(run: EvalRun, cases: RequirementDatasetCase[]): string {
   const byId = new Map(cases.map((item) => [item.input.id, item]));
   const rows = [...run.rows].sort((a, b) => a.score.requirementsF1 - b.score.requirementsF1);
   return `<!doctype html>

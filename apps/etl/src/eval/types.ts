@@ -1,3 +1,5 @@
+import type { ExtractionResult, ExtractionUsage } from "../02-enrich/extraction/vacancy-extractor";
+
 export type RequirementPriority = "must" | "nice";
 
 /** The candidate contract. `value` is a single alternative; `anyOf` is an explicit OR. */
@@ -71,4 +73,31 @@ export type RequirementsSummary = {
   alternativeAccuracy: number;
   orSplitErrors: number;
   guardAccuracy: { isTech: number; role: number; seniority: number };
+};
+
+/** Everything an extractor must do for the eval; `identity()` is the production cache's concern. */
+export type EvalExtractor = { extract(text: string): Promise<ExtractionResult> };
+
+export type ExtractorName = "requirements-v2" | "production";
+
+export type RowResult = {
+  id: string;
+  title: string;
+  reviewStatus: RequirementDatasetMetadata["reviewStatus"];
+  score: RequirementScore;
+  actual: ExtractedVacancyForEval | null;
+  usage: ExtractionUsage;
+  error?: string;
+};
+
+export type EvalRun = {
+  startedAt: string;
+  durationMs: number;
+  extractor: ExtractorName;
+  client: string;
+  model: string;
+  aliasSnapshotSha: string;
+  gated: boolean;
+  summary: RequirementsSummary;
+  rows: RowResult[];
 };

@@ -1,4 +1,4 @@
-jest.mock("../baml_client", () => ({
+jest.mock("../../baml_client", () => ({
   __esModule: true,
   b: { ExtractVacancyRequirementsV2: jest.fn() },
   RequirementPriority: { MUST: "MUST", NICE: "NICE" },
@@ -13,9 +13,9 @@ jest.mock("../baml_client", () => ({
   },
 }));
 
-import { b } from "../baml_client";
+import { b } from "../../baml_client";
 
-import { BamlRequirementsV2Extractor } from "./requirements-v2.baml.extractor";
+import { BamlRequirementsV2Extractor } from "./requirements-v2";
 
 const extractRequirements = b.ExtractVacancyRequirementsV2 as unknown as jest.Mock;
 

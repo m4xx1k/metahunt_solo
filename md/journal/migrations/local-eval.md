@@ -29,11 +29,12 @@ truth*, not just *what changed* — cents over 25 rows.
 
 | Entity | Where | What it is |
 |---|---|---|
-| Golden set | `eval/vacancy-requirements-v2.dataset.json` | 25 rows of `input` / `expectedOutput` / `metadata`. Unchanged. |
-| Alias snapshot | `eval/aliases.snapshot.json` | Frozen SKILL alias → canonical map plus its sha. The only thing that ever needed Postgres. |
-| Scorer | `eval/extraction.scorer.ts` | Unchanged. Owns canonicalization, OR clauses, `orSplitErrors`. |
-| Dataset module | `eval/dataset.ts` | `loadDataset`, `loadAliases`, `parseDatasetCase`, `assertReleaseGate` — rescued from the deleted Langfuse file. |
-| Runner | `eval/run-eval.ts` | `ts-node` CLI. Loops with bounded concurrency, scores, writes the run. |
+| Golden set | `eval/dataset/vacancy-requirements-v2.dataset.json` | 25 rows of `input` / `expectedOutput` / `metadata`. Unchanged. |
+| Alias snapshot | `eval/dataset/aliases.snapshot.json` | Frozen SKILL alias → canonical map plus its sha. The only thing that ever needed Postgres. |
+| Scorer | `eval/scoring/scorer.ts` | Unchanged. Owns canonicalization, OR clauses, `orSplitErrors`. `release-gate.ts` beside it. |
+| Loaders | `eval/dataset/{load,aliases}.ts` | Dataset parsing and the snapshot, rescued from the deleted Langfuse file. |
+| Runner | `eval/runner.ts` + `eval/run-eval.ts` | The loop, and the `ts-node` CLI that wires flags to it. |
+| Reports | `eval/report/{markdown,html}.ts` | The aggregate table and the side-by-side view. |
 | Run artifacts | `eval/runs/<date>-<client>.{json,md,html}` | Per-row scores and clause diffs, markdown aggregate, side-by-side HTML. Committed — they are the evidence behind the model choice. |
 | promptfoo glue | `eval/promptfoo/{provider,score}.ts` + `promptfooconfig.yaml` | Step 3 only. ~40 lines wrapping the extractor and the scorer. |
 
@@ -132,6 +133,11 @@ so it cannot witness a client swap — step 3.2 fixes that, and until it does, o
 swapping `DEEPSEEK_MODEL` invalidates the cache correctly; a `ClientRegistry` swap
 does not, which is why the eval never goes near `CachedVacancyExtractor`. promptfoo
 keeps its own cache on top: `--no-cache`, always.
+
+**A single run is noisy.** Measured on the first two runs: F1 67.0% then 63.8%,
+`or_split_errors` 2 then 1, same extractor, same rows, same snapshot. The scorer is
+deterministic, so that spread is the model. Step 3 must repeat each model's run
+before reading a gap of a few points as a result.
 
 **The gate does not apply yet.** All 25 rows are `draft`, so `assertReleaseGate`
 will not pass and must not be asked to — for a model choice the aggregate over the

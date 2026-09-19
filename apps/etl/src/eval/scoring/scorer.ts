@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { normalizeAliasName } from "../platform/shared/normalize-alias";
-
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 import type {
   ExtractedVacancyForEval,
   LegacySkills,
@@ -10,7 +9,7 @@ import type {
   RequirementScore,
   RequirementsSummary,
   ScorerAliasMap,
-} from "./extraction-eval.types";
+} from "../types";
 
 const requirementSchema = z
   .object({
