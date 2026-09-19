@@ -2,6 +2,7 @@
   "name": "metahunt",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@11.1.3",
   "scripts": {
     "build": "pnpm --filter @metahunt/database build && pnpm --filter @metahunt/etl build",
     "build:web": "pnpm --filter @metahunt/web build",
