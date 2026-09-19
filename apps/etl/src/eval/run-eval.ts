@@ -59,10 +59,11 @@ async function main(): Promise<void> {
       extractor: pick(EXTRACTORS, extractorName, "--extractor")(database, client),
       extractorName,
       concurrency: numberFlag("--concurrency", 4),
+      repeat: numberFlag("--repeat", 1),
       only: flag("--only"),
-      onRow: (row) =>
+      onRow: (row, pass) =>
         process.stdout.write(
-          `${row.score.schemaValid ? "ok  " : "FAIL"} ${row.id.slice(0, 8)} ` +
+          `${pass} ${row.score.schemaValid ? "ok  " : "FAIL"} ${row.id.slice(0, 8)} ` +
             `f1=${row.score.requirementsF1.toFixed(2)} ${row.title.slice(0, 60)}\n`,
         ),
     });

@@ -96,6 +96,9 @@ export type EvalRun = {
   model: string;
   aliasSnapshotSha: string;
   gated: boolean;
+  /** Mean over `passes`; a single pass carries a few points of model noise. */
   summary: RequirementsSummary;
+  passes: RequirementsSummary[];
+  /** The last pass only — the per-row view is for reading disagreements. */
   rows: RowResult[];
 };

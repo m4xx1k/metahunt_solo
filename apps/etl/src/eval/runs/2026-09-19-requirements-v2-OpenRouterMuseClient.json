@@ -1,24 +1,24 @@
 {
-  "startedAt": "2026-09-19T17:49:39.451Z",
-  "durationMs": 32975,
+  "startedAt": "2026-09-19T17:50:18.866Z",
+  "durationMs": 677633,
   "extractor": "requirements-v2",
-  "client": "DeepSeekClient",
-  "model": "deepseek-v4-flash",
+  "client": "OpenRouterMuseClient",
+  "model": "meta/muse-spark-1.3-contributor",
   "aliasSnapshotSha": "3b8a5cb4bc70255204c4ee922809cbe6cf821ac56232c06bbe3e49baa7864d3f",
   "gated": false,
   "summary": {
     "evaluatedCases": 25,
     "schemaValidRate": 1,
     "providerFailureRate": 0,
-    "requirementsPrecision": 0.7087366051166585,
-    "requirementsRecall": 0.6704765740279672,
-    "requirementsF1": 0.6837951262175582,
-    "priorityAccuracy": 0.9992156862745097,
-    "alternativeAccuracy": 0.6710099073613005,
-    "orSplitErrors": 2.6666666666666665,
+    "requirementsPrecision": 0.7662285904520392,
+    "requirementsRecall": 0.7195294550650587,
+    "requirementsF1": 0.7304505524246093,
+    "priorityAccuracy": 1,
+    "alternativeAccuracy": 0.7195294550650587,
+    "orSplitErrors": 5.666666666666667,
     "guardAccuracy": {
       "isTech": 1,
-      "role": 0.96,
+      "role": 0.9333333333333332,
       "seniority": 1
     }
   },
@@ -27,12 +27,12 @@
       "evaluatedCases": 25,
       "schemaValidRate": 1,
       "providerFailureRate": 0,
-      "requirementsPrecision": 0.7148491815202341,
-      "requirementsRecall": 0.6864709091390204,
-      "requirementsF1": 0.6953785373909142,
+      "requirementsPrecision": 0.7462866643160762,
+      "requirementsRecall": 0.7079417194089023,
+      "requirementsF1": 0.7156323964859898,
       "priorityAccuracy": 1,
-      "alternativeAccuracy": 0.6864709091390204,
-      "orSplitErrors": 2,
+      "alternativeAccuracy": 0.7079417194089023,
+      "orSplitErrors": 5,
       "guardAccuracy": {
         "isTech": 1,
         "role": 0.96,
@@ -43,15 +43,15 @@
       "evaluatedCases": 25,
       "schemaValidRate": 1,
       "providerFailureRate": 0,
-      "requirementsPrecision": 0.6949671770724403,
-      "requirementsRecall": 0.655566236068713,
-      "requirementsF1": 0.6688137085394181,
+      "requirementsPrecision": 0.7904122837946368,
+      "requirementsRecall": 0.7170083860755687,
+      "requirementsF1": 0.7401717927298772,
       "priorityAccuracy": 1,
-      "alternativeAccuracy": 0.655566236068713,
-      "orSplitErrors": 3,
+      "alternativeAccuracy": 0.7170083860755687,
+      "orSplitErrors": 6,
       "guardAccuracy": {
         "isTech": 1,
-        "role": 0.96,
+        "role": 0.92,
         "seniority": 1
       }
     },
@@ -59,15 +59,15 @@
       "evaluatedCases": 25,
       "schemaValidRate": 1,
       "providerFailureRate": 0,
-      "requirementsPrecision": 0.7163934567573012,
-      "requirementsRecall": 0.6693925768761683,
-      "requirementsF1": 0.6871931327223426,
-      "priorityAccuracy": 0.9976470588235294,
-      "alternativeAccuracy": 0.6709925768761683,
-      "orSplitErrors": 3,
+      "requirementsPrecision": 0.7619868232454046,
+      "requirementsRecall": 0.7336382597107055,
+      "requirementsF1": 0.7355474680579607,
+      "priorityAccuracy": 1,
+      "alternativeAccuracy": 0.7336382597107055,
+      "orSplitErrors": 6,
       "guardAccuracy": {
         "isTech": 1,
-        "role": 0.96,
+        "role": 0.92,
         "seniority": 1
       }
     }
@@ -80,11 +80,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.5135135135135135,
-        "requirementsRecall": 0.5757575757575758,
-        "requirementsF1": 0.5428571428571428,
+        "requirementsPrecision": 0.6923076923076923,
+        "requirementsRecall": 0.8181818181818182,
+        "requirementsF1": 0.7500000000000001,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5757575757575758,
+        "alternativeAccuracy": 0.8181818181818182,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -128,42 +128,44 @@
         ],
         "actualClauses": [
           "must:802.1X",
+          "must:AD DS",
           "must:AWS|Azure",
-          "must:Aruba|Ubiquiti",
-          "must:CentOS|Ubuntu Server",
+          "must:Aruba",
+          "must:CentOS",
           "must:DFS",
           "must:DHCP",
           "must:DNS",
           "must:Docker|Kubernetes",
-          "must:Firewalls",
-          "must:HP|Juniper",
+          "must:HP",
           "must:IPsec",
-          "must:Load Balancers",
+          "must:Juniper",
+          "must:Linux",
+          "must:Load Balancer",
+          "must:MikroTik",
           "must:Network Security",
+          "must:Proxy",
           "must:RADIUS",
+          "must:Reverse Proxy",
           "must:SCCM",
+          "must:Ubiquiti",
+          "must:Ubuntu",
           "must:VLAN",
           "must:WSUS",
           "must:Windows Server",
-          "must:unresolved:activedirectoryds",
           "must:unresolved:eoip",
-          "must:unresolved:firewallrulesandbestpractices",
-          "must:unresolved:linuxservers",
-          "must:unresolved:mikrotikrouters",
-          "must:unresolved:networksecurityprinciples",
-          "must:unresolved:proxyandreverseproxy",
           "must:unresolved:vmwarevcenterserver",
-          "nice:CCNA|unresolved:jncia",
-          "nice:Chef|Puppet",
+          "nice:API",
+          "nice:CCNA|unresolved:jnca",
+          "nice:Chef",
           "nice:Confluence",
           "nice:GIT",
           "nice:Jamf",
           "nice:Jira",
-          "nice:Mac|iOS SDK",
           "nice:Microsoft 365",
+          "nice:Puppet",
           "nice:SVN",
           "nice:TeamCity",
-          "nice:unresolved:apiendpoints"
+          "nice:iOS SDK|macOS"
         ]
       },
       "actual": {
@@ -173,15 +175,23 @@
         "requirements": [
           {
             "priority": "must",
-            "value": "MikroTik routers"
+            "value": "MikroTik"
           },
           {
             "priority": "must",
-            "anyOf": ["Juniper", "HP"]
+            "value": "Juniper"
           },
           {
             "priority": "must",
-            "anyOf": ["Aruba", "Ubiquiti"]
+            "value": "HP"
+          },
+          {
+            "priority": "must",
+            "value": "Aruba"
+          },
+          {
+            "priority": "must",
+            "value": "Ubiquiti"
           },
           {
             "priority": "must",
@@ -201,7 +211,7 @@
           },
           {
             "priority": "must",
-            "value": "802.1x"
+            "value": "802.1X"
           },
           {
             "priority": "must",
@@ -209,7 +219,7 @@
           },
           {
             "priority": "must",
-            "value": "Firewalls"
+            "value": "Firewall"
           },
           {
             "priority": "must",
@@ -225,19 +235,19 @@
           },
           {
             "priority": "must",
-            "value": "Network security principles"
+            "value": "Network Security"
           },
           {
             "priority": "must",
-            "value": "Firewall rules and best practices"
+            "value": "Load Balancer"
           },
           {
             "priority": "must",
-            "value": "Load balancers"
+            "value": "Proxy"
           },
           {
             "priority": "must",
-            "value": "Proxy and reverse proxy"
+            "value": "Reverse Proxy"
           },
           {
             "priority": "must",
@@ -249,7 +259,7 @@
           },
           {
             "priority": "must",
-            "value": "Active Directory DS"
+            "value": "AD DS"
           },
           {
             "priority": "must",
@@ -261,11 +271,15 @@
           },
           {
             "priority": "must",
-            "value": "Linux servers"
+            "value": "Linux"
           },
           {
             "priority": "must",
-            "anyOf": ["Ubuntu Server", "CentOS"]
+            "value": "Ubuntu"
+          },
+          {
+            "priority": "must",
+            "value": "CentOS"
           },
           {
             "priority": "must",
@@ -281,7 +295,7 @@
           },
           {
             "priority": "nice",
-            "anyOf": ["Mac", "iOS"]
+            "anyOf": ["macOS", "iOS"]
           },
           {
             "priority": "nice",
@@ -289,11 +303,15 @@
           },
           {
             "priority": "nice",
-            "anyOf": ["Puppet", "Chef"]
+            "value": "Puppet"
           },
           {
             "priority": "nice",
-            "value": "API endpoints"
+            "value": "Chef"
+          },
+          {
+            "priority": "nice",
+            "value": "API"
           },
           {
             "priority": "nice",
@@ -309,7 +327,7 @@
           },
           {
             "priority": "nice",
-            "value": "JIRA"
+            "value": "Jira"
           },
           {
             "priority": "nice",
@@ -317,18 +335,18 @@
           },
           {
             "priority": "nice",
-            "anyOf": ["CCNA", "JNCIA"]
+            "anyOf": ["CCNA", "JNCA"]
           }
         ]
       },
       "usage": {
-        "in": 2339,
-        "out": 911,
-        "cached": 2176,
-        "client": "DeepSeekClient",
+        "in": 2312,
+        "out": 4969,
+        "cached": 2289,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 2759
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 52199
       }
     },
     {
@@ -338,12 +356,12 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6666666666666666,
-        "requirementsRecall": 0.64,
-        "requirementsF1": 0.6530612244897959,
-        "priorityAccuracy": 0.9411764705882353,
+        "requirementsPrecision": 0.4722222222222222,
+        "requirementsRecall": 0.68,
+        "requirementsF1": 0.5573770491803278,
+        "priorityAccuracy": 1,
         "alternativeAccuracy": 0.68,
-        "orSplitErrors": 0,
+        "orSplitErrors": 3,
         "guardAccuracy": {
           "isTech": 1,
           "role": 1,
@@ -377,29 +395,41 @@
           "nice:unresolved:saascostmanagement"
         ],
         "actualClauses": [
-          "must:AWS Cost Explorer|Azure Cost Management|GCP Billing Console",
+          "must:AWS",
+          "must:AWS Cost Explorer",
           "must:AWS|Azure|Google Cloud",
           "must:Anomaly Detection",
+          "must:Azure",
+          "must:Azure Cost Management",
           "must:Budget Management",
           "must:CloudHealth|CloudZero|Kubecost",
           "must:FinOps",
-          "must:Multi-cloud",
-          "must:Savings Plans|unresolved:committedusediscounts|unresolved:reservedinstances",
-          "must:unresolved:cloudpricingmodels",
+          "must:GCP Billing Console",
+          "must:Google Cloud",
+          "must:Networking",
+          "must:Savings Plans",
+          "must:Storage",
           "must:unresolved:commitmentmanagement",
-          "must:unresolved:costallocation",
+          "must:unresolved:committedusediscounts",
+          "must:unresolved:compute",
           "must:unresolved:costallocationframework",
-          "must:unresolved:finopsoperatingmodeldesign",
-          "must:unresolved:forecastingmodels",
-          "must:unresolved:preemptiblevms|unresolved:spotinstances",
+          "must:unresolved:costforecasting",
+          "must:unresolved:finopsoperatingmodel",
+          "must:unresolved:maturityscoring",
+          "must:unresolved:reservedinstances",
+          "must:unresolved:rightsizing",
           "must:unresolved:showbackchargeback",
+          "must:unresolved:spotpreemptible",
           "must:unresolved:tagginggovernance",
           "must:unresolved:unifiedcostmodel",
-          "nice:AWS CUR|unresolved:azurecostexport|unresolved:gcpbigquerybillingexport",
+          "nice:AWS CUR",
+          "nice:Kubernetes",
+          "nice:Multi-cloud",
           "nice:Terraform",
-          "nice:unresolved:aimlcostoptimization",
+          "nice:unresolved:aimlworkloadoptimization",
+          "nice:unresolved:azurecostexport",
           "nice:unresolved:certifiedengineer|unresolved:certifiedpractitioner|unresolved:certifiedprofessional",
-          "nice:unresolved:kubernetescostmanagement",
+          "nice:unresolved:gcpbigquerybillingexport",
           "nice:unresolved:saascostmanagement"
         ]
       },
@@ -414,19 +444,31 @@
           },
           {
             "priority": "must",
+            "value": "AWS"
+          },
+          {
+            "priority": "must",
+            "value": "Azure"
+          },
+          {
+            "priority": "must",
+            "value": "GCP"
+          },
+          {
+            "priority": "must",
             "value": "FinOps"
           },
           {
             "priority": "must",
-            "value": "Cost Allocation"
+            "value": "Cost allocation framework"
           },
           {
             "priority": "must",
-            "value": "Tagging Governance"
+            "value": "Tagging governance"
           },
           {
             "priority": "must",
-            "value": "Commitment Management"
+            "value": "Commitment management"
           },
           {
             "priority": "must",
@@ -434,15 +476,27 @@
           },
           {
             "priority": "must",
-            "value": "Anomaly Detection"
+            "value": "Anomaly detection"
           },
           {
             "priority": "must",
-            "value": "FinOps Operating Model Design"
+            "value": "FinOps operating model"
           },
           {
             "priority": "must",
-            "anyOf": ["AWS Cost Explorer", "Azure Cost Management", "GCP Billing Console"]
+            "value": "Maturity scoring"
+          },
+          {
+            "priority": "must",
+            "value": "AWS Cost Explorer"
+          },
+          {
+            "priority": "must",
+            "value": "Azure Cost Management"
+          },
+          {
+            "priority": "must",
+            "value": "GCP Billing Console"
           },
           {
             "priority": "must",
@@ -450,27 +504,31 @@
           },
           {
             "priority": "must",
-            "value": "Cloud Pricing Models"
+            "value": "Compute"
           },
           {
             "priority": "must",
-            "anyOf": ["Reserved Instances", "Savings Plans", "Committed Use Discounts"]
+            "value": "Storage"
           },
           {
             "priority": "must",
-            "anyOf": ["Spot Instances", "Preemptible VMs"]
+            "value": "Networking"
           },
           {
             "priority": "must",
-            "value": "Budget Management"
+            "value": "Reserved Instances"
           },
           {
             "priority": "must",
-            "value": "Forecasting Models"
+            "value": "Savings Plans"
           },
           {
             "priority": "must",
-            "value": "Cost Allocation Framework"
+            "value": "Committed Use Discounts"
+          },
+          {
+            "priority": "must",
+            "value": "Spot/Preemptible"
           },
           {
             "priority": "must",
@@ -478,6 +536,18 @@
           },
           {
             "priority": "must",
+            "value": "Budget management"
+          },
+          {
+            "priority": "must",
+            "value": "Cost forecasting"
+          },
+          {
+            "priority": "must",
+            "value": "Rightsizing"
+          },
+          {
+            "priority": "nice",
             "value": "Multi-cloud"
           },
           {
@@ -486,19 +556,27 @@
           },
           {
             "priority": "nice",
-            "value": "Kubernetes Cost Management"
+            "value": "Kubernetes"
           },
           {
             "priority": "nice",
-            "anyOf": ["AWS CUR", "Azure Cost Export", "GCP BigQuery Billing Export"]
+            "value": "AWS CUR"
           },
           {
             "priority": "nice",
-            "value": "SaaS Cost Management"
+            "value": "Azure Cost Export"
           },
           {
             "priority": "nice",
-            "value": "AI/ML Cost Optimization"
+            "value": "GCP BigQuery billing export"
+          },
+          {
+            "priority": "nice",
+            "value": "SaaS cost management"
+          },
+          {
+            "priority": "nice",
+            "value": "AI/ML workload optimization"
           },
           {
             "priority": "nice",
@@ -507,13 +585,13 @@
         ]
       },
       "usage": {
-        "in": 4001,
-        "out": 673,
-        "cached": 3840,
-        "client": "DeepSeekClient",
+        "in": 3353,
+        "out": 6461,
+        "cached": 3313,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 2710
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 66853
       }
     },
     {
@@ -523,9 +601,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8181818181818182,
+        "requirementsPrecision": 0.6923076923076923,
         "requirementsRecall": 0.75,
-        "requirementsF1": 0.7826086956521738,
+        "requirementsF1": 0.7199999999999999,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.75,
         "orSplitErrors": 0,
@@ -549,17 +627,19 @@
           "nice:unresolved:apiuitestintegration"
         ],
         "actualClauses": [
+          "must:API Testing",
           "must:Cypress|Playwright|WebdriverIO",
           "must:JavaScript",
+          "must:JavaScript|TypeScript",
           "must:OOP",
           "must:Playwright",
-          "must:QA methodologies",
-          "must:TypeScript",
-          "nice:API Testing",
+          "must:Test Automation",
+          "must:UI Testing",
           "nice:CI/CD",
           "nice:Docker",
           "nice:Linux",
-          "nice:SQL"
+          "nice:SQL",
+          "nice:unresolved:apiuitestintegration"
         ]
       },
       "actual": {
@@ -569,11 +649,7 @@
         "requirements": [
           {
             "priority": "must",
-            "value": "JavaScript"
-          },
-          {
-            "priority": "must",
-            "value": "TypeScript"
+            "anyOf": ["JavaScript", "TypeScript"]
           },
           {
             "priority": "must",
@@ -581,15 +657,27 @@
           },
           {
             "priority": "must",
-            "value": "QA methodologies"
-          },
-          {
-            "priority": "must",
             "value": "OOP"
           },
           {
             "priority": "must",
+            "value": "JavaScript"
+          },
+          {
+            "priority": "must",
+            "value": "Test Automation"
+          },
+          {
+            "priority": "must",
             "anyOf": ["Cypress", "WebdriverIO", "Playwright"]
+          },
+          {
+            "priority": "must",
+            "value": "API Testing"
+          },
+          {
+            "priority": "must",
+            "value": "UI Testing"
           },
           {
             "priority": "nice",
@@ -609,18 +697,18 @@
           },
           {
             "priority": "nice",
-            "value": "API Testing"
+            "value": "API/UI test integration"
           }
         ]
       },
       "usage": {
-        "in": 2019,
-        "out": 347,
-        "cached": 1792,
-        "client": "DeepSeekClient",
+        "in": 2012,
+        "out": 3963,
+        "cached": 1649,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1579
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 45157
       }
     },
     {
@@ -630,9 +718,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.7,
+        "requirementsPrecision": 0.875,
         "requirementsRecall": 0.7,
-        "requirementsF1": 0.7,
+        "requirementsF1": 0.7777777777777777,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.7,
         "orSplitErrors": 0,
@@ -655,15 +743,13 @@
         ],
         "actualClauses": [
           "must:API Testing",
-          "must:AQA Reporting Tools",
           "must:AWS",
           "must:CI/CD",
           "must:Cucumber",
           "must:OOP",
           "must:Python",
           "must:Selenium",
-          "must:behave",
-          "must:unresolved:webuitesting"
+          "must:behave"
         ]
       },
       "actual": {
@@ -671,6 +757,10 @@
         "isTech": true,
         "seniority": "SENIOR",
         "requirements": [
+          {
+            "priority": "must",
+            "value": "OOP"
+          },
           {
             "priority": "must",
             "value": "Python"
@@ -681,7 +771,7 @@
           },
           {
             "priority": "must",
-            "value": "behave"
+            "value": "Behave"
           },
           {
             "priority": "must",
@@ -693,34 +783,22 @@
           },
           {
             "priority": "must",
-            "value": "AQA reporting tools"
-          },
-          {
-            "priority": "must",
             "value": "Selenium"
           },
           {
             "priority": "must",
-            "value": "API testing"
-          },
-          {
-            "priority": "must",
-            "value": "Object-oriented programming"
-          },
-          {
-            "priority": "must",
-            "value": "Web UI testing"
+            "value": "API Testing"
           }
         ]
       },
       "usage": {
-        "in": 2142,
-        "out": 313,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 2134,
+        "out": 2672,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1535
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 30283
       }
     },
     {
@@ -730,11 +808,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8421052631578947,
-        "requirementsRecall": 0.8421052631578947,
-        "requirementsF1": 0.8421052631578947,
+        "requirementsPrecision": 0.7368421052631579,
+        "requirementsRecall": 0.7368421052631579,
+        "requirementsF1": 0.7368421052631579,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.8421052631578947,
+        "alternativeAccuracy": 0.7368421052631579,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -773,15 +851,15 @@
           "must:Secure Coding",
           "must:TDD",
           "must:Test Automation",
+          "must:Threat Modeling",
           "must:TypeScript",
-          "must:unresolved:shiftleftengineering",
-          "nice:Agentic Systems",
-          "nice:Event-Driven Architecture",
+          "must:unresolved:shiftleft",
+          "nice:Agentic Systems|unresolved:autonomousworkflows|unresolved:orchestrationagents",
+          "nice:Event-driven systems|Microservices|Serverless",
           "nice:LLM",
+          "nice:MCP",
           "nice:Machine Learning",
-          "nice:Microservices",
-          "nice:Serverless",
-          "nice:unresolved:mcp(modelcontextprotocol)"
+          "nice:unresolved:azurecertification|unresolved:devopscertification|unresolved:securitycertification"
         ]
       },
       "actual": {
@@ -807,7 +885,7 @@
           },
           {
             "priority": "must",
-            "value": "Shift-Left engineering"
+            "value": "Shift-Left"
           },
           {
             "priority": "must",
@@ -827,15 +905,19 @@
           },
           {
             "priority": "must",
-            "value": "Secure coding"
+            "value": "Secure Coding"
           },
           {
             "priority": "must",
-            "value": "Automated testing"
+            "value": "Automated Testing"
           },
           {
             "priority": "must",
             "value": "Azure"
+          },
+          {
+            "priority": "must",
+            "value": "Threat Modeling"
           },
           {
             "priority": "nice",
@@ -847,34 +929,30 @@
           },
           {
             "priority": "nice",
-            "value": "Agentic systems"
+            "anyOf": ["Agentic Systems", "Autonomous Workflows", "Orchestration Agents"]
           },
           {
             "priority": "nice",
-            "value": "MCP (Model Context Protocol)"
+            "value": "MCP"
           },
           {
             "priority": "nice",
-            "value": "Event-driven architecture"
+            "anyOf": ["Event-Driven Systems", "Microservices", "Serverless"]
           },
           {
             "priority": "nice",
-            "value": "Microservices"
-          },
-          {
-            "priority": "nice",
-            "value": "Serverless"
+            "anyOf": ["Azure Certification", "DevOps Certification", "Security Certification"]
           }
         ]
       },
       "usage": {
-        "in": 2363,
-        "out": 462,
-        "cached": 2176,
-        "client": "DeepSeekClient",
+        "in": 2336,
+        "out": 9697,
+        "cached": 2289,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1721
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 103041
       }
     },
     {
@@ -884,11 +962,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6666666666666666,
-        "requirementsRecall": 0.6,
-        "requirementsF1": 0.631578947368421,
+        "requirementsPrecision": 0.5,
+        "requirementsRecall": 0.4,
+        "requirementsF1": 0.4444444444444445,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.6,
+        "alternativeAccuracy": 0.4,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -910,13 +988,12 @@
         "actualClauses": [
           "must:C++",
           "must:Linux",
-          "must:OOP",
           "must:Qt",
           "must:Server-side Development",
-          "nice:Distributed Systems",
-          "nice:unresolved:datavisualizationoranalyticssystems",
-          "nice:unresolved:frontendconceptsoruiuxbestpractices",
-          "nice:unresolved:networkingconceptsorprotocols"
+          "nice:Data Analytics|Data Visualization",
+          "nice:Distributed Systems|unresolved:largescaleplatforms",
+          "nice:Frontend|UI/UX Principles",
+          "nice:Network Protocols|Networking"
         ]
       },
       "actual": {
@@ -930,15 +1007,11 @@
           },
           {
             "priority": "must",
-            "value": "Object-Oriented Programming"
-          },
-          {
-            "priority": "must",
             "value": "Qt"
           },
           {
             "priority": "must",
-            "value": "Server-side development"
+            "value": "Server-Side Development"
           },
           {
             "priority": "must",
@@ -946,30 +1019,30 @@
           },
           {
             "priority": "nice",
-            "value": "Distributed systems"
+            "anyOf": ["Distributed Systems", "Large-Scale Platforms"]
           },
           {
             "priority": "nice",
-            "value": "Networking concepts or protocols"
+            "anyOf": ["Networking", "Network Protocols"]
           },
           {
             "priority": "nice",
-            "value": "Data visualization or analytics systems"
+            "anyOf": ["Data Visualization", "Data Analytics"]
           },
           {
             "priority": "nice",
-            "value": "Frontend concepts or UI/UX best practices"
+            "anyOf": ["Frontend", "UI/UX"]
           }
         ]
       },
       "usage": {
-        "in": 2158,
-        "out": 292,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 2150,
+        "out": 6613,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1353
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 79370
       }
     },
     {
@@ -979,11 +1052,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.875,
-        "requirementsRecall": 0.7,
-        "requirementsF1": 0.7777777777777777,
+        "requirementsPrecision": 0.8571428571428571,
+        "requirementsRecall": 0.6,
+        "requirementsF1": 0.7058823529411764,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.7,
+        "alternativeAccuracy": 0.6,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -1004,13 +1077,12 @@
         ],
         "actualClauses": [
           "must:CI/CD",
+          "must:Cursor",
           "must:Cypress|Playwright",
           "must:Exploratory Testing",
           "must:Manual Testing",
-          "must:TypeScript",
-          "nice:Agile",
-          "nice:Scrum",
-          "nice:unresolved:istqbcertification"
+          "must:Test Automation",
+          "must:TypeScript"
         ]
       },
       "actual": {
@@ -1028,6 +1100,14 @@
           },
           {
             "priority": "must",
+            "value": "Cursor"
+          },
+          {
+            "priority": "must",
+            "value": "Test Automation"
+          },
+          {
+            "priority": "must",
             "value": "Manual Testing"
           },
           {
@@ -1037,29 +1117,17 @@
           {
             "priority": "must",
             "value": "CI/CD"
-          },
-          {
-            "priority": "nice",
-            "value": "ISTQB Certification"
-          },
-          {
-            "priority": "nice",
-            "value": "Agile"
-          },
-          {
-            "priority": "nice",
-            "value": "Scrum"
           }
         ]
       },
       "usage": {
-        "in": 1876,
-        "out": 262,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1866,
+        "out": 3471,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1606
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 40429
       }
     },
     {
@@ -1107,13 +1175,13 @@
           "must:Playwright",
           "must:REST Assured",
           "must:Relational Databases",
+          "must:Test Automation",
           "must:TypeScript",
           "must:unresolved:aibasedtestingtools",
-          "nice:Data Profiling",
           "nice:Docker",
+          "nice:IICS|Informatica PowerCenter",
           "nice:Kubernetes",
-          "nice:Performance Testing",
-          "nice:unresolved:etltools"
+          "nice:Performance Testing"
         ]
       },
       "actual": {
@@ -1127,7 +1195,7 @@
           },
           {
             "priority": "must",
-            "value": "RestAssured"
+            "value": "Rest Assured"
           },
           {
             "priority": "must",
@@ -1143,7 +1211,7 @@
           },
           {
             "priority": "must",
-            "value": "Relational databases"
+            "value": "Relational Databases"
           },
           {
             "priority": "must",
@@ -1151,7 +1219,7 @@
           },
           {
             "priority": "must",
-            "value": "AI-based testing tools"
+            "value": "CI/CD"
           },
           {
             "priority": "must",
@@ -1159,7 +1227,11 @@
           },
           {
             "priority": "must",
-            "value": "CI/CD"
+            "value": "Test Automation"
+          },
+          {
+            "priority": "must",
+            "value": "AI-based Testing Tools"
           },
           {
             "priority": "nice",
@@ -1171,26 +1243,22 @@
           },
           {
             "priority": "nice",
-            "value": "ETL tools"
+            "anyOf": ["IICS", "Informatica PowerCenter"]
           },
           {
             "priority": "nice",
-            "value": "Data profiling"
-          },
-          {
-            "priority": "nice",
-            "value": "Performance testing"
+            "value": "Performance Testing"
           }
         ]
       },
       "usage": {
-        "in": 2226,
-        "out": 375,
-        "cached": 2048,
-        "client": "DeepSeekClient",
+        "in": 2214,
+        "out": 5099,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1560
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 52990
       }
     },
     {
@@ -1205,10 +1273,10 @@
         "requirementsF1": 0.5333333333333333,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.6666666666666666,
-        "orSplitErrors": 1,
+        "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
-          "role": 1,
+          "role": 0,
           "seniority": 1
         },
         "expectedClauses": [
@@ -1220,19 +1288,19 @@
           "nice:Redis|SQLAlchemy|unresolved:asyncdatabasedrivers|unresolved:backgroundtaskqueues|unresolved:containerizeddeployments"
         ],
         "actualClauses": [
+          "must:API",
           "must:Async Programming",
           "must:FastAPI",
           "must:Pydantic",
           "must:Python",
           "nice:Redis",
-          "nice:SQLAlchemy",
-          "nice:unresolved:asyncdatabasedrivers",
+          "nice:SQLAlchemy|unresolved:asyncdatabasedrivers",
           "nice:unresolved:backgroundtaskqueues",
           "nice:unresolved:containerizeddeployments"
         ]
       },
       "actual": {
-        "role": "Backend Engineer",
+        "role": "Software Engineer",
         "isTech": true,
         "seniority": null,
         "requirements": [
@@ -1253,12 +1321,12 @@
             "value": "Pydantic"
           },
           {
-            "priority": "nice",
-            "value": "SQLAlchemy"
+            "priority": "must",
+            "value": "API"
           },
           {
             "priority": "nice",
-            "value": "Async database drivers"
+            "anyOf": ["SQLAlchemy", "Async database drivers"]
           },
           {
             "priority": "nice",
@@ -1275,13 +1343,13 @@
         ]
       },
       "usage": {
-        "in": 1859,
-        "out": 283,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1848,
+        "out": 6848,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1412
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 73477
       }
     },
     {
@@ -1291,9 +1359,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 1,
+        "requirementsPrecision": 0.8571428571428571,
         "requirementsRecall": 0.9230769230769231,
-        "requirementsF1": 0.9600000000000001,
+        "requirementsF1": 0.888888888888889,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.9230769230769231,
         "orSplitErrors": 0,
@@ -1322,9 +1390,11 @@
           "must:API Testing",
           "must:AWS",
           "must:CI/CD",
+          "must:Debugging",
           "must:GIT",
           "must:Java|JavaScript|Python|TypeScript",
           "must:Playwright",
+          "nice:AWS Certification",
           "nice:CloudFormation|Terraform",
           "nice:CloudWatch|Datadog|Grafana",
           "nice:Docker",
@@ -1366,12 +1436,16 @@
             "value": "AI/LLM tools"
           },
           {
+            "priority": "must",
+            "value": "Debugging"
+          },
+          {
             "priority": "nice",
             "value": "Docker"
           },
           {
             "priority": "nice",
-            "value": "microservices"
+            "value": "Microservices"
           },
           {
             "priority": "nice",
@@ -1384,17 +1458,21 @@
           {
             "priority": "nice",
             "anyOf": ["CloudWatch", "Datadog", "Grafana"]
+          },
+          {
+            "priority": "nice",
+            "value": "AWS Certification"
           }
         ]
       },
       "usage": {
-        "in": 1962,
-        "out": 329,
-        "cached": 1792,
-        "client": "DeepSeekClient",
+        "in": 1947,
+        "out": 3279,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1560
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 33650
       }
     },
     {
@@ -1404,11 +1482,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6666666666666666,
-        "requirementsRecall": 0.5,
-        "requirementsF1": 0.5714285714285715,
+        "requirementsPrecision": 0.75,
+        "requirementsRecall": 0.75,
+        "requirementsF1": 0.75,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5,
+        "alternativeAccuracy": 0.75,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -1426,12 +1504,14 @@
           "nice:unresolved:automatedtestingpipelines"
         ],
         "actualClauses": [
-          "must:API Test Automation",
+          "must:API Testing",
           "must:Playwright",
-          "must:unresolved:qaprocessesandsoftwaretestingprinciples",
+          "must:QA Processes",
+          "must:Software Testing",
           "nice:CI/CD",
           "nice:Shopify",
-          "nice:unresolved:ecommerceplatformtesting"
+          "nice:unresolved:automatedtestingpipelines",
+          "nice:unresolved:ecommerceplatforms"
         ]
       },
       "actual": {
@@ -1445,11 +1525,15 @@
           },
           {
             "priority": "must",
-            "value": "API test automation"
+            "value": "API Testing"
           },
           {
             "priority": "must",
-            "value": "QA processes and software testing principles"
+            "value": "QA processes"
+          },
+          {
+            "priority": "must",
+            "value": "Software Testing"
           },
           {
             "priority": "nice",
@@ -1457,22 +1541,26 @@
           },
           {
             "priority": "nice",
-            "value": "E-commerce platform testing"
+            "value": "E-commerce platforms"
           },
           {
             "priority": "nice",
             "value": "CI/CD"
+          },
+          {
+            "priority": "nice",
+            "value": "Automated testing pipelines"
           }
         ]
       },
       "usage": {
-        "in": 1905,
-        "out": 177,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1894,
+        "out": 3267,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1365
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 38947
       }
     },
     {
@@ -1482,11 +1570,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8333333333333334,
-        "requirementsRecall": 0.625,
-        "requirementsF1": 0.7142857142857143,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 1,
+        "requirementsF1": 1,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.625,
+        "alternativeAccuracy": 1,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -1504,9 +1592,11 @@
           "must:Python"
         ],
         "actualClauses": [
-          "must:AWS|Azure|Google Cloud",
+          "must:AWS",
+          "must:Azure",
           "must:CI/CD",
           "must:Docker",
+          "must:Google Cloud",
           "must:Kubernetes",
           "must:MLOps",
           "must:Python"
@@ -1523,11 +1613,15 @@
           },
           {
             "priority": "must",
-            "value": "CI/CD"
+            "value": "AWS"
           },
           {
             "priority": "must",
-            "value": "Python"
+            "value": "GCP"
+          },
+          {
+            "priority": "must",
+            "value": "Azure"
           },
           {
             "priority": "must",
@@ -1539,18 +1633,22 @@
           },
           {
             "priority": "must",
-            "anyOf": ["AWS", "GCP", "Azure"]
+            "value": "CI/CD"
+          },
+          {
+            "priority": "must",
+            "value": "Python"
           }
         ]
       },
       "usage": {
-        "in": 1876,
-        "out": 210,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1866,
+        "out": 3678,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1439
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 40672
       }
     },
     {
@@ -1560,9 +1658,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.75,
+        "requirementsPrecision": 1,
         "requirementsRecall": 0.75,
-        "requirementsF1": 0.75,
+        "requirementsF1": 0.8571428571428571,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.75,
         "orSplitErrors": 0,
@@ -1577,12 +1675,7 @@
           "must:TypeScript",
           "must:Web Development"
         ],
-        "actualClauses": [
-          "must:Angular|React|Vue.js",
-          "must:JavaScript",
-          "must:TypeScript",
-          "must:unresolved:webdevelopmentfundamentals"
-        ]
+        "actualClauses": ["must:Angular|React|Vue.js", "must:JavaScript", "must:TypeScript"]
       },
       "actual": {
         "role": "Frontend Engineer",
@@ -1600,21 +1693,17 @@
           {
             "priority": "must",
             "anyOf": ["React", "Vue.js", "Angular"]
-          },
-          {
-            "priority": "must",
-            "value": "Web development fundamentals"
           }
         ]
       },
       "usage": {
-        "in": 1868,
-        "out": 137,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1858,
+        "out": 1588,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 998
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 19172
       }
     },
     {
@@ -1624,12 +1713,12 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.5,
+        "requirementsPrecision": 1,
         "requirementsRecall": 0.5,
-        "requirementsF1": 0.5,
+        "requirementsF1": 0.6666666666666666,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.5,
-        "orSplitErrors": 1,
+        "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
           "role": 1,
@@ -1643,14 +1732,7 @@
           "nice:ELT|ETL",
           "nice:unresolved:moderndatastack"
         ],
-        "actualClauses": [
-          "must:Data Pipelines",
-          "must:Python",
-          "nice:ELT",
-          "nice:ETL",
-          "nice:unresolved:cloudbaseddataplatforms",
-          "nice:unresolved:moderndatastack"
-        ]
+        "actualClauses": ["must:Data Pipelines", "must:Python", "nice:ELT|ETL"]
       },
       "actual": {
         "role": "Data Engineer",
@@ -1663,34 +1745,22 @@
           },
           {
             "priority": "must",
-            "value": "Data pipelines"
+            "value": "Data Pipelines"
           },
           {
             "priority": "nice",
-            "value": "ETL"
-          },
-          {
-            "priority": "nice",
-            "value": "ELT"
-          },
-          {
-            "priority": "nice",
-            "value": "Cloud-based data platforms"
-          },
-          {
-            "priority": "nice",
-            "value": "Modern data stack"
+            "anyOf": ["ETL", "ELT"]
           }
         ]
       },
       "usage": {
-        "in": 1890,
-        "out": 166,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1883,
+        "out": 4431,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1141
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 49561
       }
     },
     {
@@ -1700,12 +1770,12 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.9090909090909091,
-        "requirementsRecall": 0.8333333333333334,
-        "requirementsF1": 0.8695652173913043,
+        "requirementsPrecision": 0.6666666666666666,
+        "requirementsRecall": 0.6666666666666666,
+        "requirementsF1": 0.6666666666666666,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.8333333333333334,
-        "orSplitErrors": 0,
+        "alternativeAccuracy": 0.6666666666666666,
+        "orSplitErrors": 1,
         "guardAccuracy": {
           "isTech": 1,
           "role": 1,
@@ -1728,12 +1798,13 @@
         "actualClauses": [
           "must:AWS",
           "must:Azure",
-          "must:Data Lakes",
+          "must:Data Lake",
           "must:Data Modeling",
           "must:Data Quality",
           "must:Data Warehousing",
-          "must:ETL/ELT",
-          "must:Lakehouse Architecture",
+          "must:ELT",
+          "must:ETL",
+          "must:Lakehouse",
           "must:Performance Optimization",
           "must:SQL",
           "must:unresolved:relationaldatabasedesign"
@@ -1746,7 +1817,11 @@
         "requirements": [
           {
             "priority": "must",
-            "value": "ETL/ELT"
+            "value": "ETL"
+          },
+          {
+            "priority": "must",
+            "value": "ELT"
           },
           {
             "priority": "must",
@@ -1762,7 +1837,7 @@
           },
           {
             "priority": "must",
-            "value": "Relational database design"
+            "value": "Relational Database Design"
           },
           {
             "priority": "must",
@@ -1770,11 +1845,11 @@
           },
           {
             "priority": "must",
-            "value": "Data Lakes"
+            "value": "Data Lake"
           },
           {
             "priority": "must",
-            "value": "Lakehouse architecture"
+            "value": "Lakehouse"
           },
           {
             "priority": "must",
@@ -1791,13 +1866,13 @@
         ]
       },
       "usage": {
-        "in": 1867,
-        "out": 285,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1857,
+        "out": 2510,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1653
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 29405
       }
     },
     {
@@ -1807,9 +1882,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 1,
+        "requirementsPrecision": 0.5384615384615384,
         "requirementsRecall": 1,
-        "requirementsF1": 1,
+        "requirementsF1": 0.7000000000000001,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 1,
         "orSplitErrors": 0,
@@ -1829,9 +1904,15 @@
         ],
         "actualClauses": [
           "must:AWS",
+          "must:AWS ECS",
+          "must:AWS Lambda",
+          "must:AWS RDS",
+          "must:AWS S3",
           "must:CI/CD",
           "must:Cloud Infrastructure",
+          "must:CloudFront",
           "must:Deployment Automation",
+          "must:EC2",
           "must:Java",
           "must:Spring Boot",
           "must:Terraform"
@@ -1848,6 +1929,30 @@
           },
           {
             "priority": "must",
+            "value": "EC2"
+          },
+          {
+            "priority": "must",
+            "value": "RDS"
+          },
+          {
+            "priority": "must",
+            "value": "S3"
+          },
+          {
+            "priority": "must",
+            "value": "ECS"
+          },
+          {
+            "priority": "must",
+            "value": "Lambda"
+          },
+          {
+            "priority": "must",
+            "value": "CloudFront"
+          },
+          {
+            "priority": "must",
             "value": "Terraform"
           },
           {
@@ -1860,26 +1965,26 @@
           },
           {
             "priority": "must",
-            "value": "CI/CD"
-          },
-          {
-            "priority": "must",
             "value": "Cloud infrastructure"
           },
           {
             "priority": "must",
             "value": "Deployment automation"
+          },
+          {
+            "priority": "must",
+            "value": "CI/CD"
           }
         ]
       },
       "usage": {
-        "in": 1893,
-        "out": 229,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1881,
+        "out": 2980,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1286
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 28942
       }
     },
     {
@@ -1924,27 +2029,27 @@
         "actualClauses": [
           "must:BullMQ",
           "must:CI/CD",
+          "must:Cloud Infrastructure",
           "must:Docker",
           "must:Material UI",
           "must:MySQL",
           "must:NestJS",
           "must:Nginx",
+          "must:Node.js",
+          "must:REST API",
           "must:Rate Limiting",
           "must:React",
           "must:React-Admin",
           "must:Redis",
           "must:TypeORM",
           "must:TypeScript",
-          "must:unresolved:cloudinfrastructuresetup",
-          "must:unresolved:idempotentupsertoperations",
+          "must:unresolved:idempotentupsert",
           "must:unresolved:pagination",
-          "must:unresolved:restapiintegration",
           "nice:Apple Business Manager",
           "nice:Automated Device Enrollment",
           "nice:FileVault",
           "nice:MDM",
-          "nice:unresolved:activationlock",
-          "nice:unresolved:appleecosystem"
+          "nice:unresolved:activationlock"
         ]
       },
       "actual": {
@@ -1952,6 +2057,10 @@
         "isTech": true,
         "seniority": "SENIOR",
         "requirements": [
+          {
+            "priority": "must",
+            "value": "Node.js"
+          },
           {
             "priority": "must",
             "value": "TypeScript"
@@ -1978,19 +2087,19 @@
           },
           {
             "priority": "must",
-            "value": "REST API integration"
-          },
-          {
-            "priority": "must",
-            "value": "Rate limiting"
-          },
-          {
-            "priority": "must",
-            "value": "Idempotent upsert operations"
+            "value": "REST API"
           },
           {
             "priority": "must",
             "value": "Pagination"
+          },
+          {
+            "priority": "must",
+            "value": "Rate Limiting"
+          },
+          {
+            "priority": "must",
+            "value": "Idempotent Upsert"
           },
           {
             "priority": "must",
@@ -2006,7 +2115,7 @@
           },
           {
             "priority": "must",
-            "value": "Cloud infrastructure setup"
+            "value": "Cloud Infrastructure"
           },
           {
             "priority": "must",
@@ -2023,10 +2132,6 @@
           {
             "priority": "nice",
             "value": "MDM"
-          },
-          {
-            "priority": "nice",
-            "value": "Apple ecosystem"
           },
           {
             "priority": "nice",
@@ -2047,13 +2152,13 @@
         ]
       },
       "usage": {
-        "in": 2172,
-        "out": 557,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 2052,
+        "out": 4695,
+        "cached": 2033,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1962
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 49949
       }
     },
     {
@@ -2118,7 +2223,7 @@
         "requirements": [
           {
             "priority": "must",
-            "value": "Python 3"
+            "value": "Python"
           },
           {
             "priority": "must",
@@ -2146,7 +2251,7 @@
           },
           {
             "priority": "must",
-            "value": "Third-party API integration"
+            "value": "Third-Party API Integration"
           },
           {
             "priority": "must",
@@ -2178,18 +2283,18 @@
           },
           {
             "priority": "must",
-            "value": "Error handling"
+            "value": "Error Handling"
           }
         ]
       },
       "usage": {
-        "in": 2078,
-        "out": 394,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 1970,
+        "out": 2414,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1631
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 28092
       }
     },
     {
@@ -2199,11 +2304,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.7777777777777778,
-        "requirementsRecall": 0.8235294117647058,
-        "requirementsF1": 0.7999999999999999,
+        "requirementsPrecision": 0.8333333333333334,
+        "requirementsRecall": 0.8823529411764706,
+        "requirementsF1": 0.8571428571428571,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.8235294117647058,
+        "alternativeAccuracy": 0.8823529411764706,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2238,7 +2343,7 @@
           "must:GIT",
           "must:GraphQL",
           "must:Logging",
-          "must:Microservices Architecture",
+          "must:Microservices",
           "must:NestJS",
           "must:Node.js",
           "must:PostgreSQL",
@@ -2285,7 +2390,7 @@
           },
           {
             "priority": "must",
-            "value": "Event loop"
+            "value": "Event Loop"
           },
           {
             "priority": "must",
@@ -2297,11 +2402,11 @@
           },
           {
             "priority": "must",
-            "value": "Third-party API integration"
+            "value": "Third-party API Integration"
           },
           {
             "priority": "must",
-            "value": "Microservices architecture"
+            "value": "Microservices"
           },
           {
             "priority": "must",
@@ -2329,18 +2434,18 @@
           },
           {
             "priority": "must",
-            "value": "Error handling"
+            "value": "Error Handling"
           }
         ]
       },
       "usage": {
-        "in": 2100,
-        "out": 459,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 1990,
+        "out": 3695,
+        "cached": 1649,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1626
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 37767
       }
     },
     {
@@ -2350,11 +2455,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6428571428571429,
-        "requirementsRecall": 0.5294117647058824,
-        "requirementsF1": 0.5806451612903226,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.7058823529411765,
+        "requirementsF1": 0.8275862068965517,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5294117647058824,
+        "alternativeAccuracy": 0.7058823529411765,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2384,13 +2489,11 @@
           "must:AWS",
           "must:Docker",
           "must:Kubernetes",
-          "must:Microservices Architecture",
+          "must:Microservices",
           "must:NestJS",
-          "must:NoSQL Databases",
+          "must:NoSQL",
           "must:Node.js",
-          "must:unresolved:databaseschemadesign",
-          "must:unresolved:sqldatabases",
-          "must:unresolved:sqlqueryoptimization",
+          "must:SQL",
           "nice:ClickHouse",
           "nice:Go",
           "nice:Test Automation",
@@ -2412,23 +2515,15 @@
           },
           {
             "priority": "must",
-            "value": "SQL databases"
+            "value": "SQL"
           },
           {
             "priority": "must",
-            "value": "NoSQL databases"
+            "value": "NoSQL"
           },
           {
             "priority": "must",
-            "value": "Microservices architecture"
-          },
-          {
-            "priority": "must",
-            "value": "Database schema design"
-          },
-          {
-            "priority": "must",
-            "value": "SQL query optimization"
+            "value": "Microservices"
           },
           {
             "priority": "must",
@@ -2448,11 +2543,11 @@
           },
           {
             "priority": "nice",
-            "value": "Unit testing"
+            "value": "Unit Testing"
           },
           {
             "priority": "nice",
-            "value": "Integration testing"
+            "value": "Integration Testing"
           },
           {
             "priority": "nice",
@@ -2461,13 +2556,13 @@
         ]
       },
       "usage": {
-        "in": 2188,
-        "out": 349,
-        "cached": 2048,
-        "client": "DeepSeekClient",
+        "in": 2078,
+        "out": 2566,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1442
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 24883
       }
     },
     {
@@ -2477,11 +2572,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.5714285714285714,
-        "requirementsRecall": 0.5333333333333333,
-        "requirementsF1": 0.5517241379310344,
+        "requirementsPrecision": 0.6428571428571429,
+        "requirementsRecall": 0.6,
+        "requirementsF1": 0.6206896551724138,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5333333333333333,
+        "alternativeAccuracy": 0.6,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2507,15 +2602,15 @@
         ],
         "actualClauses": [
           "must:PHP",
-          "must:REST-API",
+          "must:REST API",
           "must:Shopware 6",
           "must:Symfony",
           "must:Twig",
           "must:raw:mariadb|raw:mysql",
-          "must:unresolved:shopware6architecture",
-          "must:unresolved:shopware6dal",
-          "must:unresolved:shopware6pluginsystem",
-          "must:unresolved:shopware6storefront&adminextensions",
+          "must:unresolved:dal",
+          "must:unresolved:shopwareadmin",
+          "must:unresolved:shopwarepluginsystem",
+          "must:unresolved:shopwarestorefront",
           "nice:Docker",
           "nice:GIT",
           "nice:JavaScript|TypeScript",
@@ -2545,11 +2640,11 @@
           },
           {
             "priority": "must",
-            "value": "Shopware 6 plugin system"
+            "value": "Shopware plugin system"
           },
           {
             "priority": "must",
-            "value": "Shopware 6 DAL"
+            "value": "DAL"
           },
           {
             "priority": "must",
@@ -2557,15 +2652,15 @@
           },
           {
             "priority": "must",
-            "value": "Shopware 6 Storefront & Admin extensions"
+            "value": "Shopware Storefront"
           },
           {
             "priority": "must",
-            "value": "Shopware 6 architecture"
+            "value": "Shopware Admin"
           },
           {
             "priority": "must",
-            "value": "REST APIs"
+            "value": "REST API"
           },
           {
             "priority": "nice",
@@ -2586,13 +2681,13 @@
         ]
       },
       "usage": {
-        "in": 1913,
-        "out": 372,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1903,
+        "out": 6453,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1571
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 66287
       }
     },
     {
@@ -2602,11 +2697,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.625,
-        "requirementsRecall": 0.45454545454545453,
-        "requirementsF1": 0.5263157894736842,
+        "requirementsPrecision": 0.6666666666666666,
+        "requirementsRecall": 0.5454545454545454,
+        "requirementsF1": 0.6,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.45454545454545453,
+        "alternativeAccuracy": 0.5454545454545454,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2629,12 +2724,13 @@
         "actualClauses": [
           "must:Active Directory",
           "must:Kubernetes",
-          "must:Microsoft Windows Server",
+          "must:Network Security",
+          "must:Public Cloud",
           "must:Terraform",
-          "must:unresolved:networkconcepts(firewalls,vpn,peering)",
-          "must:unresolved:publiccloudinfrastructuredeploymentandsupport",
+          "must:Windows Server",
+          "must:unresolved:peering",
           "nice:Google Cloud",
-          "nice:Tencent Cloud"
+          "nice:Tencent"
         ]
       },
       "actual": {
@@ -2652,19 +2748,11 @@
           },
           {
             "priority": "must",
-            "value": "Public cloud infrastructure deployment and support"
-          },
-          {
-            "priority": "nice",
-            "value": "GCP"
-          },
-          {
-            "priority": "nice",
-            "value": "Tencent Cloud"
+            "value": "Public Cloud"
           },
           {
             "priority": "must",
-            "value": "Microsoft Windows Server"
+            "value": "Windows Server"
           },
           {
             "priority": "must",
@@ -2672,18 +2760,34 @@
           },
           {
             "priority": "must",
-            "value": "Network concepts (firewalls, VPN, peering)"
+            "value": "Firewall"
+          },
+          {
+            "priority": "must",
+            "value": "VPN"
+          },
+          {
+            "priority": "must",
+            "value": "Peering"
+          },
+          {
+            "priority": "nice",
+            "value": "GCP"
+          },
+          {
+            "priority": "nice",
+            "value": "Tencent"
           }
         ]
       },
       "usage": {
-        "in": 1864,
-        "out": 271,
-        "cached": 1664,
-        "client": "DeepSeekClient",
+        "in": 1856,
+        "out": 3693,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1846
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 39308
       }
     },
     {
@@ -2693,11 +2797,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.375,
-        "requirementsRecall": 0.16666666666666666,
-        "requirementsF1": 0.23076923076923078,
+        "requirementsPrecision": 0.875,
+        "requirementsRecall": 0.7777777777777778,
+        "requirementsF1": 0.823529411764706,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.16666666666666666,
+        "alternativeAccuracy": 0.7777777777777778,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2725,14 +2829,22 @@
           "nice:unresolved:linuxbootprocess"
         ],
         "actualClauses": [
+          "must:Cryptography",
+          "must:Embedded Systems",
           "must:GIT",
+          "must:Information Security",
           "must:Python",
-          "must:unresolved:cryptographicprimitivesandinformationsecurityfundamentals",
-          "must:unresolved:embeddedsystemsdevelopment",
-          "must:unresolved:linuxunixadministration",
-          "nice:unresolved:linuxbootprocess(uboot,kernel,initramfs,systemd)",
-          "nice:unresolved:linuxkernelconfigurationandmodification(drivers,devicetree)",
-          "nice:unresolved:softwarebuildsystems(cmake,autotools,pkgconfig,crosstoolchains)"
+          "must:raw:linux|raw:unix",
+          "nice:Autotools",
+          "nice:CMake",
+          "nice:Device Drivers",
+          "nice:Device Tree",
+          "nice:Linux kernel",
+          "nice:U-Boot",
+          "nice:initramfs",
+          "nice:pkg-config",
+          "nice:systemd",
+          "nice:unresolved:crosstoolchain"
         ]
       },
       "actual": {
@@ -2746,42 +2858,74 @@
           },
           {
             "priority": "must",
-            "value": "Embedded systems development"
+            "value": "Embedded Systems"
           },
           {
             "priority": "must",
-            "value": "Linux/UNIX administration"
-          },
-          {
-            "priority": "must",
-            "value": "Cryptographic primitives and information security fundamentals"
+            "anyOf": ["Linux", "UNIX"]
           },
           {
             "priority": "must",
             "value": "Git"
           },
           {
-            "priority": "nice",
-            "value": "Linux boot process (u-boot, kernel, initramfs, systemd)"
+            "priority": "must",
+            "value": "Cryptography"
+          },
+          {
+            "priority": "must",
+            "value": "Information Security"
           },
           {
             "priority": "nice",
-            "value": "Linux kernel configuration and modification (drivers, Device Tree)"
+            "value": "U-Boot"
           },
           {
             "priority": "nice",
-            "value": "Software build systems (cmake, autotools, pkg-config, cross-toolchains)"
+            "value": "Linux Kernel"
+          },
+          {
+            "priority": "nice",
+            "value": "initramfs"
+          },
+          {
+            "priority": "nice",
+            "value": "systemd"
+          },
+          {
+            "priority": "nice",
+            "value": "Device Drivers"
+          },
+          {
+            "priority": "nice",
+            "value": "Device Tree"
+          },
+          {
+            "priority": "nice",
+            "value": "CMake"
+          },
+          {
+            "priority": "nice",
+            "value": "Autotools"
+          },
+          {
+            "priority": "nice",
+            "value": "pkg-config"
+          },
+          {
+            "priority": "nice",
+            "value": "Cross-toolchain"
           }
         ]
       },
       "usage": {
-        "in": 1994,
-        "out": 302,
-        "cached": 1792,
-        "client": "DeepSeekClient",
+        "in": 1919,
+        "out": 4616,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1476
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 52099
       }
     },
     {
@@ -2791,12 +2935,12 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.5555555555555556,
-        "requirementsRecall": 0.5,
-        "requirementsF1": 0.5263157894736842,
+        "requirementsPrecision": 0.6666666666666666,
+        "requirementsRecall": 0.6,
+        "requirementsF1": 0.631578947368421,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5,
-        "orSplitErrors": 0,
+        "alternativeAccuracy": 0.6,
+        "orSplitErrors": 1,
         "guardAccuracy": {
           "isTech": 1,
           "role": 1,
@@ -2826,23 +2970,23 @@
         ],
         "actualClauses": [
           "must:ArduPilot|PX4",
+          "must:C",
           "must:C++",
+          "must:Flight Controllers",
           "must:GIT",
           "must:Lua",
           "must:MAVLink",
           "must:RTOS",
-          "must:unresolved:flightcontrollerarchitecture",
-          "must:unresolved:linuxunixadministration",
-          "must:unresolved:onboardloganalysis",
-          "nice:Arduino|Raspberry Pi",
-          "nice:Fixed-wing UAV Piloting",
+          "must:raw:linux|raw:unix",
+          "nice:Arduino",
+          "nice:EKF",
+          "nice:PID controllers",
           "nice:Python",
           "nice:ROS",
-          "nice:unresolved:cryptographicprimitivesandsecurityfundamentals",
-          "nice:unresolved:ekffilters",
-          "nice:unresolved:notchfilters",
-          "nice:unresolved:pidcontrollertuning",
-          "nice:unresolved:uavexperience"
+          "nice:Raspberry Pi",
+          "nice:Security",
+          "nice:unresolved:cryptographicprimitives",
+          "nice:unresolved:notchfilters"
         ]
       },
       "actual": {
@@ -2852,7 +2996,11 @@
         "requirements": [
           {
             "priority": "must",
-            "value": "C/C++"
+            "value": "C"
+          },
+          {
+            "priority": "must",
+            "value": "C++"
           },
           {
             "priority": "must",
@@ -2864,7 +3012,7 @@
           },
           {
             "priority": "must",
-            "value": "Flight controller architecture"
+            "value": "Flight Controllers"
           },
           {
             "priority": "must",
@@ -2876,11 +3024,7 @@
           },
           {
             "priority": "must",
-            "value": "Onboard log analysis"
-          },
-          {
-            "priority": "must",
-            "value": "Linux/UNIX administration"
+            "anyOf": ["Linux", "UNIX"]
           },
           {
             "priority": "must",
@@ -2888,23 +3032,15 @@
           },
           {
             "priority": "nice",
-            "value": "UAV experience"
+            "value": "PID Controllers"
           },
           {
             "priority": "nice",
-            "value": "Fixed-wing UAV piloting"
+            "value": "EKF"
           },
           {
             "priority": "nice",
-            "value": "PID controller tuning"
-          },
-          {
-            "priority": "nice",
-            "value": "EKF filters"
-          },
-          {
-            "priority": "nice",
-            "value": "Notch filters"
+            "value": "Notch Filters"
           },
           {
             "priority": "nice",
@@ -2916,22 +3052,30 @@
           },
           {
             "priority": "nice",
-            "anyOf": ["Arduino", "Raspberry Pi"]
+            "value": "Arduino"
           },
           {
             "priority": "nice",
-            "value": "Cryptographic primitives and security fundamentals"
+            "value": "Raspberry Pi"
+          },
+          {
+            "priority": "nice",
+            "value": "Cryptographic Primitives"
+          },
+          {
+            "priority": "nice",
+            "value": "Security"
           }
         ]
       },
       "usage": {
-        "in": 2127,
-        "out": 462,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 2018,
+        "out": 4765,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1989
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 46132
       }
     },
     {
@@ -2941,11 +3085,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.7272727272727273,
-        "requirementsRecall": 0.6666666666666666,
-        "requirementsF1": 0.6956521739130435,
+        "requirementsPrecision": 0.8333333333333334,
+        "requirementsRecall": 0.8333333333333334,
+        "requirementsF1": 0.8333333333333334,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.6666666666666666,
+        "alternativeAccuracy": 0.8333333333333334,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2968,13 +3112,14 @@
         ],
         "actualClauses": [
           "must:API",
+          "must:API Testing",
           "must:Confluence",
           "must:Creatio",
           "must:Databases",
           "must:JMeter",
           "must:Jira",
+          "must:Load Testing",
           "must:Manual Testing",
-          "must:Microsoft Office",
           "must:Postman",
           "must:SQL",
           "must:Test Automation"
@@ -2987,11 +3132,11 @@
         "requirements": [
           {
             "priority": "must",
-            "value": "SQL"
+            "value": "Databases"
           },
           {
             "priority": "must",
-            "value": "Databases"
+            "value": "SQL"
           },
           {
             "priority": "must",
@@ -3003,15 +3148,11 @@
           },
           {
             "priority": "must",
-            "value": "Microsoft Office"
+            "value": "Manual Testing"
           },
           {
             "priority": "must",
-            "value": "Manual testing"
-          },
-          {
-            "priority": "must",
-            "value": "Jira"
+            "value": "JIRA"
           },
           {
             "priority": "must",
@@ -3019,7 +3160,15 @@
           },
           {
             "priority": "must",
+            "value": "API Testing"
+          },
+          {
+            "priority": "must",
             "value": "JMeter"
+          },
+          {
+            "priority": "must",
+            "value": "Load Testing"
           },
           {
             "priority": "must",
@@ -3027,18 +3176,18 @@
           },
           {
             "priority": "must",
-            "value": "Integration testing"
+            "value": "Integration Testing"
           }
         ]
       },
       "usage": {
-        "in": 2126,
-        "out": 276,
-        "cached": 1920,
-        "client": "DeepSeekClient",
+        "in": 2013,
+        "out": 4607,
+        "cached": 0,
+        "client": "OpenRouterMuseClient",
         "provider": "openai-generic",
-        "model": "deepseek-v4-flash",
-        "ms": 1375
+        "model": "meta/muse-spark-1.3-contributor",
+        "ms": 45974
       }
     }
   ]

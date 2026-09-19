@@ -15,6 +15,19 @@ export type EvalClient = {
 
 const CLIENTS: Record<string, () => EvalClient> = {
   DeepSeekClient: () => ({ model: required("DEEPSEEK_MODEL") }),
+  // Same model, reasoning left on. Production disables it for cost and latency;
+  // this variant measures what that costs in extraction quality.
+  DeepSeekThinkingClient: () => {
+    const model = required("DEEPSEEK_MODEL");
+    const registry = new ClientRegistry();
+    registry.addLlmClient("DeepSeekThinkingClient", "openai-generic", {
+      base_url: "https://api.deepseek.com",
+      model,
+      api_key: required("DEEPSEEK_API_KEY"),
+    });
+    registry.setPrimary("DeepSeekThinkingClient");
+    return { model, registry };
+  },
   OpenRouterMuseClient: () => {
     const model = required("OPENROUTER_MUSE_MODEL");
     const registry = new ClientRegistry();
