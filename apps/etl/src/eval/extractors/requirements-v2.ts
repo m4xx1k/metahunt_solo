@@ -2,25 +2,21 @@ import { Injectable } from "@nestjs/common";
 
 import { Collector } from "@boundaryml/baml";
 
-import { sha256 } from "../02-enrich/dedup/content-fingerprint";
-import { BAML_RUNTIME_VERSION } from "../02-enrich/extraction/baml-production-identity.generated";
 import type {
-  ExtractionIdentity,
   ExtractionResult,
   ExtractionUsage,
-  VacancyExtractor,
-} from "../02-enrich/extraction/vacancy-extractor";
-import { b, RequirementPriority, Seniority } from "../baml_client";
+} from "../../02-enrich/extraction/vacancy-extractor";
+import { b, RequirementPriority, Seniority } from "../../baml_client";
 import type {
   ExtractedVacancy,
   ExtractedVacancyRequirementsV2,
   RequirementsV2Role,
-} from "../baml_client";
+} from "../../baml_client";
+
+import type { EvalClient } from "./clients";
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
-export const REQUIREMENTS_V2_PROMPT_VERSION = 4;
-export const BAML_REQUIREMENTS_V2_SOURCE_HASH =
-  "baa02d4d5644c5b7e63d9fea37a2245f3400f274c1d01fec7f3e0e1ed832f94a";
+export const REQUIREMENTS_V2_PROMPT_VERSION = 5;
 
 /** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
 const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
@@ -58,15 +54,28 @@ const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
 
 export const REQUIREMENTS_V2_ROLES = Object.values(ROLE_DISPLAY_NAMES);
 
+/**
+ * Eval-only, so it deliberately does not implement `VacancyExtractor`: `identity()`
+ * exists for the production extraction cache, and the eval never goes near it.
+ */
 @Injectable()
-export class BamlRequirementsV2Extractor implements VacancyExtractor {
+export class BamlRequirementsV2Extractor {
+  constructor(private readonly client: EvalClient) {}
+
   async extract(text: string): Promise<ExtractionResult> {
     const collector = new Collector("vacancy-requirements-v2-extract");
+    const options = {
+      collector,
+      ...(this.client.registry && { clientRegistry: this.client.registry }),
+    };
     try {
-      const data = await b.ExtractVacancyRequirementsV2(text, { collector });
+      const data = await b.ExtractVacancyRequirementsV2(text, options);
       return {
         data: toEvalVacancy(data, text),
-        meta: { promptVersion: REQUIREMENTS_V2_PROMPT_VERSION, usage: readUsage(collector) },
+        meta: {
+          promptVersion: REQUIREMENTS_V2_PROMPT_VERSION,
+          usage: readUsage(collector, this.client.model),
+        },
       };
     } catch (error) {
       const message = error instanceof Error ? error.message.split("\n")[0] : String(error);
@@ -74,44 +83,18 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
         data: null,
         meta: {
           promptVersion: REQUIREMENTS_V2_PROMPT_VERSION,
-          usage: readUsage(collector),
+          usage: readUsage(collector, this.client.model),
           error: `BAML Requirements v2 extraction: ${message}`,
         },
       };
     }
-  }
-
-  async identity(text: string): Promise<ExtractionIdentity> {
-    const provider = "openai-generic";
-    const model = process.env.DEEPSEEK_MODEL ?? "unknown";
-    const taxonomyHash = sha256([...REQUIREMENTS_V2_ROLES].sort().join("\n"));
-    return {
-      specHash: sha256(
-        [
-          "ExtractVacancyRequirementsV2",
-          String(REQUIREMENTS_V2_PROMPT_VERSION),
-          BAML_REQUIREMENTS_V2_SOURCE_HASH,
-          BAML_RUNTIME_VERSION,
-          provider,
-          model,
-          taxonomyHash,
-        ].join("|"),
-      ),
-      inputHash: sha256(text),
-      provider,
-      model,
-      bamlVersion: BAML_RUNTIME_VERSION,
-      bamlSourceHash: BAML_REQUIREMENTS_V2_SOURCE_HASH,
-      taxonomyHash,
-    };
   }
 }
 
 function toEvalVacancy(data: ExtractedVacancyRequirementsV2, text: string): ExtractedVacancy {
   const requirements = data.requirements.map((requirement) => ({
     priority: requirement.priority === RequirementPriority.MUST ? "must" : "nice",
-    ...(requirement.value ? { value: requirement.value } : {}),
-    ...(requirement.anyOf ? { anyOf: requirement.anyOf } : {}),
+    anyOf: requirement.anyOf,
   }));
   return {
     ...data,
@@ -178,7 +161,7 @@ function advertisedSeniority(text: string): Seniority | null {
   return matches.size === 1 ? [...matches][0] : null;
 }
 
-function readUsage(collector: Collector): ExtractionUsage {
+function readUsage(collector: Collector, model: string): ExtractionUsage {
   const usage = collector.usage;
   const call = collector.last?.calls?.[0];
   return {
@@ -187,7 +170,7 @@ function readUsage(collector: Collector): ExtractionUsage {
     cached: usage.cachedInputTokens ?? 0,
     client: call?.clientName ?? "unknown",
     provider: call?.provider ?? "unknown",
-    model: process.env.DEEPSEEK_MODEL ?? "unknown",
+    model,
     ms: collector.last?.timing?.durationMs ?? null,
   };
 }

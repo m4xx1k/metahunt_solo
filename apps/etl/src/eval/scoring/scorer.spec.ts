@@ -3,8 +3,8 @@ import {
   canonicalizeRequirement,
   scoreRequirements,
   summarizeRequirements,
-} from "./extraction.scorer";
-import type { ExtractedVacancyForEval, RequirementDatasetCase } from "./extraction-eval.types";
+} from "./scorer";
+import type { ExtractedVacancyForEval, RequirementDatasetCase } from "../types";
 
 const aliases = new Map([
   ["nodejs", "skill-node"],
@@ -33,8 +33,8 @@ describe("Requirements v2 scorer", () => {
   it("resolves production alias normalization before comparing clauses", () => {
     expect(canonicalizeRequirement("Node.js", aliases)).toBe("skill-node");
     const score = scoreRequirements(
-      expected([{ priority: "must", value: "Node.js" }]),
-      actual([{ priority: "must", value: "node-js" }]),
+      expected([{ priority: "must", anyOf: ["Node.js"] }]),
+      actual([{ priority: "must", anyOf: ["node-js"] }]),
       aliases,
     );
     expect(score.requirementsF1).toBe(1);
@@ -52,7 +52,7 @@ describe("Requirements v2 scorer", () => {
 
   it("rejects an anyOf that collapses to one canonical alternative", () => {
     const score = scoreRequirements(
-      expected([{ priority: "must", value: "React" }]),
+      expected([{ priority: "must", anyOf: ["React"] }]),
       actual([{ priority: "must", anyOf: ["React", "React"] }]),
       aliases,
     );
@@ -73,7 +73,7 @@ describe("Requirements v2 scorer", () => {
 
     const omitted = scoreRequirements(
       expected([{ priority: "must", anyOf: ["MySQL", "MariaDB"] }]),
-      actual([{ priority: "must", value: "MySQL" }]),
+      actual([{ priority: "must", anyOf: ["MySQL"] }]),
       brokenAliases,
     );
     expect(omitted.requirementsF1).toBe(0);
@@ -81,8 +81,8 @@ describe("Requirements v2 scorer", () => {
 
   it("keeps priority separate from a matching alternative group", () => {
     const score = scoreRequirements(
-      expected([{ priority: "must", value: "TypeScript" }]),
-      actual([{ priority: "nice", value: "TypeScript" }]),
+      expected([{ priority: "must", anyOf: ["TypeScript"] }]),
+      actual([{ priority: "nice", anyOf: ["TypeScript"] }]),
       aliases,
     );
     expect(score.requirementsF1).toBe(0);
@@ -92,11 +92,11 @@ describe("Requirements v2 scorer", () => {
 
   it("collapses duplicate clauses and lets must win", () => {
     const score = scoreRequirements(
-      expected([{ priority: "must", value: "React" }]),
+      expected([{ priority: "must", anyOf: ["React"] }]),
       actual([
-        { priority: "nice", value: "React" },
-        { priority: "must", value: "React" },
-        { priority: "must", value: "React" },
+        { priority: "nice", anyOf: ["React"] },
+        { priority: "must", anyOf: ["React"] },
+        { priority: "must", anyOf: ["React"] },
       ]),
       aliases,
     );
@@ -108,8 +108,8 @@ describe("Requirements v2 scorer", () => {
     const score = scoreRequirements(
       expected([{ priority: "must", anyOf: ["React", "Vue.js"] }]),
       actual([
-        { priority: "must", value: "React" },
-        { priority: "must", value: "Vue.js" },
+        { priority: "must", anyOf: ["React"] },
+        { priority: "must", anyOf: ["Vue.js"] },
       ]),
       aliases,
     );
@@ -122,8 +122,8 @@ describe("Requirements v2 scorer", () => {
 
   it("adapts the current flat skills output into singleton Requirements", () => {
     expect(adaptLegacySkills({ required: ["TypeScript"], optional: ["React"] })).toEqual([
-      { priority: "must", value: "TypeScript" },
-      { priority: "nice", value: "React" },
+      { priority: "must", anyOf: ["TypeScript"] },
+      { priority: "nice", anyOf: ["React"] },
     ]);
   });
 
