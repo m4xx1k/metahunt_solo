@@ -78,8 +78,6 @@ export type RequirementsSummary = {
 /** Everything an extractor must do for the eval; `identity()` is the production cache's concern. */
 export type EvalExtractor = { extract(text: string): Promise<ExtractionResult> };
 
-export type ExtractorName = "requirements-v2" | "production";
-
 export type RowResult = {
   id: string;
   title: string;
@@ -93,7 +91,7 @@ export type RowResult = {
 export type EvalRun = {
   startedAt: string;
   durationMs: number;
-  extractor: ExtractorName;
+  extractor: string;
   client: string;
   model: string;
   aliasSnapshotSha: string;

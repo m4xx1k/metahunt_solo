@@ -7,7 +7,6 @@ import { scoreRequirements, summarizeRequirements } from "./scoring/scorer";
 import type {
   EvalExtractor,
   EvalRun,
-  ExtractorName,
   ExtractedVacancyForEval,
   RequirementDatasetCase,
   RowResult,
@@ -16,7 +15,7 @@ import type {
 
 export type RunOptions = {
   extractor: EvalExtractor;
-  extractorName: ExtractorName;
+  extractorName: string;
   concurrency: number;
   only?: string;
   onRow?: (row: RowResult) => void;

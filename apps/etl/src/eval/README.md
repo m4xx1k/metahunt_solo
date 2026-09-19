@@ -7,8 +7,11 @@ No service, no hosted dataset, no build step.
 pnpm eval                      # 25 rows against ExtractVacancyRequirementsV2
 pnpm eval --only <row-id>      # one row
 pnpm eval --concurrency 8      # default 4
-pnpm eval --refresh-aliases    # rebuild aliases.snapshot.json — needs DATABASE_URL
+pnpm eval --refresh-aliases    # rebuild aliases.snapshot.json and exit — needs DATABASE_URL
 ```
+
+An unknown `--extractor`, a non-positive `--concurrency`, or an `--only` that
+matches nothing fails with the accepted values named.
 
 Needs `DEEPSEEK_API_KEY` and `DEEPSEEK_MODEL` in `.env`. It calls the provider, so
 it is deliberately manual.
