@@ -246,6 +246,52 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     expect(linkedSkills.map(({ name }) => name)).toEqual(["Rust"]);
   });
 
+  it("reloads the record that is already current only when forced", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const recordId = await seedRecord(sourceId, ingestId, fullExtracted);
+    const vacancyId = await loader.loadFromRecord(recordId);
+    if (!vacancyId) throw new Error("loadFromRecord returned null");
+
+    const skillNames = async (): Promise<string[]> => {
+      const rows = await db
+        .select({ name: schema.nodes.canonicalName })
+        .from(schema.vacancyNodes)
+        .innerJoin(schema.nodes, eq(schema.nodes.id, schema.vacancyNodes.nodeId))
+        .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
+      return rows.map(({ name }) => name).sort();
+    };
+    expect(await skillNames()).toEqual(["Docker", "Go", "PostgreSQL"]);
+
+    // What a re-extraction does: same record, richer skills under the raised cap.
+    await db
+      .update(schema.rssRecords)
+      .set({
+        extractedData: {
+          ...fullExtracted,
+          skills: { required: ["Go", "PostgreSQL", "Kafka"], optional: ["Docker"] },
+        },
+      })
+      .where(eq(schema.rssRecords.id, recordId));
+
+    // Unforced, the freshness guard compares the record against itself and drops it.
+    expect(await loader.loadFromRecord(recordId)).toBe(vacancyId);
+    expect(await skillNames()).toEqual(["Docker", "Go", "PostgreSQL"]);
+
+    expect(await loader.loadFromRecord(recordId, { force: true })).toBe(vacancyId);
+    expect(await skillNames()).toEqual(["Docker", "Go", "Kafka", "PostgreSQL"]);
+    expect(await rowCount(schema.vacancies)).toBe(1);
+
+    // The forced path must also invalidate the derived semantics, or dedup
+    // would keep grouping on an embedding built from the old skill set.
+    const [vacancy] = await db
+      .select()
+      .from(schema.vacancies)
+      .where(eq(schema.vacancies.id, vacancyId));
+    expect(vacancy.embedding).toBeNull();
+    expect(vacancy.embeddingSourceHash).toBeNull();
+    expect(vacancy.deduplicatedAt).toBeNull();
+  });
+
   it("re-opens a changed listing without orphaning it from its position", async () => {
     const { sourceId, ingestId } = await seedSource();
     const first = await seedRecord(sourceId, ingestId, fullExtracted, {

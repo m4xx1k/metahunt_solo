@@ -1,7 +1,9 @@
+import { eq } from "drizzle-orm";
 import type { Pool } from "pg";
 
 import { schema, type DrizzleDB } from "@metahunt/database";
 
+import { RssExtractActivity } from "../../src/01-ingest/rss/activities/rss-extract.activity";
 import { RssBackfillService } from "../../src/01-ingest/rss/rss-backfill.service";
 import { LoaderBackfillService } from "../../src/02-enrich/loader/services/loader-backfill.service";
 import { MonitoringService } from "../../src/admin/monitoring/monitoring.service";
@@ -113,6 +115,36 @@ describe("extraction outcome boundary (integration)", () => {
       failed: 0,
     });
     expect(loadFromRecord).toHaveBeenCalledWith(succeededId);
+  });
+
+  it("keeps a stored success when re-extraction fails, but still records a fresh failure", async () => {
+    const { failedId, succeededId } = await seedExtractionOutcomes();
+    const extractor = {
+      extract: jest.fn().mockResolvedValue({
+        data: null,
+        meta: { promptVersion: 3, usage: { in: 10, out: 0, cached: 0 }, error: "boom" },
+      }),
+      identity: jest.fn(),
+    };
+    const activity = new RssExtractActivity(db, extractor);
+
+    // The success predates extraction_artifacts for most of the corpus, so its
+    // payload is the only copy — a failed re-run must not overwrite it.
+    await expect(activity.extractAndInsert(succeededId)).rejects.toThrow("boom");
+    const [kept] = await db
+      .select()
+      .from(schema.rssRecords)
+      .where(eq(schema.rssRecords.id, succeededId));
+    expect(kept.extractedData).toEqual({ role: "Backend Engineer" });
+
+    // A record that already holds an error has nothing to lose, so the newer
+    // failure still lands with its usage.
+    await expect(activity.extractAndInsert(failedId)).rejects.toThrow("boom");
+    const [replaced] = await db
+      .select()
+      .from(schema.rssRecords)
+      .where(eq(schema.rssRecords.id, failedId));
+    expect(replaced.extractedData).toMatchObject({ _error: "boom" });
   });
 
   it("reports distinct outcome statuses and ingest counts", async () => {

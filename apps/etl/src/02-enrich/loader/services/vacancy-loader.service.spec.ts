@@ -96,7 +96,12 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     expect(nodeResolve).toHaveBeenCalledWith("ROLE", "Backend Engineer", TX);
     expect(nodeResolve).toHaveBeenCalledWith("DOMAIN", "FinTech", TX);
     expect(nodeResolve).toHaveBeenCalledWith("SKILL", "Go", TX);
-    expect(repo.upsertWithSkills).toHaveBeenCalledWith(expect.anything(), expect.anything(), TX);
+    expect(repo.upsertWithSkills).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      TX,
+      undefined,
+    );
 
     expect(valuesArg(repo)).toMatchObject({
       sourceId: SOURCE_ID,
@@ -226,6 +231,23 @@ describe("VacancyLoaderService.loadFromRecord", () => {
 
     expect(result).toBe(VACANCY_ID);
     expect(repo.upsertWithSkills).toHaveBeenCalled();
+  });
+
+  it("passes force through to the repository so a re-extraction can reload", async () => {
+    const repo = makeRepo();
+    repo.findRecord.mockResolvedValue({
+      ...baseRecord,
+      extractedData: { ...fullExtracted, isTech: true },
+    } as never);
+    const { service, companyResolve, nodeResolve } = makeService(repo);
+    companyResolve.mockResolvedValue(COMPANY_ID);
+    nodeResolve.mockResolvedValue("node");
+
+    await service.loadFromRecord(RECORD_ID, { force: true });
+
+    expect(repo.upsertWithSkills).toHaveBeenCalledWith(expect.anything(), expect.anything(), TX, {
+      force: true,
+    });
   });
 
   it("throws before opening a transaction when the rss_record is missing", async () => {

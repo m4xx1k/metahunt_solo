@@ -5,6 +5,7 @@ import type { Executor } from "../repositories/executor";
 import {
   VacancyRepository,
   type SkillLink,
+  type UpsertOptions,
   type VacancyUpsertValues,
 } from "../repositories/vacancy.repository";
 
@@ -23,7 +24,7 @@ export class VacancyLoaderService {
 
   // Returns the upserted vacancy id, or null when the record is the LLM serve
   // gate dropped it (non-tech). Callers must treat null as "skipped".
-  async loadFromRecord(rssRecordId: string): Promise<string | null> {
+  async loadFromRecord(rssRecordId: string, options?: UpsertOptions): Promise<string | null> {
     const record = await this.repo.findRecord(rssRecordId);
     if (!record) {
       throw new Error(`rss_record ${rssRecordId} not found`);
@@ -84,7 +85,7 @@ export class VacancyLoaderService {
         publishedAt: record.publishedAt,
       };
 
-      return this.repo.upsertWithSkills(values, skillLinks, tx);
+      return this.repo.upsertWithSkills(values, skillLinks, tx, options);
     });
   }
 

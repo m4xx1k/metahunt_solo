@@ -28,8 +28,17 @@ describe("LoadVacancyActivity", () => {
 
     const result = await activity.loadVacancy(RECORD_ID);
 
-    expect(loadFromRecord).toHaveBeenCalledWith(RECORD_ID);
+    expect(loadFromRecord).toHaveBeenCalledWith(RECORD_ID, undefined);
     expect(result).toBe(VACANCY_ID);
+  });
+
+  it("forwards options so a re-extraction can force a reload", async () => {
+    const { activity, loadFromRecord } = await bootstrap();
+    loadFromRecord.mockResolvedValue(VACANCY_ID);
+
+    await activity.loadVacancy(RECORD_ID, { force: true });
+
+    expect(loadFromRecord).toHaveBeenCalledWith(RECORD_ID, { force: true });
   });
 
   it("propagates loader errors so Temporal can retry", async () => {

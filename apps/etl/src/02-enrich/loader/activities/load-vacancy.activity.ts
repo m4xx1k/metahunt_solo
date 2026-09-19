@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
+import type { UpsertOptions } from "../repositories/vacancy.repository";
 import { VacancyLoaderService } from "../services/vacancy-loader.service";
 
 @Injectable()
@@ -10,7 +11,7 @@ export class LoadVacancyActivity {
   constructor(private readonly loader: VacancyLoaderService) {}
 
   @ActivityMethod()
-  async loadVacancy(rssRecordId: string): Promise<string | null> {
-    return this.loader.loadFromRecord(rssRecordId);
+  async loadVacancy(rssRecordId: string, options?: UpsertOptions): Promise<string | null> {
+    return this.loader.loadFromRecord(rssRecordId, options);
   }
 }

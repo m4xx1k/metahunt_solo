@@ -14,6 +14,11 @@ import type { Executor } from "./executor";
 
 export type SkillLink = { nodeId: string; isRequired: boolean };
 
+// `force` skips the freshness guard below. Re-extraction reloads the record
+// that is already the listing's current version, which the guard reads as
+// "not newer" and would otherwise drop on the floor.
+export type UpsertOptions = { force?: boolean };
+
 type RssRecordRow = typeof schema.rssRecords.$inferSelect;
 // The repository mints the vacancy/group id pair itself (deferred FKs, 0041),
 // so neither half may be supplied by a caller.
@@ -39,6 +44,7 @@ export abstract class VacancyRepository {
     values: VacancyUpsertValues,
     skillLinks: SkillLink[],
     executor: Executor,
+    options?: UpsertOptions,
   ): Promise<string>;
 }
 
@@ -64,6 +70,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
     values: VacancyUpsertValues,
     skillLinks: SkillLink[],
     executor: Executor,
+    options?: UpsertOptions,
   ): Promise<string> {
     let existing = await this.lockExistingListing(values, executor);
 
@@ -97,7 +104,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
 
     // Activity retries and out-of-order records are normal. Replaying an old
     // bronze record must never roll the user-facing listing back.
-    if (!existing.incoming_is_newer) return existing.id;
+    if (!options?.force && !existing.incoming_is_newer) return existing.id;
 
     const oldClusterId = existing.unique_vacancy_id;
     if (oldClusterId) {
