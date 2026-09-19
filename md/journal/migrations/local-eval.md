@@ -113,10 +113,14 @@ work format or English level is invisible.
 
 | # | Step | Gate |
 |---|---|---|
-| 1 | `OpenRouterMuseClient` in `clients.baml` (`provider openai-generic`, `base_url "https://openrouter.ai/api/v1"`, `api_key env.OPENROUTER_MUSE_API_KEY`); `pnpm baml:generate`. | `pnpm baml:identity:check` — the new client must not move the production identity hash. |
-| 2 | `BamlRequirementsV2Extractor({ clientName, modelLabel })`: feeds BAML's `ClientRegistry` in `extract`, and `modelLabel` into `readUsage`. | One row through each client; `usage.client` differs. |
-| 3 | `promptfooconfig.yaml` + provider and score wrappers. promptfoo owns the loop, storage and UI; the scorer stays the scorer. | Muse returns schema-valid output, or stop here and stay on DeepSeek. |
-| 4 | Two runs, `promptfoo eval --no-cache`. | Compare, decide, record in `runs/`. |
+| 1 | ~~`OpenRouterMuseClient` in `clients.baml`~~ — **done differently.** `baml:identity:check` hashes `clients.baml` whole, so any edit there moves `BAML_PRODUCTION_SOURCE_HASH` and therefore every artifact's `spec_hash`: adding an eval-only client would re-extract ~18k postings. The clients live in `extractors/clients.ts` and are registered at runtime through `ClientRegistry`. | `pnpm baml:identity:check` unchanged. ✅ |
+| 2 | Extractor takes an `EvalClient` carrying the registry and the model name, which `readUsage` reports instead of `process.env.DEEPSEEK_MODEL`. | A row through Muse reports `client: OpenRouterMuseClient`, `model: meta/muse-spark-1.3-contributor`. ✅ |
+| 3 | Two runs per model — the spread below makes one run per model meaningless. | Muse returns schema-valid output, or stop here and stay on DeepSeek. **Blocked:** OpenRouter answers 403, the account needs its 18+ attestation. |
+| 4 | Compare, decide, record in `runs/`. | |
+
+promptfoo is deferred, not dropped. The runner already owns the loop, the storage
+and a side-by-side view, so the only thing left to buy is the two-model grid —
+weigh that against a `--compare` over two run files before taking the dependency.
 
 **Compared:** F1, precision, recall, `alternativeAccuracy`, `priorityAccuracy`,
 `orSplitErrors`, `isTech` accuracy, `schemaValidRate`, tokens and cost, p50 latency.

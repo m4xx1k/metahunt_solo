@@ -12,6 +12,8 @@ import type { DrizzleDB } from "@metahunt/database";
 import { BamlVacancyExtractor } from "../02-enrich/extraction/baml.extractor";
 
 import { refreshAliasSnapshot } from "./dataset/aliases";
+import type { EvalClient } from "./extractors/clients";
+import { resolveClient } from "./extractors/clients";
 import { BamlRequirementsV2Extractor } from "./extractors/requirements-v2";
 import { renderRunHtml } from "./report/html";
 import { renderRunMarkdown } from "./report/markdown";
@@ -21,8 +23,9 @@ import type { EvalExtractor, EvalRun, RequirementDatasetCase } from "./types";
 type OpenDatabase = () => DrizzleDB;
 
 /** Extractors take the database opener, not a connection: only `production` calls it. */
-const EXTRACTORS: Record<string, (database: OpenDatabase) => EvalExtractor> = {
-  "requirements-v2": () => new BamlRequirementsV2Extractor(),
+const EXTRACTORS: Record<string, (database: OpenDatabase, client: EvalClient) => EvalExtractor> = {
+  "requirements-v2": (_database, client) => new BamlRequirementsV2Extractor(client),
+  // ExtractVacancy is bound to DeepSeekClient in clients.baml; --client does not reach it.
   production: (database) => new BamlVacancyExtractor(database()),
 };
 
@@ -51,8 +54,9 @@ async function main(): Promise<void> {
     }
 
     const extractorName = flag("--extractor") ?? "requirements-v2";
+    const client = resolveClient(flag("--client") ?? "DeepSeekClient");
     const { run, cases } = await runEval({
-      extractor: pick(EXTRACTORS, extractorName, "--extractor")(database),
+      extractor: pick(EXTRACTORS, extractorName, "--extractor")(database, client),
       extractorName,
       concurrency: numberFlag("--concurrency", 4),
       only: flag("--only"),
@@ -64,7 +68,9 @@ async function main(): Promise<void> {
     });
 
     mkdirSync(RUNS_DIR, { recursive: true });
-    const stem = `${run.startedAt.slice(0, 10)}-${run.client}`;
+    // The extractor belongs in the name: both extractors run on the same client,
+    // so date+client alone silently overwrites the previous run.
+    const stem = `${run.startedAt.slice(0, 10)}-${run.extractor}-${run.client}`;
     for (const [extension, render] of Object.entries(REPORTS)) {
       writeFileSync(join(RUNS_DIR, `${stem}.${extension}`), render(run, cases));
     }

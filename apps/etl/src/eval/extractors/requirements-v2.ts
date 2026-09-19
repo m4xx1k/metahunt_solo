@@ -13,6 +13,8 @@ import type {
   RequirementsV2Role,
 } from "../../baml_client";
 
+import type { EvalClient } from "./clients";
+
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
 export const REQUIREMENTS_V2_PROMPT_VERSION = 4;
 
@@ -58,13 +60,22 @@ export const REQUIREMENTS_V2_ROLES = Object.values(ROLE_DISPLAY_NAMES);
  */
 @Injectable()
 export class BamlRequirementsV2Extractor {
+  constructor(private readonly client: EvalClient) {}
+
   async extract(text: string): Promise<ExtractionResult> {
     const collector = new Collector("vacancy-requirements-v2-extract");
+    const options = {
+      collector,
+      ...(this.client.registry && { clientRegistry: this.client.registry }),
+    };
     try {
-      const data = await b.ExtractVacancyRequirementsV2(text, { collector });
+      const data = await b.ExtractVacancyRequirementsV2(text, options);
       return {
         data: toEvalVacancy(data, text),
-        meta: { promptVersion: REQUIREMENTS_V2_PROMPT_VERSION, usage: readUsage(collector) },
+        meta: {
+          promptVersion: REQUIREMENTS_V2_PROMPT_VERSION,
+          usage: readUsage(collector, this.client.model),
+        },
       };
     } catch (error) {
       const message = error instanceof Error ? error.message.split("\n")[0] : String(error);
@@ -72,7 +83,7 @@ export class BamlRequirementsV2Extractor {
         data: null,
         meta: {
           promptVersion: REQUIREMENTS_V2_PROMPT_VERSION,
-          usage: readUsage(collector),
+          usage: readUsage(collector, this.client.model),
           error: `BAML Requirements v2 extraction: ${message}`,
         },
       };
@@ -151,7 +162,7 @@ function advertisedSeniority(text: string): Seniority | null {
   return matches.size === 1 ? [...matches][0] : null;
 }
 
-function readUsage(collector: Collector): ExtractionUsage {
+function readUsage(collector: Collector, model: string): ExtractionUsage {
   const usage = collector.usage;
   const call = collector.last?.calls?.[0];
   return {
@@ -160,7 +171,7 @@ function readUsage(collector: Collector): ExtractionUsage {
     cached: usage.cachedInputTokens ?? 0,
     client: call?.clientName ?? "unknown",
     provider: call?.provider ?? "unknown",
-    model: process.env.DEEPSEEK_MODEL ?? "unknown",
+    model,
     ms: collector.last?.timing?.durationMs ?? null,
   };
 }

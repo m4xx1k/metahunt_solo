@@ -7,6 +7,7 @@ No service, no hosted dataset, no build step.
 pnpm eval                      # 25 rows against ExtractVacancyRequirementsV2
 pnpm eval --only <row-id>      # one row
 pnpm eval --concurrency 8      # default 4
+pnpm eval --client OpenRouterMuseClient   # swap the model behind the same prompt
 pnpm eval --refresh-aliases    # rebuild aliases.snapshot.json and exit — needs DATABASE_URL
 ```
 
@@ -51,6 +52,18 @@ extractor on the same rows gave F1 67.0% and 63.8%, with `or_split_errors` 2 and
 A single run therefore carries a few points of noise, and a comparison between two
 models only means something when the gap is clearly wider than that. Repeat a run
 before reading a small difference as a result.
+
+## Clients
+
+`extractors/clients.ts` declares the eval's LLM clients at runtime through BAML's
+`ClientRegistry`, not in `baml_src/clients.baml`. `baml:identity:check` hashes that
+file whole, so adding a challenger there would move `BAML_PRODUCTION_SOURCE_HASH`,
+hence every artifact's `spec_hash`, and re-extract the entire corpus for a client
+production never calls. Each entry also carries its own model name, because BAML's
+collector reports the client but not the model.
+
+`--client` only reaches `--extractor requirements-v2`. Production's `ExtractVacancy`
+is bound to `DeepSeekClient` in `clients.baml`.
 
 ## Two extractors
 

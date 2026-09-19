@@ -17,6 +17,8 @@ import { b } from "../../baml_client";
 
 import { BamlRequirementsV2Extractor } from "./requirements-v2";
 
+const TEST_CLIENT = { model: "test-model" };
+
 const extractRequirements = b.ExtractVacancyRequirementsV2 as unknown as jest.Mock;
 
 describe("BamlRequirementsV2Extractor", () => {
@@ -30,7 +32,7 @@ describe("BamlRequirementsV2Extractor", () => {
         { priority: "NICE", value: "Terraform" },
       ],
     });
-    const extractor = new BamlRequirementsV2Extractor();
+    const extractor = new BamlRequirementsV2Extractor(TEST_CLIENT);
 
     const text = "Title: Senior DevOps Engineer\n\nAWS or GCP. Terraform is a plus.";
     const result = await extractor.extract(text);
@@ -69,7 +71,7 @@ describe("BamlRequirementsV2Extractor", () => {
       requirements: [],
     });
 
-    const result = await new BamlRequirementsV2Extractor().extract(text);
+    const result = await new BamlRequirementsV2Extractor(TEST_CLIENT).extract(text);
 
     expect(result.data?.seniority).toBe(expected);
   });
@@ -82,7 +84,7 @@ describe("BamlRequirementsV2Extractor", () => {
       requirements: [],
     });
 
-    const result = await new BamlRequirementsV2Extractor().extract(
+    const result = await new BamlRequirementsV2Extractor(TEST_CLIENT).extract(
       "Title: Software Engineer\\n\\nBuild and maintain product software.",
     );
 
