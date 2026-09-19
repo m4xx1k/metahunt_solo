@@ -2,14 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import { Collector } from "@boundaryml/baml";
 
-import { sha256 } from "../02-enrich/dedup/content-fingerprint";
-import { BAML_RUNTIME_VERSION } from "../02-enrich/extraction/baml-production-identity.generated";
-import type {
-  ExtractionIdentity,
-  ExtractionResult,
-  ExtractionUsage,
-  VacancyExtractor,
-} from "../02-enrich/extraction/vacancy-extractor";
+import type { ExtractionResult, ExtractionUsage } from "../02-enrich/extraction/vacancy-extractor";
 import { b, RequirementPriority, Seniority } from "../baml_client";
 import type {
   ExtractedVacancy,
@@ -19,8 +12,6 @@ import type {
 
 /** Eval-only prompt; production continues to use ExtractVacancy unchanged. */
 export const REQUIREMENTS_V2_PROMPT_VERSION = 4;
-export const BAML_REQUIREMENTS_V2_SOURCE_HASH =
-  "baa02d4d5644c5b7e63d9fea37a2245f3400f274c1d01fec7f3e0e1ed832f94a";
 
 /** Intended post-role-v2 disciplines, isolated from the stale production ROLE nodes. */
 const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
@@ -58,8 +49,12 @@ const ROLE_DISPLAY_NAMES: Record<RequirementsV2Role, string> = {
 
 export const REQUIREMENTS_V2_ROLES = Object.values(ROLE_DISPLAY_NAMES);
 
+/**
+ * Eval-only, so it deliberately does not implement `VacancyExtractor`: `identity()`
+ * exists for the production extraction cache, and the eval never goes near it.
+ */
 @Injectable()
-export class BamlRequirementsV2Extractor implements VacancyExtractor {
+export class BamlRequirementsV2Extractor {
   async extract(text: string): Promise<ExtractionResult> {
     const collector = new Collector("vacancy-requirements-v2-extract");
     try {
@@ -79,31 +74,6 @@ export class BamlRequirementsV2Extractor implements VacancyExtractor {
         },
       };
     }
-  }
-
-  async identity(text: string): Promise<ExtractionIdentity> {
-    const provider = "openai-generic";
-    const model = process.env.DEEPSEEK_MODEL ?? "unknown";
-    const taxonomyHash = sha256([...REQUIREMENTS_V2_ROLES].sort().join("\n"));
-    return {
-      specHash: sha256(
-        [
-          "ExtractVacancyRequirementsV2",
-          String(REQUIREMENTS_V2_PROMPT_VERSION),
-          BAML_REQUIREMENTS_V2_SOURCE_HASH,
-          BAML_RUNTIME_VERSION,
-          provider,
-          model,
-          taxonomyHash,
-        ].join("|"),
-      ),
-      inputHash: sha256(text),
-      provider,
-      model,
-      bamlVersion: BAML_RUNTIME_VERSION,
-      bamlSourceHash: BAML_REQUIREMENTS_V2_SOURCE_HASH,
-      taxonomyHash,
-    };
   }
 }
 

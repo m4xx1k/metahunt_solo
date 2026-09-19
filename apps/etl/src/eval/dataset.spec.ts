@@ -1,4 +1,4 @@
-import { assertReleaseGate, parseDatasetCase } from "./extraction.experiment";
+import { assertReleaseGate, parseDatasetCase } from "./dataset";
 import { scoreRequirements } from "./extraction.scorer";
 import type { RequirementDatasetCase } from "./extraction-eval.types";
 import { REQUIREMENTS_V2_ROLES } from "./requirements-v2.baml.extractor";
@@ -15,7 +15,7 @@ const approvedOrCase: RequirementDatasetCase = {
   metadata: { reviewStatus: "approved", slices: ["or"], contractVersion: "requirements-v2" },
 };
 
-describe("Requirements v2 Langfuse experiment", () => {
+describe("Requirements v2 golden set", () => {
   it("ships 25 real-text draft cases, including explicit OR boundaries", () => {
     expect(draftDataset).toHaveLength(25);
     expect(new Set(draftDataset.map((item) => item.input.id)).size).toBe(25);

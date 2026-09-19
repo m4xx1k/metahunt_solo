@@ -1,34 +1,50 @@
 # Vacancy Requirements v2 evaluation
 
-[`vacancy-requirements-v2.review.md`](./vacancy-requirements-v2.review.md) is
-the readable GitHub review view for 25 real vacancy texts and manual `draft`
-labels. The adjacent JSON is only the machine-readable Langfuse source; there
-is no legacy conversion and no data-preparation CLI.
-
-The eval calls the isolated
-[`extract-vacancy-requirements-v2.baml`](../../baml_src/extract-vacancy-requirements-v2.baml)
-function. It is deliberately separate from production `extract-vacancy.baml`:
-the production `skills` contract is not changed by this experiment.
-
-After reviewing and uploading that exact dataset to Langfuse, run:
+25 real vacancy texts with hand-written labels, scored by a deterministic scorer.
+No service, no hosted dataset, no build step.
 
 ```bash
-pnpm eval:requirements-v2 -- --dataset metahunt-vacancy-requirements-v2-draft --dataset-version <version> --run-name baseline-current-skills
+pnpm eval                      # 25 rows against ExtractVacancyRequirementsV2
+pnpm eval --only <row-id>      # one row
+pnpm eval --concurrency 8      # default 4
+pnpm eval --refresh-aliases    # rebuild aliases.snapshot.json — needs DATABASE_URL
 ```
 
-The command needs `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, optional
-`LANGFUSE_BASE_URL`, plus `DATABASE_URL`, `DEEPSEEK_API_KEY`, and
-`DEEPSEEK_MODEL`. It is intentionally manual because it calls the provider and
-writes traces and scores to Langfuse. The command configures and flushes an
-offline OpenTelemetry span processor; it does not add production tracing.
+Needs `DEEPSEEK_API_KEY` and `DEEPSEEK_MODEL` in `.env`. It calls the provider, so
+it is deliberately manual.
 
-The run records the dataset version, Requirements contract version, BAML/spec
-identity, model/provider, and frozen taxonomy hash. Score names are
-`schema_valid`, `provider_failure`, requirement precision/recall/F1, priority
-and alternative accuracy, `or_split_errors`, and the three regression guards.
-Aliases use production `normalizeAliasName`; unknown names retain a stable
-`unresolved:` key until taxonomy curation catches up.
+## What is where
 
-When a run contains approved rows, only those rows participate in its release
-gate. A draft-only run still shows its aggregate metrics, but never passes a
-release gate.
+- `vacancy-requirements-v2.dataset.json` — the golden set: `input`,
+  `expectedOutput`, `metadata`. `vacancy-requirements-v2.review.md` is its
+  readable GitHub view.
+- `aliases.snapshot.json` — frozen SKILL alias → canonical map, resolved through
+  production `normalizeAliasName`. The scorer reads it instead of the database, so
+  a moving taxonomy cannot silently change scores between runs; its sha is
+  recorded in every run.
+- `extraction.scorer.ts` — precision / recall / F1 over canonicalized clauses,
+  priority and alternative accuracy, `or_split_errors`, and the isTech / role /
+  seniority guards. Unknown names keep a stable `unresolved:` key.
+- `run-eval.ts` — the runner. `dataset.ts` — loading, validation, release gate.
+- `runs/<date>-<client>.{json,md,html}` — per-row scores, the aggregate table, and
+  a side-by-side HTML view (vacancy text left, missing/extra clauses and the full
+  extracted object right, worst rows first). Committed: they are the evidence
+  behind a model or prompt decision.
+
+## Two extractors
+
+`--extractor requirements-v2` (default) is `ExtractVacancyRequirementsV2`, the
+contract the labels were written against. `--extractor production` is
+`ExtractVacancy` and needs `DATABASE_URL` for its taxonomy prompt; its `anyOf`
+metrics stay at zero until `requirement-groups.md` Pass 2 adds `alternatives` to
+the production contract.
+
+## Release gate
+
+All 25 rows are `draft`, so `assertReleaseGate` does not run and a draft-only run
+never claims one — the aggregate is for comparison only. When rows are approved,
+only those rows feed both the summary and the gate. `requirement-groups.md` R7
+approves the 10 rows carrying a MUST group before Pass 2 ships.
+
+`seniority` is excluded from model comparisons: `advertisedSeniority()` is a regex
+over the title, so it is identical for any two models.
