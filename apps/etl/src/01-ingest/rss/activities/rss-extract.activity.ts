@@ -14,6 +14,7 @@ import {
   VACANCY_EXTRACTOR,
   type VacancyExtractor,
 } from "../../../02-enrich/extraction/vacancy-extractor";
+import { extractionStatus } from "../../../platform/shared/extraction-status";
 
 @Injectable()
 @Activity()
@@ -45,18 +46,22 @@ export class RssExtractActivity {
 
     if (!result.data) {
       const error = result.meta.error ?? "extraction failed";
-      // Persist usage of the failed attempt so its tokens are not lost from
-      // cost analysis, then re-throw so Temporal can retry. If a retry
-      // succeeds, this row is overwritten with the success payload — for now
-      // we accept that approximation (see plan: typed-dazzling-quail.md).
-      await this.db
-        .update(schema.rssRecords)
-        .set({
-          extractedData: { ...sidecar, _error: error },
-          extractedAt: new Date(),
-          contentFingerprint: contentFingerprint(record.title, record.description),
-        })
-        .where(eq(schema.rssRecords.id, recordId));
+      // Never downgrade a stored success to an error blob: on a re-extraction
+      // that payload is the only copy for records older than the artifact table.
+      if (extractionStatus(record.extractedAt, record.extractedData) !== "succeeded") {
+        // Persist usage of the failed attempt so its tokens are not lost from
+        // cost analysis, then re-throw so Temporal can retry. If a retry
+        // succeeds, this row is overwritten with the success payload — for now
+        // we accept that approximation (see plan: typed-dazzling-quail.md).
+        await this.db
+          .update(schema.rssRecords)
+          .set({
+            extractedData: { ...sidecar, _error: error },
+            extractedAt: new Date(),
+            contentFingerprint: contentFingerprint(record.title, record.description),
+          })
+          .where(eq(schema.rssRecords.id, recordId));
+      }
       throw new Error(error);
     }
 

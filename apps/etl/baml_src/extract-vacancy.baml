@@ -68,7 +68,7 @@ class Skills {
   required string[] @description(#"
     Must-have hard technical skills from the Requirements section.
     Languages (TypeScript, Go), frameworks (React, NestJS),
-    databases (PostgreSQL), cloud (AWS). MAX 10 entries.
+    databases (PostgreSQL), cloud (AWS). MAX 20 entries.
     Use canonical names as commonly written in the Ukrainian IT market.
 
     NEVER extract — these are not skills, whatever the posting calls them:
@@ -102,7 +102,7 @@ class Skills {
   "#)
   optional string[] @description(#"
     Nice-to-have / "would be a plus" skills. Same EXCLUDE / DEDUPLICATE
-    rules as required. MAX 5 entries.
+    rules as required. MAX 10 entries.
   "#)
 }
 
