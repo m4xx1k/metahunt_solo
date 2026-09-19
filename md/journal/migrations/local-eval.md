@@ -1,7 +1,7 @@
 # local-eval — run the extraction eval from disk, then pick a model
 
-**Branch:** `chore/local-eval`
-**Status:** planned, nothing built.
+**Branch:** `chore/local-eval` — PR #215, awaiting merge.
+**Status:** built and measured. Moves to `_done/` once #215 lands.
 **Written:** 2026-09-19.
 **Linear:** unfiled.
 **Related:** [`requirement-groups.md`](./requirement-groups.md) — Pass 2's release
@@ -19,11 +19,11 @@ hosting (a duplicate of the repo JSON), the run loop (a `for`), and score storag
 (a file). It is also why nobody runs the eval: two extra keys, a manual upload,
 and a build of two packages before a single row is scored.
 
-Two things come out of this: a runnable eval, and a model comparison —
-`deepseek/deepseek-v4.1-flash` (prod `DEEPSEEK_MODEL` is on `deepseek-v4-flash`;
-confirm which is current) against `meta/muse-spark-1.3-contributor` on OpenRouter.
+Two things come out of this: a runnable eval, and a model comparison. Production
+runs `deepseek-v4-flash` (the `.1` variant this tracker first named does not exist
+in `.env`), measured against `meta/muse-spark-1.3-contributor` on OpenRouter.
 Because labels exist, that comparison answers *which model is closer to the
-truth*, not just *what changed* — cents over 25 rows.
+truth*, not just *what changed* — the whole session cost under $0.50.
 
 ## The finished shape
 
@@ -35,15 +35,18 @@ truth*, not just *what changed* — cents over 25 rows.
 | Loaders | `eval/dataset/{load,aliases}.ts` | Dataset parsing and the snapshot, rescued from the deleted Langfuse file. |
 | Runner | `eval/runner.ts` + `eval/run-eval.ts` | The loop, and the `ts-node` CLI that wires flags to it. |
 | Reports | `eval/report/{markdown,html}.ts` | The aggregate table and the side-by-side view. |
-| Run artifacts | `eval/runs/<date>-<client>.{json,md,html}` | Per-row scores and clause diffs, markdown aggregate, side-by-side HTML. Committed — they are the evidence behind the model choice. |
-| promptfoo glue | `eval/promptfoo/{provider,score}.ts` + `promptfooconfig.yaml` | Step 3 only. ~40 lines wrapping the extractor and the scorer. |
+| Clients | `eval/extractors/clients.ts` | `DeepSeekClient`, `DeepSeekThinkingClient`, `OpenRouterMuseClient`, registered at runtime. |
+| Editor | `eval/dataset/editor.ts` | `pnpm eval:dataset` — a local page for reading and relabelling the golden set. |
+| Run artifacts | `eval/runs/<date>-<extractor>-<client>.{json,md,html}` | Per-row scores and clause diffs, markdown aggregate, side-by-side HTML. Committed — they are the evidence behind the model choice. |
 
 ```bash
-pnpm eval                             # 25 rows, no Docker, no Postgres, no build
-pnpm eval --client OpenRouterMuse     # same rows, other model
-pnpm eval --extractor production      # same rows, the 15-field production contract
-pnpm eval --refresh-aliases           # the one command that touches the database
-pnpm eval:ui                          # promptfoo view — two models side by side
+pnpm eval                                  # 25 rows, 33s, no Docker, no build
+pnpm eval --repeat 3                       # the model is not deterministic
+pnpm eval --client OpenRouterMuseClient    # same rows, other model
+pnpm eval --extractor production           # the 15-field production contract
+pnpm eval --only <row-id> --concurrency 8
+pnpm eval --refresh-aliases                # the one command that touches the database
+pnpm eval:dataset                          # edit the golden set
 ```
 
 **Two extractors, two jobs.** `--extractor` picks between them and both are needed.
@@ -62,72 +65,83 @@ the two contracts converge and the split stops mattering.
 
 ## Reports
 
-Two views, because comparing models and reading one vacancy are different jobs.
+- **`runs/<date>-<extractor>-<client>.html`**, written by every run — vacancy text
+  on the left, missing and extra clauses and the full extracted object on the right,
+  worst rows first. Answers *why is this row wrong*.
+- **`pnpm eval:dataset`** — the same split, with the labels editable. Requirements
+  edit as `must: React | Vue.js` lines; `profile` as `field: value` lines, where an
+  omitted line means unreviewed. Saving writes the JSON back through the runner's
+  own validation.
 
-- **`promptfoo view`** — row × model grid, filterable by failure. Answers *where did
-  the two models disagree*. Cramped for long input text, which is fine, that is not
-  its question.
-- **`runs/<date>-<client>.html`**, written by the runner — vacancy text on the left,
-  expected vs actual on the right, disagreements highlighted. Answers *why is this
-  row wrong*. `vacancy-requirements-v2.review.md` is the hand-made ancestor of this
-  view; the HTML replaces it and is regenerated per run. HTML rather than markdown
-  because two columns and a highlighted diff do not survive GitHub's renderer.
+The vacancy text is rendered one sentence per line because the scraped text is a
+single blob — every row carries two newlines in ~5k characters — so its paragraphs
+cannot be recovered, only invented. Display only.
 
 **What is dropped.** `identity()` — `specHash` / `taxonomyHash` / `bamlSourceHash`
 exist for the production cache (`extraction_artifacts`) and leaked into the eval
 only to fill Langfuse metadata. The eval extractor keeps `extract` and stops
 implementing `VacancyExtractor`.
 
-## Steps
+## What was built
 
-### Step 1 — the runner, no new model
-
-| # | Step | Gate |
+| # | Step | Outcome |
 |---|---|---|
-| 1 | `dataset.ts`: move `parseDatasetCase` + `assertReleaseGate` off the Langfuse file, add `loadDataset` (disk) and `loadAliases` (snapshot, `--refresh-aliases` rebuilds it from `node_aliases`). | `extraction.experiment.spec.ts` compiles against the new path. |
-| 2 | `run-eval.ts`: flags `--client`, `--extractor`, `--concurrency`, `--only <id>`, `--refresh-aliases`. Writes the run json, the markdown aggregate, and the side-by-side HTML. | `pnpm eval` scores 25 rows with Docker down. |
-| 3 | Delete `extraction.experiment.ts`; drop `@langfuse/client`, `@langfuse/otel`, `@opentelemetry/sdk-node`; `eval:requirements-v2` becomes `eval`, on `ts-node`, no build step. Rewrite `eval/README.md`. | `pnpm test:etl` green; scorer untouched. |
+| 1 | Local runner; `dataset/`, `scoring/`, `extractors/`, `report/`; Langfuse and its three dependencies dropped. | Done. `pnpm eval` scores 25 rows in 33s with Docker down. |
+| 2 | `--repeat`, because one pass carries a few points of model noise. | Done. Reports the mean plus every pass and its provider failures. |
+| 3 | `--client`, clients registered at runtime. | Done. Declaring the challenger in `clients.baml` fails `baml:identity:check` — see the traps. |
+| 4 | Model comparison, three passes each. | Done. Stay on DeepSeek. |
+| 5 | `value \| anyOf` collapsed to one shape. | Done, and it regressed first — see below. |
+| 6 | `profile` labels for production's other fields. | Partial: 22 of 25 rows, 51 values. |
+| 7 | promptfoo. | Deferred. The runner owns the loop, the storage and a side-by-side view; only the two-model grid is left to buy. |
 
-The alias snapshot is not a convenience. Taxonomy moves, the alias map feeds the
-scorer, so two runs on different days currently disagree for reasons that have
-nothing to do with the model. The snapshot's sha goes in the run file.
+## What it measured
 
-### Step 2 — cheap labels for the rest of the production contract
-
-`expectedOutput` covers 4 of production's 15 fields. Extend it with the ones that
-compare by equality — `workFormat`, `employmentType`, `englishLevel`,
-`engagementType`, `hasTestAssignment`, `hasReservation`, `companyName` — in one
-labelling pass over the 25 rows. They are visible in the opening lines of a
-posting, and the scorer gains one equality comparator, not seven.
-
-Deferred, because each needs its own comparator rather than equality:
-`locations` (city/country arrays with exonyms — the same normalization problem as
-skills), `salary` (ranges, currency, net vs gross), `experienceYears` (float, "3+"
-vs 3), `domain` (a separate taxonomy).
-
-**This step is a precondition for `requirement-groups.md` Pass 1**, not for Pass 2.
-The cap raise edits `extract-vacancy.baml`; without these labels, a side effect on
-work format or English level is invisible.
-
-### Step 3 — promptfoo and the second model
-
-| # | Step | Gate |
+| | requirements-v2 | production |
 |---|---|---|
-| 1 | ~~`OpenRouterMuseClient` in `clients.baml`~~ — **done differently.** `baml:identity:check` hashes `clients.baml` whole, so any edit there moves `BAML_PRODUCTION_SOURCE_HASH` and therefore every artifact's `spec_hash`: adding an eval-only client would re-extract ~18k postings. The clients live in `extractors/clients.ts` and are registered at runtime through `ClientRegistry`. | `pnpm baml:identity:check` unchanged. ✅ |
-| 2 | Extractor takes an `EvalClient` carrying the registry and the model name, which `readUsage` reports instead of `process.env.DEEPSEEK_MODEL`. | A row through Muse reports `client: OpenRouterMuseClient`, `model: meta/muse-spark-1.3-contributor`. ✅ |
-| 3 | Two runs per model — the spread below makes one run per model meaningless. | Muse returns schema-valid output, or stop here and stay on DeepSeek. **Blocked:** OpenRouter answers 403, the account needs its 18+ attestation. |
-| 4 | Compare, decide, record in `runs/`. | |
+| F1 | 71.2% | 57.2% |
+| recall | 72.3% | 49.9% |
+| role accuracy | 93.3% | 52.0% |
+| or_split_errors | 6.0 | 13 |
+| profile fields | — | 96.1% of 51 |
 
-promptfoo is deferred, not dropped. The runner already owns the loop, the storage
-and a side-by-side view, so the only thing left to buy is the two-model grid —
-weigh that against a `--compare` over two run files before taking the dependency.
+Production's three weak numbers are mostly structural, not quality: its contract
+has no `anyOf` at all (0 emitted against 22 in the labels), its cap of 10 + 5 is
+below what 10 of the 25 rows need, and its role list is 100 VERIFIED nodes with
+heavy overlap rather than the v2 list of 30. That is the "before" for
+`requirement-groups.md`, and it is why `--extractor production` numbers must not
+be read as extraction quality.
 
-**Compared:** F1, precision, recall, `alternativeAccuracy`, `priorityAccuracy`,
-`orSplitErrors`, `isTech` accuracy, `schemaValidRate`, tokens and cost, p50 latency.
+### Models, three passes each
 
-**Not compared:** `seniority` — `advertisedSeniority()` is a regex over the first
-500 characters, identical for any two models, and a tie there would be an
-artefact. `role` carries the `Software Engineer` fallback; read it with that in mind.
+| | F1 | or_split | per row | out tokens |
+|---|---|---|---|---|
+| DeepSeek | 68.4% | 2.7 | 1.6s | 8.9k |
+| DeepSeek + thinking | 69.8% | **0.0** | 19.9s | 153k |
+| Muse | **73.0%** | 5.7 | 45.2s | 109k |
+
+**Stay on DeepSeek.** Muse's lead is real — the pass ranges do not overlap — but
+it is twice as bad at the grouping this initiative is about, 29x slower, and a
+corpus re-extraction becomes a day instead of an hour.
+
+**Reasoning, not the model, is what stops OR clauses being split.** Same model,
+2.7 → 0.0, for 5x the cost and one row that reproducibly fails to parse. That
+belongs to `requirement-groups.md` Pass 2, not here.
+
+### The one-form contract regressed before it helped
+
+Collapsing `value | anyOf` removed the signal that a requirement is normally one
+thing, and the model began merging unrelated items into a single choice. F1 hid
+it, because a lump is a miss and an extra that cancel out.
+
+| | groups | 3+ | max | F1 |
+|---|---|---|---|---|
+| two-form | 26 | 11 | 4 | 68.4% |
+| one-form, first attempt | 41 | 18 | 6 | 67.5% |
+| one-form + explicit default | **22** | 9 | 4 | **71.2%** |
+
+The labels carry 22 choices. Stating the one-entry default in the prompt fixed
+it and cleared the original baseline. The error then inverted: `or_split_errors`
+2.7 → 6.0, the model splitting genuine choices instead of inventing them.
 
 ## The traps
 
@@ -139,9 +153,14 @@ does not, which is why the eval never goes near `CachedVacancyExtractor`. prompt
 keeps its own cache on top: `--no-cache`, always.
 
 **A single run is noisy.** Measured on the first two runs: F1 67.0% then 63.8%,
-`or_split_errors` 2 then 1, same extractor, same rows, same snapshot. The scorer is
-deterministic, so that spread is the model. Step 3 must repeat each model's run
-before reading a gap of a few points as a result.
+same extractor, same rows, same snapshot. The scorer is deterministic, so that
+spread is the model. `--repeat` exists for this; a gap of a few points between two
+single runs means nothing.
+
+**Any change to the VERIFIED node set re-extracts the whole corpus.** `identity()`
+hashes roles, domains and skills into `taxonomyHash`, which feeds `specHash`, which
+keys `extraction_artifacts`. A role cleanup therefore costs exactly what Pass 1's
+cap raise costs, so the two must ship in one pass rather than two.
 
 **The gate does not apply yet.** All 25 rows are `draft`, so `assertReleaseGate`
 will not pass and must not be asked to — for a model choice the aggregate over the
