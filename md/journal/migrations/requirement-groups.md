@@ -509,6 +509,32 @@ skills per vacancy changes `node_stats` df for every skill, which moves coverage
 and relevance for everyone. It is not code-gated — there is no "flip a switch"
 step here.
 
+#### Re-extraction depth — settled 2026-09-19
+
+**First batch target: positions first loaded on or after 2026-08-19** (roughly a
+month back, ~2.5–3k positions, under a dollar). The date is a target for how
+deep to go, not a constant anywhere in the code: **the IDF cutoff is derived in
+SQL from what has actually been re-extracted**, so the window can only ever
+describe real corpus state, never promise one that was not paid for.
+
+The steps below still read as a corpus-wide migration with a backup and a
+schedule pause around it. That framing came from an estimate of "tens of
+dollars" that the measured numbers do not support: at $0.0001 per call the whole
+canonical corpus is $1.7–4. Treat those steps as proportionate to that, not to a
+migration — the worst realistic outcome is that `FIT_STRONG_MIN` /
+`FIT_GOOD_MIN` need retuning, which is a code change against untouched data.
+
+One rule is not caution and does hold: **no taxonomy edits while a batch runs.**
+`taxonomyHash` feeds `specHash`, so verifying a single node mid-run turns every
+artifact already paid for into a cache miss. That is the only way this gets
+expensive.
+
+If the first batch behaves, there is no reason to stop at a window. A full
+re-extraction makes the corpus homogeneous and **removes the need for a windowed
+`node_stats` entirely** — the window exists only to keep a *partial*
+re-extraction internally consistent, and at this price partial is a choice, not
+a constraint.
+
 ### Pass 2 — structure requirements (alternatives / requirement_group)
 
 | # | Step | Reversible |
