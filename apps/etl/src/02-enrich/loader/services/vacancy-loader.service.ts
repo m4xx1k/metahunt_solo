@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 
 import type { ExtractedVacancy } from "../../../baml_client/types";
+import { normalizeAliasName } from "../../../platform/shared/normalize-alias";
 import type { Executor } from "../repositories/executor";
 import {
   VacancyRepository,
@@ -11,6 +12,7 @@ import {
 
 import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
+import { stampRequirementGroups } from "./requirement-groups";
 
 @Injectable()
 export class VacancyLoaderService {
@@ -57,7 +59,7 @@ export class VacancyLoaderService {
         ? await this.nodeResolver.resolve("DOMAIN", extracted.domain, tx)
         : null;
 
-      const skillLinks = await this.resolveSkillLinks(extracted, tx);
+      const skillLinks = await this.resolveSkillLinks(extracted, tx, rssRecordId);
 
       const values: VacancyUpsertValues = {
         sourceId: record.sourceId,
@@ -96,18 +98,34 @@ export class VacancyLoaderService {
   private async resolveSkillLinks(
     extracted: ExtractedVacancy,
     executor: Executor,
+    rssRecordId: string,
   ): Promise<SkillLink[]> {
     const byNode = new Map<string, SkillLink>();
+    const nodeIdByName = new Map<string, string>();
     for (const name of extracted.skills?.required ?? []) {
       const nodeId = await this.nodeResolver.resolve("SKILL", name, executor);
+      nodeIdByName.set(normalizeAliasName(name), nodeId);
       byNode.set(nodeId, { nodeId, isRequired: true });
     }
     for (const name of extracted.skills?.optional ?? []) {
       const nodeId = await this.nodeResolver.resolve("SKILL", name, executor);
+      nodeIdByName.set(normalizeAliasName(name), nodeId);
       if (!byNode.has(nodeId)) {
         byNode.set(nodeId, { nodeId, isRequired: false });
       }
     }
+
+    const groups = stampRequirementGroups(
+      byNode,
+      extracted.skills?.alternatives ?? [],
+      nodeIdByName,
+    );
+    for (const drop of groups.drops) {
+      this.logger.warn(
+        `Dropped requirement group ${drop.index} (${drop.reason}) on rss_record ${rssRecordId}`,
+      );
+    }
+
     return Array.from(byNode.values());
   }
 }

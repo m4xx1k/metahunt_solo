@@ -12,7 +12,7 @@ import { repairUniqueVacancy } from "../../dedup/unique-vacancy-rollup";
 
 import type { Executor } from "./executor";
 
-export type SkillLink = { nodeId: string; isRequired: boolean };
+export type SkillLink = { nodeId: string; isRequired: boolean; requirementGroup?: number };
 
 // `force` skips the freshness guard below. Re-extraction reloads the record
 // that is already the listing's current version, which the guard reads as
@@ -173,6 +173,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
           vacancyId,
           nodeId: link.nodeId,
           isRequired: link.isRequired,
+          requirementGroup: link.requirementGroup ?? null,
         })),
       );
     }
