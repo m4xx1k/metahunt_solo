@@ -90,17 +90,23 @@ class Skills {
 
     ARCHITECTURAL STYLES AND NAMED PRACTICES — Microservices, Event-Driven
     Architecture, Clean Architecture, DDD, CQRS, CI/CD, TDD, RAG, Prompt
-    Engineering, MLOps, ETL, Observability and the like — extract one ONLY
-    when the posting genuinely requires it AND its name appears VERBATIM in
-    the prompt's `knownSkills` list. Copy the spelling from that list
-    character for character. If the practice the posting names is not on the
-    list, DROP it: never invent, rephrase, expand or abbreviate one
-    ("event-driven design", "EDA", "Agile methodology" are all wrong — either
-    the exact listed name or nothing).
+    Engineering, MLOps, ETL, Observability and the like — extract one when the
+    posting genuinely requires it. `knownSkills` is the canonical spelling:
+    when the practice is on that list, copy it character for character, and
+    never output a variant of a listed name ("event-driven design" and "EDA"
+    are both wrong when "Event-Driven Architecture" is listed).
 
-    Any skill you output that is NOT on `knownSkills` must be a concrete
-    technology — a language, framework, library, database, cloud service or
-    tool. Never mint a new practice, methodology or architectural style.
+    When the posting requires a practice that `knownSkills` does NOT contain,
+    output it under its established market-standard English name. The bar is
+    what the thing IS, not whether the list happens to hold it: an
+    established, named technology, tool or practice that a Ukrainian IT
+    posting would name the same way. A duty, a responsibility, or a phrase
+    you composed from the posting's wording is not a skill — "Cost
+    Forecasting", "Tag Governance" and "Improving Retrieval Quality" are all
+    descriptions of work, not names of things.
+
+    A skill name is a NAME: three words at most, capitalised the way the
+    market writes it, never a sentence and never a verb phrase.
 
     Prefer concrete technologies when the MAX cap forces a choice: a practice
     only takes a slot once every named technology the posting requires is in.
@@ -184,9 +190,9 @@ class ExtractedVacancy {
     Hard technical skills ONLY. Each entry is a single skill name.
     EXCLUDE: soft skills, domain knowledge, certifications.
     Architectural styles and named practices (Microservices, CI/CD, TDD, RAG)
-    are allowed ONLY as an exact verbatim match from `knownSkills`. A skill
-    that is not on that list must be a concrete technology, never a
-    methodology.
+    are allowed. Use the `knownSkills` spelling whenever the practice is on
+    that list; otherwise use its established market-standard name. A phrase
+    composed from the posting's duties is never a skill.
   "#)
 
   experienceYears float? @description(#"
@@ -361,23 +367,27 @@ function ExtractVacancy(
         workFormat: REMOTE
         companyName: "Bolt"
 
-    Example — a listed practice IS extractable
+    Example — practices, listed and unlisted
       knownSkills contains: "Microservices, CI/CD, RAG, Kafka"
       Input: "Event-driven microservices on Kafka, CI/CD pipelines,
               building a RAG pipeline. Agile/Scrum team."
       Output:
-        skills.required: ["Microservices", "Kafka", "CI/CD", "RAG"]
-          ← each one appears verbatim in knownSkills
-          ← "Event-driven" is NOT emitted: no exact knownSkills entry here
+        skills.required: ["Microservices", "Kafka", "CI/CD", "RAG",
+                          "Event-Driven Architecture"]
+          ← the first four use the knownSkills spelling character for character
+          ← "Event-Driven Architecture" is NOT on the list, but the posting
+            requires it and it is an established named practice — emit it
+            under its market-standard name, never as "event-driven"
           ← "Agile" / "Scrum" are NOT emitted: process, never a skill
 
     Counter-example — DO NOT output:
         role: "React Developer"            ← too specific, use "Frontend Developer"
         skills.required: ["Communication"] ← soft skill, exclude
         skills.required: ["HTTP", "JSON"]  ← universal protocols, exclude
-        skills.required: ["Agile methodology"] ← invented practice, not in knownSkills
-        skills.required: ["event driven design"] ← rephrase of a listed practice;
-                                                   use the exact knownSkills name or drop it
+        skills.required: ["Agile methodology"] ← process, and a name nobody uses
+        skills.required: ["event driven design"] ← variant of a name that exists;
+                                                   use "Event-Driven Architecture"
+        skills.required: ["Improving Retrieval Quality"] ← a duty, not a skill
         skills.required: ["react.js"]      ← deduped form, use "React"
         domain: "Web Development"          ← tech stack, not a business domain
         domain: "Software Development"     ← role-as-domain, use null
