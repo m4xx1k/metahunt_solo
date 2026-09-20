@@ -199,8 +199,8 @@ reason, MET-144).
 ### R7 — golden-set approval covers only the rows with a MUST group
 
 **Chosen**, over approving the whole set or shipping ungated. The count was 10
-of 25; after R9 removed the FinOps row it is **9 of 24**, carrying 11 MUST
-groups, and it moves again when the rebalance adds rows.
+of 25; after R9 removed the FinOps row it was 9 of 24, and after the rebalance
+landed it is **16 of 29**, carrying 32 MUST groups.
 
 **Why.** Pass 2's release gate should cover exactly what Pass 2 changes. The
 other 15 golden rows judge general extraction quality (role, seniority, plain
@@ -252,6 +252,17 @@ for Security, Hardware and Data Analyst for balance.
 the 25-row set. They stay as the record of what was true then, and the first run
 after the rebalance is a **new baseline** — do not compare across the change.
 Re-baseline once, after the dataset work is finished, not after each row.
+
+**Done 2026-09-20.** The set is **29 rows**: three Automation QA rows without a
+MUST group dropped, eight added (two `Software Engineer`, and one each of
+`AI Engineer`, `Data Analyst`, `Security Engineer`, `Hardware Engineer`,
+`Frontend Engineer`, plus a DevOps posting written almost entirely in
+alternative lists). QA is 4 of 29 (13.8%) against 13.5% of the corpus, and
+**MUST groups go from 11 in 9 rows to 32 in 16 rows**, which moves the R7 gate
+from 9 rows to 16. The new baseline is F1 61.5% / precision 67.2% / recall
+58.9% / `or_split_errors` 21.3, per-pass spread 0.7 points — see the
+measurement log. `or_split_errors` tripling is the set finally exercising the
+failure Pass 2 exists to fix, not a regression.
 
 ### R10 — the `knownSkills` list is guidance, not a whitelist
 
@@ -631,10 +642,10 @@ file keeps the plan and the decisions; that one keeps the evidence.
 
 - **Before Pass 2 step 5**, run the new contract over the golden set
   (`apps/etl/src/eval/`) and compare groups against the hand-labelled `anyOf`
-  entries — 18 of them in the 24-row set, 11 of which are MUST and therefore
-  reachable (R2). Done twice already; see the measurement log.
-- **Release gate (R7):** approve only the rows carrying a MUST group — 9 of the
-  current 24 — and do it immediately before Pass 2 ships wide, because
+  entries — 32 MUST groups in the 29-row set after R9, all of them reachable
+  (R2). Done three times already; see the measurement log.
+- **Release gate (R7):** approve only the rows carrying a MUST group — 16 of the
+  current 29 — and do it immediately before Pass 2 ships wide, because
   approving narrows the summary to approved rows. The rest stay draft: they test
   the already-shipped contract, not this feature.
 - **After Pass 2 step 7**, the metric is how many Positions changed Fit tier, not
@@ -655,25 +666,35 @@ that view, so it is `CREATE OR REPLACE`. **Any future change to `position_nodes`
 no longer pins a pnpm version against `packageManager` (it had been failing on
 every branch, including `main`).
 
-**Open in PR #219, CI green, waiting on the owner.** Extraction (`SkillGroup` +
+**Merged 2026-09-20 (PR #219, `5291ceb`).** Extraction (`SkillGroup` +
 `Skills.alternatives` + three prompt examples), the loader (stamping, four drop
 reasons, members matched by alias-normalized name so a group can never mint a
 node), `reextractWorkflow`, and the eval adapter. Nothing in it changes a
 user-visible number: the field is written, no scorer reads it. `specHash` is
-`dcb8e6cc…`.
+`dcb8e6cc…`. No migration rode with it, so the deploy moved nothing. New
+postings extracted from here on carry groups; the existing corpus does not
+until it is re-extracted.
 
 **Not started.** The corpus re-extraction — the workflow has no schedule and no
-endpoint, it starts by hand. Pass 2 step 7 (switching `scoringCtes`,
+endpoint, it starts by hand. Depth is settled 2026-09-20: the **2026-08-19
+batch** (~2.5–3k positions, $0.30–0.75), not the whole corpus, so the windowed
+`node_stats` cutoff stays in play. Pass 2 step 7 (switching `scoringCtes`,
 `recommendation.service.ts` and the exclusion predicate to units) is a separate
 commit and a separate deploy, and it is the only step that moves Fit.
 
-**Spent so far:** under two cents, three golden-set runs. The corpus batch from
+**Spent so far:** about four cents, five golden-set runs. The corpus batch from
 2026-08-19 is $0.30–0.75; the whole canonical corpus is $1.7–4.
 
-**Decided but not yet built:** R9 (rebalance the golden set to the corpus; the
-FinOps row is already deleted, the set is 24 rows) and R10 (`knownSkills`
-becomes guidance rather than a whitelist). R10 moves `specHash` on its own, so
-it belongs with a re-extraction that is already being paid for.
+**R9 is done 2026-09-20.** The golden set is 29 rows with 32 MUST groups and a
+new baseline; the R7 gate is 16 rows, not 9.
+
+**Decided but not yet built:** R10 (`knownSkills` becomes guidance rather than a
+whitelist). R10 moves `specHash` on its own, and the owner decided 2026-09-20 to
+**fold it into the same re-extraction** as the groups rather than pay for a
+separate pass. That bundles two changes into one measurement — accepted against
+R1's default — so the count of distinct NEW nodes minted by the first batch is
+the tripwire that tells the two apart, and it is measured before `node_stats`
+is refreshed.
 
 **The one rule that costs money if broken:** no taxonomy edits while a batch
 runs. Verifying a single node moves `taxonomyHash` → `specHash`, and every

@@ -818,7 +818,7 @@ The main goal of this role is to help the company use data more effectively for 
 - `must` File Integrity Monitoring
 - `must` Python **OR** Bash **OR** PowerShell
 - `nice` CIS Benchmarks
-- `nice` SELinux **OR** AppArmor **OR** Gatekeeper **OR** System Integrity Protection **OR** FileVault **OR** Microsoft Defender **OR** BitLocker
+- `nice` SELinux **OR** AppArmor **OR** Gatekeeper **OR** System Integrity Protection **OR** FileVault **OR** Microsoft Defender **OR** Attack Surface Reduction **OR** BitLocker
 
 <details>
 <summary>Текст вакансії</summary>
@@ -837,7 +837,12 @@ We are looking for a hands-on Security Engineer to build and operate the control
 **Expected:** tech: `true`; role: `Hardware Engineer`; seniority: `PRINCIPAL`
 
 - `must` RF Engineering **OR** Microwave Engineering
-- `must` RF Front End **OR** Filters **OR** Amplifiers **OR** Mixers **OR** Frequency Synthesizers **OR** Down-converters **OR** SDR
+- `must` RF Front End
+- `must` Filters
+- `must` Amplifiers
+- `must` Mixers
+- `must` Frequency Synthesizers
+- `must` Down-converters **OR** SDR
 - `must` Spectrum Analyzer **OR** Vector Network Analyzer **OR** Signal Generator **OR** Oscilloscope **OR** Power Meter
 - `must` FPGA
 - `must` DSP

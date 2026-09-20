@@ -1,0 +1,3007 @@
+{
+  "startedAt": "2026-09-20T15:30:24.919Z",
+  "durationMs": 18371,
+  "extractor": "production",
+  "client": "DeepSeekClient",
+  "model": "deepseek-v4-flash",
+  "aliasSnapshotSha": "3b8a5cb4bc70255204c4ee922809cbe6cf821ac56232c06bbe3e49baa7864d3f",
+  "gated": false,
+  "summary": {
+    "evaluatedCases": 29,
+    "schemaValidRate": 1,
+    "providerFailureRate": 0,
+    "requirementsPrecision": 0.672191568399145,
+    "requirementsRecall": 0.5893687333409229,
+    "requirementsF1": 0.6149523311762318,
+    "priorityAccuracy": 0.9932079414838036,
+    "alternativeAccuracy": 0.592370010480131,
+    "orSplitErrors": 21.333333333333332,
+    "guardAccuracy": {
+      "isTech": 1,
+      "role": 0.5977011494252874,
+      "seniority": 0.9885057471264368
+    },
+    "profileChecked": 61,
+    "profileAccuracy": 0.9562841530054644
+  },
+  "passes": [
+    {
+      "evaluatedCases": 29,
+      "schemaValidRate": 1,
+      "providerFailureRate": 0,
+      "requirementsPrecision": 0.6745398056938573,
+      "requirementsRecall": 0.594499976199026,
+      "requirementsF1": 0.6190920849555469,
+      "priorityAccuracy": 0.9856321839080461,
+      "alternativeAccuracy": 0.6000555317545814,
+      "orSplitErrors": 23,
+      "guardAccuracy": {
+        "isTech": 1,
+        "role": 0.6206896551724138,
+        "seniority": 1
+      },
+      "profileChecked": 61,
+      "profileAccuracy": 0.9672131147540983
+    },
+    {
+      "evaluatedCases": 29,
+      "schemaValidRate": 1,
+      "providerFailureRate": 0,
+      "requirementsPrecision": 0.6664342857781631,
+      "requirementsRecall": 0.5941365414889489,
+      "requirementsF1": 0.6133263838820895,
+      "priorityAccuracy": 0.9971264367816093,
+      "alternativeAccuracy": 0.5958606794199833,
+      "orSplitErrors": 21,
+      "guardAccuracy": {
+        "isTech": 1,
+        "role": 0.5517241379310345,
+        "seniority": 0.9655172413793104
+      },
+      "profileChecked": 61,
+      "profileAccuracy": 0.9508196721311475
+    },
+    {
+      "evaluatedCases": 29,
+      "schemaValidRate": 1,
+      "providerFailureRate": 0,
+      "requirementsPrecision": 0.6756006137254148,
+      "requirementsRecall": 0.5794696823347938,
+      "requirementsF1": 0.612438524691059,
+      "priorityAccuracy": 0.9968652037617555,
+      "alternativeAccuracy": 0.5811938202658284,
+      "orSplitErrors": 20,
+      "guardAccuracy": {
+        "isTech": 1,
+        "role": 0.6206896551724138,
+        "seniority": 1
+      },
+      "profileChecked": 61,
+      "profileAccuracy": 0.9508196721311475
+    }
+  ],
+  "rows": [
+    {
+      "id": "1f481401-b3e8-4e44-bf75-df21cf019bf6",
+      "title": "Middle System Administrator в Levi9 Ukraine, Київ",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.7931034482758621,
+        "requirementsRecall": 0.696969696969697,
+        "requirementsF1": 0.7419354838709677,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.696969696969697,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:802.1X",
+          "must:AWS|Azure",
+          "must:Aruba",
+          "must:DHCP",
+          "must:DNS",
+          "must:Docker|Kubernetes",
+          "must:Firewalls",
+          "must:IPsec",
+          "must:Juniper",
+          "must:Linux",
+          "must:Load Balancing",
+          "must:MikroTik",
+          "must:Network Security",
+          "must:Networking",
+          "must:Proxy Servers",
+          "must:RADIUS",
+          "must:Ubiquiti",
+          "must:VLAN",
+          "must:VMware vCenter",
+          "must:Windows Server",
+          "must:unresolved:eoip",
+          "must:unresolved:hpnetworking",
+          "nice:API",
+          "nice:Chef",
+          "nice:Confluence",
+          "nice:GIT",
+          "nice:Jamf",
+          "nice:Jira",
+          "nice:Microsoft 365",
+          "nice:Puppet",
+          "nice:SVN",
+          "nice:TeamCity",
+          "nice:iOS SDK|macOS"
+        ],
+        "actualClauses": [
+          "must:802.1X",
+          "must:Active Directory",
+          "must:Aruba",
+          "must:DHCP",
+          "must:DNS",
+          "must:Firewalls",
+          "must:IPsec",
+          "must:Juniper",
+          "must:Load Balancers",
+          "must:MikroTik",
+          "must:Network Security",
+          "must:Proxy",
+          "must:RADIUS",
+          "must:Reverse Proxy",
+          "must:SCCM",
+          "must:Ubiquiti",
+          "must:VLAN",
+          "must:VMware vCenter",
+          "must:Windows Server",
+          "nice:API",
+          "nice:Chef",
+          "nice:GIT",
+          "nice:Jamf",
+          "nice:Jira",
+          "nice:Microsoft 365",
+          "nice:Puppet",
+          "nice:SVN",
+          "nice:TeamCity",
+          "nice:macOS"
+        ]
+      },
+      "actual": {
+        "role": "Systems Administrator",
+        "isTech": true,
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "MikroTik",
+            "Juniper",
+            "Aruba",
+            "Ubiquiti",
+            "VPN",
+            "IPsec",
+            "VLAN",
+            "802.1x",
+            "Radius",
+            "Firewalls",
+            "DNS",
+            "DHCP",
+            "VMware vCenter",
+            "Network Security",
+            "Load Balancers",
+            "Proxy",
+            "Reverse Proxy",
+            "Windows Server",
+            "SCCM",
+            "Active Directory"
+          ],
+          "optional": [
+            "Microsoft 365",
+            "macOS",
+            "Jamf",
+            "Puppet",
+            "Chef",
+            "API",
+            "SVN",
+            "Git",
+            "TeamCity",
+            "Jira"
+          ],
+          "alternatives": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "OFFICE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": null,
+        "engagementType": "OUTSOURCE",
+        "companyName": "Levi9 Ukraine",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9546,
+        "out": 324,
+        "cached": 9344,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1735
+      }
+    },
+    {
+      "id": "3881a497-a17f-4168-a7de-d4f34d35ac6c",
+      "title": "Junior Automation QA Engineer (JS)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.6363636363636364,
+        "requirementsRecall": 0.5833333333333334,
+        "requirementsF1": 0.6086956521739131,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.5833333333333334,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:API Test Automation",
+          "must:Cypress|Playwright|WebdriverIO",
+          "must:JavaScript",
+          "must:OOP",
+          "must:Playwright",
+          "must:QA methodologies",
+          "must:UI Test Automation",
+          "nice:CI/CD",
+          "nice:Docker",
+          "nice:Linux",
+          "nice:SQL",
+          "nice:unresolved:apiuitestintegration"
+        ],
+        "actualClauses": [
+          "must:API Testing",
+          "must:Automation QA",
+          "must:Cypress|Playwright|WebdriverIO",
+          "must:JavaScript",
+          "must:OOP",
+          "must:TypeScript",
+          "must:UI Testing",
+          "nice:CI/CD",
+          "nice:Docker",
+          "nice:Linux",
+          "nice:SQL"
+        ]
+      },
+      "actual": {
+        "role": "Automation QA Engineer",
+        "isTech": true,
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": [
+            "JavaScript",
+            "TypeScript",
+            "Playwright",
+            "Cypress",
+            "WebdriverIO",
+            "OOP",
+            "Automation QA",
+            "API Testing",
+            "UI Testing"
+          ],
+          "optional": ["Linux", "Docker", "CI/CD", "SQL"],
+          "alternatives": [
+            {
+              "anyOf": ["Cypress", "WebdriverIO", "Playwright"]
+            }
+          ]
+        },
+        "experienceYears": 0.5,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9226,
+        "out": 214,
+        "cached": 9088,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1635
+      }
+    },
+    {
+      "id": "94c194b8-0ef0-43c4-999a-879411e7bc5e",
+      "title": "Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.9230769230769231,
+        "requirementsRecall": 0.631578947368421,
+        "requirementsF1": 0.7499999999999999,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.631578947368421,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:.NET",
+          "must:Angular",
+          "must:Azure",
+          "must:CI/CD",
+          "must:Cucumber",
+          "must:DevSecOps",
+          "must:SQL",
+          "must:Secure Coding",
+          "must:TDD",
+          "must:Test Automation",
+          "must:TypeScript",
+          "must:unresolved:shiftlefttesting",
+          "nice:Agentic Systems",
+          "nice:Event-driven systems",
+          "nice:LLM",
+          "nice:MCP",
+          "nice:Machine Learning",
+          "nice:Microservices",
+          "nice:Serverless"
+        ],
+        "actualClauses": [
+          "must:.NET",
+          "must:Angular",
+          "must:Azure",
+          "must:CI/CD",
+          "must:DevSecOps",
+          "must:SQL",
+          "must:TDD",
+          "must:TypeScript",
+          "nice:Adobe Illustrator",
+          "nice:LLM",
+          "nice:MCP",
+          "nice:Microservices",
+          "nice:Serverless"
+        ]
+      },
+      "actual": {
+        "role": "Software Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            ".NET",
+            "Angular",
+            "TypeScript",
+            "SQL",
+            "TDD",
+            "CI/CD",
+            "DevSecOps",
+            "Azure"
+          ],
+          "optional": ["AI", "LLM", "MCP", "Microservices", "Serverless"],
+          "alternatives": []
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Kharkiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Lviv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Dnipro",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Odesa",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Vinnytsia",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Ivano-Frankivsk",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Khmelnytskyi",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Uzhhorod",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Cherkasy",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Chernivtsi",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "AI",
+        "engagementType": "OUTSOURCE",
+        "companyName": "EPAM",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9570,
+        "out": 393,
+        "cached": 9344,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1901
+      }
+    },
+    {
+      "id": "44f8f1d5-f52b-4407-b84d-cd84a129601f",
+      "title": "⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.8,
+        "requirementsF1": 0.888888888888889,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.8,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:C++",
+          "must:Linux",
+          "must:OOP",
+          "must:Qt",
+          "must:Server-side Development",
+          "nice:Data Visualization",
+          "nice:Distributed Systems",
+          "nice:Front-end Development",
+          "nice:Networking",
+          "nice:UI/UX Principles"
+        ],
+        "actualClauses": [
+          "must:C++",
+          "must:Linux",
+          "must:OOP",
+          "must:Qt",
+          "nice:Data Visualization",
+          "nice:Distributed Systems",
+          "nice:Networking",
+          "nice:UI/UX Principles"
+        ]
+      },
+      "actual": {
+        "role": "Software Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": ["C++", "Qt", "OOP", "Linux"],
+          "optional": [
+            "Distributed Systems",
+            "Networking",
+            "Data Visualization",
+            "UI/UX Principles"
+          ],
+          "alternatives": []
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": "FULL_TIME",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Cybersecurity",
+        "engagementType": null,
+        "companyName": "SixthSense Technology",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9365,
+        "out": 170,
+        "cached": 9216,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1391
+      }
+    },
+    {
+      "id": "97ec4fbc-6f58-4c48-aca4-983b8946a633",
+      "title": "QA Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.8571428571428571,
+        "requirementsRecall": 0.6,
+        "requirementsF1": 0.7058823529411764,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.6,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 0,
+          "correct": 0,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:CI/CD",
+          "must:Cursor",
+          "must:Cypress|Playwright",
+          "must:Defect Tracking",
+          "must:Exploratory Testing",
+          "must:Manual Testing",
+          "must:TypeScript",
+          "must:unresolved:testspecifications",
+          "nice:Agile",
+          "nice:Scrum"
+        ],
+        "actualClauses": [
+          "must:CI/CD",
+          "must:Cypress|Playwright",
+          "must:Manual Testing",
+          "must:TypeScript",
+          "nice:Agile",
+          "nice:German",
+          "nice:Scrum"
+        ]
+      },
+      "actual": {
+        "role": "QA Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": ["TypeScript", "Playwright", "Cypress", "CI/CD", "Manual Testing"],
+          "optional": ["German", "Agile", "Scrum"],
+          "alternatives": [
+            {
+              "anyOf": ["Playwright", "Cypress"]
+            }
+          ]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9083,
+        "out": 175,
+        "cached": 8832,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1353
+      }
+    },
+    {
+      "id": "ac76929d-692e-4458-bc93-07ecc1be906a",
+      "title": "Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.5454545454545454,
+        "requirementsRecall": 0.375,
+        "requirementsF1": 0.4444444444444444,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.375,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:API Testing",
+          "must:Azure DevOps",
+          "must:Java",
+          "must:JavaScript|TypeScript",
+          "must:Playwright",
+          "must:REST Assured",
+          "must:Relational Databases",
+          "must:unresolved:aibasedtesting",
+          "nice:Data Profiling",
+          "nice:Data Validation",
+          "nice:Data mapping",
+          "nice:Docker",
+          "nice:IICS|Informatica PowerCenter",
+          "nice:Kubernetes",
+          "nice:Performance Testing",
+          "nice:unresolved:etlscheduling"
+        ],
+        "actualClauses": [
+          "must:Azure DevOps",
+          "must:Java",
+          "must:JavaScript",
+          "must:Playwright",
+          "must:REST Assured",
+          "must:SQL",
+          "must:TypeScript",
+          "nice:Docker",
+          "nice:ETL",
+          "nice:Informatica PowerCenter",
+          "nice:Kubernetes"
+        ]
+      },
+      "actual": {
+        "role": "Automation QA Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "Playwright",
+            "REST Assured",
+            "TypeScript",
+            "JavaScript",
+            "Java",
+            "Azure DevOps",
+            "SQL"
+          ],
+          "optional": ["Docker", "Kubernetes", "Informatica PowerCenter", "ETL"],
+          "alternatives": []
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [
+          {
+            "city": "Lviv",
+            "country": "Ukraine"
+          }
+        ],
+        "domain": "HealthTech",
+        "engagementType": null,
+        "companyName": "Binariks",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9433,
+        "out": 205,
+        "cached": 9216,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1393
+      }
+    },
+    {
+      "id": "c4ac496c-7f80-4ec0-86ac-85ee2742ace9",
+      "title": "Python Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.42857142857142855,
+        "requirementsRecall": 0.5,
+        "requirementsF1": 0.4615384615384615,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.5,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:API Design",
+          "must:Async Programming",
+          "must:FastAPI",
+          "must:Pydantic",
+          "must:Python",
+          "nice:Redis|SQLAlchemy|unresolved:asyncdatabasedrivers|unresolved:backgroundtaskqueues|unresolved:containerizeddeployments"
+        ],
+        "actualClauses": [
+          "must:Asynchronous Programming",
+          "must:FastAPI",
+          "must:Pydantic",
+          "must:Python",
+          "nice:Docker",
+          "nice:Redis",
+          "nice:SQLAlchemy"
+        ]
+      },
+      "actual": {
+        "role": "Python Developer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": ["Python", "FastAPI", "Pydantic", "Asynchronous Programming"],
+          "optional": ["SQLAlchemy", "Redis", "Docker"],
+          "alternatives": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9066,
+        "out": 156,
+        "cached": 8832,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1632
+      }
+    },
+    {
+      "id": "95407129-4421-4ebb-a701-1429592d6a90",
+      "title": "MLOps Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.8333333333333334,
+        "requirementsRecall": 0.625,
+        "requirementsF1": 0.7142857142857143,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.625,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS",
+          "must:Azure",
+          "must:CI/CD",
+          "must:Docker",
+          "must:Google Cloud",
+          "must:Kubernetes",
+          "must:MLOps",
+          "must:Python"
+        ],
+        "actualClauses": [
+          "must:AWS|Azure|Google Cloud",
+          "must:CI/CD",
+          "must:Docker",
+          "must:Kubernetes",
+          "must:MLOps",
+          "must:Python"
+        ]
+      },
+      "actual": {
+        "role": "Machine Learning Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["MLOps", "AWS", "GCP", "Azure", "Kubernetes", "Docker", "CI/CD", "Python"],
+          "optional": [],
+          "alternatives": [
+            {
+              "anyOf": ["AWS", "GCP", "Azure"]
+            }
+          ]
+        },
+        "experienceYears": 7,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "FREELANCE",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9083,
+        "out": 195,
+        "cached": 8832,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1770
+      }
+    },
+    {
+      "id": "4950053b-d757-4b4d-9828-3ff51f4509fb",
+      "title": "Frontend Engineer (JavaScript/TypeScript)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.75,
+        "requirementsF1": 0.8571428571428571,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.75,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Angular|React|Vue.js",
+          "must:JavaScript",
+          "must:TypeScript",
+          "must:Web Development"
+        ],
+        "actualClauses": ["must:Angular|React|Vue.js", "must:JavaScript", "must:TypeScript"]
+      },
+      "actual": {
+        "role": "Frontend Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["JavaScript", "TypeScript", "React", "Vue.js", "Angular"],
+          "optional": [],
+          "alternatives": [
+            {
+              "anyOf": ["React", "Vue.js", "Angular"]
+            }
+          ]
+        },
+        "experienceYears": 10,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": "FREELANCE",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9075,
+        "out": 179,
+        "cached": 8832,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1352
+      }
+    },
+    {
+      "id": "d649c71a-7f2a-42dc-9af2-2311bc9a0d5f",
+      "title": "Data Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.4,
+        "requirementsRecall": 0.3333333333333333,
+        "requirementsF1": 0.3636363636363636,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.3333333333333333,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Data Engineering",
+          "must:Data Pipelines",
+          "must:Python",
+          "nice:Cloud Data Platforms",
+          "nice:ELT|ETL",
+          "nice:unresolved:moderndatastack"
+        ],
+        "actualClauses": [
+          "must:Data Pipelines",
+          "must:Python",
+          "nice:Cloud",
+          "nice:ELT",
+          "nice:ETL"
+        ]
+      },
+      "actual": {
+        "role": "Data Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": ["Python", "Data Pipelines"],
+          "optional": ["ETL", "ELT", "Cloud"],
+          "alternatives": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "SaaS",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9097,
+        "out": 154,
+        "cached": 8960,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1509
+      }
+    },
+    {
+      "id": "b2d7b7d4-e51b-46cd-bf08-2cecee9900a7",
+      "title": "Senior Data Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.6666666666666666,
+        "requirementsRecall": 0.5,
+        "requirementsF1": 0.5714285714285715,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.5,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS",
+          "must:Azure",
+          "must:Data Engineering",
+          "must:Data Lakes",
+          "must:Data Modeling",
+          "must:Data Quality",
+          "must:Data Warehousing",
+          "must:ELT|ETL",
+          "must:Lakehouse Architecture",
+          "must:Performance Optimization",
+          "must:SQL",
+          "must:unresolved:relationaldatabasedesign"
+        ],
+        "actualClauses": [
+          "must:AWS",
+          "must:Azure",
+          "must:Data Lake",
+          "must:Data Modeling",
+          "must:Data Warehousing",
+          "must:ELT",
+          "must:ETL",
+          "must:Performance Optimization",
+          "must:SQL"
+        ]
+      },
+      "actual": {
+        "role": "Data Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "ETL",
+            "ELT",
+            "AWS",
+            "Azure",
+            "SQL",
+            "Data Warehousing",
+            "Data Lake",
+            "Data Modeling",
+            "Performance Optimization"
+          ],
+          "optional": [],
+          "alternatives": []
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": "OUTSTAFF",
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9074,
+        "out": 178,
+        "cached": 8832,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1472
+      }
+    },
+    {
+      "id": "32e7e8af-290a-463a-a612-747282522816",
+      "title": "Senior DevOps Engineer (Java)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.45454545454545453,
+        "requirementsRecall": 0.7142857142857143,
+        "requirementsF1": 0.5555555555555556,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.7142857142857143,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 4,
+          "correct": 4,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS",
+          "must:CI/CD",
+          "must:Cloud Infrastructure",
+          "must:Deployment Automation",
+          "must:Java",
+          "must:Spring Boot",
+          "must:Terraform"
+        ],
+        "actualClauses": [
+          "must:AWS",
+          "must:AWS EC2",
+          "must:AWS ECS",
+          "must:AWS Lambda",
+          "must:AWS RDS",
+          "must:AWS S3",
+          "must:CI/CD",
+          "must:CloudFront",
+          "must:Java",
+          "must:Spring Boot",
+          "must:Terraform"
+        ]
+      },
+      "actual": {
+        "role": "DevOps Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "AWS",
+            "AWS EC2",
+            "AWS RDS",
+            "AWS S3",
+            "AWS ECS",
+            "AWS Lambda",
+            "CloudFront",
+            "Terraform",
+            "Java",
+            "Spring Boot",
+            "CI/CD"
+          ],
+          "optional": [],
+          "alternatives": []
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": "FULL_TIME",
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": "OUTSTAFF",
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9100,
+        "out": 192,
+        "cached": 8960,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1269
+      }
+    },
+    {
+      "id": "bc2deda3-7698-40c3-9a1c-edea450e62cb",
+      "title": "Senior Full-Stack (Node + React) Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.9333333333333333,
+        "requirementsRecall": 0.7368421052631579,
+        "requirementsF1": 0.8235294117647058,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.7368421052631579,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:BullMQ",
+          "must:CI/CD",
+          "must:Cloud Infrastructure",
+          "must:Docker",
+          "must:Material UI",
+          "must:MySQL",
+          "must:NestJS",
+          "must:Nginx",
+          "must:React",
+          "must:React-Admin",
+          "must:Redis",
+          "must:TypeORM",
+          "must:TypeScript",
+          "must:unresolved:restapiintegration",
+          "nice:Apple Business Manager",
+          "nice:Automated Device Enrollment",
+          "nice:FileVault",
+          "nice:MDM",
+          "nice:unresolved:activationlock"
+        ],
+        "actualClauses": [
+          "must:BullMQ",
+          "must:CI/CD",
+          "must:Docker",
+          "must:Material UI",
+          "must:MySQL",
+          "must:NestJS",
+          "must:Nginx",
+          "must:REST API",
+          "must:React",
+          "must:React-Admin",
+          "must:Redis",
+          "must:TypeORM",
+          "must:TypeScript",
+          "nice:Apple Business Manager",
+          "nice:MDM"
+        ]
+      },
+      "actual": {
+        "role": "Full Stack Developer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "TypeScript",
+            "NestJS",
+            "TypeORM",
+            "MySQL",
+            "BullMQ",
+            "Redis",
+            "REST API",
+            "Docker",
+            "Nginx",
+            "CI/CD",
+            "React",
+            "React Admin",
+            "MUI"
+          ],
+          "optional": ["MDM", "Apple Business Manager"],
+          "alternatives": []
+        },
+        "experienceYears": 6,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "SaaS",
+        "engagementType": "PRODUCT",
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9379,
+        "out": 204,
+        "cached": 9216,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1404
+      }
+    },
+    {
+      "id": "c595d814-5ed1-48b5-9686-6d0a953c598d",
+      "title": "Python Developer (Django)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.7058823529411765,
+        "requirementsF1": 0.8275862068965517,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.7058823529411765,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS",
+          "must:CI/CD",
+          "must:Django",
+          "must:Docker",
+          "must:Error Handling",
+          "must:GIT",
+          "must:Linux",
+          "must:Logging",
+          "must:OOP",
+          "must:PostgreSQL",
+          "must:Python",
+          "must:REST API",
+          "must:System Reliability",
+          "must:asyncio",
+          "must:multiprocessing",
+          "must:unresolved:backendservices",
+          "must:unresolved:thirdpartyapiintegration"
+        ],
+        "actualClauses": [
+          "must:AWS",
+          "must:CI/CD",
+          "must:Django",
+          "must:Docker",
+          "must:GIT",
+          "must:Linux",
+          "must:OOP",
+          "must:PostgreSQL",
+          "must:Python",
+          "must:REST API",
+          "must:asyncio",
+          "must:multiprocessing"
+        ]
+      },
+      "actual": {
+        "role": "Python Developer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Python",
+            "Django",
+            "REST API",
+            "PostgreSQL",
+            "OOP",
+            "asyncio",
+            "multiprocessing",
+            "Git",
+            "Linux",
+            "Docker",
+            "Docker Compose",
+            "AWS",
+            "CI/CD"
+          ],
+          "optional": [],
+          "alternatives": []
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9285,
+        "out": 190,
+        "cached": 9088,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1154
+      }
+    },
+    {
+      "id": "700f21ca-52cc-40cc-ae4f-2ae153b74fab",
+      "title": "Node.js Developer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.7058823529411765,
+        "requirementsF1": 0.8275862068965517,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.7058823529411765,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS",
+          "must:Async Programming",
+          "must:CI/CD",
+          "must:Docker",
+          "must:Error Handling",
+          "must:Express.js",
+          "must:GIT",
+          "must:GraphQL",
+          "must:Logging",
+          "must:Microservices",
+          "must:NestJS",
+          "must:Node.js",
+          "must:PostgreSQL",
+          "must:REST API",
+          "must:System Reliability",
+          "must:TypeScript",
+          "must:unresolved:thirdpartyapiintegration"
+        ],
+        "actualClauses": [
+          "must:AWS",
+          "must:CI/CD",
+          "must:Docker",
+          "must:Express.js",
+          "must:GIT",
+          "must:GraphQL",
+          "must:Microservices",
+          "must:NestJS",
+          "must:Node.js",
+          "must:PostgreSQL",
+          "must:REST API",
+          "must:TypeScript"
+        ]
+      },
+      "actual": {
+        "role": "Backend Developer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Node.js",
+            "REST API",
+            "Express.js",
+            "NestJS",
+            "TypeScript",
+            "PostgreSQL",
+            "GraphQL",
+            "Microservices",
+            "Git",
+            "Docker",
+            "Docker Compose",
+            "AWS",
+            "CI/CD"
+          ],
+          "optional": [],
+          "alternatives": []
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9307,
+        "out": 192,
+        "cached": 9088,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1382
+      }
+    },
+    {
+      "id": "1b5c33e8-9ffb-461e-81d5-8cd987a71a46",
+      "title": "Backend Developer (Node.js)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.6470588235294118,
+        "requirementsF1": 0.7857142857142858,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.6470588235294118,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS",
+          "must:Database Design",
+          "must:Database Migrations",
+          "must:Docker",
+          "must:Kubernetes",
+          "must:Microservices",
+          "must:NestJS",
+          "must:NoSQL",
+          "must:Node.js",
+          "must:SQL",
+          "must:unresolved:databaseindexing",
+          "must:unresolved:paymentsystemintegration",
+          "must:unresolved:sqloptimization",
+          "nice:ClickHouse",
+          "nice:Go",
+          "nice:Test Automation",
+          "nice:Unit Testing"
+        ],
+        "actualClauses": [
+          "must:AWS",
+          "must:Docker",
+          "must:Kubernetes",
+          "must:Microservices",
+          "must:NestJS",
+          "must:NoSQL",
+          "must:Node.js",
+          "must:SQL",
+          "nice:ClickHouse",
+          "nice:Go",
+          "nice:Unit Testing"
+        ]
+      },
+      "actual": {
+        "role": "Backend Developer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Node.js",
+            "NestJS",
+            "SQL",
+            "NoSQL",
+            "Docker",
+            "Kubernetes",
+            "AWS",
+            "Microservices"
+          ],
+          "optional": ["Go", "Unit Testing", "ClickHouse"],
+          "alternatives": []
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "iGaming",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9395,
+        "out": 173,
+        "cached": 9216,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1536
+      }
+    },
+    {
+      "id": "365476ce-7843-49a5-9863-724c78abd568",
+      "title": "Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.6363636363636364,
+        "requirementsRecall": 0.4666666666666667,
+        "requirementsF1": 0.5384615384615385,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.4666666666666667,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 4,
+          "correct": 3,
+          "wrong": [
+            {
+              "field": "employmentType",
+              "expected": "PART_TIME",
+              "actual": "CONTRACT"
+            }
+          ]
+        },
+        "expectedClauses": [
+          "must:PHP",
+          "must:Shopware",
+          "must:Symfony",
+          "must:Twig",
+          "must:raw:mariadb|raw:mysql",
+          "must:unresolved:restapiintegration",
+          "must:unresolved:shopwareadminextensions",
+          "must:unresolved:shopwarearchitecture",
+          "must:unresolved:shopwaredal",
+          "must:unresolved:shopwarepluginsystem",
+          "must:unresolved:shopwarestorefrontextensions",
+          "nice:Docker",
+          "nice:GIT",
+          "nice:JavaScript|TypeScript",
+          "nice:Vue.js"
+        ],
+        "actualClauses": [
+          "must:MySQL",
+          "must:PHP",
+          "must:REST API",
+          "must:Shopware",
+          "must:Symfony",
+          "must:Twig",
+          "nice:Docker",
+          "nice:GIT",
+          "nice:JavaScript",
+          "nice:TypeScript",
+          "nice:Vue.js"
+        ]
+      },
+      "actual": {
+        "role": "Full Stack Developer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": ["Shopware", "PHP", "Symfony", "MySQL", "MariaDB", "Twig", "REST API"],
+          "optional": ["JavaScript", "TypeScript", "Vue.js", "Docker", "Git"],
+          "alternatives": []
+        },
+        "experienceYears": 3,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": "CONTRACT",
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Ecommerce",
+        "engagementType": "OUTSOURCE",
+        "companyName": "IT Service Ukraine",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9120,
+        "out": 184,
+        "cached": 8960,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1413
+      }
+    },
+    {
+      "id": "3f08d0da-1d87-4d8f-a1bf-17db9a324e86",
+      "title": "Middle DevOps",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.875,
+        "requirementsRecall": 0.6363636363636364,
+        "requirementsF1": 0.7368421052631579,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.6363636363636364,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Active Directory",
+          "must:Firewalls",
+          "must:Kubernetes",
+          "must:Network Security",
+          "must:Networking",
+          "must:Terraform",
+          "must:Windows Server",
+          "must:unresolved:cloudpeering",
+          "must:unresolved:publiccloudinfrastructure",
+          "nice:Google Cloud",
+          "nice:Tencent Cloud"
+        ],
+        "actualClauses": [
+          "must:Active Directory",
+          "must:Firewalls",
+          "must:Kubernetes",
+          "must:Microsoft Windows Server",
+          "must:Network Security",
+          "must:Terraform",
+          "nice:Google Cloud",
+          "nice:Tencent Cloud"
+        ]
+      },
+      "actual": {
+        "role": "DevOps Engineer",
+        "isTech": true,
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "Terraform",
+            "Kubernetes",
+            "Microsoft Windows Server",
+            "Active Directory",
+            "Firewalls",
+            "VPN"
+          ],
+          "optional": ["GCP", "Tencent Cloud"],
+          "alternatives": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9071,
+        "out": 167,
+        "cached": 8832,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1214
+      }
+    },
+    {
+      "id": "2eb4a20a-ebb0-4210-86aa-e6250891237d",
+      "title": "Linux embedded",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.6363636363636364,
+        "requirementsRecall": 0.3888888888888889,
+        "requirementsF1": 0.4827586206896552,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.3888888888888889,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 0,
+          "correct": 0,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Cryptography",
+          "must:Embedded Systems",
+          "must:GIT",
+          "must:Information Security",
+          "must:Python",
+          "must:unresolved:linuxunixadministration",
+          "nice:Autotools",
+          "nice:Build Systems",
+          "nice:CMake",
+          "nice:Device Drivers",
+          "nice:Device Tree",
+          "nice:Linux kernel",
+          "nice:U-Boot",
+          "nice:initramfs",
+          "nice:pkg-config",
+          "nice:systemd",
+          "nice:unresolved:crosscompilationtoolchains",
+          "nice:unresolved:linuxbootprocess"
+        ],
+        "actualClauses": [
+          "must:Arduino",
+          "must:Cryptography",
+          "must:GIT",
+          "must:Linux",
+          "must:Python",
+          "must:Raspberry Pi",
+          "nice:CMake",
+          "nice:Device Tree",
+          "nice:Embedded Linux",
+          "nice:Linux kernel",
+          "nice:U-Boot"
+        ]
+      },
+      "actual": {
+        "role": "Embedded Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": ["Python", "Arduino", "Raspberry Pi", "Linux", "Cryptography", "Git"],
+          "optional": ["U-Boot", "Linux kernel", "Device Tree", "CMake", "Embedded Linux"],
+          "alternatives": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9201,
+        "out": 171,
+        "cached": 8960,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1336
+      }
+    },
+    {
+      "id": "fa303161-eab2-4375-956d-faf5e328b4e0",
+      "title": "Embedded / UAV Software Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.75,
+        "requirementsRecall": 0.6,
+        "requirementsF1": 0.6666666666666665,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.6,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 0,
+          "correct": 0,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:ArduPilot|PX4",
+          "must:C|C++",
+          "must:GIT",
+          "must:Log Analysis",
+          "must:Lua",
+          "must:MAVLink",
+          "must:RTOS",
+          "must:unresolved:flightcontrollerarchitecture",
+          "must:unresolved:linuxunixadministration",
+          "nice:Arduino",
+          "nice:Cryptography",
+          "nice:EKF",
+          "nice:Information Security",
+          "nice:PID controllers",
+          "nice:Python",
+          "nice:ROS",
+          "nice:Raspberry Pi",
+          "nice:UAV",
+          "nice:UAV piloting",
+          "nice:unresolved:notchfilters"
+        ],
+        "actualClauses": [
+          "must:ArduPilot|PX4",
+          "must:C",
+          "must:C++",
+          "must:GIT",
+          "must:Linux",
+          "must:Lua",
+          "must:MAVLink",
+          "must:RTOS",
+          "nice:Arduino",
+          "nice:Cryptography",
+          "nice:EKF",
+          "nice:PID",
+          "nice:Python",
+          "nice:ROS",
+          "nice:Raspberry Pi",
+          "nice:UAV"
+        ]
+      },
+      "actual": {
+        "role": "Embedded Software Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": [
+            "C",
+            "C++",
+            "Lua",
+            "ArduPilot",
+            "PX4",
+            "RTOS",
+            "MAVLink",
+            "Linux",
+            "UNIX",
+            "Git"
+          ],
+          "optional": [
+            "UAV",
+            "PID",
+            "EKF",
+            "ROS",
+            "Python",
+            "Arduino",
+            "Raspberry Pi",
+            "Cryptography"
+          ],
+          "alternatives": [
+            {
+              "anyOf": ["ArduPilot", "PX4"]
+            }
+          ]
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9334,
+        "out": 215,
+        "cached": 9088,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1404
+      }
+    },
+    {
+      "id": "ef22000b-3d54-4916-8151-5489fdddcb2f",
+      "title": "Junior QA Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.5555555555555556,
+        "requirementsRecall": 0.4166666666666667,
+        "requirementsF1": 0.4761904761904762,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.4166666666666667,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 2,
+          "correct": 2,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:API Testing",
+          "must:Confluence",
+          "must:Databases",
+          "must:JMeter",
+          "must:Jira",
+          "must:Load Testing",
+          "must:Manual Testing",
+          "must:Postman",
+          "must:SQL",
+          "must:Software Testing",
+          "must:Test Automation",
+          "must:unresolved:creatiocrm"
+        ],
+        "actualClauses": [
+          "must:1C",
+          "must:API",
+          "must:Confluence",
+          "must:Creatio",
+          "must:JMeter",
+          "must:Jira",
+          "must:Microsoft Excel",
+          "must:Postman",
+          "must:SQL"
+        ]
+      },
+      "actual": {
+        "role": "Manual QA Engineer",
+        "isTech": true,
+        "seniority": "JUNIOR",
+        "skills": {
+          "required": [
+            "SQL",
+            "API",
+            "Postman",
+            "Jira",
+            "Confluence",
+            "JMeter",
+            "Creatio",
+            "1C",
+            "Microsoft Excel"
+          ],
+          "optional": [],
+          "alternatives": []
+        },
+        "experienceYears": null,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": "Consimple",
+        "hasTestAssignment": true,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9333,
+        "out": 168,
+        "cached": 9088,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1211
+      }
+    },
+    {
+      "id": "c889ffae-55d8-40cc-86d8-bb3b9c308d79",
+      "title": "DevOps Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.6,
+        "requirementsRecall": 0.631578947368421,
+        "requirementsF1": 0.6153846153846154,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.631578947368421,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 2,
+          "correct": 2,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AWS EKS|OpenShift|RKE2|k3s",
+          "must:ArgoCD|FluxCD",
+          "must:Cosign|Sigstore",
+          "must:GitHub Actions|GitLab CI",
+          "must:GitOps",
+          "must:HashiCorp Vault|SOPs",
+          "must:Helm",
+          "must:Kubernetes",
+          "must:Kustomize",
+          "must:Pulumi|Terraform",
+          "must:RBAC",
+          "must:SBOM",
+          "must:Zarf",
+          "must:mTLS",
+          "nice:GDPR",
+          "nice:Gatekeeper|Open Policy Agent",
+          "nice:Go|Python",
+          "nice:Hetzner|OVHcloud",
+          "nice:Istio"
+        ],
+        "actualClauses": [
+          "must:AWS EKS|OpenShift|RKE2|k3s",
+          "must:ArgoCD|FluxCD",
+          "must:CI/CD",
+          "must:GitHub Actions|GitLab CI",
+          "must:HashiCorp Vault",
+          "must:Helm",
+          "must:Kubernetes",
+          "must:Kustomize",
+          "must:OCI",
+          "must:Pulumi|Terraform",
+          "must:RBAC",
+          "must:UDS",
+          "must:Zarf",
+          "must:mTLS",
+          "nice:GDPR",
+          "nice:Go",
+          "nice:Hetzner",
+          "nice:Istio",
+          "nice:OPA",
+          "nice:Python"
+        ]
+      },
+      "actual": {
+        "role": "DevOps Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": [
+            "Zarf",
+            "UDS",
+            "Kubernetes",
+            "K3s",
+            "RKE2",
+            "AWS EKS",
+            "OpenShift",
+            "FluxCD",
+            "ArgoCD",
+            "CI/CD",
+            "GitHub Actions",
+            "GitLab CI",
+            "Terraform",
+            "Pulumi",
+            "Helm",
+            "Kustomize",
+            "OCI",
+            "mTLS",
+            "RBAC",
+            "HashiCorp Vault"
+          ],
+          "optional": ["GDPR", "OPA", "Istio", "Hetzner", "Go", "Python"],
+          "alternatives": [
+            {
+              "anyOf": ["K3s", "RKE2", "AWS EKS", "OpenShift"]
+            },
+            {
+              "anyOf": ["FluxCD", "ArgoCD"]
+            },
+            {
+              "anyOf": ["GitHub Actions", "GitLab CI"]
+            },
+            {
+              "anyOf": ["Terraform", "Pulumi"]
+            },
+            {
+              "anyOf": ["HashiCorp Vault"]
+            }
+          ]
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": null,
+        "companyName": "Edge Solutions Lab",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9725,
+        "out": 376,
+        "cached": 9472,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1998
+      }
+    },
+    {
+      "id": "c0b4333e-c7af-44ce-aa04-616a686f6c94",
+      "title": "Middle Software Engineer",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.625,
+        "requirementsRecall": 0.9090909090909091,
+        "requirementsF1": 0.7407407407407406,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.9090909090909091,
+        "orSplitErrors": 0,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 3,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Asynchronous Programming|Multithreading|multiprocessing",
+          "must:Docker",
+          "must:GIT",
+          "must:GitHub Actions",
+          "must:Linux",
+          "must:PyTest",
+          "must:Python",
+          "nice:C++",
+          "nice:HDF5",
+          "nice:MAVLink",
+          "nice:YAML"
+        ],
+        "actualClauses": [
+          "must:CI/CD",
+          "must:Docker",
+          "must:GIT",
+          "must:GitHub Actions",
+          "must:Linux",
+          "must:Multithreading",
+          "must:PyTest",
+          "must:Python",
+          "must:asyncio",
+          "must:multiprocessing",
+          "nice:C++",
+          "nice:Embedded Systems",
+          "nice:HDF5",
+          "nice:MAVLink",
+          "nice:SITL",
+          "nice:YAML"
+        ]
+      },
+      "actual": {
+        "role": "Software Engineer",
+        "isTech": true,
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "Python",
+            "Multithreading",
+            "multiprocessing",
+            "asyncio",
+            "Linux",
+            "Git",
+            "PyTest",
+            "Docker",
+            "GitHub Actions",
+            "CI/CD"
+          ],
+          "optional": ["YAML", "MAVLink", "SITL", "HDF5", "C++", "Embedded Systems"],
+          "alternatives": []
+        },
+        "experienceYears": 1,
+        "salary": null,
+        "englishLevel": "UPPER_INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": "DroneOps",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "usage": {
+        "in": 9619,
+        "out": 212,
+        "cached": 9472,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1791
+      }
+    },
+    {
+      "id": "1e5289f6-e2a6-4e59-9c04-e2afd8166838",
+      "title": "Senior Software Engineer (MFC , C++ , Fortran)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.4,
+        "requirementsRecall": 0.5,
+        "requirementsF1": 0.4444444444444445,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.5,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:C++",
+          "must:MFC",
+          "must:Microsoft SQL Server|Oracle Database",
+          "must:OOP",
+          "nice:.NET|Angular|Java|Node.js|Python",
+          "nice:Data Visualization",
+          "nice:Fortran",
+          "nice:IoT"
+        ],
+        "actualClauses": [
+          "must:C++",
+          "must:MFC",
+          "must:Microsoft SQL Server|Oracle",
+          "must:OOP",
+          "nice:.NET",
+          "nice:Angular",
+          "nice:Fortran",
+          "nice:Java",
+          "nice:Node.js",
+          "nice:Python"
+        ]
+      },
+      "actual": {
+        "role": "Software Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": ["MFC", "C++", "Microsoft SQL Server", "Oracle", "OOP"],
+          "optional": ["Fortran", ".NET", "Python", "Node.js", "Angular", "Java"],
+          "alternatives": [
+            {
+              "anyOf": ["Microsoft SQL Server", "Oracle"]
+            }
+          ]
+        },
+        "experienceYears": 10,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "Oil & Gas",
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9442,
+        "out": 186,
+        "cached": 9216,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1326
+      }
+    },
+    {
+      "id": "373d1fbb-8670-418f-b78a-cdc600fcf7b1",
+      "title": "Senior AI Engineer (LLM, RAG, Agentic AI)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.3448275862068966,
+        "requirementsRecall": 0.5,
+        "requirementsF1": 0.40816326530612246,
+        "priorityAccuracy": 0.9090909090909091,
+        "alternativeAccuracy": 0.55,
+        "orSplitErrors": 3,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 2,
+          "correct": 2,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:AI Agents",
+          "must:AWS|Azure|Google Cloud",
+          "must:Distributed Systems",
+          "must:Docker",
+          "must:Embeddings",
+          "must:Haystack|LangChain|LangGraph|LlamaIndex|Semantic Kernel",
+          "must:Hybrid Search|Semantic Search",
+          "must:LLM",
+          "must:Microservices",
+          "must:Python",
+          "must:RAG",
+          "must:REST API",
+          "must:Vector Databases",
+          "nice:AutoGen|CrewAI|LangGraph",
+          "nice:Claude Code|Cursor|GitHub Copilot",
+          "nice:DeepEval|LangSmith|MLflow|RAGAS|Weights & Biases",
+          "nice:Fine-tuning|LoRa|PEFT",
+          "nice:Kubernetes",
+          "nice:LLMOps|MLOps",
+          "nice:Speech-to-Text|Text-to-Speech"
+        ],
+        "actualClauses": [
+          "must:AI Agents",
+          "must:API",
+          "must:AWS|Azure|Google Cloud",
+          "must:Docker",
+          "must:Embeddings",
+          "must:Kubernetes",
+          "must:LLM",
+          "must:LangChain|LangGraph|LlamaIndex|Semantic Kernel",
+          "must:Microservices",
+          "must:Python",
+          "must:RAG",
+          "must:REST API",
+          "must:Semantic Search",
+          "must:Software Architecture",
+          "must:Vector Databases",
+          "nice:AutoGen",
+          "nice:Claude Code",
+          "nice:CrewAI",
+          "nice:Cursor",
+          "nice:Fine-tuning",
+          "nice:GitHub Copilot",
+          "nice:LLMOps",
+          "nice:LangSmith",
+          "nice:LoRa",
+          "nice:MLOps",
+          "nice:MLflow",
+          "nice:PEFT",
+          "nice:TTS",
+          "nice:Weights & Biases"
+        ]
+      },
+      "actual": {
+        "role": "AI Engineer",
+        "isTech": true,
+        "seniority": "SENIOR",
+        "skills": {
+          "required": [
+            "Python",
+            "LLM",
+            "RAG",
+            "AI Agents",
+            "Embeddings",
+            "Vector Databases",
+            "Semantic Search",
+            "LangChain",
+            "LangGraph",
+            "LlamaIndex",
+            "Semantic Kernel",
+            "API",
+            "AWS",
+            "Azure",
+            "Google Cloud",
+            "Docker",
+            "Kubernetes",
+            "REST API",
+            "Microservices",
+            "Software Architecture"
+          ],
+          "optional": [
+            "Fine-tuning",
+            "LoRA",
+            "PEFT",
+            "TTS",
+            "AutoGen",
+            "CrewAI",
+            "LangSmith",
+            "MLflow",
+            "Weights & Biases",
+            "MLOps",
+            "LLMOps",
+            "Claude Code",
+            "Cursor",
+            "GitHub Copilot"
+          ],
+          "alternatives": [
+            {
+              "anyOf": ["LangChain", "LangGraph", "LlamaIndex", "Semantic Kernel"]
+            },
+            {
+              "anyOf": ["AWS", "Azure", "Google Cloud"]
+            }
+          ]
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9501,
+        "out": 319,
+        "cached": 9344,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1726
+      }
+    },
+    {
+      "id": "7e11b60e-7526-48e2-8cdd-24c50343578c",
+      "title": "Middle Data Analyst в EPC Network, Київ, Варшава (Польща), віддалено",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.5714285714285714,
+        "requirementsRecall": 0.4444444444444444,
+        "requirementsF1": 0.5,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.4444444444444444,
+        "orSplitErrors": 1,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 4,
+          "correct": 3,
+          "wrong": [
+            {
+              "field": "workFormat",
+              "expected": "HYBRID",
+              "actual": "REMOTE"
+            }
+          ]
+        },
+        "expectedClauses": [
+          "must:A/B Testing|Cohort Analysis",
+          "must:BigQuery",
+          "must:Google Sheets|Microsoft Excel",
+          "must:Looker|Power BI|Tableau",
+          "must:SQL",
+          "must:Statistics",
+          "nice:Affiliate Marketing|Email Marketing|Performance Marketing",
+          "nice:Python",
+          "nice:Salesforce"
+        ],
+        "actualClauses": [
+          "must:A/B Testing",
+          "must:BigQuery",
+          "must:Google Sheets",
+          "must:Looker|Power BI|Tableau",
+          "must:Microsoft Excel",
+          "must:SQL",
+          "nice:Python"
+        ]
+      },
+      "actual": {
+        "role": "Data Analyst",
+        "isTech": true,
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "SQL",
+            "BigQuery",
+            "Looker",
+            "Tableau",
+            "Power BI",
+            "Google Sheets",
+            "Microsoft Excel",
+            "A/B Testing"
+          ],
+          "optional": ["Python"],
+          "alternatives": [
+            {
+              "anyOf": ["Looker", "Tableau", "Power BI"]
+            }
+          ]
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [
+          {
+            "city": "Kyiv",
+            "country": "Ukraine"
+          },
+          {
+            "city": "Warsaw",
+            "country": "Poland"
+          }
+        ],
+        "domain": null,
+        "engagementType": null,
+        "companyName": "EPC Network",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9609,
+        "out": 225,
+        "cached": 9472,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1612
+      }
+    },
+    {
+      "id": "f64c609a-faf5-43fe-88f7-0d9706158d50",
+      "title": "Security Engineer (Endpoint and Infrastructure Protection) в JustMarkets Tech, Київ, за кордоном, віддалено",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.21052631578947367,
+        "requirementsRecall": 0.4444444444444444,
+        "requirementsF1": 0.2857142857142857,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.4444444444444444,
+        "orSplitErrors": 3,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 4,
+          "correct": 4,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Bash|PowerShell|Python",
+          "must:EDR|XDR",
+          "must:Linux",
+          "must:MDM|UEM",
+          "must:System Hardening",
+          "must:Windows|macOS",
+          "must:unresolved:fileintegritymonitoring",
+          "nice:AppArmor|Attack Surface Reduction|BitLocker|FileVault|Gatekeeper|Microsoft Defender|SELinux|System Integrity Protection",
+          "nice:CIS Benchmarks"
+        ],
+        "actualClauses": [
+          "must:Bash|PowerShell|Python",
+          "must:EDR",
+          "must:Endpoint Security",
+          "must:Linux",
+          "must:MDM",
+          "must:Windows",
+          "must:XDR",
+          "must:macOS",
+          "must:unresolved:fileintegritymonitoring",
+          "must:unresolved:operatingsystemhardening",
+          "nice:AppArmor",
+          "nice:Attack Surface Reduction",
+          "nice:BitLocker",
+          "nice:CIS Benchmarks",
+          "nice:FileVault",
+          "nice:Gatekeeper",
+          "nice:Microsoft Defender",
+          "nice:SELinux",
+          "nice:System Integrity Protection"
+        ]
+      },
+      "actual": {
+        "role": "Security Engineer",
+        "isTech": true,
+        "seniority": null,
+        "skills": {
+          "required": [
+            "EDR",
+            "XDR",
+            "MDM",
+            "Linux",
+            "macOS",
+            "Windows",
+            "Python",
+            "Bash",
+            "PowerShell",
+            "Endpoint Security",
+            "Operating System Hardening",
+            "File Integrity Monitoring"
+          ],
+          "optional": [
+            "CIS Benchmarks",
+            "SELinux",
+            "AppArmor",
+            "Gatekeeper",
+            "System Integrity Protection",
+            "FileVault",
+            "Microsoft Defender",
+            "Attack Surface Reduction",
+            "BitLocker"
+          ],
+          "alternatives": [
+            {
+              "anyOf": ["Python", "Bash", "PowerShell"]
+            }
+          ]
+        },
+        "experienceYears": 4,
+        "salary": null,
+        "englishLevel": "INTERMEDIATE",
+        "employmentType": null,
+        "workFormat": "REMOTE",
+        "locations": [],
+        "domain": "Fintech",
+        "engagementType": "PRODUCT",
+        "companyName": "JustMarkets Tech",
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9659,
+        "out": 251,
+        "cached": 9472,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1717
+      }
+    },
+    {
+      "id": "38c18141-4aba-41ad-9511-100947b91bc9",
+      "title": "Principal Engineer (напрямок Microwave / RF Systems)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.4375,
+        "requirementsRecall": 0.4375,
+        "requirementsF1": 0.4375,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.4375,
+        "orSplitErrors": 2,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 1,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 3,
+          "correct": 2,
+          "wrong": [
+            {
+              "field": "workFormat",
+              "expected": "OFFICE",
+              "actual": null
+            }
+          ]
+        },
+        "expectedClauses": [
+          "must:ADC",
+          "must:Amplifiers",
+          "must:DAC",
+          "must:DSP",
+          "must:FPGA",
+          "must:Filters",
+          "must:Microwave Engineering|RF Engineering",
+          "must:Mixers",
+          "must:Oscilloscope|Power Meter|Signal Generator|Spectrum Analyzer|VNA",
+          "must:RF FrontEnd",
+          "must:SDR|unresolved:downconverters",
+          "must:unresolved:frequencysynthesizers",
+          "nice:Altium Designer",
+          "nice:Antenna Design",
+          "nice:EMC",
+          "nice:MATLAB|Python"
+        ],
+        "actualClauses": [
+          "must:ADC",
+          "must:DAC",
+          "must:DSP",
+          "must:FPGA",
+          "must:Microwave Engineering",
+          "must:Oscilloscope",
+          "must:RF Engineering",
+          "must:SDR",
+          "must:Signal Generator",
+          "must:Spectrum Analyzer",
+          "must:VNA",
+          "nice:Altium Designer",
+          "nice:Antenna Design",
+          "nice:EMC",
+          "nice:MATLAB",
+          "nice:Python"
+        ]
+      },
+      "actual": {
+        "role": "Hardware Engineer",
+        "isTech": true,
+        "seniority": "PRINCIPAL",
+        "skills": {
+          "required": [
+            "RF Engineering",
+            "Microwave Engineering",
+            "Spectrum Analyzer",
+            "VNA",
+            "Signal Generator",
+            "Oscilloscope",
+            "SDR",
+            "ADC",
+            "DAC",
+            "FPGA",
+            "DSP"
+          ],
+          "optional": ["Altium Designer", "MATLAB", "Python", "Antenna Design", "EMC"],
+          "alternatives": []
+        },
+        "experienceYears": 5,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": "DefTech",
+        "engagementType": "PRODUCT",
+        "companyName": "Infozahyst",
+        "hasTestAssignment": null,
+        "hasReservation": true
+      },
+      "usage": {
+        "in": 10612,
+        "out": 229,
+        "cached": 10368,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1863
+      }
+    },
+    {
+      "id": "5b32b885-c059-4a78-86bd-06c500887333",
+      "title": "Middle Front-End Developer (React)",
+      "reviewStatus": "draft",
+      "score": {
+        "schemaValid": true,
+        "providerFailure": false,
+        "requirementsPrecision": 0.4782608695652174,
+        "requirementsRecall": 0.5238095238095238,
+        "requirementsF1": 0.5,
+        "priorityAccuracy": 1,
+        "alternativeAccuracy": 0.5238095238095238,
+        "orSplitErrors": 4,
+        "guardAccuracy": {
+          "isTech": 1,
+          "role": 0,
+          "seniority": 1
+        },
+        "profile": {
+          "checked": 1,
+          "correct": 1,
+          "wrong": []
+        },
+        "expectedClauses": [
+          "must:Accessibility",
+          "must:Axios|Fetch API",
+          "must:Babel",
+          "must:GIT",
+          "must:HTML/CSS",
+          "must:JavaScript",
+          "must:NPM",
+          "must:REST API",
+          "must:React",
+          "must:Responsive Design",
+          "must:Web Security",
+          "must:Webpack",
+          "must:jQuery",
+          "nice:Agile|Scrum",
+          "nice:CI/CD",
+          "nice:ChatGPT|Claude Code|GitHub Copilot",
+          "nice:Context API|MobX|Redux",
+          "nice:Cypress|Jest|React Testing Library",
+          "nice:SignalR|WebSockets",
+          "nice:TypeScript",
+          "nice:Vite"
+        ],
+        "actualClauses": [
+          "must:Axios",
+          "must:Babel",
+          "must:GIT",
+          "must:HTML/CSS",
+          "must:JavaScript",
+          "must:NPM",
+          "must:REST API",
+          "must:React",
+          "must:Webpack",
+          "must:jQuery",
+          "nice:ChatGPT",
+          "nice:Claude Code",
+          "nice:Context API",
+          "nice:Cypress",
+          "nice:GitHub Copilot",
+          "nice:Jest",
+          "nice:MobX",
+          "nice:React Testing Library",
+          "nice:Redux",
+          "nice:SignalR",
+          "nice:TypeScript",
+          "nice:Vite",
+          "nice:WebSockets"
+        ]
+      },
+      "actual": {
+        "role": "Frontend Developer",
+        "isTech": true,
+        "seniority": "MIDDLE",
+        "skills": {
+          "required": [
+            "JavaScript",
+            "React",
+            "jQuery",
+            "Webpack",
+            "Babel",
+            "NPM",
+            "REST API",
+            "HTML/CSS",
+            "Git",
+            "Axios"
+          ],
+          "optional": [
+            "Redux",
+            "Context API",
+            "MobX",
+            "TypeScript",
+            "Jest",
+            "React Testing Library",
+            "Cypress",
+            "Vite",
+            "SignalR",
+            "WebSockets",
+            "GitHub Copilot",
+            "ChatGPT",
+            "Claude Code"
+          ],
+          "alternatives": []
+        },
+        "experienceYears": 2,
+        "salary": null,
+        "englishLevel": null,
+        "employmentType": null,
+        "workFormat": null,
+        "locations": [],
+        "domain": null,
+        "engagementType": null,
+        "companyName": null,
+        "hasTestAssignment": null,
+        "hasReservation": null
+      },
+      "usage": {
+        "in": 9738,
+        "out": 227,
+        "cached": 9600,
+        "client": "DeepSeekClient",
+        "provider": "openai-generic",
+        "model": "deepseek-v4-flash",
+        "ms": 1285
+      }
+    }
+  ]
+}

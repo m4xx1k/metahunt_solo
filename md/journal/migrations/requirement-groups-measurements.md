@@ -244,3 +244,66 @@ Re-run the same query after step 7 and compare tier shares; that, not skill
 accuracy, is the metric for the switch to units.
 
 ---
+#### Measured 2026-09-20 — the rebalanced golden set, a new baseline (R9)
+
+R9 is done: three Automation QA rows with no MUST group are gone, eight
+hand-labelled rows are in, and the set is 29 rows. The new rows are two
+`Software Engineer` (9.3% of the corpus and previously unrepresented), plus one
+each of `AI Engineer`, `Data Analyst`, `Security Engineer`, `Hardware Engineer`
+and `Frontend Engineer`, and a DevOps posting written almost entirely in
+alternative lists. QA now holds 4 of 29 rows (13.8%) against 13.5% of the
+corpus. **MUST groups go from 11 in 9 rows to 32 in 16 rows.**
+
+`--extractor production --repeat 3`, two cents. The left column is the last run
+against the old set (`2026-09-20-production-DeepSeekClient-25row.md`); the two
+are **not comparable**, and the right column is the baseline every later run is
+read against (`…-29row.md`).
+
+| | 25-row set | 29-row set |
+|---|---|---|
+| F1 | 63.0% | **61.5%** |
+| precision | 74.0% | **67.2%** |
+| recall | 56.4% | **58.9%** |
+| alternative accuracy | 57.0% | **59.2%** |
+| `or_split_errors` | 8.3 | **21.3** |
+| priority accuracy | 97.7% | **99.3%** |
+| role accuracy | 57.3% | **59.8%** |
+| profile fields | 97.4% of 51 | **95.6% of 61** |
+| per-pass F1 spread | 1.4 pt | **0.7 pt** |
+
+**`or_split_errors` tripling is the point, not a regression.** The old set gave
+the extractor 11 chances to split a choice; this one gives it 32, and it splits
+most of them. Precision falls for the same reason: every member the model emits
+as its own requirement is an `extra` against one grouped label. Both numbers
+now measure the thing Pass 2 exists to fix, which the old set barely could.
+
+Where the splitting shows up, from the run itself:
+
+```
+Security Engineer  expected  nice:AppArmor|BitLocker|FileVault|Gatekeeper|…|SELinux
+                   actual    nine separate `nice` requirements
+AI Engineer        expected  must:Haystack|LangChain|LangGraph|LlamaIndex|Semantic Kernel
+                   actual    must:Semantic Kernel + nice:LangChain + nice:LangGraph
+```
+
+Both postings mark the list as a choice in the source ("at least one … such
+as", "such as … or"), so these are true `or_split` errors, not label disputes.
+
+Two labels were corrected after reading the first run and before this baseline
+was taken: `Attack Surface Reduction` was missing from the Security row's
+native-controls list (it is verbatim in the posting), and the Hardware row's
+RF-module sentence was over-grouped — the `або` there binds only
+`down-converters` and `SDR`, the rest of that sentence is cumulative.
+
+Only three labels across the eight new rows fail to resolve to a taxonomy node
+(`Down-converters`, `Frequency Synthesizers`, `File Integrity Monitoring`),
+against 31 unresolvable labels among the rows that were already there. Two
+alias collisions are worth knowing before reading a score: `LoRA` normalizes
+onto `LoRa`, the radio protocol, and `SOPS` onto `SOPs`. The scorer
+canonicalizes both sides through the same map, so neither biases a comparison.
+
+The per-pass spread fell from 1.4 to 0.7 points, so this set's noise floor is
+lower than the old one's — but still read nothing under about 1.5 F1 points as
+a result.
+
+---

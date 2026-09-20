@@ -2078,6 +2078,7 @@
             "System Integrity Protection",
             "FileVault",
             "Microsoft Defender",
+            "Attack Surface Reduction",
             "BitLocker"
           ]
         }
@@ -2112,15 +2113,27 @@
         },
         {
           "priority": "must",
-          "anyOf": [
-            "RF Front End",
-            "Filters",
-            "Amplifiers",
-            "Mixers",
-            "Frequency Synthesizers",
-            "Down-converters",
-            "SDR"
-          ]
+          "anyOf": ["RF Front End"]
+        },
+        {
+          "priority": "must",
+          "anyOf": ["Filters"]
+        },
+        {
+          "priority": "must",
+          "anyOf": ["Amplifiers"]
+        },
+        {
+          "priority": "must",
+          "anyOf": ["Mixers"]
+        },
+        {
+          "priority": "must",
+          "anyOf": ["Frequency Synthesizers"]
+        },
+        {
+          "priority": "must",
+          "anyOf": ["Down-converters", "SDR"]
         },
         {
           "priority": "must",
