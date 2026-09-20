@@ -539,9 +539,9 @@ a constraint.
 
 | # | Step | Reversible |
 |---|---|---|
-| 1 | `pnpm db:generate` migration: `requirement_group` column + `position_nodes` view. Deploy. Nothing writes it yet, nothing reads it. | drop column |
-| 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). | git |
-| 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. | git |
+| 1 | `pnpm db:generate` migration: `requirement_group` column + `position_nodes` view. Deploy. Nothing writes it yet, nothing reads it. **Done 2026-09-20** (PR #218, migration `0058`) — hand-edited to `CREATE OR REPLACE VIEW`: the generated `DROP VIEW` fails, `node_stats`, `node_skill_cooc` and both track views depend on it. | drop column |
+| 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). **Done 2026-09-20** — codegen round-trips, §11.1 closed; `BAML_PRODUCTION_SOURCE_HASH` → `4f089c9a…`. | git |
+| 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. **Done 2026-09-20** — four reasons, not three: a member outside this posting's skills is its own case, because group names are matched against already-resolved links and never resolve a node of their own. | git |
 | 4 | `scripts/db-backup.sh`, then pause Temporal schedules. | — |
 | 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). | data only; the backup |
 | 6 | Refresh `node_stats` and `node_skill_cooc`. Re-set `FIT_STRONG_MIN` / `FIT_GOOD_MIN` on the now-settled distribution. | git |
@@ -610,6 +610,30 @@ prompt edit aimed at skills cannot silently move work format or English level.
   skill accuracy. Expect movement concentrated in DevOps / Security / SysAdmin —
   the roles with both the highest cap saturation (48% / 42% / 40%) and the
   substitute families.
+
+#### Measured 2026-09-20 — the Fit distribution before Pass 2
+
+There was no Fit-level baseline at all, which made "did Pass 2 help" unanswerable.
+Taken on the 2026-09-19 prod dump restored locally
+(`backups/Postgres-railwayssh-20260919-223122.sql.gz`, 16,169 Positions, 45
+candidates with resolved skills), $0 and no prod access. The query mirrors
+`scoringCtes` exactly — coverage over required weight, tiers at 0.8 / 0.5 — over
+every (candidate, Position) pair sharing at least one skill: 403,037 pairs.
+
+| tier | pairs | share | avg coverage |
+|---|---|---|---|
+| STRONG (≥0.8) | 11,222 | 2.78% | 0.950 |
+| GOOD (0.5–0.8) | 32,384 | 8.03% | 0.619 |
+| STRETCH (<0.5) | 359,431 | 89.18% | 0.171 |
+
+Per candidate: 249 STRONG and 720 GOOD on average (median 218 / 628), and every
+candidate has at least one STRONG. Coverage is heavily bottom-loaded — 57% of
+pairs sit under 0.2, only 1.9% reach exactly 1.0 — which is what makes
+`FIT_STRONG_MIN` / `FIT_GOOD_MIN` worth re-eyeballing on the post-Pass-2
+distribution (Pass 2 step 6) rather than before.
+
+Re-run the same query after step 7 and compare tier shares; that, not skill
+accuracy, is the metric for the switch to units.
 
 ---
 
@@ -737,8 +761,12 @@ partition label, and a real requirement table would simply absorb it.
 All eight design questions this doc raised are resolved in §3. What's left is
 execution risk, not decision:
 
-1. **`SkillGroup[]` must round-trip through `baml_client` codegen** before Pass
-   2's loader step is written (§4). Not yet verified.
+1. ~~**`SkillGroup[]` must round-trip through `baml_client` codegen**~~ —
+   **closed 2026-09-20.** `baml-cli generate` emits `interface SkillGroup` and
+   `alternatives: SkillGroup[]` in both `types.ts` and `partial_types.ts`, and
+   `b.parse.ExtractVacancy` parses a response carrying groups. A response that
+   omits the field coerces to `[]` rather than failing, so the old shape still
+   parses. No `string[][]` fallback needed, and no provider call was made.
 2. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to need
    an interim recalibration, or whether the single recalibration planned after
    Pass 2 (§7, Pass 2 step 6) is enough. Decide after watching Pass 1 step 4's
