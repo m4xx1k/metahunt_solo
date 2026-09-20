@@ -394,3 +394,48 @@ Artifacts: `2026-09-20-requirements-v2-DeepSeekClient.*` and
 pass — read nothing under about 1.5 F1 points from it.
 
 ---
+
+#### Measured 2026-09-20 — the reshaped contract, and what the slash rule adds
+
+`Skills` reshaped so every requirement is an `anyOf` list and `alternatives` is
+gone, then the slash-pair instruction added on top of it. Same 29 rows, same
+labels, same model, three passes each:
+
+| | F1 | MUST groups of 32 | two-member of 23 | NICE groups of 23 | `or_split` | role |
+|---|---|---|---|---|---|---|
+| production, `alternatives` (baseline) | 61.5% | 11 | **5** | 0 | 21.3 | 59.8% |
+| production, `anyOf` | 66.1% | 15 | **10** | 7 | 10.0 | 57.5% |
+| production, `anyOf` + slash rule | 67.4% | 20 | **15** | 5 | 6.7 | 57.5% |
+| requirements-v2, for reference | 65.6% | 18 | 12 | 8 | 17.0 | 96.6% |
+
+**The reshape alone doubles binary grouping, 5 → 10, and the slash rule takes it
+to 15 of 23** — past both the 12 the v2 contract reached and the 12 the reasoning
+challenger reached. `or_split_errors` falls from 21.3 to 6.7: the split that this
+whole tracker is named after is now the exception rather than the rule. Group
+counts are from the last pass of each run; F1 is the three-pass mean, and
+run-to-run spread on this set is about 0.7 points, so only the group counts and
+the `or_split` collapse are large enough to read on their own.
+
+NICE groups are now expressible at all — `optional` carries requirements too —
+and land 5–7 of 23 against 0 before, the one number the old contract could not
+produce by construction (R2 still keeps them out of the database).
+
+What the remaining eight binary misses are, read off the run rather than guessed:
+
+```
+Microsoft SQL Server | Oracle Database   grouped correctly, emitted "Oracle" — a name, not a grouping miss
+C | C++                                  named in the slash rule, still missed (Ukrainian sentence)
+RF Engineering | Microwave Engineering   that row produced no group at all
+Sigstore | Cosign, Hybrid | Semantic Search, Fetch API | Axios, SDR | Down-converters
+A/B Testing | Cohort Analysis            a disputed label (PR #220)
+```
+
+Role accuracy does not move (57.5% against 59.8%, inside the noise): it is fed by
+the 100 VERIFIED role nodes, which this change does not touch. The ROLE cleanup
+is still worth its measured ~37 points.
+
+Cost: six passes, about six cents. Artifacts:
+`2026-09-20-production-anyof-DeepSeekClient-29row.json` (reshape only) and
+`2026-09-20-production-anyof-slash-DeepSeekClient-29row.*`.
+
+---
