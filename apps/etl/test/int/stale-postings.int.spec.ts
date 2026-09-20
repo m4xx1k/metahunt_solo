@@ -35,7 +35,7 @@ const extractor = {
 const extracted = {
   role: "Backend Engineer",
   isTech: true,
-  skills: { required: ["Go"], optional: [], alternatives: [] },
+  skills: { required: [{ anyOf: ["Go"] }], optional: [] },
   locations: [],
 };
 

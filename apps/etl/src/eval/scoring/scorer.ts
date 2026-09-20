@@ -6,7 +6,7 @@ import type {
   ProfileExpectation,
   ProfileMiss,
   ExtractedVacancyForEval,
-  LegacySkills,
+  ProductionSkills,
   Requirement,
   RequirementDatasetCase,
   RequirementScore,
@@ -25,9 +25,8 @@ const extractionSchema = z.object({
   seniority: z.string().nullable(),
   skills: z
     .object({
-      required: z.array(z.string()).optional(),
-      optional: z.array(z.string()).optional(),
-      alternatives: z.array(z.object({ anyOf: z.array(z.string()).optional() })).optional(),
+      required: z.array(z.object({ anyOf: z.array(z.string()).optional() })).optional(),
+      optional: z.array(z.object({ anyOf: z.array(z.string()).optional() })).optional(),
     })
     .nullable()
     .optional(),
@@ -42,40 +41,21 @@ type NormalizedClause = {
 };
 
 /**
- * Production's flat `skills` in the labels' shape: one requirement per skill,
- * except where `alternatives` marks several of them as one choice. A grouped
- * skill is only that group's member, never also a requirement of its own —
- * the labels count one choice once. Groups naming a skill outside `required`,
- * or collapsing to fewer than two, are ignored exactly as the loader drops them.
+ * Production's `skills` in the labels' shape. Both contracts carry the same
+ * requirement — a list of the skills that satisfy it — so this only reads the
+ * priority off which field the requirement came from.
  */
-export function adaptLegacySkills(skills: LegacySkills | null | undefined): Requirement[] {
-  const required = skills?.required ?? [];
-  const byNormalized = new Map(required.map((name) => [normalizeAliasName(name), name]));
-
-  const groups: string[][] = [];
-  const grouped = new Set<string>();
-  for (const { anyOf } of skills?.alternatives ?? []) {
-    const members = new Map<string, string>();
-    for (const name of anyOf ?? []) {
-      const canonical = byNormalized.get(normalizeAliasName(name));
-      if (!canonical) {
-        members.clear();
-        break;
-      }
-      members.set(canonical, canonical);
-    }
-    if (members.size < 2 || [...members.keys()].some((name) => grouped.has(name))) continue;
-    for (const name of members.keys()) grouped.add(name);
-    groups.push([...members.keys()]);
-  }
-
+export function requirementsFromSkills(skills: ProductionSkills | null | undefined): Requirement[] {
   return [
-    ...groups.map((anyOf) => ({ priority: "must" as const, anyOf })),
-    ...required
-      .filter((name) => !grouped.has(name))
-      .map((name) => ({ priority: "must" as const, anyOf: [name] })),
-    ...(skills?.optional ?? []).map((name) => ({ priority: "nice" as const, anyOf: [name] })),
-  ];
+    ...(skills?.required ?? []).map((requirement) => ({
+      priority: "must" as const,
+      anyOf: requirement.anyOf ?? [],
+    })),
+    ...(skills?.optional ?? []).map((requirement) => ({
+      priority: "nice" as const,
+      anyOf: requirement.anyOf ?? [],
+    })),
+  ].filter((requirement) => requirement.anyOf.length > 0);
 }
 
 /**
@@ -100,7 +80,7 @@ export function scoreRequirements(
   if (!parsed.success)
     return failureScore(false, parsed.error.issues.map((item) => item.message).join("; "));
 
-  const actualRequirements = parsed.data.requirements ?? adaptLegacySkills(parsed.data.skills);
+  const actualRequirements = parsed.data.requirements ?? requirementsFromSkills(parsed.data.skills);
   const collapsedChoice = actualRequirements.find(
     (requirement) =>
       requirement.anyOf.length > 1 && new Set(requirement.anyOf.map(normalizeAliasName)).size < 2,

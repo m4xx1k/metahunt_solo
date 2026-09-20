@@ -64,20 +64,31 @@ class ExtractedLocation {
   "#)
 }
 
-class SkillGroup {
+class SkillRequirement {
   anyOf string[] @description(#"
-    2+ names from `required` that the posting states as ONE choice
-    ("AWS or GCP", "one of Kafka / RabbitMQ / NATS"). Copy the names exactly
-    as written in `required`. A comma-separated stack that the posting wants
-    cumulatively is NOT a group.
+    ONE requirement, as the list of skills that satisfy it.
+
+    ALMOST ALWAYS ONE ENTRY: ["PostgreSQL"]. That is the default and most
+    requirements are this.
+
+    Use more than one entry ONLY where the posting itself marks the skills as
+    interchangeable — "AWS or GCP", "one of A/B", "A and/or B",
+    "any of: A, B, C". That is ONE requirement holding several entries:
+    ["AWS", "GCP"], never several one-entry requirements.
+
+    A comma-separated stack the posting wants cumulatively is NOT a choice:
+    each skill is its own requirement with its own one-entry list. Never put
+    skills together because they are similar, related, or listed near each
+    other. Entries must be distinct skills.
   "#)
 }
 
 class Skills {
-  required string[] @description(#"
-    Must-have hard technical skills from the Requirements section.
+  required SkillRequirement[] @description(#"
+    Must-have hard technical skills from the Requirements section, one
+    requirement per entry.
     Languages (TypeScript, Go), frameworks (React, NestJS),
-    databases (PostgreSQL), cloud (AWS). MAX 20 entries.
+    databases (PostgreSQL), cloud (AWS). MAX 20 requirements.
     Use canonical names as commonly written in the Ukrainian IT market.
 
     NEVER extract — these are not skills, whatever the posting calls them:
@@ -109,15 +120,10 @@ class Skills {
     node + node.js, javascript + js), output ONE — the form most commonly
     used in the Ukrainian IT market (React, Node.js, JavaScript).
   "#)
-  optional string[] @description(#"
-    Nice-to-have / "would be a plus" skills. Same EXCLUDE / DEDUPLICATE
-    rules as required. MAX 10 entries.
-  "#)
-  alternatives SkillGroup[] @description(#"
-    Every explicit choice among REQUIRED skills, one entry per choice.
-    Each name must also appear in `required` — this field groups them, it does
-    not replace them. Never group `optional`. [] when the posting states no
-    choice.
+  optional SkillRequirement[] @description(#"
+    Nice-to-have / "would be a plus" skills, one requirement per entry. Same
+    EXCLUDE / DEDUPLICATE and one-choice-is-one-entry rules as required.
+    MAX 10 requirements.
   "#)
 }
 
@@ -181,7 +187,8 @@ class ExtractedVacancy {
   "#)
 
   skills Skills @description(#"
-    Hard technical skills ONLY. Each entry is a single skill name.
+    Hard technical skills ONLY. Each entry is one requirement: a list holding
+    a single skill name, or the skills the posting states as one choice.
     EXCLUDE: soft skills, domain knowledge, certifications.
     Architectural styles and named practices (Microservices, CI/CD, TDD, RAG)
     are allowed ONLY as an exact verbatim match from `knownSkills`. A skill
@@ -354,8 +361,9 @@ function ExtractVacancy(
       Output:
         role: "Frontend Developer"          ← umbrella, NOT "React Developer"
         seniority: SENIOR
-        skills.required: ["React", "TypeScript"]   ← NOT ["React.js"]
-        skills.optional: ["GraphQL"]
+        skills.required: [{ anyOf: ["React"] }, { anyOf: ["TypeScript"] }]
+          ← one requirement each, and "React" NOT "React.js"
+        skills.optional: [{ anyOf: ["GraphQL"] }]
         domain: "Fintech"
         salary: { min: 5000, max: 7000, currency: USD }
         workFormat: REMOTE
@@ -366,63 +374,70 @@ function ExtractVacancy(
       Input: "Event-driven microservices on Kafka, CI/CD pipelines,
               building a RAG pipeline. Agile/Scrum team."
       Output:
-        skills.required: ["Microservices", "Kafka", "CI/CD", "RAG"]
+        skills.required: [{ anyOf: ["Microservices"] }, { anyOf: ["Kafka"] },
+                          { anyOf: ["CI/CD"] }, { anyOf: ["RAG"] }]
           ← each one appears verbatim in knownSkills
           ← "Event-driven" is NOT emitted: no exact knownSkills entry here
           ← "Agile" / "Scrum" are NOT emitted: process, never a skill
 
     Counter-example — DO NOT output:
         role: "React Developer"            ← too specific, use "Frontend Developer"
-        skills.required: ["Communication"] ← soft skill, exclude
-        skills.required: ["HTTP", "JSON"]  ← universal protocols, exclude
-        skills.required: ["Agile methodology"] ← invented practice, not in knownSkills
-        skills.required: ["event driven design"] ← rephrase of a listed practice;
-                                                   use the exact knownSkills name or drop it
-        skills.required: ["react.js"]      ← deduped form, use "React"
+        skills.required: [{ anyOf: ["Communication"] }] ← soft skill, exclude
+        skills.required: [{ anyOf: ["HTTP"] }]   ← universal protocol, exclude
+        skills.required: [{ anyOf: ["Agile methodology"] }] ← invented practice,
+                                                   not in knownSkills
+        skills.required: [{ anyOf: ["event driven design"] }] ← rephrase of a listed
+                                                   practice; use the exact knownSkills
+                                                   name or drop it
+        skills.required: [{ anyOf: ["react.js"] }] ← deduped form, use "React"
+        skills.required: [{ anyOf: ["React", "Node.js"] }] ← a stack the posting wants
+                                                   cumulatively is two requirements
         domain: "Web Development"          ← tech stack, not a business domain
         domain: "Software Development"     ← role-as-domain, use null
 
-    For ALTERNATIVES among required skills:
-      - One logical choice is one group, however the posting words it:
+    Every requirement in `required` and `optional` is one `anyOf` list, and
+    nearly all of them hold exactly one skill. A list holds more than one skill
+    only where the posting itself offers a choice:
+      - One logical choice is one list, however the posting words it:
         "AWS or GCP", "one of A/B", "A and/or B", "at least one of: A, B, C",
         "any framework (A, B, C)".
       - A slash joins a choice only when each side is a skill on its own.
         "CI/CD" and "TCP/IP" are ONE name; "ETL/ELT" is two skills, hence a
         choice.
       - A comma-separated stack is cumulative unless the text marks it as a
-        choice. "etc." adds no member: group exactly the names written.
-      - Never split one choice into singletons; never merge two separate
-        statements.
+        choice. "etc." adds no member: list exactly the names written.
+      - Never split one choice into one-entry requirements; never merge two
+        separate statements into one list.
+      - A choice among nice-to-haves is one `optional` requirement, by the
+        same rules.
 
     Example — "or" between two named tools
       Input: "Required: Python, AWS or GCP, Kafka or RabbitMQ.
-              Terraform is a plus."
+              Terraform or Pulumi is a plus."
       Output:
-        skills.required: ["Python", "AWS", "GCP", "Kafka", "RabbitMQ"]
-        skills.optional: ["Terraform"]
-        skills.alternatives: [{ anyOf: ["AWS", "GCP"] },
-                              { anyOf: ["Kafka", "RabbitMQ"] }]
-          ← members stay in `required`; the group only records the choice
-          ← "Python" is cumulative, so it is in no group
-          ← never group an `optional` skill
+        skills.required: [{ anyOf: ["Python"] },
+                          { anyOf: ["AWS", "GCP"] },
+                          { anyOf: ["Kafka", "RabbitMQ"] }]
+        skills.optional: [{ anyOf: ["Terraform", "Pulumi"] }]
+          ← "Python" is cumulative, so it is a requirement of its own
+          ← a two-way choice is ONE requirement, never two
 
     Example — a quantifier and a colon make a list a choice
       Input: "Hands-on experience with at least one test automation framework:
               Cypress, WebdriverIO, or Playwright."
       Output:
-        skills.required: ["Cypress", "WebdriverIO", "Playwright"]
-        skills.alternatives: [{ anyOf: ["Cypress", "WebdriverIO", "Playwright"] }]
+        skills.required: [{ anyOf: ["Cypress", "WebdriverIO", "Playwright"] }]
           ← "at least one" makes the list a choice, not a stack
 
     Example — parentheses, "etc.", and a slash pair
       Input: "Any framework (React, Vue, Angular, etc.). Strong ETL/ELT
               experience. CI/CD pipelines."
       Output:
-        skills.required: ["React", "Vue.js", "Angular", "ETL", "ELT", "CI/CD"]
-        skills.alternatives: [{ anyOf: ["React", "Vue.js", "Angular"] },
-                              { anyOf: ["ETL", "ELT"] }]
-          ← "etc." adds nothing; group only the three named
-          ← "CI/CD" is one skill, never a group
+        skills.required: [{ anyOf: ["React", "Vue.js", "Angular"] },
+                          { anyOf: ["ETL", "ELT"] },
+                          { anyOf: ["CI/CD"] }]
+          ← "etc." adds nothing; list only the three named
+          ← "CI/CD" is one skill, never a choice
 
     {{ ctx.output_format }}
 

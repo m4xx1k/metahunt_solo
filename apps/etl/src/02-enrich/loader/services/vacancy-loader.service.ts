@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 
 import type { ExtractedVacancy } from "../../../baml_client/types";
-import { normalizeAliasName } from "../../../platform/shared/normalize-alias";
 import type { Executor } from "../repositories/executor";
 import {
   VacancyRepository,
@@ -12,7 +11,7 @@ import {
 
 import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
-import { stampRequirementGroups } from "./requirement-groups";
+import { assignRequirementGroups } from "./requirement-groups";
 
 @Injectable()
 export class VacancyLoaderService {
@@ -91,39 +90,43 @@ export class VacancyLoaderService {
     });
   }
 
-  // Resolve skill names to taxonomy node ids, deduped by node. Distinct
-  // spellings of the same skill (e.g. "react" / "react.js") collapse to one
-  // alias-resolved node; when a node appears as both required and optional,
-  // required wins.
+  // Resolve skill names to taxonomy node ids, deduped by node. Each extracted
+  // requirement is a choice of one or more skills; a choice of several nodes is
+  // numbered so it scores as one requirement. Distinct spellings of the same
+  // skill (e.g. "react" / "react.js") collapse to one alias-resolved node, and
+  // when a node appears as both required and optional, required wins.
   private async resolveSkillLinks(
     extracted: ExtractedVacancy,
     executor: Executor,
     rssRecordId: string,
   ): Promise<SkillLink[]> {
-    const byNode = new Map<string, SkillLink>();
-    const nodeIdByName = new Map<string, string>();
-    for (const name of extracted.skills?.required ?? []) {
-      const nodeId = await this.nodeResolver.resolve("SKILL", name, executor);
-      nodeIdByName.set(normalizeAliasName(name), nodeId);
-      byNode.set(nodeId, { nodeId, isRequired: true });
-    }
-    for (const name of extracted.skills?.optional ?? []) {
-      const nodeId = await this.nodeResolver.resolve("SKILL", name, executor);
-      nodeIdByName.set(normalizeAliasName(name), nodeId);
-      if (!byNode.has(nodeId)) {
-        byNode.set(nodeId, { nodeId, isRequired: false });
+    const units: string[][] = [];
+    for (const requirement of extracted.skills?.required ?? []) {
+      const nodeIds: string[] = [];
+      for (const name of requirement.anyOf ?? []) {
+        nodeIds.push(await this.nodeResolver.resolve("SKILL", name, executor));
       }
+      units.push(nodeIds);
     }
 
-    const groups = stampRequirementGroups(
-      byNode,
-      extracted.skills?.alternatives ?? [],
-      nodeIdByName,
-    );
-    for (const drop of groups.drops) {
+    const { groupByNode, drops } = assignRequirementGroups(units);
+    for (const drop of drops) {
       this.logger.warn(
         `Dropped requirement group ${drop.index} (${drop.reason}) on rss_record ${rssRecordId}`,
       );
+    }
+
+    const byNode = new Map<string, SkillLink>();
+    for (const nodeId of units.flat()) {
+      if (byNode.has(nodeId)) continue;
+      byNode.set(nodeId, { nodeId, isRequired: true, requirementGroup: groupByNode.get(nodeId) });
+    }
+
+    for (const requirement of extracted.skills?.optional ?? []) {
+      for (const name of requirement.anyOf ?? []) {
+        const nodeId = await this.nodeResolver.resolve("SKILL", name, executor);
+        if (!byNode.has(nodeId)) byNode.set(nodeId, { nodeId, isRequired: false });
+      }
     }
 
     return Array.from(byNode.values());

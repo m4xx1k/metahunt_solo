@@ -36,7 +36,7 @@ import type {
   Salary,
   Seniority,
   SkillCategory,
-  SkillGroup,
+  SkillRequirement,
   SkillToClassify,
   Skills,
   VacancyRequirementV2,
@@ -107,7 +107,7 @@ export namespace partial_types {
     max?: number | null;
     currency?: types.Currency | null;
   }
-  export interface SkillGroup {
+  export interface SkillRequirement {
     anyOf: string[];
   }
   export interface SkillToClassify {
@@ -115,9 +115,8 @@ export namespace partial_types {
     name?: string | null;
   }
   export interface Skills {
-    required: string[];
-    optional: string[];
-    alternatives: SkillGroup[];
+    required: SkillRequirement[];
+    optional: SkillRequirement[];
   }
   export interface VacancyRequirementV2 {
     priority?: types.RequirementPriority | null;

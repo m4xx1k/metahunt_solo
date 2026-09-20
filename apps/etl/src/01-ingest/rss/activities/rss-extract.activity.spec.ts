@@ -35,7 +35,7 @@ const baseRecord = {
 const sampleExtract = {
   role: "Backend Developer",
   seniority: "SENIOR",
-  skills: { required: ["Node.js", "TypeScript"], optional: [] },
+  skills: { required: [{ anyOf: ["Node.js"] }, { anyOf: ["TypeScript"] }], optional: [] },
   experienceYears: 3,
   salary: { min: 6000, max: 8000, currency: "USD" },
   englishLevel: "UPPER_INTERMEDIATE",

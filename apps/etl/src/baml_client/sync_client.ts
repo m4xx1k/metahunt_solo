@@ -48,7 +48,7 @@ import type {
   Salary,
   Seniority,
   SkillCategory,
-  SkillGroup,
+  SkillRequirement,
   SkillToClassify,
   Skills,
   VacancyRequirementV2,

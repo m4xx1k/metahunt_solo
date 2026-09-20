@@ -199,7 +199,7 @@ export interface Salary {
   currency?: Currency | null;
 }
 
-export interface SkillGroup {
+export interface SkillRequirement {
   anyOf: string[];
 }
 
@@ -209,9 +209,8 @@ export interface SkillToClassify {
 }
 
 export interface Skills {
-  required: string[];
-  optional: string[];
-  alternatives: SkillGroup[];
+  required: SkillRequirement[];
+  optional: SkillRequirement[];
 }
 
 export interface VacancyRequirementV2 {

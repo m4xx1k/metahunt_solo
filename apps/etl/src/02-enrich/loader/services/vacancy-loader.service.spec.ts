@@ -23,7 +23,10 @@ const TX = { __tx: true } as unknown as Executor;
 const fullExtracted = {
   role: "Backend Engineer",
   seniority: "SENIOR",
-  skills: { required: ["Go", "PostgreSQL"], optional: ["Docker"] },
+  skills: {
+    required: [{ anyOf: ["Go"] }, { anyOf: ["PostgreSQL"] }],
+    optional: [{ anyOf: ["Docker"] }],
+  },
   experienceYears: 3,
   salary: { min: 4000, max: 6000, currency: "USD" },
   englishLevel: "UPPER_INTERMEDIATE",
@@ -137,7 +140,10 @@ describe("VacancyLoaderService.loadFromRecord", () => {
       ...baseRecord,
       extractedData: {
         ...fullExtracted,
-        skills: { required: ["Go"], optional: ["Go", "Docker"] },
+        skills: {
+          required: [{ anyOf: ["Go"] }],
+          optional: [{ anyOf: ["Go"] }, { anyOf: ["Docker"] }],
+        },
       },
     } as never);
     const { service, companyResolve, nodeResolve } = makeService(repo);

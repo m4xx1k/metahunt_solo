@@ -1,67 +1,38 @@
-import type { SkillGroup } from "../../../baml_client/types";
-import { normalizeAliasName } from "../../../platform/shared/normalize-alias";
-import type { SkillLink } from "../repositories/vacancy.repository";
-
-export type RequirementGroupDropReason =
-  "unknown-member" | "too-few-members" | "optional-member" | "overlapping";
+export type RequirementGroupDropReason = "overlapping";
 
 export type RequirementGroupDrop = { index: number; reason: RequirementGroupDropReason };
 
-export type RequirementGroupResult = { stamped: number; drops: RequirementGroupDrop[] };
+export type RequirementGroupResult = {
+  groupByNode: Map<string, number>;
+  drops: RequirementGroupDrop[];
+};
 
 /**
- * Stamp `requirementGroup` onto the links a vacancy already has, so an "A or B"
- * choice scores as one requirement (requirement-groups.md §5.2).
+ * Number the choices among a vacancy's required skills, so an "A or B" scores as
+ * one requirement (requirement-groups.md §5.2). Takes one entry per extracted
+ * requirement — its members already resolved to node ids, in extraction order.
  *
- * Every rule drops the offending group, never the extraction: a malformed
- * overlay degrades to today's flat behaviour. Members are matched by
- * alias-normalized name against links this vacancy already resolved — a group
- * name never resolves a node of its own, so the model cannot mint taxonomy
- * through this field.
+ * A requirement that resolves to a single node is an ordinary flat link and
+ * takes no number, which is also where a choice whose members collapse onto one
+ * node through aliases lands. A node belongs to at most one choice: a later
+ * requirement reaching a node an earlier one already numbered degrades to flat
+ * links (I1) and is reported as `overlapping`.
  */
-export function stampRequirementGroups(
-  links: Map<string, SkillLink>,
-  groups: SkillGroup[],
-  nodeIdByName: Map<string, string>,
-): RequirementGroupResult {
+export function assignRequirementGroups(units: string[][]): RequirementGroupResult {
+  const groupByNode = new Map<string, number>();
   const drops: RequirementGroupDrop[] = [];
   let stamped = 0;
 
-  groups.forEach((group, position) => {
-    const index = position + 1;
-    const ids = new Set<string>();
-    let unknownMember = false;
-
-    for (const name of group.anyOf ?? []) {
-      const nodeId = nodeIdByName.get(normalizeAliasName(name));
-      if (!nodeId) {
-        unknownMember = true;
-        break;
-      }
-      ids.add(nodeId);
-    }
-
-    const members = Array.from(ids, (nodeId) => links.get(nodeId));
-    const reason = unknownMember
-      ? "unknown-member"
-      : ids.size < 2
-        ? "too-few-members"
-        : members.some((link) => !link?.isRequired)
-          ? "optional-member"
-          : members.some((link) => link?.requirementGroup != null)
-            ? "overlapping"
-            : null;
-
-    if (reason) {
-      drops.push({ index, reason });
+  units.forEach((nodeIds, position) => {
+    const members = [...new Set(nodeIds)];
+    if (members.length < 2) return;
+    if (members.some((nodeId) => groupByNode.has(nodeId))) {
+      drops.push({ index: position + 1, reason: "overlapping" });
       return;
     }
-
-    for (const link of members) {
-      if (link) link.requirementGroup = stamped + 1;
-    }
     stamped += 1;
+    for (const nodeId of members) groupByNode.set(nodeId, stamped);
   });
 
-  return { stamped, drops };
+  return { groupByNode, drops };
 }

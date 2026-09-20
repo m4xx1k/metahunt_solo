@@ -17,9 +17,8 @@ const PLACEHOLDER: ExtractedVacancy = {
   isTech: true,
   seniority: Seniority.SENIOR,
   skills: {
-    required: ["TypeScript", "PostgreSQL"],
-    optional: ["Temporal"],
-    alternatives: [],
+    required: [{ anyOf: ["TypeScript"] }, { anyOf: ["PostgreSQL"] }],
+    optional: [{ anyOf: ["Temporal"] }],
   },
   experienceYears: 3,
   salary: { min: 6000, max: 8000, currency: null },
