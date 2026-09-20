@@ -69,9 +69,12 @@ is bound to `DeepSeekClient` in `clients.baml`.
 
 `--extractor requirements-v2` (default) is `ExtractVacancyRequirementsV2`, the
 contract the labels were written against. `--extractor production` is
-`ExtractVacancy` and needs `DATABASE_URL` for its taxonomy prompt; its `anyOf`
-metrics stay at zero until `requirement-groups.md` Pass 2 adds `alternatives` to
-the production contract.
+`ExtractVacancy` and needs `DATABASE_URL` for its taxonomy prompt. Its flat
+`skills` are adapted into the labels' shape by `adaptLegacySkills`: one
+requirement per skill, except where `skills.alternatives` marks several of them
+as one choice, which becomes one multi-entry requirement and removes the
+members' singletons. A group naming a skill outside `required`, or collapsing to
+fewer than two, is ignored — the same rules the loader drops it by.
 
 ## Release gate
 

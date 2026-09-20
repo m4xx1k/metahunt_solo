@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { count, eq, sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
@@ -290,6 +291,101 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     expect(vacancy.embedding).toBeNull();
     expect(vacancy.embeddingSourceHash).toBeNull();
     expect(vacancy.deduplicatedAt).toBeNull();
+  });
+
+  it("stamps a requirement group onto the links a choice names, and rewrites it on reload", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const recordId = await seedRecord(sourceId, ingestId, {
+      ...fullExtracted,
+      skills: {
+        required: ["Go", "PostgreSQL", "Kafka", "RabbitMQ"],
+        optional: ["Docker"],
+        alternatives: [{ anyOf: ["Kafka", "RabbitMQ"] }],
+      },
+    });
+    const vacancyId = await loader.loadFromRecord(recordId);
+    if (!vacancyId) throw new Error("loadFromRecord returned null");
+
+    const groups = async (): Promise<Array<{ name: string; group: number | null }>> => {
+      const rows = await db
+        .select({
+          name: schema.nodes.canonicalName,
+          group: schema.vacancyNodes.requirementGroup,
+        })
+        .from(schema.vacancyNodes)
+        .innerJoin(schema.nodes, eq(schema.nodes.id, schema.vacancyNodes.nodeId))
+        .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
+      return rows.sort((a, b) => a.name.localeCompare(b.name));
+    };
+
+    expect(await groups()).toEqual([
+      { name: "Docker", group: null },
+      { name: "Go", group: null },
+      { name: "Kafka", group: 1 },
+      { name: "PostgreSQL", group: null },
+      { name: "RabbitMQ", group: 1 },
+    ]);
+
+    // The view the scorer reads must carry the number through to the Position.
+    const viaPosition = await db
+      .select({ group: schema.positionNodes.requirementGroup })
+      .from(schema.positionNodes)
+      .innerJoin(schema.nodes, eq(schema.nodes.id, schema.positionNodes.nodeId))
+      .where(eq(schema.nodes.canonicalName, "Kafka"));
+    expect(viaPosition).toEqual([{ group: 1 }]);
+
+    // A re-extraction that no longer sees a choice must clear the old numbering.
+    await db
+      .update(schema.rssRecords)
+      .set({
+        extractedData: {
+          ...fullExtracted,
+          skills: {
+            required: ["Go", "PostgreSQL", "Kafka", "RabbitMQ"],
+            optional: ["Docker"],
+            alternatives: [],
+          },
+        },
+      })
+      .where(eq(schema.rssRecords.id, recordId));
+    expect(await loader.loadFromRecord(recordId, { force: true })).toBe(vacancyId);
+    expect((await groups()).every(({ group }) => group === null)).toBe(true);
+  });
+
+  it("keeps the flat skills when a group is malformed, and says why it dropped it", async () => {
+    const warn = jest.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
+    const { sourceId, ingestId } = await seedSource();
+    const recordId = await seedRecord(sourceId, ingestId, {
+      ...fullExtracted,
+      skills: {
+        required: ["Go", "PostgreSQL"],
+        optional: ["Docker", "Kafka"],
+        // Optional-only (R2), and one naming a skill this posting never listed.
+        alternatives: [{ anyOf: ["Docker", "Kafka"] }, { anyOf: ["Go", "Erlang"] }],
+      },
+    });
+
+    const vacancyId = await loader.loadFromRecord(recordId);
+    if (!vacancyId) throw new Error("loadFromRecord returned null");
+
+    const links = await db
+      .select()
+      .from(schema.vacancyNodes)
+      .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
+    expect(links).toHaveLength(4);
+    expect(links.every((link) => link.requirementGroup === null)).toBe(true);
+
+    const messages = warn.mock.calls.map(([message]) => String(message));
+    expect(messages).toEqual([
+      expect.stringContaining("group 1 (optional-member)"),
+      expect.stringContaining("group 2 (unknown-member)"),
+    ]);
+    // A group naming an unlisted skill must not mint a taxonomy node for it.
+    const erlang = await db
+      .select()
+      .from(schema.nodes)
+      .where(eq(schema.nodes.canonicalName, "Erlang"));
+    expect(erlang).toHaveLength(0);
   });
 
   it("re-opens a changed listing without orphaning it from its position", async () => {

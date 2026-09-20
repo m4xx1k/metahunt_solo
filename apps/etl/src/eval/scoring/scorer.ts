@@ -24,7 +24,11 @@ const extractionSchema = z.object({
   role: z.string().nullable(),
   seniority: z.string().nullable(),
   skills: z
-    .object({ required: z.array(z.string()).optional(), optional: z.array(z.string()).optional() })
+    .object({
+      required: z.array(z.string()).optional(),
+      optional: z.array(z.string()).optional(),
+      alternatives: z.array(z.object({ anyOf: z.array(z.string()).optional() })).optional(),
+    })
     .nullable()
     .optional(),
   requirements: z.array(requirementSchema).nullable().optional(),
@@ -37,9 +41,39 @@ type NormalizedClause = {
   alternativesKey: string;
 };
 
+/**
+ * Production's flat `skills` in the labels' shape: one requirement per skill,
+ * except where `alternatives` marks several of them as one choice. A grouped
+ * skill is only that group's member, never also a requirement of its own —
+ * the labels count one choice once. Groups naming a skill outside `required`,
+ * or collapsing to fewer than two, are ignored exactly as the loader drops them.
+ */
 export function adaptLegacySkills(skills: LegacySkills | null | undefined): Requirement[] {
+  const required = skills?.required ?? [];
+  const byNormalized = new Map(required.map((name) => [normalizeAliasName(name), name]));
+
+  const groups: string[][] = [];
+  const grouped = new Set<string>();
+  for (const { anyOf } of skills?.alternatives ?? []) {
+    const members = new Map<string, string>();
+    for (const name of anyOf ?? []) {
+      const canonical = byNormalized.get(normalizeAliasName(name));
+      if (!canonical) {
+        members.clear();
+        break;
+      }
+      members.set(canonical, canonical);
+    }
+    if (members.size < 2 || [...members.keys()].some((name) => grouped.has(name))) continue;
+    for (const name of members.keys()) grouped.add(name);
+    groups.push([...members.keys()]);
+  }
+
   return [
-    ...(skills?.required ?? []).map((name) => ({ priority: "must" as const, anyOf: [name] })),
+    ...groups.map((anyOf) => ({ priority: "must" as const, anyOf })),
+    ...required
+      .filter((name) => !grouped.has(name))
+      .map((name) => ({ priority: "must" as const, anyOf: [name] })),
     ...(skills?.optional ?? []).map((name) => ({ priority: "nice" as const, anyOf: [name] })),
   ];
 }

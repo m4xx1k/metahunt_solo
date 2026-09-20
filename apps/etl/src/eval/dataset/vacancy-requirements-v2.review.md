@@ -1,6 +1,6 @@
 # Requirements v2 — draft review
 
-25 реальних вакансій з production DB. Це читабельний GitHub-view канонічного `vacancy-requirements-v2.dataset.json`.
+24 реальні вакансії з production DB. Це читабельний GitHub-view канонічного `vacancy-requirements-v2.dataset.json`.
 
 Розмітку v2 зроблено вручну за текстом вакансій, а не відповідями DeepSeek. Role labels використовують цільові discipline-ролі з role-v2; `Architect` не означає `PRINCIPAL` автоматично. Статус лишається `draft`, доки owner не підтвердить labels.
 
@@ -55,49 +55,7 @@ Title: Middle System Administrator в Levi9 Ukraine, Київ
 
 </details>
 
-## 02. Middle FinOps Engineer; ID 100980 в SoftServe, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Луцьк, Полтава, Рівне, Тернопіль, Ужгород, Хмельницький, Чернівці, віддалено
-
-**ID:** `31edad8c-e079-4dd7-acd1-5ecea8a2fca5` \
-**Slices:** `or`, `cloud`
-
-**Expected:** tech: `true`; role: `DevOps Engineer`; seniority: `MIDDLE`
-
-- `must` AWS **OR** Azure **OR** GCP
-- `must` FinOps
-- `must` Cost Allocation
-- `must` Tag Governance
-- `must` Commitment Management
-- `must` Showback/Chargeback
-- `must` Anomaly Detection
-- `must` FinOps Operating Model
-- `must` Maturity Scoring
-- `must` AWS Cost Explorer **OR** Azure Cost Management **OR** GCP Billing Console
-- `must` CloudZero **OR** CloudHealth **OR** Kubecost
-- `must` Cloud Pricing Models
-- `must` Reserved Instances
-- `must` Savings Plans
-- `must` Committed Use Discounts
-- `must` Spot/Preemptible Instances
-- `must` Unified Cost Model
-- `must` Budget Management
-- `must` Cost Forecasting
-- `nice` Multi-cloud
-- `nice` Kubernetes Cost Management
-- `nice` AWS CUR **OR** Azure Cost Export **OR** GCP BigQuery Billing Export
-- `nice` SaaS Cost Management
-- `nice` AI/ML Cost Optimization
-- `nice` Terraform
-
-<details>
-<summary>Текст вакансії</summary>
-
-Title: Middle FinOps Engineer; ID 100980 в SoftServe, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Луцьк, Полтава, Рівне, Тернопіль, Ужгород, Хмельницький, Чернівці, віддалено
-
-ПРО РОЛЬ: У цій ролі ти допомагатимеш організаціям з різних індустрій взяти під контроль витрати на хмарні сервіси, впроваджуючи FinOps як повноцінну бізнес-дисципліну. Ти працюватимеш у межах FinOps-практики SoftServe та допомагатимеш клієнтам з оптимізацією та управлінням хмарними витратами. У твої задачі входитиме аналіз витрат, пошук можливостей для економії та покращення прозорості використання хмарних ресурсів. Також ти братимеш участь у побудові та покращенні FinOps-процесів, governance-підходів і операційних моделей, щоб клієнти могли ефективніше керувати своїми хмарними середовищами. ОБОВ’ЯЗКИ: проводити оцінку прозорості хмарних витрат: аналіз ієрархії акаунтів, сегментація середовищ, формування базового рівня витрат і моделювання трендів; виконувати аналіз неефективних витрат і rightsizing у хмарах AWS, Azure та GCP; оцінювати та впроваджувати стратегії зобов’язань — Reserved Instances, Savings Plans, Spot — і готувати поетапні плани закупівель із ROI‑моделями; розгортати та налаштовувати FinOps‑інструменти, закривати прогалини у прозорості та передавати клієнтам готові cost‑дашборди до завершення залучення; готувати ключові артефакти залучення: maturity scorecard, звіт з економії, 90‑денний план дій і повний підсумковий звіт оцінки; виконувати контрольні FinOps‑залучення; будувати та запускати Unified Cost Model: консолідація кількох акаунтів, сегментація середовищ і 12‑місячна модель прогнозування; впроваджувати фреймворки алокації витрат, showback‑звіти та chargeback‑моделі з інтеграцією у фінансову звітність клієнта; налаштовувати повну бюджетну модель управління: бюджети на рівні команд, виявлення аномалій з автоматичними алертами та регулярний FinOps‑ритм оглядів. ВИМОГИ: 3+ роки практичного досвіду роботи з AWS, Azure або GCP (досвід multi‑cloud буде перевагою); 2+ роки спеціалізованого досвіду у FinOps: алокація витрат, governance тегування, управління зобов’язаннями, showback/chargeback, виявлення аномалій і дизайн FinOps operating model; досвід ведення FinOps‑залучень end‑to‑end — від первинної оцінки та maturity scoring до впровадження і передачі результатів; практичний досвід роботи з інструментами управління хмарними витратами: нативні сервіси (AWS Cost Explorer, Azure Cost Management, GCP Billing Console) та сторонні платформи (CloudZero, CloudHealth, Kubecost або подібні); розуміння моделей ціноутворення у хмарі: compute, storage, networking, Reserved Instances, Savings Plans, Committed Use Discounts, Spot/Preemptible; досвід побудови cost allocation framework, unified cost model, структур бюджетного управління та моделей прогнозування; сильні комунікаційні навички для презентації результатів Product Owners, CFO, Engineering Managers і роботи над імплементацією разом із DevOps‑командами в межах одного дня; досвід фасилітації регулярних FinOps‑оглядів і зустрічей зі стейкхолдерами; англійська мова на рівні upper‑intermediate або вище (усна й письмова); сертифікації Certified Practitioner, Certified Engineer або Certified Professional (буде перевагою); досвід у консалтинговому або клієнтському середовищі (nice to have); знайомство з управлінням витратами Kubernetes на рівні namespace та workload (опційно); досвід роботи з білінговими дата‑пайплайнами (AWS CUR, Azure Cost Export, GCP BigQuery billing export) (бажано); знання управління витратами SaaS і оптимізації вартості AI/ML‑навантажень (перевага); знання Terraform (перевага). ПРО НАС: SoftServe — глобальна компанія у сфері цифрової інженерії та технологічного консалтингу. Тут експертність поєднується з культурою, у центрі якої — люди. Уже понад 30 років ми допомагаємо організаціям долати складні бізнес-виклики. Поєднуємо глибоку інженерну експертизу з продуманими інноваціями, що спираються на дослідження. Наші команди працюють у напрямах цифрової інженерії, аналітики даних, хмарних технологій та AI/ML. Створюємо практичні й масштабовані технологічні рішення, що відповідають реальним потребам бізнесу та приносять користь людям. Серед наших клієнтів — компанії з різних індустрій: високих технологій, фінансових сервісів, охорони здоров’я, фармацевтики та біотехнологій, ритейлу, енергетики й виробництва. Для нас важливі якість рішень, їхній вплив і люди, завдяки яким ця робота стає можливою. Нас вирізняє те, як ми працюємо разом. Ти приносиш свій погляд і амбіції — ми створюємо середовище, де можна впевнено рухатися вперед і будувати рішення, що мають значення. МИ ПРОПОНУЄМО: Гнучкий графік Працюй з дому, з офісу або в гібридному форматі — так, щоб зберігати фокус і залишатися на зв’язку з командою. Компенсація та переваги Конкурентна винагорода, що відповідає ролі, локації та ринку. Також — медичне страхування, оплачувана відпустка, підтримка фізичного й ментального здоров’я та можливості для навчання. Лідерство з фокусом на людей Ти працюєш із лідерами, відкритими до діалогу, які пояснюють контекст і допомагають командам рухатися в одному напрямі. Технологічні спільноти Долучайся до спільнот з AI/ML, Cloud, Quantum Computing, IoT і Robotics, а також до проєктів, що базуються на сучасних фреймворках і технологіях. SoftServe — компанія рівних можливостей. Ми відкриті до працевлаштування усіх кваліфікованих кандидатів та кандидаток, незалежно від раси, кольору шкіри, віросповідання, віку, статі, національності, інвалідності, сексуальної орієнтації, гендерної ідентичності та самовираження, ветеранського статусу та інших захищених ознак, відповідно до чинного законодавства. Ставай частиною SoftServe та роби те, що драйвить! Відгукнутись на вакансію
-
-</details>
-
-## 03. Junior Automation QA Engineer (JS)
+## 02. Junior Automation QA Engineer (JS)
 
 **ID:** `3881a497-a17f-4168-a7de-d4f34d35ac6c` \
 **Slices:** `or`, `qa`
@@ -126,7 +84,7 @@ Due to the launch of a new project, we are looking for a Junior Automation QA En
 
 </details>
 
-## 04. Senior Python Automation QA Engineer
+## 03. Senior Python Automation QA Engineer
 
 **ID:** `06a94eef-a83f-4fd8-8d32-67f61ac3854c` \
 **Slices:** `qa`, `methodology`
@@ -153,7 +111,7 @@ Description About Project: Comprised of the Company’s international business u
 
 </details>
 
-## 05. Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено
+## 04. Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено
 
 **ID:** `94c194b8-0ef0-43c4-999a-879411e7bc5e` \
 **Slices:** `methodology`
@@ -189,7 +147,7 @@ We are seeking a highly skilled Senior .NET AI Software Engineer to lead the dev
 
 </details>
 
-## 06. ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено
+## 05. ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено
 
 **ID:** `44f8f1d5-f52b-4407-b84d-cd84a129601f` \
 **Slices:** `competency`, `nice`
@@ -216,7 +174,7 @@ Title: ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed 
 
 </details>
 
-## 07. QA Engineer
+## 06. QA Engineer
 
 **ID:** `97ec4fbc-6f58-4c48-aca4-983b8946a633` \
 **Slices:** `methodology`, `nice`
@@ -243,7 +201,7 @@ Tasks Design, write, and maintain automated test suites (e.g., using TypeScript 
 
 </details>
 
-## 08. Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів
+## 07. Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів
 
 **ID:** `ac76929d-692e-4458-bc93-07ecc1be906a` \
 **Slices:** `qa`, `api-testing`
@@ -276,7 +234,7 @@ We are looking for a Senior Automation QA Engineer (Playwright, RestAssured, TS/
 
 </details>
 
-## 09. Python Engineer
+## 08. Python Engineer
 
 **ID:** `c4ac496c-7f80-4ec0-86ac-85ee2742ace9` \
 **Slices:** `api-testing`
@@ -299,7 +257,7 @@ We’re hiring a skilled Python developer with strong FastAPI experience to help
 
 </details>
 
-## 10. Middle Automation QA Engineer (Playwright) в Exoft, Львів
+## 09. Middle Automation QA Engineer (Playwright) в Exoft, Львів
 
 **ID:** `ab523145-c7b7-4271-b765-63380c6e8f53` \
 **Slices:** `qa`, `cloud`
@@ -329,7 +287,7 @@ Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer
 
 </details>
 
-## 11. QA Automation Engineer (Contract) в IT Service Ukraine, за кордоном, віддалено
+## 10. QA Automation Engineer (Contract) в IT Service Ukraine, за кордоном, віддалено
 
 **ID:** `40d73699-35db-4a14-be41-a4429c7451be` \
 **Slices:** `qa`
@@ -354,7 +312,7 @@ We’re looking for a QA Automation Engineer to join our team on a full-time con
 
 </details>
 
-## 12. MLOps Engineer
+## 11. MLOps Engineer
 
 **ID:** `95407129-4421-4ebb-a701-1429592d6a90` \
 **Slices:** `or`, `cloud`
@@ -379,7 +337,7 @@ Senior MLOps Engineer with 7+ years of experience needed for a global project in
 
 </details>
 
-## 13. Frontend Engineer (JavaScript/TypeScript)
+## 12. Frontend Engineer (JavaScript/TypeScript)
 
 **ID:** `4950053b-d757-4b4d-9828-3ff51f4509fb` \
 **Slices:** `or`
@@ -400,7 +358,7 @@ Senior Frontend Engineer with 10+ years of experience needed for a global projec
 
 </details>
 
-## 14. Data Engineer
+## 13. Data Engineer
 
 **ID:** `d649c71a-7f2a-42dc-9af2-2311bc9a0d5f` \
 **Slices:** `data`
@@ -423,7 +381,7 @@ We’re looking for a Data Engineer to improve our data infrastructure and integ
 
 </details>
 
-## 15. Senior Data Engineer
+## 14. Senior Data Engineer
 
 **ID:** `b2d7b7d4-e51b-46cd-bf08-2cecee9900a7` \
 **Slices:** `data`
@@ -452,7 +410,7 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
 
 </details>
 
-## 16. Senior DevOps Engineer (Java)
+## 15. Senior DevOps Engineer (Java)
 
 **ID:** `32e7e8af-290a-463a-a612-747282522816` \
 **Slices:** `devops`
@@ -476,7 +434,7 @@ We are looking for a Senior DevOps / Backend Engineer (Java) to join our client'
 
 </details>
 
-## 17. Senior Full-Stack (Node + React) Engineer
+## 16. Senior Full-Stack (Node + React) Engineer
 
 **ID:** `bc2deda3-7698-40c3-9a1c-edea450e62cb` \
 **Slices:** `fullstack`
@@ -512,7 +470,7 @@ Title: Senior Full-Stack (Node + React) Engineer
 
 </details>
 
-## 18. Python Developer (Django)
+## 17. Python Developer (Django)
 
 **ID:** `c595d814-5ed1-48b5-9686-6d0a953c598d` \
 **Slices:** `api-testing`
@@ -546,7 +504,7 @@ Title: Python Developer (Django)
 
 </details>
 
-## 19. Node.js Developer
+## 18. Node.js Developer
 
 **ID:** `700f21ca-52cc-40cc-ae4f-2ae153b74fab` \
 **Slices:** `api-testing`
@@ -580,7 +538,7 @@ Title: Node.js Developer
 
 </details>
 
-## 20. Backend Developer (Node.js)
+## 19. Backend Developer (Node.js)
 
 **ID:** `1b5c33e8-9ffb-461e-81d5-8cd987a71a46` \
 **Slices:** `backend`
@@ -614,7 +572,7 @@ Title: Backend Developer (Node.js)
 
 </details>
 
-## 21. Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
+## 20. Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
 
 **ID:** `365476ce-7843-49a5-9863-724c78abd568` \
 **Slices:** `backend`
@@ -646,7 +604,7 @@ We are looking for a Middle+/Senior Full-stack Shopware developer to join our te
 
 </details>
 
-## 22. Middle DevOps
+## 21. Middle DevOps
 
 **ID:** `3f08d0da-1d87-4d8f-a1bf-17db9a324e86` \
 **Slices:** `devops`, `cloud`
@@ -674,7 +632,7 @@ Requirements: Hands-on experience with preparing automation scenarios using Terr
 
 </details>
 
-## 23. Linux embedded
+## 22. Linux embedded
 
 **ID:** `2eb4a20a-ebb0-4210-86aa-e6250891237d` \
 **Slices:** `embedded`
@@ -709,7 +667,7 @@ Title: Linux embedded
 
 </details>
 
-## 24. Embedded / UAV Software Engineer
+## 23. Embedded / UAV Software Engineer
 
 **ID:** `fa303161-eab2-4375-956d-faf5e328b4e0` \
 **Slices:** `embedded`
@@ -746,7 +704,7 @@ Title: Embedded / UAV Software Engineer
 
 </details>
 
-## 25. Junior QA Engineer
+## 24. Junior QA Engineer
 
 **ID:** `ef22000b-3d54-4916-8151-5489fdddcb2f` \
 **Slices:** `qa`, `api-testing`

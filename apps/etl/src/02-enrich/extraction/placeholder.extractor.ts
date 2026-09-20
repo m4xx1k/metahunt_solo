@@ -19,6 +19,7 @@ const PLACEHOLDER: ExtractedVacancy = {
   skills: {
     required: ["TypeScript", "PostgreSQL"],
     optional: ["Temporal"],
+    alternatives: [],
   },
   experienceYears: 3,
   salary: { min: 6000, max: 8000, currency: null },

@@ -127,6 +127,32 @@ describe("Requirements v2 scorer", () => {
     ]);
   });
 
+  it("folds an explicit choice into one requirement, dropping the members' singletons", () => {
+    expect(
+      adaptLegacySkills({
+        required: ["Python", "AWS", "GCP"],
+        optional: ["Terraform"],
+        alternatives: [{ anyOf: ["AWS", "GCP"] }],
+      }),
+    ).toEqual([
+      { priority: "must", anyOf: ["AWS", "GCP"] },
+      { priority: "must", anyOf: ["Python"] },
+      { priority: "nice", anyOf: ["Terraform"] },
+    ]);
+  });
+
+  it("ignores a group the way the loader drops it: unknown member, or fewer than two", () => {
+    expect(
+      adaptLegacySkills({
+        required: ["AWS", "Kafka"],
+        alternatives: [{ anyOf: ["AWS", "Oracle Cloud"] }, { anyOf: ["Kafka"] }],
+      }),
+    ).toEqual([
+      { priority: "must", anyOf: ["AWS"] },
+      { priority: "must", anyOf: ["Kafka"] },
+    ]);
+  });
+
   it("reports provider failures separately from schema failures", () => {
     const provider = scoreRequirements(expected([]), null, aliases, "upstream unavailable");
     const schema = scoreRequirements(

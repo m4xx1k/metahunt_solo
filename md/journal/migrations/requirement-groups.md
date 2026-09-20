@@ -105,9 +105,10 @@ the load-bearing ones**; break either and Fit corrupts silently.
 
 ## 3. Decisions
 
-Eight questions came up while designing this. All eight are decided; each row
-says what was chosen and what that choice costs or unlocks. Nothing here is
-provisional — treat these as settled unless new evidence shows up.
+Ten questions came up. All ten are decided; each row says what was chosen and
+what that choice costs or unlocks. Nothing here is provisional — treat these as
+settled unless new evidence shows up. R1–R8 are design decisions taken while
+writing this plan; R9–R10 came out of measuring it on 2026-09-20.
 
 ### R1 — cap raise and grouping run as two separate corpus passes, not one
 
@@ -195,9 +196,11 @@ drifting apart again the way they already had to be reconciled once
 (`scoringCtes` itself was pulled out of `RankingService` for exactly this
 reason, MET-144).
 
-### R7 — golden-set approval covers only the 10 rows with a MUST group
+### R7 — golden-set approval covers only the rows with a MUST group
 
-**Chosen**, over approving all 25 or shipping ungated.
+**Chosen**, over approving the whole set or shipping ungated. The count was 10
+of 25; after R9 removed the FinOps row it is **9 of 24**, carrying 11 MUST
+groups, and it moves again when the rebalance adds rows.
 
 **Why.** Pass 2's release gate should cover exactly what Pass 2 changes. The
 other 15 golden rows judge general extraction quality (role, seniority, plain
@@ -208,6 +211,10 @@ participate in a release gate; a draft-only run never passes one.
 **Consequence.** Pass 2 has a real, if narrow, release gate. Pass 1 (cap raise +
 concepts) has no comparable golden-set gate today, and this decision does not
 add one for it — that stays a follow-up if Pass 1's shift looks concerning.
+
+Approving also **narrows the summary to approved rows** (`apps/etl/src/eval/README.md`),
+so it is done last: measure against the draft set first, approve immediately
+before Pass 2 ships wide (settled 2026-09-20).
 
 ### R8 — the SkillDiff single-chip rendering (`AWS / Azure / GCP` as one chip
 instead of three) ships in the **next** release, not this one
@@ -220,6 +227,58 @@ which is cosmetically the same complaint that motivated this whole tracker.
 detail — flagged here so it doesn't quietly fall off after Pass 2 ships. Carry
 the group id out on `SkillRef` and collapse it in the renderer when this is
 picked up (§6.5).
+
+### R9 — the golden set is rebalanced to the corpus, and the FinOps row is gone
+
+**Chosen 2026-09-20.** The 25-row set was written for contract coverage, not for
+resemblance to the corpus, and it shows: 7 of 25 rows are QA against ~13% of
+Positions, while `Software Engineer` (9.3% of the corpus, the second-largest
+role) has no row at all, and neither do AI, Security, Hardware or Data Analyst —
+together about a fifth of the corpus.
+
+The FinOps row is **deleted, not relabelled** (done 2026-09-20, the set is 24
+rows). It carried 25 labels, 23 of which the extractor missed, and most of those
+labels are concept phrases with no taxonomy node behind them
+(`Cost Forecasting`, `Tag Governance`, `Commitment Management`). It moved the
+aggregate by roughly three points and diagnosed nothing.
+
+**Target composition**, weighted by the owner's segment counts rather than by
+single roles: Backend 2,458 · Data & AI 2,215 · QA 2,192 · DevOps 2,104 ·
+Fullstack 1,552 · Frontend 625. Roughly: keep Backend and Fullstack as they are,
+keep at most 4 QA, add Data & AI and Software Engineer rows, and add one each
+for Security, Hardware and Data Analyst for balance.
+
+**Consequence.** Every metric recorded in this tracker so far was measured on
+the 25-row set. They stay as the record of what was true then, and the first run
+after the rebalance is a **new baseline** — do not compare across the change.
+Re-baseline once, after the dataset work is finished, not after each row.
+
+### R10 — the `knownSkills` list is guidance, not a whitelist
+
+**Chosen 2026-09-20.** Today the prompt allows an architectural style or named
+practice **only** when it appears verbatim in `knownSkills`, and forbids minting
+a new one outright. That rule was added to stop invented practices, and it
+worked — but it also froze the taxonomy: nothing new can enter through
+extraction, so the list only ever grows by hand.
+
+**New rule to write:** the model may trust `knownSkills` as the canonical
+spelling and should prefer it, and may emit a genuinely new name when the
+posting really requires something the list does not contain. The bar stays on
+what a skill *is* — a concrete technology, tool, or an established named
+practice — not on membership in the list.
+
+**Why this needs care rather than a one-line edit.** `node_stats` counts
+**NEW and VERIFIED nodes alike** — only HIDDEN is excluded — so anything the
+extractor mints immediately enters the IDF weights, and a typo or a one-off
+phrase lands as a rare, high-weight node. That is the exact failure the fat-tail
+smoothing constant K=5 exists to dampen, and loosening the rule pushes more
+traffic through it. Before this ships: measure how many distinct NEW nodes one
+batch mints, and be ready to keep a lighter guard (for example: a new name must
+look like a product or technology name, never a sentence or a duty).
+
+**Consequence.** This is a third corpus pass in waiting, not part of Pass 2 —
+it moves `specHash` on its own. Fold it in with a re-extraction that is already
+being paid for, exactly as the ROLE cleanup is meant to ride along (§7).
 
 ---
 
@@ -261,7 +320,7 @@ Notes on why this shape:
   execution risk in the whole plan (§11).
 - The model has already demonstrated this capability: the v2 eval contract
   (`extract-vacancy-requirements-v2.baml`) has an `anyOf` field, and the golden
-  set carries 22 hand-labelled groups.
+  set carries hand-labelled groups (22 when this was written; 18 after R9).
 
 Prompt additions — reuse the rules already written and validated in the v2 file,
 they are the same problem:
@@ -539,9 +598,9 @@ a constraint.
 
 | # | Step | Reversible |
 |---|---|---|
-| 1 | `pnpm db:generate` migration: `requirement_group` column + `position_nodes` view. Deploy. Nothing writes it yet, nothing reads it. | drop column |
-| 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). | git |
-| 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. | git |
+| 1 | `pnpm db:generate` migration: `requirement_group` column + `position_nodes` view. Deploy. Nothing writes it yet, nothing reads it. **Done 2026-09-20** (PR #218, migration `0058`) — hand-edited to `CREATE OR REPLACE VIEW`: the generated `DROP VIEW` fails, `node_stats`, `node_skill_cooc` and both track views depend on it. | drop column |
+| 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). **Done 2026-09-20** — codegen round-trips, §11.1 closed; `BAML_PRODUCTION_SOURCE_HASH` → `4f089c9a…`. | git |
+| 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. **Done 2026-09-20** — four reasons, not three: a member outside this posting's skills is its own case, because group names are matched against already-resolved links and never resolve a node of their own. | git |
 | 4 | `scripts/db-backup.sh`, then pause Temporal schedules. | — |
 | 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). | data only; the backup |
 | 6 | Refresh `node_stats` and `node_skill_cooc`. Re-set `FIT_STRONG_MIN` / `FIT_GOOD_MIN` on the now-settled distribution. | git |
@@ -566,52 +625,60 @@ The eval this section assumes now exists and runs from disk — `pnpm eval`, see
 | role accuracy | 52.0% |
 | profile fields | 96.1% of 51 checked |
 
-#### Measured 2026-09-19, prompt only — the cap raise works
+The measurement log — every run, its numbers and how to read them — lives in
+[`requirement-groups-measurements.md`](requirement-groups-measurements.md). This
+file keeps the plan and the decisions; that one keeps the evidence.
 
-Taken before any corpus touch: the golden set is the whole measurement, so this
-cost about a cent and needed no backup, no schedule pause and no prod access.
-`pnpm eval --extractor production --repeat 3`, run against the same alias
-snapshot `3b8a5cb4bc70` as the baseline.
-`runs/2026-09-19-production-DeepSeekClient-cap20.*`.
-
-| metric | before | after | delta | per-pass spread |
-|---|---|---|---|---|
-| recall | 49.9% | **55.4%** | **+5.4** | 0.9 |
-| precision | 69.6% | 68.5% | −1.1 | 1.3 |
-| F1 | 57.2% | **60.2%** | **+3.0** | 0.4 |
-| or_split_errors | 13 | 16 | +3 | — |
-| role accuracy | 52.0% | 53.3% | +1.3 | — |
-| profile fields | 96.1% | 95.4% | −0.7 | — |
-
-Read it against the spread, which is this run's own noise estimate: **recall
-moved 6x its noise band, so it is real. Precision moved less than its noise
-band, so on this evidence the cap raise did not measurably cost precision** —
-which is not the same as "cost nothing", only that 25 rows cannot resolve a
-movement this small. F1 is a genuine gain either way.
-
-Two things this does not measure, both by construction. It says nothing about
-`node_stats`, coverage or Fit — those need the corpus, and the corpus is
-untouched. And `or_split_errors` got worse (13 → 16): more slots means less
-pressure to collapse "A or B" into one entry, so Pass 2 inherits a slightly
-bigger problem than the baseline suggested. That is the contract Pass 2 exists
-to fix, not a regression to chase here.
-
-Two things that pass carries: reasoning removes OR splitting entirely on the same
-model (`or_split` 2.7 → 0.0 for 5x the cost), and the `profile` labels exist so a
-prompt edit aimed at skills cannot silently move work format or English level.
-
-- **Before Pass 2 step 5**, run the new contract over the 25-row golden set
-  (`apps/etl/src/eval/`) and compare groups against the 22 hand-labelled `anyOf`
-  entries.
-- **Release gate (R7):** approve only the 10 golden-set rows carrying a MUST
-  group before Pass 2 ships wide. The other 15 stay draft — they test the
-  already-shipped contract, not this feature.
+- **Before Pass 2 step 5**, run the new contract over the golden set
+  (`apps/etl/src/eval/`) and compare groups against the hand-labelled `anyOf`
+  entries — 18 of them in the 24-row set, 11 of which are MUST and therefore
+  reachable (R2). Done twice already; see the measurement log.
+- **Release gate (R7):** approve only the rows carrying a MUST group — 9 of the
+  current 24 — and do it immediately before Pass 2 ships wide, because
+  approving narrows the summary to approved rows. The rest stay draft: they test
+  the already-shipped contract, not this feature.
 - **After Pass 2 step 7**, the metric is how many Positions changed Fit tier, not
   skill accuracy. Expect movement concentrated in DevOps / Security / SysAdmin —
   the roles with both the highest cap saturation (48% / 42% / 40%) and the
   substitute families.
 
 ---
+
+## 7a. Where this stands — 2026-09-20
+
+**Shipped to prod.** `vacancy_nodes.requirement_group` + the column on the
+`position_nodes` view (PR #218, migration `0058`). Deployed, verified on prod,
+0 rows grouped — nothing user-visible moved. The migration is hand-written:
+drizzle-kit's `DROP VIEW` + `CREATE VIEW` fails because four objects depend on
+that view, so it is `CREATE OR REPLACE`. **Any future change to `position_nodes`,
+`positions` or `postings` hits the same trap.** Shipped alongside: `seo-audit.yml`
+no longer pins a pnpm version against `packageManager` (it had been failing on
+every branch, including `main`).
+
+**Open in PR #219, CI green, waiting on the owner.** Extraction (`SkillGroup` +
+`Skills.alternatives` + three prompt examples), the loader (stamping, four drop
+reasons, members matched by alias-normalized name so a group can never mint a
+node), `reextractWorkflow`, and the eval adapter. Nothing in it changes a
+user-visible number: the field is written, no scorer reads it. `specHash` is
+`dcb8e6cc…`.
+
+**Not started.** The corpus re-extraction — the workflow has no schedule and no
+endpoint, it starts by hand. Pass 2 step 7 (switching `scoringCtes`,
+`recommendation.service.ts` and the exclusion predicate to units) is a separate
+commit and a separate deploy, and it is the only step that moves Fit.
+
+**Spent so far:** under two cents, three golden-set runs. The corpus batch from
+2026-08-19 is $0.30–0.75; the whole canonical corpus is $1.7–4.
+
+**Decided but not yet built:** R9 (rebalance the golden set to the corpus; the
+FinOps row is already deleted, the set is 24 rows) and R10 (`knownSkills`
+becomes guidance rather than a whitelist). R10 moves `specHash` on its own, so
+it belongs with a re-extraction that is already being paid for.
+
+**The one rule that costs money if broken:** no taxonomy edits while a batch
+runs. Verifying a single node moves `taxonomyHash` → `specHash`, and every
+artifact already paid for becomes a cache miss.
+
 
 ## 8. Risks, measured
 
@@ -734,12 +801,24 @@ partition label, and a real requirement table would simply absorb it.
 
 ## 11. Open
 
-All eight design questions this doc raised are resolved in §3. What's left is
-execution risk, not decision:
+All ten design questions are resolved in §3. What is left is execution and
+sequencing:
 
-1. **`SkillGroup[]` must round-trip through `baml_client` codegen** before Pass
-   2's loader step is written (§4). Not yet verified.
-2. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to need
-   an interim recalibration, or whether the single recalibration planned after
-   Pass 2 (§7, Pass 2 step 6) is enough. Decide after watching Pass 1 step 4's
-   output — don't pre-guess it.
+1. ~~`SkillGroup[]` must round-trip through `baml_client` codegen~~ — **closed
+   2026-09-20.** Codegen emits the interface and the field, `b.parse` parses a
+   response carrying groups, and a response omitting the field coerces to `[]`
+   rather than failing. No `string[][]` fallback needed.
+2. **How far to push the grouping prompt.** One iteration took it from 36% to
+   57% of the reachable golden-set choices for about a cent. The remaining
+   misses concentrate in slash pairs (`ETL/ELT`, `C/C++`), and at least one is a
+   label question rather than a prompt one. Ungrouped choices score exactly as
+   today, so this gates nothing.
+3. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to
+   need an interim recalibration, or whether the single recalibration after
+   Pass 2 (§7, Pass 2 step 6) is enough. Decide on the corpus, not in advance —
+   the "before" distribution is in the measurement log.
+4. **Sequencing R9 and R10 against the corpus pass.** Rebalancing the golden set
+   costs no provider money and moves no `specHash`; relaxing `knownSkills`
+   moves both. Doing R10 after a paid corpus pass means paying for it twice.
+5. **428 canonical postings carry no skills at all.** Found while measuring
+   coverage, unexamined.
