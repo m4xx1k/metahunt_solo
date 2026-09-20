@@ -401,9 +401,13 @@ function ExtractVacancy(
       - One logical choice is one list, however the posting words it:
         "AWS or GCP", "one of A/B", "A and/or B", "at least one of: A, B, C",
         "any framework (A, B, C)".
-      - A slash joins a choice only when each side is a skill on its own.
-        "CI/CD" and "TCP/IP" are ONE name; "ETL/ELT" is two skills, hence a
-        choice.
+      - A slash joins a choice whenever each side is a skill on its own, with
+        or without spaces around it: "EDR/XDR", "MDM/UEM", "ETL / ELT",
+        "C/C++", "RF/Microwave", "MySQL/MariaDB" are each ONE requirement
+        listing BOTH sides. Never emit the slashed string as a single name,
+        and never split it into two requirements.
+        A slash inside ONE established name is not a choice and not a pair:
+        "CI/CD" and "TCP/IP" stay one skill.
       - A comma-separated stack is cumulative unless the text marks it as a
         choice. "etc." adds no member: list exactly the names written.
       - Never split one choice into one-entry requirements; never merge two
@@ -438,6 +442,16 @@ function ExtractVacancy(
                           { anyOf: ["CI/CD"] }]
           ← "etc." adds nothing; list only the three named
           ← "CI/CD" is one skill, never a choice
+
+    Example — a slash pair anywhere in the posting, including in duties
+      Input: "Operate EDR/XDR controls across macOS and Windows endpoints.
+              Manage devices through MDM/UEM platforms."
+      Output:
+        skills.required: [{ anyOf: ["EDR", "XDR"] },
+                          { anyOf: ["macOS", "Windows"] },
+                          { anyOf: ["MDM", "UEM"] }]
+          ← NOT { anyOf: ["EDR/XDR"] }, and NOT two requirements
+          ← "across macOS and Windows" names the platforms the one duty covers
 
     {{ ctx.output_format }}
 
