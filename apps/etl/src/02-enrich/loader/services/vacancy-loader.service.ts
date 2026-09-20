@@ -13,6 +13,20 @@ import { CompanyResolverService } from "./company-resolver.service";
 import { NodeResolverService } from "./node-resolver.service";
 import { assignRequirementGroups } from "./requirement-groups";
 
+/**
+ * One stored skill entry, either shape. `rss_records.extractedData` keeps
+ * whatever contract wrote it: postings extracted before requirement lists
+ * (2026-09-20) store a bare name per entry. Only canonical postings are ever
+ * re-extracted, so the old shape never fully disappears from the table.
+ */
+type StoredSkillEntry = string | { anyOf?: string[] | null };
+
+function requirementNames(entries: readonly StoredSkillEntry[] | null | undefined): string[][] {
+  return (entries ?? []).map((entry) =>
+    typeof entry === "string" ? [entry] : (entry.anyOf ?? []),
+  );
+}
+
 @Injectable()
 export class VacancyLoaderService {
   private readonly logger = new Logger(VacancyLoaderService.name);
@@ -100,10 +114,15 @@ export class VacancyLoaderService {
     executor: Executor,
     rssRecordId: string,
   ): Promise<SkillLink[]> {
+    const skills = extracted.skills as
+      | { required?: StoredSkillEntry[] | null; optional?: StoredSkillEntry[] | null }
+      | null
+      | undefined;
+
     const units: string[][] = [];
-    for (const requirement of extracted.skills?.required ?? []) {
+    for (const names of requirementNames(skills?.required)) {
       const nodeIds: string[] = [];
-      for (const name of requirement.anyOf ?? []) {
+      for (const name of names) {
         nodeIds.push(await this.nodeResolver.resolve("SKILL", name, executor));
       }
       units.push(nodeIds);
@@ -122,8 +141,8 @@ export class VacancyLoaderService {
       byNode.set(nodeId, { nodeId, isRequired: true, requirementGroup: groupByNode.get(nodeId) });
     }
 
-    for (const requirement of extracted.skills?.optional ?? []) {
-      for (const name of requirement.anyOf ?? []) {
+    for (const names of requirementNames(skills?.optional)) {
+      for (const name of names) {
         const nodeId = await this.nodeResolver.resolve("SKILL", name, executor);
         if (!byNode.has(nodeId)) byNode.set(nodeId, { nodeId, isRequired: false });
       }

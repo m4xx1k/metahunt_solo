@@ -378,6 +378,13 @@ for each required requirement r (in extraction order):
   else: link[id].requirementGroup = next number
 ```
 
+The loader reads both shapes, permanently. `rss_records.extractedData` keeps
+whatever contract wrote it, and only canonical postings are ever re-extracted
+(the stale query joins `unique_vacancies`), so a duplicate's record keeps flat
+names forever. Without that read, any later load of an old record — the
+loader backfill's extracted-but-never-loaded set, or a manual reload — would
+resolve zero skills and store a vacancy with none, silently.
+
 Three of the four drop reasons the overlay needed are unreachable under the
 reshaped contract and were removed with it: `unknown-member` and
 `optional-member` cannot happen when the members are the required list itself,
