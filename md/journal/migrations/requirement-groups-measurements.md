@@ -214,6 +214,16 @@ A named example inside a list of alternatives — the exact shape requirement
 groups exist for. **Re-run this query after the corpus pass**: if Jenkins does
 not move, grouping did not reach the case it was built for.
 
+The query was ad hoc when this was first taken and is now checked in as
+[`scripts/sql/corpus-skill-coverage.sql`](../../../scripts/sql/corpus-skill-coverage.sql),
+so the before and after runs are the same query rather than two similar ones.
+Re-run 2026-09-20 on the same snapshot, it reproduces every coverage figure in
+the table above. Two `linked` counts in that table do not: the original counted
+links without restricting them to the postings that mention the skill, which is
+why MongoDB reads 1,000 linked against 970 mentioned. The percentages were
+computed the right way, so they stand; the checked-in query keeps
+`linked ⊆ mentioned` and gives MongoDB 863 of 970.
+
 Two incidental corpus facts from the same pass: the average canonical posting
 carries **6.9 required skills** and only **76 of 16,169 reach the cap of 20**, so
 the cap is no longer the binding constraint after Pass 1 — and **428 canonical
