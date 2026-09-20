@@ -64,6 +64,15 @@ class ExtractedLocation {
   "#)
 }
 
+class SkillGroup {
+  anyOf string[] @description(#"
+    2+ names from `required` that the posting states as ONE choice
+    ("AWS or GCP", "one of Kafka / RabbitMQ / NATS"). Copy the names exactly
+    as written in `required`. A comma-separated stack that the posting wants
+    cumulatively is NOT a group.
+  "#)
+}
+
 class Skills {
   required string[] @description(#"
     Must-have hard technical skills from the Requirements section.
@@ -103,6 +112,12 @@ class Skills {
   optional string[] @description(#"
     Nice-to-have / "would be a plus" skills. Same EXCLUDE / DEDUPLICATE
     rules as required. MAX 10 entries.
+  "#)
+  alternatives SkillGroup[] @description(#"
+    Every explicit choice among REQUIRED skills, one entry per choice.
+    Each name must also appear in `required` — this field groups them, it does
+    not replace them. Never group `optional`. [] when the posting states no
+    choice.
   "#)
 }
 
@@ -366,6 +381,26 @@ function ExtractVacancy(
         skills.required: ["react.js"]      ← deduped form, use "React"
         domain: "Web Development"          ← tech stack, not a business domain
         domain: "Software Development"     ← role-as-domain, use null
+
+    For ALTERNATIVES among required skills:
+      - Preserve one logical choice as one group: "AWS or GCP", "one of A/B",
+        "A and/or B", "any framework: A, B, C".
+      - A comma-separated stack is cumulative unless the text marks it as a
+        choice.
+      - Never split one choice into singletons; never merge two separate
+        statements.
+
+    Example — an explicit choice becomes one group
+      Input: "Required: Python, AWS or GCP, Kafka or RabbitMQ.
+              Terraform is a plus."
+      Output:
+        skills.required: ["Python", "AWS", "GCP", "Kafka", "RabbitMQ"]
+        skills.optional: ["Terraform"]
+        skills.alternatives: [{ anyOf: ["AWS", "GCP"] },
+                              { anyOf: ["Kafka", "RabbitMQ"] }]
+          ← members stay in `required`; the group only records the choice
+          ← "Python" is cumulative, so it is in no group
+          ← never group an `optional` skill
 
     {{ ctx.output_format }}
 
