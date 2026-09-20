@@ -278,7 +278,26 @@ look like a product or technology name, never a sentence or a duty).
 
 **Consequence.** This is a third corpus pass in waiting, not part of Pass 2 —
 it moves `specHash` on its own. Fold it in with a re-extraction that is already
-being paid for, exactly as the ROLE cleanup is meant to ride along (§7).
+being paid for, exactly as the ROLE cleanup is meant to ride along (§7). The
+owner chose that folding on 2026-09-20, knowing it bundles two changes into one
+measurement against R1's default.
+
+**Written 2026-09-20, PR #221, held as a draft.** `extract-vacancy.baml` only;
+`extract-candidate.baml` keeps the frozen rule because no measurement here
+covers candidate extraction. `BAML_PRODUCTION_SOURCE_HASH` → `2c1f7133…`, so
+merging it starts re-extracting whatever the pipeline touches next — it waits
+for the batch it rides with.
+
+Two things the writing turned up. The prompt **contradicted itself**: the
+practices block gated on `knownSkills` while the SKILLS section three hundred
+lines below already said unlisted skills are welcome under their
+market-standard name. So only practices were ever frozen, and the taxonomy has
+been growing through concrete technologies all along — **455 new SKILL nodes
+over the 2,324 postings loaded since 2026-09-01, 404 of them (89%) on a single
+posting.** That is the prior to read the post-batch count against, and the
+tripwire R10 asks for is now
+[`scripts/sql/new-nodes-minted.sql`](../../../scripts/sql/new-nodes-minted.sql)
+— run after the batch, **before** `node_stats` is refreshed.
 
 ---
 
