@@ -59,6 +59,7 @@ export type RequirementDatasetCase = {
 export type LegacySkills = {
   required?: string[] | null;
   optional?: string[] | null;
+  alternatives?: Array<{ anyOf?: string[] | null }> | null;
 };
 
 export type ExtractedVacancyForEval = {
