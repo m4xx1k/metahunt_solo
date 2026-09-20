@@ -1,10 +1,10 @@
 # Vacancy Requirements v2 evaluation
 
-25 real vacancy texts with hand-written labels, scored by a deterministic scorer.
+29 real vacancy texts with hand-written labels, scored by a deterministic scorer.
 No service, no hosted dataset, no build step.
 
 ```bash
-pnpm eval                      # 25 rows against ExtractVacancyRequirementsV2
+pnpm eval                      # 29 rows against ExtractVacancyRequirementsV2
 pnpm eval --only <row-id>      # one row
 pnpm eval --concurrency 8      # default 4
 pnpm eval --client OpenRouterMuseClient   # swap the model behind the same prompt
@@ -78,10 +78,10 @@ fewer than two, is ignored — the same rules the loader drops it by.
 
 ## Release gate
 
-All 25 rows are `draft`, so `assertReleaseGate` does not run and a draft-only run
+All 29 rows are `draft`, so `assertReleaseGate` does not run and a draft-only run
 never claims one — the aggregate is for comparison only. When rows are approved,
 only those rows feed both the summary and the gate. `requirement-groups.md` R7
-approves the 10 rows carrying a MUST group before Pass 2 ships.
+approves the 16 rows carrying a MUST group before Pass 2 ships.
 
 `seniority` is excluded from model comparisons: `advertisedSeniority()` is a regex
 over the title, so it is identical for any two models.

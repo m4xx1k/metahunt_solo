@@ -17,9 +17,9 @@ const approvedOrCase: RequirementDatasetCase = {
 };
 
 describe("Requirements v2 golden set", () => {
-  it("ships 24 real-text draft cases, including explicit OR boundaries", () => {
-    expect(draftDataset).toHaveLength(24);
-    expect(new Set(draftDataset.map((item) => item.input.id)).size).toBe(24);
+  it("ships 29 real-text draft cases, including explicit OR boundaries", () => {
+    expect(draftDataset).toHaveLength(29);
+    expect(new Set(draftDataset.map((item) => item.input.id)).size).toBe(29);
     expect(draftDataset.every((item) => item.metadata.reviewStatus === "draft")).toBe(true);
     expect(draftDataset.some((item) => item.metadata.slices.includes("or"))).toBe(true);
     expect(draftDataset.every((item) => item.input.text.length > 100)).toBe(true);
