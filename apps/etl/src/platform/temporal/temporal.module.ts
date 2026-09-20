@@ -7,6 +7,7 @@ import { TemporalModule } from "nestjs-temporal-core";
 
 import { RSS_ACTIVITIES } from "../../01-ingest/rss/activities";
 import { DEDUP_ACTIVITIES } from "../../02-enrich/dedup/activities";
+import { EXTRACTION_ACTIVITIES } from "../../02-enrich/extraction/activities";
 import { LOADER_ACTIVITIES } from "../../02-enrich/loader/activities";
 import { TELEGRAM_ACTIVITIES } from "../../04-notify/telegram/activities";
 
@@ -42,6 +43,7 @@ import { appendTsLoaderRule } from "./webpack-workflow.hook";
             bundlerOptions: { webpackConfigHook: appendTsLoaderRule },
             activityClasses: [
               ...RSS_ACTIVITIES,
+              ...EXTRACTION_ACTIVITIES,
               ...LOADER_ACTIVITIES,
               ...DEDUP_ACTIVITIES,
               ...TELEGRAM_ACTIVITIES,
