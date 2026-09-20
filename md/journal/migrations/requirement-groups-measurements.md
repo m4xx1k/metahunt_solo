@@ -317,3 +317,80 @@ lower than the old one's — but still read nothing under about 1.5 F1 points as
 a result.
 
 ---
+
+#### Measured 2026-09-20 — the contract shape under-groups, not the model
+
+The 29-row baseline reads low enough to raise "is `deepseek-v4-flash` simply
+not good enough". It is not the model. Three runs over the same 29 rows and
+the same labels, changing one thing at a time:
+
+| | F1 | MUST groups of 32 | two-member of 23 | `or_split` | role | p50 | out tokens |
+|---|---|---|---|---|---|---|---|
+| DeepSeek, production contract | 61.5% | 11 | **5** | 21.3 | 59.8% | 1.4s | 6k |
+| DeepSeek, v2 contract | 65.6% | 18 | **12** | 17.0 | 96.6% | 1.7s | 11k |
+| Muse, v2 contract | 67.1% | 19 | **12** | 6.0 | 93.1% | **54s** | **153k** |
+
+**Changing the contract buys +4.1 F1 and +7 groups. Changing the model buys
++1.5 F1 and +1 group.** On two-member choices — the "AWS or GCP" case this
+whole tracker is named after — both models land on exactly 12 of 23. A
+reasoning model thinking 38× longer for 14× the output tokens does not see
+the eleven that DeepSeek misses.
+
+The mechanism is in the class shape. Production asks for the same information
+twice:
+
+```
+class Skills {
+  required     string[]        // flat list
+  optional     string[]
+  alternatives SkillGroup[]    // now go back and restate some of those names in pairs
+}
+```
+
+`alternatives` is a second pass over an answer the model has already written,
+and it is the pass that gets skipped. The v2 contract has no flat form at all —
+`requirements: [{priority, anyOf}]`, so every requirement is already a list and
+grouping is not extra work. Same model, same posting, 5 vs 12 two-member
+groups.
+
+The misses are not subtle cases. Verbatim from the production run:
+
+```
+AWS | Azure              ← "Experience with Azure or AWS cloud"
+Docker | Kubernetes      ← "Experience with Docker or Kubernetes"
+ETL | ELT                ← the prompt itself names "ETL/ELT" as a worked example
+EDR | XDR,  MDM | UEM    ← "EDR/XDR", "MDM/UEM"
+Sigstore | Cosign,  Microsoft SQL Server | Oracle Database
+```
+
+Longer enumerations are fine in both contracts (3-member: 5 of 6 on
+production). The failure is specific to binary choices.
+
+Two more things the same runs settle.
+
+**Minting is a prompt property, not a model property.** The v2 contract passes
+no `knownSkills` at all, and both models invent at the same rate: 95 names with
+no taxonomy node out of 559 for DeepSeek, 76 of 581 for Muse, against **2 of
+389** for the production contract which does pass the list. On the RF posting
+the unconstrained prompt produced `noise analysis`, `linearity analysis`,
+`frequency planning`, `deviation analysis` — duties, not skills — plus `PhD`
+and `electrical/radio engineering degree`. That is the ceiling on R10's risk,
+measured rather than guessed. R10 keeps the list as guidance so the real number
+is lower, but it is not zero and no model choice avoids it.
+
+**Role accuracy is taxonomy debt.** 59.8% on production against 96.6% on v2,
+same model. Production feeds the 100 VERIFIED role nodes from the database; v2
+feeds the closed 30-role enum. 37 of those 100 roles carry no positions at all.
+This prices the ROLE cleanup deferred on 2026-09-19 at roughly 37 points of
+role accuracy.
+
+**Cost note against switching models.** 153k output tokens for 29 postings on
+the reasoning challenger. Extrapolated to 16,169 canonical postings that is not
+the $1.7–4 the corpus pass is budgeted at, for +1.5 F1. Fix the contract before
+reconsidering the model.
+
+Artifacts: `2026-09-20-requirements-v2-DeepSeekClient.*` and
+`2026-09-20-requirements-v2-OpenRouterMuseClient.*`. The Muse run is a single
+pass — read nothing under about 1.5 F1 points from it.
+
+---
