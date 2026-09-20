@@ -1,5 +1,5 @@
 import {
-  adaptLegacySkills,
+  requirementsFromSkills,
   canonicalizeRequirement,
   scoreRequirements,
   summarizeRequirements,
@@ -120,36 +120,22 @@ describe("Requirements v2 scorer", () => {
     });
   });
 
-  it("adapts the current flat skills output into singleton Requirements", () => {
-    expect(adaptLegacySkills({ required: ["TypeScript"], optional: ["React"] })).toEqual([
-      { priority: "must", anyOf: ["TypeScript"] },
-      { priority: "nice", anyOf: ["React"] },
-    ]);
-  });
-
-  it("folds an explicit choice into one requirement, dropping the members' singletons", () => {
+  it("reads production's two fields as one priority-tagged requirement list", () => {
     expect(
-      adaptLegacySkills({
-        required: ["Python", "AWS", "GCP"],
-        optional: ["Terraform"],
-        alternatives: [{ anyOf: ["AWS", "GCP"] }],
+      requirementsFromSkills({
+        required: [{ anyOf: ["Python"] }, { anyOf: ["AWS", "GCP"] }],
+        optional: [{ anyOf: ["Terraform", "Pulumi"] }],
       }),
     ).toEqual([
-      { priority: "must", anyOf: ["AWS", "GCP"] },
       { priority: "must", anyOf: ["Python"] },
-      { priority: "nice", anyOf: ["Terraform"] },
+      { priority: "must", anyOf: ["AWS", "GCP"] },
+      { priority: "nice", anyOf: ["Terraform", "Pulumi"] },
     ]);
   });
 
-  it("ignores a group the way the loader drops it: unknown member, or fewer than two", () => {
-    expect(
-      adaptLegacySkills({
-        required: ["AWS", "Kafka"],
-        alternatives: [{ anyOf: ["AWS", "Oracle Cloud"] }, { anyOf: ["Kafka"] }],
-      }),
-    ).toEqual([
+  it("skips a requirement that names no skill at all", () => {
+    expect(requirementsFromSkills({ required: [{ anyOf: [] }, { anyOf: ["AWS"] }] })).toEqual([
       { priority: "must", anyOf: ["AWS"] },
-      { priority: "must", anyOf: ["Kafka"] },
     ]);
   });
 

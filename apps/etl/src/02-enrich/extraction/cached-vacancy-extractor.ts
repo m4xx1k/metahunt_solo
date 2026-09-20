@@ -17,11 +17,16 @@ export type CachedExtractionResult = ExtractionResult & {
 
 /** A unique DB claim makes concurrent workers share one paid provider call. */
 @Injectable()
-export class CachedVacancyExtractor {
+export class CachedVacancyExtractor implements VacancyExtractor {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     @Inject(RAW_VACANCY_EXTRACTOR) private readonly raw: VacancyExtractor,
   ) {}
+
+  /** The cache does not change what the extraction IS, only who pays for it. */
+  identity(text: string): Promise<ExtractionIdentity> {
+    return this.raw.identity(text);
+  }
 
   async extract(text: string): Promise<CachedExtractionResult> {
     const identity = await this.raw.identity(text);

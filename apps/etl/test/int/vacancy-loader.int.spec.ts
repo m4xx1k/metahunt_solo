@@ -18,7 +18,10 @@ const PUBLISHED_AT = new Date("2026-04-24T10:00:00.000Z");
 const fullExtracted = {
   role: "Backend Engineer",
   seniority: "SENIOR",
-  skills: { required: ["Go", "PostgreSQL"], optional: ["Docker"] },
+  skills: {
+    required: [{ anyOf: ["Go"] }, { anyOf: ["PostgreSQL"] }],
+    optional: [{ anyOf: ["Docker"] }],
+  },
   experienceYears: 3,
   salary: { min: 4000, max: 6000, currency: "USD" },
   englishLevel: "UPPER_INTERMEDIATE",
@@ -182,7 +185,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const second = await seedRecord(
       sourceId,
       ingestId,
-      { ...fullExtracted, skills: { required: ["Rust"], optional: [] } },
+      { ...fullExtracted, skills: { required: [{ anyOf: ["Rust"] }], optional: [] } },
       {
         externalId: "100001",
         title: "Staff Backend Engineer",
@@ -212,7 +215,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const newer = await seedRecord(
       sourceId,
       ingestId,
-      { ...fullExtracted, skills: { required: ["Rust"], optional: [] } },
+      { ...fullExtracted, skills: { required: [{ anyOf: ["Rust"] }], optional: [] } },
       {
         title: "Current Backend Engineer",
         createdAt: new Date("2026-04-25T10:00:00.000Z"),
@@ -221,7 +224,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const older = await seedRecord(
       sourceId,
       ingestId,
-      { ...fullExtracted, skills: { required: ["Go"], optional: [] } },
+      { ...fullExtracted, skills: { required: [{ anyOf: ["Go"] }], optional: [] } },
       {
         title: "Stale Backend Engineer",
         createdAt: new Date("2026-04-24T10:00:00.000Z"),
@@ -269,7 +272,10 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       .set({
         extractedData: {
           ...fullExtracted,
-          skills: { required: ["Go", "PostgreSQL", "Kafka"], optional: ["Docker"] },
+          skills: {
+            required: [{ anyOf: ["Go"] }, { anyOf: ["PostgreSQL"] }, { anyOf: ["Kafka"] }],
+            optional: [{ anyOf: ["Docker"] }],
+          },
         },
       })
       .where(eq(schema.rssRecords.id, recordId));
@@ -298,9 +304,8 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const recordId = await seedRecord(sourceId, ingestId, {
       ...fullExtracted,
       skills: {
-        required: ["Go", "PostgreSQL", "Kafka", "RabbitMQ"],
-        optional: ["Docker"],
-        alternatives: [{ anyOf: ["Kafka", "RabbitMQ"] }],
+        required: [{ anyOf: ["Go"] }, { anyOf: ["PostgreSQL"] }, { anyOf: ["Kafka", "RabbitMQ"] }],
+        optional: [{ anyOf: ["Docker"] }],
       },
     });
     const vacancyId = await loader.loadFromRecord(recordId);
@@ -341,9 +346,13 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
         extractedData: {
           ...fullExtracted,
           skills: {
-            required: ["Go", "PostgreSQL", "Kafka", "RabbitMQ"],
-            optional: ["Docker"],
-            alternatives: [],
+            required: [
+              { anyOf: ["Go"] },
+              { anyOf: ["PostgreSQL"] },
+              { anyOf: ["Kafka"] },
+              { anyOf: ["RabbitMQ"] },
+            ],
+            optional: [{ anyOf: ["Docker"] }],
           },
         },
       })
@@ -352,16 +361,15 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     expect((await groups()).every(({ group }) => group === null)).toBe(true);
   });
 
-  it("keeps the flat skills when a group is malformed, and says why it dropped it", async () => {
+  it("keeps a choice flat when it overlaps an earlier one, and says why it dropped it", async () => {
     const warn = jest.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
     const { sourceId, ingestId } = await seedSource();
     const recordId = await seedRecord(sourceId, ingestId, {
       ...fullExtracted,
       skills: {
-        required: ["Go", "PostgreSQL"],
-        optional: ["Docker", "Kafka"],
-        // Optional-only (R2), and one naming a skill this posting never listed.
-        alternatives: [{ anyOf: ["Docker", "Kafka"] }, { anyOf: ["Go", "Erlang"] }],
+        required: [{ anyOf: ["Go", "PostgreSQL"] }, { anyOf: ["PostgreSQL", "Kafka"] }],
+        // A choice among nice-to-haves is never numbered (R2).
+        optional: [{ anyOf: ["Docker", "Podman"] }],
       },
     });
 
@@ -369,23 +377,25 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     if (!vacancyId) throw new Error("loadFromRecord returned null");
 
     const links = await db
-      .select()
+      .select({
+        name: schema.nodes.canonicalName,
+        isRequired: schema.vacancyNodes.isRequired,
+        group: schema.vacancyNodes.requirementGroup,
+      })
       .from(schema.vacancyNodes)
+      .innerJoin(schema.nodes, eq(schema.nodes.id, schema.vacancyNodes.nodeId))
       .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
-    expect(links).toHaveLength(4);
-    expect(links.every((link) => link.requirementGroup === null)).toBe(true);
+
+    expect(links.sort((a, b) => a.name.localeCompare(b.name))).toEqual([
+      { name: "Docker", isRequired: false, group: null },
+      { name: "Go", isRequired: true, group: 1 },
+      { name: "Kafka", isRequired: true, group: null },
+      { name: "Podman", isRequired: false, group: null },
+      { name: "PostgreSQL", isRequired: true, group: 1 },
+    ]);
 
     const messages = warn.mock.calls.map(([message]) => String(message));
-    expect(messages).toEqual([
-      expect.stringContaining("group 1 (optional-member)"),
-      expect.stringContaining("group 2 (unknown-member)"),
-    ]);
-    // A group naming an unlisted skill must not mint a taxonomy node for it.
-    const erlang = await db
-      .select()
-      .from(schema.nodes)
-      .where(eq(schema.nodes.canonicalName, "Erlang"));
-    expect(erlang).toHaveLength(0);
+    expect(messages).toEqual([expect.stringContaining("group 2 (overlapping)")]);
   });
 
   it("re-opens a changed listing without orphaning it from its position", async () => {
@@ -418,7 +428,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
     const second = await seedRecord(
       sourceId,
       ingestId,
-      { ...fullExtracted, skills: { required: ["Rust"], optional: [] } },
+      { ...fullExtracted, skills: { required: [{ anyOf: ["Rust"] }], optional: [] } },
       {
         title: "Updated Backend Engineer",
         createdAt: new Date("2026-04-25T10:00:00.000Z"),

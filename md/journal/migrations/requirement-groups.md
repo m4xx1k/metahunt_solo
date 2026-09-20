@@ -295,52 +295,48 @@ being paid for, exactly as the ROLE cleanup is meant to ride along (§7).
 
 ## 4. Extraction contract
 
-`extract-vacancy.baml`, additive. `required` and `optional` keep their current
-shape and rules. This ships in **Pass 2** (R1).
+`extract-vacancy.baml`. Shipped twice: as an additive `alternatives` overlay
+(PR #219, 2026-09-20), then **replaced the same day** by the shape below, after
+the overlay measured at 5 of 23 binary choices (measurement log).
 
 ```baml
-class SkillGroup {
-  anyOf string[] @description(#"
-    2+ names from `required` that the posting states as ONE choice
-    ("AWS or GCP", "one of Kafka / RabbitMQ / NATS"). Copy the names exactly
-    as written in `required`. A comma-separated stack that the posting wants
-    cumulatively is NOT a group.
-  "#)
+class SkillRequirement {
+  anyOf string[]   // one requirement; almost always one entry
+}
+
+class Skills {
+  required SkillRequirement[]   // MAX 20 requirements
+  optional SkillRequirement[]   // MAX 10 requirements
 }
 ```
 
-added to `class Skills`:
+Why this shape and not the overlay it replaced:
 
-```baml
-  alternatives SkillGroup[] @description(#"
-    Every explicit choice among REQUIRED skills, one entry per choice.
-    Each name must also appear in `required` — this field groups them, it does
-    not replace them. Never group `optional`. [] when the posting states no
-    choice.
-  "#)
-```
+- `alternatives` asked the model to restate, as pairs, names it had already
+  written into a flat list. That second pass over a finished answer is the one
+  that gets skipped, and `alternatives: []` is schema-valid, so nothing failed
+  loudly. With `anyOf` native there is no second pass to skip.
+- One entity fewer, not one more. Every existing consumer of `skills.required`
+  reads it through the loader, which is the only code that touches the field.
+- `optional` carries requirements too (owner's call, 2026-09-20). R2 is
+  unchanged — the loader still numbers `required` only — but a nice-to-have
+  choice is now expressible, and the golden set can score it.
+- Members can no longer name a skill outside the posting's own list: the
+  members ARE the list.
 
-Notes on why this shape:
-
-- Members stay in `required`, so the cap raised in Pass 1 still counts them
-  individually and every existing consumer of `skills.required` is untouched
-  (I1, I2).
-- A class rather than `string[][]` — self-documenting, and it does not depend on
-  BAML's nested-array support. **Verify `SkillGroup[]` round-trips through
-  `baml_client` codegen before writing the loader** — this is the one unresolved
-  execution risk in the whole plan (§11).
-- The model has already demonstrated this capability: the v2 eval contract
-  (`extract-vacancy-requirements-v2.baml`) has an `anyOf` field, and the golden
-  set carries hand-labelled groups (22 when this was written; 18 after R9).
-
-Prompt additions — reuse the rules already written and validated in the v2 file,
-they are the same problem:
+Prompt rules that ride with it — the v2 file's alternative rules, plus an
+explicit slash-pair rule worth 5 more binary groups on its own:
 
 ```
-- Preserve one logical choice as one group: "AWS or GCP", "one of A/B",
-  "A and/or B", "any framework: A, B, C".
+- One logical choice is one list: "AWS or GCP", "one of A/B", "A and/or B",
+  "any framework: A, B, C".
+- A slash joins a choice whenever each side is a skill on its own, spaces or
+  not: EDR/XDR, MDM/UEM, ETL / ELT, C/C++, RF/Microwave. Never emit the
+  slashed string as one name, never split it into two requirements.
+  A slash inside one established name — CI/CD, TCP/IP — is one skill.
 - A comma-separated stack is cumulative unless the text marks it as a choice.
-- Never split one choice into singletons; never merge two separate statements.
+- Never split one choice into one-entry requirements; never merge two
+  separate statements.
 ```
 
 ---
@@ -373,14 +369,28 @@ node and lets required win over optional. It gains one step: resolve each group'
 names to node ids, then stamp the group number onto those links.
 
 ```
-for each group g (index i, 1-based):
-  ids = distinct(resolve(name) for name in g.anyOf)
-  drop g if |ids| < 2                        # I4
-  drop g if any id already carries a group   # I2 disjoint
-  drop g if any id is not required           # I2 / I6 — this is where R2's
-                                              # optional-only groups get dropped
-  else: link[id].requirementGroup = i
+for each required requirement r (in extraction order):
+  ids = distinct(resolve(name) for name in r.anyOf)
+  if |ids| < 2:                              # an ordinary flat requirement,
+    continue                                 # including one aliased onto one node
+  if any id already carries a group:         # I2 disjoint
+    drop the number, keep the links          # reason: overlapping
+  else: link[id].requirementGroup = next number
 ```
+
+The loader reads both shapes, permanently. `rss_records.extractedData` keeps
+whatever contract wrote it, and only canonical postings are ever re-extracted
+(the stale query joins `unique_vacancies`), so a duplicate's record keeps flat
+names forever. Without that read, any later load of an old record — the
+loader backfill's extracted-but-never-loaded set, or a manual reload — would
+resolve zero skills and store a vacancy with none, silently.
+
+Three of the four drop reasons the overlay needed are unreachable under the
+reshaped contract and were removed with it: `unknown-member` and
+`optional-member` cannot happen when the members are the required list itself,
+and `too-few-members` is not a failure but the ordinary flat case. Only
+`overlapping` is left, and it still drops the number rather than the
+extraction (I1).
 
 Every rule is a **drop of the offending group, never of the extraction**. A
 malformed overlay degrades to today's flat behaviour (I1). Log the drop *with its
@@ -613,7 +623,7 @@ a constraint.
 | 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). **Done 2026-09-20** — codegen round-trips, §11.1 closed; `BAML_PRODUCTION_SOURCE_HASH` → `4f089c9a…`. | git |
 | 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. **Done 2026-09-20** — four reasons, not three: a member outside this posting's skills is its own case, because group names are matched against already-resolved links and never resolve a node of their own. | git |
 | 4 | `scripts/db-backup.sh`, then pause Temporal schedules. | — |
-| 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). **Blocked on the `Skills` reshape** — at 5 of 23 binary groups, a paid pass delivers half the feature (§7a). | data only; the backup |
+| 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). **Unblocked 2026-09-20**: the reshaped contract groups 15 of 23 binary choices against the overlay's 5. Owner's call when to pay for it. | data only; the backup |
 | 6 | Refresh `node_stats` and `node_skill_cooc`. Re-set `FIT_STRONG_MIN` / `FIT_GOOD_MIN` on the now-settled distribution. | git |
 | 7 | Switch `scoringCtes` **and** `recommendation.service.ts` to units (§6.3, R6), and the exclusion predicate to unit semantics (§6.4, R5). **This is the step that changes user-visible Fit for this pass.** | git revert, data untouched |
 | 8 | Resume schedules. Check the tripwires in §8.2. | — |
@@ -674,6 +684,25 @@ user-visible number: the field is written, no scorer reads it. `specHash` is
 `dcb8e6cc…`. No migration rode with it, so the deploy moved nothing. New
 postings extracted from here on carry groups; the existing corpus does not
 until it is re-extracted.
+
+**The contract was reshaped the same day, on `feat/skills-anyof-contract`.**
+`Skills.required`/`optional` are lists of `anyOf` requirements and
+`alternatives` is gone (§4); the loader numbers a choice as it resolves it and
+keeps one drop rule instead of four (§5.2); `adaptLegacySkills` is gone from the
+eval, so both extractors now measure the same object. Three passes each on the
+29 rows: binary grouping 5 → 10 on the reshape, → 15 of 23 with the slash-pair
+rule, `or_split_errors` 21.3 → 6.7, F1 61.5% → 67.4%. Nothing re-extracted,
+nothing merged: `BAML_PRODUCTION_SOURCE_HASH` moves, so merging is a deploy and
+the owner's call.
+
+**Rehearsed 2026-09-20, on 60 postings of the local dev database.** The first
+hand-start of `reextractWorkflow` failed outright — `CachedVacancyExtractor`
+had no `identity()`, so the stale-posting query could not ask for the current
+`specHash` and the workflow died on its first activity. Fixed on
+`feat/skills-anyof-contract`. With the fix the whole path runs: 39 groups over
+22 of 60 postings, mean size 2.44, zero `overlapping` drops, 4 new nodes
+minted, `node_stats` refreshed. Every §8.2 tripwire is inside its band. The
+corpus pass itself is still not started.
 
 **Not started.** The corpus re-extraction — the workflow has no schedule and no
 endpoint, it starts by hand. Depth is settled 2026-09-20: the **2026-08-19
@@ -847,14 +876,13 @@ sequencing:
    2026-09-20.** Codegen emits the interface and the field, `b.parse` parses a
    response carrying groups, and a response omitting the field coerces to `[]`
    rather than failing. No `string[][]` fallback needed.
-2. **How far to push the grouping prompt** — reframed 2026-09-20. The ceiling
-   is not the prompt's wording but the class shape: `alternatives` restates
-   names the model has already written, and that pass gets skipped. Reshaping
-   `Skills` around `anyOf` is measured at 5 → 12 of 23 binary groups on the same
-   model. Slash pairs (`ETL/ELT`, `C/C++`, `EDR/XDR`, `MDM/UEM`) survive the
-   reshape and need their own instruction and their own measurement. Ungrouped
-   choices still score exactly as today, so this gates nothing but the value of
-   the corpus pass.
+2. ~~**How far to push the grouping prompt**~~ — **closed 2026-09-20.** The
+   ceiling was the class shape, not the wording. Reshaping `Skills` around
+   `anyOf` took binary grouping 5 → 10 of 23, and the slash-pair rule measured
+   separately on top of it took it to 15. What is left is eight misses, of
+   which one is a naming mismatch and one a disputed label; the rest are
+   ordinary recall, not a contract defect. Pushing the prompt further is no
+   longer the lever — a corpus pass is.
 3. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to
    need an interim recalibration, or whether the single recalibration after
    Pass 2 (§7, Pass 2 step 6) is enough. Decide on the corpus, not in advance —

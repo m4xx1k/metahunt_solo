@@ -56,17 +56,17 @@ export type RequirementDatasetCase = {
   metadata: RequirementDatasetMetadata;
 };
 
-export type LegacySkills = {
-  required?: string[] | null;
-  optional?: string[] | null;
-  alternatives?: Array<{ anyOf?: string[] | null }> | null;
+/** Production's `skills`: the same requirements, split by priority into two fields. */
+export type ProductionSkills = {
+  required?: Array<{ anyOf?: string[] | null }> | null;
+  optional?: Array<{ anyOf?: string[] | null }> | null;
 };
 
 export type ExtractedVacancyForEval = {
   isTech: boolean;
   role: string | null;
   seniority: string | null;
-  skills?: LegacySkills | null;
+  skills?: ProductionSkills | null;
   requirements?: Requirement[] | null;
 } & Partial<Record<keyof ProfileExpectation, unknown>>;
 

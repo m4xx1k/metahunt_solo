@@ -394,3 +394,112 @@ Artifacts: `2026-09-20-requirements-v2-DeepSeekClient.*` and
 pass — read nothing under about 1.5 F1 points from it.
 
 ---
+
+#### Measured 2026-09-20 — the reshaped contract, and what the slash rule adds
+
+`Skills` reshaped so every requirement is an `anyOf` list and `alternatives` is
+gone, then the slash-pair instruction added on top of it. Same 29 rows, same
+labels, same model, three passes each:
+
+| | F1 | MUST groups of 32 | two-member of 23 | NICE groups of 23 | `or_split` | role |
+|---|---|---|---|---|---|---|
+| production, `alternatives` (baseline) | 61.5% | 11 | **5** | 0 | 21.3 | 59.8% |
+| production, `anyOf` | 66.1% | 15 | **10** | 7 | 10.0 | 57.5% |
+| production, `anyOf` + slash rule | 67.4% | 20 | **15** | 5 | 6.7 | 57.5% |
+| requirements-v2, for reference | 65.6% | 18 | 12 | 8 | 17.0 | 96.6% |
+
+**The reshape alone doubles binary grouping, 5 → 10, and the slash rule takes it
+to 15 of 23** — past both the 12 the v2 contract reached and the 12 the reasoning
+challenger reached. `or_split_errors` falls from 21.3 to 6.7: the split that this
+whole tracker is named after is now the exception rather than the rule. Group
+counts are from the last pass of each run; F1 is the three-pass mean, and
+run-to-run spread on this set is about 0.7 points, so only the group counts and
+the `or_split` collapse are large enough to read on their own.
+
+NICE groups are now expressible at all — `optional` carries requirements too —
+and land 5–7 of 23 against 0 before, the one number the old contract could not
+produce by construction (R2 still keeps them out of the database).
+
+What the remaining eight binary misses are, read off the run rather than guessed:
+
+```
+Microsoft SQL Server | Oracle Database   grouped correctly, emitted "Oracle" — a name, not a grouping miss
+C | C++                                  named in the slash rule, still missed (Ukrainian sentence)
+RF Engineering | Microwave Engineering   that row produced no group at all
+Sigstore | Cosign, Hybrid | Semantic Search, Fetch API | Axios, SDR | Down-converters
+A/B Testing | Cohort Analysis            a disputed label (PR #220)
+```
+
+Role accuracy does not move (57.5% against 59.8%, inside the noise): it is fed by
+the 100 VERIFIED role nodes, which this change does not touch. The ROLE cleanup
+is still worth its measured ~37 points.
+
+Cost: six passes, about six cents. Artifacts:
+`2026-09-20-production-anyof-DeepSeekClient-29row.json` (reshape only) and
+`2026-09-20-production-anyof-slash-DeepSeekClient-29row.*`.
+
+---
+
+#### Measured 2026-09-20 — the first real re-extraction run, on 60 postings
+
+Not the corpus pass. A rehearsal of the whole path — `reextractWorkflow` →
+`extractAndInsert` → `loadVacancy(force)` → `refreshNodeStats` — on the **local
+dev database** (`metahunt_railway`, 14 904 positions), one-day window, capped at
+60 canonical postings. Prod untouched; `metahunt_snapshot0919` deliberately
+untouched too, so the corpus-coverage "before" stays pristine.
+
+**It found that the workflow had never run.** The first activity failed with
+`this.extractor.identity is not a function`: `VACANCY_EXTRACTOR` resolves to
+`CachedVacancyExtractor`, which used `raw.identity()` internally for its cache
+key but exposed no `identity()` of its own, while `StalePostingsActivity` asks
+the token for the current `specHash`. `useExisting` does not type-check the
+provider against the token, and the class declared no `implements`, so nothing
+caught it. Fixed by delegating and by declaring `implements VacancyExtractor`.
+Every claim about "Pass 2 step 5 is ready" before this date was untested.
+
+What the run produced, against the §8.2 tripwires:
+
+| | golden set | this run | tripwire |
+|---|---|---|---|
+| postings with ≥1 group | 40% | **36.7%** (22 of 60) | >50% suspicious, ~0 = ignored |
+| mean group size | 2.55 | **2.44** | >3 = collapsing stacks |
+| groups dropped `overlapping` | — | **0** | should be ~0 |
+| new nodes minted | — | **4 per 60 postings** | R10's tripwire |
+
+39 groups: 27 pairs, 12 longer, max 4. The four new nodes are
+`AWS Database Migration Service`, `OVN`, `Config Connector`, `Starlette` — all
+concrete technologies, none of the duties-as-skills the unconstrained prompt
+produced in the model comparison. `position_nodes` carries all 95 grouped links,
+so the view the scorer will read is correct ahead of step 7.
+
+Groups read as the postings write them, including one that looks wrong and is
+not: `Java | Cypress | Playwright` comes from "Experience with Java or Cypress
+or Playwright" verbatim.
+
+**Skills per posting went up, which is the prompt, not the grouping.** Over the
+same 115-posting window, links 1242 → 1402 and required 815 → 977 while only 60
+postings changed — about +2.7 links each. Splitting a slash pair into two named
+skills is most of it.
+
+**`node_stats` barely moves on a partial pass, and Fit cannot move at all.**
+Grouping does not enter `df`: it counts `DISTINCT position_id` over
+`position_nodes`, and two alternatives are still two links. What moves `df` is
+the new skill set. After the refresh:
+
+```
+Docker 3400 → 3402    ETL 327 → 331    MDM 85 → 86
+EDR    81   → 82      ELT 71  → 72     XDR 17 → 17    UEM 1 → 1
+```
+
+Weights move in the fourth decimal. The pairs this change exists for — `XDR`
+(df 17) and `UEM` (df 1) — are the ones that should grow most on a full pass,
+and 60 postings is far too few to show it. Read nothing about the post-pass
+distribution from this: `df` is corpus-wide, so a partially re-extracted corpus
+understates every new skill. That is exactly why the `FIT_STRONG_MIN` /
+`FIT_GOOD_MIN` recalibration is Pass 2 step 6, after the full pass. Fit itself
+is unreachable until step 7 — `scoringCtes` still does not read
+`requirement_group`.
+
+Cost: 60 postings at $0.000194 each ≈ **$0.012**.
+
+---

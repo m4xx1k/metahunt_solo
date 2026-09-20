@@ -23,7 +23,10 @@ const TX = { __tx: true } as unknown as Executor;
 const fullExtracted = {
   role: "Backend Engineer",
   seniority: "SENIOR",
-  skills: { required: ["Go", "PostgreSQL"], optional: ["Docker"] },
+  skills: {
+    required: [{ anyOf: ["Go"] }, { anyOf: ["PostgreSQL"] }],
+    optional: [{ anyOf: ["Docker"] }],
+  },
   experienceYears: 3,
   salary: { min: 4000, max: 6000, currency: "USD" },
   englishLevel: "UPPER_INTERMEDIATE",
@@ -131,13 +134,40 @@ describe("VacancyLoaderService.loadFromRecord", () => {
     ]);
   });
 
+  it("still reads a record extracted before requirement lists, as flat names", async () => {
+    const repo = makeRepo();
+    repo.findRecord.mockResolvedValue({
+      ...baseRecord,
+      extractedData: {
+        ...fullExtracted,
+        skills: { required: ["Go", "PostgreSQL"], optional: ["Docker"] },
+      },
+    } as never);
+    const { service, companyResolve, nodeResolve } = makeService(repo);
+    companyResolve.mockResolvedValue(COMPANY_ID);
+    nodeResolve.mockImplementation((_type: string, name: string) =>
+      Promise.resolve(`skill:${name}`),
+    );
+
+    await service.loadFromRecord(RECORD_ID);
+
+    expect(skillsArg(repo)).toEqual([
+      { nodeId: "skill:Go", isRequired: true },
+      { nodeId: "skill:PostgreSQL", isRequired: true },
+      { nodeId: "skill:Docker", isRequired: false },
+    ]);
+  });
+
   it("required wins when a skill is both required and optional", async () => {
     const repo = makeRepo();
     repo.findRecord.mockResolvedValue({
       ...baseRecord,
       extractedData: {
         ...fullExtracted,
-        skills: { required: ["Go"], optional: ["Go", "Docker"] },
+        skills: {
+          required: [{ anyOf: ["Go"] }],
+          optional: [{ anyOf: ["Go"] }, { anyOf: ["Docker"] }],
+        },
       },
     } as never);
     const { service, companyResolve, nodeResolve } = makeService(repo);

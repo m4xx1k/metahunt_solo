@@ -73,11 +73,11 @@ export default class TypeBuilder {
 
   Salary: ClassViewer<"Salary", "min" | "max" | "currency">;
 
-  SkillGroup: ClassViewer<"SkillGroup", "anyOf">;
+  SkillRequirement: ClassViewer<"SkillRequirement", "anyOf">;
 
   SkillToClassify: ClassViewer<"SkillToClassify", "nodeId" | "name">;
 
-  Skills: ClassViewer<"Skills", "required" | "optional" | "alternatives">;
+  Skills: ClassViewer<"Skills", "required" | "optional">;
 
   VacancyRequirementV2: ClassViewer<"VacancyRequirementV2", "priority" | "anyOf">;
 
@@ -156,7 +156,7 @@ export default class TypeBuilder {
         "ExtractedVacancy",
         "ExtractedVacancyRequirementsV2",
         "Salary",
-        "SkillGroup",
+        "SkillRequirement",
         "SkillToClassify",
         "Skills",
         "VacancyRequirementV2",
@@ -222,11 +222,11 @@ export default class TypeBuilder {
 
     this.Salary = this.tb.classViewer("Salary", ["min", "max", "currency"]);
 
-    this.SkillGroup = this.tb.classViewer("SkillGroup", ["anyOf"]);
+    this.SkillRequirement = this.tb.classViewer("SkillRequirement", ["anyOf"]);
 
     this.SkillToClassify = this.tb.classViewer("SkillToClassify", ["nodeId", "name"]);
 
-    this.Skills = this.tb.classViewer("Skills", ["required", "optional", "alternatives"]);
+    this.Skills = this.tb.classViewer("Skills", ["required", "optional"]);
 
     this.VacancyRequirementV2 = this.tb.classViewer("VacancyRequirementV2", ["priority", "anyOf"]);
 

@@ -105,6 +105,17 @@ describe("CachedVacancyExtractor", () => {
     expect(db.current()).toMatchObject({ status: "completed", usage: providerUsage });
   });
 
+  it("answers identity() with the raw extractor's, so the stale-posting query can ask it", async () => {
+    const raw: VacancyExtractor = {
+      identity: jest.fn(async () => identity),
+      extract: jest.fn(async () => sample),
+    };
+    const extractor = new CachedVacancyExtractor(dbHarness() as never, raw);
+
+    await expect(extractor.identity("any posting")).resolves.toEqual(identity);
+    expect(raw.identity).toHaveBeenCalledWith("any posting");
+  });
+
   it("reclaims an expired failed artifact instead of making a second cache key", async () => {
     const db = dbHarness("failed");
     const raw: VacancyExtractor = {
