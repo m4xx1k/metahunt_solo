@@ -4,12 +4,12 @@
 // These run against the real LLM via `pnpm --filter @metahunt/etl baml:test`;
 // the automated gate assertion lives in baml.extractor.spec.ts.
 
-// The named-practice gate (Phase C): a practice is emitted ONLY on an exact
-// verbatim match in knownSkills. Microservices / CI/CD / RAG are listed and
-// the body requires all three → expected in skills.required. "event-driven"
-// is deliberately absent from knownSkills → must be dropped, not coerced to
-// "Event-Driven Architecture" or minted as a new node.
-test vacancy_concepts_gated {
+// The named-practice bar (R10): knownSkills is the canonical spelling, not a
+// whitelist. Microservices / CI/CD / RAG are listed → expected verbatim.
+// "event-driven" is deliberately absent → still expected, but under its
+// market-standard name "Event-Driven Architecture", never as "event-driven".
+// "Agile" / "Scrum" stay out: process, not a skill, list or no list.
+test vacancy_concepts_unlisted {
   functions [ExtractVacancy]
   args {
     text #"
@@ -25,9 +25,9 @@ test vacancy_concepts_gated {
   }
 }
 
-// The inverse: when the listed practice IS present it must come through. Same
-// body, but Event-Driven Architecture is now on the list → all four practices
-// expected alongside the concrete tech.
+// The inverse: when the practice IS on the list, the output must use that
+// spelling character for character. Same body, Event-Driven Architecture now
+// listed → all four practices expected alongside the concrete tech.
 test vacancy_concepts_listed {
   functions [ExtractVacancy]
   args {
