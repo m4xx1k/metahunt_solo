@@ -600,6 +600,54 @@ Two things that pass carries: reasoning removes OR splitting entirely on the sam
 model (`or_split` 2.7 → 0.0 for 5x the cost), and the `profile` labels exist so a
 prompt edit aimed at skills cannot silently move work format or English level.
 
+#### Measured 2026-09-20, prompt only — grouping works, the model is shy
+
+`pnpm eval --extractor production --repeat 3`, same alias snapshot
+`3b8a5cb4bc70`, same taxonomy, 75 provider calls for under a cent.
+`runs/2026-09-20-production-DeepSeekClient.*`. The golden set was not touched:
+no label, `metadata` or alias entry moved, so this reads against the cap-raise
+baseline directly.
+
+| metric | cap20 | with groups | delta | this run's spread |
+|---|---|---|---|---|
+| precision | 68.5% | 73.6% | +5.1 | 4.0 |
+| recall | 55.4% | 55.6% | +0.2 | 2.7 |
+| F1 | 60.2% | 62.2% | +2.0 | 2.1 |
+| or_split_errors | 16 | **8.7** | **−7.3** | 3.0 |
+| alternative accuracy | 55.8% | 56.0% | +0.2 | — |
+| priority accuracy | 96.9% | 98.4% | +1.5 | — |
+| profile fields | 95.4% | 95.4% | 0 | — |
+
+**`or_split_errors` is the only metric that moved past its own noise**, and it is
+the one this pass exists to move: 16 → 8.7 against a spread of 3.0. Precision
+rose 5.1 against a spread of 4.0 — marginal, and mechanically expected rather
+than earned: a group's members stop emitting one clause each, so a correctly
+grouped choice removes two or three "extra" clauses from the actual set. F1's
++2.0 sits inside its 2.1 spread. **Recall did not move, which is what mattered
+to watch**: the grouping instructions did not cost the cap raise's +5.4.
+
+`alternative accuracy` barely moves by construction and should not be read as
+the result: it is the share of *all* expected clauses whose `anyOf` set matched,
+and ~90% of them are single-entry, which match trivially. The group-level number
+has to be counted separately:
+
+| | cap20 | with groups |
+|---|---|---|
+| labelled group clauses reproduced exactly | 0 of 22 | 5 of 22 |
+| of the 14 that are MUST (reachable) | 0 | **5 — 36%** |
+| groups the model emitted at all | 0 | 6 |
+
+8 of the 22 labelled groups are optional-only, so R2 makes them unreachable by
+construction — `alternatives` groups `required` only. Against the 14 reachable
+ones the model produces 5. It is conservative, not wrong: of 6 groups emitted, 5
+matched a label exactly. The misses are plain choices it left flat —
+`Angular|React|Vue.js`, `Cypress|Playwright|WebdriverIO`, `ELT|ETL`.
+
+Consequence for the corpus pass: a choice the model leaves flat scores exactly as
+it does today, so 36% is a partial win with no downside, not a half-broken
+feature. Whether to spend a few cents tuning the prompt before the corpus pass or
+accept 36% and revisit is open — noted in §11.
+
 - **Before Pass 2 step 5**, run the new contract over the 25-row golden set
   (`apps/etl/src/eval/`) and compare groups against the 22 hand-labelled `anyOf`
   entries.
@@ -767,7 +815,11 @@ execution risk, not decision:
    `b.parse.ExtractVacancy` parses a response carrying groups. A response that
    omits the field coerces to `[]` rather than failing, so the old shape still
    parses. No `string[][]` fallback needed, and no provider call was made.
-2. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to need
+2. **Whether to tune the prompt before the corpus pass.** The model groups 36%
+   of the reachable choices in the golden set (5 of 14). Ungrouped choices score
+   exactly as today, so this is not a blocker; the question is only whether a few
+   cents of prompt iteration lifts that number before paying for the corpus.
+3. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to need
    an interim recalibration, or whether the single recalibration planned after
    Pass 2 (§7, Pass 2 step 6) is enough. Decide after watching Pass 1 step 4's
    output — don't pre-guess it.
