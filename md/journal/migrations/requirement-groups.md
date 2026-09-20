@@ -613,7 +613,7 @@ a constraint.
 | 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). **Done 2026-09-20** — codegen round-trips, §11.1 closed; `BAML_PRODUCTION_SOURCE_HASH` → `4f089c9a…`. | git |
 | 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. **Done 2026-09-20** — four reasons, not three: a member outside this posting's skills is its own case, because group names are matched against already-resolved links and never resolve a node of their own. | git |
 | 4 | `scripts/db-backup.sh`, then pause Temporal schedules. | — |
-| 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). | data only; the backup |
+| 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). **Blocked on the `Skills` reshape** — at 5 of 23 binary groups, a paid pass delivers half the feature (§7a). | data only; the backup |
 | 6 | Refresh `node_stats` and `node_skill_cooc`. Re-set `FIT_STRONG_MIN` / `FIT_GOOD_MIN` on the now-settled distribution. | git |
 | 7 | Switch `scoringCtes` **and** `recommendation.service.ts` to units (§6.3, R6), and the exclusion predicate to unit semantics (§6.4, R5). **This is the step that changes user-visible Fit for this pass.** | git revert, data untouched |
 | 8 | Resume schedules. Check the tripwires in §8.2. | — |
@@ -682,7 +682,25 @@ batch** (~2.5–3k positions, $0.30–0.75), not the whole corpus, so the window
 `recommendation.service.ts` and the exclusion predicate to units) is a separate
 commit and a separate deploy, and it is the only step that moves Fit.
 
-**Spent so far:** about four cents, five golden-set runs. The corpus batch from
+**The order changed on 2026-09-20, after measuring it.** Three runs over the
+same 29 rows showed the *contract shape* under-groups, not the model: changing
+the contract is worth +4.1 F1 and +7 MUST groups, changing the model +1.5 and
++1, and both models miss the same eleven two-member choices. `alternatives` is
+a second pass over an answer already written, and it is the pass that gets
+skipped — production produces 5 of 23 binary groups where the `anyOf`-native v2
+contract produces 12. The corpus pass therefore waits on reshaping `Skills`
+around `anyOf`; paying for a re-extraction that still under-groups by half buys
+half the feature. Same runs priced the deferred ROLE cleanup at ~37 points of
+role accuracy, and showed minting tracks the prompt rather than the model.
+Numbers and mechanism in the measurement log.
+
+**Working order from here.** Reshape the contract, then the ROLE list, iterating
+each on the golden set at a cent a run until the numbers stop moving; then ONE
+corpus pass with the final prompt; then step 7. Every one of those moves
+`specHash`, so iterating them on the cheap ruler first is what keeps R1's
+attribution without paying for a corpus pass per change.
+
+**Spent so far:** about six cents, seven golden-set runs. The corpus batch from
 2026-08-19 is $0.30–0.75; the whole canonical corpus is $1.7–4.
 
 **R9 is done 2026-09-20.** The golden set is 29 rows with 32 MUST groups and a
@@ -829,17 +847,24 @@ sequencing:
    2026-09-20.** Codegen emits the interface and the field, `b.parse` parses a
    response carrying groups, and a response omitting the field coerces to `[]`
    rather than failing. No `string[][]` fallback needed.
-2. **How far to push the grouping prompt.** One iteration took it from 36% to
-   57% of the reachable golden-set choices for about a cent. The remaining
-   misses concentrate in slash pairs (`ETL/ELT`, `C/C++`), and at least one is a
-   label question rather than a prompt one. Ungrouped choices score exactly as
-   today, so this gates nothing.
+2. **How far to push the grouping prompt** — reframed 2026-09-20. The ceiling
+   is not the prompt's wording but the class shape: `alternatives` restates
+   names the model has already written, and that pass gets skipped. Reshaping
+   `Skills` around `anyOf` is measured at 5 → 12 of 23 binary groups on the same
+   model. Slash pairs (`ETL/ELT`, `C/C++`, `EDR/XDR`, `MDM/UEM`) survive the
+   reshape and need their own instruction and their own measurement. Ungrouped
+   choices still score exactly as today, so this gates nothing but the value of
+   the corpus pass.
 3. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to
    need an interim recalibration, or whether the single recalibration after
    Pass 2 (§7, Pass 2 step 6) is enough. Decide on the corpus, not in advance —
    the "before" distribution is in the measurement log.
-4. **Sequencing R9 and R10 against the corpus pass.** Rebalancing the golden set
-   costs no provider money and moves no `specHash`; relaxing `knownSkills`
-   moves both. Doing R10 after a paid corpus pass means paying for it twice.
+4. ~~**Sequencing R9 and R10 against the corpus pass.**~~ R9 is done. R10 is
+   written and held (PR #221). The owner chose to fold R10 into the same
+   re-extraction; the measurement afterwards argues for detaching it — an
+   unconstrained prompt mints 95 names with no taxonomy node out of 559 against
+   2 of 389 with the list, and no model choice avoids it. Bundling it with the
+   contract reshape means one measurement covering two changes, which is what
+   R1 exists to prevent. Owner's call, now with a number on it.
 5. **428 canonical postings carry no skills at all.** Found while measuring
    coverage, unexamined.
