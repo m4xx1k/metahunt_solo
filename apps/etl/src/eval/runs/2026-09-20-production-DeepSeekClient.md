@@ -2,22 +2,22 @@
 
 25 rows, 28s, aliases `3b8a5cb4bc70` · draft-only, no release gate
 
-3 passes — F1 63.6% / 61.6% / 61.5%, provider failures 0.0% / 0.0% / 0.0%
+3 passes — F1 62.2% / 63.1% / 63.6%, provider failures 0.0% / 0.0% / 0.0%
 
 | metric | value |
 |---|---|
 | schema valid | 100.0% |
 | provider failures | 0.0% |
-| precision | 73.6% |
-| recall | 55.6% |
-| F1 | 62.2% |
-| priority accuracy | 98.4% |
-| alternative accuracy | 56.0% |
-| or_split_errors | 8.7 |
+| precision | 74.0% |
+| recall | 56.4% |
+| F1 | 63.0% |
+| priority accuracy | 97.7% |
+| alternative accuracy | 57.0% |
+| or_split_errors | 8.3 |
 | isTech accuracy | 100.0% |
-| role accuracy | 52.0% |
-| profile fields | 95.4% of 51 checked |
-| tokens in / out | 224806 / 5111 |
-| p50 latency | 1360 ms |
+| role accuracy | 57.3% |
+| profile fields | 97.4% of 51 checked |
+| tokens in / out | 232981 / 5195 |
+| p50 latency | 1351 ms |
 
 `seniority` is omitted: `advertisedSeniority()` is deterministic, not a model answer.

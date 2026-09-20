@@ -648,6 +648,54 @@ it does today, so 36% is a partial win with no downside, not a half-broken
 feature. Whether to spend a few cents tuning the prompt before the corpus pass or
 accept 36% and revisit is open — noted in §11.
 
+#### Measured 2026-09-20, second pass — three examples instead of one
+
+The first grouping prompt carried one example, in one surface form ("X or Y"
+spelled with the word "or"). Every miss was the same choice written differently:
+a colon list with a quantifier ("at least one test automation framework:
+Cypress, WebdriverIO, or Playwright"), a parenthesised list ("Any framework
+(React, Vue, Angular, etc.)"), and a slash pair ("Strong ETL/ELT experience").
+The prose rules named those forms; the single example did not show them, and the
+example is what the model follows.
+
+Replaced with three examples, one per surface form, plus an explicit slash
+guard: `CI/CD` and `TCP/IP` are one name, `ETL/ELT` is two skills. All nine
+skill names used in the examples are VERIFIED taxonomy nodes in exactly that
+spelling, so no example teaches a name the extractor would then have to invent.
+
+| | one example | three examples |
+|---|---|---|
+| MUST groups reproduced (of 14 reachable) | 5 — 36% | **8 — 57%** |
+| groups emitted at all | 6 | 9 |
+| precision | 73.6% | 74.0% |
+| recall | 55.6% | 56.4% |
+| F1 | 62.2% | 63.0% |
+| or_split_errors | 8.7 | 8.3 |
+| profile fields | 95.4% | 97.4% |
+| per-pass spread (precision / F1 / or_split) | 4.0 / 2.1 / 3.0 | **2.7 / 1.4 / 1.0** |
+
+The aggregate metrics moved inside their own noise, as expected — grouping
+changes the shape of a handful of clauses, not the bulk of them. The group count
+is the result: 5 → 8 of 14, and the run also got measurably more stable (every
+spread narrowed), which is what more examples usually buy.
+
+Of the 9 groups emitted, 8 matched a label exactly. The ninth is
+`ArduPilot | PX4` on the UAV row — plausibly a real choice the labels do not
+carry. Check it when approving the 10 MUST-group rows (R7); if it is right, the
+label moves, not the prompt.
+
+The six remaining misses are not one problem:
+
+- `ELT | ETL` — both skills extracted, left ungrouped, despite the example using
+  that exact phrase. Slash pairs are still the weakest form.
+- `C | C++` — same shape, and arguably a label question rather than a model one.
+- `JavaScript | TypeScript`, and two three-way FinOps tool choices.
+- `MariaDB | MySQL` — not a grouping miss at all: MariaDB was never extracted.
+
+Two prompt iterations cost under two cents in total. A third is available but
+has a clear diminishing look to it; 57% grouped with the rest scoring exactly as
+today is a reasonable state to pay for the corpus with.
+
 - **Before Pass 2 step 5**, run the new contract over the 25-row golden set
   (`apps/etl/src/eval/`) and compare groups against the 22 hand-labelled `anyOf`
   entries.
@@ -815,10 +863,11 @@ execution risk, not decision:
    `b.parse.ExtractVacancy` parses a response carrying groups. A response that
    omits the field coerces to `[]` rather than failing, so the old shape still
    parses. No `string[][]` fallback needed, and no provider call was made.
-2. **Whether to tune the prompt before the corpus pass.** The model groups 36%
-   of the reachable choices in the golden set (5 of 14). Ungrouped choices score
-   exactly as today, so this is not a blocker; the question is only whether a few
-   cents of prompt iteration lifts that number before paying for the corpus.
+2. **How far to push the grouping prompt.** One iteration took it from 36% to
+   57% of the reachable golden-set choices (5 → 8 of 14) for about a cent. The
+   remaining misses are concentrated in slash pairs (`ETL/ELT`, `C/C++`), and
+   one of them may be a label question rather than a prompt one. Ungrouped
+   choices score exactly as today, so this gates nothing.
 3. **Whether Pass 1 alone shifts `FIT_STRONG_MIN`/`FIT_GOOD_MIN`** enough to need
    an interim recalibration, or whether the single recalibration planned after
    Pass 2 (§7, Pass 2 step 6) is enough. Decide after watching Pass 1 step 4's

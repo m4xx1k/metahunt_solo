@@ -1,6 +1,6 @@
 {
-  "startedAt": "2026-09-20T11:36:57.701Z",
-  "durationMs": 28248,
+  "startedAt": "2026-09-20T14:21:12.144Z",
+  "durationMs": 28460,
   "extractor": "production",
   "client": "DeepSeekClient",
   "model": "deepseek-v4-flash",
@@ -10,53 +10,35 @@
     "evaluatedCases": 25,
     "schemaValidRate": 1,
     "providerFailureRate": 0,
-    "requirementsPrecision": 0.7364553587236143,
-    "requirementsRecall": 0.5555537387735529,
-    "requirementsF1": 0.6224396318787534,
-    "priorityAccuracy": 0.9838359788359788,
-    "alternativeAccuracy": 0.5600702888901029,
-    "orSplitErrors": 8.666666666666666,
+    "requirementsPrecision": 0.7398028915528916,
+    "requirementsRecall": 0.5642616712378321,
+    "requirementsF1": 0.6297674224689715,
+    "priorityAccuracy": 0.9766666666666666,
+    "alternativeAccuracy": 0.5703061156822765,
+    "orSplitErrors": 8.333333333333334,
     "guardAccuracy": {
       "isTech": 1,
-      "role": 0.52,
-      "seniority": 0.9866666666666667
+      "role": 0.5733333333333334,
+      "seniority": 0.9733333333333333
     },
     "profileChecked": 51,
-    "profileAccuracy": 0.954248366013072
+    "profileAccuracy": 0.9738562091503269
   },
   "passes": [
     {
       "evaluatedCases": 25,
       "schemaValidRate": 1,
       "providerFailureRate": 0,
-      "requirementsPrecision": 0.7563394638942309,
-      "requirementsRecall": 0.5700270786660878,
-      "requirementsF1": 0.6359182896175082,
-      "priorityAccuracy": 0.995,
-      "alternativeAccuracy": 0.5736634423024514,
-      "orSplitErrors": 7,
+      "requirementsPrecision": 0.7265995115995116,
+      "requirementsRecall": 0.5569514993434496,
+      "requirementsF1": 0.6224001871884044,
+      "priorityAccuracy": 0.9766666666666666,
+      "alternativeAccuracy": 0.5652181660101163,
+      "orSplitErrors": 9,
       "guardAccuracy": {
         "isTech": 1,
-        "role": 0.52,
-        "seniority": 1
-      },
-      "profileChecked": 51,
-      "profileAccuracy": 0.9411764705882353
-    },
-    {
-      "evaluatedCases": 25,
-      "schemaValidRate": 1,
-      "providerFailureRate": 0,
-      "requirementsPrecision": 0.7158690476190476,
-      "requirementsRecall": 0.5532978429894837,
-      "requirementsF1": 0.6161915728494933,
-      "priorityAccuracy": 0.9765079365079365,
-      "alternativeAccuracy": 0.5616111297027705,
-      "orSplitErrors": 10,
-      "guardAccuracy": {
-        "isTech": 1,
-        "role": 0.52,
-        "seniority": 1
+        "role": 0.56,
+        "seniority": 0.96
       },
       "profileChecked": 51,
       "profileAccuracy": 0.9607843137254902
@@ -65,16 +47,34 @@
       "evaluatedCases": 25,
       "schemaValidRate": 1,
       "providerFailureRate": 0,
-      "requirementsPrecision": 0.7371575646575647,
-      "requirementsRecall": 0.5433362946650871,
-      "requirementsF1": 0.6152090331692589,
-      "priorityAccuracy": 0.98,
-      "alternativeAccuracy": 0.5449362946650871,
-      "orSplitErrors": 9,
+      "requirementsPrecision": 0.7384642857142858,
+      "requirementsRecall": 0.5683087029585481,
+      "requirementsF1": 0.6310395512667318,
+      "priorityAccuracy": 0.9666666666666666,
+      "alternativeAccuracy": 0.5765753696252147,
+      "orSplitErrors": 8,
       "guardAccuracy": {
         "isTech": 1,
-        "role": 0.52,
+        "role": 0.56,
         "seniority": 0.96
+      },
+      "profileChecked": 51,
+      "profileAccuracy": 1
+    },
+    {
+      "evaluatedCases": 25,
+      "schemaValidRate": 1,
+      "providerFailureRate": 0,
+      "requirementsPrecision": 0.7543448773448773,
+      "requirementsRecall": 0.5675248114114986,
+      "requirementsF1": 0.6358625289517784,
+      "priorityAccuracy": 0.9866666666666666,
+      "alternativeAccuracy": 0.5691248114114985,
+      "orSplitErrors": 8,
+      "guardAccuracy": {
+        "isTech": 1,
+        "role": 0.6,
+        "seniority": 1
       },
       "profileChecked": 51,
       "profileAccuracy": 0.9607843137254902
@@ -88,12 +88,12 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8,
+        "requirementsPrecision": 0.7272727272727273,
         "requirementsRecall": 0.7272727272727273,
-        "requirementsF1": 0.761904761904762,
+        "requirementsF1": 0.7272727272727273,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.7272727272727273,
-        "orSplitErrors": 0,
+        "orSplitErrors": 1,
         "guardAccuracy": {
           "isTech": 1,
           "role": 1,
@@ -144,32 +144,35 @@
           "must:Active Directory",
           "must:Aruba",
           "must:CentOS",
+          "must:DFS",
           "must:DHCP",
           "must:DNS",
           "must:Docker|Kubernetes",
+          "must:Firewalls",
           "must:IPsec",
           "must:Juniper",
           "must:Linux",
           "must:MikroTik",
           "must:Network Security",
+          "must:RADIUS",
           "must:SCCM",
           "must:Ubiquiti",
           "must:Ubuntu",
           "must:VLAN",
+          "must:VMware",
           "must:VMware vCenter",
-          "must:VMware vSphere",
           "must:WSUS",
           "must:Windows Server",
           "nice:API",
           "nice:Chef",
-          "nice:Confluence",
           "nice:GIT",
           "nice:Jamf",
-          "nice:Jira",
           "nice:Microsoft 365",
           "nice:Puppet",
           "nice:SVN",
-          "nice:TeamCity"
+          "nice:TeamCity",
+          "nice:iOS SDK",
+          "nice:macOS"
         ]
       },
       "actual": {
@@ -185,13 +188,16 @@
             "VPN",
             "IPsec",
             "VLAN",
+            "Radius",
+            "Firewalls",
             "DNS",
             "DHCP",
             "VMware vCenter",
-            "VMware vSphere",
+            "VMware",
             "Windows Server",
-            "Active Directory",
             "SCCM",
+            "Active Directory",
+            "DFS",
             "WSUS",
             "Linux",
             "Ubuntu",
@@ -203,15 +209,15 @@
           ],
           "optional": [
             "Microsoft 365",
+            "macOS",
+            "iOS",
             "Jamf",
             "Puppet",
             "Chef",
             "API",
             "SVN",
             "Git",
-            "TeamCity",
-            "Jira",
-            "Confluence"
+            "TeamCity"
           ],
           "alternatives": [
             {
@@ -231,10 +237,6 @@
           {
             "city": "Kyiv",
             "country": "Ukraine"
-          },
-          {
-            "city": "Lviv",
-            "country": "Ukraine"
           }
         ],
         "domain": null,
@@ -244,13 +246,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 9219,
-        "out": 340,
-        "cached": 9085,
+        "in": 9546,
+        "out": 371,
+        "cached": 9344,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1688
+        "ms": 1959
       }
     },
     {
@@ -260,12 +262,12 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.1111111111111111,
-        "requirementsRecall": 0.04,
-        "requirementsF1": 0.058823529411764705,
-        "priorityAccuracy": 0.5,
-        "alternativeAccuracy": 0.08,
-        "orSplitErrors": 2,
+        "requirementsPrecision": 0.5,
+        "requirementsRecall": 0.08,
+        "requirementsF1": 0.13793103448275865,
+        "priorityAccuracy": 0.6666666666666666,
+        "alternativeAccuracy": 0.12,
+        "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
           "role": 0,
@@ -304,15 +306,10 @@
           "nice:unresolved:saascostmanagement"
         ],
         "actualClauses": [
-          "must:AWS",
-          "must:Azure",
+          "must:AWS|Azure|Google Cloud",
           "must:FinOps",
-          "must:Google Cloud",
-          "must:Kubernetes",
           "must:Terraform",
-          "nice:CloudHealth",
-          "nice:CloudZero",
-          "nice:Kubecost"
+          "nice:Kubernetes"
         ]
       },
       "actual": {
@@ -320,9 +317,13 @@
         "isTech": true,
         "seniority": "MIDDLE",
         "skills": {
-          "required": ["AWS", "Azure", "GCP", "FinOps", "Terraform", "Kubernetes"],
-          "optional": ["CloudZero", "CloudHealth", "Kubecost"],
-          "alternatives": []
+          "required": ["AWS", "Azure", "Google Cloud", "FinOps", "Terraform"],
+          "optional": ["Kubernetes"],
+          "alternatives": [
+            {
+              "anyOf": ["AWS", "Azure", "Google Cloud"]
+            }
+          ]
         },
         "experienceYears": 3,
         "salary": null,
@@ -394,13 +395,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 10881,
-        "out": 442,
-        "cached": 10747,
+        "in": 11208,
+        "out": 419,
+        "cached": 11008,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1917
+        "ms": 2123
       }
     },
     {
@@ -410,9 +411,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6363636363636364,
+        "requirementsPrecision": 0.7,
         "requirementsRecall": 0.5833333333333334,
-        "requirementsF1": 0.6086956521739131,
+        "requirementsF1": 0.6363636363636365,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.5833333333333334,
         "orSplitErrors": 0,
@@ -442,10 +443,9 @@
         ],
         "actualClauses": [
           "must:API Testing",
-          "must:Automation QA",
+          "must:Cypress|Playwright|WebdriverIO",
           "must:JavaScript",
           "must:OOP",
-          "must:Playwright",
           "must:TypeScript",
           "must:UI Testing",
           "nice:CI/CD",
@@ -464,7 +464,8 @@
             "TypeScript",
             "Playwright",
             "OOP",
-            "Automation QA",
+            "Cypress",
+            "WebdriverIO",
             "API Testing",
             "UI Testing"
           ],
@@ -488,13 +489,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8899,
-        "out": 198,
-        "cached": 8704,
+        "in": 9226,
+        "out": 207,
+        "cached": 9088,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1734
+        "ms": 1360
       }
     },
     {
@@ -504,11 +505,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8571428571428571,
-        "requirementsRecall": 0.6,
-        "requirementsF1": 0.7058823529411764,
+        "requirementsPrecision": 0.875,
+        "requirementsRecall": 0.7,
+        "requirementsF1": 0.7777777777777777,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.6,
+        "alternativeAccuracy": 0.7,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -537,6 +538,7 @@
           "must:AWS",
           "must:CI/CD",
           "must:Cucumber",
+          "must:OOP",
           "must:Python",
           "must:Selenium",
           "must:behave"
@@ -547,7 +549,7 @@
         "isTech": true,
         "seniority": "SENIOR",
         "skills": {
-          "required": ["Python", "behave", "AWS", "CI/CD", "Selenium", "API Testing", "BDD"],
+          "required": ["Python", "behave", "BDD", "AWS", "CI/CD", "Selenium", "API Testing", "OOP"],
           "optional": [],
           "alternatives": []
         },
@@ -564,13 +566,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 9022,
-        "out": 160,
-        "cached": 8832,
+        "in": 9349,
+        "out": 164,
+        "cached": 9215,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1297
+        "ms": 1177
       }
     },
     {
@@ -580,11 +582,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.9,
-        "requirementsRecall": 0.47368421052631576,
-        "requirementsF1": 0.6206896551724138,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.5789473684210527,
+        "requirementsF1": 0.7333333333333334,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.47368421052631576,
+        "alternativeAccuracy": 0.5789473684210527,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -622,21 +624,22 @@
           "must:Angular",
           "must:Azure",
           "must:CI/CD",
-          "must:DevSecOps",
           "must:SQL",
+          "must:TDD",
           "must:TypeScript",
-          "nice:Adobe Illustrator",
           "nice:LLM",
-          "nice:MCP"
+          "nice:MCP",
+          "nice:Microservices",
+          "nice:Serverless"
         ]
       },
       "actual": {
-        "role": "Full Stack Developer",
+        "role": "Software Engineer",
         "isTech": true,
         "seniority": "SENIOR",
         "skills": {
-          "required": [".NET", "Angular", "TypeScript", "SQL", "CI/CD", "DevSecOps", "Azure"],
-          "optional": ["AI", "LLM", "MCP"],
+          "required": [".NET", "Angular", "SQL", "TypeScript", "Azure", "CI/CD", "TDD"],
+          "optional": ["LLM", "MCP", "Microservices", "Serverless"],
           "alternatives": []
         },
         "experienceYears": 5,
@@ -690,20 +693,20 @@
             "country": "Ukraine"
           }
         ],
-        "domain": "Consulting",
+        "domain": null,
         "engagementType": "OUTSOURCE",
         "companyName": "EPAM",
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 9243,
-        "out": 361,
-        "cached": 9088,
+        "in": 9570,
+        "out": 362,
+        "cached": 9344,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1591
+        "ms": 1758
       }
     },
     {
@@ -713,11 +716,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8333333333333334,
-        "requirementsRecall": 0.5,
-        "requirementsF1": 0.625,
+        "requirementsPrecision": 1,
+        "requirementsRecall": 0.6,
+        "requirementsF1": 0.7499999999999999,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5,
+        "alternativeAccuracy": 0.6,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -746,17 +749,17 @@
           "must:Linux",
           "must:OOP",
           "must:Qt",
-          "nice:Cybersecurity",
-          "nice:Networking"
+          "nice:Networking",
+          "nice:UI/UX Principles"
         ]
       },
       "actual": {
-        "role": "Software Engineer",
+        "role": "Backend Developer",
         "isTech": true,
         "seniority": null,
         "skills": {
           "required": ["C++", "Qt", "Linux", "OOP"],
-          "optional": ["Networking", "Cybersecurity"],
+          "optional": ["Networking", "UI/UX Principles"],
           "alternatives": []
         },
         "experienceYears": 4,
@@ -772,13 +775,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 9038,
-        "out": 159,
-        "cached": 8832,
+        "in": 9365,
+        "out": 158,
+        "cached": 9216,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1391
+        "ms": 1500
       }
     },
     {
@@ -788,15 +791,15 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 1,
-        "requirementsRecall": 0.7,
-        "requirementsF1": 0.8235294117647058,
+        "requirementsPrecision": 0.8333333333333334,
+        "requirementsRecall": 0.5,
+        "requirementsF1": 0.625,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.7,
+        "alternativeAccuracy": 0.5,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
-          "role": 0,
+          "role": 1,
           "seniority": 1
         },
         "profile": {
@@ -822,17 +825,16 @@
           "must:Cypress|Playwright",
           "must:Manual Testing",
           "must:TypeScript",
-          "nice:Agile",
-          "nice:Scrum"
+          "nice:German"
         ]
       },
       "actual": {
-        "role": "QA Engineer",
+        "role": "Automation QA Engineer",
         "isTech": true,
         "seniority": null,
         "skills": {
-          "required": ["TypeScript", "Playwright", "Cypress", "Manual Testing", "CI/CD", "Cursor"],
-          "optional": ["Agile", "Scrum"],
+          "required": ["TypeScript", "Playwright", "Cypress", "Cursor", "CI/CD", "Manual Testing"],
+          "optional": ["German"],
           "alternatives": [
             {
               "anyOf": ["Playwright", "Cypress"]
@@ -852,13 +854,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8756,
-        "out": 175,
-        "cached": 8576,
+        "in": 9083,
+        "out": 172,
+        "cached": 8832,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1355
+        "ms": 1332
       }
     },
     {
@@ -868,9 +870,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.5454545454545454,
+        "requirementsPrecision": 0.5,
         "requirementsRecall": 0.375,
-        "requirementsF1": 0.4444444444444444,
+        "requirementsF1": 0.42857142857142855,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.375,
         "orSplitErrors": 1,
@@ -907,6 +909,7 @@
           "must:Java",
           "must:JavaScript",
           "must:Playwright",
+          "must:REST API",
           "must:REST Assured",
           "must:SQL",
           "must:TypeScript",
@@ -928,7 +931,8 @@
             "JavaScript",
             "Java",
             "Azure DevOps",
-            "SQL"
+            "SQL",
+            "REST API"
           ],
           "optional": ["Docker", "Kubernetes", "ETL", "Informatica PowerCenter"],
           "alternatives": []
@@ -951,13 +955,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 9106,
-        "out": 210,
-        "cached": 8960,
+        "in": 9433,
+        "out": 212,
+        "cached": 9216,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1656
+        "ms": 1340
       }
     },
     {
@@ -967,9 +971,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.42857142857142855,
+        "requirementsPrecision": 0.5,
         "requirementsRecall": 0.5,
-        "requirementsF1": 0.4615384615384615,
+        "requirementsF1": 0.5,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.5,
         "orSplitErrors": 0,
@@ -992,13 +996,12 @@
           "nice:Redis|SQLAlchemy|unresolved:asyncdatabasedrivers|unresolved:backgroundtaskqueues|unresolved:containerizeddeployments"
         ],
         "actualClauses": [
+          "must:Docker",
           "must:FastAPI",
           "must:Pydantic",
           "must:Python",
-          "nice:Celery",
-          "nice:Docker",
-          "nice:Redis",
-          "nice:SQLAlchemy"
+          "must:Redis",
+          "must:SQLAlchemy"
         ]
       },
       "actual": {
@@ -1006,8 +1009,8 @@
         "isTech": true,
         "seniority": null,
         "skills": {
-          "required": ["Python", "FastAPI", "Pydantic"],
-          "optional": ["SQLAlchemy", "Redis", "Docker", "Celery"],
+          "required": ["Python", "FastAPI", "Pydantic", "SQLAlchemy", "Redis", "Docker"],
+          "optional": [],
           "alternatives": []
         },
         "experienceYears": null,
@@ -1023,13 +1026,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8739,
-        "out": 155,
-        "cached": 8576,
+        "in": 9066,
+        "out": 152,
+        "cached": 8832,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1539
+        "ms": 1186
       }
     },
     {
@@ -1039,9 +1042,9 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.5625,
+        "requirementsPrecision": 0.6,
         "requirementsRecall": 0.6923076923076923,
-        "requirementsF1": 0.6206896551724138,
+        "requirementsF1": 0.6428571428571429,
         "priorityAccuracy": 1,
         "alternativeAccuracy": 0.6923076923076923,
         "orSplitErrors": 2,
@@ -1073,7 +1076,6 @@
         "actualClauses": [
           "must:API Testing",
           "must:AWS",
-          "must:Adobe Illustrator",
           "must:CI/CD",
           "must:GIT",
           "must:Java|JavaScript|Python|TypeScript",
@@ -1104,7 +1106,6 @@
             "AWS",
             "CI/CD",
             "Git",
-            "AI",
             "LLM"
           ],
           "optional": [
@@ -1134,20 +1135,20 @@
             "country": "Ukraine"
           }
         ],
-        "domain": "SaaS",
+        "domain": "Cloud",
         "engagementType": "OUTSOURCE",
         "companyName": "Exoft",
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 8842,
-        "out": 248,
-        "cached": 8704,
+        "in": 9169,
+        "out": 244,
+        "cached": 8960,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1307
+        "ms": 1229
       }
     },
     {
@@ -1170,8 +1171,14 @@
         },
         "profile": {
           "checked": 4,
-          "correct": 4,
-          "wrong": []
+          "correct": 3,
+          "wrong": [
+            {
+              "field": "englishLevel",
+              "expected": "INTERMEDIATE",
+              "actual": "UPPER_INTERMEDIATE"
+            }
+          ]
         },
         "expectedClauses": [
           "must:API Test Automation",
@@ -1196,24 +1203,24 @@
         },
         "experienceYears": null,
         "salary": null,
-        "englishLevel": "INTERMEDIATE",
+        "englishLevel": "UPPER_INTERMEDIATE",
         "employmentType": "CONTRACT",
         "workFormat": "REMOTE",
         "locations": [],
         "domain": "Ecommerce",
-        "engagementType": "OUTSOURCE",
+        "engagementType": null,
         "companyName": "IT Service Ukraine",
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 8785,
-        "out": 158,
-        "cached": 8576,
+        "in": 9112,
+        "out": 160,
+        "cached": 8960,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1441
+        "ms": 1565
       }
     },
     {
@@ -1223,15 +1230,15 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8,
-        "requirementsRecall": 0.5,
-        "requirementsF1": 0.6153846153846154,
+        "requirementsPrecision": 0.8333333333333334,
+        "requirementsRecall": 0.625,
+        "requirementsF1": 0.7142857142857143,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5,
+        "alternativeAccuracy": 0.625,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
-          "role": 0,
+          "role": 1,
           "seniority": 1
         },
         "profile": {
@@ -1254,15 +1261,16 @@
           "must:CI/CD",
           "must:Docker",
           "must:Kubernetes",
+          "must:MLOps",
           "must:Python"
         ]
       },
       "actual": {
-        "role": "DevOps Engineer",
+        "role": "Machine Learning Engineer",
         "isTech": true,
         "seniority": "SENIOR",
         "skills": {
-          "required": ["Python", "Kubernetes", "Docker", "CI/CD", "AWS", "GCP", "Azure"],
+          "required": ["MLOps", "AWS", "GCP", "Azure", "Kubernetes", "Docker", "CI/CD", "Python"],
           "optional": [],
           "alternatives": [
             {
@@ -1283,13 +1291,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8756,
-        "out": 184,
-        "cached": 8576,
+        "in": 9083,
+        "out": 188,
+        "cached": 8832,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1466
+        "ms": 1577
       }
     },
     {
@@ -1300,10 +1308,10 @@
         "schemaValid": true,
         "providerFailure": false,
         "requirementsPrecision": 1,
-        "requirementsRecall": 0.5,
-        "requirementsF1": 0.6666666666666666,
+        "requirementsRecall": 0.75,
+        "requirementsF1": 0.8571428571428571,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5,
+        "alternativeAccuracy": 0.75,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -1321,16 +1329,20 @@
           "must:TypeScript",
           "must:Web Development"
         ],
-        "actualClauses": ["must:JavaScript", "must:TypeScript"]
+        "actualClauses": ["must:Angular|React|Vue.js", "must:JavaScript", "must:TypeScript"]
       },
       "actual": {
         "role": "Frontend Engineer",
         "isTech": true,
         "seniority": "SENIOR",
         "skills": {
-          "required": ["JavaScript", "TypeScript"],
+          "required": ["JavaScript", "TypeScript", "React", "Vue.js", "Angular"],
           "optional": [],
-          "alternatives": []
+          "alternatives": [
+            {
+              "anyOf": ["React", "Vue.js", "Angular"]
+            }
+          ]
         },
         "experienceYears": 10,
         "salary": null,
@@ -1345,13 +1357,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8748,
-        "out": 142,
-        "cached": 8576,
+        "in": 9075,
+        "out": 175,
+        "cached": 8832,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1208
+        "ms": 1334
       }
     },
     {
@@ -1402,20 +1414,20 @@
         "employmentType": null,
         "workFormat": null,
         "locations": [],
-        "domain": null,
+        "domain": "SaaS",
         "engagementType": null,
         "companyName": null,
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 8770,
-        "out": 149,
-        "cached": 8576,
+        "in": 9097,
+        "out": 147,
+        "cached": 8960,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1272
+        "ms": 1046
       }
     },
     {
@@ -1438,14 +1450,8 @@
         },
         "profile": {
           "checked": 3,
-          "correct": 2,
-          "wrong": [
-            {
-              "field": "employmentType",
-              "expected": "FULL_TIME",
-              "actual": null
-            }
-          ]
+          "correct": 3,
+          "wrong": []
         },
         "expectedClauses": [
           "must:AWS",
@@ -1495,7 +1501,7 @@
         "experienceYears": 5,
         "salary": null,
         "englishLevel": "UPPER_INTERMEDIATE",
-        "employmentType": null,
+        "employmentType": "FULL_TIME",
         "workFormat": null,
         "locations": [],
         "domain": null,
@@ -1505,13 +1511,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8747,
-        "out": 171,
-        "cached": 8576,
+        "in": 9074,
+        "out": 178,
+        "cached": 8832,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1228
+        "ms": 1242
       }
     },
     {
@@ -1594,13 +1600,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8773,
-        "out": 192,
-        "cached": 8576,
+        "in": 9100,
+        "out": 188,
+        "cached": 8960,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1316
+        "ms": 1351
       }
     },
     {
@@ -1610,11 +1616,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.9230769230769231,
-        "requirementsRecall": 0.631578947368421,
-        "requirementsF1": 0.7499999999999999,
+        "requirementsPrecision": 0.9285714285714286,
+        "requirementsRecall": 0.6842105263157895,
+        "requirementsF1": 0.7878787878787878,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.631578947368421,
+        "alternativeAccuracy": 0.6842105263157895,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -1657,6 +1663,7 @@
           "must:Nginx",
           "must:REST API",
           "must:React",
+          "must:React-Admin",
           "must:Redis",
           "must:TypeORM",
           "must:TypeScript",
@@ -1680,7 +1687,8 @@
             "Nginx",
             "CI/CD",
             "React",
-            "MUI"
+            "React Admin",
+            "Material UI"
           ],
           "optional": ["MDM"],
           "alternatives": []
@@ -1692,19 +1700,19 @@
         "workFormat": "REMOTE",
         "locations": [],
         "domain": "SaaS",
-        "engagementType": null,
+        "engagementType": "PRODUCT",
         "companyName": null,
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 9052,
-        "out": 193,
-        "cached": 8832,
+        "in": 9379,
+        "out": 199,
+        "cached": 9216,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1424
+        "ms": 1474
       }
     },
     {
@@ -1794,19 +1802,19 @@
         "workFormat": "REMOTE",
         "locations": [],
         "domain": null,
-        "engagementType": "PRODUCT",
+        "engagementType": null,
         "companyName": null,
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 8958,
-        "out": 192,
-        "cached": 8704,
+        "in": 9285,
+        "out": 190,
+        "cached": 9088,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1414
+        "ms": 1245
       }
     },
     {
@@ -1874,17 +1882,17 @@
           "required": [
             "Node.js",
             "REST API",
-            "Express",
+            "Express.js",
             "NestJS",
             "TypeScript",
             "PostgreSQL",
             "GraphQL",
             "Microservices",
-            "Git",
             "Docker",
             "Docker Compose",
             "AWS",
-            "CI/CD"
+            "CI/CD",
+            "Git"
           ],
           "optional": [],
           "alternatives": []
@@ -1902,13 +1910,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8980,
-        "out": 189,
-        "cached": 8832,
+        "in": 9307,
+        "out": 194,
+        "cached": 9088,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1426
+        "ms": 1416
       }
     },
     {
@@ -1998,13 +2006,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 9068,
+        "in": 9395,
         "out": 173,
-        "cached": 8832,
+        "cached": 9216,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1241
+        "ms": 1645
       }
     },
     {
@@ -2014,16 +2022,16 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6363636363636364,
-        "requirementsRecall": 0.4666666666666667,
-        "requirementsF1": 0.5384615384615385,
+        "requirementsPrecision": 0.5454545454545454,
+        "requirementsRecall": 0.4,
+        "requirementsF1": 0.4615384615384615,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.4666666666666667,
+        "alternativeAccuracy": 0.4,
         "orSplitErrors": 1,
         "guardAccuracy": {
           "isTech": 1,
           "role": 0,
-          "seniority": 0
+          "seniority": 1
         },
         "profile": {
           "checked": 4,
@@ -2057,7 +2065,7 @@
           "must:MySQL",
           "must:PHP",
           "must:REST API",
-          "must:Shopware",
+          "must:Shopware 6",
           "must:Symfony",
           "must:Twig",
           "nice:Docker",
@@ -2070,9 +2078,9 @@
       "actual": {
         "role": "Full Stack Developer",
         "isTech": true,
-        "seniority": "SENIOR",
+        "seniority": null,
         "skills": {
-          "required": ["Shopware", "PHP", "Symfony", "MySQL", "MariaDB", "Twig", "REST API"],
+          "required": ["Shopware 6", "PHP", "Symfony", "MySQL", "MariaDB", "Twig", "REST API"],
           "optional": ["JavaScript", "TypeScript", "Vue.js", "Docker", "Git"],
           "alternatives": []
         },
@@ -2083,19 +2091,19 @@
         "workFormat": "REMOTE",
         "locations": [],
         "domain": "Ecommerce",
-        "engagementType": "OUTSOURCE",
+        "engagementType": null,
         "companyName": "IT Service Ukraine",
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 8793,
-        "out": 187,
-        "cached": 8576,
+        "in": 9120,
+        "out": 188,
+        "cached": 8960,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1320
+        "ms": 1769
       }
     },
     {
@@ -2105,11 +2113,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.8571428571428571,
-        "requirementsRecall": 0.5454545454545454,
-        "requirementsF1": 0.6666666666666665,
+        "requirementsPrecision": 0.8888888888888888,
+        "requirementsRecall": 0.7272727272727273,
+        "requirementsF1": 0.7999999999999999,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5454545454545454,
+        "alternativeAccuracy": 0.7272727272727273,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2140,8 +2148,10 @@
           "must:Kubernetes",
           "must:Microsoft Windows Server",
           "must:Network Security",
+          "must:Networking",
           "must:Terraform",
-          "nice:Google Cloud"
+          "nice:Google Cloud",
+          "nice:Tencent Cloud"
         ]
       },
       "actual": {
@@ -2155,9 +2165,10 @@
             "Microsoft Windows Server",
             "Active Directory",
             "Firewalls",
-            "VPN"
+            "VPN",
+            "Networking"
           ],
-          "optional": ["GCP"],
+          "optional": ["GCP", "Tencent Cloud"],
           "alternatives": []
         },
         "experienceYears": null,
@@ -2166,20 +2177,20 @@
         "employmentType": null,
         "workFormat": null,
         "locations": [],
-        "domain": "Cloud",
+        "domain": null,
         "engagementType": null,
         "companyName": null,
         "hasTestAssignment": null,
         "hasReservation": null
       },
       "usage": {
-        "in": 8744,
-        "out": 159,
-        "cached": 8576,
+        "in": 9071,
+        "out": 171,
+        "cached": 8832,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1186
+        "ms": 1145
       }
     },
     {
@@ -2197,7 +2208,7 @@
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
-          "role": 1,
+          "role": 0,
           "seniority": 1
         },
         "profile": {
@@ -2226,36 +2237,39 @@
           "nice:unresolved:linuxbootprocess"
         ],
         "actualClauses": [
+          "must:Arduino",
           "must:Cryptography",
           "must:Embedded Systems",
           "must:GIT",
           "must:Information Security",
           "must:Linux",
           "must:Python",
-          "nice:Arduino",
+          "must:Raspberry Pi",
           "nice:Autotools",
           "nice:CMake",
+          "nice:Cross-compilation",
           "nice:Device Tree",
           "nice:Linux kernel",
-          "nice:Raspberry Pi",
           "nice:U-Boot",
           "nice:pkg-config",
-          "nice:systemd",
-          "nice:unresolved:crosstoolchains"
+          "nice:systemd"
         ]
       },
       "actual": {
-        "role": "Embedded Engineer",
+        "role": "Embedded Software Engineer",
         "isTech": true,
         "seniority": null,
         "skills": {
           "required": [
             "Python",
             "Embedded Systems",
+            "Arduino",
+            "Raspberry Pi",
             "Linux",
-            "Git",
+            "UNIX",
             "Cryptography",
-            "Information Security"
+            "Information Security",
+            "Git"
           ],
           "optional": [
             "U-Boot",
@@ -2263,11 +2277,9 @@
             "systemd",
             "Device Tree",
             "CMake",
-            "Autotools",
+            "autotools",
             "pkg-config",
-            "Cross-toolchains",
-            "Arduino",
-            "Raspberry Pi"
+            "Cross-compilation"
           ],
           "alternatives": []
         },
@@ -2284,13 +2296,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 8874,
-        "out": 191,
-        "cached": 8704,
+        "in": 9201,
+        "out": 199,
+        "cached": 8960,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1167
+        "ms": 1810
       }
     },
     {
@@ -2308,7 +2320,7 @@
         "orSplitErrors": 1,
         "guardAccuracy": {
           "isTech": 1,
-          "role": 0,
+          "role": 1,
           "seniority": 1
         },
         "profile": {
@@ -2358,7 +2370,7 @@
         ]
       },
       "actual": {
-        "role": "Embedded Software Engineer",
+        "role": "Embedded Engineer",
         "isTech": true,
         "seniority": null,
         "skills": {
@@ -2392,13 +2404,13 @@
         "hasReservation": null
       },
       "usage": {
-        "in": 9007,
-        "out": 215,
-        "cached": 8832,
+        "in": 9334,
+        "out": 214,
+        "cached": 9088,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1360
+        "ms": 1147
       }
     },
     {
@@ -2408,11 +2420,11 @@
       "score": {
         "schemaValid": true,
         "providerFailure": false,
-        "requirementsPrecision": 0.6666666666666666,
-        "requirementsRecall": 0.5,
-        "requirementsF1": 0.5714285714285715,
+        "requirementsPrecision": 0.5555555555555556,
+        "requirementsRecall": 0.4166666666666667,
+        "requirementsF1": 0.4761904761904762,
         "priorityAccuracy": 1,
-        "alternativeAccuracy": 0.5,
+        "alternativeAccuracy": 0.4166666666666667,
         "orSplitErrors": 0,
         "guardAccuracy": {
           "isTech": 1,
@@ -2445,7 +2457,7 @@
           "must:Creatio",
           "must:JMeter",
           "must:Jira",
-          "must:Manual Testing",
+          "must:Microsoft Excel",
           "must:Postman",
           "must:SQL"
         ]
@@ -2459,12 +2471,12 @@
             "SQL",
             "API",
             "Postman",
-            "Jira",
-            "Confluence",
+            "Microsoft Excel",
             "JMeter",
             "Creatio",
             "1C",
-            "Manual Testing"
+            "Jira",
+            "Confluence"
           ],
           "optional": [],
           "alternatives": []
@@ -2476,19 +2488,19 @@
         "workFormat": "REMOTE",
         "locations": [],
         "domain": null,
-        "engagementType": null,
+        "engagementType": "OUTSOURCE",
         "companyName": "Consimple",
         "hasTestAssignment": true,
         "hasReservation": null
       },
       "usage": {
-        "in": 9006,
-        "out": 168,
-        "cached": 8832,
+        "in": 9333,
+        "out": 170,
+        "cached": 9088,
         "client": "DeepSeekClient",
         "provider": "openai-generic",
         "model": "deepseek-v4-flash",
-        "ms": 1112
+        "ms": 1208
       }
     }
   ]

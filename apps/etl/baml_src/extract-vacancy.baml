@@ -383,14 +383,18 @@ function ExtractVacancy(
         domain: "Software Development"     ← role-as-domain, use null
 
     For ALTERNATIVES among required skills:
-      - Preserve one logical choice as one group: "AWS or GCP", "one of A/B",
-        "A and/or B", "any framework: A, B, C".
-      - A comma-separated stack is cumulative unless the text marks it as a
+      - One logical choice is one group, however the posting words it:
+        "AWS or GCP", "one of A/B", "A and/or B", "at least one of: A, B, C",
+        "any framework (A, B, C)".
+      - A slash joins a choice only when each side is a skill on its own.
+        "CI/CD" and "TCP/IP" are ONE name; "ETL/ELT" is two skills, hence a
         choice.
+      - A comma-separated stack is cumulative unless the text marks it as a
+        choice. "etc." adds no member: group exactly the names written.
       - Never split one choice into singletons; never merge two separate
         statements.
 
-    Example — an explicit choice becomes one group
+    Example — "or" between two named tools
       Input: "Required: Python, AWS or GCP, Kafka or RabbitMQ.
               Terraform is a plus."
       Output:
@@ -401,6 +405,24 @@ function ExtractVacancy(
           ← members stay in `required`; the group only records the choice
           ← "Python" is cumulative, so it is in no group
           ← never group an `optional` skill
+
+    Example — a quantifier and a colon make a list a choice
+      Input: "Hands-on experience with at least one test automation framework:
+              Cypress, WebdriverIO, or Playwright."
+      Output:
+        skills.required: ["Cypress", "WebdriverIO", "Playwright"]
+        skills.alternatives: [{ anyOf: ["Cypress", "WebdriverIO", "Playwright"] }]
+          ← "at least one" makes the list a choice, not a stack
+
+    Example — parentheses, "etc.", and a slash pair
+      Input: "Any framework (React, Vue, Angular, etc.). Strong ETL/ELT
+              experience. CI/CD pipelines."
+      Output:
+        skills.required: ["React", "Vue.js", "Angular", "ETL", "ELT", "CI/CD"]
+        skills.alternatives: [{ anyOf: ["React", "Vue.js", "Angular"] },
+                              { anyOf: ["ETL", "ELT"] }]
+          ← "etc." adds nothing; group only the three named
+          ← "CI/CD" is one skill, never a group
 
     {{ ctx.output_format }}
 

@@ -41,22 +41,22 @@ li.hit { color: var(--muted); }
 <body>
 <main>
 <h1>DeepSeekClient · deepseek-v4-flash</h1>
-<p class="meta">production · 25 rows · 2026-09-20T11:36:57.701Z
+<p class="meta">production · 25 rows · 2026-09-20T14:21:12.144Z
  · aliases <code>3b8a5cb4bc70</code> · worst rows first</p>
 <div class="summary">
-<div><span>F1</span>62%</div>
+<div><span>F1</span>63%</div>
 <div><span>precision</span>74%</div>
 <div><span>recall</span>56%</div>
 <div><span>priority</span>98%</div>
-<div><span>alternatives</span>56%</div>
-<div><span>or_split_errors</span>8.666666666666666</div>
+<div><span>alternatives</span>57%</div>
+<div><span>or_split_errors</span>8.333333333333334</div>
 <div><span>schema valid</span>100%</div>
 <div><span>isTech</span>100%</div>
 </div>
 <details>
 <summary>
   <b>Middle FinOps Engineer; ID 100980 в SoftServe, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Луцьк, Полтава, Рівне, Тернопіль, Ужгород, Хмельницький, Чернівці, віддалено</b>
-  <span class="f1">F1 6% · P 11% · R 4% · 2 OR split</span>
+  <span class="f1">F1 14% · P 50% · R 8%</span>
 </summary>
 <div class="cols">
   <div>
@@ -68,7 +68,7 @@ li.hit { color: var(--muted); }
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="extra">+ must:AWS</li><li class="miss">− must:AWS Cost Explorer|Azure Cost Management|GCP Billing Console</li><li class="miss">− must:AWS|Azure|Google Cloud</li><li class="miss">− must:Anomaly Detection</li><li class="extra">+ must:Azure</li><li class="miss">− must:Budget Management</li><li class="miss">− must:CloudHealth|CloudZero|Kubecost</li><li class="hit">  must:FinOps</li><li class="extra">+ must:Google Cloud</li><li class="extra">+ must:Kubernetes</li><li class="miss">− must:Savings Plans</li><li class="extra">+ must:Terraform</li><li class="miss">− must:unresolved:cloudpricingmodels</li><li class="miss">− must:unresolved:commitmentmanagement</li><li class="miss">− must:unresolved:committedusediscounts</li><li class="miss">− must:unresolved:costallocation</li><li class="miss">− must:unresolved:costforecasting</li><li class="miss">− must:unresolved:finopsoperatingmodel</li><li class="miss">− must:unresolved:maturityscoring</li><li class="miss">− must:unresolved:reservedinstances</li><li class="miss">− must:unresolved:showbackchargeback</li><li class="miss">− must:unresolved:spotpreemptibleinstances</li><li class="miss">− must:unresolved:taggovernance</li><li class="miss">− must:unresolved:unifiedcostmodel</li><li class="miss">− nice:AWS CUR|unresolved:azurecostexport|unresolved:gcpbigquerybillingexport</li><li class="extra">+ nice:CloudHealth</li><li class="extra">+ nice:CloudZero</li><li class="extra">+ nice:Kubecost</li><li class="miss">− nice:Multi-cloud</li><li class="miss">− nice:Terraform</li><li class="miss">− nice:unresolved:aimlcostoptimization</li><li class="miss">− nice:unresolved:kubernetescostmanagement</li><li class="miss">− nice:unresolved:saascostmanagement</li></ul>
+    <ul><li class="miss">− must:AWS Cost Explorer|Azure Cost Management|GCP Billing Console</li><li class="hit">  must:AWS|Azure|Google Cloud</li><li class="miss">− must:Anomaly Detection</li><li class="miss">− must:Budget Management</li><li class="miss">− must:CloudHealth|CloudZero|Kubecost</li><li class="hit">  must:FinOps</li><li class="miss">− must:Savings Plans</li><li class="extra">+ must:Terraform</li><li class="miss">− must:unresolved:cloudpricingmodels</li><li class="miss">− must:unresolved:commitmentmanagement</li><li class="miss">− must:unresolved:committedusediscounts</li><li class="miss">− must:unresolved:costallocation</li><li class="miss">− must:unresolved:costforecasting</li><li class="miss">− must:unresolved:finopsoperatingmodel</li><li class="miss">− must:unresolved:maturityscoring</li><li class="miss">− must:unresolved:reservedinstances</li><li class="miss">− must:unresolved:showbackchargeback</li><li class="miss">− must:unresolved:spotpreemptibleinstances</li><li class="miss">− must:unresolved:taggovernance</li><li class="miss">− must:unresolved:unifiedcostmodel</li><li class="miss">− nice:AWS CUR|unresolved:azurecostexport|unresolved:gcpbigquerybillingexport</li><li class="extra">+ nice:Kubernetes</li><li class="miss">− nice:Multi-cloud</li><li class="miss">− nice:Terraform</li><li class="miss">− nice:unresolved:aimlcostoptimization</li><li class="miss">− nice:unresolved:kubernetescostmanagement</li><li class="miss">− nice:unresolved:saascostmanagement</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
   &quot;role&quot;: &quot;Cloud Engineer&quot;,
@@ -78,17 +78,22 @@ li.hit { color: var(--muted); }
     &quot;required&quot;: [
       &quot;AWS&quot;,
       &quot;Azure&quot;,
-      &quot;GCP&quot;,
+      &quot;Google Cloud&quot;,
       &quot;FinOps&quot;,
-      &quot;Terraform&quot;,
-      &quot;Kubernetes&quot;
+      &quot;Terraform&quot;
     ],
     &quot;optional&quot;: [
-      &quot;CloudZero&quot;,
-      &quot;CloudHealth&quot;,
-      &quot;Kubecost&quot;
+      &quot;Kubernetes&quot;
     ],
-    &quot;alternatives&quot;: []
+    &quot;alternatives&quot;: [
+      {
+        &quot;anyOf&quot;: [
+          &quot;AWS&quot;,
+          &quot;Azure&quot;,
+          &quot;Google Cloud&quot;
+        ]
+      }
+    ]
   },
   &quot;experienceYears&quot;: 3,
   &quot;salary&quot;: null,
@@ -200,7 +205,7 @@ We’re looking for a Data Engineer to improve our data infrastructure and integ
   &quot;employmentType&quot;: null,
   &quot;workFormat&quot;: null,
   &quot;locations&quot;: [],
-  &quot;domain&quot;: null,
+  &quot;domain&quot;: &quot;SaaS&quot;,
   &quot;engagementType&quot;: null,
   &quot;companyName&quot;: null,
   &quot;hasTestAssignment&quot;: null,
@@ -212,7 +217,7 @@ We’re looking for a Data Engineer to improve our data infrastructure and integ
 <details>
 <summary>
   <b>Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів</b>
-  <span class="f1">F1 44% · P 55% · R 38% · 1 OR split</span>
+  <span class="f1">F1 43% · P 50% · R 38% · 1 OR split</span>
 </summary>
 <div class="cols">
   <div>
@@ -224,7 +229,7 @@ We are looking for a Senior Automation QA Engineer (Playwright, RestAssured, TS/
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:API Testing</li><li class="hit">  must:Azure DevOps</li><li class="hit">  must:Java</li><li class="extra">+ must:JavaScript</li><li class="miss">− must:JavaScript|TypeScript</li><li class="hit">  must:Playwright</li><li class="hit">  must:REST Assured</li><li class="miss">− must:Relational Databases</li><li class="extra">+ must:SQL</li><li class="extra">+ must:TypeScript</li><li class="miss">− must:unresolved:aibasedtesting</li><li class="miss">− nice:Data Profiling</li><li class="miss">− nice:Data Validation</li><li class="miss">− nice:Data mapping</li><li class="hit">  nice:Docker</li><li class="extra">+ nice:ETL</li><li class="miss">− nice:IICS|Informatica PowerCenter</li><li class="extra">+ nice:Informatica PowerCenter</li><li class="hit">  nice:Kubernetes</li><li class="miss">− nice:Performance Testing</li><li class="miss">− nice:unresolved:etlscheduling</li></ul>
+    <ul><li class="miss">− must:API Testing</li><li class="hit">  must:Azure DevOps</li><li class="hit">  must:Java</li><li class="extra">+ must:JavaScript</li><li class="miss">− must:JavaScript|TypeScript</li><li class="hit">  must:Playwright</li><li class="extra">+ must:REST API</li><li class="hit">  must:REST Assured</li><li class="miss">− must:Relational Databases</li><li class="extra">+ must:SQL</li><li class="extra">+ must:TypeScript</li><li class="miss">− must:unresolved:aibasedtesting</li><li class="miss">− nice:Data Profiling</li><li class="miss">− nice:Data Validation</li><li class="miss">− nice:Data mapping</li><li class="hit">  nice:Docker</li><li class="extra">+ nice:ETL</li><li class="miss">− nice:IICS|Informatica PowerCenter</li><li class="extra">+ nice:Informatica PowerCenter</li><li class="hit">  nice:Kubernetes</li><li class="miss">− nice:Performance Testing</li><li class="miss">− nice:unresolved:etlscheduling</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
   &quot;role&quot;: &quot;Automation QA Engineer&quot;,
@@ -238,7 +243,8 @@ We are looking for a Senior Automation QA Engineer (Playwright, RestAssured, TS/
       &quot;JavaScript&quot;,
       &quot;Java&quot;,
       &quot;Azure DevOps&quot;,
-      &quot;SQL&quot;
+      &quot;SQL&quot;,
+      &quot;REST API&quot;
     ],
     &quot;optional&quot;: [
       &quot;Docker&quot;,
@@ -270,8 +276,114 @@ We are looking for a Senior Automation QA Engineer (Playwright, RestAssured, TS/
 </details>
 <details>
 <summary>
+  <b>Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено</b>
+  <span class="f1">F1 46% · P 55% · R 40% · 1 OR split</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
+
+We are looking for a Middle+/Senior Full-stack Shopware developer to join our team on a part-time contract basis . Required Skills: 3+ years of commercial experience with Shopware 6 . Strong knowledge of PHP 8 , Symfony , and MySQL/MariaDB . Hands-on experience with: Shopware 6 : plugin system, DAL, Twig, Storefront &amp; Admin extensions. Understanding of the architecture of Shopware 6. Experience integrating REST APIs. English B1/B2 (for communication with clients). Nice to have: — Knowledge of JavaScript/TypeScript, Vue js. — Experience with Docker, Git. Відгукнутись на вакансію</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="extra">+ must:MySQL</li><li class="hit">  must:PHP</li><li class="extra">+ must:REST API</li><li class="miss">− must:Shopware</li><li class="extra">+ must:Shopware 6</li><li class="hit">  must:Symfony</li><li class="hit">  must:Twig</li><li class="miss">− must:raw:mariadb|raw:mysql</li><li class="miss">− must:unresolved:restapiintegration</li><li class="miss">− must:unresolved:shopwareadminextensions</li><li class="miss">− must:unresolved:shopwarearchitecture</li><li class="miss">− must:unresolved:shopwaredal</li><li class="miss">− must:unresolved:shopwarepluginsystem</li><li class="miss">− must:unresolved:shopwarestorefrontextensions</li><li class="hit">  nice:Docker</li><li class="hit">  nice:GIT</li><li class="extra">+ nice:JavaScript</li><li class="miss">− nice:JavaScript|TypeScript</li><li class="extra">+ nice:TypeScript</li><li class="hit">  nice:Vue.js</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Full Stack Developer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: null,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;Shopware 6&quot;,
+      &quot;PHP&quot;,
+      &quot;Symfony&quot;,
+      &quot;MySQL&quot;,
+      &quot;MariaDB&quot;,
+      &quot;Twig&quot;,
+      &quot;REST API&quot;
+    ],
+    &quot;optional&quot;: [
+      &quot;JavaScript&quot;,
+      &quot;TypeScript&quot;,
+      &quot;Vue.js&quot;,
+      &quot;Docker&quot;,
+      &quot;Git&quot;
+    ],
+    &quot;alternatives&quot;: []
+  },
+  &quot;experienceYears&quot;: 3,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
+  &quot;employmentType&quot;: &quot;CONTRACT&quot;,
+  &quot;workFormat&quot;: &quot;REMOTE&quot;,
+  &quot;locations&quot;: [],
+  &quot;domain&quot;: &quot;Ecommerce&quot;,
+  &quot;engagementType&quot;: null,
+  &quot;companyName&quot;: &quot;IT Service Ukraine&quot;,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
+  <b>Junior QA Engineer</b>
+  <span class="f1">F1 48% · P 56% · R 42%</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Junior QA Engineer
+
+Компанія Consimple шукає Junior QA Manual Engineer , який підсилить нашу команду! Необхідні навички: впевнене розуміння баз даних; володіння написанням SQL-запитів; знання та вміння користуватися API; базові навички роботи з Postman; знання Microsoft Office (Word, Excel, Outlook); аналітичне мислення; практичний досвід тестування ПЗ Обов&#39;язки: аналіз вимог Клієнта; робота з документацією створення тест-кейсів робота з БТС (баг-трекінгова система) JIRA робота з Confluence мануальне тестування API (Postman) тестування навантаження (Jmeter) мануальне тестування кастомних рішень у CRM-системі Creatio інтеграційне тестування зі сторонніми системами (1С, сайт, каси, МП тощо) комунікація з клієнтом та командою. Ми обіцяємо: довгострокова зайнятість; шляхи для зростання та саморозвитку; віддалений формат роботи; доброзичливий командний дух; цікаві колективні заходи. Вакансія передбачає виконання тестового завдання.</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="extra">+ must:1C</li><li class="extra">+ must:API</li><li class="miss">− must:API Testing</li><li class="hit">  must:Confluence</li><li class="extra">+ must:Creatio</li><li class="miss">− must:Databases</li><li class="hit">  must:JMeter</li><li class="hit">  must:Jira</li><li class="miss">− must:Load Testing</li><li class="miss">− must:Manual Testing</li><li class="extra">+ must:Microsoft Excel</li><li class="hit">  must:Postman</li><li class="hit">  must:SQL</li><li class="miss">− must:Software Testing</li><li class="miss">− must:Test Automation</li><li class="miss">− must:unresolved:creatiocrm</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Manual QA Engineer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: &quot;JUNIOR&quot;,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;SQL&quot;,
+      &quot;API&quot;,
+      &quot;Postman&quot;,
+      &quot;Microsoft Excel&quot;,
+      &quot;JMeter&quot;,
+      &quot;Creatio&quot;,
+      &quot;1C&quot;,
+      &quot;Jira&quot;,
+      &quot;Confluence&quot;
+    ],
+    &quot;optional&quot;: [],
+    &quot;alternatives&quot;: []
+  },
+  &quot;experienceYears&quot;: null,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: null,
+  &quot;employmentType&quot;: null,
+  &quot;workFormat&quot;: &quot;REMOTE&quot;,
+  &quot;locations&quot;: [],
+  &quot;domain&quot;: null,
+  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
+  &quot;companyName&quot;: &quot;Consimple&quot;,
+  &quot;hasTestAssignment&quot;: true,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
   <b>Python Engineer</b>
-  <span class="f1">F1 46% · P 43% · R 50%</span>
+  <span class="f1">F1 50% · P 50% · R 50%</span>
 </summary>
 <div class="cols">
   <div>
@@ -283,7 +395,7 @@ We’re hiring a skilled Python developer with strong FastAPI experience to help
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:API Design</li><li class="miss">− must:Async Programming</li><li class="hit">  must:FastAPI</li><li class="hit">  must:Pydantic</li><li class="hit">  must:Python</li><li class="extra">+ nice:Celery</li><li class="extra">+ nice:Docker</li><li class="extra">+ nice:Redis</li><li class="miss">− nice:Redis|SQLAlchemy|unresolved:asyncdatabasedrivers|unresolved:backgroundtaskqueues|unresolved:containerizeddeployments</li><li class="extra">+ nice:SQLAlchemy</li></ul>
+    <ul><li class="miss">− must:API Design</li><li class="miss">− must:Async Programming</li><li class="extra">+ must:Docker</li><li class="hit">  must:FastAPI</li><li class="hit">  must:Pydantic</li><li class="hit">  must:Python</li><li class="extra">+ must:Redis</li><li class="extra">+ must:SQLAlchemy</li><li class="miss">− nice:Redis|SQLAlchemy|unresolved:asyncdatabasedrivers|unresolved:backgroundtaskqueues|unresolved:containerizeddeployments</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
   &quot;role&quot;: &quot;Python Developer&quot;,
@@ -293,14 +405,12 @@ We’re hiring a skilled Python developer with strong FastAPI experience to help
     &quot;required&quot;: [
       &quot;Python&quot;,
       &quot;FastAPI&quot;,
-      &quot;Pydantic&quot;
-    ],
-    &quot;optional&quot;: [
+      &quot;Pydantic&quot;,
       &quot;SQLAlchemy&quot;,
       &quot;Redis&quot;,
-      &quot;Docker&quot;,
-      &quot;Celery&quot;
+      &quot;Docker&quot;
     ],
+    &quot;optional&quot;: [],
     &quot;alternatives&quot;: []
   },
   &quot;experienceYears&quot;: null,
@@ -352,67 +462,12 @@ We’re looking for a QA Automation Engineer to join our team on a full-time con
   },
   &quot;experienceYears&quot;: null,
   &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
+  &quot;englishLevel&quot;: &quot;UPPER_INTERMEDIATE&quot;,
   &quot;employmentType&quot;: &quot;CONTRACT&quot;,
   &quot;workFormat&quot;: &quot;REMOTE&quot;,
   &quot;locations&quot;: [],
   &quot;domain&quot;: &quot;Ecommerce&quot;,
-  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
-  &quot;companyName&quot;: &quot;IT Service Ukraine&quot;,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
-  <b>Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено</b>
-  <span class="f1">F1 54% · P 64% · R 47% · 1 OR split</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
-
-We are looking for a Middle+/Senior Full-stack Shopware developer to join our team on a part-time contract basis . Required Skills: 3+ years of commercial experience with Shopware 6 . Strong knowledge of PHP 8 , Symfony , and MySQL/MariaDB . Hands-on experience with: Shopware 6 : plugin system, DAL, Twig, Storefront &amp; Admin extensions. Understanding of the architecture of Shopware 6. Experience integrating REST APIs. English B1/B2 (for communication with clients). Nice to have: — Knowledge of JavaScript/TypeScript, Vue js. — Experience with Docker, Git. Відгукнутись на вакансію</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="extra">+ must:MySQL</li><li class="hit">  must:PHP</li><li class="extra">+ must:REST API</li><li class="hit">  must:Shopware</li><li class="hit">  must:Symfony</li><li class="hit">  must:Twig</li><li class="miss">− must:raw:mariadb|raw:mysql</li><li class="miss">− must:unresolved:restapiintegration</li><li class="miss">− must:unresolved:shopwareadminextensions</li><li class="miss">− must:unresolved:shopwarearchitecture</li><li class="miss">− must:unresolved:shopwaredal</li><li class="miss">− must:unresolved:shopwarepluginsystem</li><li class="miss">− must:unresolved:shopwarestorefrontextensions</li><li class="hit">  nice:Docker</li><li class="hit">  nice:GIT</li><li class="extra">+ nice:JavaScript</li><li class="miss">− nice:JavaScript|TypeScript</li><li class="extra">+ nice:TypeScript</li><li class="hit">  nice:Vue.js</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Full Stack Developer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;SENIOR&quot;,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;Shopware&quot;,
-      &quot;PHP&quot;,
-      &quot;Symfony&quot;,
-      &quot;MySQL&quot;,
-      &quot;MariaDB&quot;,
-      &quot;Twig&quot;,
-      &quot;REST API&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;JavaScript&quot;,
-      &quot;TypeScript&quot;,
-      &quot;Vue.js&quot;,
-      &quot;Docker&quot;,
-      &quot;Git&quot;
-    ],
-    &quot;alternatives&quot;: []
-  },
-  &quot;experienceYears&quot;: 3,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
-  &quot;employmentType&quot;: &quot;CONTRACT&quot;,
-  &quot;workFormat&quot;: &quot;REMOTE&quot;,
-  &quot;locations&quot;: [],
-  &quot;domain&quot;: &quot;Ecommerce&quot;,
-  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
+  &quot;engagementType&quot;: null,
   &quot;companyName&quot;: &quot;IT Service Ukraine&quot;,
   &quot;hasTestAssignment&quot;: null,
   &quot;hasReservation&quot;: null
@@ -512,7 +567,7 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
   &quot;experienceYears&quot;: 5,
   &quot;salary&quot;: null,
   &quot;englishLevel&quot;: &quot;UPPER_INTERMEDIATE&quot;,
-  &quot;employmentType&quot;: null,
+  &quot;employmentType&quot;: &quot;FULL_TIME&quot;,
   &quot;workFormat&quot;: null,
   &quot;locations&quot;: [],
   &quot;domain&quot;: null,
@@ -526,50 +581,56 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
 </details>
 <details>
 <summary>
-  <b>Junior QA Engineer</b>
-  <span class="f1">F1 57% · P 67% · R 50%</span>
+  <b>QA Engineer</b>
+  <span class="f1">F1 63% · P 83% · R 50%</span>
 </summary>
 <div class="cols">
   <div>
     <h3>Vacancy</h3>
-    <pre>Title: Junior QA Engineer
+    <pre>Title: QA Engineer
 
-Компанія Consimple шукає Junior QA Manual Engineer , який підсилить нашу команду! Необхідні навички: впевнене розуміння баз даних; володіння написанням SQL-запитів; знання та вміння користуватися API; базові навички роботи з Postman; знання Microsoft Office (Word, Excel, Outlook); аналітичне мислення; практичний досвід тестування ПЗ Обов&#39;язки: аналіз вимог Клієнта; робота з документацією створення тест-кейсів робота з БТС (баг-трекінгова система) JIRA робота з Confluence мануальне тестування API (Postman) тестування навантаження (Jmeter) мануальне тестування кастомних рішень у CRM-системі Creatio інтеграційне тестування зі сторонніми системами (1С, сайт, каси, МП тощо) комунікація з клієнтом та командою. Ми обіцяємо: довгострокова зайнятість; шляхи для зростання та саморозвитку; віддалений формат роботи; доброзичливий командний дух; цікаві колективні заходи. Вакансія передбачає виконання тестового завдання.</pre>
+Tasks Design, write, and maintain automated test suites (e.g., using TypeScript with Playwright or Cypress). Leverage AI-assisted coding tools like Cursor to accelerate test creation and script maintenance. Carry out manual and exploratory testing for complex edge cases. Integrate automated tests into the CI/CD pipeline. Track defects and maintain clear test specifications. Collaborate with the engineering team (daily meetings, planning, etc.). Nice-to-haves Degree in Computer Science. ISTQB Certification. Experience with Agile/Scrum methodologies. Knowledge of German. We offer Long-term employment. Paid vacation and a flexible work schedule.</pre>
   </div>
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="extra">+ must:1C</li><li class="extra">+ must:API</li><li class="miss">− must:API Testing</li><li class="hit">  must:Confluence</li><li class="extra">+ must:Creatio</li><li class="miss">− must:Databases</li><li class="hit">  must:JMeter</li><li class="hit">  must:Jira</li><li class="miss">− must:Load Testing</li><li class="hit">  must:Manual Testing</li><li class="hit">  must:Postman</li><li class="hit">  must:SQL</li><li class="miss">− must:Software Testing</li><li class="miss">− must:Test Automation</li><li class="miss">− must:unresolved:creatiocrm</li></ul>
+    <ul><li class="hit">  must:CI/CD</li><li class="hit">  must:Cursor</li><li class="hit">  must:Cypress|Playwright</li><li class="miss">− must:Defect Tracking</li><li class="miss">− must:Exploratory Testing</li><li class="hit">  must:Manual Testing</li><li class="hit">  must:TypeScript</li><li class="miss">− must:unresolved:testspecifications</li><li class="miss">− nice:Agile</li><li class="extra">+ nice:German</li><li class="miss">− nice:Scrum</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
-  &quot;role&quot;: &quot;Manual QA Engineer&quot;,
+  &quot;role&quot;: &quot;Automation QA Engineer&quot;,
   &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;JUNIOR&quot;,
+  &quot;seniority&quot;: null,
   &quot;skills&quot;: {
     &quot;required&quot;: [
-      &quot;SQL&quot;,
-      &quot;API&quot;,
-      &quot;Postman&quot;,
-      &quot;Jira&quot;,
-      &quot;Confluence&quot;,
-      &quot;JMeter&quot;,
-      &quot;Creatio&quot;,
-      &quot;1C&quot;,
+      &quot;TypeScript&quot;,
+      &quot;Playwright&quot;,
+      &quot;Cypress&quot;,
+      &quot;Cursor&quot;,
+      &quot;CI/CD&quot;,
       &quot;Manual Testing&quot;
     ],
-    &quot;optional&quot;: [],
-    &quot;alternatives&quot;: []
+    &quot;optional&quot;: [
+      &quot;German&quot;
+    ],
+    &quot;alternatives&quot;: [
+      {
+        &quot;anyOf&quot;: [
+          &quot;Playwright&quot;,
+          &quot;Cypress&quot;
+        ]
+      }
+    ]
   },
   &quot;experienceYears&quot;: null,
   &quot;salary&quot;: null,
   &quot;englishLevel&quot;: null,
   &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: &quot;REMOTE&quot;,
+  &quot;workFormat&quot;: null,
   &quot;locations&quot;: [],
   &quot;domain&quot;: null,
   &quot;engagementType&quot;: null,
-  &quot;companyName&quot;: &quot;Consimple&quot;,
-  &quot;hasTestAssignment&quot;: true,
+  &quot;companyName&quot;: null,
+  &quot;hasTestAssignment&quot;: null,
   &quot;hasReservation&quot;: null
 }</pre>
   </div>
@@ -578,7 +639,7 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
 <details>
 <summary>
   <b>Junior Automation QA Engineer (JS)</b>
-  <span class="f1">F1 61% · P 64% · R 58%</span>
+  <span class="f1">F1 64% · P 70% · R 58%</span>
 </summary>
 <div class="cols">
   <div>
@@ -590,7 +651,7 @@ Due to the launch of a new project, we are looking for a Junior Automation QA En
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:API Test Automation</li><li class="extra">+ must:API Testing</li><li class="extra">+ must:Automation QA</li><li class="miss">− must:Cypress|Playwright|WebdriverIO</li><li class="hit">  must:JavaScript</li><li class="hit">  must:OOP</li><li class="hit">  must:Playwright</li><li class="miss">− must:QA methodologies</li><li class="extra">+ must:TypeScript</li><li class="miss">− must:UI Test Automation</li><li class="extra">+ must:UI Testing</li><li class="hit">  nice:CI/CD</li><li class="hit">  nice:Docker</li><li class="hit">  nice:Linux</li><li class="hit">  nice:SQL</li><li class="miss">− nice:unresolved:apiuitestintegration</li></ul>
+    <ul><li class="miss">− must:API Test Automation</li><li class="extra">+ must:API Testing</li><li class="hit">  must:Cypress|Playwright|WebdriverIO</li><li class="hit">  must:JavaScript</li><li class="hit">  must:OOP</li><li class="miss">− must:Playwright</li><li class="miss">− must:QA methodologies</li><li class="extra">+ must:TypeScript</li><li class="miss">− must:UI Test Automation</li><li class="extra">+ must:UI Testing</li><li class="hit">  nice:CI/CD</li><li class="hit">  nice:Docker</li><li class="hit">  nice:Linux</li><li class="hit">  nice:SQL</li><li class="miss">− nice:unresolved:apiuitestintegration</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
   &quot;role&quot;: &quot;Automation QA Engineer&quot;,
@@ -602,7 +663,8 @@ Due to the launch of a new project, we are looking for a Junior Automation QA En
       &quot;TypeScript&quot;,
       &quot;Playwright&quot;,
       &quot;OOP&quot;,
-      &quot;Automation QA&quot;,
+      &quot;Cypress&quot;,
+      &quot;WebdriverIO&quot;,
       &quot;API Testing&quot;,
       &quot;UI Testing&quot;
     ],
@@ -639,8 +701,210 @@ Due to the launch of a new project, we are looking for a Junior Automation QA En
 </details>
 <details>
 <summary>
+  <b>Middle Automation QA Engineer (Playwright) в Exoft, Львів</b>
+  <span class="f1">F1 64% · P 60% · R 69% · 2 OR split</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Middle Automation QA Engineer (Playwright) в Exoft, Львів
+
+Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer to work on a cloud-based application running on AWS. The role focuses on test automation with Playwright, API testing, cloud environments, and practical use of AI tools in QA workflows. Requirements: 3+ years of QA experience, including 2+ years in test automation. Strong hands-on experience with Playwright. Good programming/scripting skills in Python, JavaScript/TypeScript, or Java. Experience with API testing. Experience testing cloud-based/SaaS applications and working with AWS. Experience with CI/CD and Git. Practical experience using AI/LLM tools in QA or automation workflows. Strong analytical and debugging skills. Nice to Have: Experience with Docker and microservices. Performance testing experience. Familiarity with Terraform or CloudFormation. Experience with CloudWatch, Datadog, or Grafana. AWS certification. Lviv, Ukraine Відгукнутись на вакансію</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="miss">− must:AI/LLM Tools</li><li class="hit">  must:API Testing</li><li class="hit">  must:AWS</li><li class="hit">  must:CI/CD</li><li class="hit">  must:GIT</li><li class="hit">  must:Java|JavaScript|Python|TypeScript</li><li class="extra">+ must:LLM</li><li class="hit">  must:Playwright</li><li class="miss">− must:unresolved:saastesting</li><li class="extra">+ nice:CloudFormation</li><li class="miss">− nice:CloudFormation|Terraform</li><li class="extra">+ nice:CloudWatch</li><li class="miss">− nice:CloudWatch|Datadog|Grafana</li><li class="extra">+ nice:Datadog</li><li class="hit">  nice:Docker</li><li class="extra">+ nice:Grafana</li><li class="hit">  nice:Microservices</li><li class="hit">  nice:Performance Testing</li><li class="extra">+ nice:Terraform</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Automation QA Engineer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: &quot;MIDDLE&quot;,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;Playwright&quot;,
+      &quot;Python&quot;,
+      &quot;JavaScript&quot;,
+      &quot;TypeScript&quot;,
+      &quot;Java&quot;,
+      &quot;API Testing&quot;,
+      &quot;AWS&quot;,
+      &quot;CI/CD&quot;,
+      &quot;Git&quot;,
+      &quot;LLM&quot;
+    ],
+    &quot;optional&quot;: [
+      &quot;Docker&quot;,
+      &quot;Microservices&quot;,
+      &quot;Performance Testing&quot;,
+      &quot;Terraform&quot;,
+      &quot;CloudFormation&quot;,
+      &quot;CloudWatch&quot;,
+      &quot;Datadog&quot;,
+      &quot;Grafana&quot;
+    ],
+    &quot;alternatives&quot;: [
+      {
+        &quot;anyOf&quot;: [
+          &quot;Python&quot;,
+          &quot;JavaScript&quot;,
+          &quot;TypeScript&quot;,
+          &quot;Java&quot;
+        ]
+      }
+    ]
+  },
+  &quot;experienceYears&quot;: 3,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: null,
+  &quot;employmentType&quot;: null,
+  &quot;workFormat&quot;: null,
+  &quot;locations&quot;: [
+    {
+      &quot;city&quot;: &quot;Lviv&quot;,
+      &quot;country&quot;: &quot;Ukraine&quot;
+    }
+  ],
+  &quot;domain&quot;: &quot;Cloud&quot;,
+  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
+  &quot;companyName&quot;: &quot;Exoft&quot;,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
+  <b>Embedded / UAV Software Engineer</b>
+  <span class="f1">F1 67% · P 75% · R 60% · 1 OR split</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Embedded / UAV Software Engineer
+
+Основні вимоги: Мови програмування: впевнене володіння C/C++ та Lua (написання скриптів). Автопілоти: практичний досвід роботи з ArduPilot та/або PX4 (модифікація, пошук та усунення дефектів). Архітектура: розуміння архітектури польотних контролерів, ролі фільтрів та RTOS. Протоколи: розуміння та досвід роботи з протоколом MAVLink . Аналітика: досвід роботи з бортовими журналами та логами. Системи та інструменти: базові навички адміністрування Linux/UNIX систем, досвід командної розробки ( Git ). Буде великим плюсом: Загальний досвід роботи в галузі БПЛА (UAV) та практичний досвід пілотування БПЛА літакового типу. Досвід тонкого налаштування PID-контролерів, EKF-фільтрів та Notch-фільтрів. Досвід роботи з фреймворком ROS . Володіння Python та досвід роботи з embedded-пристроями ( Arduino, Raspberry Pi тощо). Розуміння криптографічних примітивів і базових засад безпеки.</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="hit">  must:ArduPilot|PX4</li><li class="extra">+ must:C</li><li class="extra">+ must:C++</li><li class="miss">− must:C|C++</li><li class="hit">  must:GIT</li><li class="extra">+ must:Linux</li><li class="miss">− must:Log Analysis</li><li class="hit">  must:Lua</li><li class="hit">  must:MAVLink</li><li class="hit">  must:RTOS</li><li class="miss">− must:unresolved:flightcontrollerarchitecture</li><li class="miss">− must:unresolved:linuxunixadministration</li><li class="hit">  nice:Arduino</li><li class="hit">  nice:Cryptography</li><li class="hit">  nice:EKF</li><li class="miss">− nice:Information Security</li><li class="extra">+ nice:PID</li><li class="miss">− nice:PID controllers</li><li class="hit">  nice:Python</li><li class="hit">  nice:ROS</li><li class="hit">  nice:Raspberry Pi</li><li class="hit">  nice:UAV</li><li class="miss">− nice:UAV piloting</li><li class="miss">− nice:unresolved:notchfilters</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Embedded Engineer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: null,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;C&quot;,
+      &quot;C++&quot;,
+      &quot;Lua&quot;,
+      &quot;ArduPilot&quot;,
+      &quot;PX4&quot;,
+      &quot;RTOS&quot;,
+      &quot;MAVLink&quot;,
+      &quot;Linux&quot;,
+      &quot;Git&quot;
+    ],
+    &quot;optional&quot;: [
+      &quot;UAV&quot;,
+      &quot;PID&quot;,
+      &quot;EKF&quot;,
+      &quot;ROS&quot;,
+      &quot;Python&quot;,
+      &quot;Arduino&quot;,
+      &quot;Raspberry Pi&quot;,
+      &quot;Cryptography&quot;
+    ],
+    &quot;alternatives&quot;: [
+      {
+        &quot;anyOf&quot;: [
+          &quot;ArduPilot&quot;,
+          &quot;PX4&quot;
+        ]
+      }
+    ]
+  },
+  &quot;experienceYears&quot;: null,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: null,
+  &quot;employmentType&quot;: null,
+  &quot;workFormat&quot;: null,
+  &quot;locations&quot;: [],
+  &quot;domain&quot;: &quot;DefTech&quot;,
+  &quot;engagementType&quot;: null,
+  &quot;companyName&quot;: null,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
+  <b>Linux embedded</b>
+  <span class="f1">F1 71% · P 75% · R 67%</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Linux embedded
+
+Основні вимоги: Python: впевнене володіння мовою. Embedded: досвід роботи з пристроями (включно з хобійним рівнем: Arduino, Raspberry Pi тощо). Linux/UNIX: базові навички адміністрування. Безпека: розуміння криптографічних примітивів і базових засад інформаційної безпеки. Інструменти: досвід командної розробки та використання Git. Буде великим плюсом: Розуміння процесу завантаження Linux-систем (u-boot, kernel, initramfs, systemd). Досвід конфігурації та модифікації ядра Linux (робота з драйверами, Device Tree / дерева пристроїв). Розуміння процесів збірки ПЗ (cmake, autotools, pkg-config, cross-toolchains).</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="extra">+ must:Arduino</li><li class="hit">  must:Cryptography</li><li class="hit">  must:Embedded Systems</li><li class="hit">  must:GIT</li><li class="hit">  must:Information Security</li><li class="extra">+ must:Linux</li><li class="hit">  must:Python</li><li class="extra">+ must:Raspberry Pi</li><li class="miss">− must:unresolved:linuxunixadministration</li><li class="hit">  nice:Autotools</li><li class="miss">− nice:Build Systems</li><li class="hit">  nice:CMake</li><li class="extra">+ nice:Cross-compilation</li><li class="miss">− nice:Device Drivers</li><li class="hit">  nice:Device Tree</li><li class="hit">  nice:Linux kernel</li><li class="hit">  nice:U-Boot</li><li class="miss">− nice:initramfs</li><li class="hit">  nice:pkg-config</li><li class="hit">  nice:systemd</li><li class="miss">− nice:unresolved:crosscompilationtoolchains</li><li class="miss">− nice:unresolved:linuxbootprocess</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Embedded Software Engineer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: null,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;Python&quot;,
+      &quot;Embedded Systems&quot;,
+      &quot;Arduino&quot;,
+      &quot;Raspberry Pi&quot;,
+      &quot;Linux&quot;,
+      &quot;UNIX&quot;,
+      &quot;Cryptography&quot;,
+      &quot;Information Security&quot;,
+      &quot;Git&quot;
+    ],
+    &quot;optional&quot;: [
+      &quot;U-Boot&quot;,
+      &quot;Linux kernel&quot;,
+      &quot;systemd&quot;,
+      &quot;Device Tree&quot;,
+      &quot;CMake&quot;,
+      &quot;autotools&quot;,
+      &quot;pkg-config&quot;,
+      &quot;Cross-compilation&quot;
+    ],
+    &quot;alternatives&quot;: []
+  },
+  &quot;experienceYears&quot;: null,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: null,
+  &quot;employmentType&quot;: null,
+  &quot;workFormat&quot;: null,
+  &quot;locations&quot;: [],
+  &quot;domain&quot;: null,
+  &quot;engagementType&quot;: null,
+  &quot;companyName&quot;: null,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
   <b>MLOps Engineer</b>
-  <span class="f1">F1 62% · P 80% · R 50%</span>
+  <span class="f1">F1 71% · P 83% · R 63%</span>
 </summary>
 <div class="cols">
   <div>
@@ -652,21 +916,22 @@ Senior MLOps Engineer with 7+ years of experience needed for a global project in
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:AWS</li><li class="extra">+ must:AWS|Azure|Google Cloud</li><li class="miss">− must:Azure</li><li class="hit">  must:CI/CD</li><li class="hit">  must:Docker</li><li class="miss">− must:Google Cloud</li><li class="hit">  must:Kubernetes</li><li class="miss">− must:MLOps</li><li class="hit">  must:Python</li></ul>
+    <ul><li class="miss">− must:AWS</li><li class="extra">+ must:AWS|Azure|Google Cloud</li><li class="miss">− must:Azure</li><li class="hit">  must:CI/CD</li><li class="hit">  must:Docker</li><li class="miss">− must:Google Cloud</li><li class="hit">  must:Kubernetes</li><li class="hit">  must:MLOps</li><li class="hit">  must:Python</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
-  &quot;role&quot;: &quot;DevOps Engineer&quot;,
+  &quot;role&quot;: &quot;Machine Learning Engineer&quot;,
   &quot;isTech&quot;: true,
   &quot;seniority&quot;: &quot;SENIOR&quot;,
   &quot;skills&quot;: {
     &quot;required&quot;: [
-      &quot;Python&quot;,
+      &quot;MLOps&quot;,
+      &quot;AWS&quot;,
+      &quot;GCP&quot;,
+      &quot;Azure&quot;,
       &quot;Kubernetes&quot;,
       &quot;Docker&quot;,
       &quot;CI/CD&quot;,
-      &quot;AWS&quot;,
-      &quot;GCP&quot;,
-      &quot;Azure&quot;
+      &quot;Python&quot;
     ],
     &quot;optional&quot;: [],
     &quot;alternatives&quot;: [
@@ -696,8 +961,104 @@ Senior MLOps Engineer with 7+ years of experience needed for a global project in
 </details>
 <details>
 <summary>
+  <b>Middle System Administrator в Levi9 Ukraine, Київ</b>
+  <span class="f1">F1 73% · P 73% · R 73% · 1 OR split</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Middle System Administrator в Levi9 Ukraine, Київ
+
+🔹Who we are! At Levi9, we are passionate about what we do. We love our work and together in a team, we are smarter and stronger. We are looking for skilled team players who make change happen. Are you one of these players? 🔹About the role We are looking for a Middle System Administrator for our internal needs. You will work with the company’s cloud systems, participate in internal projects, and help our SysAdmin team. Please note that this is a fully on-site, office-based role. 🔹Responsibilities Support company employees in solving their technical issues. PC and office equipment maintenance; OS software installation and configuration; Configuration and troubleshooting of network equipment; Server administration; Virtualisation installation and configuration; Network configuration and troubleshooting; Projects implementation; Participating in internal projects; 🔹Requirements Networking experience: routers (Mikrotik), switchers (Juniper, HP), WLAN (ARUBA, UBNT), VPN tunnels, IPSec, EoIP, VLANs, 802.1x, Radius servers, firewalls; DNS, DHCP Virtualisation: VMware vCenter Server; Understanding Network security principles, Firewall rules, and best practices; Understanding SW/HW load balancers, proxy, and reverse proxy; Experience with Windows Server (SCCM, AD DS, DNS, DHCP, DFS, WSUS); Experience with Linux servers (Ubuntu server, CentOS); Experience with Azure or AWS cloud; Experience with Docker or Kubernetes; Intermediate English 🔹Nice to have: Experience with Office 365; Experience with Mac/iOS devices; Experience with Jamf, Puppet, Chef; Experience with API endpoints; Knowledge of some software development tools like SVN, Git, TeamCity, JIRA, Confluence and will learn more; CCNA/JNCA certification is an advantage. 🔹9 reasons to join us: Today we’re working with the technology of tomorrow. We don’t wait for a change. We are the change. We’re experts in creating experts (Levi9 academy, Lead9 program for leaders). No micromanagement. We are free birds with a clear understanding of what high performance is! Learning in Levi9 never stops (unlimited Udemy for business, meetups, English courses, Professional trainings). Here you can train your body and mind. We’ve gathered the best locations — comfortable, cosy, and pet-friendly offices in Kyiv (5 minutes from Olimpiyska subway station) and Lviv (5 minutes from the Opera Theatre), with regular offline internal events We have a master’s degree in work-life balance. We are actively supporting Ukraine with constant donations and volunteering 🔹Simple step to get this job Click the APPLY NOW button and leave your contacts! Відгукнутись на вакансію</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="miss">− must:802.1X</li><li class="hit">  must:AWS|Azure</li><li class="extra">+ must:Active Directory</li><li class="hit">  must:Aruba</li><li class="extra">+ must:CentOS</li><li class="extra">+ must:DFS</li><li class="hit">  must:DHCP</li><li class="hit">  must:DNS</li><li class="hit">  must:Docker|Kubernetes</li><li class="hit">  must:Firewalls</li><li class="hit">  must:IPsec</li><li class="hit">  must:Juniper</li><li class="hit">  must:Linux</li><li class="miss">− must:Load Balancing</li><li class="hit">  must:MikroTik</li><li class="hit">  must:Network Security</li><li class="miss">− must:Networking</li><li class="miss">− must:Proxy Servers</li><li class="hit">  must:RADIUS</li><li class="extra">+ must:SCCM</li><li class="hit">  must:Ubiquiti</li><li class="extra">+ must:Ubuntu</li><li class="hit">  must:VLAN</li><li class="extra">+ must:VMware</li><li class="hit">  must:VMware vCenter</li><li class="extra">+ must:WSUS</li><li class="hit">  must:Windows Server</li><li class="miss">− must:unresolved:eoip</li><li class="miss">− must:unresolved:hpnetworking</li><li class="hit">  nice:API</li><li class="hit">  nice:Chef</li><li class="miss">− nice:Confluence</li><li class="hit">  nice:GIT</li><li class="hit">  nice:Jamf</li><li class="miss">− nice:Jira</li><li class="hit">  nice:Microsoft 365</li><li class="hit">  nice:Puppet</li><li class="hit">  nice:SVN</li><li class="hit">  nice:TeamCity</li><li class="extra">+ nice:iOS SDK</li><li class="miss">− nice:iOS SDK|macOS</li><li class="extra">+ nice:macOS</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Systems Administrator&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: &quot;MIDDLE&quot;,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;MikroTik&quot;,
+      &quot;Juniper&quot;,
+      &quot;Aruba&quot;,
+      &quot;Ubiquiti&quot;,
+      &quot;VPN&quot;,
+      &quot;IPsec&quot;,
+      &quot;VLAN&quot;,
+      &quot;Radius&quot;,
+      &quot;Firewalls&quot;,
+      &quot;DNS&quot;,
+      &quot;DHCP&quot;,
+      &quot;VMware vCenter&quot;,
+      &quot;VMware&quot;,
+      &quot;Windows Server&quot;,
+      &quot;SCCM&quot;,
+      &quot;Active Directory&quot;,
+      &quot;DFS&quot;,
+      &quot;WSUS&quot;,
+      &quot;Linux&quot;,
+      &quot;Ubuntu&quot;,
+      &quot;CentOS&quot;,
+      &quot;Azure&quot;,
+      &quot;AWS&quot;,
+      &quot;Docker&quot;,
+      &quot;Kubernetes&quot;
+    ],
+    &quot;optional&quot;: [
+      &quot;Microsoft 365&quot;,
+      &quot;macOS&quot;,
+      &quot;iOS&quot;,
+      &quot;Jamf&quot;,
+      &quot;Puppet&quot;,
+      &quot;Chef&quot;,
+      &quot;API&quot;,
+      &quot;SVN&quot;,
+      &quot;Git&quot;,
+      &quot;TeamCity&quot;
+    ],
+    &quot;alternatives&quot;: [
+      {
+        &quot;anyOf&quot;: [
+          &quot;Azure&quot;,
+          &quot;AWS&quot;
+        ]
+      },
+      {
+        &quot;anyOf&quot;: [
+          &quot;Docker&quot;,
+          &quot;Kubernetes&quot;
+        ]
+      }
+    ]
+  },
+  &quot;experienceYears&quot;: null,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
+  &quot;employmentType&quot;: null,
+  &quot;workFormat&quot;: &quot;OFFICE&quot;,
+  &quot;locations&quot;: [
+    {
+      &quot;city&quot;: &quot;Kyiv&quot;,
+      &quot;country&quot;: &quot;Ukraine&quot;
+    }
+  ],
+  &quot;domain&quot;: null,
+  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
+  &quot;companyName&quot;: &quot;Levi9 Ukraine&quot;,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
   <b>Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено</b>
-  <span class="f1">F1 62% · P 90% · R 47%</span>
+  <span class="f1">F1 73% · P 100% · R 58%</span>
 </summary>
 <div class="cols">
   <div>
@@ -709,26 +1070,27 @@ We are seeking a highly skilled Senior .NET AI Software Engineer to lead the dev
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:.NET</li><li class="hit">  must:Angular</li><li class="hit">  must:Azure</li><li class="hit">  must:CI/CD</li><li class="miss">− must:Cucumber</li><li class="hit">  must:DevSecOps</li><li class="hit">  must:SQL</li><li class="miss">− must:Secure Coding</li><li class="miss">− must:TDD</li><li class="miss">− must:Test Automation</li><li class="hit">  must:TypeScript</li><li class="miss">− must:unresolved:shiftlefttesting</li><li class="extra">+ nice:Adobe Illustrator</li><li class="miss">− nice:Agentic Systems</li><li class="miss">− nice:Event-driven systems</li><li class="hit">  nice:LLM</li><li class="hit">  nice:MCP</li><li class="miss">− nice:Machine Learning</li><li class="miss">− nice:Microservices</li><li class="miss">− nice:Serverless</li></ul>
+    <ul><li class="hit">  must:.NET</li><li class="hit">  must:Angular</li><li class="hit">  must:Azure</li><li class="hit">  must:CI/CD</li><li class="miss">− must:Cucumber</li><li class="miss">− must:DevSecOps</li><li class="hit">  must:SQL</li><li class="miss">− must:Secure Coding</li><li class="hit">  must:TDD</li><li class="miss">− must:Test Automation</li><li class="hit">  must:TypeScript</li><li class="miss">− must:unresolved:shiftlefttesting</li><li class="miss">− nice:Agentic Systems</li><li class="miss">− nice:Event-driven systems</li><li class="hit">  nice:LLM</li><li class="hit">  nice:MCP</li><li class="miss">− nice:Machine Learning</li><li class="hit">  nice:Microservices</li><li class="hit">  nice:Serverless</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
-  &quot;role&quot;: &quot;Full Stack Developer&quot;,
+  &quot;role&quot;: &quot;Software Engineer&quot;,
   &quot;isTech&quot;: true,
   &quot;seniority&quot;: &quot;SENIOR&quot;,
   &quot;skills&quot;: {
     &quot;required&quot;: [
       &quot;.NET&quot;,
       &quot;Angular&quot;,
-      &quot;TypeScript&quot;,
       &quot;SQL&quot;,
+      &quot;TypeScript&quot;,
+      &quot;Azure&quot;,
       &quot;CI/CD&quot;,
-      &quot;DevSecOps&quot;,
-      &quot;Azure&quot;
+      &quot;TDD&quot;
     ],
     &quot;optional&quot;: [
-      &quot;AI&quot;,
       &quot;LLM&quot;,
-      &quot;MCP&quot;
+      &quot;MCP&quot;,
+      &quot;Microservices&quot;,
+      &quot;Serverless&quot;
     ],
     &quot;alternatives&quot;: []
   },
@@ -783,7 +1145,7 @@ We are seeking a highly skilled Senior .NET AI Software Engineer to lead the dev
       &quot;country&quot;: &quot;Ukraine&quot;
     }
   ],
-  &quot;domain&quot;: &quot;Consulting&quot;,
+  &quot;domain&quot;: null,
   &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
   &quot;companyName&quot;: &quot;EPAM&quot;,
   &quot;hasTestAssignment&quot;: null,
@@ -794,84 +1156,8 @@ We are seeking a highly skilled Senior .NET AI Software Engineer to lead the dev
 </details>
 <details>
 <summary>
-  <b>Middle Automation QA Engineer (Playwright) в Exoft, Львів</b>
-  <span class="f1">F1 62% · P 56% · R 69% · 2 OR split</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Middle Automation QA Engineer (Playwright) в Exoft, Львів
-
-Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer to work on a cloud-based application running on AWS. The role focuses on test automation with Playwright, API testing, cloud environments, and practical use of AI tools in QA workflows. Requirements: 3+ years of QA experience, including 2+ years in test automation. Strong hands-on experience with Playwright. Good programming/scripting skills in Python, JavaScript/TypeScript, or Java. Experience with API testing. Experience testing cloud-based/SaaS applications and working with AWS. Experience with CI/CD and Git. Practical experience using AI/LLM tools in QA or automation workflows. Strong analytical and debugging skills. Nice to Have: Experience with Docker and microservices. Performance testing experience. Familiarity with Terraform or CloudFormation. Experience with CloudWatch, Datadog, or Grafana. AWS certification. Lviv, Ukraine Відгукнутись на вакансію</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:AI/LLM Tools</li><li class="hit">  must:API Testing</li><li class="hit">  must:AWS</li><li class="extra">+ must:Adobe Illustrator</li><li class="hit">  must:CI/CD</li><li class="hit">  must:GIT</li><li class="hit">  must:Java|JavaScript|Python|TypeScript</li><li class="extra">+ must:LLM</li><li class="hit">  must:Playwright</li><li class="miss">− must:unresolved:saastesting</li><li class="extra">+ nice:CloudFormation</li><li class="miss">− nice:CloudFormation|Terraform</li><li class="extra">+ nice:CloudWatch</li><li class="miss">− nice:CloudWatch|Datadog|Grafana</li><li class="extra">+ nice:Datadog</li><li class="hit">  nice:Docker</li><li class="extra">+ nice:Grafana</li><li class="hit">  nice:Microservices</li><li class="hit">  nice:Performance Testing</li><li class="extra">+ nice:Terraform</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Automation QA Engineer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;MIDDLE&quot;,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;Playwright&quot;,
-      &quot;Python&quot;,
-      &quot;JavaScript&quot;,
-      &quot;TypeScript&quot;,
-      &quot;Java&quot;,
-      &quot;API Testing&quot;,
-      &quot;AWS&quot;,
-      &quot;CI/CD&quot;,
-      &quot;Git&quot;,
-      &quot;AI&quot;,
-      &quot;LLM&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;Docker&quot;,
-      &quot;Microservices&quot;,
-      &quot;Performance Testing&quot;,
-      &quot;Terraform&quot;,
-      &quot;CloudFormation&quot;,
-      &quot;CloudWatch&quot;,
-      &quot;Datadog&quot;,
-      &quot;Grafana&quot;
-    ],
-    &quot;alternatives&quot;: [
-      {
-        &quot;anyOf&quot;: [
-          &quot;Python&quot;,
-          &quot;JavaScript&quot;,
-          &quot;TypeScript&quot;,
-          &quot;Java&quot;
-        ]
-      }
-    ]
-  },
-  &quot;experienceYears&quot;: 3,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: null,
-  &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: null,
-  &quot;locations&quot;: [
-    {
-      &quot;city&quot;: &quot;Lviv&quot;,
-      &quot;country&quot;: &quot;Ukraine&quot;
-    }
-  ],
-  &quot;domain&quot;: &quot;SaaS&quot;,
-  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
-  &quot;companyName&quot;: &quot;Exoft&quot;,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
   <b>⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено</b>
-  <span class="f1">F1 63% · P 83% · R 50%</span>
+  <span class="f1">F1 75% · P 100% · R 60%</span>
 </summary>
 <div class="cols">
   <div>
@@ -883,10 +1169,10 @@ Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:C++</li><li class="hit">  must:Linux</li><li class="hit">  must:OOP</li><li class="hit">  must:Qt</li><li class="miss">− must:Server-side Development</li><li class="extra">+ nice:Cybersecurity</li><li class="miss">− nice:Data Visualization</li><li class="miss">− nice:Distributed Systems</li><li class="miss">− nice:Front-end Development</li><li class="hit">  nice:Networking</li><li class="miss">− nice:UI/UX Principles</li></ul>
+    <ul><li class="hit">  must:C++</li><li class="hit">  must:Linux</li><li class="hit">  must:OOP</li><li class="hit">  must:Qt</li><li class="miss">− must:Server-side Development</li><li class="miss">− nice:Data Visualization</li><li class="miss">− nice:Distributed Systems</li><li class="miss">− nice:Front-end Development</li><li class="hit">  nice:Networking</li><li class="hit">  nice:UI/UX Principles</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
-  &quot;role&quot;: &quot;Software Engineer&quot;,
+  &quot;role&quot;: &quot;Backend Developer&quot;,
   &quot;isTech&quot;: true,
   &quot;seniority&quot;: null,
   &quot;skills&quot;: {
@@ -898,7 +1184,7 @@ Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer
     ],
     &quot;optional&quot;: [
       &quot;Networking&quot;,
-      &quot;Cybersecurity&quot;
+      &quot;UI/UX Principles&quot;
     ],
     &quot;alternatives&quot;: []
   },
@@ -919,169 +1205,8 @@ Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer
 </details>
 <details>
 <summary>
-  <b>Middle DevOps</b>
-  <span class="f1">F1 67% · P 86% · R 55%</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Middle DevOps
-
-Requirements: Hands-on experience with preparing automation scenarios using Terraform Knowledge of Kubernetes Experience with deploying and supporting infrastructure on public clouds (GCP and Tencent will be a plus) Knowledge of Microsoft Windows Server Knowledge of Active Directory Understanding of network concepts - firewalls, VPN, peering (for public clouds) English - intermediate or better Responsibilities: System availability and performance monitoring, on the both infrastructure and application levels. Planned infrastructure and application updates. New environments’ deployment. Changing of the existing infrastructure according to the requirements. Other tasks related to the system functionality</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:Active Directory</li><li class="hit">  must:Firewalls</li><li class="hit">  must:Kubernetes</li><li class="extra">+ must:Microsoft Windows Server</li><li class="hit">  must:Network Security</li><li class="miss">− must:Networking</li><li class="hit">  must:Terraform</li><li class="miss">− must:Windows Server</li><li class="miss">− must:unresolved:cloudpeering</li><li class="miss">− must:unresolved:publiccloudinfrastructure</li><li class="hit">  nice:Google Cloud</li><li class="miss">− nice:Tencent Cloud</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;DevOps Engineer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;MIDDLE&quot;,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;Terraform&quot;,
-      &quot;Kubernetes&quot;,
-      &quot;Microsoft Windows Server&quot;,
-      &quot;Active Directory&quot;,
-      &quot;Firewalls&quot;,
-      &quot;VPN&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;GCP&quot;
-    ],
-    &quot;alternatives&quot;: []
-  },
-  &quot;experienceYears&quot;: null,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
-  &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: null,
-  &quot;locations&quot;: [],
-  &quot;domain&quot;: &quot;Cloud&quot;,
-  &quot;engagementType&quot;: null,
-  &quot;companyName&quot;: null,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
-  <b>Embedded / UAV Software Engineer</b>
-  <span class="f1">F1 67% · P 75% · R 60% · 1 OR split</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Embedded / UAV Software Engineer
-
-Основні вимоги: Мови програмування: впевнене володіння C/C++ та Lua (написання скриптів). Автопілоти: практичний досвід роботи з ArduPilot та/або PX4 (модифікація, пошук та усунення дефектів). Архітектура: розуміння архітектури польотних контролерів, ролі фільтрів та RTOS. Протоколи: розуміння та досвід роботи з протоколом MAVLink . Аналітика: досвід роботи з бортовими журналами та логами. Системи та інструменти: базові навички адміністрування Linux/UNIX систем, досвід командної розробки ( Git ). Буде великим плюсом: Загальний досвід роботи в галузі БПЛА (UAV) та практичний досвід пілотування БПЛА літакового типу. Досвід тонкого налаштування PID-контролерів, EKF-фільтрів та Notch-фільтрів. Досвід роботи з фреймворком ROS . Володіння Python та досвід роботи з embedded-пристроями ( Arduino, Raspberry Pi тощо). Розуміння криптографічних примітивів і базових засад безпеки.</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:ArduPilot|PX4</li><li class="extra">+ must:C</li><li class="extra">+ must:C++</li><li class="miss">− must:C|C++</li><li class="hit">  must:GIT</li><li class="extra">+ must:Linux</li><li class="miss">− must:Log Analysis</li><li class="hit">  must:Lua</li><li class="hit">  must:MAVLink</li><li class="hit">  must:RTOS</li><li class="miss">− must:unresolved:flightcontrollerarchitecture</li><li class="miss">− must:unresolved:linuxunixadministration</li><li class="hit">  nice:Arduino</li><li class="hit">  nice:Cryptography</li><li class="hit">  nice:EKF</li><li class="miss">− nice:Information Security</li><li class="extra">+ nice:PID</li><li class="miss">− nice:PID controllers</li><li class="hit">  nice:Python</li><li class="hit">  nice:ROS</li><li class="hit">  nice:Raspberry Pi</li><li class="hit">  nice:UAV</li><li class="miss">− nice:UAV piloting</li><li class="miss">− nice:unresolved:notchfilters</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Embedded Software Engineer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: null,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;C&quot;,
-      &quot;C++&quot;,
-      &quot;Lua&quot;,
-      &quot;ArduPilot&quot;,
-      &quot;PX4&quot;,
-      &quot;RTOS&quot;,
-      &quot;MAVLink&quot;,
-      &quot;Linux&quot;,
-      &quot;Git&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;UAV&quot;,
-      &quot;PID&quot;,
-      &quot;EKF&quot;,
-      &quot;ROS&quot;,
-      &quot;Python&quot;,
-      &quot;Arduino&quot;,
-      &quot;Raspberry Pi&quot;,
-      &quot;Cryptography&quot;
-    ],
-    &quot;alternatives&quot;: [
-      {
-        &quot;anyOf&quot;: [
-          &quot;ArduPilot&quot;,
-          &quot;PX4&quot;
-        ]
-      }
-    ]
-  },
-  &quot;experienceYears&quot;: null,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: null,
-  &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: null,
-  &quot;locations&quot;: [],
-  &quot;domain&quot;: &quot;DefTech&quot;,
-  &quot;engagementType&quot;: null,
-  &quot;companyName&quot;: null,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
-  <b>Frontend Engineer (JavaScript/TypeScript)</b>
-  <span class="f1">F1 67% · P 100% · R 50%</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Frontend Engineer (JavaScript/TypeScript)
-
-Senior Frontend Engineer with 10+ years of experience needed for a global project in defense AI technologies. Requirements: 10+ years of experience JavaScript &amp; TypeScript proficiency Any framework (React, Vue, Angular, etc.) Strong fundamentals in web development Conditions: B2B Freelance contract Full Remote 12+ months duration ASAP start date Tech Stack: JavaScript, TypeScript, any framework Project: Global project in the area of defense AI technologies. We&#39;re looking for several senior Frontend Engineers with more than 10 years experience.</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:Angular|React|Vue.js</li><li class="hit">  must:JavaScript</li><li class="hit">  must:TypeScript</li><li class="miss">− must:Web Development</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Frontend Engineer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;SENIOR&quot;,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;JavaScript&quot;,
-      &quot;TypeScript&quot;
-    ],
-    &quot;optional&quot;: [],
-    &quot;alternatives&quot;: []
-  },
-  &quot;experienceYears&quot;: 10,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: null,
-  &quot;employmentType&quot;: &quot;FREELANCE&quot;,
-  &quot;workFormat&quot;: &quot;REMOTE&quot;,
-  &quot;locations&quot;: [],
-  &quot;domain&quot;: &quot;DefTech&quot;,
-  &quot;engagementType&quot;: null,
-  &quot;companyName&quot;: null,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
   <b>Senior Python Automation QA Engineer</b>
-  <span class="f1">F1 71% · P 86% · R 60%</span>
+  <span class="f1">F1 78% · P 88% · R 70%</span>
 </summary>
 <div class="cols">
   <div>
@@ -1093,7 +1218,7 @@ Description About Project: Comprised of the Company’s international business u
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:API Testing</li><li class="hit">  must:AWS</li><li class="hit">  must:CI/CD</li><li class="hit">  must:Cucumber</li><li class="miss">− must:OOP</li><li class="hit">  must:Python</li><li class="hit">  must:Selenium</li><li class="miss">− must:Test Reporting</li><li class="miss">− must:UI Test Automation</li><li class="extra">+ must:behave</li><li class="miss">− must:unresolved:servicetestautomation</li></ul>
+    <ul><li class="hit">  must:API Testing</li><li class="hit">  must:AWS</li><li class="hit">  must:CI/CD</li><li class="hit">  must:Cucumber</li><li class="hit">  must:OOP</li><li class="hit">  must:Python</li><li class="hit">  must:Selenium</li><li class="miss">− must:Test Reporting</li><li class="miss">− must:UI Test Automation</li><li class="extra">+ must:behave</li><li class="miss">− must:unresolved:servicetestautomation</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
   &quot;role&quot;: &quot;Automation QA Engineer&quot;,
@@ -1103,11 +1228,12 @@ Description About Project: Comprised of the Company’s international business u
     &quot;required&quot;: [
       &quot;Python&quot;,
       &quot;behave&quot;,
+      &quot;BDD&quot;,
       &quot;AWS&quot;,
       &quot;CI/CD&quot;,
       &quot;Selenium&quot;,
       &quot;API Testing&quot;,
-      &quot;BDD&quot;
+      &quot;OOP&quot;
     ],
     &quot;optional&quot;: [],
     &quot;alternatives&quot;: []
@@ -1121,218 +1247,6 @@ Description About Project: Comprised of the Company’s international business u
   &quot;domain&quot;: &quot;AdTech&quot;,
   &quot;engagementType&quot;: null,
   &quot;companyName&quot;: null,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
-  <b>Linux embedded</b>
-  <span class="f1">F1 71% · P 75% · R 67%</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Linux embedded
-
-Основні вимоги: Python: впевнене володіння мовою. Embedded: досвід роботи з пристроями (включно з хобійним рівнем: Arduino, Raspberry Pi тощо). Linux/UNIX: базові навички адміністрування. Безпека: розуміння криптографічних примітивів і базових засад інформаційної безпеки. Інструменти: досвід командної розробки та використання Git. Буде великим плюсом: Розуміння процесу завантаження Linux-систем (u-boot, kernel, initramfs, systemd). Досвід конфігурації та модифікації ядра Linux (робота з драйверами, Device Tree / дерева пристроїв). Розуміння процесів збірки ПЗ (cmake, autotools, pkg-config, cross-toolchains).</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:Cryptography</li><li class="hit">  must:Embedded Systems</li><li class="hit">  must:GIT</li><li class="hit">  must:Information Security</li><li class="extra">+ must:Linux</li><li class="hit">  must:Python</li><li class="miss">− must:unresolved:linuxunixadministration</li><li class="extra">+ nice:Arduino</li><li class="hit">  nice:Autotools</li><li class="miss">− nice:Build Systems</li><li class="hit">  nice:CMake</li><li class="miss">− nice:Device Drivers</li><li class="hit">  nice:Device Tree</li><li class="hit">  nice:Linux kernel</li><li class="extra">+ nice:Raspberry Pi</li><li class="hit">  nice:U-Boot</li><li class="miss">− nice:initramfs</li><li class="hit">  nice:pkg-config</li><li class="hit">  nice:systemd</li><li class="miss">− nice:unresolved:crosscompilationtoolchains</li><li class="extra">+ nice:unresolved:crosstoolchains</li><li class="miss">− nice:unresolved:linuxbootprocess</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Embedded Engineer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: null,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;Python&quot;,
-      &quot;Embedded Systems&quot;,
-      &quot;Linux&quot;,
-      &quot;Git&quot;,
-      &quot;Cryptography&quot;,
-      &quot;Information Security&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;U-Boot&quot;,
-      &quot;Linux kernel&quot;,
-      &quot;systemd&quot;,
-      &quot;Device Tree&quot;,
-      &quot;CMake&quot;,
-      &quot;Autotools&quot;,
-      &quot;pkg-config&quot;,
-      &quot;Cross-toolchains&quot;,
-      &quot;Arduino&quot;,
-      &quot;Raspberry Pi&quot;
-    ],
-    &quot;alternatives&quot;: []
-  },
-  &quot;experienceYears&quot;: null,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: null,
-  &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: null,
-  &quot;locations&quot;: [],
-  &quot;domain&quot;: null,
-  &quot;engagementType&quot;: null,
-  &quot;companyName&quot;: null,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
-  <b>Senior Full-Stack (Node + React) Engineer</b>
-  <span class="f1">F1 75% · P 92% · R 63%</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Senior Full-Stack (Node + React) Engineer
-
-Шукаємо Senior Full-Stack (Node + React) Engineer для роботи над B2B SaaS-платформою, що допомагає компаніям централізовано управляти корпоративними пристроями та автоматизувати IT-процеси. Вимоги: 6+ років комерційного досвіду з TypeScript Сильна експертиза в backend-розробці: NestJS, TypeORM, MySQL, BullMQ, Redis Практичний досвід інтеграції сторонніх REST API, зокрема роботи з пагінацією, обмеженнями частоти запитів (rate limits) та ідемпотентними upsert-операціями Розуміння основ DevOps, зокрема Docker, Nginx, CI/CD та налаштування хмарної інфраструктури Впевнене володіння React, зокрема досвід роботи з React Admin та MUI Розмовна англійська на рівні В2 або вище Навички технічної комунікації: вміння аргументувати рішення, своєчасно підсвічувати ризики та пропонувати варіанти їх вирішення Буде плюсом знання MDM / Apple ecosystem: Activation Lock, FileVault, Apple Business Manager (ABM), Automated Device Enrollment (ADE) Ми пропонуємо: Повністю віддалений формат роботи Гнучкий графік роботи Індивідуальний план професійного розвитку Перегляд умов співпраці кожні 6-12 місяців</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:BullMQ</li><li class="hit">  must:CI/CD</li><li class="miss">− must:Cloud Infrastructure</li><li class="hit">  must:Docker</li><li class="hit">  must:Material UI</li><li class="hit">  must:MySQL</li><li class="hit">  must:NestJS</li><li class="hit">  must:Nginx</li><li class="extra">+ must:REST API</li><li class="hit">  must:React</li><li class="miss">− must:React-Admin</li><li class="hit">  must:Redis</li><li class="hit">  must:TypeORM</li><li class="hit">  must:TypeScript</li><li class="miss">− must:unresolved:restapiintegration</li><li class="miss">− nice:Apple Business Manager</li><li class="miss">− nice:Automated Device Enrollment</li><li class="miss">− nice:FileVault</li><li class="hit">  nice:MDM</li><li class="miss">− nice:unresolved:activationlock</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Full Stack Developer&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;SENIOR&quot;,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;TypeScript&quot;,
-      &quot;NestJS&quot;,
-      &quot;TypeORM&quot;,
-      &quot;MySQL&quot;,
-      &quot;BullMQ&quot;,
-      &quot;Redis&quot;,
-      &quot;REST API&quot;,
-      &quot;Docker&quot;,
-      &quot;Nginx&quot;,
-      &quot;CI/CD&quot;,
-      &quot;React&quot;,
-      &quot;MUI&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;MDM&quot;
-    ],
-    &quot;alternatives&quot;: []
-  },
-  &quot;experienceYears&quot;: 6,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: &quot;UPPER_INTERMEDIATE&quot;,
-  &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: &quot;REMOTE&quot;,
-  &quot;locations&quot;: [],
-  &quot;domain&quot;: &quot;SaaS&quot;,
-  &quot;engagementType&quot;: null,
-  &quot;companyName&quot;: null,
-  &quot;hasTestAssignment&quot;: null,
-  &quot;hasReservation&quot;: null
-}</pre>
-  </div>
-</div>
-</details>
-<details>
-<summary>
-  <b>Middle System Administrator в Levi9 Ukraine, Київ</b>
-  <span class="f1">F1 76% · P 80% · R 73%</span>
-</summary>
-<div class="cols">
-  <div>
-    <h3>Vacancy</h3>
-    <pre>Title: Middle System Administrator в Levi9 Ukraine, Київ
-
-🔹Who we are! At Levi9, we are passionate about what we do. We love our work and together in a team, we are smarter and stronger. We are looking for skilled team players who make change happen. Are you one of these players? 🔹About the role We are looking for a Middle System Administrator for our internal needs. You will work with the company’s cloud systems, participate in internal projects, and help our SysAdmin team. Please note that this is a fully on-site, office-based role. 🔹Responsibilities Support company employees in solving their technical issues. PC and office equipment maintenance; OS software installation and configuration; Configuration and troubleshooting of network equipment; Server administration; Virtualisation installation and configuration; Network configuration and troubleshooting; Projects implementation; Participating in internal projects; 🔹Requirements Networking experience: routers (Mikrotik), switchers (Juniper, HP), WLAN (ARUBA, UBNT), VPN tunnels, IPSec, EoIP, VLANs, 802.1x, Radius servers, firewalls; DNS, DHCP Virtualisation: VMware vCenter Server; Understanding Network security principles, Firewall rules, and best practices; Understanding SW/HW load balancers, proxy, and reverse proxy; Experience with Windows Server (SCCM, AD DS, DNS, DHCP, DFS, WSUS); Experience with Linux servers (Ubuntu server, CentOS); Experience with Azure or AWS cloud; Experience with Docker or Kubernetes; Intermediate English 🔹Nice to have: Experience with Office 365; Experience with Mac/iOS devices; Experience with Jamf, Puppet, Chef; Experience with API endpoints; Knowledge of some software development tools like SVN, Git, TeamCity, JIRA, Confluence and will learn more; CCNA/JNCA certification is an advantage. 🔹9 reasons to join us: Today we’re working with the technology of tomorrow. We don’t wait for a change. We are the change. We’re experts in creating experts (Levi9 academy, Lead9 program for leaders). No micromanagement. We are free birds with a clear understanding of what high performance is! Learning in Levi9 never stops (unlimited Udemy for business, meetups, English courses, Professional trainings). Here you can train your body and mind. We’ve gathered the best locations — comfortable, cosy, and pet-friendly offices in Kyiv (5 minutes from Olimpiyska subway station) and Lviv (5 minutes from the Opera Theatre), with regular offline internal events We have a master’s degree in work-life balance. We are actively supporting Ukraine with constant donations and volunteering 🔹Simple step to get this job Click the APPLY NOW button and leave your contacts! Відгукнутись на вакансію</pre>
-  </div>
-  <div>
-    
-    <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="miss">− must:802.1X</li><li class="hit">  must:AWS|Azure</li><li class="extra">+ must:Active Directory</li><li class="hit">  must:Aruba</li><li class="extra">+ must:CentOS</li><li class="hit">  must:DHCP</li><li class="hit">  must:DNS</li><li class="hit">  must:Docker|Kubernetes</li><li class="miss">− must:Firewalls</li><li class="hit">  must:IPsec</li><li class="hit">  must:Juniper</li><li class="hit">  must:Linux</li><li class="miss">− must:Load Balancing</li><li class="hit">  must:MikroTik</li><li class="hit">  must:Network Security</li><li class="miss">− must:Networking</li><li class="miss">− must:Proxy Servers</li><li class="miss">− must:RADIUS</li><li class="extra">+ must:SCCM</li><li class="hit">  must:Ubiquiti</li><li class="extra">+ must:Ubuntu</li><li class="hit">  must:VLAN</li><li class="hit">  must:VMware vCenter</li><li class="extra">+ must:VMware vSphere</li><li class="extra">+ must:WSUS</li><li class="hit">  must:Windows Server</li><li class="miss">− must:unresolved:eoip</li><li class="miss">− must:unresolved:hpnetworking</li><li class="hit">  nice:API</li><li class="hit">  nice:Chef</li><li class="hit">  nice:Confluence</li><li class="hit">  nice:GIT</li><li class="hit">  nice:Jamf</li><li class="hit">  nice:Jira</li><li class="hit">  nice:Microsoft 365</li><li class="hit">  nice:Puppet</li><li class="hit">  nice:SVN</li><li class="hit">  nice:TeamCity</li><li class="miss">− nice:iOS SDK|macOS</li></ul>
-    <h3>Extracted, every field</h3>
-    <pre>{
-  &quot;role&quot;: &quot;Systems Administrator&quot;,
-  &quot;isTech&quot;: true,
-  &quot;seniority&quot;: &quot;MIDDLE&quot;,
-  &quot;skills&quot;: {
-    &quot;required&quot;: [
-      &quot;MikroTik&quot;,
-      &quot;Juniper&quot;,
-      &quot;Aruba&quot;,
-      &quot;Ubiquiti&quot;,
-      &quot;VPN&quot;,
-      &quot;IPsec&quot;,
-      &quot;VLAN&quot;,
-      &quot;DNS&quot;,
-      &quot;DHCP&quot;,
-      &quot;VMware vCenter&quot;,
-      &quot;VMware vSphere&quot;,
-      &quot;Windows Server&quot;,
-      &quot;Active Directory&quot;,
-      &quot;SCCM&quot;,
-      &quot;WSUS&quot;,
-      &quot;Linux&quot;,
-      &quot;Ubuntu&quot;,
-      &quot;CentOS&quot;,
-      &quot;Azure&quot;,
-      &quot;AWS&quot;,
-      &quot;Docker&quot;,
-      &quot;Kubernetes&quot;
-    ],
-    &quot;optional&quot;: [
-      &quot;Microsoft 365&quot;,
-      &quot;Jamf&quot;,
-      &quot;Puppet&quot;,
-      &quot;Chef&quot;,
-      &quot;API&quot;,
-      &quot;SVN&quot;,
-      &quot;Git&quot;,
-      &quot;TeamCity&quot;,
-      &quot;Jira&quot;,
-      &quot;Confluence&quot;
-    ],
-    &quot;alternatives&quot;: [
-      {
-        &quot;anyOf&quot;: [
-          &quot;Azure&quot;,
-          &quot;AWS&quot;
-        ]
-      },
-      {
-        &quot;anyOf&quot;: [
-          &quot;Docker&quot;,
-          &quot;Kubernetes&quot;
-        ]
-      }
-    ]
-  },
-  &quot;experienceYears&quot;: null,
-  &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
-  &quot;employmentType&quot;: null,
-  &quot;workFormat&quot;: &quot;OFFICE&quot;,
-  &quot;locations&quot;: [
-    {
-      &quot;city&quot;: &quot;Kyiv&quot;,
-      &quot;country&quot;: &quot;Ukraine&quot;
-    },
-    {
-      &quot;city&quot;: &quot;Lviv&quot;,
-      &quot;country&quot;: &quot;Ukraine&quot;
-    }
-  ],
-  &quot;domain&quot;: null,
-  &quot;engagementType&quot;: &quot;OUTSOURCE&quot;,
-  &quot;companyName&quot;: &quot;Levi9 Ukraine&quot;,
   &quot;hasTestAssignment&quot;: null,
   &quot;hasReservation&quot;: null
 }</pre>
@@ -1395,50 +1309,101 @@ Description About Project: Comprised of the Company’s international business u
 </details>
 <details>
 <summary>
-  <b>QA Engineer</b>
-  <span class="f1">F1 82% · P 100% · R 70%</span>
+  <b>Senior Full-Stack (Node + React) Engineer</b>
+  <span class="f1">F1 79% · P 93% · R 68%</span>
 </summary>
 <div class="cols">
   <div>
     <h3>Vacancy</h3>
-    <pre>Title: QA Engineer
+    <pre>Title: Senior Full-Stack (Node + React) Engineer
 
-Tasks Design, write, and maintain automated test suites (e.g., using TypeScript with Playwright or Cypress). Leverage AI-assisted coding tools like Cursor to accelerate test creation and script maintenance. Carry out manual and exploratory testing for complex edge cases. Integrate automated tests into the CI/CD pipeline. Track defects and maintain clear test specifications. Collaborate with the engineering team (daily meetings, planning, etc.). Nice-to-haves Degree in Computer Science. ISTQB Certification. Experience with Agile/Scrum methodologies. Knowledge of German. We offer Long-term employment. Paid vacation and a flexible work schedule.</pre>
+Шукаємо Senior Full-Stack (Node + React) Engineer для роботи над B2B SaaS-платформою, що допомагає компаніям централізовано управляти корпоративними пристроями та автоматизувати IT-процеси. Вимоги: 6+ років комерційного досвіду з TypeScript Сильна експертиза в backend-розробці: NestJS, TypeORM, MySQL, BullMQ, Redis Практичний досвід інтеграції сторонніх REST API, зокрема роботи з пагінацією, обмеженнями частоти запитів (rate limits) та ідемпотентними upsert-операціями Розуміння основ DevOps, зокрема Docker, Nginx, CI/CD та налаштування хмарної інфраструктури Впевнене володіння React, зокрема досвід роботи з React Admin та MUI Розмовна англійська на рівні В2 або вище Навички технічної комунікації: вміння аргументувати рішення, своєчасно підсвічувати ризики та пропонувати варіанти їх вирішення Буде плюсом знання MDM / Apple ecosystem: Activation Lock, FileVault, Apple Business Manager (ABM), Automated Device Enrollment (ADE) Ми пропонуємо: Повністю віддалений формат роботи Гнучкий графік роботи Індивідуальний план професійного розвитку Перегляд умов співпраці кожні 6-12 місяців</pre>
   </div>
   <div>
     
     <h3>Requirements — missing, extra, matched</h3>
-    <ul><li class="hit">  must:CI/CD</li><li class="hit">  must:Cursor</li><li class="hit">  must:Cypress|Playwright</li><li class="miss">− must:Defect Tracking</li><li class="miss">− must:Exploratory Testing</li><li class="hit">  must:Manual Testing</li><li class="hit">  must:TypeScript</li><li class="miss">− must:unresolved:testspecifications</li><li class="hit">  nice:Agile</li><li class="hit">  nice:Scrum</li></ul>
+    <ul><li class="hit">  must:BullMQ</li><li class="hit">  must:CI/CD</li><li class="miss">− must:Cloud Infrastructure</li><li class="hit">  must:Docker</li><li class="hit">  must:Material UI</li><li class="hit">  must:MySQL</li><li class="hit">  must:NestJS</li><li class="hit">  must:Nginx</li><li class="extra">+ must:REST API</li><li class="hit">  must:React</li><li class="hit">  must:React-Admin</li><li class="hit">  must:Redis</li><li class="hit">  must:TypeORM</li><li class="hit">  must:TypeScript</li><li class="miss">− must:unresolved:restapiintegration</li><li class="miss">− nice:Apple Business Manager</li><li class="miss">− nice:Automated Device Enrollment</li><li class="miss">− nice:FileVault</li><li class="hit">  nice:MDM</li><li class="miss">− nice:unresolved:activationlock</li></ul>
     <h3>Extracted, every field</h3>
     <pre>{
-  &quot;role&quot;: &quot;QA Engineer&quot;,
+  &quot;role&quot;: &quot;Full Stack Developer&quot;,
   &quot;isTech&quot;: true,
-  &quot;seniority&quot;: null,
+  &quot;seniority&quot;: &quot;SENIOR&quot;,
   &quot;skills&quot;: {
     &quot;required&quot;: [
       &quot;TypeScript&quot;,
-      &quot;Playwright&quot;,
-      &quot;Cypress&quot;,
-      &quot;Manual Testing&quot;,
+      &quot;NestJS&quot;,
+      &quot;TypeORM&quot;,
+      &quot;MySQL&quot;,
+      &quot;BullMQ&quot;,
+      &quot;Redis&quot;,
+      &quot;REST API&quot;,
+      &quot;Docker&quot;,
+      &quot;Nginx&quot;,
       &quot;CI/CD&quot;,
-      &quot;Cursor&quot;
+      &quot;React&quot;,
+      &quot;React Admin&quot;,
+      &quot;Material UI&quot;
     ],
     &quot;optional&quot;: [
-      &quot;Agile&quot;,
-      &quot;Scrum&quot;
+      &quot;MDM&quot;
     ],
-    &quot;alternatives&quot;: [
-      {
-        &quot;anyOf&quot;: [
-          &quot;Playwright&quot;,
-          &quot;Cypress&quot;
-        ]
-      }
-    ]
+    &quot;alternatives&quot;: []
+  },
+  &quot;experienceYears&quot;: 6,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: &quot;UPPER_INTERMEDIATE&quot;,
+  &quot;employmentType&quot;: null,
+  &quot;workFormat&quot;: &quot;REMOTE&quot;,
+  &quot;locations&quot;: [],
+  &quot;domain&quot;: &quot;SaaS&quot;,
+  &quot;engagementType&quot;: &quot;PRODUCT&quot;,
+  &quot;companyName&quot;: null,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
+  <b>Middle DevOps</b>
+  <span class="f1">F1 80% · P 89% · R 73%</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Middle DevOps
+
+Requirements: Hands-on experience with preparing automation scenarios using Terraform Knowledge of Kubernetes Experience with deploying and supporting infrastructure on public clouds (GCP and Tencent will be a plus) Knowledge of Microsoft Windows Server Knowledge of Active Directory Understanding of network concepts - firewalls, VPN, peering (for public clouds) English - intermediate or better Responsibilities: System availability and performance monitoring, on the both infrastructure and application levels. Planned infrastructure and application updates. New environments’ deployment. Changing of the existing infrastructure according to the requirements. Other tasks related to the system functionality</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="hit">  must:Active Directory</li><li class="hit">  must:Firewalls</li><li class="hit">  must:Kubernetes</li><li class="extra">+ must:Microsoft Windows Server</li><li class="hit">  must:Network Security</li><li class="hit">  must:Networking</li><li class="hit">  must:Terraform</li><li class="miss">− must:Windows Server</li><li class="miss">− must:unresolved:cloudpeering</li><li class="miss">− must:unresolved:publiccloudinfrastructure</li><li class="hit">  nice:Google Cloud</li><li class="hit">  nice:Tencent Cloud</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;DevOps Engineer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: &quot;MIDDLE&quot;,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;Terraform&quot;,
+      &quot;Kubernetes&quot;,
+      &quot;Microsoft Windows Server&quot;,
+      &quot;Active Directory&quot;,
+      &quot;Firewalls&quot;,
+      &quot;VPN&quot;,
+      &quot;Networking&quot;
+    ],
+    &quot;optional&quot;: [
+      &quot;GCP&quot;,
+      &quot;Tencent Cloud&quot;
+    ],
+    &quot;alternatives&quot;: []
   },
   &quot;experienceYears&quot;: null,
   &quot;salary&quot;: null,
-  &quot;englishLevel&quot;: null,
+  &quot;englishLevel&quot;: &quot;INTERMEDIATE&quot;,
   &quot;employmentType&quot;: null,
   &quot;workFormat&quot;: null,
   &quot;locations&quot;: [],
@@ -1498,7 +1463,7 @@ Tasks Design, write, and maintain automated test suites (e.g., using TypeScript 
   &quot;workFormat&quot;: &quot;REMOTE&quot;,
   &quot;locations&quot;: [],
   &quot;domain&quot;: null,
-  &quot;engagementType&quot;: &quot;PRODUCT&quot;,
+  &quot;engagementType&quot;: null,
   &quot;companyName&quot;: null,
   &quot;hasTestAssignment&quot;: null,
   &quot;hasReservation&quot;: null
@@ -1531,17 +1496,17 @@ Tasks Design, write, and maintain automated test suites (e.g., using TypeScript 
     &quot;required&quot;: [
       &quot;Node.js&quot;,
       &quot;REST API&quot;,
-      &quot;Express&quot;,
+      &quot;Express.js&quot;,
       &quot;NestJS&quot;,
       &quot;TypeScript&quot;,
       &quot;PostgreSQL&quot;,
       &quot;GraphQL&quot;,
       &quot;Microservices&quot;,
-      &quot;Git&quot;,
       &quot;Docker&quot;,
       &quot;Docker Compose&quot;,
       &quot;AWS&quot;,
-      &quot;CI/CD&quot;
+      &quot;CI/CD&quot;,
+      &quot;Git&quot;
     ],
     &quot;optional&quot;: [],
     &quot;alternatives&quot;: []
@@ -1554,6 +1519,61 @@ Tasks Design, write, and maintain automated test suites (e.g., using TypeScript 
   &quot;locations&quot;: [],
   &quot;domain&quot;: null,
   &quot;engagementType&quot;: &quot;PRODUCT&quot;,
+  &quot;companyName&quot;: null,
+  &quot;hasTestAssignment&quot;: null,
+  &quot;hasReservation&quot;: null
+}</pre>
+  </div>
+</div>
+</details>
+<details>
+<summary>
+  <b>Frontend Engineer (JavaScript/TypeScript)</b>
+  <span class="f1">F1 86% · P 100% · R 75%</span>
+</summary>
+<div class="cols">
+  <div>
+    <h3>Vacancy</h3>
+    <pre>Title: Frontend Engineer (JavaScript/TypeScript)
+
+Senior Frontend Engineer with 10+ years of experience needed for a global project in defense AI technologies. Requirements: 10+ years of experience JavaScript &amp; TypeScript proficiency Any framework (React, Vue, Angular, etc.) Strong fundamentals in web development Conditions: B2B Freelance contract Full Remote 12+ months duration ASAP start date Tech Stack: JavaScript, TypeScript, any framework Project: Global project in the area of defense AI technologies. We&#39;re looking for several senior Frontend Engineers with more than 10 years experience.</pre>
+  </div>
+  <div>
+    
+    <h3>Requirements — missing, extra, matched</h3>
+    <ul><li class="hit">  must:Angular|React|Vue.js</li><li class="hit">  must:JavaScript</li><li class="hit">  must:TypeScript</li><li class="miss">− must:Web Development</li></ul>
+    <h3>Extracted, every field</h3>
+    <pre>{
+  &quot;role&quot;: &quot;Frontend Engineer&quot;,
+  &quot;isTech&quot;: true,
+  &quot;seniority&quot;: &quot;SENIOR&quot;,
+  &quot;skills&quot;: {
+    &quot;required&quot;: [
+      &quot;JavaScript&quot;,
+      &quot;TypeScript&quot;,
+      &quot;React&quot;,
+      &quot;Vue.js&quot;,
+      &quot;Angular&quot;
+    ],
+    &quot;optional&quot;: [],
+    &quot;alternatives&quot;: [
+      {
+        &quot;anyOf&quot;: [
+          &quot;React&quot;,
+          &quot;Vue.js&quot;,
+          &quot;Angular&quot;
+        ]
+      }
+    ]
+  },
+  &quot;experienceYears&quot;: 10,
+  &quot;salary&quot;: null,
+  &quot;englishLevel&quot;: null,
+  &quot;employmentType&quot;: &quot;FREELANCE&quot;,
+  &quot;workFormat&quot;: &quot;REMOTE&quot;,
+  &quot;locations&quot;: [],
+  &quot;domain&quot;: &quot;DefTech&quot;,
+  &quot;engagementType&quot;: null,
   &quot;companyName&quot;: null,
   &quot;hasTestAssignment&quot;: null,
   &quot;hasReservation&quot;: null
