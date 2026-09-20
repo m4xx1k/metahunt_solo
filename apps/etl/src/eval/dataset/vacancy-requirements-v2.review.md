@@ -1,6 +1,6 @@
 # Requirements v2 — draft review
 
-24 реальні вакансії з production DB. Це читабельний GitHub-view канонічного `vacancy-requirements-v2.dataset.json`.
+29 реальних вакансій з production DB. Це читабельний GitHub-view канонічного `vacancy-requirements-v2.dataset.json`.
 
 Розмітку v2 зроблено вручну за текстом вакансій, а не відповідями DeepSeek. Role labels використовують цільові discipline-ролі з role-v2; `Architect` не означає `PRINCIPAL` автоматично. Статус лишається `draft`, доки owner не підтвердить labels.
 
@@ -84,34 +84,7 @@ Due to the launch of a new project, we are looking for a Junior Automation QA En
 
 </details>
 
-## 03. Senior Python Automation QA Engineer
-
-**ID:** `06a94eef-a83f-4fd8-8d32-67f61ac3854c` \
-**Slices:** `qa`, `methodology`
-
-**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `SENIOR`
-
-- `must` OOP
-- `must` UI Test Automation
-- `must` Service Test Automation
-- `must` Python
-- `must` BDD
-- `must` AWS
-- `must` CI/CD
-- `must` Test Reporting
-- `must` Selenium
-- `must` API Testing
-
-<details>
-<summary>Текст вакансії</summary>
-
-Title: Senior Python Automation QA Engineer
-
-Description About Project: Comprised of the Company’s international business units and various direct-to-consumer streaming services, Media & Entertainment Distribution department aligns technology, media distribution and advertising sales into a single business segment to create and deliver personalized entertainment experiences to consumers around the world. GL team will be concentrated on building AdTech platform for our customer. About Company: Leading diversified international family entertainment and media enterprise with the following business segments: media networks, parks and resorts, studio entertainment, consumer products and interactive media. Requirements: Readiness to work till 12 AM Kyiv time, 11 PM Poland time 4+ years of developing and bolstering automated QA systems and associated test strategies; Experience working with business-critical customer-facing applications (user interfaces, APIs, and back-end services); Excellent communication skills with emphasis on writing detail-oriented documents and communications; Strong understanding of object-oriented programming concepts; Strong understanding of web UI and services automation testing; Strong experience with Python, BDD (behave); Knowledge in AWS, CI/CD; Experience with AQA reporting tools; Strong experience with web application testing tools (Selenium), API testing; Deal well with ambiguous/undefined problems. Ability to think abstractly. A proactive approach to tasks. Job responsibilities Responsible for designing and implementing build and test infrastructure, creating and enforcing. good engineering practices, and evaluating product quality for various external and/or internal products. Conduct research and create Proof of Concepts on new testing technologies/tools/concepts. Collecting TA metrics, statistics and reports. Design test strategies by analyzing and dissecting complex heavily integrated software systems. Develop and contribute to the automated testing efforts for the QA team. Design and build scalable, maintainable, and flexible automation test framework. Investigate the root cause of issues to assist with finding the most comprehensive and robust solutions. Collaborate closely with product, project, and development teams to identify and resolve technical, business, and process-related issues.
-
-</details>
-
-## 04. Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено
+## 03. Senior .NET AI Software Engineer в EPAM, Київ, Харків, Львів, Дніпро, Одеса, Вінниця, Івано-Франківськ, Хмельницький, Ужгород, Черкаси, Чернівці, віддалено
 
 **ID:** `94c194b8-0ef0-43c4-999a-879411e7bc5e` \
 **Slices:** `methodology`
@@ -147,7 +120,7 @@ We are seeking a highly skilled Senior .NET AI Software Engineer to lead the dev
 
 </details>
 
-## 05. ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено
+## 04. ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed Systems) в SixthSense Technology, віддалено
 
 **ID:** `44f8f1d5-f52b-4407-b84d-cd84a129601f` \
 **Slices:** `competency`, `nice`
@@ -174,7 +147,7 @@ Title: ⚡ C++ GUI / Back-End Developer (Cybersecurity, Networking, Distributed 
 
 </details>
 
-## 06. QA Engineer
+## 05. QA Engineer
 
 **ID:** `97ec4fbc-6f58-4c48-aca4-983b8946a633` \
 **Slices:** `methodology`, `nice`
@@ -201,7 +174,7 @@ Tasks Design, write, and maintain automated test suites (e.g., using TypeScript 
 
 </details>
 
-## 07. Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів
+## 06. Senior AQA Engineer (Playwright, RestAssured, TS/JS) в Binariks, Львів
 
 **ID:** `ac76929d-692e-4458-bc93-07ecc1be906a` \
 **Slices:** `qa`, `api-testing`
@@ -234,7 +207,7 @@ We are looking for a Senior Automation QA Engineer (Playwright, RestAssured, TS/
 
 </details>
 
-## 08. Python Engineer
+## 07. Python Engineer
 
 **ID:** `c4ac496c-7f80-4ec0-86ac-85ee2742ace9` \
 **Slices:** `api-testing`
@@ -257,62 +230,7 @@ We’re hiring a skilled Python developer with strong FastAPI experience to help
 
 </details>
 
-## 09. Middle Automation QA Engineer (Playwright) в Exoft, Львів
-
-**ID:** `ab523145-c7b7-4271-b765-63380c6e8f53` \
-**Slices:** `qa`, `cloud`
-
-**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `MIDDLE`
-
-- `must` Playwright
-- `must` Python **OR** JavaScript **OR** TypeScript **OR** Java
-- `must` API Testing
-- `must` SaaS Testing
-- `must` AWS
-- `must` CI/CD
-- `must` Git
-- `must` AI/LLM Tools
-- `nice` Docker
-- `nice` Microservices
-- `nice` Performance Testing
-- `nice` Terraform **OR** CloudFormation
-- `nice` CloudWatch **OR** Datadog **OR** Grafana
-
-<details>
-<summary>Текст вакансії</summary>
-
-Title: Middle Automation QA Engineer (Playwright) в Exoft, Львів
-
-Middle QA Automation Engineer We are looking for a Middle QA Automation Engineer to work on a cloud-based application running on AWS. The role focuses on test automation with Playwright, API testing, cloud environments, and practical use of AI tools in QA workflows. Requirements: 3+ years of QA experience, including 2+ years in test automation. Strong hands-on experience with Playwright. Good programming/scripting skills in Python, JavaScript/TypeScript, or Java. Experience with API testing. Experience testing cloud-based/SaaS applications and working with AWS. Experience with CI/CD and Git. Practical experience using AI/LLM tools in QA or automation workflows. Strong analytical and debugging skills. Nice to Have: Experience with Docker and microservices. Performance testing experience. Familiarity with Terraform or CloudFormation. Experience with CloudWatch, Datadog, or Grafana. AWS certification. Lviv, Ukraine Відгукнутись на вакансію
-
-</details>
-
-## 10. QA Automation Engineer (Contract) в IT Service Ukraine, за кордоном, віддалено
-
-**ID:** `40d73699-35db-4a14-be41-a4429c7451be` \
-**Slices:** `qa`
-
-**Expected:** tech: `true`; role: `Automation QA Engineer`; seniority: `null`
-
-- `must` Playwright
-- `must` API Test Automation
-- `must` QA Processes
-- `must` Software Testing
-- `nice` Shopify
-- `nice` E-commerce Testing
-- `nice` CI/CD
-- `nice` Automated Testing Pipelines
-
-<details>
-<summary>Текст вакансії</summary>
-
-Title: QA Automation Engineer (Contract) в IT Service Ukraine, за кордоном, віддалено
-
-We’re looking for a QA Automation Engineer to join our team on a full-time contract for approximately 6 weeks, with the possibility of extension. Requirements Hands-on experience with Playwright Strong experience in API test automation Solid understanding of QA processes and software testing principles Ability to work independently and manage tasks within a short-term project English — B1/B2 level or higher Good communication and attention to detail Nice to have Previous experience working with Shopify Experience testing e-commerce platforms Familiarity with CI/CD and automated testing pipelines Working hours: The working schedule may require availability until 12:00 AM (midnight) Kyiv time Відгукнутись на вакансію
-
-</details>
-
-## 11. MLOps Engineer
+## 08. MLOps Engineer
 
 **ID:** `95407129-4421-4ebb-a701-1429592d6a90` \
 **Slices:** `or`, `cloud`
@@ -337,7 +255,7 @@ Senior MLOps Engineer with 7+ years of experience needed for a global project in
 
 </details>
 
-## 12. Frontend Engineer (JavaScript/TypeScript)
+## 09. Frontend Engineer (JavaScript/TypeScript)
 
 **ID:** `4950053b-d757-4b4d-9828-3ff51f4509fb` \
 **Slices:** `or`
@@ -358,7 +276,7 @@ Senior Frontend Engineer with 10+ years of experience needed for a global projec
 
 </details>
 
-## 13. Data Engineer
+## 10. Data Engineer
 
 **ID:** `d649c71a-7f2a-42dc-9af2-2311bc9a0d5f` \
 **Slices:** `data`
@@ -381,7 +299,7 @@ We’re looking for a Data Engineer to improve our data infrastructure and integ
 
 </details>
 
-## 14. Senior Data Engineer
+## 11. Senior Data Engineer
 
 **ID:** `b2d7b7d4-e51b-46cd-bf08-2cecee9900a7` \
 **Slices:** `data`
@@ -410,7 +328,7 @@ Client: USA Format: Outstaff Workload: Full-time Duration: 3+ months We are look
 
 </details>
 
-## 15. Senior DevOps Engineer (Java)
+## 12. Senior DevOps Engineer (Java)
 
 **ID:** `32e7e8af-290a-463a-a612-747282522816` \
 **Slices:** `devops`
@@ -434,7 +352,7 @@ We are looking for a Senior DevOps / Backend Engineer (Java) to join our client'
 
 </details>
 
-## 16. Senior Full-Stack (Node + React) Engineer
+## 13. Senior Full-Stack (Node + React) Engineer
 
 **ID:** `bc2deda3-7698-40c3-9a1c-edea450e62cb` \
 **Slices:** `fullstack`
@@ -470,7 +388,7 @@ Title: Senior Full-Stack (Node + React) Engineer
 
 </details>
 
-## 17. Python Developer (Django)
+## 14. Python Developer (Django)
 
 **ID:** `c595d814-5ed1-48b5-9686-6d0a953c598d` \
 **Slices:** `api-testing`
@@ -504,7 +422,7 @@ Title: Python Developer (Django)
 
 </details>
 
-## 18. Node.js Developer
+## 15. Node.js Developer
 
 **ID:** `700f21ca-52cc-40cc-ae4f-2ae153b74fab` \
 **Slices:** `api-testing`
@@ -538,7 +456,7 @@ Title: Node.js Developer
 
 </details>
 
-## 19. Backend Developer (Node.js)
+## 16. Backend Developer (Node.js)
 
 **ID:** `1b5c33e8-9ffb-461e-81d5-8cd987a71a46` \
 **Slices:** `backend`
@@ -572,7 +490,7 @@ Title: Backend Developer (Node.js)
 
 </details>
 
-## 20. Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
+## 17. Middle+/Senior Shopware Developer (Part-Time Contract, US Project) в IT Service Ukraine, віддалено
 
 **ID:** `365476ce-7843-49a5-9863-724c78abd568` \
 **Slices:** `backend`
@@ -604,7 +522,7 @@ We are looking for a Middle+/Senior Full-stack Shopware developer to join our te
 
 </details>
 
-## 21. Middle DevOps
+## 18. Middle DevOps
 
 **ID:** `3f08d0da-1d87-4d8f-a1bf-17db9a324e86` \
 **Slices:** `devops`, `cloud`
@@ -632,7 +550,7 @@ Requirements: Hands-on experience with preparing automation scenarios using Terr
 
 </details>
 
-## 22. Linux embedded
+## 19. Linux embedded
 
 **ID:** `2eb4a20a-ebb0-4210-86aa-e6250891237d` \
 **Slices:** `embedded`
@@ -667,7 +585,7 @@ Title: Linux embedded
 
 </details>
 
-## 23. Embedded / UAV Software Engineer
+## 20. Embedded / UAV Software Engineer
 
 **ID:** `fa303161-eab2-4375-956d-faf5e328b4e0` \
 **Slices:** `embedded`
@@ -704,7 +622,7 @@ Title: Embedded / UAV Software Engineer
 
 </details>
 
-## 24. Junior QA Engineer
+## 21. Junior QA Engineer
 
 **ID:** `ef22000b-3d54-4916-8151-5489fdddcb2f` \
 **Slices:** `qa`, `api-testing`
@@ -730,5 +648,255 @@ Title: Embedded / UAV Software Engineer
 Title: Junior QA Engineer
 
 Компанія Consimple шукає Junior QA Manual Engineer , який підсилить нашу команду! Необхідні навички: впевнене розуміння баз даних; володіння написанням SQL-запитів; знання та вміння користуватися API; базові навички роботи з Postman; знання Microsoft Office (Word, Excel, Outlook); аналітичне мислення; практичний досвід тестування ПЗ Обов'язки: аналіз вимог Клієнта; робота з документацією створення тест-кейсів робота з БТС (баг-трекінгова система) JIRA робота з Confluence мануальне тестування API (Postman) тестування навантаження (Jmeter) мануальне тестування кастомних рішень у CRM-системі Creatio інтеграційне тестування зі сторонніми системами (1С, сайт, каси, МП тощо) комунікація з клієнтом та командою. Ми обіцяємо: довгострокова зайнятість; шляхи для зростання та саморозвитку; віддалений формат роботи; доброзичливий командний дух; цікаві колективні заходи. Вакансія передбачає виконання тестового завдання.
+
+</details>
+
+## 22. DevOps Engineer
+
+**ID:** `c889ffae-55d8-40cc-86d8-bb3b9c308d79` \
+**Slices:** `devops`, `or`, `cloud`
+
+**Expected:** tech: `true`; role: `DevOps Engineer`; seniority: `null`
+
+- `must` Zarf
+- `must` Kubernetes
+- `must` K3s **OR** RKE2 **OR** Amazon EKS **OR** OpenShift
+- `must` GitOps
+- `must` Flux CD **OR** Argo CD
+- `must` GitHub Actions **OR** GitLab CI
+- `must` Terraform **OR** Pulumi
+- `must` Helm
+- `must` Kustomize
+- `must` mTLS
+- `must` RBAC
+- `must` HashiCorp Vault **OR** SOPS
+- `must` SBOM
+- `must` Sigstore **OR** Cosign
+- `nice` Open Policy Agent **OR** Gatekeeper
+- `nice` Istio
+- `nice` Hetzner **OR** OVHcloud
+- `nice` Go **OR** Python
+- `nice` GDPR
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: DevOps Engineer
+
+WHO WE ARE We are Edge Solutions Lab (ESL) — a Ukrainian engineering company specialising in edge computing, defence technology, and secure platform integration. As an authorised reseller and integration partner of Defense Unicorns in Ukraine, we deliver the UDS (Unicorn Delivery Service) ecosystem to units of the defence domain and Ukrainian software vendors. WHO WE ARE LOOKING FOR We are seeking a highly skilled DevOps Engineer to join our team integrating the full UDS stack — UDS Core, Zarf, UDS CLI, UDS Image Factory, UDS Remote, and the emerging UDS Fleet command interface. You will design and operationalise secure Kubernetes platforms, build custom UDS System Images via Image Factory, package mission applications as Zarf bundles, and work directly with Ukrainian software developers and end-user units to bring next-generation software delivery capability to the production. In this role you will Design and implement UDS/Zarf-based deployment pipelines for air-gapped and connected Kubernetes environments at client sites. Integrate UDS Core bundles, missions, and operators into existing customer infrastructure across on-prem, private cloud, and hybrid environments. Package third-party and custom workloads as Zarf packages; maintain versioned, reproducible package and OCI registries. Automate cluster lifecycle management using GitOps workflows (Flux CD or ArgoCD) and CI/CD pipelines. Collaborate with client platform and security teams to align deployments with organizational and regulatory requirements (ISO 27001, NIS2, and sector-specific standards where applicable). Ensure non-functional requirements — security, performance, maintainability, scalability, and reliability — are addressed in every platform integration. Provide technical onboarding and training to client engineering teams on the UDS/Zarf ecosystem. Document processes, integration patterns, runbooks, and architecture decisions to build reusable assets for future engagements. WHAT YOU BRING ALONG At least 4 or more years of working experience in a DevOps, Platform Engineering, or Site Reliability Engineering position. Hands-on proficiency with Zarf CLI — package authoring, init components, image mirroring, and disconnected deployments. Practical experience with UDS bundles, UDS Core, and the UDS CLI. Strong Kubernetes knowledge — cluster administration, workload management, networking, and storage across distributions (K3s, RKE2, EKS, or OpenShift). Experience with GitOps tooling: Flux CD or ArgoCD. Proficiency with CI/CD pipelines (GitHub Actions, GitLab CI) and Infrastructure as Code (Terraform or Pulumi). Solid understanding of Helm, Kustomize, and OCI-based artifact registries. Experience operating in air-gapped or disconnected environments, including artifact pre-staging and offline bootstrapping. Familiarity with security fundamentals: mTLS, RBAC, secret management (Vault or SOPS), and supply chain security (SBOM, Sigstore/Cosign). Strong interpersonal, analytical, and organizational skills, with the ability to communicate technical concepts clearly to client teams. Bachelor's degree in Computer Science, Software Engineering, Information Technology, or a related field. WILL BE A PLUS Experience working within regulated European industries such as finance, healthcare, telecommunications, or critical infrastructure. Familiarity with European data sovereignty and compliance frameworks (GDPR, NIS2, DORA, BSI IT-Grundschutz). Experience with Pepr (policy engine for Kubernetes) or policy-as-code workflows (OPA/Gatekeeper). Hands-on experience with Istio service mesh and advanced Kubernetes network policy configurations. Practical knowledge of European cloud providers or sovereign cloud platforms (Hetzner, OVHcloud, Deutsche Telekom Open Telekom Cloud, etc.). Scripting skills in Go or Python for automation and tooling extensions. Contributions to open-source projects within the cloud-native ecosystem.
+
+</details>
+
+## 23. Middle Software Engineer
+
+**ID:** `c0b4333e-c7af-44ce-aa04-616a686f6c94` \
+**Slices:** `software-engineer`, `or`
+
+**Expected:** tech: `true`; role: `Software Engineer`; seniority: `MIDDLE`
+
+- `must` Python
+- `must` Multithreading **OR** Multiprocessing **OR** Asynchronous Programming
+- `must` Linux
+- `must` Git
+- `must` pytest
+- `must` Docker
+- `must` GitHub Actions
+- `nice` YAML
+- `nice` MAVLink
+- `nice` HDF5
+- `nice` C++
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Middle Software Engineer
+
+About us DroneOps is a company creating innovative UAV-related products, focused on UAV autonomy and navigation, founded in 2023. We are a team of innovators and inventors who take on the duty to help the armed forces of Ukraine defend our country and democracy by providing reliable advanced systems that simplify their work, improve personnel safety, and enable more cost-effective and precise UAV mission execution. Overview We are looking for a Junior / Middle Software Engineer to strengthen our product software team. This is a hands-on role on onboard navigation product software: you support and extend the system, build and improve tooling, and help keep releases reliable through simulation, replay, and hardware-in-the-loop validation. The role suits someone who likes understanding how complex software behaves end to end, writes clear code and tests, and wants to work on real UAV systems with experienced engineers. Responsibilities System development Implement and maintain parts of the onboard product software and supporting services Develop internal tools, automation, and utilities used across development and release workflows Integrate new features into the production codebase with stable behavior, logging, and configuration Product software support & verification Support, test, and debug components of the onboard navigation product software Verify algorithm and integration changes before release: unit tests, simulation scenarios, replay workflows, and hardware-in-the-loop checks Investigate failures from CI, field logs, and developer reports; reproduce issues and help resolving them Extend test coverage and internal utilities where routine checks can be automated Engineering quality & delivery Improve and maintain CI/CD for the product codebase (builds, Docker images, automated test pipelines, release checks) Optimize hot paths and tooling where profiling shows clear wins Follow team code standards, participate in code review, and help keep the codebase maintainable Simulation & replay tooling Run and maintain simulation and replay-based validation (software-in-the-loop, logged flight replay, autopilot estimator replay) Help expand test scenarios and regression checks as the product and integration surface grow Work with flight and navigation teams to turn real incidents into repeatable test cases Required skills & experience 1+ years of professional software development experience, or strong equivalent from internships, pet projects, or open source with evidence of shipped work Solid Python: reading & extending existing codebases, writing tests, debugging Experience with multi-threading, multi-processing, or async applications Comfort with Linux as a daily development environment Experience with Git and collaborative workflows Basic understanding of automated testing (pytest or similar) and why regressions matter in production systems Ability to read logs, configs, and stack traces and communicate findings clearly to the team Docker for local and CI environments GitHub Actions or similar CI/CD English B2+ for documentation and technical discussion; Ukrainian for day-to-day team communication Nice to have YAML-driven configuration (e.g. Hydra-style setups) MAVLink, drone autopilots, or robotics middleware Simulation experience (SITL, game-engine or physics simulators, recorded-data replay) HDF5 or other structured telemetry / time-series data C++ or willingness to work alongside C++ components when replay or autopilot tooling requires it Interest in embedded or resource-constrained targets What we offer Competitive salary Reservation from mobilization Impact on improving our country's defense capabilities 21 days of vacation + public holidays, sick leaves
+
+</details>
+
+## 24. Senior Software Engineer (MFC , C++ , Fortran)
+
+**ID:** `1e5289f6-e2a6-4e59-9c04-e2afd8166838` \
+**Slices:** `software-engineer`, `or`, `nice`
+
+**Expected:** tech: `true`; role: `Software Engineer`; seniority: `SENIOR`
+
+- `must` MFC
+- `must` C++
+- `must` Microsoft SQL Server **OR** Oracle Database
+- `must` Object-Oriented Programming
+- `nice` Fortran
+- `nice` .NET **OR** Python **OR** Node.js **OR** Angular **OR** Java
+- `nice` Data Visualization
+- `nice` IoT
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Senior Software Engineer (MFC , C++ , Fortran)
+
+Developed product is the leading software system in Energy domain covering all aspects of Oil & Gas production from geological exploration to optimization of ongoing production. Our technology solution helps geologists and geophysicists to research, visualize and interpret large volumes of geological data. Work supposes close cooperation with Customer team located in Houston and following Agile principles. Our team is senior, supportive and friendly. We are seeking an experienced and highly skilled Senior Software Engineer with 10+ years of expertise in MFC/C++/Fortran development. The ideal candidate will have a strong background in EDM (Energy Data Models) and a proven track record of working in the Petroleum Engineering or Oil & Gas domain. This role demands a deep understanding of software development and domain-specific knowledge to contribute to cutting-edge solutions in the energy sector. Responsibilities: Lead the design, development, and maintenance of applications using MFC/C++/Fortran Collaborate with cross-functional teams to develop solutions aligned with industry standards and best practices. Utilize EDM to design and optimize data structures, ensuring robust and efficient data handling. Develop and implement software solutions tailored to the Petroleum Engineering or Oil & Gas industry. Conduct code reviews and ensure the adherence to high-quality coding standards. Troubleshoot and resolve complex software issues, ensuring system reliability and performance. Provide technical mentorship to junior developers and promote knowledge sharing within the team. Stay updated with industry trends and emerging technologies to incorporate innovative solutions into projects. Mandatory Skills Description: Bachelor's or Master's degree in Computer Science, Engineering, or a related field. Senior (10+ years) Developers with MFC and C++ Strong SQL Server or Oracle Database experience Strong expertise in EDM and its application in software development. Proficiency in C++ and object-oriented programming. Strong analytical, problem-solving, and debugging skills. Excellent communication and collaboration abilities. Proven ability to manage complex projects and deliver within deadlines In-depth knowledge of the Petroleum Engineering or Oil & Gas domain is highly preferred. Nice-to-Have Skills Description: Experience with data visualization, simulation tools, or engineering applications is a plus. Experience with Fortran is a plus Familiarity with other development frameworks and languages, such as .NET or Python or Node/Angular or Java. Experience working with cloud-based solutions or integrating with IoT in the energy sector. Understanding of wellbore modeling, reservoir simulation, or production optimization.
+
+</details>
+
+## 25. Senior AI Engineer (LLM, RAG, Agentic AI)
+
+**ID:** `373d1fbb-8670-418f-b78a-cdc600fcf7b1` \
+**Slices:** `ai`, `or`, `cloud`
+
+**Expected:** tech: `true`; role: `AI Engineer`; seniority: `SENIOR`
+
+- `must` Python
+- `must` LLM
+- `must` Retrieval-Augmented Generation
+- `must` AI Agents
+- `must` Embeddings
+- `must` Vector Databases
+- `must` Semantic Search **OR** Hybrid Search
+- `must` LangChain **OR** LangGraph **OR** LlamaIndex **OR** Haystack **OR** Semantic Kernel
+- `must` REST API
+- `must` Microservices
+- `must` Distributed Systems
+- `must` AWS **OR** Azure **OR** Google Cloud Platform
+- `must` Docker
+- `nice` Kubernetes
+- `nice` Fine-tuning **OR** LoRA **OR** PEFT
+- `nice` Speech-to-Text **OR** Text-to-Speech
+- `nice` LangGraph **OR** AutoGen **OR** CrewAI
+- `nice` LangSmith **OR** MLflow **OR** Weights & Biases **OR** Ragas **OR** DeepEval
+- `nice` MLOps **OR** LLMOps
+- `nice` Claude Code **OR** Cursor **OR** GitHub Copilot
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Senior AI Engineer (LLM, RAG, Agentic AI)
+
+We are looking for a Senior AI Engineer to join our team and build production-grade AI solutions powered by LLMs, RAG, and Agentic AI. You will be involved in taking AI capabilities from experimentation and POCs to reliable, scalable production systems. What we’re looking for 5+ years of software engineering experience , with significant hands-on experience building AI/ML or GenAI solutions. Strong Python skills and solid software engineering fundamentals. Hands-on experience building applications with LLMs . Strong practical understanding of RAG architectures and retrieval pipelines. Experience building AI agents, agentic workflows, or tool-using LLM applications . Experience with embeddings, vector databases, semantic search, and/or hybrid search. Experience with at least one modern LLM/AI framework such as LangChain, LangGraph, LlamaIndex, Haystack, Semantic Kernel , or similar. Experience integrating AI solutions through APIs and building production-ready backend services. Understanding of LLM evaluation, hallucination mitigation, context management, and AI system reliability. Experience with at least one major cloud platform: AWS, Azure, or GCP . Experience with Docker and preferably Kubernetes or other container orchestration technologies. Good understanding of REST APIs, microservices, distributed systems, and software architecture. Ability to work independently, investigate new technologies, and make pragmatic engineering decisions. Nice to have Experience with fine-tuning, LoRA/PEFT, or domain adaptation . Experience with voice AI , including Speech-to-Text (STT), Text-to-Speech (TTS), voicebots, or real-time conversational systems. Experience with multi-agent frameworks such as LangGraph, AutoGen, CrewAI , or similar. Experience with LLM observability and evaluation tools such as LangSmith, MLflow, Weights & Biases, Ragas, DeepEval , or similar. Experience with AI safety, guardrails, structured outputs, and responsible AI practices. Experience optimizing AI systems for latency, scalability, reliability, and cost . Experience with MLOps or LLMOps practices. Familiarity with modern AI coding and development tools such as Claude Code, Cursor, GitHub Copilot , or similar. Why Join Us Build real production AI solutions using modern technologies. Work with international, well-known clients in distributed, highly technical teams. Have the opportunity to influence AI architecture and engineering practices and explore emerging technologies. Solve complex, real-world problems where AI and software engineering come together. Work in a supportive engineering culture focused on quality and knowledge sharing. Fully remote position with flexible working hours. B2B collaboration model with competitive compensation based on experience. Engagement: Full-time or flexible engagement depending on the project
+
+</details>
+
+## 26. Middle Data Analyst в EPC Network, Київ, Варшава (Польща), віддалено
+
+**ID:** `7e11b60e-7526-48e2-8cdd-24c50343578c` \
+**Slices:** `data-analytics`, `or`
+
+**Expected:** tech: `true`; role: `Data Analyst`; seniority: `MIDDLE`
+
+- `must` SQL
+- `must` BigQuery
+- `must` Looker Studio **OR** Tableau **OR** Power BI
+- `must` Google Sheets **OR** Microsoft Excel
+- `must` A/B Testing **OR** Cohort Analysis
+- `must` Statistics
+- `nice` Email Marketing **OR** Affiliate Marketing **OR** Performance Marketing
+- `nice` CRM
+- `nice` Python
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Middle Data Analyst в EPC Network, Київ, Варшава (Польща), віддалено
+
+The main goal of this role is to help the company use data more effectively for business decisions — not only by preparing reports, but also by identifying risks, finding opportunities, validating assumptions, explaining performance changes, and delivering practical recommendations to stakeholders. You will work closely with the Analytics Lead, marketing teams, coordinators, and other business stakeholders. The role requires strong analytical thinking, solid SQL skills, business curiosity, and the ability to translate complex data into clear conclusions. Requirements: 2+ years of experience as a Data Analyst, Business Analyst, Marketing Analyst, or similar role. Strong SQL skills and experience working with large datasets. Experience with BigQuery or another analytical database / data warehouse. Experience with BI tools such as: Looker Studio/Tableau/Power BI or similar. Proficiency with spreadsheets, such as Google Sheets or Excel. Strong analytical thinking: ability to investigate business problems using data, translate questions into logic, and deliver clear conclusions. Experience with segmentation, A/B testing, cohort analysis, or performance diagnostics. Basic understanding of statistics and ability to interpret experiment or performance results correctly. Understanding of common business and marketing metrics such as CTR, CVR, conversion rate, revenue, ROI, retention, and campaign performance. Ability to work with imperfect data, validate assumptions, and clearly communicate data limitations. Proactive mindset: ability to identify issues and opportunities, not only respond to direct requests. English level B1 or higher. Nice to have: Experience in email marketing, affiliate marketing, performance marketing, or lead generation. Familiarity with ESP, CRM, tracking, attribution, or marketing automation data. Experience with Python for analysis, automation, or data validation. Responsibilities: Analyze marketing and affiliate campaign performance across key funnel and business metrics. Analyze results across business segments, such as campaigns, partners, offers, traffic sources, lead groups, and marketing channels. Identify performance drops, traffic quality issues, risky patterns, and potential business opportunities. Provide data-driven answers, insights, and practical recommendations to business stakeholders. Prepare clear summaries and conclusions for non-technical audiences. Proactively raise analytical topics based on patterns, anomalies, or opportunities found in the data. Analyze business data to support segmentation, targeting, and campaign optimization. Support and analyze A/B tests and other business experiments. Investigate data inconsistencies and work with Data Operations and Data Engineering to clarify and resolve them. Document analytical logic, metric definitions, assumptions, and known data limitations. What it means to be part of our Team: Multinational and intercultural experience Corporate library A world-class team to work with Growth opportunities Cutting-edge frameworks and technologies Competitive salary Plenty of engaging team-building and social events Bonuses according to the policy 21 paid vacation days & 14 paid sick leaves; Cozy office in Warsaw, Kyiv available for you whenever you need it Coffee, tea, Red Bull, sweets, fruits, and more snacks 💌 Interested? We’re always on the lookout for passionate, driven, and curious people to join our team.If that sounds like you — we’d love to hear from you! Відгукнутись на вакансію
+
+</details>
+
+## 27. Security Engineer (Endpoint and Infrastructure Protection) в JustMarkets Tech, Київ, за кордоном, віддалено
+
+**ID:** `f64c609a-faf5-43fe-88f7-0d9706158d50` \
+**Slices:** `security`, `or`
+
+**Expected:** tech: `true`; role: `Security Engineer`; seniority: `null`
+
+- `must` EDR **OR** XDR
+- `must` Linux
+- `must` macOS **OR** Windows
+- `must` MDM **OR** UEM
+- `must` System Hardening
+- `must` File Integrity Monitoring
+- `must` Python **OR** Bash **OR** PowerShell
+- `nice` CIS Benchmarks
+- `nice` SELinux **OR** AppArmor **OR** Gatekeeper **OR** System Integrity Protection **OR** FileVault **OR** Microsoft Defender **OR** Attack Surface Reduction **OR** BitLocker
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Security Engineer (Endpoint and Infrastructure Protection) в JustMarkets Tech, Київ, за кордоном, віддалено
+
+We are looking for a hands-on Security Engineer to build and operate the controls that protect our employee devices and server workloads. This role sits at the intersection of endpoint security, server protection, and security platform engineering. You will not be limited to monitoring alerts: you will work across the full lifecycle of security controls — from deployment and policy tuning to coverage monitoring, hardening, troubleshooting, automation, and authorized containment. You will work closely with IT, Infrastructure, Cyber Defense, IAM, and Compliance teams to make protection reliable, measurable, and effective without creating unnecessary friction for users or critical systems Responsibilities Operate and continuously improve EDR/XDR and endpoint protection controls across macOS and Windows workstations and Linux and Windows server workloads Administer device-security controls through MDM/UEM and related management platforms where applicable Manage the security-control lifecycle, including agent deployment, upgrades, policy configuration, exclusions, health monitoring, coverage-gap remediation, and controlled rollback Build and maintain risk-based operating-system hardening baselines using CIS Benchmarks or equivalent security standards Monitor telemetry and control health, and investigate stale agents, deployment failures, unmanaged systems, policy conflicts, and coverage gaps Troubleshoot false positives, performance issues, security-agent conflicts, and control failures, driving them through root-cause analysis and remediation Partner with IT and infrastructure teams on vulnerability remediation, patching, and security configuration improvements Support endpoint- and server-related investigations and execute containment actions when authorized through approved procedures Maintain file-integrity monitoring and isolation readiness for critical systems where required Automate recurring administration, validation, and reporting tasks using scripts, APIs, or platform workflows Maintain clear runbooks, configuration records, deployment documentation, and remediation tracking Requirements 4+ years of hands-on experience in endpoint security, infrastructure security, system security, or a related security engineering role Practical experience administering an enterprise EDR/XDR or endpoint protection platform across a mixed workstation and server environment Strong knowledge of Linux and desktop operating system — macOS, Windows — with the ability to troubleshoot security controls across the remaining platform Experience with endpoint management, MDM/UEM, or equivalent configuration-management workflows Ability to deploy, tune, and troubleshoot security agents, policies, exclusions, telemetry, and containment workflows Experience implementing operating-system hardening and working with native security controls Understanding of access-control models, least privilege, endpoint telemetry, file-integrity monitoring, and host-isolation techniques. Ability to automate operational work using at least one scripting language such as Python, Bash, or PowerShell English at Intermediate level or higher Will be a plus Experience working with CIS Benchmarks or comparable hardening standards Experience securing both macOS workstations and Linux production servers Experience supporting a large, distributed fleet of managed endpoints or servers Familiarity with native controls such as SELinux, AppArmor, Gatekeeper, System Integrity Protection, FileVault, Microsoft Defender, Attack Surface Reduction, or BitLocker Experience integrating endpoint telemetry or response workflows with other security platforms Experience in fintech, banking, trading, or another regulated environment Relevant technical education, professional training, or equivalent practical experience We offer 20 paid vacation days per year 10 paid sick leave days per year Public holidays according to the company’s approved holiday calendar Medical budget Remote work Professional education budget Language-learning budget Wellness budget covering gym membership, sports equipment, and related expenses Відгукнутись на вакансію
+
+</details>
+
+## 28. Principal Engineer (напрямок Microwave / RF Systems)
+
+**ID:** `38c18141-4aba-41ad-9511-100947b91bc9` \
+**Slices:** `hardware`, `or`
+
+**Expected:** tech: `true`; role: `Hardware Engineer`; seniority: `PRINCIPAL`
+
+- `must` RF Engineering **OR** Microwave Engineering
+- `must` RF Front End
+- `must` Filters
+- `must` Amplifiers
+- `must` Mixers
+- `must` Frequency Synthesizers
+- `must` Down-converters **OR** SDR
+- `must` Spectrum Analyzer **OR** Vector Network Analyzer **OR** Signal Generator **OR** Oscilloscope **OR** Power Meter
+- `must` FPGA
+- `must` DSP
+- `must` ADC
+- `must` DAC
+- `nice` Altium Designer
+- `nice` Matlab **OR** Python
+- `nice` EMC
+- `nice` Antenna Design
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Principal Engineer (напрямок Microwave / RF Systems)
+
+Infozahyst — приватний науково-виробничий центр, лідер у галузі радіоелектронної розвідки на території України. Ми шукаємо Principal Engineer / Chief Engineer для розвитку напряму Microwave / RF Systems. Це роль для сильного технічного експерта, який зможе відповідати за архітектуру, технічні рішення, розробку, bring-up, валідацію та супровід RF/Microwave частини складних апаратно-програмних продуктів. Основна місія ролі Забезпечити технічне лідерство у напрямку Microwave / RF Engineering: формувати архітектуру RF-рішень, визначати вимоги до компонентів і підсистем, супроводжувати розробку RF FrontEnd, брати участь у bring-up, вимірюваннях, тестуванні та усуненні технічних ризиків. Роль передбачає тісну взаємодію з командами antennas, FPGA/DSP, embedded, software, mechanics, QA/testing та production. Ми шукаємо людину, яка: Має сильну практичну експертизу в RF / Microwave Engineering; Може бути технічним owner напряму, а не лише виконавцем задач; Вміє працювати з невизначеністю та складними технічними проблемами; Здатна пояснювати технічні рішення, ризики та trade-offs; Комфортно працює на стику кількох інженерних напрямів; Готова до hands-on роботи з вимірюваннями, bring-up та debug; Може менторити інженерів і допомагати команді приймати якісні технічні рішення. Що для нас важливо: 5+ років досвіду в RF / Microwave Engineering, радіотехніці, радіофізиці або суміжних напрямах. Практичний досвід розробки або супроводу RF / НВЧ пристроїв, модулів чи систем. Досвід роботи з RF FrontEnd, приймальними трактами, фільтрами, підсилювачами, змішувачами, синтезаторами, down-converters або SDR-рішеннями. Розуміння частотного планування, шумів, лінійності, динамічного діапазону, чутливості, селективності та стабільності RF-трактів. Досвід bring-up, debug, вимірювань, валідації та аналізу відхилень у RF/Microwave системах. Досвід роботи з вимірювальним обладнанням: spectrum analyzer, VNA, signal generator, oscilloscope, power meter тощо. Розуміння взаємодії RF-частини з FPGA/DSP, embedded software, ADC/DAC, digital interfaces та high-level processing. Досвід роботи з технічними вимогами, схемами, документацією, результатами вимірювань і тестовими протоколами. Вища технічна освіта у сфері радіотехніки, радіофізики, телекомунікацій, електроніки або суміжних напрямів. Буде перевагою: Досвід у defence-tech, miltech, telecom, aerospace, radar, EW, SIGINT, ELINT, COMINT або SDR. Досвід роботи з системами радіотехнічної розвідки, радіоелектронної боротьби, пеленгації або моніторингу спектру. Досвід проєктування RF PCB у Altium Designer або суміжних інструментах. Досвід роботи з EM/RF simulation tools, Matlab, Python або іншими інженерними інструментами. Розуміння антенних систем, антенних решіток, фазових характеристик, калібрування та вимірювань. Досвід підготовки до лабораторних, кліматичних, EMC, функціональних або приймальних випробувань. Досвід створення або супроводу КД, ТЗ, ТУ, ПМВ, паспортів виробу та іншої технічної документації. PhD / к.т.н. / к.ф-м.н. буде додатковою перевагою. Основні задачі: Технічне лідерство у напрямку Microwave / RF Systems. Формування архітектури RF / Microwave частини продукту. Визначення технічних вимог до RF-компонентів, модулів, трактів і підсистем. Участь у розробці RF FrontEnd, приймальних трактів, down-converter, SDR або суміжних модулів. Аналіз технічних trade-offs, ризиків та варіантів реалізації. Супровід схемотехнічних рішень, PCB-рішень, bring-up та debug. Організація та аналіз результатів RF-вимірювань. Участь у валідації, тестуванні, підготовці ПМВ та acceptance criteria. Взаємодія з командами antennas, FPGA/DSP, embedded, software, mechanics, QA/testing та production. Участь у виборі компонентів, постачальників та альтернатив. Супровід виробу на етапах EVT/DVT та підготовка до production readiness. Допомога у формуванні технічних задач, вимог до інженерних ролей та розвитку команди. Ми пропонуємо: Дотичність до справи, що наближає нашу перемогу! Бронювання відповідно до чинного законодавства Комфортну та сучасну офісну інфраструктуру Роботу в стабільній компанії Унікальні проєкти Корпоративне медичне страхування Оплачувану відпустку та покриття лікарняних Гнучкий графік роботи (початок робочого дня з 9:00 до 11:00) Відкритість до нових ідей та підходів, здорова комунікація у команді
+
+</details>
+
+## 29. Middle Front-End Developer (React)
+
+**ID:** `5b32b885-c059-4a78-86bd-06c500887333` \
+**Slices:** `frontend`, `or`, `nice`
+
+**Expected:** tech: `true`; role: `Frontend Engineer`; seniority: `MIDDLE`
+
+- `must` JavaScript
+- `must` React
+- `must` jQuery
+- `must` Webpack
+- `must` Babel
+- `must` npm
+- `must` REST API
+- `must` Fetch API **OR** Axios
+- `must` HTML
+- `must` CSS
+- `must` Responsive Design
+- `must` Git
+- `must` Web Security
+- `must` Accessibility
+- `nice` Redux **OR** Context API **OR** MobX
+- `nice` TypeScript
+- `nice` Agile **OR** Scrum
+- `nice` CI/CD
+- `nice` Jest **OR** React Testing Library **OR** Cypress
+- `nice` Vite
+- `nice` SignalR **OR** WebSockets
+- `nice` Claude Code **OR** GitHub Copilot **OR** ChatGPT
+
+<details>
+<summary>Текст вакансії</summary>
+
+Title: Middle Front-End Developer (React)
+
+We are seeking a skilled and motivated Mid-Level Front-End Developer with a strong background in JavaScript and jQuery, and a focus on React development. In this role, you will be responsible for converting legacy jQuery applications into modern, maintainable React apps as well as building new React applications from the ground up. You will be part of a dynamic team working on both greenfield and migration projects, ensuring a smooth transition from older codebases to modern frameworks while maintaining high standards of performance and code quality. Key Responsibilities: Migrate jQuery-based Applications: Convert and refactor existing jQuery applications into React applications, ensuring functionality, performance, and a seamless user experience are maintained during the transition. Develop New React Applications: Collaborate with designers and back-end developers to create new, interactive, and user-friendly React applications from scratch, following best practices in component-based design. Code Maintenance & Optimization: Write clean, modular, and reusable code. Optimize applications for speed, scalability, and responsiveness across all devices and browsers. Cross-Functional Collaboration: Work closely with UX/UI designers to implement visually appealing and functional user interfaces. Coordinate with back-end developers to integrate APIs and ensure smooth data flow. Testing & Debugging: Write and maintain unit and integration tests for React components. Identify and fix bugs or performance bottlenecks across the front-end codebase. Version Control: Use Git for version control and adhere to established Git workflows for code reviews and collaboration. Mentorship: Provide guidance and support to junior developers, helping them improve their React and JavaScript skills. Documentation: Document the development process, coding standards, and any technical processes relevant to the front-end development workflow. Required Qualifications: Proven experience (2-4 years) as a front-end developer with a focus on JavaScript, React, and jQuery. Expert knowledge of JavaScript (ES6+), including core concepts like closures, promises, asynchronous programming, and module bundling. Strong experience with React (class-based and functional components, hooks, state management) and a solid understanding of component-driven development. Solid understanding of jQuery and experience migrating or maintaining legacy jQuery codebases. Familiarity with modern JavaScript tools and libraries such as Webpack, Babel, NPM, and ES6+ syntax. Experience with RESTful APIs and asynchronous programming (fetch, axios, etc.). Strong knowledge of front-end HTML5, CSS3, and responsive design principles. Experience with version control systems, particularly Git. Understanding of front-end performance optimization techniques (e.g., lazy loading, code splitting, tree shaking). Good understanding of web security practices and accessibility standards. Preferred Qualifications: Experience with state management tools like Redux, Context API, or MobX. Familiarity with TypeScript and its integration with React applications. Experience working in an Agile or Scrum environment. Understanding of CI/CD pipelines and how they relate to front-end development. Experience with testing libraries like Jest, React Testing Library, or Cypress. Experience with modern frontend build tools and development environments such as Vite, including configuration, optimization, and migration from legacy bundling solutions. Experience developing or integrating real-time web applications using SignalR, WebSockets, or similar technologies. Experience leveraging AI-assisted software development tools such as Claude Code, GitHub Copilot, ChatGPT, or similar platforms to enhance developer productivity, code quality, troubleshooting, testing, and documentation. Familiarity with modern AI-driven development workflows, including prompt-based code generation, code review assistance, refactoring, and automated test creation. Key Competencies: Problem Solving: Ability to analyze complex problems and break them down into manageable solutions. Collaboration: Strong communication skills with the ability to work effectively in a team environment. Adaptability: Comfortable with both new development and refactoring legacy code. Attention to Detail: Focus on quality, maintainability, and user experience. Time Management: Ability to manage multiple priorities and meet deadlines.
 
 </details>

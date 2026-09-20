@@ -214,6 +214,16 @@ A named example inside a list of alternatives — the exact shape requirement
 groups exist for. **Re-run this query after the corpus pass**: if Jenkins does
 not move, grouping did not reach the case it was built for.
 
+The query was ad hoc when this was first taken and is now checked in as
+[`scripts/sql/corpus-skill-coverage.sql`](../../../scripts/sql/corpus-skill-coverage.sql),
+so the before and after runs are the same query rather than two similar ones.
+Re-run 2026-09-20 on the same snapshot, it reproduces every coverage figure in
+the table above. Two `linked` counts in that table do not: the original counted
+links without restricting them to the postings that mention the skill, which is
+why MongoDB reads 1,000 linked against 970 mentioned. The percentages were
+computed the right way, so they stand; the checked-in query keeps
+`linked ⊆ mentioned` and gives MongoDB 863 of 970.
+
 Two incidental corpus facts from the same pass: the average canonical posting
 carries **6.9 required skills** and only **76 of 16,169 reach the cap of 20**, so
 the cap is no longer the binding constraint after Pass 1 — and **428 canonical
@@ -242,5 +252,145 @@ distribution (Pass 2 step 6) rather than before.
 
 Re-run the same query after step 7 and compare tier shares; that, not skill
 accuracy, is the metric for the switch to units.
+
+---
+#### Measured 2026-09-20 — the rebalanced golden set, a new baseline (R9)
+
+R9 is done: three Automation QA rows with no MUST group are gone, eight
+hand-labelled rows are in, and the set is 29 rows. The new rows are two
+`Software Engineer` (9.3% of the corpus and previously unrepresented), plus one
+each of `AI Engineer`, `Data Analyst`, `Security Engineer`, `Hardware Engineer`
+and `Frontend Engineer`, and a DevOps posting written almost entirely in
+alternative lists. QA now holds 4 of 29 rows (13.8%) against 13.5% of the
+corpus. **MUST groups go from 11 in 9 rows to 32 in 16 rows.**
+
+`--extractor production --repeat 3`, two cents. The left column is the last run
+against the old set (`2026-09-20-production-DeepSeekClient-25row.md`); the two
+are **not comparable**, and the right column is the baseline every later run is
+read against (`…-29row.md`).
+
+| | 25-row set | 29-row set |
+|---|---|---|
+| F1 | 63.0% | **61.5%** |
+| precision | 74.0% | **67.2%** |
+| recall | 56.4% | **58.9%** |
+| alternative accuracy | 57.0% | **59.2%** |
+| `or_split_errors` | 8.3 | **21.3** |
+| priority accuracy | 97.7% | **99.3%** |
+| role accuracy | 57.3% | **59.8%** |
+| profile fields | 97.4% of 51 | **95.6% of 61** |
+| per-pass F1 spread | 1.4 pt | **0.7 pt** |
+
+**`or_split_errors` tripling is the point, not a regression.** The old set gave
+the extractor 11 chances to split a choice; this one gives it 32, and it splits
+most of them. Precision falls for the same reason: every member the model emits
+as its own requirement is an `extra` against one grouped label. Both numbers
+now measure the thing Pass 2 exists to fix, which the old set barely could.
+
+Where the splitting shows up, from the run itself:
+
+```
+Security Engineer  expected  nice:AppArmor|BitLocker|FileVault|Gatekeeper|…|SELinux
+                   actual    nine separate `nice` requirements
+AI Engineer        expected  must:Haystack|LangChain|LangGraph|LlamaIndex|Semantic Kernel
+                   actual    must:Semantic Kernel + nice:LangChain + nice:LangGraph
+```
+
+Both postings mark the list as a choice in the source ("at least one … such
+as", "such as … or"), so these are true `or_split` errors, not label disputes.
+
+Two labels were corrected after reading the first run and before this baseline
+was taken: `Attack Surface Reduction` was missing from the Security row's
+native-controls list (it is verbatim in the posting), and the Hardware row's
+RF-module sentence was over-grouped — the `або` there binds only
+`down-converters` and `SDR`, the rest of that sentence is cumulative.
+
+Only three labels across the eight new rows fail to resolve to a taxonomy node
+(`Down-converters`, `Frequency Synthesizers`, `File Integrity Monitoring`),
+against 31 unresolvable labels among the rows that were already there. Two
+alias collisions are worth knowing before reading a score: `LoRA` normalizes
+onto `LoRa`, the radio protocol, and `SOPS` onto `SOPs`. The scorer
+canonicalizes both sides through the same map, so neither biases a comparison.
+
+The per-pass spread fell from 1.4 to 0.7 points, so this set's noise floor is
+lower than the old one's — but still read nothing under about 1.5 F1 points as
+a result.
+
+---
+
+#### Measured 2026-09-20 — the contract shape under-groups, not the model
+
+The 29-row baseline reads low enough to raise "is `deepseek-v4-flash` simply
+not good enough". It is not the model. Three runs over the same 29 rows and
+the same labels, changing one thing at a time:
+
+| | F1 | MUST groups of 32 | two-member of 23 | `or_split` | role | p50 | out tokens |
+|---|---|---|---|---|---|---|---|
+| DeepSeek, production contract | 61.5% | 11 | **5** | 21.3 | 59.8% | 1.4s | 6k |
+| DeepSeek, v2 contract | 65.6% | 18 | **12** | 17.0 | 96.6% | 1.7s | 11k |
+| Muse, v2 contract | 67.1% | 19 | **12** | 6.0 | 93.1% | **54s** | **153k** |
+
+**Changing the contract buys +4.1 F1 and +7 groups. Changing the model buys
++1.5 F1 and +1 group.** On two-member choices — the "AWS or GCP" case this
+whole tracker is named after — both models land on exactly 12 of 23. A
+reasoning model thinking 38× longer for 14× the output tokens does not see
+the eleven that DeepSeek misses.
+
+The mechanism is in the class shape. Production asks for the same information
+twice:
+
+```
+class Skills {
+  required     string[]        // flat list
+  optional     string[]
+  alternatives SkillGroup[]    // now go back and restate some of those names in pairs
+}
+```
+
+`alternatives` is a second pass over an answer the model has already written,
+and it is the pass that gets skipped. The v2 contract has no flat form at all —
+`requirements: [{priority, anyOf}]`, so every requirement is already a list and
+grouping is not extra work. Same model, same posting, 5 vs 12 two-member
+groups.
+
+The misses are not subtle cases. Verbatim from the production run:
+
+```
+AWS | Azure              ← "Experience with Azure or AWS cloud"
+Docker | Kubernetes      ← "Experience with Docker or Kubernetes"
+ETL | ELT                ← the prompt itself names "ETL/ELT" as a worked example
+EDR | XDR,  MDM | UEM    ← "EDR/XDR", "MDM/UEM"
+Sigstore | Cosign,  Microsoft SQL Server | Oracle Database
+```
+
+Longer enumerations are fine in both contracts (3-member: 5 of 6 on
+production). The failure is specific to binary choices.
+
+Two more things the same runs settle.
+
+**Minting is a prompt property, not a model property.** The v2 contract passes
+no `knownSkills` at all, and both models invent at the same rate: 95 names with
+no taxonomy node out of 559 for DeepSeek, 76 of 581 for Muse, against **2 of
+389** for the production contract which does pass the list. On the RF posting
+the unconstrained prompt produced `noise analysis`, `linearity analysis`,
+`frequency planning`, `deviation analysis` — duties, not skills — plus `PhD`
+and `electrical/radio engineering degree`. That is the ceiling on R10's risk,
+measured rather than guessed. R10 keeps the list as guidance so the real number
+is lower, but it is not zero and no model choice avoids it.
+
+**Role accuracy is taxonomy debt.** 59.8% on production against 96.6% on v2,
+same model. Production feeds the 100 VERIFIED role nodes from the database; v2
+feeds the closed 30-role enum. 37 of those 100 roles carry no positions at all.
+This prices the ROLE cleanup deferred on 2026-09-19 at roughly 37 points of
+role accuracy.
+
+**Cost note against switching models.** 153k output tokens for 29 postings on
+the reasoning challenger. Extrapolated to 16,169 canonical postings that is not
+the $1.7–4 the corpus pass is budgeted at, for +1.5 F1. Fix the contract before
+reconsidering the model.
+
+Artifacts: `2026-09-20-requirements-v2-DeepSeekClient.*` and
+`2026-09-20-requirements-v2-OpenRouterMuseClient.*`. The Muse run is a single
+pass — read nothing under about 1.5 F1 points from it.
 
 ---
