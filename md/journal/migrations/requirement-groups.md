@@ -695,6 +695,15 @@ rule, `or_split_errors` 21.3 → 6.7, F1 61.5% → 67.4%. Nothing re-extracted,
 nothing merged: `BAML_PRODUCTION_SOURCE_HASH` moves, so merging is a deploy and
 the owner's call.
 
+**Rehearsed 2026-09-20, on 60 postings of the local dev database.** The first
+hand-start of `reextractWorkflow` failed outright — `CachedVacancyExtractor`
+had no `identity()`, so the stale-posting query could not ask for the current
+`specHash` and the workflow died on its first activity. Fixed on
+`feat/skills-anyof-contract`. With the fix the whole path runs: 39 groups over
+22 of 60 postings, mean size 2.44, zero `overlapping` drops, 4 new nodes
+minted, `node_stats` refreshed. Every §8.2 tripwire is inside its band. The
+corpus pass itself is still not started.
+
 **Not started.** The corpus re-extraction — the workflow has no schedule and no
 endpoint, it starts by hand. Depth is settled 2026-09-20: the **2026-08-19
 batch** (~2.5–3k positions, $0.30–0.75), not the whole corpus, so the windowed
