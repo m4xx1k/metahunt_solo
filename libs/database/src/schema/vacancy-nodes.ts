@@ -1,4 +1,4 @@
-import { pgTable, uuid, boolean, primaryKey, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, boolean, smallint, primaryKey, index } from "drizzle-orm/pg-core";
 
 import { nodes } from "./nodes";
 import { vacancies } from "./vacancies";
@@ -13,6 +13,8 @@ export const vacancyNodes = pgTable(
       .notNull()
       .references(() => nodes.id),
     isRequired: boolean("is_required").notNull().default(true),
+    // NULL = a standalone requirement; a shared number = one "A or B" choice.
+    requirementGroup: smallint("requirement_group"),
   },
   (t) => [
     primaryKey({ columns: [t.vacancyId, t.nodeId] }),

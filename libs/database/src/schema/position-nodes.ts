@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { uuid, boolean, pgView } from "drizzle-orm/pg-core";
+import { uuid, boolean, smallint, pgView } from "drizzle-orm/pg-core";
 
 // Position -> taxonomy links: the canonical posting's `vacancy_nodes`,
 // reprojected onto `position_id`. Preserves every canonical link, required
@@ -11,12 +11,14 @@ export const positionNodes = pgView("position_nodes", {
   positionId: uuid("position_id"),
   nodeId: uuid("node_id"),
   isRequired: boolean("is_required"),
+  requirementGroup: smallint("requirement_group"),
 }).as(
   sql`
     SELECT
       uv.id AS position_id,
       vn.node_id,
-      vn.is_required
+      vn.is_required,
+      vn.requirement_group
     FROM unique_vacancies uv
     JOIN vacancy_nodes vn ON vn.vacancy_id = uv.canonical_vacancy_id
   `,
