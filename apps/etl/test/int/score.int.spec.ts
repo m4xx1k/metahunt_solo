@@ -85,8 +85,13 @@ async function seedTechMeta(
   await db.insert(schema.nodeTechMeta).values({ nodeId, ...meta });
 }
 
-async function linkSkill(vacancyId: string, nodeId: string, isRequired = true) {
-  await db.insert(schema.vacancyNodes).values({ vacancyId, nodeId, isRequired });
+async function linkSkill(
+  vacancyId: string,
+  nodeId: string,
+  isRequired = true,
+  requirementGroup: number | null = null,
+) {
+  await db.insert(schema.vacancyNodes).values({ vacancyId, nodeId, isRequired, requirementGroup });
 }
 
 async function refreshNodeStats() {
@@ -368,5 +373,69 @@ describe("resolveViewer skills (integration)", () => {
     await linkActiveCv(userId, candidateId, false);
 
     await expect(resolveActiveCandidateId(db, userId)).resolves.toBeNull();
+  });
+});
+
+// Pass 2 step 7: coverage, relevance and the required count all aggregate
+// requirement units, not links — "Jenkins or GitLab CI" is one requirement
+// either member satisfies (§6, R3/R4).
+describe("requirement units (integration)", () => {
+  async function seedGroupedVacancy(): Promise<{
+    positionId: string;
+    go: string;
+    jenkins: string;
+    gitlab: string;
+  }> {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const go = await seedNode("SKILL", "Go");
+    const jenkins = await seedNode("SKILL", "Jenkins");
+    const gitlab = await seedNode("SKILL", "GitLab CI");
+    const vac = await seedVacancy(sourceId, ingestId, role);
+    await linkSkill(vac, go, true);
+    await linkSkill(vac, jenkins, true, 1);
+    await linkSkill(vac, gitlab, true, 1);
+    await seedFillers(sourceId, ingestId, role);
+    await refreshNodeStats();
+    return { positionId: await positionIdOf(vac), go, jenkins, gitlab };
+  }
+
+  it("covers the whole choice from one member", async () => {
+    const { positionId, go, jenkins } = await seedGroupedVacancy();
+
+    const overlay = await overlayFor(db, [go, jenkins], [positionId]);
+
+    // Two units, both matched — flat scoring would have called this 2 of 3.
+    expect(overlay.get(positionId)).toMatchObject({ tier: "STRONG", percent: 100 });
+  });
+
+  it("does not pay twice for knowing both members", async () => {
+    const { positionId, go, jenkins, gitlab } = await seedGroupedVacancy();
+
+    const one = await overlayFor(db, [go, jenkins], [positionId]);
+    const both = await overlayFor(db, [go, jenkins, gitlab], [positionId]);
+
+    // R4: relevance is the sort key on the same card as coverage, so it has to
+    // collapse too, or two of three interchangeable tools outranks one at the
+    // same Fit.
+    expect(both.get(positionId)?.relevance).toBeCloseTo(one.get(positionId)!.relevance, 9);
+    expect(both.get(positionId)?.percent).toBe(one.get(positionId)?.percent);
+  });
+
+  it("leaves an ungrouped position exactly where it was", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const role = await seedNode("ROLE", "Backend Developer");
+    const go = await seedNode("SKILL", "Go");
+    const k8s = await seedNode("SKILL", "Kubernetes");
+    const vac = await seedVacancy(sourceId, ingestId, role);
+    await linkSkill(vac, go, true);
+    await linkSkill(vac, k8s, true);
+    await seedFillers(sourceId, ingestId, role);
+    await refreshNodeStats();
+
+    const overlay = await overlayFor(db, [go], [await positionIdOf(vac)]);
+
+    // I1: a unit of one is its own link, so 1 of 2 stays 1 of 2.
+    expect(overlay.get(await positionIdOf(vac))).toMatchObject({ tier: "GOOD", percent: 50 });
   });
 });

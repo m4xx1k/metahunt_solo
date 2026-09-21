@@ -61,8 +61,16 @@ export interface SourceRef {
   displayName: string;
 }
 
+/** A required skill, plus the choice it belongs to. Members sharing a `group`
+ *  are alternatives — any one of them satisfies the requirement (R3/R8). */
+export interface RequirementRef extends NodeRef {
+  group?: number;
+}
+
 export interface VacancySkills {
-  required: NodeRef[];
+  required: RequirementRef[];
+  // Never grouped: only `required` enters coverage, so grouping optional would
+  // be bookkeeping that scores nothing (R2).
   optional: NodeRef[];
 }
 

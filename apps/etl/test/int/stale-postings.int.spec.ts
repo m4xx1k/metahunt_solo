@@ -94,6 +94,10 @@ afterAll(async () => {
   await pool.end();
 });
 
+beforeEach(async () => {
+  await truncateAll(db);
+});
+
 afterEach(async () => {
   await truncateAll(db);
 });

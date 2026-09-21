@@ -29,10 +29,9 @@ export function FitPanel({ vacancyId }: { vacancyId: string }) {
   const match = data?.match ?? null;
   const diff = data && data.viewerSkills ? skillDiff(data.skills, data.viewerSkills) : null;
   if (!data || !match) return null;
-  const requiredTotal = data.skills.required.length;
   const fitDetail =
-    diff && requiredTotal > 0
-      ? `${requiredTotal - diff.missing.length} of ${requiredTotal} required skills`
+    diff && diff.requiredTotal > 0
+      ? `${diff.requiredTotal - diff.missing.length} of ${diff.requiredTotal} required skills`
       : undefined;
 
   return (
