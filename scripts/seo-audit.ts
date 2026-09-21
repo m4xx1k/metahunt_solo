@@ -53,6 +53,14 @@ type Head = {
 
 const all = (html: string, re: RegExp) => [...html.matchAll(re)].map((m) => m[1]);
 
+const decodeEntities = (s: string) =>
+  s
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+
 async function head(url: string): Promise<Head> {
   const res = await fetch(url, { redirect: "manual", headers: HEADERS });
   const html = res.status === 200 ? await res.text() : "";
@@ -68,8 +76,8 @@ async function head(url: string): Promise<Head> {
   return {
     status: res.status,
     // <title> also appears inside inline SVGs; the document title is the first.
-    title: all(html, /<title[^>]*>([^<]*)<\/title>/g)[0] ?? "",
-    description: all(html, /<meta name="description" content="([^"]*)"/g)[0] ?? "",
+    title: decodeEntities(all(html, /<title[^>]*>([^<]*)<\/title>/g)[0] ?? ""),
+    description: decodeEntities(all(html, /<meta name="description" content="([^"]*)"/g)[0] ?? ""),
     canonical: all(html, /<link rel="canonical" href="([^"]*)"/g),
     robots: all(html, /<meta name="robots" content="([^"]*)"/g),
     h1: all(html, /<h1[^>]*>([\s\S]*?)<\/h1>/g).map((s) =>
