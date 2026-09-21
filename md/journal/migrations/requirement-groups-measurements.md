@@ -509,7 +509,7 @@ Cost: 60 postings at $0.000194 each ≈ **$0.012**.
 Pass 2 step 5, run for real. `reextractWorkflow` with `since=2026-08-19`,
 `maxPostings=3200`, started by hand against Temporal Cloud after #222 deployed.
 2 959 canonical postings — every posting first loaded in the last month — in
-about 88 minutes, **zero failed extraction artifacts**, about **$0.57**. Only
+about 88 minutes, **zero failed extraction artifacts**, about **$1** billed (the $0.57 first written here was a token-count estimate, not the invoice). Only
 `dedup-sweep` was paused (it re-embeds everything a reload invalidates);
 `rss-ingest-hourly` and `tg-digest-daytime` stayed live, both being time-gated
 past the batch. A verified 332 MB `pg_dump` was taken first, through the

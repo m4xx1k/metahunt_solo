@@ -623,7 +623,7 @@ a constraint.
 | 2 | BAML: `SkillGroup` + `alternatives` (§4). Verify codegen round-trips (§11). **Done 2026-09-20** — codegen round-trips, §11.1 closed; `BAML_PRODUCTION_SOURCE_HASH` → `4f089c9a…`. | git |
 | 3 | Loader: resolve + stamp groups, the three drop rules (§5.2). Unit-test each. **Done 2026-09-20** — four reasons, not three: a member outside this posting's skills is its own case, because group names are matched against already-resolved links and never resolve a node of their own. | git |
 | 4 | `scripts/db-backup.sh`, then pause Temporal schedules. | — |
-| 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). **Done 2026-09-21** — 2 959 postings (`since=2026-08-19`), 88 min, $0.57, 0 failures. Jenkins coverage in the window 71.1% → 93.0%. | data only; the backup |
+| 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). **Done 2026-09-21** — 2 959 postings (`since=2026-08-19`), 88 min, ~$1 billed, 0 failures. Jenkins coverage in the window 71.1% → 93.0%. | data only; the backup |
 | 6 | Refresh `node_stats` and `node_skill_cooc`. Re-set `FIT_STRONG_MIN` / `FIT_GOOD_MIN` on the now-settled distribution. | git |
 | 7 | Switch `scoringCtes` **and** `recommendation.service.ts` to units (§6.3, R6), and the exclusion predicate to unit semantics (§6.4, R5). **This is the step that changes user-visible Fit for this pass.** | git revert, data untouched |
 | 8 | Resume schedules. Check the tripwires in §8.2. | — |
@@ -696,7 +696,7 @@ nothing merged: `BAML_PRODUCTION_SOURCE_HASH` moves, so merging is a deploy and
 the owner's call.
 
 **The corpus pass ran 2026-09-21 (Pass 2 step 5).** 2 959 canonical postings —
-the last month — re-extracted on prod in 88 minutes for about $0.57, zero
+the last month — re-extracted on prod in 88 minutes for about $1 billed, zero
 failed artifacts, after a verified 332 MB dump taken through the Postgres
 container. In the window: required links 21 534 → 28 778, postings with no
 skills 53 → 13, 2 106 groups over 42% of postings (mean size 2.51, max 9), and
