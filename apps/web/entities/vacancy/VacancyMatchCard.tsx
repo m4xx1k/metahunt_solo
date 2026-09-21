@@ -24,10 +24,9 @@ export function VacancyMatchCard({
 }) {
   const diff = vacancy.match ? skillDiff(vacancy.skills, viewerSkills) : null;
   const viewerSkillIds = viewerSkills.map((s) => s.id);
-  const requiredTotal = vacancy.skills.required.length;
   const fitDetail =
-    diff && requiredTotal > 0
-      ? `${requiredTotal - diff.missing.length} of ${requiredTotal} required skills`
+    diff && diff.requiredTotal > 0
+      ? `${diff.requiredTotal - diff.missing.length} of ${diff.requiredTotal} required skills`
       : undefined;
 
   return (

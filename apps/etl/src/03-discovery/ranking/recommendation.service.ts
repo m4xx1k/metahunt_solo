@@ -6,6 +6,7 @@ import { DRIZZLE } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
+import { requirementUnitKey } from "../score/requirement-unit.sql";
 
 import {
   FIT_GOOD_MIN,
@@ -34,7 +35,8 @@ const reduced = (cohortSize: number, coveragePct: number): RecommendResponse => 
 // "What to learn next" — a marginal counterfactual over the candidate's role
 // cohort (same role node, seniority band ±1 incl. NULL). For each near-miss
 // vacancy (required coverage < GOOD), a missing required skill S "unlocks" it
-// iff (matched_required_w + idf(S)) / required_total_w >= GOOD. Aggregated per S,
+// iff (matched_required_w + w(unit of S)) / required_total_w >= GOOD, where
+// both sides count requirement units, not links (R6). Aggregated per S,
 // guarded to VERIFIED nodes with a cohort df-floor and a generic df-ceiling.
 // Skill-metadata stack gates (foreign-stack / known-language / framework
 // substitute) filter the unlock list; see ADR-0009 and ADR-0010.
@@ -100,6 +102,7 @@ export class RecommendationService {
       ),
       vreq AS (
         SELECT c.position_id, pn.node_id, n.status AS node_status,
+               ${requirementUnitKey("pn")} AS unit,
                ns.weight::float8 AS weight,
                (pn.node_id IN (SELECT node_id FROM cand)) AS in_cand
         FROM cohort c
@@ -107,11 +110,20 @@ export class RecommendationService {
         JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
         JOIN node_stats ns ON ns.node_id = pn.node_id
       ),
+      -- Coverage counts requirement units, exactly as scoringCtes does (R6):
+      -- one member of "Jenkins or GitLab CI" satisfies the whole requirement,
+      -- and the unit weighs MIN of its members (R3).
+      vunit AS (
+        SELECT position_id, unit,
+               min(weight) AS weight,
+               bool_or(in_cand) AS matched
+        FROM vreq GROUP BY position_id, unit
+      ),
       vcov AS (
         SELECT position_id,
                SUM(weight) AS required_total_w,
-               COALESCE(SUM(weight) FILTER (WHERE in_cand), 0) AS matched_required_w
-        FROM vreq GROUP BY position_id
+               COALESCE(SUM(weight) FILTER (WHERE matched), 0) AS matched_required_w
+        FROM vunit GROUP BY position_id
       )`;
 
     const scalars = await this.db.execute<{
@@ -143,12 +155,16 @@ export class RecommendationService {
         WHERE required_total_w > 0
           AND matched_required_w / required_total_w < ${FIT_GOOD_MIN}
       ),
+      -- A skill only unlocks what its unit does not already cover: telling an
+      -- AWS candidate to learn Azure is the bug R6 exists to stop. Learning any
+      -- member adds the unit's weight, never the member's own.
       unlock AS (
         SELECT vr.node_id, nm.position_id,
-               (nm.matched_required_w + vr.weight) / nm.required_total_w AS new_cov
+               (nm.matched_required_w + vu.weight) / nm.required_total_w AS new_cov
         FROM nearmiss nm
         JOIN vreq vr ON vr.position_id = nm.position_id
-        WHERE NOT vr.in_cand AND vr.node_status = 'VERIFIED'
+        JOIN vunit vu ON vu.position_id = vr.position_id AND vu.unit = vr.unit
+        WHERE NOT vr.in_cand AND vr.node_status = 'VERIFIED' AND NOT vu.matched
       ),
       agg AS (
         SELECT node_id,

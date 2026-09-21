@@ -8,7 +8,7 @@ import type { DrizzleDB } from "@metahunt/database";
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { uuidList } from "../../platform/shared/sql";
-import { buildWhere, FeedService, toDto } from "../feed/feed.service";
+import { buildWhere, FeedService, toDto, type SkillRow } from "../feed/feed.service";
 import { rankedPage } from "../score/ranked-page";
 import { buildScoreBreakdown, fitPercent, TIER_BY_BUCKET } from "../score/score.contract";
 import { scoringCtes } from "../score/score.sql";
@@ -30,6 +30,18 @@ import { deriveRoleSuggestions } from "./role-suggestions.derive";
 // scorer.port.ts's overlayFor — one table each direction, not one per consumer.
 
 const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
+
+// One unmet requirement is one chip: "AWS / Azure / GCP", not three red
+// entries for a single choice (R8). The unit's weight is MIN of its members,
+// the same bound the SQL scores it at (R3), so the chip sorts where it scores.
+function collapseUnit(members: SkillRow[]): SkillRef {
+  const ordered = [...members].sort((a, b) => b.weight - a.weight || a.name.localeCompare(b.name));
+  return {
+    id: ordered[0].nodeId,
+    name: ordered.map((m) => m.name).join(" / "),
+    weight: Math.min(...ordered.map((m) => m.weight)),
+  };
+}
 
 // reverse-ATS matcher (md/journal/migrations/reverse-ats.md §2).
 //   resolveSkills — plain-text skills → SKILL node ids (canonical+alias, NEW +
@@ -352,20 +364,27 @@ export class RankingService {
 
       const vacancyNodeIds = new Set(skillRows.map((s) => s.nodeId));
       const have: SkillRef[] = [];
-      const missing: SkillRef[] = [];
-      // Counts feed the "X of Y required" label; the badge is the SQL tier_bucket.
-      let requiredTotal = 0;
-      let matchedRequired = 0;
+      // Counts and chips are per requirement UNIT, matching the SQL coverage
+      // beside them: "Jenkins or GitLab CI" is one requirement, one chip, and
+      // knowing either satisfies it. An ungrouped row is a unit of one (R8).
+      const units = new Map<string, SkillRow[]>();
       for (const s of skillRows) {
-        const ref: SkillRef = { id: s.nodeId, name: s.name, weight: s.weight };
-        if (s.isRequired) requiredTotal += 1;
         if (candidateNodeIds.has(s.nodeId)) {
-          have.push(ref);
-          if (s.isRequired) matchedRequired += 1;
-        } else if (s.isRequired) {
-          missing.push(ref);
+          have.push({ id: s.nodeId, name: s.name, weight: s.weight });
         }
+        if (!s.isRequired) continue;
+        const key = s.requirementGroup === null ? `n${s.nodeId}` : `g${s.requirementGroup}`;
+        const members = units.get(key);
+        if (members) members.push(s);
+        else units.set(key, [s]);
       }
+      const missing: SkillRef[] = [];
+      let matchedRequired = 0;
+      for (const members of units.values()) {
+        if (members.some((m) => candidateNodeIds.has(m.nodeId))) matchedRequired += 1;
+        else missing.push(collapseUnit(members));
+      }
+      const requiredTotal = units.size;
       const bonus = candidate.filter((c) => !vacancyNodeIds.has(c.id));
       const breakdown = buildScoreBreakdown(row.coverage);
       items.push({

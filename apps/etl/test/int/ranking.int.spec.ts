@@ -7,6 +7,7 @@ import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { CandidateLoaderService } from "../../src/03-discovery/cv/candidate-loader.service";
 import { CandidateMatchService } from "../../src/03-discovery/cv/candidate-match.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
+import { RecommendationService } from "../../src/03-discovery/ranking/recommendation.service";
 import { NodeSlugResolver } from "../../src/platform/nodes/node-slug.resolver";
 
 import { noopAnalytics } from "./analytics";
@@ -78,8 +79,13 @@ async function seedTechMeta(
   await db.insert(schema.nodeTechMeta).values({ nodeId, ...meta });
 }
 
-async function linkSkill(vacancyId: string, nodeId: string, isRequired = true) {
-  await db.insert(schema.vacancyNodes).values({ vacancyId, nodeId, isRequired });
+async function linkSkill(
+  vacancyId: string,
+  nodeId: string,
+  isRequired = true,
+  requirementGroup: number | null = null,
+) {
+  await db.insert(schema.vacancyNodes).values({ vacancyId, nodeId, isRequired, requirementGroup });
 }
 
 async function refreshNodeStats() {
@@ -397,5 +403,55 @@ describe("CandidateMatchService criteria (integration)", () => {
     const result = await candidateMatch.match(candidateId, { excludedSkillRefs: [php] }, 1, 20);
 
     expect(result.items.map((item) => item.vacancy.id)).toEqual([optionalPhp]);
+  });
+});
+
+// §6.3 / R6: the second coverage implementation. The bug this guards is a
+// candidate who already has AWS being told to learn Azure, because Azure reads
+// as a missing required skill that lifts coverage.
+describe("RecommendationService — requirement units (integration)", () => {
+  it("never recommends the alternative of a choice the candidate already satisfies", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const backend = await seedNode("ROLE", "Backend Developer");
+    const other = await seedNode("ROLE", "QA Engineer");
+    const go = await seedNode("SKILL", "Go");
+    const aws = await seedNode("SKILL", "AWS");
+    const azure = await seedNode("SKILL", "Azure");
+    const kafka = await seedNode("SKILL", "Kafka");
+    const terraform = await seedNode("SKILL", "Terraform");
+
+    // 25 cohort vacancies, 12 of them carrying the choice plus two missing
+    // requirements — enough to sit under FIT_GOOD_MIN while either missing
+    // requirement alone lifts it over. The other 13 pad the cohort past
+    // REC_MIN_COHORT. 35 off-role fillers keep smoothed IDF positive.
+    for (let i = 0; i < 12; i++) {
+      const vac = await seedVacancy(sourceId, ingestId, backend, `Cloud ${i}`);
+      await linkSkill(vac, go);
+      await linkSkill(vac, aws, true, 1);
+      await linkSkill(vac, azure, true, 1);
+      await linkSkill(vac, kafka);
+      await linkSkill(vac, terraform);
+    }
+    for (let i = 0; i < 13; i++) {
+      const vac = await seedVacancy(sourceId, ingestId, backend, `Plain ${i}`);
+      await linkSkill(vac, go);
+    }
+    for (let i = 0; i < 35; i++) await seedVacancy(sourceId, ingestId, other, `Filler ${i}`);
+    await refreshNodeStats();
+
+    const rec = new RecommendationService(db);
+    const res = await rec.recommend(
+      [
+        { id: go, name: "Go", weight: 0 },
+        { id: aws, name: "AWS", weight: 0 },
+      ],
+      backend,
+      null,
+    );
+    const names = res.items.map((i) => i.name);
+
+    expect(res.reducedState).toBe(false);
+    expect(names).toEqual(expect.arrayContaining(["Kafka", "Terraform"]));
+    expect(names).not.toContain("Azure");
   });
 });

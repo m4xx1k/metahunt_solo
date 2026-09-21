@@ -16,6 +16,7 @@ describe("skillDiff", () => {
       have: [required1, optional1],
       missing: [required2],
       bonus: [bonusSkill],
+      requiredTotal: 2,
     });
   });
 
@@ -23,7 +24,12 @@ describe("skillDiff", () => {
     const required1 = { id: "req-1", name: "Go" };
     const skills: VacancySkills = { required: [required1], optional: [] };
 
-    expect(skillDiff(skills, [])).toEqual({ have: [], missing: [required1], bonus: [] });
+    expect(skillDiff(skills, [])).toEqual({
+      have: [],
+      missing: [required1],
+      bonus: [],
+      requiredTotal: 1,
+    });
   });
 
   it("returns nothing at all for a vacancy with no listed skills", () => {
@@ -33,6 +39,23 @@ describe("skillDiff", () => {
       have: [],
       missing: [],
       bonus: [{ id: "extra-1", name: "Rust" }],
+      requiredTotal: 0,
     });
+  });
+
+  // R8: the complaint that started the requirement-groups tracker — one choice
+  // showing up as three red chips, and counted three times against the Fit.
+  it("counts and renders a choice once", () => {
+    const go = { id: "req-1", name: "Go" };
+    const aws = { id: "req-2", name: "AWS", group: 1 };
+    const azure = { id: "req-3", name: "Azure", group: 1 };
+    const skills: VacancySkills = { required: [go, aws, azure], optional: [] };
+
+    const satisfied = skillDiff(skills, [go, aws]);
+    const unmet = skillDiff(skills, [go]);
+
+    expect(satisfied).toMatchObject({ missing: [], requiredTotal: 2 });
+    expect(unmet.missing).toEqual([{ id: "req-2", name: "AWS / Azure" }]);
+    expect(unmet.requiredTotal).toBe(2);
   });
 });

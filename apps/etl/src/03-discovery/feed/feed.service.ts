@@ -9,6 +9,7 @@ import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
 import { isUuid } from "../../platform/shared/query-parsing";
 import { uuidList } from "../../platform/shared/sql";
 import { rankedPage } from "../score/ranked-page";
+import { requirementUnitKey } from "../score/requirement-unit.sql";
 import {
   buildScoreBreakdown,
   fitPercent,
@@ -24,6 +25,7 @@ import type {
   EnglishLevel,
   FeedResponse,
   NodeRef,
+  RequirementRef,
   Seniority,
   SitemapVacancy,
   VacancyDto,
@@ -537,8 +539,8 @@ export class FeedService {
   private async fetchSkills(
     positionIds: string[],
     includeAllSkills: boolean,
-  ): Promise<Map<string, { required: NodeRef[]; optional: NodeRef[] }>> {
-    const out = new Map<string, { required: NodeRef[]; optional: NodeRef[] }>();
+  ): Promise<Map<string, { required: RequirementRef[]; optional: NodeRef[] }>> {
+    const out = new Map<string, { required: RequirementRef[]; optional: NodeRef[] }>();
     if (positionIds.length === 0) return out;
 
     const statusGate = includeAllSkills ? sql`` : sql`AND n.status = 'VERIFIED'`;
@@ -547,8 +549,10 @@ export class FeedService {
       node_id: string;
       canonical_name: string;
       is_required: boolean;
+      requirement_group: number | null;
     }>(sql`
-      SELECT pn.position_id, n.id AS node_id, n.canonical_name, pn.is_required
+      SELECT pn.position_id, n.id AS node_id, n.canonical_name, pn.is_required,
+             pn.requirement_group
       FROM position_nodes pn
       JOIN nodes n ON n.id = pn.node_id ${statusGate}
       WHERE pn.position_id IN (${uuidList(positionIds)})
@@ -559,7 +563,11 @@ export class FeedService {
       const bucket = out.get(r.position_id);
       if (!bucket) continue;
       const ref: NodeRef = { id: r.node_id, name: r.canonical_name };
-      (r.is_required ? bucket.required : bucket.optional).push(ref);
+      if (r.is_required) {
+        bucket.required.push(
+          r.requirement_group === null ? ref : { ...ref, group: r.requirement_group },
+        );
+      } else bucket.optional.push(ref);
     }
     return out;
   }
@@ -581,10 +589,11 @@ export class FeedService {
       name: string;
       status: "NEW" | "VERIFIED";
       is_required: boolean;
+      requirement_group: number | null;
       weight: number | null;
     }>(sql`
       SELECT pn.position_id, pn.node_id, n.canonical_name AS name, n.status,
-             pn.is_required, ns.weight
+             pn.is_required, pn.requirement_group, ns.weight
       FROM position_nodes pn
       JOIN nodes n ON n.id = pn.node_id AND n.status <> 'HIDDEN'
       LEFT JOIN node_stats ns ON ns.node_id = pn.node_id
@@ -598,6 +607,7 @@ export class FeedService {
         name: r.name,
         status: r.status,
         isRequired: r.is_required,
+        requirementGroup: r.requirement_group,
         weight: r.weight ?? 0,
       });
     }
@@ -610,6 +620,7 @@ export interface SkillRow {
   name: string;
   status: "NEW" | "VERIFIED";
   isRequired: boolean;
+  requirementGroup: number | null;
   weight: number;
 }
 
@@ -724,12 +735,21 @@ export function buildWhere(params: FeedSearchParams): SQL | undefined {
     )`);
   }
   if (params.excludedSkillIds?.length) {
+    // Drop a Position only when a whole required requirement unit is excluded
+    // (R5). Excluding Azure must not cost the user "AWS or Azure" postings they
+    // could take on AWS. An ungrouped link is a unit of one, so a single
+    // excluded skill still drops the Position exactly as it did before.
+    // HIDDEN members are dropped first: scoring never sees them (node_stats is
+    // HIDDEN-free), so they must not keep a unit alive here either.
     conds.push(sql`NOT EXISTS (
       SELECT 1
       FROM position_nodes excluded_pn
+      JOIN nodes excluded_n ON excluded_n.id = excluded_pn.node_id
+        AND excluded_n.status <> 'HIDDEN'
       WHERE excluded_pn.position_id = p.position_id
-        AND excluded_pn.node_id IN (${uuidList(params.excludedSkillIds)})
         AND excluded_pn.is_required
+      GROUP BY ${requirementUnitKey("excluded_pn")}
+      HAVING bool_and(excluded_pn.node_id IN (${uuidList(params.excludedSkillIds)}))
     )`);
   }
   // When includeRoleless is off (default), require a VERIFIED canonical role.
@@ -745,7 +765,7 @@ export function buildWhere(params: FeedSearchParams): SQL | undefined {
 // feed card gets, built from `selectPositions` rows it fetches directly now.
 export function toDto(
   row: PositionRow,
-  skills: { required: NodeRef[]; optional: NodeRef[] } | undefined,
+  skills: { required: RequirementRef[]; optional: NodeRef[] } | undefined,
 ): VacancyDto {
   return {
     id: row.id,

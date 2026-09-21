@@ -383,6 +383,54 @@ describe("FeedService.search — excluded skills (integration)", () => {
 
     expect(result.items.map((item) => item.id)).toEqual([optional]);
   });
+
+  // R5: excluding Azure must not cost the user "AWS or Azure" postings they
+  // could take on AWS. The whole unit has to be excluded before it drops.
+  it("keeps a position when only one member of a requirement group is excluded", async () => {
+    const source = await seedSource();
+    const role = await seedRole();
+    const [aws] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "AWS", status: "VERIFIED" })
+      .returning({ id: schema.nodes.id });
+    const [azure] = await db
+      .insert(schema.nodes)
+      .values({ type: "SKILL", canonicalName: "Azure", status: "VERIFIED" })
+      .returning({ id: schema.nodes.id });
+    const grouped = await seedVacancy({
+      sourceId: source.sourceId,
+      ingestId: source.ingestId,
+      roleNodeId: role,
+      publishedAt: new Date(),
+    });
+    await db.insert(schema.vacancyNodes).values([
+      { vacancyId: grouped, nodeId: aws.id, isRequired: true, requirementGroup: 1 },
+      { vacancyId: grouped, nodeId: azure.id, isRequired: true, requirementGroup: 1 },
+    ]);
+
+    const oneExcluded = await feed.search({
+      page: 1,
+      pageSize: 20,
+      excludedSkillIds: [azure.id],
+    });
+    const bothExcluded = await feed.search({
+      page: 1,
+      pageSize: 20,
+      excludedSkillIds: [azure.id, aws.id],
+    });
+
+    expect(oneExcluded.items.map((item) => item.id)).toEqual([grouped]);
+    expect(bothExcluded.items).toEqual([]);
+
+    // R8: the group id rides the DTO, so the client can render one chip and
+    // count the choice once instead of deriving both from a flat list.
+    expect(oneExcluded.items[0].skills.required).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "AWS", group: 1 }),
+        expect.objectContaining({ name: "Azure", group: 1 }),
+      ]),
+    );
+  });
 });
 
 describe("FacetsService.getSkillFacets — kind round-trip (integration)", () => {

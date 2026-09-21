@@ -228,6 +228,15 @@ detail — flagged here so it doesn't quietly fall off after Pass 2 ships. Carry
 the group id out on `SkillRef` and collapse it in the renderer when this is
 picked up (§6.5).
 
+**Overturned and done 2026-09-21, with step 7.** The deferral rested on "the
+numbers are right in Pass 2", and they were not: the "X of Y required" label is
+computed **client-side** by `skillDiff` over the flat `skills.required` list,
+not from the unit-collapsed SQL, so a fully-covered choice would have rendered
+"100% · 2 of 3 required skills" next to "you're missing: GitLab CI". `fit
+.matchedRequired`/`requiredTotal` had the same flat count, and nothing in `apps
+/web` reads them. Shipping the chips noisy was acceptable; shipping a badge that
+contradicts the line under it was not, so the whole of R8 went in with step 7.
+
 ### R9 — the golden set is rebalanced to the corpus, and the FinOps row is gone
 
 **Chosen 2026-09-20.** The 25-row set was written for contract coverage, not for
@@ -478,13 +487,16 @@ Rule going forward: exclude only when every member of the unit is excluded.
 Same fix applies to `subscription-matcher.service.ts`, which reads the same
 params for digests.
 
-### 6.5 SkillDiff — deferred per R8
+### 6.5 SkillDiff — shipped with step 7, R8 overturned
 
-An unmatched group puts all its members into `diff.missing`, so a user sees three
+An unmatched group put all its members into `diff.missing`, so a user saw three
 red chips for one choice — cosmetically the exact complaint this change fixes.
-The fix: carry the group id out on `SkillRef` and render one chip
-`AWS / Azure / GCP`. Not in this release (R8) — the numbers are right in Pass 2
-and only the chip list stays noisy until the follow-up.
+`VacancySkills.required` carries `group` now (`RequirementRef`), and both
+collapses key off it: `skillDiff` returns one `AWS / Azure / GCP` entry per
+unmet requirement plus a `requiredTotal` counted in units, which is what the two
+Fit labels read instead of deriving their own from `skills.required.length`;
+`buildItems` collapses the same way for the `/match` contract. See R8 for why
+the deferral did not survive contact with the label.
 
 ---
 
@@ -625,7 +637,7 @@ a constraint.
 | 4 | `scripts/db-backup.sh`, then pause Temporal schedules. | — |
 | 5 | Re-extract the corpus again. New `spec_hash` (the BAML contract changed again). **Done 2026-09-21** — 2 959 postings (`since=2026-08-19`), 88 min, ~$1 billed, 0 failures. Jenkins coverage in the window 71.1% → 93.0%. | data only; the backup |
 | 6 | Refresh `node_stats` and `node_skill_cooc`. Re-set `FIT_STRONG_MIN` / `FIT_GOOD_MIN` on the now-settled distribution. | git |
-| 7 | Switch `scoringCtes` **and** `recommendation.service.ts` to units (§6.3, R6), and the exclusion predicate to unit semantics (§6.4, R5). **This is the step that changes user-visible Fit for this pass.** | git revert, data untouched |
+| 7 | Switch `scoringCtes` **and** `recommendation.service.ts` to units (§6.3, R6), and the exclusion predicate to unit semantics (§6.4, R5). **This is the step that changes user-visible Fit for this pass.** **Done 2026-09-21** — one shared `requirementUnitKey` across all three call sites; 5 new integration tests, each verified to fail against the pre-change code. | git revert, data untouched |
 | 8 | Resume schedules. Check the tripwires in §8.2. | — |
 
 Because the passes are split (R1), a regression after Pass 2 step 8 is
@@ -735,6 +747,31 @@ around `anyOf`; paying for a re-extraction that still under-groups by half buys
 half the feature. Same runs priced the deferred ROLE cleanup at ~37 points of
 role accuracy, and showed minting tracks the prompt rather than the model.
 Numbers and mechanism in the measurement log.
+
+**Step 7 shipped 2026-09-21 — scoring reads the groups.** All three coverage
+sites collapse links into requirement units through one shared
+`requirementUnitKey` (`score/requirement-unit.sql.ts`): `scoringCtes` gains a
+`unit` CTE that `agg` aggregates instead of `position_nodes`, so `coverage`,
+`relevance` (R4), `required_total` and `all_w` all count choices;
+`recommendation.service.ts` gains `vunit` between `vreq` and `vcov`, and a skill
+whose unit is already satisfied is no longer an unlock candidate at all (R6 —
+the "learn Azure" case); the feed's excluded-skill predicate drops a Position
+only when `bool_and` says every member of a required unit is excluded (R5),
+which also covers digests, since `subscription-matcher.service.ts` builds the
+same params. Five integration tests, each run against the pre-change code first
+to prove it fails there: coverage from one member, relevance not paid twice, an
+ungrouped Position unmoved (I1), one-member exclusion kept and full exclusion
+dropped, and Azure absent from an AWS candidate's recommendations — the old code
+returned it first. **R8 went in too, not deferred** — see R8 for why the label
+forced it. Two things a review pass caught and this commit carries: the
+exclusion predicate drops HIDDEN members before grouping, or a hidden sibling
+would keep a unit alive that no scoring path agrees is satisfiable; and the
+unscoped ranked path costs **~62 ms → ~150 ms** on the 14.9k-position dev corpus
+(measured, three runs each), because collapsing means aggregating twice — a
+two-column key instead of the text one made no difference (~145 ms), so the cost
+is the second pass, not the key. `FIT_STRONG_MIN` / `FIT_GOOD_MIN` are
+uncalibrated from this commit until step 6, which waits on the rest of the
+corpus.
 
 **Working order from here.** Reshape the contract, then the ROLE list, iterating
 each on the golden set at a cent a run until the numbers stop moving; then ONE

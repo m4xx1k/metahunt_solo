@@ -2,13 +2,16 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 
+import { requirementUnitKey } from "./requirement-unit.sql";
+
 // The live scoring pass, extracted from RankingService so every
 // consumer (warm /match, the /feed lab route, role suggestions) scores against
 // ONE definition of Fit. Still live SQL: no materialized score column yet — see
 // MET-120 for the EXPLAIN ANALYZE that a "materialize this" decision needs.
 //
-// The shared aggregation pipeline: candidate VALUES → stack-set → one weighted
-// pass per Position → coverage (fitTierWeighted's SQL twin). `cand` is a VALUES
+// The shared aggregation pipeline: candidate VALUES → stack-set → requirement
+// units → one weighted pass per Position → coverage (fitTierWeighted's SQL
+// twin). `cand` is a VALUES
 // row list `(uuid), (uuid)`. No overlap pre-filter: `agg` scores every Position
 // with a tagged skill, and a zero-overlap Position falls out as `relevance IS
 // NULL` (no `COALESCE` on that column). Callers that need the old "shares ≥1
@@ -28,23 +31,41 @@ export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
         JOIN node_tech_meta m ON m.node_id = c.node_id
         WHERE m.is_core AND m.stack IS NOT NULL
       ),
-      -- one pass per Position: relevance + weighted denominators + stack flags.
+      -- rows collapsed into requirement units: "Jenkins or GitLab CI" is one
+      -- requirement, matched by either member. An ungrouped link is a unit of
+      -- one, so its min() is its own weight and nothing about it changes (I1).
+      -- A unit's weight is MIN, not MAX — read R3 before touching this, it is
+      -- the single easiest place to get backwards.
       -- node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
-      agg AS (
+      unit AS (
         SELECT pn.position_id AS id,
-               SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL)::float8 AS relevance,
-               COALESCE(SUM(ns.weight) FILTER (WHERE c.node_id IS NOT NULL AND pn.is_required), 0)::float8 AS matched_required_w,
-               count(*) FILTER (WHERE pn.is_required) AS required_total,
-               COALESCE(SUM(ns.weight) FILTER (WHERE pn.is_required), 0)::float8 AS required_total_w,
-               COALESCE(SUM(ns.weight), 0)::float8 AS all_w,
-               bool_or(tm.is_core AND pn.is_required AND tm.stack IS NOT NULL) AS has_concrete_core,
-               bool_or(tm.is_core AND pn.is_required AND tm.stack IN (SELECT stack FROM css)) AS has_instack_core
+               ${requirementUnitKey("pn")} AS unit,
+               pn.is_required AS is_required,
+               min(ns.weight) AS w,
+               bool_or(c.node_id IS NOT NULL) AS matched,
+               bool_or(tm.is_core AND tm.stack IS NOT NULL) AS concrete_core,
+               bool_or(tm.is_core AND tm.stack IN (SELECT stack FROM css)) AS instack_core
         FROM position_nodes pn
         JOIN node_stats ns ON ns.node_id = pn.node_id
         LEFT JOIN cand c ON c.node_id = pn.node_id
         LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id
         ${scope}
-        GROUP BY pn.position_id
+        GROUP BY 1, 2, 3
+      ),
+      -- one pass per Position: relevance + weighted denominators + stack flags,
+      -- all of them counting units rather than links (R4 — the sort key
+      -- collapses the same way coverage does, or the card contradicts itself).
+      agg AS (
+        SELECT id,
+               SUM(w) FILTER (WHERE matched)::float8 AS relevance,
+               COALESCE(SUM(w) FILTER (WHERE matched AND is_required), 0)::float8 AS matched_required_w,
+               count(*) FILTER (WHERE is_required) AS required_total,
+               COALESCE(SUM(w) FILTER (WHERE is_required), 0)::float8 AS required_total_w,
+               COALESCE(SUM(w), 0)::float8 AS all_w,
+               bool_or(concrete_core AND is_required) AS has_concrete_core,
+               bool_or(instack_core AND is_required) AS has_instack_core
+        FROM unit
+        GROUP BY id
       ),
       -- weighted required coverage; all-skills share when nothing is required.
       scored AS (
