@@ -503,3 +503,117 @@ is unreachable until step 7 — `scoringCtes` still does not read
 Cost: 60 postings at $0.000194 each ≈ **$0.012**.
 
 ---
+
+#### Measured 2026-09-21 — the corpus pass, 2 959 postings on prod
+
+Pass 2 step 5, run for real. `reextractWorkflow` with `since=2026-08-19`,
+`maxPostings=3200`, started by hand against Temporal Cloud after #222 deployed.
+2 959 canonical postings — every posting first loaded in the last month — in
+about 88 minutes, **zero failed extraction artifacts**, about **$1** billed (the $0.57 first written here was a token-count estimate, not the invoice). Only
+`dedup-sweep` was paused (it re-embeds everything a reload invalidates);
+`rss-ingest-hourly` and `tg-digest-daytime` stayed live, both being time-gated
+past the batch. A verified 332 MB `pg_dump` was taken first, through the
+Postgres container, since the public proxy is unreachable from the operator's
+machine.
+
+**The control number moved.** Coverage restricted to the re-extracted window,
+pristine `metahunt_snapshot0919` as the before, prod as the after:
+
+| skill | before | after | |
+|---|---|---|---|
+| **Jenkins** | **71.1%** | **93.0%** | **+21.9** |
+| Grafana | 75.2% | 88.7% | +13.5 |
+| GraphQL | 87.0% | 96.2% | +9.2 |
+| MongoDB | 88.4% | 93.9% | +5.5 |
+| Ansible | 91.9% | 97.0% | +5.1 |
+| Docker / Kafka / PostgreSQL | ~91% | ~95% | +4.4 |
+| Terraform, Redis, Django, Kubernetes | 90–95% | 93–98% | +2.7…+3.2 |
+| TypeScript, Playwright, React | 87–96% | 90–99% | +2.1…+2.3 |
+
+Jenkins was the skill this whole tracker was named after: its gap was
+concentrated in "ci/cd tools (jenkins, github actions, etc.)" — a named example
+inside a list of alternatives. It went from losing three postings in ten to
+losing one in fourteen. Every one of the fifteen probes improved; none regressed.
+
+Across the whole corpus the same query reads Jenkins 52.9% → 56.4%, because only
+18% of the corpus (16 169 postings) has been re-extracted. The window figures are
+the honest ones for what the contract does.
+
+**What the window looks like now**, before → after:
+
+```
+links           31 097 → 39 203   (+26%)
+required links  21 534 → 28 778   (+34%)
+postings with no skills at all   53 → 13
+```
+
+Nothing was lost: the count of postings carrying zero skills *fell*.
+
+**Grouping, against the §8.2 tripwires:**
+
+| | golden set | corpus pass | tripwire |
+|---|---|---|---|
+| postings with ≥1 group | 40% | **42%** (1 244 of 2 959) | >50% suspicious |
+| mean group size | 2.55 | **2.51** | >3 = collapsing stacks |
+| groups | — | 2 106 (1 324 pairs, 62 of ≥5) | — |
+| largest group | 8 | **9** | — |
+
+**The largest groups are correct, which was the open worry.** Five spot-checks,
+each read against the posting's own words:
+
+```
+Ansible | SaltStack            "Досвід роботи з Ansible або SaltStack"
+Express.js | Fastify           "Досвід з Express / Fastify"
+Redis | Valkey                 "Redis/Valkey: кешування, pub/sub"
+Fiddler | Postman | Swagger    "API testing tools (Postman/Swagger, or Fiddler)"
+Drata | Vanta                  "(Drata, Vanta, or similar)"
+9 members, QA frameworks       "such as Playwright, Cypress, Selenium, Appium,
+                                RestAssured, pytest, NUnit, xUnit, SpecFlow,
+                                or similar tools"
+```
+
+Two of them are Ukrainian slash pairs, which the slash rule was written for and
+which had never been grouped before. The nine-member group — the biggest in the
+corpus — is one sentence in the source offering nine interchangeable tools. A
+size cap would have broken it.
+
+**`node_stats` after the refresh**, whole corpus:
+
+```
+Docker 3 691 → 3 757    Grafana 1 006 → 1 038    Jenkins 416 → 443
+ETL      377 →   413    ELT        73 →   119    EDR      98 →  104
+MDM       97 →   100    XDR        26 →    29    UEM       1 →    1
+```
+
+`ELT` +63% is the slash-pair signature: `ETL/ELT` used to land as one blob.
+`XDR` and `UEM` barely moved because a one-month window holds few security
+postings — they are the reason to watch the next pass, not this one. Weights
+drift down as `df` grows (Jenkins 1.9100 → 1.8938), which is IDF doing its job.
+
+**Minting is the one thing that got worse, and it needs a decision.** 271 new
+nodes from 2 959 postings — one per eleven, the rate the 60-posting rehearsal
+predicted. 267 of them already carry links, almost all `df = 1`. Most are real
+technologies (`APISIX`, `Oban`, `Snowpipe`, `Starlette`, `PVS-Studio`,
+`MapLibre GL`, `YARA-L`). But roughly one in eight is not a skill at all:
+
+- **Roles minted as skills.** `Backend Engineer`, `Analytics Engineer`,
+  `Solutions Architect`, `ERP / CRM Engineer`, `PL/SQL Developer` now exist as
+  `SKILL:NEW` beside the legitimate `ROLE:VERIFIED` node of the same name.
+- **Duties and practices**: `CPU optimization`, `Legacy Modernization`,
+  `Memory Safety`, `Query Planning`, `Multi-region Architecture`,
+  `Data Contextualization`, `Scientific Computing`.
+- **Metrics, certifications, regimes, human languages**: `MAE`, `MAPE`, `RMSE`,
+  `MCSD`, `MCSE`, `PJPT`, `MaRisk`, `BAIT`, `CySEC`, `Italian`, `Translation`.
+
+`node_stats` counts `NEW` as well as `VERIFIED`, so these enter IDF at `df = 1`,
+which is the highest weight band — exactly what the `K = 5` smoothing exists to
+blunt, and exactly the cost R10 was measured against. **This argues for keeping
+R10 detached** (owner already chose that on 2026-09-20): the whitelist is still
+on and 271 names slipped past it; removing it would not be a small change.
+
+**Not done by this pass**, and unchanged: Fit. `scoringCtes`,
+`recommendation.service.ts` and the exclusion predicate still do not read
+`requirement_group`. That is step 7, and until it ships the 2 106 groups are
+stored, visible in `position_nodes`, and score exactly as flat links.
+
+---
