@@ -498,6 +498,21 @@ Fit labels read instead of deriving their own from `skills.required.length`;
 `buildItems` collapses the same way for the `/match` contract. See R8 for why
 the deferral did not survive contact with the label.
 
+**The card's own chip row collapses too — added 2026-09-21 on the owner's
+call.** Shipping only the diff would have left the worst surface untouched: in
+the warm lens `VacancySkills` tints each required chip by have/lacks, so
+"AWS or Azure or GCP" with AWS held rendered `✓ aws  ✗ azure  ✗ google cloud`
+— two red crosses on a requirement the viewer fully satisfies, beside a
+counter reading `✗ 2`. That row is seen by everyone with a CV, unlike the
+detail page's panel. A satisfied choice now shows what the viewer actually has
+(`✓ aws`) with stacked edges and a tooltip naming the alternatives; an
+unsatisfied one names them all (`✗ aws / azure / google cloud`). The cold card
+collapses as well — one requirement, one chip, with no verdict attached.
+`requirement-units.ts` is the single grouping both the diff and the chip row
+read, the web-side twin of `requirementUnitKey`. Members are sorted by name:
+a unit's names become one label string and the API does not order skill rows,
+so unsorted the label could differ between two renders of the same vacancy.
+
 ---
 
 ## 7. Plan

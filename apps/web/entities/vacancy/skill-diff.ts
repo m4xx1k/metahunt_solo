@@ -1,4 +1,6 @@
-import type { NodeRef, RequirementRef, VacancySkills } from "@/lib/api/vacancies";
+import type { NodeRef, VacancySkills } from "@/lib/api/vacancies";
+
+import { requirementUnits } from "./requirement-units";
 
 // The one ✅ have / ❌ missing / ➕ bonus skill diff, shared by every surface
 // that shows one: the vacancy detail page's FitPanel (full lists — it prints
@@ -24,18 +26,12 @@ export interface SkillDiff {
 export function skillDiff(skills: VacancySkills, viewerSkills: readonly NodeRef[]): SkillDiff {
   const viewerIds = new Set(viewerSkills.map((s) => s.id));
   const have: NodeRef[] = [];
-  // Members sharing a `group` are alternatives: any one of them satisfies the
-  // requirement, so they count, and render, as one.
-  const units = new Map<string, RequirementRef[]>();
   for (const skill of skills.required) {
     if (viewerIds.has(skill.id)) have.push(skill);
-    const key = skill.group === undefined ? `n${skill.id}` : `g${skill.group}`;
-    const members = units.get(key);
-    if (members) members.push(skill);
-    else units.set(key, [skill]);
   }
+  const units = requirementUnits(skills.required);
   const missing: NodeRef[] = [];
-  for (const members of units.values()) {
+  for (const members of units) {
     if (members.some((m) => viewerIds.has(m.id))) continue;
     missing.push({ id: members[0].id, name: members.map((m) => m.name).join(" / ") });
   }
@@ -44,5 +40,5 @@ export function skillDiff(skills: VacancySkills, viewerSkills: readonly NodeRef[
   }
   const vacancyIds = new Set([...skills.required, ...skills.optional].map((s) => s.id));
   const bonus = viewerSkills.filter((s) => !vacancyIds.has(s.id));
-  return { have, missing, bonus, requiredTotal: units.size };
+  return { have, missing, bonus, requiredTotal: units.length };
 }

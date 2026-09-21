@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-const TONES = {
+export const SKILL_TONES = {
   required: "border-accent text-accent",
   optional: "border-border-strong text-text-secondary",
   have: "border-success text-success",
@@ -8,7 +8,7 @@ const TONES = {
   bonus: "border-border text-text-muted",
 } as const;
 
-export type SkillTone = keyof typeof TONES;
+export type SkillTone = keyof typeof SKILL_TONES;
 
 const GLYPHS: Partial<Record<SkillTone, string>> = { have: "✓", missing: "✗" };
 
@@ -39,7 +39,9 @@ export function SkillChip({
 }) {
   const mark = glyph ? GLYPHS[tone] : undefined;
   return (
-    <span className={cn("border font-mono", SIZES[size], dotted && "border-dotted", TONES[tone])}>
+    <span
+      className={cn("border font-mono", SIZES[size], dotted && "border-dotted", SKILL_TONES[tone])}
+    >
       {mark ? <span aria-hidden>{mark} </span> : null}
       {hash ? "#" : null}
       {name.toLowerCase()}

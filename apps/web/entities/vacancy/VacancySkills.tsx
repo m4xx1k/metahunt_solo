@@ -2,14 +2,75 @@
 
 import { useMemo, useState } from "react";
 
-import { SkillChip, type SkillSize, type SkillTone } from "@/entities/skill/SkillChip";
-import type { NodeRef } from "@/lib/api/vacancies";
+import { SkillChip, SKILL_TONES, type SkillSize, type SkillTone } from "@/entities/skill/SkillChip";
+import type { NodeRef, RequirementRef } from "@/lib/api/vacancies";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/overlay/Tooltip";
+
+import { requirementUnits } from "./requirement-units";
 
 const OPTIONAL_SHOWN = 5;
 
 /** Warm lens: the candidate's resolved skill ids, to colour the card's own
  *  chips by have/lacks. Cold passes nothing → chips stay neutral (zero change). */
 export type VacancyMatch = { haveSkillIds: readonly string[] };
+
+// One requirement, one chip. Members sharing a `group` are alternatives, so a
+// satisfied choice shows what the viewer actually has ("aws") rather than a ✓
+// on two clouds they never touched, and an unsatisfied one names them all.
+// Stacked edges plus the tooltip keep the alternatives reachable.
+function requirementChips(required: RequirementRef[], have: Set<string> | null) {
+  return requirementUnits(required).map((members) => {
+    const matched = have ? members.filter((m) => have.has(m.id)) : [];
+    const shown = matched.length > 0 ? matched : members;
+    return {
+      id: members[0].id,
+      label: shown.map((m) => m.name).join(" / "),
+      tone: (have ? (matched.length > 0 ? "have" : "missing") : "required") as SkillTone,
+      // Only when the label hides members — an unsatisfied choice already
+      // spells every one of them out.
+      alternatives: matched.length > 0 && members.length > 1 ? members.map((m) => m.name) : [],
+    };
+  });
+}
+
+function ChoiceChip({
+  label,
+  tone,
+  size,
+  alternatives,
+}: {
+  label: string;
+  tone: SkillTone;
+  size: SkillSize;
+  alternatives: string[];
+}) {
+  const layers = Math.min(alternatives.length - 1, 2);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} className="relative inline-flex cursor-help">
+          {Array.from({ length: layers }, (_, i) => (
+            <span
+              key={i}
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-0 border",
+                SKILL_TONES[tone],
+                i === 0 ? "opacity-50" : "opacity-25",
+              )}
+              style={{ transform: `translate(${(i + 1) * 3}px, ${(i + 1) * -3}px)` }}
+            />
+          ))}
+          <span className="relative">
+            <SkillChip name={label} tone={tone} size={size} glyph />
+          </span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>any one of: {alternatives.join(", ").toLowerCase()}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 // Required and optional skills on their own rows (colour is the label). Required
 // is never truncated — what the role demands is always fully visible; optional
@@ -22,7 +83,7 @@ export function VacancySkills({
   size = "sm",
   collapseOptional = true,
 }: {
-  required: NodeRef[];
+  required: RequirementRef[];
   optional: NodeRef[];
   match?: VacancyMatch;
   size?: SkillSize;
@@ -41,23 +102,25 @@ export function VacancySkills({
   // Required: have → green ✓, lacks → red ✗. Optional: have → green ✓ (dotted,
   // "bonus you already have"), lacks → neutral (a missing nice-to-have isn't a
   // red flag).
-  const reqTone = (s: NodeRef): SkillTone =>
-    have ? (have.has(s.id) ? "have" : "missing") : "required";
   const optTone = (s: NodeRef): SkillTone => (have && have.has(s.id) ? "have" : "optional");
 
   return (
     <div className="flex flex-col gap-2">
       {required.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {required.map((s) => (
-            <SkillChip
-              key={s.id}
-              name={s.name}
-              tone={reqTone(s)}
-              size={size}
-              glyph={have != null}
-            />
-          ))}
+          {requirementChips(required, have).map((u) =>
+            u.alternatives.length > 1 ? (
+              <ChoiceChip
+                key={u.id}
+                label={u.label}
+                tone={u.tone}
+                size={size}
+                alternatives={u.alternatives}
+              />
+            ) : (
+              <SkillChip key={u.id} name={u.label} tone={u.tone} size={size} glyph={have != null} />
+            ),
+          )}
         </div>
       ) : null}
       {opt.length > 0 ? (
