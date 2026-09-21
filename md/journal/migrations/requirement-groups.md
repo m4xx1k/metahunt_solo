@@ -504,10 +504,14 @@ the warm lens `VacancySkills` tints each required chip by have/lacks, so
 "AWS or Azure or GCP" with AWS held rendered `✓ aws  ✗ azure  ✗ google cloud`
 — two red crosses on a requirement the viewer fully satisfies, beside a
 counter reading `✗ 2`. That row is seen by everyone with a CV, unlike the
-detail page's panel. A satisfied choice now shows what the viewer actually has
-(`✓ aws`) with stacked edges and a tooltip naming the alternatives; an
-unsatisfied one names them all (`✗ aws / azure / google cloud`). The cold card
-collapses as well — one requirement, one chip, with no verdict attached.
+detail page's panel. A chip carries one real skill name, never a slash list: the
+alternatives sit behind it as a stack of edges and the tooltip names them.
+Front is what the viewer already has when the choice is satisfied (`✓ aws`),
+so a held AWS never renders as a ✗ on two clouds they never touched; otherwise
+it is the first member. The cold card collapses as well — one requirement, one
+chip, with no verdict attached. `FitPanel`'s "you're missing" list keeps the
+slash form: it is a labelled text list with room to spell a choice out, and no
+stack to hover.
 `requirement-units.ts` is the single grouping both the diff and the chip row
 read, the web-side twin of `requirementUnitKey`. Members are sorted by name:
 a unit's names become one label string and the API does not order skill rows,

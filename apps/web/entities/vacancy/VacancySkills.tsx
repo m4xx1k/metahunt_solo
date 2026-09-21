@@ -15,21 +15,19 @@ const OPTIONAL_SHOWN = 5;
  *  chips by have/lacks. Cold passes nothing → chips stay neutral (zero change). */
 export type VacancyMatch = { haveSkillIds: readonly string[] };
 
-// One requirement, one chip. Members sharing a `group` are alternatives, so a
-// satisfied choice shows what the viewer actually has ("aws") rather than a ✓
-// on two clouds they never touched, and an unsatisfied one names them all.
-// Stacked edges plus the tooltip keep the alternatives reachable.
+// One requirement, one chip — a real skill name, never a slash list. A choice
+// puts its alternatives behind the front chip as a stack, and the tooltip
+// names them. Front is what the viewer already has when the choice is
+// satisfied, so a held AWS never renders as a ✗ on two clouds they never
+// touched; otherwise it is the first member.
 function requirementChips(required: RequirementRef[], have: Set<string> | null) {
   return requirementUnits(required).map((members) => {
-    const matched = have ? members.filter((m) => have.has(m.id)) : [];
-    const shown = matched.length > 0 ? matched : members;
+    const front = (have && members.find((m) => have.has(m.id))) || members[0];
     return {
-      id: members[0].id,
-      label: shown.map((m) => m.name).join(" / "),
-      tone: (have ? (matched.length > 0 ? "have" : "missing") : "required") as SkillTone,
-      // Only when the label hides members — an unsatisfied choice already
-      // spells every one of them out.
-      alternatives: matched.length > 0 && members.length > 1 ? members.map((m) => m.name) : [],
+      id: front.id,
+      label: front.name,
+      tone: (have ? (have.has(front.id) ? "have" : "missing") : "required") as SkillTone,
+      alternatives: members.map((m) => m.name),
     };
   });
 }
@@ -45,6 +43,8 @@ function ChoiceChip({
   size: SkillSize;
   alternatives: string[];
 }) {
+  // One edge per hidden alternative, two deep at most — enough to read as
+  // "there are more behind this" without turning into a smear.
   const layers = Math.min(alternatives.length - 1, 2);
   return (
     <Tooltip>
@@ -55,14 +55,16 @@ function ChoiceChip({
               key={i}
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-0 border",
+                "pointer-events-none absolute inset-0 border transition-transform",
                 SKILL_TONES[tone],
-                i === 0 ? "opacity-50" : "opacity-25",
+                i === 0 ? "opacity-60" : "opacity-30",
               )}
               style={{ transform: `translate(${(i + 1) * 3}px, ${(i + 1) * -3}px)` }}
             />
           ))}
-          <span className="relative">
+          {/* Opaque, so the edges read as sheets behind this one rather than
+              lines crossing it. */}
+          <span className="relative bg-bg-card">
             <SkillChip name={label} tone={tone} size={size} glyph />
           </span>
         </span>
