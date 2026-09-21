@@ -454,4 +454,38 @@ describe("RecommendationService — requirement units (integration)", () => {
     expect(names).toEqual(expect.arrayContaining(["Kafka", "Terraform"]));
     expect(names).not.toContain("Azure");
   });
+
+  it("carries requirementGroup onto vacancy.skills.required so cards can collapse alternatives", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const backend = await seedNode("ROLE", "Backend Developer");
+    const go = await seedNode("SKILL", "Go");
+    const aws = await seedNode("SKILL", "AWS");
+    const azure = await seedNode("SKILL", "Azure");
+
+    const vac = await seedVacancy(sourceId, ingestId, backend, "Cloud Job");
+    await linkSkill(vac, go, true, null);
+    await linkSkill(vac, aws, true, 1);
+    await linkSkill(vac, azure, true, 1);
+    await refreshNodeStats();
+
+    const res = await ranking.rankByRefs(
+      {
+        matched: [{ id: go, name: "Go", weight: 1 }],
+        unmatched: [],
+      },
+      {},
+      1,
+      20,
+    );
+
+    const item = res.items.find((i) => i.vacancy.id === vac);
+    expect(item).toBeDefined();
+    expect(item!.vacancy.skills.required).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Go" }),
+        expect.objectContaining({ name: "AWS", group: 1 }),
+        expect.objectContaining({ name: "Azure", group: 1 }),
+      ]),
+    );
+  });
 });

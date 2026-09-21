@@ -58,4 +58,13 @@ describe("requirementUnits", () => {
 
     expect(names(requirementUnits(skills))).toEqual([["Ungrouped"], ["Grouped"]]);
   });
+
+  it("handles group: null as ungrouped without collapsing them together", () => {
+    const skills = [
+      { id: "a", name: "Go", group: null as unknown as undefined },
+      { id: "b", name: "Kubernetes", group: null as unknown as undefined },
+    ];
+
+    expect(names(requirementUnits(skills))).toEqual([["Go"], ["Kubernetes"]]);
+  });
 });

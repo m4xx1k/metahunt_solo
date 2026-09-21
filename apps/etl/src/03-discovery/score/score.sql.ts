@@ -2,8 +2,6 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { FIT_GOOD_MIN, FIT_STRONG_MIN } from "../ranking/ranking.contract";
 
-import { requirementUnitKey } from "./requirement-unit.sql";
-
 // The live scoring pass, extracted from RankingService so every
 // consumer (warm /match, the /feed lab route, role suggestions) scores against
 // ONE definition of Fit. Still live SQL: no materialized score column yet — see
@@ -22,7 +20,8 @@ import { requirementUnitKey } from "./requirement-unit.sql";
 // knob that makes scoring a fixed, already-chosen page (`overlayFor`) cheap:
 // without it, `agg` fans out over the full ~144k-row position_nodes table.
 export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
-  const scope = scopeIds ? sql` WHERE pn.position_id IN (${scopeIds})` : sql``;
+  const scopeGrouped = scopeIds ? sql` AND pn.position_id IN (${scopeIds})` : sql``;
+  const scopeFlat = scopeIds ? sql` AND pn.position_id IN (${scopeIds})` : sql``;
   return sql`
       cand(node_id) AS (VALUES ${cand}),
       -- candidate stack-set; empty => on_stack uniformly true (no-op). ADR-0010.
@@ -36,10 +35,14 @@ export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
       -- one, so its min() is its own weight and nothing about it changes (I1).
       -- A unit's weight is MIN, not MAX — read R3 before touching this, it is
       -- the single easiest place to get backwards.
+      --
+      -- Perf optimization: only ~3% of rows carry a requirement_group. Grouping
+      -- only those rows in grouped_unit and streaming the ~97% flat rows
+      -- through flat_unit without GROUP BY prevents HashAggregate from
+      -- exceeding work_mem and spilling to disk on unscoped scoring passes.
       -- node_stats is HIDDEN-free; both meta tables are 1-row-per-node.
-      unit AS (
+      grouped_unit AS (
         SELECT pn.position_id AS id,
-               ${requirementUnitKey("pn")} AS unit,
                pn.is_required AS is_required,
                min(ns.weight) AS w,
                bool_or(c.node_id IS NOT NULL) AS matched,
@@ -49,8 +52,26 @@ export function scoringCtes(cand: SQL, scopeIds?: SQL): SQL {
         JOIN node_stats ns ON ns.node_id = pn.node_id
         LEFT JOIN cand c ON c.node_id = pn.node_id
         LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id
-        ${scope}
-        GROUP BY 1, 2, 3
+        WHERE pn.requirement_group IS NOT NULL${scopeGrouped}
+        GROUP BY pn.position_id, pn.requirement_group, pn.is_required
+      ),
+      flat_unit AS (
+        SELECT pn.position_id AS id,
+               pn.is_required AS is_required,
+               ns.weight AS w,
+               (c.node_id IS NOT NULL) AS matched,
+               (tm.is_core AND tm.stack IS NOT NULL) AS concrete_core,
+               (tm.is_core AND tm.stack IN (SELECT stack FROM css)) AS instack_core
+        FROM position_nodes pn
+        JOIN node_stats ns ON ns.node_id = pn.node_id
+        LEFT JOIN cand c ON c.node_id = pn.node_id
+        LEFT JOIN node_tech_meta tm ON tm.node_id = pn.node_id
+        WHERE pn.requirement_group IS NULL${scopeFlat}
+      ),
+      unit AS (
+        SELECT id, is_required, w, matched, concrete_core, instack_core FROM grouped_unit
+        UNION ALL
+        SELECT id, is_required, w, matched, concrete_core, instack_core FROM flat_unit
       ),
       -- one pass per Position: relevance + weighted denominators + stack flags,
       -- all of them counting units rather than links (R4 — the sort key

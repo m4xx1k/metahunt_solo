@@ -16,7 +16,7 @@ import type { RequirementRef } from "@/lib/api/vacancies";
 export function requirementUnits(required: readonly RequirementRef[]): RequirementRef[][] {
   const units = new Map<string, RequirementRef[]>();
   for (const skill of required) {
-    const key = skill.group === undefined ? `n${skill.id}` : `g${skill.group}`;
+    const key = skill.group == null ? `n${skill.id}` : `g${skill.group}`;
     const members = units.get(key);
     if (members) members.push(skill);
     else units.set(key, [skill]);

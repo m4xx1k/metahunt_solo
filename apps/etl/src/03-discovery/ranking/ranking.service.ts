@@ -35,7 +35,7 @@ const byWeight = (a: SkillRef, b: SkillRef) => b.weight - a.weight;
 // entries for a single choice (R8). The unit's weight is MIN of its members,
 // the same bound the SQL scores it at (R3), so the chip sorts where it scores.
 function collapseUnit(members: SkillRow[]): SkillRef {
-  const ordered = [...members].sort((a, b) => b.weight - a.weight || a.name.localeCompare(b.name));
+  const ordered = [...members].sort((a, b) => a.name.localeCompare(b.name));
   return {
     id: ordered[0].nodeId,
     name: ordered.map((m) => m.name).join(" / "),
@@ -356,7 +356,13 @@ export class RankingService {
       const skillRows = skillRowsByPosition.get(row.id) ?? [];
       const verified = skillRows.filter((s) => s.status === "VERIFIED");
       const vacancy = toDto(positionRow, {
-        required: verified.filter((s) => s.isRequired).map((s) => ({ id: s.nodeId, name: s.name })),
+        required: verified
+          .filter((s) => s.isRequired)
+          .map((s) => ({
+            id: s.nodeId,
+            name: s.name,
+            ...(s.requirementGroup !== null ? { group: s.requirementGroup } : {}),
+          })),
         optional: verified
           .filter((s) => !s.isRequired)
           .map((s) => ({ id: s.nodeId, name: s.name })),
