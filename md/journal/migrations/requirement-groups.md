@@ -505,7 +505,14 @@ the warm lens `VacancySkills` tints each required chip by have/lacks, so
 — two red crosses on a requirement the viewer fully satisfies, beside a
 counter reading `✗ 2`. That row is seen by everyone with a CV, unlike the
 detail page's panel. A chip carries one real skill name, never a slash list: the
-alternatives sit behind it as a stack of edges and the tooltip names them.
+alternatives sit behind it as a stack of edges, and hover (or focus, which is
+what a tap and the keyboard give) deals them upward into a labelled panel,
+bottom one first, 40ms apart. The panel is absolutely positioned — dealing them
+out inline would reflow the chip row and could rewrap it mid-hover — and is
+`w-max`, or it inherits the front chip's width and a long alternative wraps,
+which splits an inline chip's border into two boxes that read as two skills.
+Inside it only a held alternative is coloured: the panel answers "what would
+count here", not "what are you missing", which the front chip already says.
 Front is what the viewer already has when the choice is satisfied (`✓ aws`),
 so a held AWS never renders as a ✗ on two clouds they never touched; otherwise
 it is the first member. The cold card collapses as well — one requirement, one
