@@ -795,9 +795,15 @@ would keep a unit alive that no scoring path agrees is satisfiable; and the
 unscoped ranked path costs **~62 ms → ~150 ms** on the 14.9k-position dev corpus
 (measured, three runs each), because collapsing means aggregating twice — a
 two-column key instead of the text one made no difference (~145 ms), so the cost
-is the second pass, not the key. `FIT_STRONG_MIN` / `FIT_GOOD_MIN` are
-uncalibrated from this commit until step 6, which waits on the rest of the
-corpus.
+is the second pass, not the key.
+
+**Pre-merge adversarial audit findings & fixes (2026-09-21, PR #224):**
+1. *DTO contract bug:* `RankingService.buildItems` omitted `requirementGroup` when mapping `vacancy.skills.required` in `toDto`, breaking R8 UI alternative collapsing on the `/match` route; fixed by passing `group: s.requirementGroup` through.
+2. *Postgres disk spill:* EXPLAIN (ANALYZE, BUFFERS) on the 16.1k prod corpus revealed that running `GROUP BY ... COALESCE(requirement_group::text, 'n' || node_id::text)` across all 188k rows exceeded the 4MB `work_mem` limit, spilling **7.5 MB across 5 batches to disk** and pushing latency to 221 ms. Resolved by splitting `unit` into `grouped_unit` (`WHERE requirement_group IS NOT NULL`, ~3% of rows) with `GROUP BY` and `flat_unit` (`WHERE requirement_group IS NULL`, ~97% of rows) streaming without `GROUP BY`, merged via `UNION ALL`. Disk spill dropped to **0 bytes (1 batch, 1 MB RAM)**, and unscoped prod execution time fell to **173 ms** (100.000% score parity across all 15 937 active positions).
+3. *Scaling horizon (~3 months):* Daily crawling adds ~100–150 vacancies/day. On the cheap path (`/feed`, single vacancy), queries are scoped to ~20 IDs and take ~2 ms, completely immune to corpus growth. On the unscoped path (`/match`, `sort=score`), latency will gradually climb to ~250–300 ms over 3 months, well within safe HTTP timeouts. When Step 6 (re-extracting the remaining 82% of the corpus) runs, grouped rows will grow from 5.9k to ~33k (~1.6 MB RAM, still within 4MB `work_mem`). Recommended follow-up before Step 6 or when the corpus passes ~35k positions: add a partial index on `vacancy_nodes (vacancy_id, requirement_group) WHERE requirement_group IS NOT NULL` and add candidate pre-filtering to avoid scoring zero-overlap positions.
+
+`FIT_STRONG_MIN` / `FIT_GOOD_MIN` are uncalibrated from this commit until step 6,
+which waits on the rest of the corpus.
 
 **Working order from here.** Reshape the contract, then the ROLE list, iterating
 each on the golden set at a cent a run until the numbers stop moving; then ONE
