@@ -7,20 +7,17 @@ import { cleanDescription } from "./sanitize";
  * stable hash so re-embeds only happen when the underlying inputs
  * actually changed.
  *
- * Design call: we lead with the post-LLM structured fields (title,
- * role, seniority, format, skills) and trail with the cleaned
- * description. Structured fields are noise-free and high-signal
- * (same job → same role name), while the description provides the
- * long-tail context that disambiguates two postings with identical
- * structured fields.
+ * Tier 1 fix (dedup audit 2026-08-27): emit the cleaned description alone.
+ * Leading with structured fields (Title/Role/Seniority/Format/Skills) poisoned
+ * cross-source cosine distance (recall was 26% vs 86% for description-only).
+ * Title is retained as a fallback only when description is empty.
  */
-
 export interface EmbeddingTextInput {
   title: string;
-  roleName: string | null;
-  seniority: string | null;
-  workFormat: string | null;
-  requiredSkills: string[];
+  roleName?: string | null;
+  seniority?: string | null;
+  workFormat?: string | null;
+  requiredSkills?: string[];
   description: string | null;
 }
 
@@ -30,28 +27,8 @@ export interface EmbeddingTextResult {
 }
 
 export function buildEmbeddingText(input: EmbeddingTextInput): EmbeddingTextResult {
-  const parts: string[] = [];
-
-  parts.push(`Title: ${input.title.trim()}`);
-  if (input.roleName) parts.push(`Role: ${input.roleName.trim()}`);
-  if (input.seniority) parts.push(`Seniority: ${input.seniority}`);
-  if (input.workFormat) parts.push(`Format: ${input.workFormat}`);
-  if (input.requiredSkills.length > 0) {
-    // Sort + lowercase so two postings listing the same skills in
-    // different order produce identical embedding text — otherwise
-    // ordering jitter alone would shift the vector.
-    const skills = Array.from(
-      new Set(input.requiredSkills.map((s) => s.trim().toLowerCase())),
-    ).sort();
-    parts.push(`Skills: ${skills.join(", ")}`);
-  }
-
   const cleaned = cleanDescription(input.description);
-  if (cleaned.length > 0) {
-    parts.push(`Description: ${cleaned}`);
-  }
-
-  const text = parts.join("\n");
+  const text = cleaned.length > 0 ? cleaned : `Title: ${input.title.trim()}`;
   const hash = createHash("sha256").update(text).digest("hex");
   return { text, hash };
 }
