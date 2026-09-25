@@ -109,41 +109,50 @@ const STOPWORDS = words(`
   львів odesa одеса dnipro дніпро kharkiv харків ukraine україна europe eu
 `);
 
-const TITLE_LEVELS: Record<string, string> = {
-  intern: "INTERN",
-  trainee: "INTERN",
-  стажер: "INTERN",
-  junior: "JUNIOR",
-  jr: "JUNIOR",
-  джуніор: "JUNIOR",
-  молодший: "JUNIOR",
-  middle: "MIDDLE",
-  mid: "MIDDLE",
-  regular: "MIDDLE",
-  мідл: "MIDDLE",
-  senior: "SENIOR",
-  sr: "SENIOR",
-  сеньйор: "SENIOR",
-  старший: "SENIOR",
-  lead: "LEAD",
-  провідний: "LEAD",
-  principal: "PRINCIPAL",
-  staff: "PRINCIPAL",
-};
+const TITLE_LEVELS = new Map(
+  Object.entries({
+    intern: "INTERN",
+    trainee: "INTERN",
+    стажер: "INTERN",
+    junior: "JUNIOR",
+    jr: "JUNIOR",
+    джуніор: "JUNIOR",
+    молодший: "JUNIOR",
+    middle: "MIDDLE",
+    mid: "MIDDLE",
+    regular: "MIDDLE",
+    мідл: "MIDDLE",
+    senior: "SENIOR",
+    sr: "SENIOR",
+    сеньйор: "SENIOR",
+    старший: "SENIOR",
+    lead: "LEAD",
+    провідний: "LEAD",
+    principal: "PRINCIPAL",
+    staff: "PRINCIPAL",
+  }),
+);
 const SENIORITY_MODIFIERS = words("strong");
 
 // Same job, different wording across boards and reposts.
-const TITLE_SYNONYMS: Record<string, string> = {
-  developer: "engineer",
-  dev: "engineer",
-  programmer: "engineer",
-  розробник: "engineer",
-  програміст: "engineer",
-  інженер: "engineer",
-};
+const TITLE_SYNONYMS = new Map(
+  Object.entries({
+    developer: "engineer",
+    dev: "engineer",
+    programmer: "engineer",
+    розробник: "engineer",
+    програміст: "engineer",
+    інженер: "engineer",
+  }),
+);
 
 function words(list: string): Set<string> {
   return new Set(list.trim().split(/\s+/));
+}
+
+// "Middle+" is a level, "C++" is not.
+function levelOf(token: string): string | undefined {
+  return TITLE_LEVELS.get(token.endsWith("+") ? token.replace(/\++$/, "") : token);
 }
 
 function tokenize(title: string): string[] {
@@ -154,14 +163,12 @@ function tokenize(title: string): string[] {
     .filter((t) => t.length > 0);
 }
 
-function cleanTitle(
-  rawTitle: string,
-  sourceCode: string | null,
-  companyName: string | null,
-): string {
+type TitleOpts = { sourceCode: string | null; companyName: string | null };
+
+function titleTokens(rawTitle: string, opts: TitleOpts): string[] {
   let title = decodeEntities(rawTitle);
-  if (sourceCode === "dou") title = stripBoardSuffix(title, companyName);
-  return title.replace(TRAILING_AT_COMPANY, "").replace(REQUISITION_REGEX, " ");
+  if (opts.sourceCode === "dou") title = stripBoardSuffix(title, opts.companyName);
+  return tokenize(title.replace(TRAILING_AT_COMPANY, "").replace(REQUISITION_REGEX, " "));
 }
 
 /**
@@ -169,27 +176,24 @@ function cleanTitle(
  * numbers, the company's own name and seniority words are removed — seniority
  * is compared separately, by `titleLevels` and the extracted field.
  */
-export function titleKey(
-  rawTitle: string,
-  opts: { sourceCode: string | null; companyName: string | null },
-): string {
+export function titleKey(rawTitle: string, opts: TitleOpts): string {
   const companyTokens = new Set(opts.companyName ? tokenize(decodeEntities(opts.companyName)) : []);
-  const tokens = tokenize(cleanTitle(rawTitle, opts.sourceCode, opts.companyName))
+  const tokens = titleTokens(rawTitle, opts)
     .filter(
       (t) =>
         !STOPWORDS.has(t) &&
         !companyTokens.has(t) &&
-        !(t in TITLE_LEVELS) &&
+        levelOf(t) === undefined &&
         !SENIORITY_MODIFIERS.has(t),
     )
-    .map((t) => TITLE_SYNONYMS[t] ?? t);
+    .map((t) => TITLE_SYNONYMS.get(t) ?? t);
   return [...new Set(tokens)].sort().join(" ");
 }
 
-/** Seniority levels named in a title ("Middle/Senior" → MIDDLE, SENIOR). */
-export function titleLevels(rawTitle: string): string[] {
-  const levels = tokenize(decodeEntities(rawTitle))
-    .map((t) => TITLE_LEVELS[t])
+/** Seniority levels named in a title ("Middle+/Senior" → MIDDLE, SENIOR). */
+export function titleLevels(rawTitle: string, opts: TitleOpts): string[] {
+  const levels = titleTokens(rawTitle, opts)
+    .map(levelOf)
     .filter((l): l is string => l !== undefined);
   return [...new Set(levels)].sort();
 }
@@ -266,11 +270,16 @@ function disjointLevels(a: readonly string[], b: readonly string[]): boolean {
   return a.length > 0 && b.length > 0 && !a.some((l) => b.includes(l));
 }
 
+// A key of only level or stop words ("Lead", "Стажер") says nothing about the job.
+function sameTitleKey(a: PostingFacts, b: PostingFacts): boolean {
+  return a.titleKey !== "" && a.titleKey === b.titleKey;
+}
+
 export function isRepost(a: PostingFacts, b: PostingFacts, ctx: MatchContext): boolean {
   return (
     a.sourceId === b.sourceId &&
     a.companyId === b.companyId &&
-    a.titleKey === b.titleKey &&
+    sameTitleKey(a, b) &&
     containment(a.shingles, b.shingles) >= ctx.thresholds.repostText
   );
 }
@@ -314,9 +323,7 @@ export const LINK_RULES: readonly LinkRule[] = [
     if (a.sourceId === b.sourceId) return null;
     const t = ctx.thresholds;
     const strict = a.companyId === null || b.companyId === null;
-    const titleOk = strict
-      ? a.titleKey === b.titleKey
-      : titleSim(a.titleKey, b.titleKey) >= t.title;
+    const titleOk = strict ? sameTitleKey(a, b) : titleSim(a.titleKey, b.titleKey) >= t.title;
     if (!titleOk) return null;
     const cos = ctx.cosine(a, b);
     const textOk =

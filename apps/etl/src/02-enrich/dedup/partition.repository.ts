@@ -93,28 +93,31 @@ export async function loadPostings(
     LEFT JOIN companies c ON c.id = v.company_id
     WHERE ${where}
   `);
-  return res.rows.map((r) => ({
-    facts: {
-      id: r.id,
-      sourceId: r.source_id,
-      companyId: r.company_id,
-      title: r.title,
-      titleKey: titleKey(r.title, { sourceCode: r.source_code, companyName: r.company_name }),
-      titleLevels: titleLevels(r.title),
-      seniority: r.seniority,
-      roleNodeId: r.role_node_id,
-      publishedAt: toDate(r.published_at).getTime(),
-      fingerprint: r.fingerprint,
-      shingles: shingles(r.description),
-    },
-    groupId: r.group_id,
-    version: r.version,
-    hasEmbedding: r.has_embedding,
-    embedding: r.embedding === null ? null : parseVector(r.embedding),
-    loadedAt: toDate(r.loaded_at).getTime(),
-    deduplicatedAt: r.deduplicated_at === null ? null : toDate(r.deduplicated_at).toISOString(),
-    dedupReason: r.dedup_reason,
-  }));
+  return res.rows.map((r) => {
+    const titleOpts = { sourceCode: r.source_code, companyName: r.company_name };
+    return {
+      facts: {
+        id: r.id,
+        sourceId: r.source_id,
+        companyId: r.company_id,
+        title: r.title,
+        titleKey: titleKey(r.title, titleOpts),
+        titleLevels: titleLevels(r.title, titleOpts),
+        seniority: r.seniority,
+        roleNodeId: r.role_node_id,
+        publishedAt: toDate(r.published_at).getTime(),
+        fingerprint: r.fingerprint,
+        shingles: shingles(r.description),
+      },
+      groupId: r.group_id,
+      version: r.version,
+      hasEmbedding: r.has_embedding,
+      embedding: r.embedding === null ? null : parseVector(r.embedding),
+      loadedAt: toDate(r.loaded_at).getTime(),
+      deduplicatedAt: r.deduplicated_at === null ? null : toDate(r.deduplicated_at).toISOString(),
+      dedupReason: r.dedup_reason,
+    };
+  });
 }
 
 /**

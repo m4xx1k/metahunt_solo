@@ -1,6 +1,7 @@
 import {
   containment,
   DEFAULT_THRESHOLDS,
+  isRepost,
   isSame,
   requisitionNo,
   shingles,
@@ -40,16 +41,17 @@ function posting(p: {
   day?: number;
 }): PostingFacts {
   const source = p.source ?? DOU;
+  const titleOpts = {
+    sourceCode: p.sourceCode ?? (source === DOU ? "dou" : "djinni"),
+    companyName: p.companyName ?? null,
+  };
   return {
     id: `v${++seq}`,
     sourceId: source,
     companyId: p.company === undefined ? "company-1" : p.company,
     title: p.title,
-    titleLevels: titleLevels(p.title),
-    titleKey: titleKey(p.title, {
-      sourceCode: p.sourceCode ?? (source === DOU ? "dou" : "djinni"),
-      companyName: p.companyName ?? null,
-    }),
+    titleLevels: titleLevels(p.title, titleOpts),
+    titleKey: titleKey(p.title, titleOpts),
     seniority: p.seniority ?? null,
     roleNodeId: p.role ?? null,
     publishedAt: T0 + (p.day ?? 0) * DAY,
@@ -137,11 +139,13 @@ describe("titleKey", () => {
   });
 });
 
+const DJINNI_OPTS = { sourceCode: "djinni", companyName: null };
+
 describe("title seniority", () => {
   it("is not part of the key but still vetoes", () => {
     const key = (t: string) => titleKey(t, { sourceCode: "djinni", companyName: null });
     expect(key("Senior QA Engineer")).toBe(key("Middle QA Engineer"));
-    expect(titleLevels("Middle/Senior PHP Developer")).toEqual(["MIDDLE", "SENIOR"]);
+    expect(titleLevels("Middle/Senior PHP Developer", DJINNI_OPTS)).toEqual(["MIDDLE", "SENIOR"]);
     const text = words("sdet", 80);
     const a = posting({ title: "Senior SDET", source: DJINNI, company: null, description: text });
     const b = posting({ title: "Middle SDET", source: DJINNI, company: null, description: text });
@@ -153,6 +157,55 @@ describe("title seniority", () => {
       description: text,
     });
     expect(vetoes(a, c, ctx())).toBeNull();
+  });
+
+  it("reads '<level>+' as that level and keeps C++", () => {
+    expect(titleLevels("Middle+ Python Developer", DJINNI_OPTS)).toEqual(["MIDDLE"]);
+    expect(titleLevels("Senior+ Go Engineer", DJINNI_OPTS)).toEqual(["SENIOR"]);
+    expect(titleLevels("Junior+ QA", DJINNI_OPTS)).toEqual(["JUNIOR"]);
+    expect(titleLevels("Middle+/Senior Java Developer", DJINNI_OPTS)).toEqual(["MIDDLE", "SENIOR"]);
+    expect(titleKey("Middle+ Python Developer", DJINNI_OPTS)).toBe("engineer python");
+    expect(titleKey("Senior+ C++ Developer", DJINNI_OPTS)).toBe("c++ engineer");
+    expect(titleLevels("C++ Developer", DJINNI_OPTS)).toEqual([]);
+    const text = words("plus", 80);
+    const a = posting({
+      title: "Middle+ Python Developer",
+      source: DJINNI,
+      company: null,
+      description: text,
+    });
+    const b = posting({
+      title: "Senior Python Developer",
+      source: DOU,
+      company: null,
+      description: text,
+    });
+    expect(vetoes(a, b, ctx())).toBe("seniority");
+  });
+
+  it("ignores levels inside the DOU company suffix", () => {
+    const dou = { sourceCode: "dou", companyName: "Lead Tech" };
+    expect(titleLevels("Python Developer в Lead Tech", dou)).toEqual([]);
+    expect(
+      titleLevels("QA Engineer в Senior Software, Київ", { sourceCode: "dou", companyName: null }),
+    ).toEqual([]);
+    expect(
+      titleLevels("Python Developer at Junior Labs", { sourceCode: "djinni", companyName: null }),
+    ).toEqual([]);
+    const text = words("lead", 80);
+    const a = posting({
+      title: "Python Developer в Lead Tech",
+      companyName: "Lead Tech",
+      description: text,
+    });
+    const b = posting({
+      title: "Senior Python Developer",
+      source: DJINNI,
+      description: text,
+      day: 1,
+    });
+    expect(vetoes(a, b, ctx())).toBeNull();
+    expect(same(a, b)).toMatchObject({ rule: "cross_source" });
   });
 
   it("treats developer and engineer as one word and drops the company's own name", () => {
@@ -339,6 +392,41 @@ describe("vetoes + isSame", () => {
       fingerprint: "same",
     });
     expect(vetoes(c, d, ctx())).toBe("seniority");
+  });
+
+  it("a title of only level or stop words never matches on title", () => {
+    const text = words("lead", 80);
+    expect(titleKey("Lead", DJINNI_OPTS)).toBe("");
+    expect(titleKey("Стажер", DJINNI_OPTS)).toBe("");
+    const strictA = posting({ title: "Lead", source: DJINNI, company: null, description: text });
+    const strictB = posting({ title: "Lead в Acme", company: null, description: text, day: 1 });
+    expect(same(strictA, strictB, ctx({ cosine: 0.99 }))).toBeNull();
+    const crossA = posting({ title: "Lead", source: DJINNI, description: text });
+    const crossB = posting({ title: "Lead в Acme", description: text, day: 1 });
+    expect(same(crossA, crossB, ctx({ cosine: 0.99 }))).toBeNull();
+    const repostA = posting({ title: "Стажер", source: DJINNI, description: text });
+    const repostB = posting({
+      title: "Стажер",
+      source: DJINNI,
+      description: `${text} again`,
+      day: 3,
+    });
+    expect(isRepost(repostA, repostB, ctx())).toBe(false);
+    expect(vetoes(repostA, repostB, ctx())).toBe("same_source_content");
+    const exactA = posting({
+      title: "Lead",
+      source: DJINNI,
+      description: text,
+      fingerprint: "fp-lead",
+    });
+    const exactB = posting({
+      title: "Lead",
+      source: DJINNI,
+      description: text,
+      fingerprint: "fp-lead",
+      day: 2,
+    });
+    expect(same(exactA, exactB)).toMatchObject({ rule: "exact" });
   });
 
   it("company, seniority, role and manual overrides veto", () => {
