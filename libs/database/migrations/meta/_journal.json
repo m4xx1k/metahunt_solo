@@ -414,6 +414,13 @@
       "when": 1789862590640,
       "tag": "0058_sleepy_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790360804791,
+      "tag": "0059_loud_robin_chapel",
+      "breakpoints": true
     }
   ]
 }
