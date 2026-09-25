@@ -18,8 +18,10 @@ import { Pool } from "pg";
 import { schema, type DrizzleDB } from "@metahunt/database";
 
 import {
+  containment,
   DEFAULT_THRESHOLDS,
   isSame,
+  titleSim,
   vetoes,
   type MatchRule,
   type Thresholds,
@@ -86,6 +88,16 @@ async function main(): Promise<void> {
       console.log(`skipped ${golden.length - usable.length} pairs whose vacancies are gone`);
     }
 
+    const explain = argv.indexOf("--explain");
+    if (explain >= 0) {
+      const wanted = new Set(argv[explain + 1].split(","));
+      explainPairs(
+        usable.filter((p) => wanted.has(p.pairId)),
+        rows,
+        overrides,
+      );
+      return;
+    }
     if (argv.includes("--grid")) {
       grid(usable, rows, overrides);
       return;
@@ -191,6 +203,32 @@ function grid(
   for (const { t, s } of results.slice(0, 40)) {
     console.log(
       `${t.title.toFixed(2)} ${t.text.toFixed(2)} ${t.cosine.toFixed(2)} ${t.cosineStrict.toFixed(2)} ${t.repostText.toFixed(2)}  | ${String(s.fp).padStart(2)} ${String(s.fn).padStart(3)}  ${s.recall.toFixed(3)}`,
+    );
+  }
+}
+
+function explainPairs(
+  pairs: readonly GoldenPair[],
+  rows: ReadonlyMap<string, PostingRow>,
+  overrides: Array<[string, string]>,
+): void {
+  const embeddings = new Map<string, Float32Array>();
+  for (const r of rows.values()) if (r.embedding) embeddings.set(r.facts.id, r.embedding);
+  const ctx = matchContext({ overrides, embeddings });
+  for (const pair of pairs) {
+    const a = rows.get(pair.a.id)!.facts;
+    const b = rows.get(pair.b.id)!.facts;
+    const days = Math.round(Math.abs(a.publishedAt - b.publishedAt) / 86_400_000);
+    console.log(
+      `\n${pair.pairId} ${pair.stratum} label=${pair.label}/${pair.labelConfidence ?? "?"}`,
+    );
+    for (const f of [a, b]) {
+      console.log(
+        `  [${f.sourceId.slice(0, 4)}] ${f.title} | key="${f.titleKey}" | co=${f.companyId?.slice(0, 8) ?? "null"} sen=${f.seniority} role=${f.roleNodeId?.slice(0, 8) ?? "null"} shingles=${f.shingles.length}`,
+      );
+    }
+    console.log(
+      `  titleSim=${titleSim(a.titleKey, b.titleKey).toFixed(2)} containment=${containment(a.shingles, b.shingles).toFixed(2)} cosine=${ctx.cosine(a, b)?.toFixed(3)} days=${days} veto=${vetoes(a, b, ctx)} link=${isSame(a, b, ctx)?.rule ?? null}`,
     );
   }
 }

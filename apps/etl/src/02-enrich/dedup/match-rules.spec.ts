@@ -210,8 +210,8 @@ describe("vetoes + isSame", () => {
   it("merges a reworded cross-source twin on cosine when companies agree", () => {
     const a = posting({ title: "QA Automation Engineer", source: DJINNI });
     const b = posting({ title: "Automation QA Engineer в Acme, Київ", day: 1 });
-    expect(same(a, b, ctx({ cosine: 0.93 }))).toMatchObject({ rule: "cross_source" });
-    expect(same(a, b, ctx({ cosine: 0.9 }))).toBeNull();
+    expect(same(a, b, ctx({ cosine: 0.95 }))).toMatchObject({ rule: "cross_source" });
+    expect(same(a, b, ctx({ cosine: 0.93 }))).toBeNull();
   });
 
   it("needs the strict pair when a company is unknown", () => {

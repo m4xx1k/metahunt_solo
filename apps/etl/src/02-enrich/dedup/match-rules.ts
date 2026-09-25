@@ -33,12 +33,14 @@ export interface Thresholds {
   repostText: number;
 }
 
+// Calibrated 2026-09-25 on a blind-labelled 300-pair golden set: the loosest
+// values with zero false merges (md/journal/migrations/dedup-rebuild.md#decisions).
 export const DEFAULT_THRESHOLDS: Thresholds = {
-  title: 0.6,
+  title: 0.7,
   text: 0.8,
-  cosine: 0.92,
+  cosine: 0.94,
   cosineStrict: 0.95,
-  repostText: 0.9,
+  repostText: 0.8,
 };
 
 export const LINK_WINDOW_DAYS = 45;
