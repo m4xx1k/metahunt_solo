@@ -109,6 +109,16 @@ async function partition(): Promise<Map<string, string>> {
   return new Map(r.rows.map((row) => [row.id, row.g]));
 }
 
+async function snapshot() {
+  const r = await db.execute(sql`
+    SELECT v.id, v.unique_vacancy_id, v.dedup_reason, v.deduplicated_at::text,
+           u.canonical_vacancy_id
+    FROM vacancies v JOIN unique_vacancies u ON u.id = v.unique_vacancy_id
+    ORDER BY v.id
+  `);
+  return r.rows;
+}
+
 beforeAll(() => {
   ({ db, pool } = makeTestDb());
   dedup = new DedupService(db, embeddings);
@@ -253,6 +263,34 @@ describe("DedupService plan / apply / detach (integration)", () => {
 
     await dedup.apply(first.current);
     expect(await partition()).toEqual(before);
+  });
+
+  it("current.json restores reasons, the canonical member and exact timestamps", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+    await db.execute(sql`
+      INSERT INTO dedup_overrides (vacancy_a, vacancy_b, verdict)
+      VALUES (LEAST(${a}::uuid, ${b}::uuid), GREATEST(${a}::uuid, ${b}::uuid), 'different')
+    `);
+    const probe = await dedup.plan();
+    const leaving = probe.target.entries.find(
+      (e) => (e.vacancyId === a || e.vacancyId === b) && e.groupId !== groupId,
+    )!.vacancyId;
+    await db.execute(
+      sql`UPDATE unique_vacancies SET canonical_vacancy_id = ${leaving} WHERE id = ${groupId}`,
+    );
+    await db.execute(
+      sql`UPDATE vacancies SET deduplicated_at = '2026-09-01 10:00:00.123456+00' WHERE id = ${a}`,
+    );
+    const before = await snapshot();
+
+    const plan = await dedup.plan();
+    await dedup.apply(plan.target);
+    expect(await snapshot()).not.toEqual(before);
+    await dedup.apply(plan.current);
+
+    expect(await snapshot()).toEqual(before);
   });
 
   it("refuses a plan when a vacancy changed or appeared after it was built", async () => {

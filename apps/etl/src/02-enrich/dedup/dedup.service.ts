@@ -433,6 +433,7 @@ export class DedupService {
           version: entryVersion(r.contentVersion, target.get(r.facts.id)!),
           dedupReason: r.dedupReason,
           deduplicatedAt: r.deduplicatedAt,
+          canonical: r.isCanonical,
         })),
       },
     };

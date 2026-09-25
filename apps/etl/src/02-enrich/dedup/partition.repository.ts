@@ -25,6 +25,7 @@ export interface PostingRow {
   loadedAt: number;
   deduplicatedAt: string | null;
   dedupReason: unknown;
+  isCanonical: boolean;
 }
 
 /** One vacancy's place in a partition — the unit `writePartition` and the plan files share. */
@@ -34,6 +35,8 @@ export interface PartitionEntry {
   version: string;
   dedupReason: unknown;
   deduplicatedAt: string | null;
+  /** Set only by a saved current partition, so a rollback restores the canonical member. */
+  canonical?: boolean;
 }
 
 export class StalePartitionError extends Error {}
@@ -76,8 +79,9 @@ export async function loadPostings(
     content_version: string;
     has_embedding: boolean;
     embedding: string | null;
-    deduplicated_at: Date | string | null;
+    deduplicated_at: string | null;
     dedup_reason: unknown;
+    is_canonical: boolean;
   }>(sql`
     SELECT
       v.id,
@@ -96,10 +100,12 @@ export async function loadPostings(
       ${CONTENT_VERSION_SQL} AS content_version,
       v.embedding IS NOT NULL AS has_embedding,
       ${embedding} AS embedding,
-      v.deduplicated_at,
-      v.dedup_reason
+      to_char(v.deduplicated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS deduplicated_at,
+      v.dedup_reason,
+      u.canonical_vacancy_id = v.id AS is_canonical
     FROM vacancies v
     JOIN sources s ON s.id = v.source_id
+    JOIN unique_vacancies u ON u.id = v.unique_vacancy_id
     JOIN rss_records r ON r.id = v.last_rss_record_id
     LEFT JOIN companies c ON c.id = v.company_id
     WHERE ${where}
@@ -125,8 +131,9 @@ export async function loadPostings(
       hasEmbedding: r.has_embedding,
       embedding: r.embedding === null ? null : parseVector(r.embedding),
       loadedAt: toDate(r.loaded_at).getTime(),
-      deduplicatedAt: r.deduplicated_at === null ? null : toDate(r.deduplicated_at).toISOString(),
+      deduplicatedAt: r.deduplicated_at,
       dedupReason: r.dedup_reason,
+      isCanonical: r.is_canonical,
     };
   });
 }
@@ -284,6 +291,7 @@ export async function writePartition(
       group_id: e.groupId,
       dedup_reason: e.dedupReason ?? null,
       deduplicated_at: e.deduplicatedAt,
+      canonical: e.canonical === true,
     })),
   );
   await tx.execute(sql`
@@ -301,6 +309,12 @@ export async function writePartition(
     FROM jsonb_to_recordset(${payload}::jsonb)
       AS x(vacancy_id uuid, group_id uuid, dedup_reason jsonb, deduplicated_at timestamptz)
     WHERE v.id = x.vacancy_id
+  `);
+  await tx.execute(sql`
+    UPDATE unique_vacancies u
+    SET canonical_vacancy_id = x.vacancy_id
+    FROM jsonb_to_recordset(${payload}::jsonb) AS x(vacancy_id uuid, group_id uuid, canonical boolean)
+    WHERE x.canonical AND u.id = x.group_id
   `);
   await repairUniqueVacancies(allGroups, tx);
 }
