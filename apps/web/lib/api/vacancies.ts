@@ -170,28 +170,14 @@ export interface VacancyDetailDto extends VacancyDto {
 // Mirror of apps/etl/src/02-enrich/dedup/dedup.contract.ts. The "why merged"
 // reasons shown when a duplicate badge is expanded.
 
-export type DedupConfidence = "gold" | "confirmed";
+export type DedupRule = "exact" | "repost" | "cross_source";
 
 export interface DedupReason {
-  /** Cosine similarity at decision time (0..1). */
-  similarity: number;
+  rule: DedupRule;
   matchedAgainstVacancyId: string;
-  prefilterMatches: {
-    role: boolean | null;
-    seniority: boolean | null;
-    workFormat: boolean | null;
-    company: boolean | null;
-    dateWindowDays: number;
-  };
-  confidence: DedupConfidence;
-  corroboration: {
-    /** Jaccard over required-skill ids (0..1). */
-    skillJaccard: number;
-    /** Jaccard over normalised title tokens (0..1). */
-    titleJaccard: number;
-    companyMatch: boolean;
-  };
-  embeddingModel: string;
+  titleSim: number;
+  containment: number;
+  cosine: number | null;
   decidedAt: string;
 }
 
@@ -203,9 +189,7 @@ export interface DedupGroupMember {
   title: string;
   publishedAt: string | null;
   isCanonical: boolean;
-  /** Similarity to group centroid; null on the canonical member. */
-  similarityToCentroid: number | null;
-  /** null on the canonical member. */
+  /** null on the member that founded the group. */
   dedupReason: DedupReason | null;
 }
 

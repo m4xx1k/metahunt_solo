@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 
-import { dedupApi, type DedupConfidence } from "@/lib/api/dedup";
-import {
-  booleanSearchParam,
-  firstSearchParam,
-  flattenSearchParams,
-  type SearchParamValue,
-} from "@/lib/search-params";
+import { dedupApi } from "@/lib/api/dedup";
+import { booleanSearchParam, flattenSearchParams } from "@/lib/search-params";
 import { formatCount, formatPercent } from "@/lib/format";
 import { StatCard } from "@/ui/data/StatCard";
 import { StatGrid } from "@/ui/data/StatGrid";
@@ -14,19 +9,12 @@ import { EmptyState } from "@/ui/feedback/EmptyState";
 import { FilterToggles } from "@/ui/inputs/FilterToggles";
 import { PageBody } from "@/ui/layout/PageBody";
 import { PageHeader } from "@/ui/layout/PageHeader";
-import { ConfidenceFilter } from "./_components/ConfidenceFilter";
 import { GroupCard } from "./_components/GroupCard";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Dedupe" };
 
-function asConfidence(value: SearchParamValue): DedupConfidence | "all" {
-  const raw = firstSearchParam(value);
-  return raw === "gold" || raw === "confirmed" ? raw : "all";
-}
-
-// Gold tier: one group per real position, with every source posting that got
-// merged into it.
+// One group per real position, with every source posting that got merged into it.
 export default async function DedupePage({
   searchParams,
 }: {
@@ -34,11 +22,9 @@ export default async function DedupePage({
 }) {
   const sp = await searchParams;
   const crossSource = booleanSearchParam(sp.crossSource);
-  const confidence = asConfidence(sp.confidence);
 
   const data = await dedupApi.list({
     crossSource: crossSource || undefined,
-    confidence: confidence !== "all" ? confidence : undefined,
     pageSize: 100,
   });
 
@@ -47,10 +33,7 @@ export default async function DedupePage({
 
   return (
     <>
-      <PageHeader
-        title="Dedupe"
-        hint={`gold tier · ${formatCount(data.pagination.total)} groups match`}
-      />
+      <PageHeader title="Dedupe" hint={`${formatCount(data.pagination.total)} groups match`} />
 
       <PageBody>
         <StatGrid cols={4}>
@@ -91,15 +74,10 @@ export default async function DedupePage({
               },
             ]}
           />
-          <ConfidenceFilter
-            basePath="/dashboard/dedupe"
-            searchParams={flatSearchParams}
-            active={confidence}
-          />
         </div>
 
         {data.items.length === 0 ? (
-          <EmptyState title="no groups match these filters" hint="loosen the confidence filter." />
+          <EmptyState title="no groups match these filters" hint="turn off cross-source only." />
         ) : (
           <div className="flex flex-col gap-3">
             {data.items.map((group) => (

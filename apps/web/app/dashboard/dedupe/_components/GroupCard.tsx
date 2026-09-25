@@ -1,6 +1,7 @@
 import { Badge, Card } from "@/ui";
 import type { UniqueVacancyListItem } from "@/lib/api/dedup";
 import { formatDateOnly, formatDateRange, formatSalaryRange } from "@/lib/format";
+import { DetachButton } from "./DetachButton";
 import { WhyMerged } from "./WhyMerged";
 
 // One unique-vacancy group, with collapsible member list. Uses native
@@ -8,13 +9,6 @@ import { WhyMerged } from "./WhyMerged";
 // component and there's no hydration cost on page load.
 export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
   const isCrossSource = group.sourceCount >= 2;
-  const edges = group.members.filter((m) => m.dedupReason !== null);
-  const tier =
-    edges.length === 0
-      ? null
-      : edges.every((m) => m.dedupReason?.confidence === "gold")
-        ? "gold"
-        : "confirmed";
   return (
     <Card className={isCrossSource ? "!border-accent" : undefined}>
       <header className="flex flex-col gap-3">
@@ -27,17 +21,6 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
               <Badge key={s.id}>{s.displayName}</Badge>
             ))}
             <Badge variant="dark">{group.vacancyCount} postings</Badge>
-            {tier ? (
-              <span
-                className={
-                  tier === "gold"
-                    ? "inline-flex items-center bg-amber-300 px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-bg"
-                    : "inline-flex items-center bg-accent px-2 py-1 font-mono text-2xs font-bold uppercase tracking-wider text-bg"
-                }
-              >
-                {tier}
-              </span>
-            ) : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-text-muted">
@@ -87,6 +70,9 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
                     >
                       open original ↗
                     </a>
+                  ) : null}
+                  {group.vacancyCount > 1 ? (
+                    <DetachButton groupId={group.id} vacancyId={m.vacancyId} />
                   ) : null}
                 </div>
               </div>

@@ -52,9 +52,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
   }, [open, group, error, uniqueVacancyId]);
 
   const sourceSuffix =
-    sourceCount > 1
-      ? ` · ${sourceCount} ${plural(sourceCount, "source", "sources")}`
-      : "";
+    sourceCount > 1 ? ` · ${sourceCount} ${plural(sourceCount, "source", "sources")}` : "";
 
   return (
     <>
@@ -165,97 +163,17 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
   );
 }
 
-const pct = (n: number) => `${Math.round(n * 100)}%`;
-const mark = (v: boolean | null) => (v === null ? "—" : v ? "✓" : "✗");
+const RULE_LABEL: Record<DedupReason["rule"], string> = {
+  exact: "same text",
+  repost: "reposted",
+  cross_source: "same job, other board",
+};
 
 function WhyMerged({ reason: r }: { reason: DedupReason }) {
-  const simColor =
-    r.similarity >= 0.95
-      ? "text-success"
-      : r.similarity >= 0.92
-        ? "text-accent"
-        : "text-text-secondary";
-  const barColor =
-    r.similarity >= 0.95
-      ? "bg-success"
-      : r.similarity >= 0.92
-        ? "bg-accent"
-        : "bg-text-muted";
-
-  const pf = r.prefilterMatches;
-
   return (
-    <div className="flex flex-col gap-2 border-t border-border pt-3">
-      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-        why merged
-      </span>
-
-      {/* similarity bar */}
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
-          similarity
-        </span>
-        <div className="h-1.5 flex-1 bg-bg">
-          <div
-            className={cn("h-full", barColor)}
-            style={{ width: `${Math.round(r.similarity * 100)}%` }}
-          />
-        </div>
-        <span className={cn("font-mono text-xs font-bold", simColor)}>
-          {pct(r.similarity)}
-        </span>
-      </div>
-
-      {/* corroboration chips */}
-      <div className="flex flex-wrap gap-2">
-        {r.corroboration.companyMatch ? (
-          <Chip icon="🏢" label="same company" strong />
-        ) : null}
-        {r.corroboration.skillJaccard > 0 ? (
-          <Chip
-            icon="🧩"
-            label={`skills ${pct(r.corroboration.skillJaccard)}`}
-            strong={r.corroboration.skillJaccard >= 0.5}
-          />
-        ) : null}
-        {r.corroboration.titleJaccard > 0 ? (
-          <Chip
-            icon="📝"
-            label={`title ${pct(r.corroboration.titleJaccard)}`}
-            strong={r.corroboration.titleJaccard >= 0.5}
-          />
-        ) : null}
-      </div>
-
-      {/* prefilter facts — quiet */}
-      <p className="font-mono text-2xs text-text-muted">
-        role {mark(pf.role)} · seniority {mark(pf.seniority)} · format{" "}
-        {mark(pf.workFormat)} · window {pf.dateWindowDays}d
-      </p>
+    <div className="flex items-center gap-2 border-t border-border pt-3 font-mono text-2xs uppercase tracking-wider">
+      <span className="text-text-muted">why merged</span>
+      <span className="border border-success px-2 py-[2px] text-success">{RULE_LABEL[r.rule]}</span>
     </div>
-  );
-}
-
-function Chip({
-  icon,
-  label,
-  strong,
-}: {
-  icon: string;
-  label: string;
-  strong?: boolean;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 border px-2 py-[2px] font-mono text-2xs",
-        strong
-          ? "border-success text-success"
-          : "border-border text-text-secondary",
-      )}
-    >
-      <span aria-hidden>{icon}</span>
-      {label}
-    </span>
   );
 }
