@@ -422,7 +422,7 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       .where(eq(schema.vacancies.id, vacancyId));
     await db
       .update(schema.vacancies)
-      .set({ dedupReason: { method: "test" } })
+      .set({ dedupReason: { rule: "exact" } })
       .where(eq(schema.vacancies.id, vacancyId));
 
     const second = await seedRecord(

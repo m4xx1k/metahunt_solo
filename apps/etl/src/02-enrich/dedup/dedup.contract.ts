@@ -13,15 +13,6 @@
 
 import type { Currency, Seniority, WorkFormat } from "../../platform/shared/contract";
 
-// ───────────────────────── Confidence ─────────────────────────
-
-// Tier of an auto-merge decision. `gold` — high semantic similarity
-// corroborated by structural signals (company / skills / title overlap);
-// `confirmed` — passed every structural gate and the 0.92 thresholds but
-// without strong corroboration. The dashboard's `gold` view is the clean
-// demo list; `confirmed` is the rest.
-export type DedupConfidence = "gold" | "confirmed";
-
 // ─────────────────────── Source / refs ────────────────────────
 
 export interface SourceBadge {
@@ -39,53 +30,23 @@ export interface SalaryRange {
 }
 
 // ────────────────────────── DedupReason ───────────────────────
-// Persisted verbatim in `vacancies.dedup_reason`. Null on canonical
-// members and on vacancies that have not been resolved yet.
+// Persisted verbatim in `vacancies.dedup_reason`. Null on the member that
+// founded its position and on vacancies that have not been resolved yet.
+
+export type DedupRule = "exact" | "repost" | "cross_source";
 
 export interface DedupReason {
-  /** Exact normalized content bypasses only role/seniority ANN gates. */
-  method: "exact_content" | "ann";
-  /** Cosine similarity at decision time (1 - distance). */
-  similarity: number;
-  /**
-   * The specific neighbour this vacancy was matched against (best ANN
-   * hit). The group itself may contain other members, but the merge
-   * decision is pairwise — knowing which pair triggered it is what the
-   * "why merged" UI shows.
-   */
+  /** exact = identical content; repost = same board, same job re-published; cross_source = same job on another board. */
+  rule: DedupRule;
+  /** The member this vacancy was linked to — the pair the "why merged" UI shows. */
   matchedAgainstVacancyId: string;
-  /**
-   * Structural pre-filter agreement at decision time. `null` for a
-   * field means the field was absent on at least one side and was not
-   * used as a (dis)proof signal — distinct from `false` (both sides
-   * had a value and they disagreed; usually means the candidate would
-   * have been filtered out, only surfaces in soft-confidence cases).
-   */
-  prefilterMatches: {
-    role: boolean | null;
-    seniority: boolean | null;
-    workFormat: boolean | null;
-    company: boolean | null;
-    /** Absolute day gap between publishedAt of the two vacancies. */
-    dateWindowDays: number;
-  };
-  confidence: DedupConfidence;
-  /**
-   * Structural corroboration of the matched pair, computed alongside the
-   * semantic score. Decides the gold/confirmed tier and feeds the
-   * "why merged" UI so a high similarity is never the sole justification.
-   */
-  corroboration: {
-    /** Jaccard over required-skill node ids; 0 when either side has none. */
-    skillJaccard: number;
-    /** Jaccard over normalised title tokens. */
-    titleJaccard: number;
-    /** Both sides had a resolved company and they matched. */
-    companyMatch: boolean;
-  };
-  /** e.g. `text-embedding-3-small`. Lets us re-evaluate if model changes. */
-  embeddingModel: string;
-  /** ISO-8601 timestamp of the resolve decision. */
+  /** Jaccard over normalized title tokens, seniority words excluded. */
+  titleSim: number;
+  /** Shared 5-word description shingles over the smaller side. */
+  containment: number;
+  /** Embedding cosine when it was known at decision time. */
+  cosine: number | null;
+  /** ISO-8601 timestamp of the decision. */
   decidedAt: string;
 }
 
@@ -100,12 +61,7 @@ export interface UniqueVacancyMember {
   title: string;
   publishedAt: string | null;
   isCanonical: boolean;
-  /**
-   * Cosine similarity of this member's embedding to the group centroid.
-   * `null` only for the canonical member (anchor of the group).
-   */
-  similarityToCentroid: number | null;
-  /** `null` only for the canonical member. */
+  /** `null` for the member that founded the group. */
   dedupReason: DedupReason | null;
 }
 
@@ -130,13 +86,6 @@ export interface UniqueVacancyListItem {
   firstSeenAt: string;
   lastSeenAt: string;
 
-  /**
-   * Weakest similarity-to-centroid across non-canonical members. Drives
-   * a group-level confidence badge (`min < 0.92` → group has soft edges).
-   * `null` for sole-member groups.
-   */
-  minSimilarity: number | null;
-
   /** Always present in list responses — UI inline-expands instead of refetching. */
   members: UniqueVacancyMember[];
 }
@@ -156,13 +105,10 @@ export interface FeedDuplicateGroup {
 
 // ──────────────────────── Metrics panel ────────────────────────
 
-export interface DedupSimilarityBuckets {
-  /** 0.85 ≤ x < 0.92 — flagged for review. */
-  soft: number;
-  /** 0.92 ≤ x < 0.95 — confident match. */
-  hard: number;
-  /** x ≥ 0.95 — near-identical. */
-  veryHard: number;
+export interface DedupRuleCounts {
+  exact: number;
+  repost: number;
+  crossSource: number;
 }
 
 export interface DedupSourceBreakdown {
@@ -183,7 +129,8 @@ export interface DedupMetrics {
   /** Members that live in a multi-source group. */
   vacanciesInCrossSourceGroups: number;
   avgGroupSize: number;
-  similarityBuckets: DedupSimilarityBuckets;
+  /** Linked members per rule. */
+  ruleCounts: DedupRuleCounts;
   sourceBreakdown: DedupSourceBreakdown[];
 }
 
@@ -192,10 +139,6 @@ export interface DedupMetrics {
 export interface UniqueVacanciesQuery {
   /** Only return groups where `sourceCount >= 2`. */
   crossSource?: boolean;
-  /** Group-level lower bound on `minSimilarity` (so weakest-edge filter). */
-  minSimilarity?: number;
-  /** Tier filter: `gold` = every edge gold; `confirmed` = has a confirmed edge. */
-  confidence?: DedupConfidence | "all";
   /** 1-based. Defaults to 1. */
   page?: number;
   /** Defaults to 25, max 100. */

@@ -1,20 +1,33 @@
-import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
-
 import {
-  parseBool,
-  parseEnum,
-  parsePage,
-  parsePageSize,
-} from "../../platform/shared/query-parsing";
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from "@nestjs/common";
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from "@nestjs/swagger";
+
+import type { JwtUser } from "../../platform/auth/auth.types";
+import { CurrentUser } from "../../platform/auth/decorators/current-user.decorator";
+import { parseBool, parsePage, parsePageSize } from "../../platform/shared/query-parsing";
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
 import type { UniqueVacanciesResponse } from "./dedup.contract";
 import { DedupService } from "./dedup.service";
+import { DetachVacancyDto } from "./detach-vacancy.dto";
 
 const DEFAULT_PAGE_SIZE = 25;
-const CONFIDENCE_VALUES = ["gold", "confirmed", "all"] as const;
 
 @Controller("operator/unique-vacancies")
 @OperatorApi("operator: deduplication")
@@ -27,26 +40,30 @@ export class DedupController {
   @ApiOkResponse({ description: "Paginated deduplication groups." })
   list(
     @Query("crossSource") rawCrossSource?: string,
-    @Query("minSimilarity") rawMinSimilarity?: string,
-    @Query("confidence") rawConfidence?: string,
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
   ): Promise<UniqueVacanciesResponse> {
     return this.dedup.listGroups({
       crossSource: parseBool("crossSource", rawCrossSource),
-      minSimilarity: parseSimilarity(rawMinSimilarity),
-      confidence: parseEnum("confidence", rawConfidence, CONFIDENCE_VALUES),
       page: parsePage(rawPage),
       pageSize: parsePageSize(rawPageSize, { default: DEFAULT_PAGE_SIZE }),
     });
   }
-}
 
-function parseSimilarity(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n < 0 || n > 1) {
-    throw new BadRequestException(`minSimilarity must be a number in [0, 1], got "${raw}"`);
+  @Post(":groupId/detach")
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @ApiOperation({ summary: "Mark a member as a different job and rebuild its group" })
+  @ApiOkResponse({ description: "The group the vacancy lives in after the rebuild." })
+  @ApiNotFoundResponse({
+    description: "The vacancy is not a member of this group.",
+    type: ApiErrorResponseDto,
+  })
+  detach(
+    @Param("groupId", ParseUUIDPipe) groupId: string,
+    @Body() body: DetachVacancyDto,
+    @CurrentUser() user: JwtUser,
+  ): Promise<{ groupId: string }> {
+    return this.dedup.detach(groupId, body.vacancyId, user.userId);
   }
-  return n;
 }
