@@ -68,7 +68,7 @@ export const dedup = {
     { value: "0", label: "vetoed pairs merged" },
     { value: "±45d", label: "match window" },
     { value: "5 min", label: "sweep cadence" },
-    { value: "89%", label: "recall" },
+    { value: "66%", label: "recall" },
   ],
   hardFilters: [
     "Same source + same id, parsed from the URL, upserts in place.",
@@ -119,6 +119,6 @@ export const numbers = {
     },
     { value: "10,839", label: "vacancies processed", note: "100% embedded · 2026-07-07" },
     { value: "9,228", label: "unique job groups", note: "after dedup collapse" },
-    { value: "89%", label: "dedup recall", note: "194/219 in-window pairs" },
+    { value: "66%", label: "dedup recall", note: "0 false merges · 300-pair audit" },
   ],
 };
