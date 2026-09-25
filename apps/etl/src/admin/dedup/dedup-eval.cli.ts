@@ -75,6 +75,12 @@ async function main(): Promise<void> {
     .filter(Boolean)
     .map((line) => JSON.parse(line) as GoldenPair);
 
+  const partitionPath = argv.indexOf("--partition");
+  if (partitionPath >= 0) {
+    scorePartition(golden, argv[partitionPath + 1]);
+    return;
+  }
+
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const db = drizzle(pool, { schema }) as unknown as DrizzleDB;
   try {
@@ -231,6 +237,29 @@ function explainPairs(
       `  titleSim=${titleSim(a.titleKey, b.titleKey).toFixed(2)} containment=${containment(a.shingles, b.shingles).toFixed(2)} cosine=${ctx.cosine(a, b)?.toFixed(3)} days=${days} veto=${vetoes(a, b, ctx)} link=${isSame(a, b, ctx)?.rule ?? null}`,
     );
   }
+}
+
+/** Cluster-level score: a pair counts as merged when both land in one group of the partition file. */
+function scorePartition(golden: readonly GoldenPair[], path: string): void {
+  const file = JSON.parse(readFileSync(path, "utf8")) as {
+    entries: Array<{ vacancyId: string; groupId: string }>;
+  };
+  const groupOf = new Map(file.entries.map((e) => [e.vacancyId, e.groupId]));
+  const usable = golden.filter((p) => groupOf.has(p.a.id) && groupOf.has(p.b.id));
+  const verdicts: Verdict[] = usable.map((pair) => ({
+    pair,
+    predicted: groupOf.get(pair.a.id) === groupOf.get(pair.b.id),
+    rule: null,
+    veto: null,
+  }));
+  console.log(`partition ${path}: pairs=${verdicts.length} ${fmt(score(verdicts))}`);
+  for (const stratum of [...new Set(verdicts.map((v) => v.pair.stratum))].sort()) {
+    console.log(
+      `  ${stratum.padEnd(28)} ${fmt(score(verdicts.filter((v) => v.pair.stratum === stratum)))}`,
+    );
+  }
+  const fps = verdicts.filter((v) => v.predicted && v.pair.label === "different");
+  console.log(`FALSE MERGES (${fps.length}): ${fps.map((v) => v.pair.pairId).join(" ")}`);
 }
 
 function fmt(s: ReturnType<typeof score>): string {

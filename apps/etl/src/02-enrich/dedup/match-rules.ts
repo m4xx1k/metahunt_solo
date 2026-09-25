@@ -6,6 +6,7 @@ export interface PostingFacts {
   companyId: string | null;
   title: string;
   titleKey: string;
+  titleLevels: string[];
   seniority: string | null;
   roleNodeId: string | null;
   publishedAt: number;
@@ -108,10 +109,38 @@ const STOPWORDS = words(`
   львів odesa одеса dnipro дніпро kharkiv харків ukraine україна europe eu
 `);
 
-const SENIORITY_WORDS = words(`
-  intern trainee junior jr middle mid senior sr lead principal staff strong джуніор мідл
-  сеньйор старший молодший провідний
-`);
+const TITLE_LEVELS: Record<string, string> = {
+  intern: "INTERN",
+  trainee: "INTERN",
+  стажер: "INTERN",
+  junior: "JUNIOR",
+  jr: "JUNIOR",
+  джуніор: "JUNIOR",
+  молодший: "JUNIOR",
+  middle: "MIDDLE",
+  mid: "MIDDLE",
+  regular: "MIDDLE",
+  мідл: "MIDDLE",
+  senior: "SENIOR",
+  sr: "SENIOR",
+  сеньйор: "SENIOR",
+  старший: "SENIOR",
+  lead: "LEAD",
+  провідний: "LEAD",
+  principal: "PRINCIPAL",
+  staff: "PRINCIPAL",
+};
+const SENIORITY_MODIFIERS = words("strong");
+
+// Same job, different wording across boards and reposts.
+const TITLE_SYNONYMS: Record<string, string> = {
+  developer: "engineer",
+  dev: "engineer",
+  programmer: "engineer",
+  розробник: "engineer",
+  програміст: "engineer",
+  інженер: "engineer",
+};
 
 function words(list: string): Set<string> {
   return new Set(list.trim().split(/\s+/));
@@ -125,21 +154,49 @@ function tokenize(title: string): string[] {
     .filter((t) => t.length > 0);
 }
 
-/** Sorted unique identity tokens of a title, board suffix, noise and requisition numbers removed. */
+function cleanTitle(
+  rawTitle: string,
+  sourceCode: string | null,
+  companyName: string | null,
+): string {
+  let title = decodeEntities(rawTitle);
+  if (sourceCode === "dou") title = stripBoardSuffix(title, companyName);
+  return title.replace(TRAILING_AT_COMPANY, "").replace(REQUISITION_REGEX, " ");
+}
+
+/**
+ * Sorted unique identity tokens of a title. Board suffix, noise, requisition
+ * numbers, the company's own name and seniority words are removed — seniority
+ * is compared separately, by `titleLevels` and the extracted field.
+ */
 export function titleKey(
   rawTitle: string,
   opts: { sourceCode: string | null; companyName: string | null },
 ): string {
-  let title = decodeEntities(rawTitle);
-  if (opts.sourceCode === "dou") title = stripBoardSuffix(title, opts.companyName);
-  title = title.replace(TRAILING_AT_COMPANY, "").replace(REQUISITION_REGEX, " ");
-  const tokens = tokenize(title).filter((t) => !STOPWORDS.has(t));
+  const companyTokens = new Set(opts.companyName ? tokenize(decodeEntities(opts.companyName)) : []);
+  const tokens = tokenize(cleanTitle(rawTitle, opts.sourceCode, opts.companyName))
+    .filter(
+      (t) =>
+        !STOPWORDS.has(t) &&
+        !companyTokens.has(t) &&
+        !(t in TITLE_LEVELS) &&
+        !SENIORITY_MODIFIERS.has(t),
+    )
+    .map((t) => TITLE_SYNONYMS[t] ?? t);
   return [...new Set(tokens)].sort().join(" ");
 }
 
+/** Seniority levels named in a title ("Middle/Senior" → MIDDLE, SENIOR). */
+export function titleLevels(rawTitle: string): string[] {
+  const levels = tokenize(decodeEntities(rawTitle))
+    .map((t) => TITLE_LEVELS[t])
+    .filter((l): l is string => l !== undefined);
+  return [...new Set(levels)].sort();
+}
+
 export function titleSim(keyA: string, keyB: string): number {
-  const a = new Set(keyA.split(" ").filter((t) => t && !SENIORITY_WORDS.has(t)));
-  const b = new Set(keyB.split(" ").filter((t) => t && !SENIORITY_WORDS.has(t)));
+  const a = new Set(keyA.split(" ").filter(Boolean));
+  const b = new Set(keyB.split(" ").filter(Boolean));
   if (a.size === 0 || b.size === 0) return 0;
   let common = 0;
   for (const t of a) if (b.has(t)) common++;
@@ -194,6 +251,10 @@ function bothKnownAndDiffer<T>(a: T | null, b: T | null): boolean {
   return a !== null && b !== null && a !== b;
 }
 
+function disjointLevels(a: readonly string[], b: readonly string[]): boolean {
+  return a.length > 0 && b.length > 0 && !a.some((l) => b.includes(l));
+}
+
 export function isRepost(a: PostingFacts, b: PostingFacts, ctx: MatchContext): boolean {
   return (
     a.sourceId === b.sourceId &&
@@ -208,7 +269,10 @@ export const VETOES: readonly Veto[] = [
   (a, b) => (bothKnownAndDiffer(a.companyId, b.companyId) ? "company" : null),
   (a, b) =>
     bothKnownAndDiffer(requisitionNo(a.title), requisitionNo(b.title)) ? "requisition" : null,
-  (a, b) => (bothKnownAndDiffer(a.seniority, b.seniority) ? "seniority" : null),
+  (a, b) =>
+    bothKnownAndDiffer(a.seniority, b.seniority) || disjointLevels(a.titleLevels, b.titleLevels)
+      ? "seniority"
+      : null,
   (a, b) => (bothKnownAndDiffer(a.roleNodeId, b.roleNodeId) ? "role" : null),
   (a, b, ctx) =>
     a.sourceId === b.sourceId && a.fingerprint !== b.fingerprint && !isRepost(a, b, ctx)

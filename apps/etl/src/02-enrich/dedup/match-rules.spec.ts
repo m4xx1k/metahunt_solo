@@ -5,6 +5,7 @@ import {
   requisitionNo,
   shingles,
   titleKey,
+  titleLevels,
   titleSim,
   vetoes,
   type MatchContext,
@@ -44,6 +45,7 @@ function posting(p: {
     sourceId: source,
     companyId: p.company === undefined ? "company-1" : p.company,
     title: p.title,
+    titleLevels: titleLevels(p.title),
     titleKey: titleKey(p.title, {
       sourceCode: p.sourceCode ?? (source === DOU ? "dou" : "djinni"),
       companyName: p.companyName ?? null,
@@ -82,7 +84,7 @@ describe("titleKey", () => {
         sourceCode: "dou",
         companyName: null,
       }),
-    ).toBe("developer middle php");
+    ).toBe("engineer php");
   });
 
   it("keeps a company that itself contains ' в ' out of the key", () => {
@@ -91,7 +93,7 @@ describe("titleKey", () => {
         sourceCode: "dou",
         companyName: "KPMG в Україні",
       }),
-    ).toBe("consultant network security senior");
+    ).toBe("consultant network security");
   });
 
   it("keeps ' в ' inside a Djinni title", () => {
@@ -128,16 +130,41 @@ describe("titleKey", () => {
         sourceCode: "djinni",
         companyName: null,
       }),
-    ).toBe("angular developer frontend middle");
+    ).toBe("angular engineer frontend");
     expect(
       titleKey("Expert .NET Engineer (3117)", { sourceCode: "djinni", companyName: null }),
     ).toBe("engineer expert net");
   });
 });
 
-describe("titleSim", () => {
-  it("ignores seniority words", () => {
-    expect(titleSim("engineer qa senior", "engineer middle qa")).toBe(1);
+describe("title seniority", () => {
+  it("is not part of the key but still vetoes", () => {
+    const key = (t: string) => titleKey(t, { sourceCode: "djinni", companyName: null });
+    expect(key("Senior QA Engineer")).toBe(key("Middle QA Engineer"));
+    expect(titleLevels("Middle/Senior PHP Developer")).toEqual(["MIDDLE", "SENIOR"]);
+    const text = words("sdet", 80);
+    const a = posting({ title: "Senior SDET", source: DJINNI, company: null, description: text });
+    const b = posting({ title: "Middle SDET", source: DJINNI, company: null, description: text });
+    expect(vetoes(a, b, ctx())).toBe("seniority");
+    const c = posting({
+      title: "Middle/Senior SDET",
+      source: DOU,
+      company: null,
+      description: text,
+    });
+    expect(vetoes(a, c, ctx())).toBeNull();
+  });
+
+  it("treats developer and engineer as one word and drops the company's own name", () => {
+    expect(titleKey("Backend Developer", { sourceCode: "djinni", companyName: null })).toBe(
+      titleKey("Backend Engineer", { sourceCode: "djinni", companyName: null }),
+    );
+    expect(
+      titleKey("Technical QA Engineer (Kiss My Apps)", {
+        sourceCode: "djinni",
+        companyName: "Kiss My Apps",
+      }),
+    ).toBe("engineer qa technical");
   });
 });
 

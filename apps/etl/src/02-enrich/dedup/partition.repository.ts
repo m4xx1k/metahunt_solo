@@ -2,7 +2,13 @@ import { sql, type SQL } from "drizzle-orm";
 
 import type { Executor } from "../loader/repositories/executor";
 
-import { LINK_WINDOW_DAYS, shingles, titleKey, type PostingFacts } from "./match-rules";
+import {
+  LINK_WINDOW_DAYS,
+  shingles,
+  titleKey,
+  titleLevels,
+  type PostingFacts,
+} from "./match-rules";
 import { repairUniqueVacancies, uuidArray } from "./unique-vacancy-rollup";
 
 export const ANN_TOP_N = 20;
@@ -94,6 +100,7 @@ export async function loadPostings(
       companyId: r.company_id,
       title: r.title,
       titleKey: titleKey(r.title, { sourceCode: r.source_code, companyName: r.company_name }),
+      titleLevels: titleLevels(r.title),
       seniority: r.seniority,
       roleNodeId: r.role_node_id,
       publishedAt: toDate(r.published_at).getTime(),
@@ -126,6 +133,9 @@ export async function findNeighbours(
     const rows = await inTransaction(db, async (tx) => {
       await tx.execute(sql.raw(`SET LOCAL hnsw.ef_search = ${ANN_EF_SEARCH}`));
       await tx.execute(sql`SET LOCAL hnsw.iterative_scan = relaxed_order`);
+      // The date predicate is misestimated (~100 rows), so the planner picks an
+      // exact seq scan: 100 ms per query instead of 3 ms through HNSW.
+      await tx.execute(sql`SET LOCAL enable_seqscan = off`);
       const res = await tx.execute<{ a: string; b: string; cosine: string }>(sql`
         SELECT q.id AS a, n.id AS b, n.cosine::text AS cosine
         FROM vacancies q

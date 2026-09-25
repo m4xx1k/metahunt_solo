@@ -17,6 +17,7 @@ function facts(id: string, day: number, over: Partial<PostingFacts> = {}): Posti
     companyId: null,
     title: "Backend Engineer",
     titleKey: "backend engineer",
+    titleLevels: [],
     seniority: null,
     roleNodeId: null,
     publishedAt: day * DAY,
