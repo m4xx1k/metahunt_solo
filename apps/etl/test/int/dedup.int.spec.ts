@@ -367,6 +367,77 @@ describe("DedupService plan / apply / detach (integration)", () => {
     expect(await groupIdOf(b)).toBe(groupId);
   });
 
+  it("refuses to write a partition that leaves out a member of an affected group", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const plan = await dedup.plan();
+    const withoutB = plan.target.entries.filter((e) => e.vacancyId !== b);
+    await expect(
+      db.transaction((tx) => partitionRepository.writePartition(tx, withoutB)),
+    ).rejects.toThrow(/joined an affected group/);
+    expect(await groupIdOf(b)).toBe(await groupIdOf(a));
+  });
+
+  it("the sweep and a full plan agree", async () => {
+    const dou = await seedSource("dou");
+    const djinni = await seedSource("djinni");
+    const shared = text("agree");
+    await seedVacancy(dou, { description: shared });
+    await seedVacancy(djinni, { description: shared, day: 1 });
+    await seedVacancy(djinni, { description: `${shared} again`, day: 3, embedding: emb(900) });
+    await seedVacancy(dou, { title: "Designer", day: 2 });
+    await seedVacancy(djinni, { title: "Designer", day: 2, fingerprint: "fp-designer" });
+    await seedVacancy(djinni, { title: "Designer", day: 9, fingerprint: "fp-designer" });
+    await dedup.resolveAll();
+
+    const plan = await dedup.plan();
+
+    expect(plan.report.stats.diff).toEqual({ changedGroups: 0, splits: 0, merges: 0, moved: 0 });
+    expect(await groupCount()).toBe(3);
+  });
+
+  it("a detach survives a sweep started by a new neighbour", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    await dedup.detach(await groupIdOf(a), b, null);
+
+    const c = await seedVacancy(await seedSource("work"), {
+      description: text("rebuild"),
+      day: 2,
+    });
+    await dedup.resolveAll();
+
+    expect(await groupIdOf(a)).not.toBe(await groupIdOf(b));
+    expect([await groupIdOf(a), await groupIdOf(b)]).toContain(await groupIdOf(c));
+  });
+
+  it("the partition does not depend on row order when publish times tie", async () => {
+    const shared = text("tie");
+    for (const code of ["dou", "djinni", "work"]) {
+      await seedVacancy(await seedSource(code), { description: shared });
+    }
+    const shape = (p: Awaited<ReturnType<DedupService["plan"]>>) =>
+      p.target.entries
+        .map((e) => ({
+          id: e.vacancyId,
+          group: e.groupId,
+          via: (e.dedupReason as { matchedAgainstVacancyId: string } | null)
+            ?.matchedAgainstVacancyId,
+        }))
+        .sort((x, y) => x.id.localeCompare(y.id));
+    const scanOrder = async () =>
+      (await db.execute<{ id: string }>(sql`SELECT id FROM vacancies`)).rows.map((r) => r.id);
+
+    const first = shape(await dedup.plan());
+    const orderBefore = await scanOrder();
+    await db.execute(sql`UPDATE vacancies SET title = title WHERE id = ${orderBefore[0]}`);
+    expect(await scanOrder()).not.toEqual(orderBefore);
+    const second = shape(await dedup.plan());
+
+    expect(second).toEqual(first);
+    expect(new Set(first.map((e) => e.group)).size).toBe(1);
+  });
+
   it("detach rejects a vacancy outside the group", async () => {
     const { a, c } = await seedLinkedPair();
     await dedup.resolveAll();
