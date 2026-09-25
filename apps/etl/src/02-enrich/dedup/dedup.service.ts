@@ -246,7 +246,7 @@ export class DedupService {
     const seeds = [
       vacancyId,
       ...neighbours.map((n) => n.b),
-      ...(await findSameFingerprint(this.db, vacancyId)),
+      ...(await findSameFingerprint(this.db, [vacancyId])).map(([, b]) => b),
     ];
     const ids = [...new Set([...seeds, ...(await findGroupMembers(this.db, seeds))])];
     return this.rebuild(ids, (entries) => this.db.transaction((tx) => writePartition(tx, entries)));
@@ -328,15 +328,10 @@ export class DedupService {
       }
     });
     const cosines = new Map(neighbours.map((n) => [pairKey(n.a, n.b), n.cosine]));
-    const pairs: Array<readonly [string, string]> = neighbours.map((n) => [n.a, n.b]);
-    const byFingerprint = new Map<string, string[]>();
-    for (const r of rows) {
-      if (!r.facts.fingerprint) continue;
-      const list = byFingerprint.get(r.facts.fingerprint) ?? [];
-      list.push(r.facts.id);
-      byFingerprint.set(r.facts.fingerprint, list);
-    }
-    for (const list of byFingerprint.values()) pairs.push(...allPairs(list));
+    const pairs: Array<readonly [string, string]> = [
+      ...neighbours.map((n) => [n.a, n.b] as const),
+      ...(await findSameFingerprint(this.db, "all")),
+    ];
 
     const ctx = matchContext({ overrides: await loadOverrides(this.db, "all"), cosines });
     const facts = new Map(rows.map((r) => [r.facts.id, r.facts]));

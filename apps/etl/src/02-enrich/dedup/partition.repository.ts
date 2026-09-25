@@ -182,17 +182,22 @@ export async function findNeighbours(
   return out;
 }
 
-export async function findSameFingerprint(db: Executor, vacancyId: string): Promise<string[]> {
-  const res = await db.execute<{ id: string }>(sql`
-    SELECT other.id
+/** Pairs of vacancies whose current records share a content fingerprint; "all" lists each pair once. */
+export async function findSameFingerprint(
+  db: Executor,
+  ids: readonly string[] | "all",
+): Promise<Array<[string, string]>> {
+  const where =
+    ids === "all" ? sql`v.id < other.id` : sql`v.id = ANY(${uuidArray(ids)}) AND other.id <> v.id`;
+  const res = await db.execute<{ a: string; b: string }>(sql`
+    SELECT v.id AS a, other.id AS b
     FROM vacancies v
     JOIN rss_records r ON r.id = v.last_rss_record_id
     JOIN rss_records other_r ON other_r.content_fingerprint = r.content_fingerprint
     JOIN vacancies other ON other.last_rss_record_id = other_r.id
-    WHERE v.id = ${vacancyId}
-      AND other.id <> v.id
+    WHERE ${where}
   `);
-  return res.rows.map((r) => r.id);
+  return res.rows.map((r) => [r.a, r.b]);
 }
 
 export async function findGroupMembers(
