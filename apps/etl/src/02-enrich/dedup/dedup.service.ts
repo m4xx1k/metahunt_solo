@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 
 import { and, eq, sql, type SQL } from "drizzle-orm";
 
@@ -350,7 +350,7 @@ export class DedupService {
       this.db.transaction((tx) => writePartition(tx, entries)),
     );
     if (result === "stale") {
-      throw new StalePartitionError("group changed while detaching; the override is saved, retry");
+      throw new ConflictException("Detach saved; the group rebuilds on the next sweep");
     }
     const mine = result.entries.find((e) => e.vacancyId === vacancyId);
     return { groupId: mine!.groupId };

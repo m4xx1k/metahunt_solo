@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { ApiError } from "@/lib/api/client";
 import { dedupApi } from "@/lib/api/dedup";
 
 // Operator verdict "not the same job": saved as an override, so every later
@@ -10,18 +11,27 @@ import { dedupApi } from "@/lib/api/dedup";
 export function DetachButton({ groupId, vacancyId }: { groupId: string; vacancyId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [failed, setFailed] = useState(false);
+  const [state, setState] = useState<"idle" | "failed" | "queued">("idle");
 
+  // 409: the group changed meanwhile; the verdict is saved and the next sweep applies it.
   const detach = () =>
     startTransition(async () => {
       try {
         await dedupApi.detach(groupId, vacancyId);
-        setFailed(false);
+        setState("idle");
         router.refresh();
-      } catch {
-        setFailed(true);
+      } catch (err) {
+        setState(err instanceof ApiError && err.status === 409 ? "queued" : "failed");
       }
     });
+
+  if (state === "queued") {
+    return (
+      <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+        saved · rebuilds soon
+      </span>
+    );
+  }
 
   return (
     <button
@@ -30,7 +40,7 @@ export function DetachButton({ groupId, vacancyId }: { groupId: string; vacancyI
       disabled={pending}
       className="font-mono text-2xs uppercase tracking-wider text-text-muted underline-offset-2 hover:text-danger hover:underline disabled:opacity-50"
     >
-      {pending ? "detaching…" : failed ? "retry detach" : "detach"}
+      {pending ? "detaching…" : state === "failed" ? "retry detach" : "detach"}
     </button>
   );
 }

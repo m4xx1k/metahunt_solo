@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -57,6 +58,10 @@ export class DedupController {
   @ApiOkResponse({ description: "The group the vacancy lives in after the rebuild." })
   @ApiNotFoundResponse({
     description: "The vacancy is not a member of this group.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description: "The group changed meanwhile; the detach is saved and applies on the next sweep.",
     type: ApiErrorResponseDto,
   })
   detach(

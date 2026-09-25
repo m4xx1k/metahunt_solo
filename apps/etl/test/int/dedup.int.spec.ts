@@ -1,3 +1,4 @@
+import { ConflictException } from "@nestjs/common";
 import { sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
@@ -6,6 +7,7 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 import { DedupService } from "../../src/02-enrich/dedup/dedup.service";
 import { OpenAIEmbeddingsClient } from "../../src/02-enrich/dedup/openai-embeddings.client";
 import { diffPartitions } from "../../src/02-enrich/dedup/partition";
+import * as partitionRepository from "../../src/02-enrich/dedup/partition.repository";
 import { StalePartitionError } from "../../src/02-enrich/dedup/partition.repository";
 
 import { makeTestDb, truncateAll } from "./db";
@@ -287,6 +289,32 @@ describe("DedupService plan / apply / detach (integration)", () => {
         new Map(after.target.entries.map((e) => [e.vacancyId, e.groupId])),
       ).changedGroups,
     ).toBe(0);
+  });
+
+  it("detach on a group that changed meanwhile is a 409 and keeps the override", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+    const realWrite = partitionRepository.writePartition;
+    const write = jest
+      .spyOn(partitionRepository, "writePartition")
+      .mockImplementationOnce(async (tx, entries) => {
+        await db.execute(
+          sql`UPDATE vacancies SET embedding_source_hash = 'edited' WHERE id = ${a}`,
+        );
+        return realWrite(tx, entries);
+      });
+
+    const err = await dedup.detach(groupId, b, null).catch((e: unknown) => e);
+    write.mockRestore();
+
+    expect(err).toBeInstanceOf(ConflictException);
+    expect((err as ConflictException).getStatus()).toBe(409);
+    const overrides = await db.execute<{ verdict: string }>(
+      sql`SELECT verdict FROM dedup_overrides WHERE ${a} IN (vacancy_a, vacancy_b) AND ${b} IN (vacancy_a, vacancy_b)`,
+    );
+    expect(overrides.rows).toEqual([{ verdict: "different" }]);
+    expect(await groupIdOf(b)).toBe(groupId);
   });
 
   it("detach rejects a vacancy outside the group", async () => {
