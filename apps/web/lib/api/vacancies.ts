@@ -3,6 +3,7 @@
 // Hand-mirrored per ADR-0005 (no shared libs/contracts/ until 2nd consumer).
 
 import { apiGet, buildQs } from "./client";
+import type { DedupReason } from "./dedup";
 // FitTier/MatchSort live in ranking.ts, which already imports VacancyDto from
 // here — a type-only import back is fine (erased at compile time, no runtime
 // cycle) and avoids a second copy of the tier union.
@@ -170,16 +171,7 @@ export interface VacancyDetailDto extends VacancyDto {
 // Mirror of apps/etl/src/02-enrich/dedup/dedup.contract.ts. The "why merged"
 // reasons shown when a duplicate badge is expanded.
 
-export type DedupRule = "exact" | "repost" | "cross_source";
-
-export interface DedupReason {
-  rule: DedupRule;
-  matchedAgainstVacancyId: string;
-  titleSim: number;
-  containment: number;
-  cosine: number | null;
-  decidedAt: string;
-}
+export type { DedupReason, DedupRule } from "./dedup";
 
 export interface DedupGroupMember {
   vacancyId: string;
@@ -190,7 +182,7 @@ export interface DedupGroupMember {
   publishedAt: string | null;
   isCanonical: boolean;
   /** null on the member that founded the group. */
-  dedupReason: DedupReason | null;
+  dedupReason: DedupReason | Record<string, unknown> | null;
 }
 
 export interface FeedDuplicateGroup {

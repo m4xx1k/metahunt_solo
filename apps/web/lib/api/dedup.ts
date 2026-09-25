@@ -32,6 +32,23 @@ export interface DedupReason {
   decidedAt: string;
 }
 
+const RULE_LABEL: Record<DedupRule, string> = {
+  exact: "same text",
+  repost: "reposted",
+  cross_source: "same job, other board",
+};
+
+// Rows written before the pairwise rebuild (or restored by a rollback) carry
+// the old reason shape, with no `rule`.
+export function isRuleReason(reason: unknown): reason is DedupReason {
+  const rule = (reason as { rule?: unknown } | null)?.rule;
+  return typeof rule === "string" && Object.hasOwn(RULE_LABEL, rule);
+}
+
+export function dedupRuleLabel(reason: unknown): string {
+  return isRuleReason(reason) ? RULE_LABEL[reason.rule] : "earlier rules";
+}
+
 // ─────────────────── Group / member view models ────────────────
 
 export interface UniqueVacancyMember {
@@ -42,7 +59,7 @@ export interface UniqueVacancyMember {
   title: string;
   publishedAt: string | null;
   isCanonical: boolean;
-  dedupReason: DedupReason | null;
+  dedupReason: DedupReason | Record<string, unknown> | null;
 }
 
 export interface UniqueVacancyListItem {

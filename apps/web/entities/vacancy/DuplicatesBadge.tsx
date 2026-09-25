@@ -4,12 +4,8 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/lib/format";
-import {
-  vacanciesApi,
-  type DedupGroupMember,
-  type DedupReason,
-  type FeedDuplicateGroup,
-} from "@/lib/api/vacancies";
+import { dedupRuleLabel } from "@/lib/api/dedup";
+import { vacanciesApi, type DedupGroupMember, type FeedDuplicateGroup } from "@/lib/api/vacancies";
 
 type Props = {
   uniqueVacancyId: string;
@@ -163,17 +159,13 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
   );
 }
 
-const RULE_LABEL: Record<DedupReason["rule"], string> = {
-  exact: "same text",
-  repost: "reposted",
-  cross_source: "same job, other board",
-};
-
-function WhyMerged({ reason: r }: { reason: DedupReason }) {
+export function WhyMerged({ reason }: { reason: NonNullable<DedupGroupMember["dedupReason"]> }) {
   return (
     <div className="flex items-center gap-2 border-t border-border pt-3 font-mono text-2xs uppercase tracking-wider">
       <span className="text-text-muted">why merged</span>
-      <span className="border border-success px-2 py-[2px] text-success">{RULE_LABEL[r.rule]}</span>
+      <span className="border border-success px-2 py-[2px] text-success">
+        {dedupRuleLabel(reason)}
+      </span>
     </div>
   );
 }
