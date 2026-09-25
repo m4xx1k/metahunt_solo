@@ -422,6 +422,23 @@ drop in this PR, so the old code still runs).
   that "title vetoes block merges" was wrong: no such code existed before this rewrite.
 - **Rehearsal spend:** one local `embed --force` over 20 557 rows, 17 min, ≈ $0.3.
 - **Manual detach is a pair table**, not ADR-0012's `detached_at` (ADR-0016).
+- **Review fixes (2026-09-25, after the independent `/code-review` of #225).** Decided here:
+  - A partition entry's version pins content, embedding, company, role, seniority **and the group
+    the file expects to find the row in**. The target file expects today's groups; the rollback file
+    expects the target's groups, so `apply current.json` still restores right after `apply`, and a
+    detach or reclassification between `plan` and `apply` makes `apply` refuse.
+  - The rollback file also restores each group's canonical member and exact `deduplicated_at`.
+  - ANN neighbours collapse identical copies (same fingerprint) before the top-20 cut. Without it a
+    repost series (24 + 23 copies) crowds out other neighbours, and every `apply` (which adds HNSW
+    entries) shuffled which ones came back — `plan` after `apply` moved 26 vacancies. After: 0 diff.
+    Cost: a full `plan` takes ~2 m 40 s instead of ~1 m 15 s.
+  - An empty title key (only level or stop words) never counts as a title match; `Middle+` is a
+    level; levels inside the DOU company suffix are ignored.
+  - Stale detach is a 409: the override is kept and the next sweep applies it.
+  - `dedup:resolve` stays: a manual sweep is used in the rehearsal and the smoke test.
+  - Golden set after the fixes: 0 false merges; pair recall 0.669 (unchanged), cluster recall
+    0.646 (was 0.657): two pairs now land in different groups of one ad series because a larger
+    group claims one twin and a title-level veto keeps the other out.
 
 ## Links
 
