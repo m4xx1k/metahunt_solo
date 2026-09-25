@@ -8,6 +8,7 @@ import type { VacancyDto } from "@/lib/api/vacancies";
 import { formatSalary } from "@/lib/extracted-vacancy";
 import { Tag } from "@/ui";
 
+import { AdminLinks } from "./AdminLinks";
 import { VacancyMetaPills } from "./VacancyMetaPills";
 
 export function VacancyHero({
@@ -114,6 +115,8 @@ export function VacancyHero({
         hasTestAssignment={vacancy.hasTestAssignment}
         hasReservation={vacancy.hasReservation}
       />
+
+      <AdminLinks vacancy={vacancy} />
     </div>
   );
 }

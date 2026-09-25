@@ -1,15 +1,9 @@
 // Web-side wire types + fetcher for the operator dedup dashboard.
-// Source of truth: apps/etl/src/dedup/dedup.contract.ts.
+// Source of truth: apps/etl/src/02-enrich/dedup/dedup.contract.ts.
 // Hand-mirrored per ADR-0005 (no shared libs/contracts/ until 2nd consumer).
 
 import type { Currency, Seniority, WorkFormat } from "./vacancies";
-import { apiGet, buildQs } from "./client";
-
-// ───────────────────────── Confidence ─────────────────────────
-
-// `gold` — high similarity corroborated by a structural signal;
-// `confirmed` — passed every gate but weaker corroboration.
-export type DedupConfidence = "gold" | "confirmed";
+import { apiGet, apiPost, buildQs } from "./client";
 
 // ─────────────────────── Source / refs ────────────────────────
 
@@ -27,24 +21,32 @@ export interface SalaryRange {
 
 // ────────────────────────── DedupReason ───────────────────────
 
+export type DedupRule = "exact" | "repost" | "cross_source";
+
 export interface DedupReason {
-  similarity: number;
+  rule: DedupRule;
   matchedAgainstVacancyId: string;
-  prefilterMatches: {
-    role: boolean | null;
-    seniority: boolean | null;
-    workFormat: boolean | null;
-    company: boolean | null;
-    dateWindowDays: number;
-  };
-  confidence: DedupConfidence;
-  corroboration: {
-    skillJaccard: number;
-    titleJaccard: number;
-    companyMatch: boolean;
-  };
-  embeddingModel: string;
+  titleSim: number;
+  containment: number;
+  cosine: number | null;
   decidedAt: string;
+}
+
+const RULE_LABEL: Record<DedupRule, string> = {
+  exact: "same text",
+  repost: "reposted",
+  cross_source: "same job, other board",
+};
+
+// Rows written before the pairwise rebuild (or restored by a rollback) carry
+// the old reason shape, with no `rule`.
+export function isRuleReason(reason: unknown): reason is DedupReason {
+  const rule = (reason as { rule?: unknown } | null)?.rule;
+  return typeof rule === "string" && Object.hasOwn(RULE_LABEL, rule);
+}
+
+export function dedupRuleLabel(reason: unknown): string {
+  return isRuleReason(reason) ? RULE_LABEL[reason.rule] : "earlier rules";
 }
 
 // ─────────────────── Group / member view models ────────────────
@@ -57,8 +59,7 @@ export interface UniqueVacancyMember {
   title: string;
   publishedAt: string | null;
   isCanonical: boolean;
-  similarityToCentroid: number | null;
-  dedupReason: DedupReason | null;
+  dedupReason: DedupReason | Record<string, unknown> | null;
 }
 
 export interface UniqueVacancyListItem {
@@ -75,16 +76,15 @@ export interface UniqueVacancyListItem {
   vacancyCount: number;
   firstSeenAt: string;
   lastSeenAt: string;
-  minSimilarity: number | null;
   members: UniqueVacancyMember[];
 }
 
 // ──────────────────────── Metrics panel ────────────────────────
 
-export interface DedupSimilarityBuckets {
-  soft: number;
-  hard: number;
-  veryHard: number;
+export interface DedupRuleCounts {
+  exact: number;
+  repost: number;
+  crossSource: number;
 }
 
 export interface DedupSourceBreakdown {
@@ -101,7 +101,7 @@ export interface DedupMetrics {
   totalVacancies: number;
   vacanciesInCrossSourceGroups: number;
   avgGroupSize: number;
-  similarityBuckets: DedupSimilarityBuckets;
+  ruleCounts: DedupRuleCounts;
   sourceBreakdown: DedupSourceBreakdown[];
 }
 
@@ -109,8 +109,7 @@ export interface DedupMetrics {
 
 export interface UniqueVacanciesQuery {
   crossSource?: boolean;
-  minSimilarity?: number;
-  confidence?: DedupConfidence | "all";
+  groupId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -129,7 +128,7 @@ export interface UniqueVacanciesResponse {
 
 export const dedupApi = {
   list: (q: UniqueVacanciesQuery = {}) =>
-    apiGet<UniqueVacanciesResponse>(
-      `/operator/unique-vacancies${buildQs(q)}`,
-    ),
+    apiGet<UniqueVacanciesResponse>(`/operator/unique-vacancies${buildQs(q)}`),
+  detach: (groupId: string, vacancyId: string) =>
+    apiPost<{ groupId: string }>(`/operator/unique-vacancies/${groupId}/detach`, { vacancyId }),
 };

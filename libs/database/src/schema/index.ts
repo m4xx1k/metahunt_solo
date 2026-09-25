@@ -15,6 +15,7 @@ export * from "./node-tech-meta";
 export * from "./node-skill-cooc";
 export * from "./candidates";
 export * from "./unique-vacancies";
+export * from "./dedup-overrides";
 export * from "./postings";
 export * from "./positions";
 export * from "./position-nodes";

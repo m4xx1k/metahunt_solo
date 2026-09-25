@@ -13,7 +13,7 @@ describe("DedupService.embedAll", () => {
       id: `00000000-0000-0000-0000-${String(i).padStart(12, "0")}`,
       last_rss_record_id: `r${i}`,
       title: `Vacancy ${i}`,
-      description: "text",
+      description: `text ${i}`,
       seniority: null,
       work_format: null,
       embedding_source_hash: null,

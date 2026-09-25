@@ -100,8 +100,9 @@ Ports: web `4000`, etl `3333` in Docker / `3000` native fallback, Postgres `5432
 **Guards that also run in CI** — run before touching their area: `pnpm seo:audit`,
 `pnpm analytics:catalog`, `pnpm db:check`, `pnpm baml:identity:check`.
 
-**Pipeline / admin CLIs** (dry-run by default, `--apply` mutates): `pnpm dedup:embed |
-dedup:resolve | dedup:reset`, `pnpm skills:classify`, `pnpm taxonomy:migrate`.
+**Pipeline / admin CLIs** (dry-run by default, `--apply` mutates): `pnpm skills:classify`,
+`pnpm taxonomy:migrate`. Dedup is different — `pnpm dedup:plan` is the read-only one;
+`dedup:embed | dedup:resolve | dedup:apply` always write (non-local needs `--yes-prod`).
 
 **Hit the local API without a browser login:**
 
@@ -118,7 +119,7 @@ never prod. Never creates a user; the Telegram id must have logged in once alrea
 
 ```bash
 DATABASE_URL=$(scripts/prod-db-url.sh) psql                # ad-hoc read
-DATABASE_URL=$(scripts/prod-db-url.sh) pnpm dedup:resolve   # dry-run against real data
+DATABASE_URL=$(scripts/prod-db-url.sh) pnpm dedup:plan      # read-only rebuild plan on real data
 ```
 
 `scripts/prod-db-url.sh` fetches the Railway `DATABASE_PUBLIC_URL` fresh per call — nothing

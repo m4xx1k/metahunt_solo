@@ -4,7 +4,7 @@
 # This is a credential PROVIDER, not a tool. Inject it into any CLI that reads
 # DATABASE_URL to run that CLI against prod, without ever storing the secret:
 #
-#   DATABASE_URL=$(scripts/prod-db-url.sh) pnpm dedup:resolve
+#   DATABASE_URL=$(scripts/prod-db-url.sh) pnpm dedup:plan
 #   DATABASE_URL=$(scripts/prod-db-url.sh) pnpm classify-skills
 #   DATABASE_URL=$(scripts/prod-db-url.sh) psql            # ad-hoc recheck
 #

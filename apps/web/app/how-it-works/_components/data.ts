@@ -65,10 +65,10 @@ export const parse = {
 export const dedup = {
   substats: [
     { value: "1536-d", label: "embedding" },
-    { value: "0.92", label: "merge cosine" },
+    { value: "0", label: "vetoed pairs merged" },
     { value: "±45d", label: "match window" },
     { value: "5 min", label: "sweep cadence" },
-    { value: "89%", label: "recall" },
+    { value: "66%", label: "recall" },
   ],
   hardFilters: [
     "Same source + same id, parsed from the URL, upserts in place.",
@@ -76,13 +76,14 @@ export const dedup = {
   ],
   softFilters: [
     "Each vacancy → a 1536-d embedding; pgvector takes the top-20 nearest within ±45 days.",
-    "Structural gates: same role & seniority, different companies excluded.",
-    "Join only if pairwise and group-centroid both ≥ 0.92; gold tier at ≥ 0.95.",
+    "A pair links on identical text, a same-board repost, or a matching title plus shared text on another board.",
+    "Any disagreement vetoes: company, requisition number, seniority, role, or different text on one board.",
+    "Every member of a group must agree with every other — no chains through a middleman.",
     "Canonical = earliest-published member; every source link is kept.",
   ],
   funnel: [
     { label: "all vacancies (100% embedded)", value: "10,839" },
-    { down: "top-20 nearest · ±45d · role/seniority gates · cosine ≥ 0.92" },
+    { down: "top-20 nearest · ±45d · pair rules · complete veto" },
     { label: "unique job groups", value: "9,228", accent: true },
     { down: "of which merged from 2+ postings" },
     { label: "multi-member groups merged", value: "1,107" },
@@ -118,6 +119,6 @@ export const numbers = {
     },
     { value: "10,839", label: "vacancies processed", note: "100% embedded · 2026-07-07" },
     { value: "9,228", label: "unique job groups", note: "after dedup collapse" },
-    { value: "89%", label: "dedup recall", note: "194/219 in-window pairs" },
+    { value: "66%", label: "dedup recall", note: "0 false merges · 300-pair audit" },
   ],
 };

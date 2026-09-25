@@ -3,6 +3,7 @@
 // Hand-mirrored per ADR-0005 (no shared libs/contracts/ until 2nd consumer).
 
 import { apiGet, buildQs } from "./client";
+import type { DedupReason } from "./dedup";
 // FitTier/MatchSort live in ranking.ts, which already imports VacancyDto from
 // here — a type-only import back is fine (erased at compile time, no runtime
 // cycle) and avoids a second copy of the tier union.
@@ -170,30 +171,7 @@ export interface VacancyDetailDto extends VacancyDto {
 // Mirror of apps/etl/src/02-enrich/dedup/dedup.contract.ts. The "why merged"
 // reasons shown when a duplicate badge is expanded.
 
-export type DedupConfidence = "gold" | "confirmed";
-
-export interface DedupReason {
-  /** Cosine similarity at decision time (0..1). */
-  similarity: number;
-  matchedAgainstVacancyId: string;
-  prefilterMatches: {
-    role: boolean | null;
-    seniority: boolean | null;
-    workFormat: boolean | null;
-    company: boolean | null;
-    dateWindowDays: number;
-  };
-  confidence: DedupConfidence;
-  corroboration: {
-    /** Jaccard over required-skill ids (0..1). */
-    skillJaccard: number;
-    /** Jaccard over normalised title tokens (0..1). */
-    titleJaccard: number;
-    companyMatch: boolean;
-  };
-  embeddingModel: string;
-  decidedAt: string;
-}
+export type { DedupReason, DedupRule } from "./dedup";
 
 export interface DedupGroupMember {
   vacancyId: string;
@@ -203,10 +181,8 @@ export interface DedupGroupMember {
   title: string;
   publishedAt: string | null;
   isCanonical: boolean;
-  /** Similarity to group centroid; null on the canonical member. */
-  similarityToCentroid: number | null;
-  /** null on the canonical member. */
-  dedupReason: DedupReason | null;
+  /** null on the member that founded the group. */
+  dedupReason: DedupReason | Record<string, unknown> | null;
 }
 
 export interface FeedDuplicateGroup {

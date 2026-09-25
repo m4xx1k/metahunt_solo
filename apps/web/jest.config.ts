@@ -7,6 +7,7 @@ const config: Config = {
     "<rootDir>/lib/**/*.spec.ts",
     "<rootDir>/features/**/*.spec.ts",
     "<rootDir>/entities/**/*.spec.ts",
+    "<rootDir>/entities/**/*.spec.tsx",
   ],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",

@@ -4,11 +4,10 @@ import { Activity, ActivityMethod } from "nestjs-temporal-core";
 
 import { DedupService } from "../dedup.service";
 
-// One activity == the whole CLI sweep, run sequentially: embed the new
-// vacancies, then resolve them. Both halves are idempotent (embed by source
+// One activity == the whole CLI sweep: embed the new vacancies, then rebuild
+// each pending one's affected set. Both halves are idempotent (embed by source
 // hash, resolve by `deduplicated_at IS NULL`), so a retry or an overlapping
-// schedule fire is harmless — and resolveAll walks chronologically in a single
-// pass, which is exactly what keeps near-duplicate siblings in one group.
+// schedule fire is harmless.
 @Injectable()
 @Activity()
 export class DedupSweepActivity {
@@ -20,11 +19,10 @@ export class DedupSweepActivity {
   async dedupSweep(): Promise<void> {
     const embed = await this.dedup.embedAll();
     const resolve = await this.dedup.resolveAll();
-    const exactContentSplits = await this.dedup.countExactContentSplits();
     this.logger.log(
       `dedup sweep — embedded=${embed.embedded} skipped=${embed.skipped}; ` +
-        `resolved=${resolve.processed} assigned=${resolve.assigned}; ` +
-        `exact_content_splits=${exactContentSplits}`,
+        `resolved=${resolve.resolved}/${resolve.processed} stale=${resolve.stale}; ` +
+        `same_source_violations=${resolve.sameSourceViolations}`,
     );
   }
 }

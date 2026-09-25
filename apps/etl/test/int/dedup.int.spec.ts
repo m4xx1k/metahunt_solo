@@ -1,3 +1,4 @@
+import { ConflictException } from "@nestjs/common";
 import { sql } from "drizzle-orm";
 import type { Pool } from "pg";
 
@@ -5,6 +6,9 @@ import { schema, type DrizzleDB } from "@metahunt/database";
 
 import { DedupService } from "../../src/02-enrich/dedup/dedup.service";
 import { OpenAIEmbeddingsClient } from "../../src/02-enrich/dedup/openai-embeddings.client";
+import { diffPartitions } from "../../src/02-enrich/dedup/partition";
+import * as partitionRepository from "../../src/02-enrich/dedup/partition.repository";
+import { StalePartitionError } from "../../src/02-enrich/dedup/partition.repository";
 
 import { makeTestDb, truncateAll } from "./db";
 import { insertVacancyWithGroup } from "./vacancy-fixture";
@@ -14,16 +18,14 @@ let pool: Pool;
 let dedup: DedupService;
 let seq = 0;
 
-// resolveAll never calls OpenAI (only embedAll does); the resolve path reads
-// only `.model` (a fallback in loadVacancyForResolve), so a stub suffices.
+// resolve/plan/apply never call OpenAI; only embedAll does.
 const embeddings = {
   model: "text-embedding-3-small",
   embed: async () => [],
 } as unknown as OpenAIEmbeddingsClient;
 
-// 1536-d embedding. Two vacancies on the same `axis` are cosine-identical
-// (sim 1.0 → above the 0.92 gate); different axes are orthogonal (sim 0 → no
-// match). Never all-zero — cosine distance is undefined for a zero vector.
+// Two vacancies on the same `axis` are cosine-identical, different axes are
+// orthogonal. Never all-zero — cosine distance is undefined for a zero vector.
 const DIM = 1536;
 function emb(axis: number): number[] {
   const v = new Array<number>(DIM).fill(0);
@@ -32,12 +34,17 @@ function emb(axis: number): number[] {
   return v;
 }
 
-const DAY = 86_400_000;
+function text(topic: string): string {
+  return Array.from({ length: 60 }, (_, i) => `${topic}${i}`).join(" ");
+}
 
-async function seedSource(): Promise<{ sourceId: string; ingestId: string }> {
+const DAY = 86_400_000;
+const BASE = new Date("2026-06-01T00:00:00Z");
+
+async function seedSource(code: string): Promise<{ sourceId: string; ingestId: string }> {
   const [source] = await db
     .insert(schema.sources)
-    .values({ code: `src-${++seq}`, displayName: "DOU", baseUrl: "https://dou.ua" })
+    .values({ code: `${code}-${++seq}`, displayName: code, baseUrl: `https://${code}.test` })
     .returning({ id: schema.sources.id });
   const [ingest] = await db
     .insert(schema.rssIngests)
@@ -46,31 +53,39 @@ async function seedSource(): Promise<{ sourceId: string; ingestId: string }> {
   return { sourceId: source.id, ingestId: ingest.id };
 }
 
-async function seedVacancy(opts: {
-  sourceId: string;
-  ingestId: string;
-  publishedAt: Date;
-  embedding: number[];
-}): Promise<string> {
+async function seedVacancy(
+  src: { sourceId: string; ingestId: string },
+  opts: {
+    day?: number;
+    embedding?: number[];
+    fingerprint?: string;
+    title?: string;
+    description?: string;
+  } = {},
+): Promise<string> {
   const externalId = `ext-${++seq}`;
+  const title = opts.title ?? "Backend Engineer";
+  const publishedAt = new Date(BASE.getTime() + (opts.day ?? 0) * DAY);
   const [rec] = await db
     .insert(schema.rssRecords)
     .values({
-      sourceId: opts.sourceId,
-      rssIngestId: opts.ingestId,
+      sourceId: src.sourceId,
+      rssIngestId: src.ingestId,
       externalId,
       hash: `hash-${externalId}`,
-      title: "Backend Engineer",
-      publishedAt: opts.publishedAt,
+      contentFingerprint: opts.fingerprint ?? `fp-${externalId}`,
+      title,
+      publishedAt,
     })
     .returning({ id: schema.rssRecords.id });
   return insertVacancyWithGroup(db, {
-    sourceId: opts.sourceId,
+    sourceId: src.sourceId,
     externalId,
     lastRssRecordId: rec.id,
-    title: "Backend Engineer",
-    publishedAt: opts.publishedAt,
-    embedding: opts.embedding,
+    title,
+    description: opts.description ?? text(`t${seq}x`),
+    publishedAt,
+    embedding: opts.embedding ?? emb(seq * 3),
     embeddingModel: "text-embedding-3-small",
   });
 }
@@ -80,11 +95,28 @@ async function groupCount(): Promise<number> {
   return Number(r.rows[0]?.c ?? 0);
 }
 
-async function groupIdOf(vacancyId: string): Promise<string | null> {
-  const r = await db.execute<{ g: string | null }>(
+async function groupIdOf(vacancyId: string): Promise<string> {
+  const r = await db.execute<{ g: string }>(
     sql`SELECT unique_vacancy_id AS g FROM vacancies WHERE id = ${vacancyId}`,
   );
-  return r.rows[0]?.g ?? null;
+  return r.rows[0].g;
+}
+
+async function partition(): Promise<Map<string, string>> {
+  const r = await db.execute<{ id: string; g: string }>(
+    sql`SELECT id, unique_vacancy_id AS g FROM vacancies`,
+  );
+  return new Map(r.rows.map((row) => [row.id, row.g]));
+}
+
+async function snapshot() {
+  const r = await db.execute(sql`
+    SELECT v.id, v.unique_vacancy_id, v.dedup_reason, v.deduplicated_at::text,
+           u.canonical_vacancy_id
+    FROM vacancies v JOIN unique_vacancies u ON u.id = v.unique_vacancy_id
+    ORDER BY v.id
+  `);
+  return r.rows;
 }
 
 beforeAll(() => {
@@ -100,83 +132,327 @@ afterEach(async () => {
   await truncateAll(db);
 });
 
-describe("DedupService.resolveAll — mechanics (integration)", () => {
-  it("merges same-source reposts (a board re-listing one job under a new id)", async () => {
-    const { sourceId, ingestId } = await seedSource();
-    const base = new Date("2026-06-01T00:00:00Z");
-    const a = await seedVacancy({ sourceId, ingestId, publishedAt: base, embedding: emb(3) });
-    const b = await seedVacancy({
-      sourceId,
-      ingestId,
-      publishedAt: new Date(base.getTime() + DAY),
-      embedding: emb(3),
-    });
+describe("DedupService.resolveAll — sweep (integration)", () => {
+  it("merges same-source postings with identical content and is idempotent", async () => {
+    const dou = await seedSource("dou");
+    const a = await seedVacancy(dou, { fingerprint: "fp-same", embedding: emb(3) });
+    const b = await seedVacancy(dou, { fingerprint: "fp-same", embedding: emb(3), day: 1 });
 
     await dedup.resolveAll();
 
     expect(await groupCount()).toBe(1);
     const groupId = await groupIdOf(a);
-    expect(groupId).toBe(await groupIdOf(b));
+    expect(await groupIdOf(b)).toBe(groupId);
     const [group] = await db
       .select()
       .from(schema.uniqueVacancies)
       .where(sql`${schema.uniqueVacancies.id} = ${groupId}`);
-    expect(group).toMatchObject({
-      vacancyCount: 2,
-      sourceCount: 1,
-      representativeVacancyId: b,
-    });
-    const resolved = await db
-      .select({ deduplicatedAt: schema.vacancies.deduplicatedAt })
-      .from(schema.vacancies);
-    expect(resolved.every((row) => row.deduplicatedAt !== null)).toBe(true);
+    expect(group).toMatchObject({ vacancyCount: 2, sourceCount: 1, representativeVacancyId: b });
+    const [member] = await db
+      .select({ reason: schema.vacancies.dedupReason })
+      .from(schema.vacancies)
+      .where(sql`${schema.vacancies.id} = ${b}`);
+    expect(member.reason).toMatchObject({ rule: "exact", matchedAgainstVacancyId: a });
 
-    expect(await dedup.resolveAll()).toEqual({ processed: 0, assigned: 0 });
+    expect(await dedup.resolveAll()).toMatchObject({ processed: 0, resolved: 0 });
     expect(await groupCount()).toBe(1);
   });
 
-  it("merges a cross-source pair 40 days apart (inside the 45d window)", async () => {
-    const s1 = await seedSource();
-    const s2 = await seedSource();
-    const base = new Date("2026-05-01T00:00:00Z");
-    const a = await seedVacancy({
-      sourceId: s1.sourceId,
-      ingestId: s1.ingestId,
-      publishedAt: base,
-      embedding: emb(7),
-    });
-    const b = await seedVacancy({
-      sourceId: s2.sourceId,
-      ingestId: s2.ingestId,
-      publishedAt: new Date(base.getTime() + 40 * DAY),
-      embedding: emb(7),
-    });
+  it("keeps same-source postings with different content apart even if embeddings match", async () => {
+    const dou = await seedSource("dou");
+    const a = await seedVacancy(dou, { embedding: emb(3), description: text("fintech") });
+    const b = await seedVacancy(dou, { embedding: emb(3), description: text("health"), day: 1 });
 
     await dedup.resolveAll();
 
-    expect(await groupCount()).toBe(1);
+    expect(await groupIdOf(a)).not.toBe(await groupIdOf(b));
+  });
+
+  it("merges a cross-source pair 40 days apart, not 46", async () => {
+    const dou = await seedSource("dou");
+    const djinni = await seedSource("djinni");
+    const shared = text("platform");
+    const a = await seedVacancy(dou, { description: shared });
+    const b = await seedVacancy(djinni, { description: shared, day: 40 });
+    const c = await seedVacancy(djinni, { description: shared, title: "Data Engineer", day: 5 });
+    const d = await seedVacancy(dou, { description: shared, title: "Data Engineer", day: 51 });
+
+    await dedup.resolveAll();
+
     expect(await groupIdOf(a)).toBe(await groupIdOf(b));
+    expect(await groupIdOf(c)).not.toBe(await groupIdOf(d));
   });
 
-  it("keeps a pair 46 days apart separate (outside the 45d window)", async () => {
-    const s1 = await seedSource();
-    const s2 = await seedSource();
-    const base = new Date("2026-05-01T00:00:00Z");
-    await seedVacancy({
-      sourceId: s1.sourceId,
-      ingestId: s1.ingestId,
-      publishedAt: base,
-      embedding: emb(9),
-    });
-    await seedVacancy({
-      sourceId: s2.sourceId,
-      ingestId: s2.ingestId,
-      publishedAt: new Date(base.getTime() + 46 * DAY),
-      embedding: emb(9),
-    });
+  it("never chains two different same-board postings through a cross-board match", async () => {
+    const dou = await seedSource("dou");
+    const djinni = await seedSource("djinni");
+    const shared = text("chain");
+    const a = await seedVacancy(dou, { description: `${shared} ${text("alpha")}` });
+    const b = await seedVacancy(djinni, { description: shared, day: 1 });
+    const c = await seedVacancy(dou, { description: `${shared} ${text("gamma")}`, day: 2 });
 
     await dedup.resolveAll();
 
+    expect(await groupIdOf(a)).toBe(await groupIdOf(b));
+    expect(await groupIdOf(c)).not.toBe(await groupIdOf(a));
+  });
+
+  it("splits an edited vacancy out of its group and keeps the old group id", async () => {
+    const dou = await seedSource("dou");
+    const djinni = await seedSource("djinni");
+    const shared = text("edit");
+    const a = await seedVacancy(dou, { description: shared });
+    const b = await seedVacancy(djinni, { description: shared, day: 1 });
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+    expect(await groupIdOf(b)).toBe(groupId);
+
+    const [rec] = await db
+      .insert(schema.rssRecords)
+      .values({
+        sourceId: djinni.sourceId,
+        rssIngestId: djinni.ingestId,
+        externalId: `edited-${b}`,
+        hash: `hash-edited-${b}`,
+        contentFingerprint: "fp-edited",
+        title: "Backend Engineer",
+        publishedAt: BASE,
+      })
+      .returning({ id: schema.rssRecords.id });
+    await db.execute(sql`
+      UPDATE vacancies
+      SET last_rss_record_id = ${rec.id},
+          description = ${text("unrelated")},
+          embedding = ${`[${emb(700).join(",")}]`}::vector,
+          deduplicated_at = NULL,
+          dedup_reason = NULL
+      WHERE id = ${b}
+    `);
+
+    await dedup.resolveAll();
+
+    expect(await groupIdOf(a)).toBe(groupId);
+    expect(await groupIdOf(b)).not.toBe(groupId);
     expect(await groupCount()).toBe(2);
+  });
+});
+
+describe("DedupService plan / apply / detach (integration)", () => {
+  async function seedLinkedPair() {
+    const dou = await seedSource("dou");
+    const djinni = await seedSource("djinni");
+    const shared = text("rebuild");
+    const a = await seedVacancy(dou, { description: shared });
+    const b = await seedVacancy(djinni, { description: shared, day: 1 });
+    const c = await seedVacancy(dou, { title: "Designer", day: 2 });
+    return { a, b, c };
+  }
+
+  it("apply writes the plan; a second plan is a 0 diff; current.json restores exactly", async () => {
+    const { a, b } = await seedLinkedPair();
+    const before = await partition();
+
+    const first = await dedup.plan();
+    expect(first.report.stats.diff.changedGroups).toBe(1);
+    await dedup.apply(first.target);
+    expect(await groupIdOf(a)).toBe(await groupIdOf(b));
+    expect(await groupIdOf(a)).toBe(before.get(a));
+
+    const second = await dedup.plan();
+    expect(second.report.stats.diff).toEqual({ changedGroups: 0, splits: 0, merges: 0, moved: 0 });
+
+    await dedup.apply(first.current);
+    expect(await partition()).toEqual(before);
+  });
+
+  it("current.json restores reasons, the canonical member and exact timestamps", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+    await db.execute(sql`
+      INSERT INTO dedup_overrides (vacancy_a, vacancy_b, verdict)
+      VALUES (LEAST(${a}::uuid, ${b}::uuid), GREATEST(${a}::uuid, ${b}::uuid), 'different')
+    `);
+    const probe = await dedup.plan();
+    const leaving = probe.target.entries.find(
+      (e) => (e.vacancyId === a || e.vacancyId === b) && e.groupId !== groupId,
+    )!.vacancyId;
+    await db.execute(
+      sql`UPDATE unique_vacancies SET canonical_vacancy_id = ${leaving} WHERE id = ${groupId}`,
+    );
+    await db.execute(
+      sql`UPDATE vacancies SET deduplicated_at = '2026-09-01 10:00:00.123456+00' WHERE id = ${a}`,
+    );
+    const before = await snapshot();
+
+    const plan = await dedup.plan();
+    await dedup.apply(plan.target);
+    expect(await snapshot()).not.toEqual(before);
+    await dedup.apply(plan.current);
+
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("refuses a plan when a vacancy changed or appeared after it was built", async () => {
+    const { a } = await seedLinkedPair();
+    const plan = await dedup.plan();
+
+    await db.execute(sql`UPDATE vacancies SET embedding_source_hash = 'changed' WHERE id = ${a}`);
+    await expect(dedup.apply(plan.target)).rejects.toThrow(StalePartitionError);
+
+    const fresh = await dedup.plan();
+    await seedVacancy(await seedSource("dou"));
+    await expect(dedup.apply(fresh.target)).rejects.toThrow(StalePartitionError);
+  });
+
+  it("refuses a plan after a detach or a reclassification", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const plan = await dedup.plan();
+    await dedup.detach(await groupIdOf(a), b, null);
+    await expect(dedup.apply(plan.target)).rejects.toThrow(StalePartitionError);
+
+    const fresh = await dedup.plan();
+    await db.execute(sql`UPDATE vacancies SET seniority = 'SENIOR' WHERE id = ${a}`);
+    await expect(dedup.apply(fresh.target)).rejects.toThrow(StalePartitionError);
+  });
+
+  it("a detached member stays detached through a full plan/apply", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+    expect(await groupIdOf(b)).toBe(groupId);
+
+    const out = await dedup.detach(groupId, b, null);
+
+    expect(out.groupId).not.toBe(groupId);
+    expect(await groupIdOf(a)).toBe(groupId);
+    expect(await groupIdOf(b)).toBe(out.groupId);
+
+    const plan = await dedup.plan();
+    await dedup.apply(plan.target);
+    expect(await groupIdOf(b)).not.toBe(await groupIdOf(a));
+    const after = await dedup.plan();
+    expect(
+      diffPartitions(
+        await partition(),
+        new Map(after.target.entries.map((e) => [e.vacancyId, e.groupId])),
+      ).changedGroups,
+    ).toBe(0);
+  });
+
+  it("detach on a group that changed meanwhile is a 409 and keeps the override", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+    const realWrite = partitionRepository.writePartition;
+    const write = jest
+      .spyOn(partitionRepository, "writePartition")
+      .mockImplementationOnce(async (tx, entries) => {
+        await db.execute(
+          sql`UPDATE vacancies SET embedding_source_hash = 'edited' WHERE id = ${a}`,
+        );
+        return realWrite(tx, entries);
+      });
+
+    const err = await dedup.detach(groupId, b, null).catch((e: unknown) => e);
+    write.mockRestore();
+
+    expect(err).toBeInstanceOf(ConflictException);
+    expect((err as ConflictException).getStatus()).toBe(409);
+    const overrides = await db.execute<{ verdict: string }>(
+      sql`SELECT verdict FROM dedup_overrides WHERE ${a} IN (vacancy_a, vacancy_b) AND ${b} IN (vacancy_a, vacancy_b)`,
+    );
+    expect(overrides.rows).toEqual([{ verdict: "different" }]);
+    expect(await groupIdOf(b)).toBe(groupId);
+  });
+
+  it("refuses to write a partition that leaves out a member of an affected group", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const plan = await dedup.plan();
+    const withoutB = plan.target.entries.filter((e) => e.vacancyId !== b);
+    await expect(
+      db.transaction((tx) => partitionRepository.writePartition(tx, withoutB)),
+    ).rejects.toThrow(/joined an affected group/);
+    expect(await groupIdOf(b)).toBe(await groupIdOf(a));
+  });
+
+  it("the sweep and a full plan agree", async () => {
+    const dou = await seedSource("dou");
+    const djinni = await seedSource("djinni");
+    const shared = text("agree");
+    await seedVacancy(dou, { description: shared });
+    await seedVacancy(djinni, { description: shared, day: 1 });
+    await seedVacancy(djinni, { description: `${shared} again`, day: 3, embedding: emb(900) });
+    await seedVacancy(dou, { title: "Designer", day: 2 });
+    await seedVacancy(djinni, { title: "Designer", day: 2, fingerprint: "fp-designer" });
+    await seedVacancy(djinni, { title: "Designer", day: 9, fingerprint: "fp-designer" });
+    await dedup.resolveAll();
+
+    const plan = await dedup.plan();
+
+    expect(plan.report.stats.diff).toEqual({ changedGroups: 0, splits: 0, merges: 0, moved: 0 });
+    expect(await groupCount()).toBe(3);
+  });
+
+  it("a detach survives a sweep started by a new neighbour", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    await dedup.detach(await groupIdOf(a), b, null);
+
+    const c = await seedVacancy(await seedSource("work"), {
+      description: text("rebuild"),
+      day: 2,
+    });
+    await dedup.resolveAll();
+
+    expect(await groupIdOf(a)).not.toBe(await groupIdOf(b));
+    expect([await groupIdOf(a), await groupIdOf(b)]).toContain(await groupIdOf(c));
+  });
+
+  it("the partition does not depend on row order when publish times tie", async () => {
+    const shared = text("tie");
+    for (const code of ["dou", "djinni", "work"]) {
+      await seedVacancy(await seedSource(code), { description: shared });
+    }
+    const shape = (p: Awaited<ReturnType<DedupService["plan"]>>) =>
+      p.target.entries
+        .map((e) => ({
+          id: e.vacancyId,
+          group: e.groupId,
+          via: (e.dedupReason as { matchedAgainstVacancyId: string } | null)
+            ?.matchedAgainstVacancyId,
+        }))
+        .sort((x, y) => x.id.localeCompare(y.id));
+    const scanOrder = async () =>
+      (await db.execute<{ id: string }>(sql`SELECT id FROM vacancies`)).rows.map((r) => r.id);
+
+    const first = shape(await dedup.plan());
+    const orderBefore = await scanOrder();
+    await db.execute(sql`UPDATE vacancies SET title = title WHERE id = ${orderBefore[0]}`);
+    expect(await scanOrder()).not.toEqual(orderBefore);
+    const second = shape(await dedup.plan());
+
+    expect(second).toEqual(first);
+    expect(new Set(first.map((e) => e.group)).size).toBe(1);
+  });
+
+  it("lists one group by id", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+
+    const res = await dedup.listGroups({ groupId });
+
+    expect(res.pagination.total).toBe(1);
+    expect(res.items.map((g) => g.id)).toEqual([groupId]);
+    expect(res.items[0].members.map((m) => m.vacancyId).sort()).toEqual([a, b].sort());
+  });
+
+  it("detach rejects a vacancy outside the group", async () => {
+    const { a, c } = await seedLinkedPair();
+    await dedup.resolveAll();
+    await expect(dedup.detach(await groupIdOf(a), c, null)).rejects.toThrow(/not a member/);
   });
 });

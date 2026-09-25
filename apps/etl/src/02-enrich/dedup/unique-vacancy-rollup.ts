@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 
 import type { Executor } from "../loader/repositories/executor";
 
@@ -10,14 +10,26 @@ import type { Executor } from "../loader/repositories/executor";
  * meanings for the same columns again.
  */
 export async function repairUniqueVacancy(groupId: string, executor: Executor): Promise<void> {
+  await repairUniqueVacancies([groupId], executor);
+}
+
+export async function repairUniqueVacancies(
+  groupIds: readonly string[],
+  executor: Executor,
+): Promise<void> {
+  if (groupIds.length === 0) return;
+  const ids = uuidArray(groupIds);
+
   await executor.execute(sql`
     DELETE FROM unique_vacancies u
-    WHERE u.id = ${groupId}
+    WHERE u.id = ANY(${ids})
       AND NOT EXISTS (
         SELECT 1 FROM vacancies v WHERE v.unique_vacancy_id = u.id
       )
   `);
 
+  // centroid_embedding is no longer read by dedup; it is kept current only so
+  // a code rollback to the centroid resolver still works.
   await executor.execute(sql`
     UPDATE unique_vacancies u
     SET
@@ -40,6 +52,7 @@ export async function repairUniqueVacancy(groupId: string, executor: Executor): 
       updated_at = now()
     FROM (
       SELECT
+        v.unique_vacancy_id AS group_id,
         (array_agg(v.id ORDER BY COALESCE(v.published_at, v.loaded_at) DESC, v.id))[1]
           AS representative_vacancy_id,
         AVG(v.embedding) AS centroid_embedding,
@@ -49,9 +62,14 @@ export async function repairUniqueVacancy(groupId: string, executor: Executor): 
         COALESCE(MAX(v.published_at), MAX(v.loaded_at)) AS last_seen_at,
         MIN(v.loaded_at) AS first_loaded_at
       FROM vacancies v
-      WHERE v.unique_vacancy_id = ${groupId}
+      WHERE v.unique_vacancy_id = ANY(${ids})
+      GROUP BY v.unique_vacancy_id
     ) members
-    WHERE u.id = ${groupId}
-      AND members.vacancy_count > 0
+    WHERE u.id = members.group_id
   `);
+}
+
+/** One bound `uuid[]` parameter, so a full-corpus id list never hits the bind-parameter limit. */
+export function uuidArray(ids: readonly string[]): SQL {
+  return sql`${`{${ids.join(",")}}`}::uuid[]`;
 }
