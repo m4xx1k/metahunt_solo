@@ -423,9 +423,7 @@ export class DedupService {
   }
 
   // ═════════════════════════════════════════════════════════════
-  // Read-side — feeds the operator dashboard. Drops the mock and
-  // queries the populated tables directly. Same response shape as
-  // `dedup.mock.ts`, so the frontend doesn't change.
+  // Read-side — feeds the operator dashboard.
   // ═════════════════════════════════════════════════════════════
   async listGroups(query: UniqueVacanciesQuery): Promise<UniqueVacanciesResponse> {
     const page = query.page ?? 1;
