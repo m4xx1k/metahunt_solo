@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Badge, Card } from "@/ui";
 import type { UniqueVacancyListItem } from "@/lib/api/dedup";
 import { formatDateOnly, formatDateRange, formatSalaryRange } from "@/lib/format";
@@ -7,7 +9,7 @@ import { WhyMerged } from "./WhyMerged";
 // One unique-vacancy group, with collapsible member list. Uses native
 // <details>/<summary> instead of useState so the card stays a server
 // component and there's no hydration cost on page load.
-export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
+export function GroupCard({ group, open }: { group: UniqueVacancyListItem; open?: boolean }) {
   const isCrossSource = group.sourceCount >= 2;
   return (
     <Card className={isCrossSource ? "!border-accent" : undefined}>
@@ -36,7 +38,7 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
         </div>
       </header>
 
-      <details className="group/details">
+      <details className="group/details" open={open}>
         <summary className="flex cursor-pointer list-none items-center justify-between border-t border-border pt-4 font-mono text-2xs uppercase tracking-wider text-text-muted hover:text-text-primary">
           <span>
             {group.vacancyCount === 1
@@ -61,6 +63,12 @@ export function GroupCard({ group }: { group: UniqueVacancyListItem }) {
                 </div>
                 <div className="flex items-center gap-3 font-mono text-2xs text-text-muted">
                   {m.publishedAt ? <span>{formatDateOnly(m.publishedAt)}</span> : null}
+                  <Link
+                    href={`/vacancy/${m.vacancyId}`}
+                    className="text-accent underline-offset-2 hover:underline"
+                  >
+                    page
+                  </Link>
                   {m.externalUrl ? (
                     <a
                       href={m.externalUrl}

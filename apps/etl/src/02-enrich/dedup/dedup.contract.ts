@@ -139,6 +139,8 @@ export interface DedupMetrics {
 export interface UniqueVacanciesQuery {
   /** Only return groups where `sourceCount >= 2`. */
   crossSource?: boolean;
+  /** Only this group — the operator's direct link. */
+  groupId?: string;
   /** 1-based. Defaults to 1. */
   page?: number;
   /** Defaults to 25, max 100. */

@@ -109,6 +109,7 @@ export interface DedupMetrics {
 
 export interface UniqueVacanciesQuery {
   crossSource?: boolean;
+  groupId?: string;
   page?: number;
   pageSize?: number;
 }

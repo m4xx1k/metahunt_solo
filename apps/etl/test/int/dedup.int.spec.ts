@@ -438,6 +438,18 @@ describe("DedupService plan / apply / detach (integration)", () => {
     expect(new Set(first.map((e) => e.group)).size).toBe(1);
   });
 
+  it("lists one group by id", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const groupId = await groupIdOf(a);
+
+    const res = await dedup.listGroups({ groupId });
+
+    expect(res.pagination.total).toBe(1);
+    expect(res.items.map((g) => g.id)).toEqual([groupId]);
+    expect(res.items[0].members.map((m) => m.vacancyId).sort()).toEqual([a, b].sort());
+  });
+
   it("detach rejects a vacancy outside the group", async () => {
     const { a, c } = await seedLinkedPair();
     await dedup.resolveAll();

@@ -434,6 +434,7 @@ export class DedupService {
     if (query.crossSource === true) {
       conditions.push(sql`u.source_count >= 2`);
     }
+    if (query.groupId) conditions.push(sql`u.id = ${query.groupId}`);
     const whereClause =
       conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
 

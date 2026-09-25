@@ -41,11 +41,13 @@ export class DedupController {
   @ApiOkResponse({ description: "Paginated deduplication groups." })
   list(
     @Query("crossSource") rawCrossSource?: string,
+    @Query("groupId", new ParseUUIDPipe({ optional: true })) groupId?: string,
     @Query("page") rawPage?: string,
     @Query("pageSize") rawPageSize?: string,
   ): Promise<UniqueVacanciesResponse> {
     return this.dedup.listGroups({
       crossSource: parseBool("crossSource", rawCrossSource),
+      groupId,
       page: parsePage(rawPage),
       pageSize: parsePageSize(rawPageSize, { default: DEFAULT_PAGE_SIZE }),
     });
