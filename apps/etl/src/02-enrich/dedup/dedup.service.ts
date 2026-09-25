@@ -17,7 +17,7 @@ import type {
   UniqueVacancyListItem,
   UniqueVacancyMember,
 } from "./dedup.contract";
-import { buildEmbeddingText, type EmbeddingTextInput } from "./embedding-text.builder";
+import { buildEmbeddingText } from "./embedding-text.builder";
 import { EMBEDDING_DIMENSIONS, OpenAIEmbeddingsClient } from "./openai-embeddings.client";
 import {
   allPairs,
@@ -50,13 +50,8 @@ interface VacancyEmbeddingRow {
   lastRssRecordId: string;
   title: string;
   description: string | null;
-  seniority: string | null;
-  workFormat: string | null;
   embeddingSourceHash: string | null;
   embeddingModel: string | null;
-  publishedAt: Date | null;
-  roleName: string | null;
-  requiredSkills: string[];
 }
 
 export interface PartitionFile {
@@ -106,18 +101,7 @@ export class DedupService {
       afterId = batch[batch.length - 1].id;
 
       const prepared = batch
-        .map((row) => {
-          const input: EmbeddingTextInput = {
-            title: row.title,
-            roleName: row.roleName,
-            seniority: row.seniority,
-            workFormat: row.workFormat,
-            requiredSkills: row.requiredSkills,
-            description: row.description,
-          };
-          const { text, hash } = buildEmbeddingText(input);
-          return { row, text, hash };
-        })
+        .map((row) => ({ row, ...buildEmbeddingText(row) }))
         // Skip rows whose hash already matches and have a current-model
         // embedding — we already paid the OpenAI cost for those. `force`
         // bypasses this when we want to re-embed everything after model
@@ -196,36 +180,12 @@ export class DedupService {
       last_rss_record_id: string;
       title: string;
       description: string | null;
-      seniority: string | null;
-      work_format: string | null;
       embedding_source_hash: string | null;
       embedding_model: string | null;
-      published_at: Date | null;
-      role_name: string | null;
-      required_skills: string[] | null;
     }>(sql`
-      SELECT
-        v.id,
-        v.last_rss_record_id,
-        v.title,
-        v.description,
-        v.seniority::text AS seniority,
-        v.work_format::text AS work_format,
-        v.embedding_source_hash,
-        v.embedding_model,
-        v.published_at,
-        role_node.canonical_name AS role_name,
-        COALESCE(
-          array_agg(DISTINCT skill_node.canonical_name)
-            FILTER (WHERE skill_node.canonical_name IS NOT NULL),
-          ARRAY[]::text[]
-        ) AS required_skills
+      SELECT v.id, v.last_rss_record_id, v.title, v.description, v.embedding_source_hash, v.embedding_model
       FROM vacancies v
-      LEFT JOIN nodes role_node ON role_node.id = v.role_node_id
-      LEFT JOIN vacancy_nodes vn ON vn.vacancy_id = v.id AND vn.is_required = true
-      LEFT JOIN nodes skill_node ON skill_node.id = vn.node_id
       WHERE ${where} ${after}
-      GROUP BY v.id, role_node.canonical_name
       ORDER BY v.id ASC
       LIMIT ${limit}
     `);
@@ -235,13 +195,8 @@ export class DedupService {
       lastRssRecordId: r.last_rss_record_id,
       title: r.title,
       description: r.description,
-      seniority: r.seniority,
-      workFormat: r.work_format,
       embeddingSourceHash: r.embedding_source_hash,
       embeddingModel: r.embedding_model,
-      publishedAt: r.published_at,
-      roleName: r.role_name,
-      requiredSkills: Array.isArray(r.required_skills) ? r.required_skills : [],
     }));
   }
 

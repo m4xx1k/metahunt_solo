@@ -14,10 +14,6 @@ import { cleanDescription } from "./sanitize";
  */
 export interface EmbeddingTextInput {
   title: string;
-  roleName?: string | null;
-  seniority?: string | null;
-  workFormat?: string | null;
-  requiredSkills?: string[];
   description: string | null;
 }
 

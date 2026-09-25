@@ -4,10 +4,6 @@ describe("buildEmbeddingText (Tier 1 description-only)", () => {
   it("uses the cleaned description when present", () => {
     const res = buildEmbeddingText({
       title: "Senior Backend Engineer в Acme, Київ",
-      roleName: "Backend Engineer",
-      seniority: "SENIOR",
-      workFormat: "REMOTE",
-      requiredSkills: ["Go", "PostgreSQL"],
       description: "<p>We are looking for a Go developer to build scalable services.</p>",
     });
 
@@ -18,10 +14,6 @@ describe("buildEmbeddingText (Tier 1 description-only)", () => {
   it("falls back to title when description is null or empty", () => {
     const res = buildEmbeddingText({
       title: "Lead AI Engineer",
-      roleName: "AI Engineer",
-      seniority: "LEAD",
-      workFormat: "REMOTE",
-      requiredSkills: [],
       description: "   <div>  <br/> </div>  ",
     });
 
