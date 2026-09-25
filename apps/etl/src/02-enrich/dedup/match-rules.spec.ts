@@ -302,8 +302,48 @@ describe("vetoes + isSame", () => {
     expect(isSame(a, b, ctx())).toBeNull();
   });
 
+  it("extracted role and seniority do not veto the same text; title levels still do", () => {
+    const text = words("repost", 80);
+    const a = posting({
+      title: "Founding Engineer",
+      source: DJINNI,
+      company: null,
+      description: text,
+      role: "r1",
+      seniority: "SENIOR",
+      fingerprint: "same",
+    });
+    const b = posting({
+      title: "Founding Engineer",
+      source: DJINNI,
+      company: null,
+      description: text,
+      role: "r2",
+      seniority: "MIDDLE",
+      fingerprint: "same",
+      day: 7,
+    });
+    expect(same(a, b)).toMatchObject({ rule: "exact" });
+    const c = posting({
+      title: "Middle Founding Engineer",
+      source: DJINNI,
+      company: null,
+      description: text,
+      fingerprint: "same",
+    });
+    const d = posting({
+      title: "Senior Founding Engineer",
+      source: DJINNI,
+      company: null,
+      description: text,
+      fingerprint: "same",
+    });
+    expect(vetoes(c, d, ctx())).toBe("seniority");
+  });
+
   it("company, seniority, role and manual overrides veto", () => {
     const text = words("x", 80);
+    const edited = `${words("x", 70)} ${words("y", 10)}`;
     const a = posting({
       title: "Go Developer",
       source: DJINNI,
@@ -315,10 +355,14 @@ describe("vetoes + isSame", () => {
       vetoes(a, posting({ title: "Go Developer", company: "company-2", description: text }), ctx()),
     ).toBe("company");
     expect(
-      vetoes(a, posting({ title: "Go Developer", description: text, seniority: "MIDDLE" }), ctx()),
+      vetoes(
+        a,
+        posting({ title: "Go Developer", description: edited, seniority: "MIDDLE" }),
+        ctx(),
+      ),
     ).toBe("seniority");
     expect(
-      vetoes(a, posting({ title: "Go Developer", description: text, role: "r2" }), ctx()),
+      vetoes(a, posting({ title: "Go Developer", description: edited, role: "r2" }), ctx()),
     ).toBe("role");
     const b = posting({ title: "Go Developer", description: text });
     expect(vetoes(a, b, ctx({ overrides: [[b.id, a.id]] }))).toBe("manual_override");

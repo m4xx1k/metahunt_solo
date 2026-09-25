@@ -251,6 +251,17 @@ function bothKnownAndDiffer<T>(a: T | null, b: T | null): boolean {
   return a !== null && b !== null && a !== b;
 }
 
+const SAME_TEXT_CONTAINMENT = 0.95;
+
+// Extracted seniority and role are functions of the text: on (near-)identical
+// text a disagreement is extraction noise, not evidence of two jobs.
+function sameText(a: PostingFacts, b: PostingFacts): boolean {
+  return (
+    (a.fingerprint !== null && a.fingerprint === b.fingerprint) ||
+    containment(a.shingles, b.shingles) >= SAME_TEXT_CONTAINMENT
+  );
+}
+
 function disjointLevels(a: readonly string[], b: readonly string[]): boolean {
   return a.length > 0 && b.length > 0 && !a.some((l) => b.includes(l));
 }
@@ -270,10 +281,11 @@ export const VETOES: readonly Veto[] = [
   (a, b) =>
     bothKnownAndDiffer(requisitionNo(a.title), requisitionNo(b.title)) ? "requisition" : null,
   (a, b) =>
-    bothKnownAndDiffer(a.seniority, b.seniority) || disjointLevels(a.titleLevels, b.titleLevels)
+    (!sameText(a, b) && bothKnownAndDiffer(a.seniority, b.seniority)) ||
+    disjointLevels(a.titleLevels, b.titleLevels)
       ? "seniority"
       : null,
-  (a, b) => (bothKnownAndDiffer(a.roleNodeId, b.roleNodeId) ? "role" : null),
+  (a, b) => (!sameText(a, b) && bothKnownAndDiffer(a.roleNodeId, b.roleNodeId) ? "role" : null),
   (a, b, ctx) =>
     a.sourceId === b.sourceId && a.fingerprint !== b.fingerprint && !isRepost(a, b, ctx)
       ? "same_source_content"
