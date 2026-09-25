@@ -62,6 +62,37 @@ The corpus cannot be processed across all time uniformly because `anyOf` was dep
 > [!WARNING]
 > Running the pipeline on all-time data (`published_at < 2026-08-19`) will treat historical alternatives as complements, severely diluting the substitutability signal. The primary graph contract **must** be anchored to `published_at >= '2026-08-19'`.
 
+### 2.3 Taxonomy Quality & Node Guardrails (Concepts & Garbage Isolation)
+
+An audit of the `nodes` table across all 10,902 `SKILL` entries reveals critical architectural invariants for the graph's vertex set $V$:
+
+| Status | Count | Share | Reality in Database |
+|---|---|---|---|
+| **`VERIFIED`** | **1,242** | **11.4%** | Curated taxonomy. **This is the only set eligible for Lab.** |
+| **`NEW`** | **9,469** | **86.9%** | Raw strings emitted by LLM extraction. **Must stay isolated from Lab.** |
+| **`HIDDEN`** | **191** | **1.7%** | Deprecated / rejected entries. |
+
+#### The State of `NEW` Skills (Why Lab Must Enforce `status = 'VERIFIED'`):
+1. **5,210 nodes (55.0% of `NEW`) are dead orphans:** They have 0 links in `vacancy_nodes` (ghost residues from re-extraction, deduplication, and alias merges).
+2. **2,758 nodes (29.1%) appear in exactly 1 position.** Overall, **92.4%** of `NEW` skills appear $\le 2$ times.
+3. **Roles minted as skills:** 27 roles exist as `SKILL:NEW` (e.g. `QA Engineer`, `Software Architect`, `Frontend Engineer`, `Solutions Architect`, `Backend Engineer`, `Machine Learning Engineer`, `Project Manager`, `Team Lead`).
+4. **Sentence fragments & duty leakage:** Strings like `Paginated Reports`, `Custom Post Types`, `Flight Test`, `Timing Constraints`, `MULTI / multiprotocol RC`.
+5. **Product-level side effect (High Severity for Scoring):** In the main product, `node_stats` counts `WHERE n.status <> 'HIDDEN'`. Because $df = 1$, single-instance garbage nodes receive the maximum possible IDF weight ($2.81$ vs $1.31$ for Docker), unfairly punishing matching candidates. *(Separate product fix required).*
+
+#### The Dual Nature of `kind = 'CONCEPT'` (313 VERIFIED Nodes, ~18% of Market Demand):
+Concepts are NOT homogenous and must not be treated as a single bucket:
+1. **Domain Anchors (Essential — Must Keep):**
+   - **QA:** `Manual Testing` (891 positions), `API Testing` (655), `Test Automation` (238), `Test Design` (264).
+   - **AI/ML:** `LLM` (719), `RAG` (445), `Computer Vision` (252), `Prompt Engineering` (257), `AI Agents` (395).
+   - **Embedded:** `CAN` (244), `Embedded Systems` (283), `Electronics` (203).
+   - **Data:** `ETL` (374), `Data Modeling` (239), `Data Warehousing` (170).
+   *Impact:* Without these, entire engineering disciplines become invisible in the graph. They provide tight, domain-specific semantic cohesion.
+2. **Ubiquitous Engineering Hubs (Dangerous for Graph Layout — "Hairball Creators"):**
+   - `CI/CD` (2,221 positions, co-occurs with **838 distinct skills** — #2 hub in the entire market after Python).
+   - `Microservices` (622 positions), `REST-API` (2,169 positions), `OOP` (356), `SOLID` (180), `Unit Testing` (188).
+   *Impact:* These cross-cutting practices attach equally to Frontend, Backend, Mobile, and DevOps. In Louvain community detection and ForceAtlas2 layout, they act as high-density bridges that collapse distinct tech stacks into one undifferentiated hairball.
+   *Remedy:* Leverage `node_tech_meta.generic = true` (already populated for 25 top practices) to allow the graph to penalize or toggle ubiquitous hubs off during community clustering.
+
 ---
 
 ## 3. Empirical Proof: Separating Substitutes from Complements
@@ -210,3 +241,6 @@ Add a view selector:
 4. **Preserving `IMPLIES`:**
    - `anyOf` only detects symmetric equivalence ("A or B"). It does not detect asymmetric prerequisites ("Next.js implies React", "Alembic implies SQLAlchemy").
    - *Review question:* How should `IMPLIES` from `pair-relations.json` best interface with empirical `SUBSTITUTE` / `COMPLEMENT`?
+5. **Handling Ubiquitous Concept Hubs (`generic = true`):**
+   - Universal engineering practices like `CI/CD` (degree 838), `Microservices`, and `REST-API` act as high-density bridges that risk collapsing separate discipline communities in Louvain into one hairball.
+   - *Review question:* Should `04-export.sql` flag `generic` nodes so the frontend layout engine can exclude them from community detection or render them as an overlay? Also, should product `node_stats` be patched to prevent $df=1$ `NEW` skills from dominating candidate scoring?

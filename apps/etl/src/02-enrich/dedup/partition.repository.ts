@@ -13,6 +13,7 @@ import { repairUniqueVacancies, uuidArray } from "./unique-vacancy-rollup";
 
 export const ANN_TOP_N = 20;
 const ANN_EF_SEARCH = 100;
+const ANN_SCAN = 100;
 const ANN_BATCH = 200;
 
 export interface PostingRow {
@@ -157,18 +158,30 @@ export async function findNeighbours(
       // The date predicate is misestimated (~100 rows), so the planner picks an
       // exact seq scan: 100 ms per query instead of 3 ms through HNSW.
       await tx.execute(sql`SET LOCAL enable_seqscan = off`);
+      // Identical copies of one ad would fill the top-N and hide its other
+      // neighbours; they link through their shared fingerprint anyway.
       const res = await tx.execute<{ a: string; b: string; cosine: string }>(sql`
         SELECT q.id AS a, n.id AS b, n.cosine::text AS cosine
         FROM vacancies q
         CROSS JOIN LATERAL (
-          SELECT c.id, 1 - (c.embedding <=> q.embedding) AS cosine
-          FROM vacancies c
-          WHERE c.id <> q.id
-            AND c.embedding IS NOT NULL
-            AND COALESCE(c.published_at, c.loaded_at)
-              BETWEEN COALESCE(q.published_at, q.loaded_at) - make_interval(days => ${LINK_WINDOW_DAYS})
-                  AND COALESCE(q.published_at, q.loaded_at) + make_interval(days => ${LINK_WINDOW_DAYS})
-          ORDER BY c.embedding <=> q.embedding
+          SELECT d.id, d.cosine
+          FROM (
+            SELECT DISTINCT ON (COALESCE(r.content_fingerprint, k.id::text)) k.id, k.cosine
+            FROM (
+              SELECT c.id, c.last_rss_record_id, 1 - (c.embedding <=> q.embedding) AS cosine
+              FROM vacancies c
+              WHERE c.id <> q.id
+                AND c.embedding IS NOT NULL
+                AND COALESCE(c.published_at, c.loaded_at)
+                  BETWEEN COALESCE(q.published_at, q.loaded_at) - make_interval(days => ${LINK_WINDOW_DAYS})
+                      AND COALESCE(q.published_at, q.loaded_at) + make_interval(days => ${LINK_WINDOW_DAYS})
+              ORDER BY c.embedding <=> q.embedding
+              LIMIT ${ANN_SCAN}
+            ) k
+            JOIN rss_records r ON r.id = k.last_rss_record_id
+            ORDER BY COALESCE(r.content_fingerprint, k.id::text), k.cosine DESC, k.id
+          ) d
+          ORDER BY d.cosine DESC, d.id
           LIMIT ${ANN_TOP_N}
         ) n
         WHERE q.id = ANY(${uuidArray(batch)})
