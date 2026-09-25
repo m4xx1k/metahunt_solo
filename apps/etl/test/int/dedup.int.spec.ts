@@ -267,6 +267,18 @@ describe("DedupService plan / apply / detach (integration)", () => {
     await expect(dedup.apply(fresh.target)).rejects.toThrow(StalePartitionError);
   });
 
+  it("refuses a plan after a detach or a reclassification", async () => {
+    const { a, b } = await seedLinkedPair();
+    await dedup.resolveAll();
+    const plan = await dedup.plan();
+    await dedup.detach(await groupIdOf(a), b, null);
+    await expect(dedup.apply(plan.target)).rejects.toThrow(StalePartitionError);
+
+    const fresh = await dedup.plan();
+    await db.execute(sql`UPDATE vacancies SET seniority = 'SENIOR' WHERE id = ${a}`);
+    await expect(dedup.apply(fresh.target)).rejects.toThrow(StalePartitionError);
+  });
+
   it("a detached member stays detached through a full plan/apply", async () => {
     const { a, b } = await seedLinkedPair();
     await dedup.resolveAll();

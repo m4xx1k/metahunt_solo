@@ -31,6 +31,7 @@ import {
 import {
   findGroupMembers,
   findNeighbours,
+  entryVersion,
   findSameFingerprint,
   insertDifferentOverrides,
   loadOverrides,
@@ -428,7 +429,8 @@ export class DedupService {
         entries: rows.map((r) => ({
           vacancyId: r.facts.id,
           groupId: r.groupId,
-          version: r.version,
+          // The rollback file expects the rows where applying the target puts them.
+          version: entryVersion(r.contentVersion, target.get(r.facts.id)!),
           dedupReason: r.dedupReason,
           deduplicatedAt: r.deduplicatedAt,
         })),

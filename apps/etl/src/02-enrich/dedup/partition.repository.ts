@@ -18,8 +18,8 @@ const ANN_BATCH = 200;
 export interface PostingRow {
   facts: PostingFacts;
   groupId: string;
-  /** Changes whenever the source content or its embedding changes. */
-  version: string;
+  /** Changes whenever the content, its embedding or a veto input changes. */
+  contentVersion: string;
   hasEmbedding: boolean;
   embedding: Float32Array | null;
   loadedAt: number;
@@ -38,7 +38,18 @@ export interface PartitionEntry {
 
 export class StalePartitionError extends Error {}
 
-const VERSION_SQL = sql`(v.last_rss_record_id::text || '|' || COALESCE(v.embedding_source_hash, '') || '|' || COALESCE(v.embedding_model, ''))`;
+const CONTENT_VERSION_SQL = sql`concat_ws('|',
+  v.last_rss_record_id::text,
+  COALESCE(v.embedding_source_hash, ''),
+  COALESCE(v.embedding_model, ''),
+  COALESCE(v.company_id::text, ''),
+  COALESCE(v.role_node_id::text, ''),
+  COALESCE(v.seniority::text, ''))`;
+
+/** Pins a row's content and the group a partition expects to find it in. */
+export function entryVersion(contentVersion: string, groupId: string): string {
+  return `${contentVersion}|${groupId}`;
+}
 
 export async function loadPostings(
   db: Executor,
@@ -62,7 +73,7 @@ export async function loadPostings(
     fingerprint: string | null;
     description: string | null;
     group_id: string;
-    version: string;
+    content_version: string;
     has_embedding: boolean;
     embedding: string | null;
     deduplicated_at: Date | string | null;
@@ -82,7 +93,7 @@ export async function loadPostings(
       r.content_fingerprint AS fingerprint,
       v.description,
       v.unique_vacancy_id AS group_id,
-      ${VERSION_SQL} AS version,
+      ${CONTENT_VERSION_SQL} AS content_version,
       v.embedding IS NOT NULL AS has_embedding,
       ${embedding} AS embedding,
       v.deduplicated_at,
@@ -110,7 +121,7 @@ export async function loadPostings(
         shingles: shingles(r.description),
       },
       groupId: r.group_id,
-      version: r.version,
+      contentVersion: r.content_version,
       hasEmbedding: r.has_embedding,
       embedding: r.embedding === null ? null : parseVector(r.embedding),
       loadedAt: toDate(r.loaded_at).getTime(),
@@ -235,8 +246,8 @@ export async function writePartition(
   if (entries.length === 0) return;
   const ids = entries.map((e) => e.vacancyId);
 
-  const locked = await tx.execute<{ id: string; group_id: string; version: string }>(sql`
-    SELECT v.id, v.unique_vacancy_id AS group_id, ${VERSION_SQL} AS version
+  const locked = await tx.execute<{ id: string; group_id: string; content_version: string }>(sql`
+    SELECT v.id, v.unique_vacancy_id AS group_id, ${CONTENT_VERSION_SQL} AS content_version
     FROM vacancies v
     WHERE v.id = ANY(${uuidArray(ids)})
     ORDER BY v.id
@@ -246,7 +257,7 @@ export async function writePartition(
   for (const e of entries) {
     const row = current.get(e.vacancyId);
     if (!row) throw new StalePartitionError(`vacancy ${e.vacancyId} no longer exists`);
-    if (row.version !== e.version) {
+    if (entryVersion(row.content_version, row.group_id) !== e.version) {
       throw new StalePartitionError(`vacancy ${e.vacancyId} changed since the partition was built`);
     }
   }

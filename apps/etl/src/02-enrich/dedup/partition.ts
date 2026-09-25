@@ -10,7 +10,7 @@ import {
   type PostingFacts,
   type Thresholds,
 } from "./match-rules";
-import type { PartitionEntry, PostingRow } from "./partition.repository";
+import { entryVersion, type PartitionEntry, type PostingRow } from "./partition.repository";
 
 export function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
@@ -91,7 +91,7 @@ export function targetPartition(
       entries.push({
         vacancyId: row.facts.id,
         groupId,
-        version: row.version,
+        version: entryVersion(row.contentVersion, row.groupId),
         dedupReason: reason,
         deduplicatedAt: row.hasEmbedding ? opts.decidedAt : null,
       });
