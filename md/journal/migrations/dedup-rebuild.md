@@ -6,7 +6,9 @@
 
 ## Outcome
 
-*(fill in when closing)*
+Code complete on a draft PR (#225); prod rollout pending owner review. Local rehearsal on a fresh
+prod dump: 0 false merges on a 300-pair blind audit (the old partition: 68/120), cluster recall 0.66,
+same-board violations 1 060 → 0, `plan` after `apply` = 0 diff, `apply current.json` restores exactly.
 
 ---
 
@@ -315,7 +317,7 @@ rollback must stay possible; schema drop is a follow-up PR after prod is verifie
      `deduplicated_at`, embedding), run `pnpm dedup:embed && pnpm dedup:resolve` → split out.
   — *done when:* all steps pass, numbers recorded in the report.
 
-- [ ] **T9 — Docs, PR, report** — ADR `md/journal/decisions/0016-dedup-pairwise-rebuild.md`
+- [x] **T9 — Docs, PR, report** — ADR `md/journal/decisions/0016-dedup-pairwise-rebuild.md`
   (supersedes the relevant parts of 0012; read 0012 first); update `md/architecture/overview.md`
   dedup section; `md/journal/releases.md` entry; this tracker's subtasks/Decisions. Commit in
   logical steps, push, open a **draft** PR. Write `.private/dedup-rebuild/REPORT.md`:
@@ -425,4 +427,4 @@ drop in this PR, so the old code still runs).
 
 - Previous handoff: `.private/handoff-dedup-holywater-fix.md`
 - ADRs: 0012 (position grain & dedup state), 0015 (position read model), 0016 (this — to write)
-- PR: —
+- PR: [#225](https://github.com/m4xx1k/metahunt_solo/pull/225) (draft)
