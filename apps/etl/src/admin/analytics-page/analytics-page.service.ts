@@ -23,6 +23,11 @@ import { clampedMinutesBetween } from "./analytics-page.derive";
 const PEOPLE_PAGE_MAX = 100;
 const HUMAN_TRAFFIC =
   "lower(ifNull(toString(properties.is_test), 'false')) != 'true' AND lower(ifNull(toString(properties.$is_bot), 'false')) != 'true'";
+// Aggregates only: the Contacts roster still shows staff rows, flagged via isStaff.
+const AUDIENCE_TRAFFIC = `${HUMAN_TRAFFIC} AND lower(ifNull(toString(person.properties.is_staff), 'false')) != 'true'`;
+// A utm tag beats the referrer — ChatGPT tags its links but often strips the referrer.
+const SOURCE_EXPR =
+  "coalesce(nullIf(toString(properties.utm_source), ''), nullIf(properties.$referring_domain, ''), 'direct')";
 
 const PERIOD_DAYS: Record<AnalyticsPagePeriod, number> = {
   "24h": 1,
@@ -112,9 +117,7 @@ export class AnalyticsPageService {
     if (!this.posthogQueryClient.isAvailable()) return empty;
 
     const periodDays = PERIOD_DAYS[period];
-    const sourceFilter = source
-      ? ` AND properties.$referring_domain = '${escapeHogql(source)}'`
-      : "";
+    const sourceFilter = source ? ` AND ${SOURCE_EXPR} = '${escapeHogql(source)}'` : "";
 
     const [activeUsersResult, funnelResult, sourceResult] = await Promise.all([
       this.posthogQueryClient.queryWithStatus(this.activeUsersQuery(periodDays, sourceFilter)),
@@ -229,7 +232,7 @@ export class AnalyticsPageService {
       FROM events
       WHERE timestamp >= now() - INTERVAL ${mauWindow} DAY
         AND event = '$pageview'
-        AND ${HUMAN_TRAFFIC}${sourceFilter}
+        AND ${AUDIENCE_TRAFFIC}${sourceFilter}
     `.trim();
   }
 
@@ -241,19 +244,19 @@ export class AnalyticsPageService {
           uniqIf(distinct_id, event = 'telegram_linked') AS linked
       FROM events
       WHERE timestamp >= now() - INTERVAL ${periodDays} DAY
-        AND ${HUMAN_TRAFFIC}${sourceFilter}
+        AND ${AUDIENCE_TRAFFIC}${sourceFilter}
     `.trim();
   }
 
   private sourcesQuery(periodDays: number): string {
     return `
       SELECT
-          coalesce(nullIf(properties.$referring_domain, ''), 'direct') AS source,
+          ${SOURCE_EXPR} AS source,
           uniq(distinct_id) AS people
       FROM events
       WHERE timestamp >= now() - INTERVAL ${periodDays} DAY
         AND event = '$pageview'
-        AND ${HUMAN_TRAFFIC}
+        AND ${AUDIENCE_TRAFFIC}
       GROUP BY source
       ORDER BY people DESC
       LIMIT 20

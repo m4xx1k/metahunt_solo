@@ -6,6 +6,9 @@ import { PostHogQueryClient } from "../../platform/analytics/posthog-query.clien
 
 import { AnalyticsPageService } from "./analytics-page.service";
 
+const SOURCE_EXPR =
+  "coalesce(nullIf(toString(properties.utm_source), ''), nullIf(properties.$referring_domain, ''), 'direct')";
+
 type Row = Record<string, unknown>;
 
 type DbMock = { execute: jest.Mock };
@@ -98,7 +101,7 @@ describe("AnalyticsPageService", () => {
       ]);
     });
 
-    it("adds a $referring_domain filter to active-users and funnel queries when source is set", async () => {
+    it("adds a utm-first source filter to active-users and funnel queries when source is set", async () => {
       const db = dbMock();
       const postHog = postHogMock(true);
       postHog.query.mockResolvedValue([]);
@@ -107,12 +110,12 @@ describe("AnalyticsPageService", () => {
       await svc.metrics("7d", "linkedin.com");
 
       const calledQueries = postHog.query.mock.calls.map(([hogql]: [string]) => hogql);
-      expect(calledQueries[0]).toContain("properties.$referring_domain = 'linkedin.com'");
-      expect(calledQueries[1]).toContain("properties.$referring_domain = 'linkedin.com'");
-      // The sources query itself selects $referring_domain as a column (it's
-      // how you'd discover a source to filter by) but must not be filtered
-      // down to a single source by the currently-applied filter.
-      expect(calledQueries[2]).not.toContain("$referring_domain = 'linkedin.com'");
+      expect(calledQueries[0]).toContain(`${SOURCE_EXPR} = 'linkedin.com'`);
+      expect(calledQueries[1]).toContain(`${SOURCE_EXPR} = 'linkedin.com'`);
+      // The sources query selects the same expression as a column but must not
+      // be narrowed to a single source by the currently-applied filter.
+      expect(calledQueries[2]).toContain(`${SOURCE_EXPR} AS source`);
+      expect(calledQueries[2]).not.toContain("= 'linkedin.com'");
     });
 
     it("never queries a window wider than the picker for a narrow period", async () => {
@@ -156,7 +159,7 @@ describe("AnalyticsPageService", () => {
       await svc.metrics("30d", "a\\' OR 1=1 --");
 
       const activeUsersQuery = postHog.query.mock.calls[0][0] as string;
-      expect(activeUsersQuery).toContain("properties.$referring_domain = 'a\\\\\\' OR 1=1 --'");
+      expect(activeUsersQuery).toContain(`${SOURCE_EXPR} = 'a\\\\\\' OR 1=1 --'`);
     });
 
     it("returns available:false with zeroed defaults when every PostHog query fails", async () => {
@@ -209,6 +212,9 @@ describe("AnalyticsPageService", () => {
     for (const [hogql] of postHog.query.mock.calls as Array<[string]>) {
       expect(hogql).toContain("lower(ifNull(toString(properties.is_test), 'false')) != 'true'");
       expect(hogql).toContain("lower(ifNull(toString(properties.$is_bot), 'false')) != 'true'");
+      expect(hogql).toContain(
+        "lower(ifNull(toString(person.properties.is_staff), 'false')) != 'true'",
+      );
       expect(hogql).not.toContain("person_id");
     }
   });
