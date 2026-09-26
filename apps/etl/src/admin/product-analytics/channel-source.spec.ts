@@ -5,6 +5,11 @@ describe("resolveChannelSource", () => {
     expect(resolveChannelSource("reddit", "l.threads.com")).toBe("reddit");
   });
 
+  it("normalises ChatGPT's own utm tag to the chatgpt channel", () => {
+    expect(resolveChannelSource("chatgpt.com", null)).toBe("chatgpt");
+    expect(resolveChannelSource("ChatGPT.com", "www.google.com")).toBe("chatgpt");
+  });
+
   it("falls back to the referrer only when the tag is absent or blank", () => {
     expect(resolveChannelSource(null, "l.threads.com")).toBe("threads");
     expect(resolveChannelSource("  ", "l.threads.com")).toBe("threads");
@@ -20,6 +25,9 @@ describe("resolveChannelSource", () => {
     ["com.reddit.frontpage", "reddit"],
     ["www.reddit.com", "reddit"],
     ["www.google.com", "search"],
+    ["chatgpt.com", "chatgpt"],
+    ["www.perplexity.ai", "perplexity"],
+    ["gemini.google.com", "gemini"],
     ["duckduckgo.com", "search"],
     ["www.facebook.com", "facebook"],
     ["github.com", "github"],

@@ -612,7 +612,12 @@ export class ProductAnalyticsService {
             coalesce(nullIf(toString(e.properties.$referring_domain), ''), 'direct'),
             e.timestamp,
             e.event = '$pageview'
-          ) AS referrer
+          ) AS referrer,
+          argMinIf(
+            ifNull(toString(e.properties.utm_source), ''),
+            e.timestamp,
+            e.event = '$pageview'
+          ) AS utm_source
       FROM events e
       INNER JOIN anchors a ON e.person_id = a.merged_id
       WHERE e.timestamp >= now() - INTERVAL ${PERSON_HISTORY_DAYS} DAY
@@ -628,7 +633,7 @@ export class ProductAnalyticsService {
           feedClicks: toNumber(row.feed_clicks),
           digestClicks: toNumber(row.digest_clicks),
           actedSince: toDateOrNull(row.acted_since),
-          source: resolveChannelSource(null, asReferrer(row.referrer)),
+          source: resolveChannelSource(toKey(row.utm_source), asReferrer(row.referrer)),
         },
       ]),
     );

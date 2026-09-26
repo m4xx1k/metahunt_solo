@@ -32,8 +32,8 @@ export function SourcesSection({
   const max = top[0]?.people ?? 0;
   const meta = (
     <HintText label="what counts as a source" text="top 10 · by people">
-      $referring_domain of a $pageview — the site the tab came from, not a UTM. &ldquo;direct&rdquo;
-      means no referrer: typed URL, bookmark, or a UTM link where the referrer header was stripped.
+      utm_source of a $pageview, else its $referring_domain. &ldquo;direct&rdquo; means neither:
+      typed URL, bookmark, or a stripped referrer. Staff traffic is excluded.
     </HintText>
   );
 

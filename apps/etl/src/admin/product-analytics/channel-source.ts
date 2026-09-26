@@ -16,6 +16,10 @@ const REFERRER_RULES: ReadonlyArray<readonly [match: string, channel: string]> =
   ["com.instagram.android", "instagram"],
   ["reddit.com", "reddit"],
   ["com.reddit.frontpage", "reddit"],
+  ["chatgpt.com", "chatgpt"],
+  ["chat.openai.com", "chatgpt"],
+  ["perplexity.ai", "perplexity"],
+  ["gemini.google.com", "gemini"],
   ["google.com", "search"],
   ["google.com.ua", "search"],
   ["bing.com", "search"],
@@ -28,6 +32,12 @@ const REFERRER_RULES: ReadonlyArray<readonly [match: string, channel: string]> =
   ["x.com", "x"],
   ["twitter.com", "x"],
 ];
+
+// ChatGPT tags its outbound links `utm_source=chatgpt.com` and often strips the
+// referrer, so the tag is the only trace of that channel.
+const UTM_ALIASES: Readonly<Record<string, string>> = {
+  "chatgpt.com": "chatgpt",
+};
 
 export const DIRECT_CHANNEL = "direct";
 
@@ -66,8 +76,8 @@ export function resolveChannelSource(
   utmSource: string | null,
   referrerDomain: string | null,
 ): string {
-  const utm = utmSource?.trim();
-  if (utm) return utm;
+  const utm = utmSource?.trim().toLowerCase();
+  if (utm) return UTM_ALIASES[utm] ?? utm;
 
   const host = referrerDomain?.trim().toLowerCase();
   if (!host) return DIRECT_CHANNEL;
