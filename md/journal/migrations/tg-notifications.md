@@ -4,6 +4,8 @@
 **Status:** in-progress
 **Started:** 2026-06-03 · **Closed:** —
 
+> **Superseded 2026-09-28** for digest matching and delivery by [`alerts.md`](alerts.md) and ADR-0018.
+
 ## Update — 2026-08-04
 
 Everything below T6/T7 has since shipped and is live in prod (scheduled auto-send via
