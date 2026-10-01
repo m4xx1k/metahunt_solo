@@ -87,4 +87,5 @@ so a future plan can shorten it without slowing anyone else below today's hourly
 - The ledger doubles as the decision record: `collapsed` / `absorbed` rows answer "why didn't I get X".
 - New sources (ATS) need no alerting change — only a watch on the `collapsed` share.
 - Freshness for a faster cadence is bounded by ingest (hourly RSS today), not by the digest tick.
-- Rollout plan and measurements: [`migrations/alerts.md`](../migrations/alerts.md).
+- Rollout plan, measurements, and the refined rules (ledger key, windows, floor) that supersede
+  the details above: [`migrations/alerts.md`](../migrations/alerts.md).
