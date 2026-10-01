@@ -13,6 +13,7 @@ function router(env: Record<string, string>, overrides: { deliverChat?: jest.Moc
     listActiveIds: jest.fn().mockResolvedValue(ACTIVE.map((s) => s.id)),
     listActiveRefs: jest.fn().mockResolvedValue(ACTIVE),
     listActiveChatIds: jest.fn().mockResolvedValue(["chat-owner", "chat-tester"]),
+    getActiveById: jest.fn(async (id: string) => ACTIVE.find((s) => s.id === id) ?? null),
   };
   const digest = { deliver: jest.fn().mockResolvedValue(1) };
   const alerts = { deliverChat: overrides.deliverChat ?? jest.fn().mockResolvedValue({ sent: 2 }) };
@@ -69,5 +70,23 @@ describe("AlertsRouterService.runAll", () => {
       failed: 1,
     });
     expect(digest.deliver).not.toHaveBeenCalled();
+  });
+});
+
+describe("AlertsRouterService.isV2Subscription", () => {
+  it("v1 with no canary → false", async () => {
+    await expect(router({}).service.isV2Subscription("sub-owner")).resolves.toBe(false);
+  });
+
+  it("canary → true only for the canary chat's subscriptions", async () => {
+    const { service } = router({ ALERTS_V2_CHAT_IDS: "chat-owner" });
+    await expect(service.isV2Subscription("sub-owner-2")).resolves.toBe(true);
+    await expect(service.isV2Subscription("sub-tester")).resolves.toBe(false);
+  });
+
+  it("v2 → true; a gone subscription → false", async () => {
+    const { service } = router({ ALERTS_ENGINE: "v2" });
+    await expect(service.isV2Subscription("sub-tester")).resolves.toBe(true);
+    await expect(service.isV2Subscription("sub-gone")).resolves.toBe(false);
   });
 });

@@ -4,7 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import { DigestService } from "../telegram/digest.service";
 import { SubscriptionsService } from "../telegram/subscriptions.service";
 
-import { alertsFlags } from "./alerts-flags";
+import { alertsFlags, chatUsesV2 } from "./alerts-flags";
 import { AlertsService } from "./alerts.service";
 
 export interface AlertsRunPlan {
@@ -47,6 +47,12 @@ export class AlertsRouterService {
       subscriptionIds: active.filter((s) => !canaryChatIds.has(s.chatId)).map((s) => s.id),
       chatIds: [...new Set(active.map((s) => s.chatId).filter((c) => canaryChatIds.has(c)))],
     };
+  }
+
+  /** True when the subscription's chat is delivered by v2, so a v1 send would bypass its ledger. */
+  async isV2Subscription(subscriptionId: string): Promise<boolean> {
+    const sub = await this.subscriptions.getActiveById(subscriptionId);
+    return sub !== null && chatUsesV2(alertsFlags(this.config), sub.chatId);
   }
 
   /** The manual trigger: the same split, run in-process so the response carries counts. */

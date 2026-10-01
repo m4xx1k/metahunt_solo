@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Get,
   NotFoundException,
@@ -9,6 +10,7 @@ import {
 } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -50,11 +52,18 @@ export class DigestController {
     return this.router.runAll();
   }
 
-  /** Deliver to one subscription. `{ sent }` (0 if gone or nothing new). */
+  /** Deliver to one subscription, v1 only. `{ sent }` (0 if gone or nothing new). */
   @Post("run/:subscriptionId")
-  @ApiOperation({ summary: "Deliver a digest to one subscription" })
+  @ApiOperation({ summary: "Deliver a v1 digest to one subscription" })
   @ApiOkResponse({ description: "Delivery count." })
+  @ApiConflictResponse({
+    description: "The subscription's chat is on alerts v2; use POST /digest/run.",
+    type: ApiErrorResponseDto,
+  })
   async runOne(@Param("subscriptionId") subscriptionId: string): Promise<{ sent: number }> {
+    if (await this.router.isV2Subscription(subscriptionId)) {
+      throw new ConflictException("chat is on alerts v2; use POST /digest/run");
+    }
     return { sent: await this.digest.deliver(subscriptionId) };
   }
 

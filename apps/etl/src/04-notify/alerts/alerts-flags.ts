@@ -18,3 +18,7 @@ export function alertsFlags(config: ConfigService): AlertsFlags {
 export function v2InPlay(flags: AlertsFlags): boolean {
   return flags.engine === "v2" || flags.canaryChatIds.size > 0;
 }
+
+export function chatUsesV2(flags: AlertsFlags, chatId: string): boolean {
+  return flags.engine === "v2" || flags.canaryChatIds.has(chatId);
+}
