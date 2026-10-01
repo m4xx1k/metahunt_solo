@@ -16,16 +16,20 @@ import {
 
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
+import { AlertsRouterService, type AlertsRunResult } from "../alerts/alerts-router.service";
 
 import { DigestService } from "./digest.service";
 
 // Manual digest trigger — runs delivery directly (no Temporal) so the HTTP
-// response carries the counts. The fast local-test hook and an operator
-// "re-send now"; the scheduled path uses notifySubscribersWorkflow, not this.
+// response carries the counts, split between v1 and v2 exactly like the
+// scheduled run. The fast local-test hook and an operator "re-send now".
 @Controller("digest")
 @OperatorApi("operator: digest")
 export class DigestController {
-  constructor(private readonly digest: DigestService) {}
+  constructor(
+    private readonly digest: DigestService,
+    private readonly router: AlertsRouterService,
+  ) {}
 
   /** Dry-run match, no send. `{ total, label, titles }`. */
   @Get("preview/:subscriptionId")
@@ -38,12 +42,12 @@ export class DigestController {
     return result;
   }
 
-  /** Deliver to every active subscription. `{ subscriptions, sent }`. */
+  /** Deliver to everyone, v1 or v2 per the alerts flag. `{ subscriptions, chats, sent, failed }`. */
   @Post("run")
-  @ApiOperation({ summary: "Deliver digests to every active subscription" })
+  @ApiOperation({ summary: "Deliver alerts to every active subscription" })
   @ApiOkResponse({ description: "Delivery counts." })
-  runAll(): Promise<{ subscriptions: number; sent: number }> {
-    return this.digest.runForAllActive();
+  runAll(): Promise<AlertsRunResult> {
+    return this.router.runAll();
   }
 
   /** Deliver to one subscription. `{ sent }` (0 if gone or nothing new). */
