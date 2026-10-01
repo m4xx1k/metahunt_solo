@@ -34,6 +34,8 @@ export function SubscriptionEditor({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(subscription.name || subscription.label);
+  const initialBumps = subscription.alertsBumps ?? true;
+  const [bumps, setBumps] = useState(initialBumps);
   const params = subscription.params;
   const initialFilters = useMemo(() => filterToState(params), [params]);
   const filters = useLocalFilters(initialFilters);
@@ -53,6 +55,9 @@ export function SubscriptionEditor({
   const handleName = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
   }, []);
+  const handleBumps = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setBumps(event.target.checked);
+  }, []);
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -62,9 +67,10 @@ export function SubscriptionEditor({
       // The rail has no source section, so the stored id rides across untouched.
       const next = stateToFilter(filters.filters, params.sourceId);
       if (filtersDiffer(next, params)) patch.params = next;
+      if (bumps !== initialBumps) patch.alertsBumps = bumps;
       onSave(subscription.id, patch);
     },
-    [filters.filters, name, onSave, params, subscription.id],
+    [bumps, filters.filters, initialBumps, name, onSave, params, subscription.id],
   );
 
   return (
@@ -78,6 +84,16 @@ export function SubscriptionEditor({
             maxLength={64}
             className="border border-border bg-bg px-3 py-2 font-sans text-sm normal-case tracking-normal text-text-primary focus:border-accent focus:outline-none"
           />
+        </label>
+
+        <label className="mt-4 flex cursor-pointer items-center gap-2 font-mono text-2xs uppercase tracking-wider text-text-muted">
+          <input
+            type="checkbox"
+            checked={bumps}
+            onChange={handleBumps}
+            className="h-3 w-3 accent-[var(--color-accent)]"
+          />
+          also send bumped jobs
         </label>
 
         <div className="mt-5 border-t border-border">

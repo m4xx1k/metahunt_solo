@@ -162,6 +162,33 @@ describe("MeService.setSubscriptionActive (integration)", () => {
     expect(resumed.deactivatedAt).toBeNull();
   });
 
+  // Alerts v2: a switched-on alert promises only what happens from then on.
+  it("moves the alerts floor to now on resume", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const subscriptionId = await seedSubscription({ userId });
+    const old = new Date("2026-01-01T00:00:00.000Z");
+    await db
+      .update(subscriptions)
+      .set({ alertsFloorAt: old })
+      .where(eq(subscriptions.id, subscriptionId));
+
+    await me.setSubscriptionActive(userId, subscriptionId, false);
+    const [paused] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    expect(paused.alertsFloorAt).toEqual(old);
+
+    const before = Date.now();
+    await me.setSubscriptionActive(userId, subscriptionId, true);
+    const [resumed] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, subscriptionId));
+    expect(resumed.alertsFloorAt!.getTime()).toBeGreaterThanOrEqual(before - 1000);
+  });
+
   it("treats an already-applied state as success without duplicating events", async () => {
     const me = makeService();
     const userId = await seedUser();
@@ -194,6 +221,18 @@ describe("MeService.updateSubscription (integration)", () => {
         { id: otherId, name: "Keep me" },
       ]),
     );
+  });
+
+  it("toggles bumps, on by default, and lists the setting", async () => {
+    const me = makeService();
+    const userId = await seedUser();
+    const subscriptionId = await seedSubscription({ userId });
+    expect((await me.listSubscriptions(userId))[0].alertsBumps).toBe(true);
+
+    await expect(
+      me.updateSubscription(userId, subscriptionId, { alertsBumps: false }),
+    ).resolves.toBe(true);
+    expect((await me.listSubscriptions(userId))[0].alertsBumps).toBe(false);
   });
 
   // The account editor labels a saved selection from the feed catalogs, which
