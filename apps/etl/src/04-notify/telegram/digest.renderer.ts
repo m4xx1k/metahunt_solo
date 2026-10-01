@@ -241,6 +241,16 @@ export interface DigestPage {
   vacancyIds: string[];
 }
 
+/** One alerts-v2 card. A bump gets its marker line above the card. */
+export function renderAlertCard(
+  vacancy: VacancyDto,
+  meta: DigestMeta,
+  kind: "new" | "bumped",
+): string {
+  const card = renderCard(vacancy, meta);
+  return kind === "bumped" ? `${copy.digest.bumped}\n${card}` : card;
+}
+
 /**
  * Scheduled delivery sends one vacancy per message. The first message is allowed
  * to notify; follow-ups in the same batch are sent silently by DigestService.

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 
-import { and, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
@@ -30,6 +30,13 @@ export type {
 } from "./subscriptions.types";
 
 const { subscriptions, authIdentities, userCvs } = schema;
+
+export interface AlertSubscriptionRow {
+  id: string;
+  params: Record<string, unknown>;
+  alertsBumps: boolean;
+  alertsFloorAt: Date | null;
+}
 const TELEGRAM_PROVIDER = "telegram";
 
 // Consecutive bounced digest sends before a chat is treated as gone.
@@ -193,6 +200,7 @@ export class SubscriptionsService {
         .set({
           chatId,
           isActive: true,
+          alertsFloorAt: sql`now()`,
           userId: ownerId,
           personId: ownerId,
           linkedAt: sql`now()`,
@@ -249,6 +257,36 @@ export class SubscriptionsService {
       .from(subscriptions)
       .where(eq(subscriptions.isActive, true));
     return rows.map((r) => r.id);
+  }
+
+  /** Chats with at least one active subscription — the alerts v2 work list. */
+  async listActiveChatIds(): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ chatId: subscriptions.chatId })
+      .from(subscriptions)
+      .where(and(eq(subscriptions.isActive, true), isNotNull(subscriptions.chatId)))
+      .orderBy(subscriptions.chatId);
+    return rows.map((r) => r.chatId!);
+  }
+
+  /** A chat's active filter subscriptions, as the alerts engine needs them. */
+  async listAlertSubscriptions(chatId: string): Promise<AlertSubscriptionRow[]> {
+    return this.db
+      .select({
+        id: subscriptions.id,
+        params: subscriptions.params,
+        alertsBumps: subscriptions.alertsBumps,
+        alertsFloorAt: subscriptions.alertsFloorAt,
+      })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.chatId, chatId),
+          eq(subscriptions.isActive, true),
+          isNull(subscriptions.candidateId),
+        ),
+      )
+      .orderBy(subscriptions.createdAt, subscriptions.id);
   }
 
   /**
@@ -365,6 +403,7 @@ export class SubscriptionsService {
         .update(subscriptions)
         .set({
           isActive: true,
+          alertsFloorAt: sql`now()`,
           deactivatedAt: null,
           deactivatedReason: null,
           unreachableCount: 0,

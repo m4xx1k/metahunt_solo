@@ -78,6 +78,7 @@ async function seedRecord(
     title?: string;
     createdAt?: Date;
     publishedAt?: Date;
+    hash?: string;
   } = {},
 ): Promise<string> {
   const externalId = overrides.externalId ?? "100001";
@@ -88,7 +89,7 @@ async function seedRecord(
       sourceId,
       rssIngestId: ingestId,
       externalId,
-      hash: `hash-${externalId}-${title}`,
+      hash: overrides.hash ?? `hash-${externalId}-${title}`,
       publishedAt: overrides.publishedAt ?? PUBLISHED_AT,
       title,
       description: "Long description here.",
@@ -208,6 +209,38 @@ describe("VacancyLoaderService.loadFromRecord (integration)", () => {
       .from(schema.vacancyNodes)
       .where(eq(schema.vacancyNodes.vacancyId, vacancyId));
     expect(links).toHaveLength(1); // skills fully rewritten to just Rust
+  });
+
+  // Alerts v2 keys its ledger on vacancies.id and reads the bump from
+  // published_at (md/journal/migrations/alerts.md §7, §16).
+  it("applies a re-dated record to the same row: same id, new published_at, dedup re-opened", async () => {
+    const { sourceId, ingestId } = await seedSource();
+    const first = await seedRecord(sourceId, ingestId, fullExtracted, {
+      createdAt: new Date("2026-04-24T10:00:00.000Z"),
+    });
+    const vacancyId = await loader.loadFromRecord(first);
+    if (!vacancyId) throw new Error("loadFromRecord returned null");
+    await db
+      .update(schema.vacancies)
+      .set({ deduplicatedAt: new Date("2026-04-24T10:05:00.000Z") })
+      .where(eq(schema.vacancies.id, vacancyId));
+
+    const bumpedAt = new Date("2026-05-10T09:00:00.000Z");
+    const redated = await seedRecord(sourceId, ingestId, fullExtracted, {
+      publishedAt: bumpedAt,
+      createdAt: new Date("2026-05-10T09:30:00.000Z"),
+      hash: "hash-100001-redated",
+    });
+    expect(await loader.loadFromRecord(redated)).toBe(vacancyId);
+
+    expect(await rowCount(schema.vacancies)).toBe(1);
+    const [vacancy] = await db
+      .select()
+      .from(schema.vacancies)
+      .where(eq(schema.vacancies.id, vacancyId));
+    expect(vacancy.publishedAt?.toISOString()).toBe(bumpedAt.toISOString());
+    expect(vacancy.deduplicatedAt).toBeNull();
+    expect(vacancy.lastRssRecordId).toBe(redated);
   });
 
   it("does not let an older source record overwrite a newer listing", async () => {

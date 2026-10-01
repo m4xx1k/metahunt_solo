@@ -17,3 +17,11 @@ export function asNumber(v: unknown): number | undefined {
 export function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 }
+
+/** A comma-separated env value ("1, 2,,3") as its trimmed, non-empty items. */
+export function csvList(v: string | undefined): string[] {
+  return (v ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
