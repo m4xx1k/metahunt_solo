@@ -421,6 +421,13 @@
       "when": 1790360804791,
       "tag": "0059_loud_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790815403974,
+      "tag": "0060_alerts_v2_ledger",
+      "breakpoints": true
     }
   ]
 }

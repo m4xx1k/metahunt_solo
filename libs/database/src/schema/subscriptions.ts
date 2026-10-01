@@ -40,9 +40,14 @@ export const subscriptions = pgTable(
     linkedAt: timestamp("linked_at", { withTimezone: true }),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
     // 'user' = explicit unsubscribe; 'blocked'/'unreachable' auto-reactivate on
-    // unblock. Null on rows deactivated before this column existed.
-    deactivatedReason: text("deactivated_reason").$type<"user" | "blocked" | "unreachable">(),
+    // unblock; 'retired' = CV subscription switched off by alerts v2.
+    deactivatedReason: text("deactivated_reason").$type<
+      "user" | "blocked" | "unreachable" | "retired"
+    >(),
     unreachableCount: integer("unreachable_count").notNull().default(0),
+    // Alerts deliver nothing older than this. Null on pre-v2 rows until lazy init sets it.
+    alertsFloorAt: timestamp("alerts_floor_at", { withTimezone: true }).defaultNow(),
+    alertsBumps: boolean("alerts_bumps").notNull().default(true),
   },
   (t) => [
     index("subscriptions_chat_id_idx").on(t.chatId),
