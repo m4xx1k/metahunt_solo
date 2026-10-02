@@ -27,3 +27,4 @@ export * from "./user-cvs";
 export * from "./subscriptions";
 export * from "./sent-notifications";
 export * from "./digest-deliveries";
+export * from "./chat-notifications";
