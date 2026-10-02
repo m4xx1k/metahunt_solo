@@ -42,3 +42,42 @@ describe("MeController account deletion", () => {
     await expect(controller.deleteAccount(user)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
+
+describe("MeController.patchSubscription", () => {
+  const updateSubscription = jest.fn();
+  const user = { userId: "user-1", telegramId: "telegram-1", roles: ["user"] };
+  let controller: MeController;
+
+  beforeEach(async () => {
+    updateSubscription.mockReset();
+    const moduleBuilder = Test.createTestingModule({
+      controllers: [MeController],
+      providers: [{ provide: MeService, useValue: { updateSubscription } }],
+    });
+    moduleBuilder.overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true });
+    const moduleRef = await moduleBuilder.compile();
+    controller = moduleRef.get(MeController);
+  });
+
+  it("accepts a patch that updates only alertsBumps", async () => {
+    updateSubscription.mockResolvedValue(true);
+
+    await expect(
+      controller.patchSubscription(user, "00000000-0000-0000-0000-000000000001", {
+        alertsBumps: false,
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    expect(updateSubscription).toHaveBeenCalledWith(
+      "user-1",
+      "00000000-0000-0000-0000-000000000001",
+      { alertsBumps: false },
+    );
+  });
+
+  it("throws BadRequestException when no update fields are provided", async () => {
+    await expect(
+      controller.patchSubscription(user, "00000000-0000-0000-0000-000000000001", {}),
+    ).rejects.toThrow("At least one subscription field is required");
+  });
+});

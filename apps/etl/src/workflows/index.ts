@@ -6,3 +6,4 @@ export * from "../02-enrich/extraction/workflows";
 export * from "../02-enrich/loader/workflows";
 export * from "../02-enrich/dedup/workflows";
 export * from "../04-notify/telegram/workflows";
+export * from "../04-notify/alerts/workflows";

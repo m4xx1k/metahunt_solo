@@ -4,8 +4,10 @@ import { CvModule } from "../../03-discovery/cv/cv.module";
 import { FeedModule } from "../../03-discovery/feed/feed.module";
 import { AuthModule } from "../../platform/auth/auth.module";
 import { SubscriptionPlatformModule } from "../../platform/subscriptions/subscription-platform.module";
+import { ALERTS_ACTIVITIES } from "../alerts/activities";
 import { AlertCandidatesRepository } from "../alerts/alert-candidates.repository";
 import { AlertLedgerRepository } from "../alerts/alert-ledger.repository";
+import { AlertsRouterService } from "../alerts/alerts-router.service";
 import { AlertsService } from "../alerts/alerts.service";
 
 import { TELEGRAM_ACTIVITIES } from "./activities";
@@ -40,7 +42,9 @@ import { TelegramService } from "./telegram.service";
     AlertCandidatesRepository,
     AlertLedgerRepository,
     AlertsService,
+    AlertsRouterService,
     ...TELEGRAM_ACTIVITIES,
+    ...ALERTS_ACTIVITIES,
   ],
   exports: [TelegramService, SubscriptionsService],
 })

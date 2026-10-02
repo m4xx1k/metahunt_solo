@@ -8,15 +8,21 @@ import {
 } from "@temporalio/client";
 import { TemporalService } from "nestjs-temporal-core";
 
+import { alertsFlags, v2InPlay } from "../alerts/alerts-flags";
+
 const SCHEDULE_ID = "tg-digest-daytime";
 const SCHEDULE_TIMEZONE = "Europe/Kyiv";
 const SCHEDULE_HOUR_START = 9;
 const SCHEDULE_HOUR_END = 21;
 const SCHEDULE_MINUTE = 30;
 const SCHEDULE_STEP_HOURS = 1; // hourly at :30 — 09:30, 10:30 … 21:30
+// Under the hourly cadence, so a stuck v2 run dies before the next one is skipped.
+const ALERTS_RUN_TIMEOUT = "50m";
 
-// Installs the Temporal schedule that fires `notifySubscribersWorkflow` a few
-// times a day. Mirrors RssSchedulerService; idempotent create-or-update on boot.
+// Installs the Temporal schedule that fires the hourly delivery. Mirrors
+// RssSchedulerService; idempotent create-or-update on boot. While alerts v2 is
+// off the action stays v1's `notifySubscribersWorkflow`, so a rollback (env or
+// deploy) rewrites the schedule back to exactly what v1 ran.
 @Injectable()
 export class NotifySchedulerService implements OnApplicationBootstrap {
   private readonly logger = new Logger(NotifySchedulerService.name);
@@ -72,12 +78,20 @@ export class NotifySchedulerService implements OnApplicationBootstrap {
       ],
       timezone: SCHEDULE_TIMEZONE,
     };
-    const action: ScheduleOptions["action"] = {
-      type: "startWorkflow",
-      workflowType: "notifySubscribersWorkflow",
-      taskQueue,
-      workflowId: "tg-digest",
-    };
+    const action: ScheduleOptions["action"] = v2InPlay(alertsFlags(this.config))
+      ? {
+          type: "startWorkflow",
+          workflowType: "deliverAlertsWorkflow",
+          taskQueue,
+          workflowId: "tg-digest",
+          workflowExecutionTimeout: ALERTS_RUN_TIMEOUT,
+        }
+      : {
+          type: "startWorkflow",
+          workflowType: "notifySubscribersWorkflow",
+          taskQueue,
+          workflowId: "tg-digest",
+        };
     const policies = { overlap: ScheduleOverlapPolicy.SKIP };
     const mm = String(SCHEDULE_MINUTE).padStart(2, "0");
     const description = `TG digests hourly, ${String(SCHEDULE_HOUR_START).padStart(

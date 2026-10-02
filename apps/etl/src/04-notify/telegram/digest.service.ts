@@ -141,28 +141,6 @@ export class DigestService {
   }
 
   /**
-   * Deliver to every active subscription directly (no Temporal) — the manual
-   * trigger. Per-sub failures are isolated so one blocked chat doesn't abort
-   * the rest, matching notifySubscribersWorkflow's resilience.
-   */
-  async runForAllActive(): Promise<{ subscriptions: number; sent: number }> {
-    const ids = await this.subscriptions.listActiveIds();
-    let sent = 0;
-    for (const id of ids) {
-      try {
-        sent += await this.deliver(id);
-      } catch (err) {
-        this.logger.warn(
-          `digest delivery failed for sub ${id}: ${
-            err instanceof Error ? err.message : String(err)
-          }`,
-        );
-      }
-    }
-    return { subscriptions: ids.length, sent };
-  }
-
-  /**
    * Admin-only format probe: sends real, randomly-sampled vacancies straight to
    * `chatId` through the same `paginateDigest` path the scheduled digest uses —
    * no subscription, no `sent_notifications` write, no anti-join. Safe to call

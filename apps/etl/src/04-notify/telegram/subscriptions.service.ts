@@ -259,6 +259,15 @@ export class SubscriptionsService {
     return rows.map((r) => r.id);
   }
 
+  /** Active subscriptions with their chat — the alerts canary split needs both. */
+  async listActiveRefs(): Promise<{ id: string; chatId: string }[]> {
+    const rows = await this.db
+      .select({ id: subscriptions.id, chatId: subscriptions.chatId })
+      .from(subscriptions)
+      .where(and(eq(subscriptions.isActive, true), isNotNull(subscriptions.chatId)));
+    return rows.map((r) => ({ id: r.id, chatId: r.chatId! }));
+  }
+
   /** Chats with at least one active subscription — the alerts v2 work list. */
   async listActiveChatIds(): Promise<string[]> {
     const rows = await this.db
