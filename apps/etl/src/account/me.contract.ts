@@ -38,6 +38,8 @@ interface MeSubscriptionBase {
   name: string;
   label: string;
   isActive: boolean;
+  /** Re-dated ("bumped") postings arrive as `↑ піднято` cards. */
+  alertsBumps: boolean;
   status: MeSubscriptionStatus;
   createdAt: string;
   tgUsername: string | null;
@@ -84,6 +86,11 @@ export class UpdateSubscriptionDto {
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  alertsBumps?: boolean;
 
   @ApiPropertyOptional({ type: SubscriptionFilterDto })
   @ValidateIf((_object, value: unknown) => value !== undefined)

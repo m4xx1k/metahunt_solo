@@ -73,6 +73,11 @@ export const copy = {
     reservation: "Надають бронювання",
     noTest: "Без тестового завдання",
     hasTest: "Є тестове завдання",
+    bumped: "↑ піднято",
+  },
+  legacy: {
+    cvRetired: (webUrl: string): string => `CV-підписку вимкнено. Фільтр — на сайті: ${webUrl}`,
+    loginToManage: (webUrl: string): string => `Керуй сповіщеннями на сайті: ${webUrl}`,
   },
   describe: {
     byCv: "за резюме",

@@ -3,6 +3,8 @@ import { ConfigService } from "@nestjs/config";
 
 import { Bot, GrammyError } from "grammy";
 
+import { csvList } from "../../platform/shared/coerce";
+
 import { RateLimiter, withRetryAfter } from "./rate-limiter";
 import { TelegramCommandsHandler } from "./telegram-commands.handler";
 import { BOT_COMMANDS } from "./telegram-copy";
@@ -33,11 +35,22 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly chatLimiters = new Map<string, RateLimiter>();
   private bot?: Bot;
   private stopping = false;
+  private readonly devAllowlist: ReadonlySet<string> | null;
 
   constructor(
     private readonly config: ConfigService,
     private readonly commands: TelegramCommandsHandler,
-  ) {}
+  ) {
+    this.devAllowlist =
+      this.config.get<string>("NODE_ENV") === "production"
+        ? null
+        : new Set(csvList(this.config.get<string>("ALERTS_DEV_CHAT_ALLOWLIST")));
+  }
+
+  /** False outside production for any chat not in ALERTS_DEV_CHAT_ALLOWLIST. */
+  canSendTo(chatId: string): boolean {
+    return this.devAllowlist === null || this.devAllowlist.has(chatId);
+  }
 
   async onModuleInit(): Promise<void> {
     const token = this.config.get<string>("TELEGRAM_BOT_TOKEN") ?? "";
@@ -131,6 +144,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     html: string,
     opts: { disableNotification?: boolean } = {},
   ): Promise<number> {
+    if (!this.canSendTo(chatId)) {
+      throw new Error(`Refusing to message chat ${chatId}: not in ALERTS_DEV_CHAT_ALLOWLIST`);
+    }
     const bot = this.bot;
     if (!bot) throw new Error("Telegram bot is not initialized");
     await Promise.all([this.limiter.acquire(), this.limiterForChat(chatId).acquire()]);

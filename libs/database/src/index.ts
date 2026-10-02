@@ -7,4 +7,5 @@ export type { RssRecord, NewRssRecord } from "./schema/rss-records";
 export type { User, NewUser } from "./schema/users";
 export type { NodeType } from "./schema/nodes";
 export type { DigestDelivery, DigestProfileType } from "./schema/digest-deliveries";
+export type { ChatNotification, ChatNotificationKind } from "./schema/chat-notifications";
 export { slugify, uniqueSlug } from "./slug";

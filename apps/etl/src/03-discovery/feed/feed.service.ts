@@ -91,6 +91,9 @@ export interface FeedSearchParams {
    *  already-sent) — matches on the group, so a repost of an already-sent
    *  Position under a different Posting id is still excluded. */
   excludeIds?: string[];
+  /** Positions with a deduplicated member Posting whose last activity
+   *  (greatest of published/loaded) is after this instant — the alerts window. */
+  postingActiveAfter?: Date;
 
   /** ORDER BY only when a scorer is present — ignored otherwise, same as
    *  today. "score" (+ `minFitTier` set) forces the FULL PATH. */
@@ -716,6 +719,14 @@ export function buildWhere(params: FeedSearchParams): SQL | undefined {
   if (params.excludeIds && params.excludeIds.length > 0) {
     conds.push(sql`p.position_id NOT IN (
       SELECT position_id FROM postings WHERE posting_id IN (${uuidList(params.excludeIds)})
+    )`);
+  }
+  if (params.postingActiveAfter) {
+    conds.push(sql`EXISTS (
+      SELECT 1 FROM vacancies v
+      WHERE v.unique_vacancy_id = p.position_id
+        AND v.deduplicated_at IS NOT NULL
+        AND greatest(v.published_at, v.loaded_at) > ${params.postingActiveAfter}
     )`);
   }
   if (params.skillIds && params.skillIds.length > 0) {

@@ -1,6 +1,6 @@
 import type { VacancyDto } from "../../03-discovery/feed/feed.contract";
 
-import { paginateDigest, renderDigest } from "./digest.renderer";
+import { paginateDigest, renderAlertCard, renderDigest } from "./digest.renderer";
 
 const BASE = "https://api.metahunt.io";
 const WEB = "https://www.metahunt.app";
@@ -292,5 +292,30 @@ describe("digest.renderer", () => {
       expect(pages[0].html).not.toContain("/list");
       expect(pages[0].html).not.toContain("<i>");
     });
+  });
+});
+
+describe("renderAlertCard", () => {
+  const meta = { totalNew: 1, applyBaseUrl: BASE, webBaseUrl: WEB, subscriptionId: "sub-1" };
+
+  it("puts the bump marker on the first line of a bumped card", () => {
+    const html = renderAlertCard(createVacancy(), meta, "bumped");
+    expect(html.split("\n")[0]).toBe("↑ піднято");
+    expect(html.split("\n")[1]).toMatch(/^◆ /);
+  });
+
+  it("renders a new card with no marker", () => {
+    expect(renderAlertCard(createVacancy(), meta, "new")).toMatch(/^◆ /);
+  });
+
+  it("links the posting's own id and source", () => {
+    const posting = createVacancy({
+      id: "22222222-2222-2222-2222-222222222222",
+      source: { id: "s2", code: "dou", displayName: "DOU" },
+    });
+    const html = renderAlertCard(posting, meta, "new");
+    expect(html).toContain(`${BASE}/go/22222222-2222-2222-2222-222222222222?s=sub-1`);
+    expect(html).toContain(">DOU</a>");
+    expect(html).toContain("full-stack-developer-22222222-2222-2222-2222-222222222222");
   });
 });

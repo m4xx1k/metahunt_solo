@@ -177,6 +177,17 @@ export function validateEnv(config: RawEnv): RawEnv {
   // (the endpoint 503s), same shape as the dormant bot and PostHog above.
   const googleClientId = asString(config.GOOGLE_CLIENT_ID) ?? "";
 
+  // Alerts v2 rollout (md/journal/migrations/alerts.md §13). v1 stays the
+  // default; the canary list moves single chats to v2 while the engine is v1.
+  const alertsEngine = asString(config.ALERTS_ENGINE) ?? "v1";
+  if (alertsEngine !== "v1" && alertsEngine !== "v2") {
+    throw new Error(`ALERTS_ENGINE must be v1 or v2, got "${alertsEngine}"`);
+  }
+  const alertsV2ChatIds = asString(config.ALERTS_V2_CHAT_IDS) ?? "";
+  // Outside production the bot only talks to these chats, so a restored prod
+  // copy can never message a real subscriber from a local run.
+  const alertsDevChatAllowlist = asString(config.ALERTS_DEV_CHAT_ALLOWLIST) ?? "";
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -208,5 +219,8 @@ export function validateEnv(config: RawEnv): RawEnv {
     JWT_SECRET: jwtSecret,
     ADMIN_TELEGRAM_IDS: adminTelegramIds,
     GOOGLE_CLIENT_ID: googleClientId,
+    ALERTS_ENGINE: alertsEngine,
+    ALERTS_V2_CHAT_IDS: alertsV2ChatIds,
+    ALERTS_DEV_CHAT_ALLOWLIST: alertsDevChatAllowlist,
   };
 }

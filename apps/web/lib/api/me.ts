@@ -31,6 +31,8 @@ interface MeSubscriptionBase {
    * absent map just falls back to the catalogs, i.e. the old behaviour.
    */
   refNames?: Record<string, string>;
+  /** Re-dated jobs arrive as "bumped" cards. Absent from an older API = on. */
+  alertsBumps?: boolean;
 }
 
 export interface MeCvSubscription extends MeSubscriptionBase {
@@ -54,6 +56,7 @@ export type MeSubscription = MeCvSubscription | MeFeedSubscription;
 export interface UpdateSubscription {
   name?: string;
   isActive?: boolean;
+  alertsBumps?: boolean;
   params?: SubscriptionFilter;
 }
 

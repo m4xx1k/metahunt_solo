@@ -16,12 +16,13 @@ import type { SubscriptionParams } from "../platform/subscriptions/subscription.
 
 import type { MeCv, MeSubscription, MeSubscriptionStatus } from "./me.contract";
 
-const { authIdentities, userCvs, users, candidates, subscriptions } = schema;
+const { authIdentities, chatNotifications, userCvs, users, candidates, subscriptions } = schema;
 const TELEGRAM_PROVIDER = "telegram";
 
 interface SubscriptionUpdate {
   name?: string;
   isActive?: boolean;
+  alertsBumps?: boolean;
   params?: SubscriptionParams;
 }
 
@@ -132,6 +133,7 @@ export class MeService {
         params: subscriptions.params,
         candidateId: subscriptions.candidateId,
         isActive: subscriptions.isActive,
+        alertsBumps: subscriptions.alertsBumps,
         createdAt: subscriptions.createdAt,
         tgUsername: subscriptions.tgUsername,
         tgFirstName: subscriptions.tgFirstName,
@@ -172,6 +174,7 @@ export class MeService {
           name: r.name ?? createSubscriptionName(r.id),
           label,
           isActive: r.isActive,
+          alertsBumps: r.alertsBumps,
           status: subscriptionStatus(r),
           createdAt: r.createdAt.toISOString(),
           tgUsername: r.tgUsername,
@@ -259,6 +262,12 @@ export class MeService {
       if (params !== undefined) {
         await tx.update(subscriptions).set({ params }).where(eq(subscriptions.id, existing.id));
       }
+      if (patch.alertsBumps !== undefined) {
+        await tx
+          .update(subscriptions)
+          .set({ alertsBumps: patch.alertsBumps })
+          .where(eq(subscriptions.id, existing.id));
+      }
 
       const activeChanged = patch.isActive !== undefined && patch.isActive !== existing.isActive;
       if (!activeChanged || patch.isActive === undefined) return true;
@@ -267,6 +276,8 @@ export class MeService {
         .update(subscriptions)
         .set({
           isActive: patch.isActive,
+          // A switched-on alert promises only what happens from now on.
+          ...(patch.isActive ? { alertsFloorAt: sql`now()` } : {}),
           deactivatedAt: patch.isActive ? null : sql`now()`,
           deactivatedReason: patch.isActive ? null : "user",
         })
@@ -310,6 +321,7 @@ export class MeService {
       const telegramIds = identities.map((identity) => identity.telegramId);
       if (telegramIds.length > 0) {
         await tx.delete(subscriptions).where(inArray(subscriptions.chatId, telegramIds));
+        await tx.delete(chatNotifications).where(inArray(chatNotifications.chatId, telegramIds));
       }
 
       await tx.delete(users).where(eq(users.id, userId));

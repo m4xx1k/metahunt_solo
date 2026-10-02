@@ -4,6 +4,9 @@ import { CvModule } from "../../03-discovery/cv/cv.module";
 import { FeedModule } from "../../03-discovery/feed/feed.module";
 import { AuthModule } from "../../platform/auth/auth.module";
 import { SubscriptionPlatformModule } from "../../platform/subscriptions/subscription-platform.module";
+import { AlertCandidatesRepository } from "../alerts/alert-candidates.repository";
+import { AlertLedgerRepository } from "../alerts/alert-ledger.repository";
+import { AlertsService } from "../alerts/alerts.service";
 
 import { TELEGRAM_ACTIVITIES } from "./activities";
 import { DigestController } from "./digest.controller";
@@ -34,6 +37,9 @@ import { TelegramService } from "./telegram.service";
     SubscriptionMatcherService,
     DigestService,
     NotifySchedulerService,
+    AlertCandidatesRepository,
+    AlertLedgerRepository,
+    AlertsService,
     ...TELEGRAM_ACTIVITIES,
   ],
   exports: [TelegramService, SubscriptionsService],
