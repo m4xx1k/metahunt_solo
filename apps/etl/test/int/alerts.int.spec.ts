@@ -236,7 +236,7 @@ describe("AlertsService.deliverChat (integration)", () => {
 
     await bump(posting, ago(2));
     expect(await alerts.deliverChat(CHAT)).toMatchObject({ sent: 1, bumped: 1 });
-    expect(telegram.sent[0].html.startsWith("↑ піднято\n")).toBe(true);
+    expect(telegram.sent[0].html).toContain(" · 🔄 оновлено");
 
     await bump(posting, ago(1));
     expect(await alerts.deliverChat(CHAT)).toMatchObject({ sent: 0, absorbed: 1 });

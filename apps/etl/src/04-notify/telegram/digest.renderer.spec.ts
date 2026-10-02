@@ -298,10 +298,10 @@ describe("digest.renderer", () => {
 describe("renderAlertCard", () => {
   const meta = { totalNew: 1, applyBaseUrl: BASE, webBaseUrl: WEB, subscriptionId: "sub-1" };
 
-  it("puts the bump marker on the first line of a bumped card", () => {
+  it("adds the bump marker in the source line of a bumped card", () => {
     const html = renderAlertCard(createVacancy(), meta, "bumped");
-    expect(html.split("\n")[0]).toBe("↑ піднято");
-    expect(html.split("\n")[1]).toMatch(/^◆ /);
+    expect(html).toMatch(/^◆ /);
+    expect(html).toContain(">Djinni</a> · 🔄 оновлено");
   });
 
   it("renders a new card with no marker", () => {

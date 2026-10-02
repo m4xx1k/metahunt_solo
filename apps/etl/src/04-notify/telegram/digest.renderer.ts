@@ -157,7 +157,7 @@ function renderDetails(v: VacancyDto): string[] {
   return lines;
 }
 
-function renderCard(v: VacancyDto, meta: DigestMeta): string {
+function renderCard(v: VacancyDto, meta: DigestMeta, kind?: "new" | "bumped"): string {
   const body: string[] = [];
 
   const salary = formatSalary(v.salary);
@@ -176,10 +176,13 @@ function renderCard(v: VacancyDto, meta: DigestMeta): string {
   }
 
   if (v.link) {
+    const bumpSuffix = kind === "bumped" ? ` · ${copy.digest.bumped}` : "";
     body.push(
       "",
-      `знайдено на <a href="${escapeHtml(applyUrl(meta.applyBaseUrl, v.id, meta.subscriptionId))}">${escapeHtml(v.source.displayName)}</a>`,
+      `знайдено на <a href="${escapeHtml(applyUrl(meta.applyBaseUrl, v.id, meta.subscriptionId))}">${escapeHtml(v.source.displayName)}</a>${bumpSuffix}`,
     );
+  } else if (kind === "bumped") {
+    body.push("", copy.digest.bumped);
   }
 
   const webBaseUrl = meta.webBaseUrl ?? meta.applyBaseUrl;
@@ -241,14 +244,13 @@ export interface DigestPage {
   vacancyIds: string[];
 }
 
-/** One alerts-v2 card. A bump gets its marker line above the card. */
+/** One alerts-v2 card. A bump gets its marker in the source line. */
 export function renderAlertCard(
   vacancy: VacancyDto,
   meta: DigestMeta,
   kind: "new" | "bumped",
 ): string {
-  const card = renderCard(vacancy, meta);
-  return kind === "bumped" ? `${copy.digest.bumped}\n${card}` : card;
+  return renderCard(vacancy, meta, kind);
 }
 
 /**
