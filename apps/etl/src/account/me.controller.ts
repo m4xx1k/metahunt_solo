@@ -106,7 +106,12 @@ export class MeController {
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: UpdateSubscriptionDto,
   ): Promise<{ ok: true }> {
-    if (body.name === undefined && body.isActive === undefined && body.params === undefined) {
+    if (
+      body.name === undefined &&
+      body.isActive === undefined &&
+      body.params === undefined &&
+      body.alertsBumps === undefined
+    ) {
       throw new BadRequestException("At least one subscription field is required");
     }
     if (!(await this.me.updateSubscription(user.userId, id, body))) {
