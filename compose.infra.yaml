@@ -94,9 +94,43 @@ services:
     depends_on:
       - temporal
 
+  prometheus:
+    container_name: metahunt-prometheus
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    networks: [metahunt-infra]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - metahunt_prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+
+  grafana:
+    container_name: metahunt-grafana
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    networks: [metahunt-infra]
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
+      - metahunt_grafana_data:/var/lib/grafana
+
 volumes:
   # External: created outside compose (manual prod restore); reused as-is so
   # there's no data migration — see md/runbook/docker-dev.md.
   metahunt_railway_pgdata:
     external: true
   metahunt-minio-data:
+  metahunt_prometheus_data:
+  metahunt_grafana_data:
+

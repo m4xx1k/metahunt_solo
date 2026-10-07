@@ -27,6 +27,7 @@ import { AnalyticsModule } from "./platform/analytics/analytics.module";
 import { AuthModule } from "./platform/auth/auth.module";
 import { validateEnv } from "./platform/config/env.validation";
 import { HealthController } from "./platform/health/health.controller";
+import { MetricsModule } from "./platform/metrics";
 import { StorageModule } from "./platform/storage/storage.module";
 import { TemporalInfraModule } from "./platform/temporal/temporal.module";
 
@@ -43,6 +44,7 @@ import { TemporalInfraModule } from "./platform/temporal/temporal.module";
     // CvController — the LLM-backed /cv upload, 5/min per real browser IP).
     ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 300 }]),
     DatabaseModule.forRoot(),
+    MetricsModule,
     AnalyticsModule,
     AuthModule,
     TemporalInfraModule,

@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "metahunt-etl"
+    static_configs:
+      # In docker compose, etl container is reachable via service name
+      - targets: ["etl:3333"]
+      # When running bare-metal via pnpm dev:etl, replace with:
+      # - targets: ["host.docker.internal:3333"]
