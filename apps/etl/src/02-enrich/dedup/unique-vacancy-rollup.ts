@@ -28,8 +28,6 @@ export async function repairUniqueVacancies(
       )
   `);
 
-  // centroid_embedding is no longer read by dedup; it is kept current only so
-  // a code rollback to the centroid resolver still works.
   await executor.execute(sql`
     UPDATE unique_vacancies u
     SET
@@ -43,7 +41,6 @@ export async function repairUniqueVacancies(
         ELSE members.representative_vacancy_id
       END,
       representative_vacancy_id = members.representative_vacancy_id,
-      centroid_embedding = members.centroid_embedding,
       source_count = members.source_count,
       vacancy_count = members.vacancy_count,
       first_seen_at = members.first_seen_at,
@@ -55,7 +52,6 @@ export async function repairUniqueVacancies(
         v.unique_vacancy_id AS group_id,
         (array_agg(v.id ORDER BY COALESCE(v.published_at, v.loaded_at) DESC, v.id))[1]
           AS representative_vacancy_id,
-        AVG(v.embedding) AS centroid_embedding,
         COUNT(DISTINCT v.source_id)::int AS source_count,
         COUNT(*)::int AS vacancy_count,
         COALESCE(MIN(v.published_at), MIN(v.loaded_at)) AS first_seen_at,

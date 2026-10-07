@@ -428,6 +428,13 @@
       "when": 1790815403974,
       "tag": "0060_alerts_v2_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1791373333355,
+      "tag": "0061_curly_true_believers",
+      "breakpoints": true
     }
   ]
 }

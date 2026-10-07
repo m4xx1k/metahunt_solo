@@ -1,12 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  integer,
-  timestamp,
-  vector,
-  index,
-  type AnyPgColumn,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, timestamp, index, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import { vacancies } from "./vacancies";
 
@@ -25,10 +17,6 @@ export const uniqueVacancies = pgTable(
     canonicalVacancyId: uuid("canonical_vacancy_id")
       .notNull()
       .references((): AnyPgColumn => vacancies.id),
-
-    // Mean of member embeddings. Used as anchor point when resolving new
-    // vacancies; recomputed on every merge/unmerge.
-    centroidEmbedding: vector("centroid_embedding", { dimensions: 1536 }),
 
     // Denormalized counters — kept in sync inside resolve transactions.
     // sourceCount = COUNT(DISTINCT source_id) of members; the >=2 filter
