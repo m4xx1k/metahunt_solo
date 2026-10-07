@@ -150,6 +150,12 @@ export const EVENT_CATALOG: AnalyticsEventDoc[] = [
     actor: "user",
     means: "finished /match onboarding",
   },
+  {
+    name: "dedup_mistake_reported",
+    label: "dedup mistake reported",
+    actor: "user",
+    means: "reported that a merged duplicate posting in DuplicatesBadge is not the same job",
+  },
 ];
 
 const BY_NAME = new Map(EVENT_CATALOG.map((event) => [event.name, event]));
