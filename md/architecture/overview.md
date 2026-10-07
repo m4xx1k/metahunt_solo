@@ -48,7 +48,7 @@ src/
   03-discovery/ feed, market, tracks                   # public read API over silver
   04-notify/    telegram, users                        # outbound: digests + subscriptions
   admin/        taxonomy, monitoring                   # operator: moderation + observability
-  platform/     auth, config, storage, subscriptions, temporal, shared
+  platform/     auth, config, metrics, storage, subscriptions, temporal, shared
   workflows/    barrel that aggregates each stage's Temporal workflows
   baml_client/  generated BAML client (consumed by 02-enrich/extraction)
   app.module.ts, app.controller.ts, main.ts           # root composition + entry
@@ -61,7 +61,7 @@ not cross-stage DI — which keeps each stage independently extractable later.
 
 `apps/etl` currently contains:
 
-- `AppModule` — imports `ConfigModule` (global, with env validation), `DatabaseModule` (global), `StorageModule`, `TemporalInfraModule`, `RssModule`, `LoaderModule`, `FeedModule`, `MarketModule`, `TracksModule`, `DedupModule`, `TaxonomyModule`, `MonitoringModule`, `ExtractionCostModule`, `UsersModule`, `TelegramModule`. Registers `AppController` + `HealthController`. CORS allows only the normalized `WEB_BASE_URL` origin (set in `main.ts`); operator endpoints also require a bearer token with the `admin` role.
+- `AppModule` — imports `ConfigModule` (global, with env validation), `DatabaseModule` (global), `MetricsModule`, `StorageModule`, `TemporalInfraModule`, `RssModule`, `LoaderModule`, `FeedModule`, `MarketModule`, `TracksModule`, `DedupModule`, `TaxonomyModule`, `MonitoringModule`, `ExtractionCostModule`, `UsersModule`, `TelegramModule`. Registers `AppController` + `HealthController`. CORS allows only the normalized `WEB_BASE_URL` origin (set in `main.ts`); operator endpoints also require a bearer token with the `admin` role.
 - `AppController` — `GET /`: runs `SELECT 1`, returns `{ status: "ok", db: "up" }` (legacy canary; Railway healthcheck is `/healthz`).
 - `HealthController` — `GET /healthz`: aggregated Postgres + S3 + Temporal check via `Promise.all` with per-call latency capture. 200 if all three are ok; 503 with per-dependency error detail otherwise.
 - `RssModule` — full RSS ingest pipeline. Imports `StorageModule` + `ExtractionModule` + `TemporalModule.registerAsync({ isGlobal: true, ... })`. Providers: `RssParserService`, four activities (`RssFetch/Parse/Extract/Finalize`), `RssSchedulerService`. Controller: `RssController`. The workflow finalizes failures by `workflow_run_id`, so an ingest created before a fetch/storage failure does not remain `running` after activity retries exhaust.
@@ -74,6 +74,7 @@ not cross-stage DI — which keeps each stage independently extractable later.
 - Workflows (loader): `apps/etl/src/02-enrich/loader/workflows/vacancy-pipeline.workflow.ts` — `vacancyPipelineWorkflow(rssRecordId)` runs `loadVacancy` today; future stages (dedup, telegram) append here without rewrite. Started as an `ABANDON` child of `rssIngestWorkflow` per successfully extracted record, with deterministic `workflowId = vacancy-pipeline-<rssRecordId>` and `WorkflowIdReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY` so a failed pipeline retries on the next ingest pass without blocking the happy path.
 - Workflows barrel: `apps/etl/src/workflows/index.ts` aggregates `rss/workflows` + `loader/workflows` so the Temporal worker bundles every feature's workflows from one `workflowsPath`.
 - `MonitoringModule` — authenticated operator observability over the ETL pipeline. `MonitoringController` exposes six endpoints under `/monitoring`: `stats` (totals + last-24h + per-source latest run), `sources`, `ingests` + `ingests/:id`, `records` + `records/:id`, all with offset/limit pagination and inline query parsing (`query-parsing.ts`, mirrors the `/rss` style). `MonitoringService` does the joins/aggregations directly via the global Drizzle instance (counts of records-per-ingest and extracted-per-ingest computed in SQL, not N+1). `listRecords` and `getRecord` return identical shapes — both include `description` and `extractedData` — so the web feed renders `RssRecordCard` without an extra detail fetch.
+- `MetricsModule` — Prometheus observability over the NestJS process, HTTP layer, and pipeline. Provides a singleton `Registry`, registers default Node.js process metrics (`collectDefaultMetrics`), exposes `GET /metrics` (`@SkipThrottle`, `X-Robots-Tag: noindex`), guards it with `MetricsAuthGuard` (timing-safe SHA-256 compare against `METRICS_TOKEN`), and instruments HTTP traffic via `HttpMetricsInterceptor` (duration histogram labeled by method, normalized route pattern, and status code). Provides counters and histograms for pipeline ingest, extraction success/latency, LLM cost, dedup merges, and digest sends.
 - `ProductAnalyticsModule` — administrator-only CRM and temporary parity API under `/admin/product-analytics`. `/people` returns a server-paginated, pseudonymous person roster (account-only and Telegram-only people included) with first known, last product action, subscriptions, selected-range feed/Telegram clicks, and current state; it never selects Telegram identifiers or provider PII. `/overview` retains delivery and ledger integrity diagnostics while the PostHog parity gate is open. `/dashboard/analytics` leads with the compact CRM roster; acquisition, paths, funnels, and retention are read in PostHog.
 - `RssSchedulerService` — two methods, no boolean: `ingestRemote()` (sources with `rssUrl IS NOT NULL`) and `ingestAll()` (every source; the HTTP-trigger use-case). Both call `temporal.startWorkflow("rssIngestWorkflow", [source.id], ...)` per source. Implements `OnApplicationBootstrap` and (re)installs a Temporal Schedule `rss-ingest-hourly` on every boot — calendar spec `{ minute: 0, hour: { start: 6, end: 22, step: RSS_INGEST_INTERVAL_HOURS } }`, timezone `Europe/Kyiv`, overlap policy `SKIP`, action starts `rssIngestAllWorkflow`. If the schedule already exists, the service updates its spec/action via the schedule handle so env-driven cadence changes apply on restart.
 - Workflows: `apps/etl/src/01-ingest/rss/workflows/{rss-ingest.workflow.ts, rss-ingest-all.workflow.ts, index.ts}` — barrel pattern so the Temporal worker bundler can resolve the workflowsPath directory. `rssIngestAllWorkflow` (driven by the Temporal Schedule) starts `rssIngestWorkflow` children in deterministic batches of five with `parentClosePolicy: ABANDON`; one failed child start does not block other sources.
@@ -133,19 +134,27 @@ guide: [`md/runbook/docker-dev.md`](../runbook/docker-dev.md).
 | `minio-init`  | `minio/mc:latest`            | —                             | One-shot: creates `rss-payloads` bucket idempotently, then exits                       |
 | `temporal`    | `temporalio/auto-setup:1.26` | `7233` (gRPC)                 | Temporal server; auto-creates `temporal` + `temporal_visibility` databases inside `db` |
 | `temporal-ui` | `temporalio/ui:2.34.0`       | `8080`                        | Workflow UI                                                                            |
+| `prometheus`  | `prom/prometheus:latest`     | `9090`                        | Local Prometheus scraper targeting `etl:3333/metrics`                                  |
+| `grafana`     | `grafana/grafana:latest`     | `3001`                        | Local Grafana dashboard UI with auto-provisioned dashboards/datasources                |
 
 Default credentials live in `.env.example` and match container env (`metahunt`/`metahunt`/`metahunt123` for db/MinIO root creds). Temporal namespace is `default`; task queue is `rss-ingest`.
 
 ## Deployment
 
-Two independent surfaces, both built from a subset of this monorepo. Neither rebuilds when only the other's files change.
+Three independent surfaces, built from subsets of this monorepo.
 
 ### `@metahunt/etl` → Railway
 
 - Builder: Dockerfile (multi-stage, Node 22). The runtime image copies **only** `apps/etl/dist/`, `libs/database/dist/`, migrations, and the workspace `node_modules` it needs. `apps/web/` is excluded by both selective `COPY` lines and `.dockerignore`.
-- `railway.json` `watchPatterns` lists root infra files + `apps/etl/**` + `libs/**`. Frontend-only commits don't trigger a Railway build.
+- `railway.json` `watchPatterns` lists root infra files + `apps/etl/**` + `libs/**` + `ops/**`. Frontend-only commits don't trigger a Railway build.
 - Pre-deploy: `node -r ts-node/register/transpile-only libs/database/migrate.ts` runs Drizzle migrations.
 - Healthcheck: `GET /healthz` (Postgres + S3 + Temporal aggregated).
+
+### Observability (Prometheus & Grafana) → Railway
+
+Companion monitoring services deployed in the same Railway project:
+- **`prometheus`**: Built from `ops/prometheus/Dockerfile.railway`. Attached to a 5GB volume at `/prometheus`. Scrapes `https://api.metahunt.app` using `bearer_token_file` seeded from `METRICS_TOKEN`. Privilege drops to `nobody` (UID 65534) on startup.
+- **`grafana`**: Built from `ops/grafana/Dockerfile.railway`. Attached to volume at `/var/lib/grafana`. Pre-provisions datasource to `http://prometheus.railway.internal:9090` and dashboard `ops/grafana/provisioning/dashboards/metahunt.json`. Privilege drops to `grafana` (UID 472) on startup.
 
 ### `@metahunt/web` → Vercel
 

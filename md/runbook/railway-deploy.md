@@ -18,7 +18,7 @@ Edit only these — Railway UI is read-only mirror.
 | Start | `node apps/etl/dist/main.js` |
 | Healthcheck | `GET /healthz` (Postgres + S3 + Temporal; 200 / 503) |
 | Port | `process.env.PORT` (3000 fallback) |
-| Watch | `Dockerfile`, `railway.json`, `package.json`, `pnpm-lock.yaml`, `apps/etl/**`, `libs/**` |
+| Watch | `Dockerfile`, `railway.json`, `package.json`, `pnpm-lock.yaml`, `apps/etl/**`, `libs/**`, `ops/**` |
 
 ## Required env vars
 
@@ -27,6 +27,8 @@ Edit only these — Railway UI is read-only mirror.
 **Temporal Cloud** — `TEMPORAL_ADDRESS=<ns>.<acct>.tmprl.cloud:7233`, `TEMPORAL_NAMESPACE=<ns>.<acct>`, `TEMPORAL_API_KEY=<key>`, `TEMPORAL_TASK_QUEUE=rss-ingest`. App auto-enables TLS when `TEMPORAL_API_KEY` is set; empty → plaintext (local only).
 
 **S3 / R2** — `STORAGE_ENDPOINT`, `STORAGE_REGION` (R2: `auto`), `STORAGE_BUCKET` (must exist), `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`. Bucket perms: `PutObject`, `GetObject`, `HeadBucket`.
+
+**Observability** — `METRICS_TOKEN=<secret>` (static bearer token required by `MetricsAuthGuard` in production; fails closed if unset).
 
 **Optional** — `PORT` (Railway injects), `LLM_EXTRACTION_ENABLED=false` for v1.
 
@@ -112,6 +114,36 @@ manual now, see [taxonomy-verification-policy.md](taxonomy-verification-policy.m
 railway logs --service @metahunt/etl --lines 200       # runtime
 railway logs --build --latest --lines 200              # build
 ```
+
+**Observability (Prometheus & Grafana on Railway)**
+
+MetaHunt runs self-hosted Prometheus and Grafana services directly in the Railway project.
+
+1. **Architecture & Service Setup:**
+   - **`@metahunt/etl`**: Exposes authenticated `GET /metrics` (`X-Robots-Tag: noindex`, `@SkipThrottle`). Requires `METRICS_TOKEN` env var.
+   - **`prometheus`**:
+     - Dockerfile: `ops/prometheus/Dockerfile.railway`
+     - Volume: 5GB persistent volume mounted at `/prometheus` (7d retention / 5GB max).
+     - Env vars: `METRICS_TOKEN` (injected into `/etc/prometheus/bearer.token` with mode 600).
+     - Scrape config: `ops/prometheus/prometheus.prod.yml` scraping `https://api.metahunt.app` directly over HTTPS every 15s.
+   - **`grafana`**:
+     - Dockerfile: `ops/grafana/Dockerfile.railway`
+     - Volume: persistent volume mounted at `/var/lib/grafana`.
+     - Env vars: `GF_SECURITY_ADMIN_PASSWORD=<pass>`, `GF_USERS_ALLOW_SIGN_UP=false`.
+     - Provisioning: Datasource pre-configured to `http://prometheus.railway.internal:9090`. Dashboard pre-loaded from `ops/grafana/provisioning/dashboards/metahunt.json` with dynamic `$datasource`.
+
+2. **Security & Least Privilege (Volume Fix):**
+   - Railway volumes mount as `root:root` (UID 0:0, mode 0755), which blocks unprivileged users from writing.
+   - Never run daemons as root. Both `ops/prometheus/entrypoint.sh` and `ops/grafana/entrypoint.sh` start as root for <5ms to chown volume directories, then immediately drop privileges via `exec su -s /bin/sh nobody` (Prometheus UID 65534) and `exec su -s /bin/sh grafana` (Grafana UID 472).
+
+3. **Verification:**
+   ```bash
+   # Test /metrics unauthenticated (must return 401 Unauthorized in production)
+   curl -i https://api.metahunt.app/metrics
+
+   # Test /metrics authenticated
+   curl -i -H "Authorization: Bearer $METRICS_TOKEN" https://api.metahunt.app/metrics
+   ```
 
 ## Rules
 

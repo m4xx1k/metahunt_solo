@@ -34,7 +34,7 @@ the watcher can do that. Ctrl-C stops watching (the containers keep running).
 > this session.
 
 Ports (host): web `4000`, etl `3333`, Postgres `54323`, MinIO `9000`/`9001`,
-Temporal `7233`, Temporal UI `8080`.
+Temporal `7233`, Temporal UI `8080`, Prometheus `9090`, Grafana `3001`.
 
 Built on [Docker Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/);
 the `develop.watch` / `init` keys are in the
@@ -44,7 +44,7 @@ the `develop.watch` / `init` keys are in the
 
 | File | What |
 |---|---|
-| `compose.infra.yaml` | shared infra: `db` (pg18), `minio`, `minio-init`, `temporal`, `temporal-ui`. Creates the external network `metahunt-infra`. |
+| `compose.infra.yaml` | shared infra: `db` (pg18), `minio`, `minio-init`, `temporal`, `temporal-ui`, `prometheus`, `grafana`. Creates the external network `metahunt-infra`. |
 | `compose.yaml` | app stack: `etl` + `web`, joined to `metahunt-infra`. `docker compose` finds it by default. |
 | `apps/etl/Dockerfile.dev` | etl image: etl + `@metahunt/database` deps baked and the lib built, non-root `node`. Uses the repo-root `.dockerignore` (already excludes apps/web). |
 | `apps/web/Dockerfile.dev` (+ `.dockerignore` sidecar) | web image: only web's deps (next/react), non-root `node`. Sidecar keeps apps/web, drops apps/etl + libs. |
@@ -122,7 +122,18 @@ the infra db, Temporal's `POSTGRES_PWD`, and the etl container's `DATABASE_URL`.
 `temporal_visibility` databases; `temporalio/auto-setup` creates them on first
 `docker:infra` (metahunt is superuser). They coexist with app data by design.
 
+## Observability (Prometheus & Grafana)
+
+Running `pnpm docker:infra` automatically starts Prometheus and Grafana:
+
+- **Prometheus** (`http://localhost:9090`): scrapes `etl:3333/metrics` every 15s. Config lives in `ops/prometheus/prometheus.yml`, data persists in named volume `metahunt_prometheus_data`.
+- **Grafana** (`http://localhost:3001`): login with `admin` / `admin`. Datasources and dashboards are auto-provisioned from `ops/grafana/provisioning/` on startup. The pre-loaded dashboard **"MetaHunt / Engineering & Pipeline Health"** displays:
+  - HTTP RED metrics (Total RPS, p95 latency, error rates, per-endpoint breakdown).
+  - Node.js runtime health (Event Loop lag, RSS vs Heap memory, CPU usage).
+  - ETL Pipeline domain metrics (Ingested records, LLM extraction cost in USD, Dedup merges).
+
 ## Notes
+
 
 - **Why bridge, not `--network host`:** on Docker Desktop a host-networked
   container's ports aren't reachable from the host, so the browser couldn't hit

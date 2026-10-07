@@ -6,6 +6,17 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-10-08
+
+- **Prometheus + Grafana observability stack deployed to production and local compose**
+  (`feat/prometheus-metrics`, [PR #232](https://github.com/m4xx1k/metahunt_solo/pull/232), tracker [`prometheus-grafana-observability`](../todo/prometheus-grafana-observability.md)).
+  Shipped end-to-end metrics infrastructure across the NestJS backend and Railway platform:
+  - **Application telemetry (`apps/etl`)**: `MetricsModule` exports a singleton Prometheus registry. Exposes `GET /metrics` (`@SkipThrottle`, `X-Robots-Tag: noindex`), guarded in production by `MetricsAuthGuard` using constant-time SHA-256 hash comparison (`crypto.timingSafeEqual`) against `METRICS_TOKEN`. HTTP RED metrics recorded via `HttpMetricsInterceptor` into `http_request_duration_seconds` histograms labeled by method, normalized route pattern (`req.baseUrl + req.route?.path`), and response status code (including proper `HttpException` status code extraction). Pipeline domain metrics cover `ingest_runs_total`, `ingest_records_total`, `ingest_duration_seconds`, `extraction_total`, `extraction_duration_seconds`, `extraction_cost_usd_total`, `dedup_merges_total`, `digest_sends_total`, and standard Node.js process metrics (event loop lag, RSS/heap, CPU).
+  - **Local infra (`compose.infra.yaml`)**: Prometheus on port 9090 and Grafana on port 3001 with declarative provisioning for instant local visibility.
+  - **Railway production deployment & hardening**: Dedicated `prometheus` and `grafana` services on Railway. Overcame Railway persistent volume UID 0 root mount restrictions without compromising container security: minimal entrypoints run as root for <5ms to chown storage directories and immediately drop privileges via `exec su -s /bin/sh nobody` (Prometheus UID 65534) and `exec su -s /bin/sh grafana` (Grafana UID 472). Prometheus scrapes `https://api.metahunt.app/metrics` over HTTPS with Bearer token authentication. Grafana auto-provisions datasources directly via `http://prometheus.railway.internal:9090` and pre-loads the MetaHunt engineering health dashboard.
+
+---
+
 ## 2026-10-07
 
 - **Dedup follow-up T10: centroid column dropped, dead conflicts table purged, candidate report added**

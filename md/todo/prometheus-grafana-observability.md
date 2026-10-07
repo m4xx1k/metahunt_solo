@@ -1,7 +1,8 @@
 # TODO — Prometheus + Grafana observability
 
-**Status:** open · **Opened:** 2026-08-25 · **Driver:** learn the stack hands-on (it is
+**Status:** completed · **Opened:** 2026-08-25 · **Completed:** 2026-10-08 · **Driver:** learn the stack hands-on (it is
 on almost every backend job ad) while getting real pipeline visibility out of it.
+
 
 ## Why this repo is a good fit
 
@@ -142,3 +143,48 @@ claim. Options, cheapest first:
 
 Parts 1+2 = one evening (live graphs the same night). Parts 3+4 = the rest of a
 weekend. Part 5 and production are additive and can wait.
+
+---
+
+## Completed Implementation (2026-10-08)
+
+All core parts (1–4) and production self-hosting on Railway (Option 3) are fully shipped, tested, and running live in production.
+
+### 1. Application Layer (`apps/etl/src/platform/metrics`)
+- **`MetricsModule` & `MetricsService`**: Provides a singleton Prometheus `Registry`, initializes standard Node.js process metrics (`collectDefaultMetrics`), domain counters, and histograms. Implements `OnModuleDestroy` to cleanly clear registries during teardown.
+- **`MetricsController`**: Exposes `GET /metrics` formatted with `Content-Type: text/plain; version=0.0.4`. Annotated with `@SkipThrottle` to prevent scraper throttling while preserving global `X-Robots-Tag: noindex`.
+- **`MetricsAuthGuard`**: Authenticates requests using `Authorization: Bearer <METRICS_TOKEN>` with constant-time SHA-256 hash comparison (`crypto.timingSafeEqual`) to prevent timing side-channel attacks. Fails closed (`NODE_ENV === "production"` strictly requires non-empty `METRICS_TOKEN`).
+- **`HttpMetricsInterceptor`**: Intercepts HTTP traffic and records `http_request_duration_seconds` histograms labeled by method, normalized route pattern (`req.baseUrl + req.route?.path`), and response status code (including proper `HttpException` status code extraction).
+- **Domain Metrics Instrumentations**:
+  - `ingest_runs_total` (counter, labels: `source`, `status`)
+  - `ingest_records_total` (counter, labels: `source`)
+  - `ingest_duration_seconds` (histogram, labels: `source`)
+  - `extraction_total` (counter, labels: `status`)
+  - `extraction_duration_seconds` (histogram)
+  - `extraction_cost_usd_total` (counter, labels: `model`)
+  - `dedup_merges_total` (counter)
+  - `digest_sends_total` (counter, labels: `status`)
+
+### 2. Local Infrastructure (`compose.infra.yaml`)
+- `prometheus`: `prom/prometheus:latest` listening on `:9090` (configured via `ops/prometheus/prometheus.yml` scraping `etl:3333/metrics`).
+- `grafana`: `grafana/grafana:latest` listening on `:3001` with declarative datasource and dashboard provisioning mounted read-only from `ops/grafana/provisioning/`.
+
+### 3. Production Deployment on Railway
+- **Prometheus Service**:
+  - Image built from `ops/prometheus/Dockerfile.railway`.
+  - Config: `ops/prometheus/prometheus.prod.yml` scraping `https://api.metahunt.app/metrics` using `bearer_token_file: /etc/prometheus/bearer.token`.
+  - Storage: Railway persistent volume attached at `/prometheus` (5GB TSDB retention).
+- **Grafana Service**:
+  - Image built from `ops/grafana/Dockerfile.railway`.
+  - Datasource provisioned to `http://prometheus.railway.internal:9090`.
+  - Dashboard: `ops/grafana/provisioning/dashboards/metahunt.json` provisioned declaratively with dynamic `$datasource` variable.
+  - Storage: Railway persistent volume attached at `/var/lib/grafana`.
+
+### 4. Security Hardening & Railway Gotchas Solved
+- **Railway Volume Ownership & Privilege Dropping**:
+  - *Problem*: Railway volumes mount as `root:root` (UID 0:0, 0755), which prevents unprivileged daemons (`nobody` UID 65534 in Prometheus, `grafana` UID 472 in Grafana) from writing to TSDB / sqlite databases. Running container daemons as root violates security benchmarks.
+  - *Fix*: Minimal startup script (`entrypoint.sh`) runs as root for <5ms to `chown` the volume mount, writes the bearer token file with mode `600`, and immediately drops privileges using `exec su -s /bin/sh nobody` (Prometheus) and `exec su -s /bin/sh grafana` (Grafana).
+- **Grafana Provisioning Variable Syntax**:
+  - *Problem*: Grafana datasource provisioning config parsed via Go's `os.ExpandEnv` does not support bash default expansion like `${VAR:-default}`. It parses it as the literal variable name `VAR:-default`, evaluating to `""` and triggering `error="parse \"\": empty url"`.
+  - *Fix*: Explicitly specify the static internal service URL `http://prometheus.railway.internal:9090`.
+
