@@ -8,7 +8,8 @@
       "package.json",
       "pnpm-lock.yaml",
       "apps/etl/**",
-      "libs/**"
+      "libs/**",
+      "ops/**"
     ]
   },
   "deploy": {
