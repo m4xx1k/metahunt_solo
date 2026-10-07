@@ -184,7 +184,11 @@ export default async function FeedPage({
         />
         {!trackSlug ? (
           <div className="mx-auto w-full max-w-[1536px] px-6 pb-6 lg:px-12">
-            <HomeRadarBlock />
+            <HomeRadarBlock
+              roleCatalog={roleCatalog}
+              skillCatalog={skillCatalog}
+              domainCatalog={domainCatalog}
+            />
           </div>
         ) : null}
         <TrackStrip tracks={tracks} activeSlug={trackSlug ?? null} />

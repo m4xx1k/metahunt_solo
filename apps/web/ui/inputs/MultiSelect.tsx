@@ -53,31 +53,13 @@ export function MultiSelect({
     const byId = new Map<string, SelectOption>();
     for (const o of options) byId.set(o.id, o);
     for (const o of selectedOptions ?? []) if (!byId.has(o.id)) byId.set(o.id, o);
-    return selected.map((id) => {
-      const direct = byId.get(id);
-      if (direct) return direct;
-      const normalized = id.toLowerCase().replace(/[-_]/g, " ");
-      const found = options.find((o) => {
-        const oNorm = o.label.toLowerCase().replace(/[-_]/g, " ");
-        const oIdNorm = o.id.toLowerCase().replace(/[-_]/g, " ");
-        return (
-          oNorm === normalized ||
-          oIdNorm === normalized ||
-          oIdNorm.replace("developer", "engineer") ===
-            normalized.replace("developer", "engineer") ||
-          oNorm.replace("developer", "engineer") === normalized.replace("developer", "engineer")
-        );
-      });
-      if (found) return found;
-      return { id, label: id.replace(/[-_]/g, " ") };
-    });
+    return selected.map((id) => byId.get(id) ?? { id, label: id });
   }, [options, selectedOptions, selected]);
 
   const rest = useMemo(() => {
     const sel = new Set(selected);
-    const selChipIds = new Set(selectedChips.map((c) => c.id));
-    return options.filter((o) => !sel.has(o.id) && !selChipIds.has(o.id)).sort(byCount);
-  }, [options, selected, selectedChips]);
+    return options.filter((o) => !sel.has(o.id)).sort(byCount);
+  }, [options, selected]);
 
   const filteredRest = useMemo(() => {
     if (q.length === 0) return rest;

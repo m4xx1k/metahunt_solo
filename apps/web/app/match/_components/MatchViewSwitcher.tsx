@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SparkleIcon, StepsIcon } from "@phosphor-icons/react/dist/ssr";
 
-import { QuickSubscriptionCard } from "@/features/quick-flow";
+import { HomeRadarBlock } from "@/features/quick-flow";
 import { cn } from "@/lib/utils";
 import { MatchStepper } from "./MatchStepper";
 
@@ -47,7 +47,7 @@ export function MatchViewSwitcher() {
         </div>
       </div>
 
-      {view === "quick" ? <QuickSubscriptionCard /> : <MatchStepper />}
+      {view === "quick" ? <HomeRadarBlock /> : <MatchStepper />}
     </div>
   );
 }

@@ -26,7 +26,7 @@ import {
   WORK_FORMAT_OPTIONS,
 } from "@/features/vacancy-filters/enum-options";
 import { cvApi } from "@/lib/api/cv";
-import { facetsApi } from "@/lib/api/facets";
+import { facetsApi, type NodeFacet } from "@/lib/api/facets";
 import { subscriptionsApi, type SubscriptionFilter } from "@/lib/api/subscriptions";
 import {
   vacanciesApi,
@@ -42,10 +42,10 @@ import { EnumSection } from "@/ui/inputs/EnumSection";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import type { SelectOption } from "@/ui/inputs/types";
 
-// Canonical verified roles matching the live database (n.slug)
+// Canonical verified roles matching the live database (n.slug and n.canonical_name)
 const DEFAULT_ROLES: SelectOption[] = [
-  { id: "backend-developer", label: "Backend Engineer", count: 2899 },
-  { id: "full-stack-developer", label: "Full Stack Engineer", count: 1799 },
+  { id: "backend-developer", label: "Backend Developer", count: 2899 },
+  { id: "full-stack-developer", label: "Full Stack Developer", count: 1799 },
   { id: "devops-engineer", label: "DevOps Engineer", count: 1260 },
   { id: "software-engineer", label: "Software Engineer", count: 1228 },
   { id: "qa-engineer", label: "QA Engineer", count: 1100 },
@@ -101,12 +101,24 @@ const EXPERIENCE_OPTIONS: SelectOption[] = [
   { id: "5", label: "5+ yrs" },
 ];
 
-export function HomeRadarBlock({ className }: { className?: string }) {
+export interface HomeRadarBlockProps {
+  className?: string;
+  roleCatalog?: NodeFacet[];
+  skillCatalog?: NodeFacet[];
+  domainCatalog?: NodeFacet[];
+}
+
+export function HomeRadarBlock({
+  className,
+  roleCatalog: initialRoles,
+  skillCatalog: initialSkills,
+  domainCatalog: initialDomains,
+}: HomeRadarBlockProps = {}) {
   const router = useRouter();
   const analytics = useAnalytics();
   const { isLoggedIn } = useSession();
 
-  // Core filter selections
+  // Core filter selections (canonical database node IDs)
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(["backend-developer"]);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([
     "go",
@@ -138,71 +150,78 @@ export function HomeRadarBlock({ className }: { className?: string }) {
   // Submit in flight
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Verified catalogs
+  // Verified catalogs (fetched client-side only when not provided as server props)
   const { data: rolesData } = useQuery({
     queryKey: ["facets-roles"],
     queryFn: () => facetsApi.roles(),
     staleTime: 5 * 60_000,
+    enabled: !initialRoles,
   });
 
   const { data: skillsData } = useQuery({
     queryKey: ["facets-skills"],
     queryFn: () => facetsApi.skills(),
     staleTime: 5 * 60_000,
+    enabled: !initialSkills,
   });
 
   const { data: domainsData } = useQuery({
     queryKey: ["facets-domains"],
     queryFn: () => facetsApi.domains(),
     staleTime: 5 * 60_000,
+    enabled: !initialDomains,
   });
+
+  const rawRoles = initialRoles ?? rolesData?.roles;
+  const rawSkills = initialSkills ?? skillsData?.skills;
+  const rawDomains = initialDomains ?? domainsData?.domains;
 
   // Options mapping
   const roleOptions = useMemo<SelectOption[]>(() => {
-    if (!rolesData?.roles || rolesData.roles.length === 0) return DEFAULT_ROLES;
-    return rolesData.roles.map((r) => ({
+    if (!rawRoles || rawRoles.length === 0) return DEFAULT_ROLES;
+    return rawRoles.map((r) => ({
       id: r.id,
       label: r.name,
       count: r.count,
     }));
-  }, [rolesData]);
+  }, [rawRoles]);
 
   const skillOptions = useMemo<SelectOption[]>(() => {
-    if (!skillsData?.skills || skillsData.skills.length === 0) return DEFAULT_SKILLS;
-    return skillsData.skills.map((s) => ({
+    if (!rawSkills || rawSkills.length === 0) return DEFAULT_SKILLS;
+    return rawSkills.map((s) => ({
       id: s.id,
       label: s.name,
       count: s.count,
       kind: s.kind ?? undefined,
     }));
-  }, [skillsData]);
+  }, [rawSkills]);
 
   const domainOptions = useMemo<SelectOption[]>(() => {
-    if (!domainsData?.domains || domainsData.domains.length === 0) return DEFAULT_DOMAINS;
-    return domainsData.domains.map((d) => ({
+    if (!rawDomains || rawDomains.length === 0) return DEFAULT_DOMAINS;
+    return rawDomains.map((d) => ({
       id: d.id,
       label: d.name,
       count: d.count,
     }));
-  }, [domainsData]);
+  }, [rawDomains]);
 
   const excludeDomainOptions = useMemo<SelectOption[]>(() => {
-    if (!domainsData?.domains || domainsData.domains.length === 0) return DEFAULT_EXCLUDE_DOMAINS;
-    return domainsData.domains.map((d) => ({
+    if (!rawDomains || rawDomains.length === 0) return DEFAULT_EXCLUDE_DOMAINS;
+    return rawDomains.map((d) => ({
       id: d.id,
       label: d.name,
       count: d.count,
     }));
-  }, [domainsData]);
+  }, [rawDomains]);
 
   const excludeSkillOptions = useMemo<SelectOption[]>(() => {
-    if (!skillsData?.skills || skillsData.skills.length === 0) return DEFAULT_EXCLUDE_SKILLS;
-    return skillsData.skills.slice(0, 50).map((s) => ({
+    if (!rawSkills || rawSkills.length === 0) return DEFAULT_EXCLUDE_SKILLS;
+    return rawSkills.slice(0, 50).map((s) => ({
       id: s.id,
       label: s.name,
       count: s.count,
     }));
-  }, [skillsData]);
+  }, [rawSkills]);
 
   // Toggle callbacks
   const handleToggleRole = useCallback((roleId: string) => {
