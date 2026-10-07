@@ -35,6 +35,7 @@ import { JsonLd } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { organizationJsonLd, webSiteJsonLd } from "@/lib/seo/organization";
 import { FeedShellIsland } from "../_components/FeedShellIsland";
+import { HomeRadarBlock } from "@/features/quick-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -181,6 +182,11 @@ export default async function FeedPage({
               : undefined
           }
         />
+        {!trackSlug ? (
+          <div className="mx-auto w-full max-w-[1536px] px-6 pb-6 lg:px-12">
+            <HomeRadarBlock />
+          </div>
+        ) : null}
         <TrackStrip tracks={tracks} activeSlug={trackSlug ?? null} />
         <div className="mx-auto w-full max-w-[1536px] px-6 pb-20 lg:px-12">
           <HydrationBoundary state={dehydrate(queryClient)}>

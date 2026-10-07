@@ -143,6 +143,7 @@ export function FeedShell({
 
   return (
     <div
+      id="feed-shell"
       className={cn(
         "grid grid-cols-1 gap-8 lg:items-start",
         // The third column only fits from xl. Below it the rail wraps under the
