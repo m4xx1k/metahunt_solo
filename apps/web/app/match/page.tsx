@@ -10,7 +10,7 @@ import { formatKyivTime } from "@/lib/format";
 import { Tag } from "@/ui";
 import { pageMetadata } from "@/lib/seo/metadata";
 
-import { MatchStepper } from "./_components/MatchStepper";
+import { MatchViewSwitcher } from "./_components/MatchViewSwitcher";
 
 const HERO_DISCIPLINES = 8;
 
@@ -85,7 +85,7 @@ export default async function MatchPage() {
         <section className="px-4 py-10 sm:px-6 md:px-12 md:py-14">
           <div className="mx-auto w-full max-w-[880px]">
             <Suspense fallback={null}>
-              <MatchStepper />
+              <MatchViewSwitcher />
             </Suspense>
           </div>
         </section>
