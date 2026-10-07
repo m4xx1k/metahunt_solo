@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+# Railway volumes are mounted as root:root by default. Ensure /prometheus is accessible.
+mkdir -p /prometheus /etc/prometheus
+chmod 777 /prometheus 2>/dev/null || true
+
 # If METRICS_TOKEN is provided as an environment variable in Railway,
 # populate /etc/prometheus/bearer.token for authenticated scraping.
 if [ -n "$METRICS_TOKEN" ]; then
