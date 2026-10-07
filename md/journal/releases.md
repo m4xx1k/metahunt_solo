@@ -6,6 +6,20 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
 
 ---
 
+## 2026-10-07
+
+- **Dedup follow-up T10: centroid column dropped, dead conflicts table purged, candidate report added**
+  (`chore/dedup-t10-cleanup`, tracker [`dedup-rebuild`](migrations/dedup-rebuild.md)).
+  Following 11 days of stable production operation without regressions or false merges, the deferred
+  cleanup subtask T10 is complete. `unique_vacancies.centroid_embedding` and the unused
+  `exact_content_conflicts` table are dropped in migration `0061_curly_true_believers.sql`. Group rollup
+  (`unique-vacancy-rollup.ts`) no longer runs the heavy `AVG(v.embedding)` aggregation over 1536-dimensional
+  vectors during sweeps. In the web feed, candidates can now flag false merges via a discrete
+  "not the same job?" action in `DuplicatesBadge`, dispatching the `dedup_mistake_reported` event to
+  PostHog for operator triage. The dedup-rebuild initiative is fully closed.
+
+---
+
 ## 2026-09-25
 
 - **Dedup is rebuilt from pair rules; no more chains** (`fix/dedup-rebuild`, tracker
@@ -16,8 +30,8 @@ Format: group by date, short bullets inside. If a bullet has bigger context, lin
   `dedup plan` / atomic `dedup apply`. On a fresh prod copy (20 557 vacancies) the rebuild moves
   3 445 vacancies, same-board violations go 1 060 → 0, and a blind-labelled 300-pair audit shows
   0 false merges (the old partition: 68 of 120 `different` pairs merged) at 0.66 recall.
-  Operators can detach a member (`dedup_overrides`), which survives every rebuild. **Not yet on
-  prod** — rollout commands in the tracker §5.
+  Operators can detach a member (`dedup_overrides`), which survives every rebuild. Deployed and rolled
+  out to prod on 2026-09-26.
 
 ---
 

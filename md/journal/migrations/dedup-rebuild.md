@@ -1,14 +1,16 @@
 # dedup-rebuild — pairwise rule + deterministic cluster rebuild
 
-**Branch:** `fix/dedup-rebuild`
-**Status:** in-review (draft PR; prod rollout pending owner)
-**Started:** 2026-09-25 · **Closed:** —
+**Branch:** `fix/dedup-rebuild` (merged PR #225) · `chore/dedup-t10-cleanup` (T10 follow-up)
+**Status:** done
+**Started:** 2026-09-25 · **Closed:** 2026-10-07
 
 ## Outcome
 
-Code complete on a draft PR (#225); prod rollout pending owner review. Local rehearsal on a fresh
-prod dump: 0 false merges on a 300-pair blind audit (the old partition: 68/120), cluster recall 0.66,
-same-board violations 1 060 → 0, `plan` after `apply` = 0 diff, `apply current.json` restores exactly.
+PR #225 merged and deployed to production on 2026-09-26. Prod rollout executed with 0 false merges,
+0 same-source violations, and 0 diff between plan and apply. After 11 days of stable production
+operation, T10 follow-up dropped `unique_vacancies.centroid_embedding` and `exact_content_conflicts`
+via migration 0061, removed `AVG(v.embedding)` from rollup updates, and added candidate-facing
+"not the same job?" reporting in `DuplicatesBadge` wired to PostHog analytics.
 
 ---
 
@@ -325,9 +327,10 @@ rollback must stay possible; schema drop is a follow-up PR after prod is verifie
   · **50 pairs to eyeball** · **Blocked / skipped** · **Prod rollout** (§5 commands, filled in with
   real paths) · **Risks left**. — *done when:* PR link and report exist.
 
-- [ ] **T10 — Follow-up (not in this run)** — after prod is verified for a week: drop
-  `unique_vacancies.centroid_embedding` and `exact_content_conflicts`; optional user-facing
-  "not the same job" report in `DuplicatesBadge` writing a pending override.
+- [x] **T10 — Follow-up (closed 2026-10-07)** — after prod verified for >1 week: drop
+  `unique_vacancies.centroid_embedding` and `exact_content_conflicts` (migration 0061); user-facing
+  "not the same job" report in `DuplicatesBadge` wired to PostHog (`dedup_mistake_reported`).
+  — *done when:* schema dropped, rollup AVG(embedding) removed, web report tested, tracker closed.
 
 ---
 
