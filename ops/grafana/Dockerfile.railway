@@ -1,3 +1,6 @@
 FROM grafana/grafana:latest
 USER root
-COPY ops/grafana/provisioning /etc/grafana/provisioning
+COPY --chown=472:0 ops/grafana/provisioning /etc/grafana/provisioning
+COPY ops/grafana/entrypoint.sh /etc/grafana/entrypoint.sh
+RUN chmod +x /etc/grafana/entrypoint.sh
+ENTRYPOINT ["/bin/sh", "/etc/grafana/entrypoint.sh"]
