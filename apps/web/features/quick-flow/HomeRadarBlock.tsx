@@ -9,15 +9,18 @@ import {
   CaretDownIcon,
   CaretUpIcon,
   CheckCircleIcon,
+  CheckSquareIcon,
   FileArrowUpIcon,
   PaperPlaneTiltIcon,
   SlidersHorizontalIcon,
+  SquareIcon,
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
 
 import { AuthChoice } from "@/features/auth/auth-choice";
 import { useSession } from "@/features/auth/use-session";
 import {
+  EMPLOYMENT_OPTIONS,
   ENGLISH_OPTIONS,
   SENIORITY_OPTIONS,
   WORK_FORMAT_OPTIONS,
@@ -27,6 +30,7 @@ import { facetsApi } from "@/lib/api/facets";
 import { subscriptionsApi, type SubscriptionFilter } from "@/lib/api/subscriptions";
 import {
   vacanciesApi,
+  type EmploymentType,
   type EnglishLevel,
   type Seniority,
   type WorkFormat,
@@ -38,28 +42,63 @@ import { EnumSection } from "@/ui/inputs/EnumSection";
 import { MultiSelect } from "@/ui/inputs/MultiSelect";
 import type { SelectOption } from "@/ui/inputs/types";
 
-// High-confidence defaults so the widget renders immediately before catalogs resolve
+// Canonical verified roles matching the live database (n.slug)
 const DEFAULT_ROLES: SelectOption[] = [
-  { id: "backend-engineer", label: "Backend Engineer", count: 2450 },
-  { id: "frontend-engineer", label: "Frontend Engineer", count: 1820 },
-  { id: "full-stack-engineer", label: "Full Stack Engineer", count: 1530 },
-  { id: "devops-engineer", label: "DevOps Engineer", count: 1200 },
+  { id: "backend-developer", label: "Backend Engineer", count: 2899 },
+  { id: "full-stack-developer", label: "Full Stack Engineer", count: 1799 },
+  { id: "devops-engineer", label: "DevOps Engineer", count: 1260 },
+  { id: "software-engineer", label: "Software Engineer", count: 1228 },
   { id: "qa-engineer", label: "QA Engineer", count: 1100 },
+  { id: "frontend-developer", label: "Frontend Developer", count: 1050 },
+  { id: "data-engineer", label: "Data Engineer", count: 850 },
   { id: "mobile-developer", label: "Mobile Developer", count: 650 },
-  { id: "data-engineer", label: "Data Engineer", count: 580 },
 ];
 
 const DEFAULT_SKILLS: SelectOption[] = [
-  { id: "go", label: "Go", count: 350 },
-  { id: "postgresql", label: "PostgreSQL", count: 1400 },
-  { id: "docker", label: "Docker", count: 1600 },
-  { id: "kubernetes", label: "Kubernetes", count: 950 },
-  { id: "python", label: "Python", count: 1200 },
-  { id: "typescript", label: "TypeScript", count: 1500 },
-  { id: "react", label: "React", count: 1300 },
-  { id: "node-js", label: "Node.js", count: 850 },
-  { id: "aws", label: "AWS", count: 1100 },
-  { id: "redis", label: "Redis", count: 600 },
+  { id: "python", label: "Python", count: 5728 },
+  { id: "docker", label: "Docker", count: 4044 },
+  { id: "sql", label: "SQL", count: 3892 },
+  { id: "aws", label: "AWS", count: 3827 },
+  { id: "ci-cd", label: "CI/CD", count: 3413 },
+  { id: "postgresql", label: "PostgreSQL", count: 3310 },
+  { id: "typescript", label: "TypeScript", count: 3100 },
+  { id: "kubernetes", label: "Kubernetes", count: 2400 },
+  { id: "react", label: "React", count: 2300 },
+  { id: "go", label: "Go", count: 1200 },
+  { id: "node-js", label: "Node.js", count: 1100 },
+  { id: "redis", label: "Redis", count: 900 },
+];
+
+const DEFAULT_DOMAINS: SelectOption[] = [
+  { id: "fintech", label: "Fintech", count: 1857 },
+  { id: "deftech", label: "DefTech", count: 2054 },
+  { id: "saas", label: "SaaS", count: 1177 },
+  { id: "ai", label: "AI", count: 1046 },
+  { id: "healthtech", label: "HealthTech", count: 841 },
+  { id: "ecommerce", label: "Ecommerce", count: 699 },
+  { id: "cybersecurity", label: "Cybersecurity", count: 412 },
+  { id: "adtech", label: "AdTech", count: 437 },
+];
+
+const DEFAULT_EXCLUDE_SKILLS: SelectOption[] = [
+  { id: "php", label: "PHP", count: 850 },
+  { id: "1c", label: "1C", count: 120 },
+  { id: "wordpress", label: "WordPress", count: 210 },
+  { id: "ruby", label: "Ruby", count: 180 },
+];
+
+const DEFAULT_EXCLUDE_DOMAINS: SelectOption[] = [
+  { id: "igaming", label: "iGaming / Gambling", count: 977 },
+  { id: "crypto", label: "Crypto / Web3", count: 530 },
+  { id: "adult", label: "Adult", count: 140 },
+];
+
+const EXPERIENCE_OPTIONS: SelectOption[] = [
+  { id: "0", label: "0–1 yr" },
+  { id: "1", label: "1–2 yrs" },
+  { id: "2", label: "2–3 yrs" },
+  { id: "3", label: "3–5 yrs" },
+  { id: "5", label: "5+ yrs" },
 ];
 
 export function HomeRadarBlock({ className }: { className?: string }) {
@@ -68,18 +107,24 @@ export function HomeRadarBlock({ className }: { className?: string }) {
   const { isLoggedIn } = useSession();
 
   // Core filter selections
-  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(["backend-engineer"]);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(["backend-developer"]);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([
     "go",
     "postgresql",
     "docker",
   ]);
-
-  // Extra filter selections
-  const [selectedWorkFormats, setSelectedWorkFormats] = useState<string[]>(["REMOTE"]);
   const [selectedDomainIds, setSelectedDomainIds] = useState<string[]>([]);
+
+  // Additional criteria
+  const [selectedExcludedDomainIds, setSelectedExcludedDomainIds] = useState<string[]>([]);
+  const [selectedExcludedSkillIds, setSelectedExcludedSkillIds] = useState<string[]>([]);
+  const [selectedWorkFormats, setSelectedWorkFormats] = useState<string[]>(["REMOTE"]);
   const [selectedSeniorities, setSelectedSeniorities] = useState<string[]>([]);
   const [selectedEnglish, setSelectedEnglish] = useState<string | null>(null);
+  const [selectedExperience, setSelectedExperience] = useState<string[]>([]);
+  const [selectedEmployment, setSelectedEmployment] = useState<string[]>([]);
+  const [hasNoTest, setHasNoTest] = useState(false);
+  const [hasReservation, setHasReservation] = useState(false);
 
   // Accordion toggle
   const [isExtraOpen, setIsExtraOpen] = useState(false);
@@ -93,7 +138,7 @@ export function HomeRadarBlock({ className }: { className?: string }) {
   // Submit in flight
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch verified catalogs
+  // Verified catalogs
   const { data: rolesData } = useQuery({
     queryKey: ["facets-roles"],
     queryFn: () => facetsApi.roles(),
@@ -112,7 +157,7 @@ export function HomeRadarBlock({ className }: { className?: string }) {
     staleTime: 5 * 60_000,
   });
 
-  // Map to SelectOption
+  // Options mapping
   const roleOptions = useMemo<SelectOption[]>(() => {
     if (!rolesData?.roles || rolesData.roles.length === 0) return DEFAULT_ROLES;
     return rolesData.roles.map((r) => ({
@@ -133,13 +178,31 @@ export function HomeRadarBlock({ className }: { className?: string }) {
   }, [skillsData]);
 
   const domainOptions = useMemo<SelectOption[]>(() => {
-    if (!domainsData?.domains || domainsData.domains.length === 0) return [];
+    if (!domainsData?.domains || domainsData.domains.length === 0) return DEFAULT_DOMAINS;
     return domainsData.domains.map((d) => ({
       id: d.id,
       label: d.name,
       count: d.count,
     }));
   }, [domainsData]);
+
+  const excludeDomainOptions = useMemo<SelectOption[]>(() => {
+    if (!domainsData?.domains || domainsData.domains.length === 0) return DEFAULT_EXCLUDE_DOMAINS;
+    return domainsData.domains.map((d) => ({
+      id: d.id,
+      label: d.name,
+      count: d.count,
+    }));
+  }, [domainsData]);
+
+  const excludeSkillOptions = useMemo<SelectOption[]>(() => {
+    if (!skillsData?.skills || skillsData.skills.length === 0) return DEFAULT_EXCLUDE_SKILLS;
+    return skillsData.skills.slice(0, 50).map((s) => ({
+      id: s.id,
+      label: s.name,
+      count: s.count,
+    }));
+  }, [skillsData]);
 
   // Toggle callbacks
   const handleToggleRole = useCallback((roleId: string) => {
@@ -154,15 +217,27 @@ export function HomeRadarBlock({ className }: { className?: string }) {
     );
   }, []);
 
-  const handleToggleFormat = useCallback((formatId: string) => {
-    setSelectedWorkFormats((prev) =>
-      prev.includes(formatId) ? prev.filter((id) => id !== formatId) : [...prev, formatId],
-    );
-  }, []);
-
   const handleToggleDomain = useCallback((domainId: string) => {
     setSelectedDomainIds((prev) =>
       prev.includes(domainId) ? prev.filter((id) => id !== domainId) : [...prev, domainId],
+    );
+  }, []);
+
+  const handleToggleExcludedDomain = useCallback((domainId: string) => {
+    setSelectedExcludedDomainIds((prev) =>
+      prev.includes(domainId) ? prev.filter((id) => id !== domainId) : [...prev, domainId],
+    );
+  }, []);
+
+  const handleToggleExcludedSkill = useCallback((skillId: string) => {
+    setSelectedExcludedSkillIds((prev) =>
+      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId],
+    );
+  }, []);
+
+  const handleToggleFormat = useCallback((formatId: string) => {
+    setSelectedWorkFormats((prev) =>
+      prev.includes(formatId) ? prev.filter((id) => id !== formatId) : [...prev, formatId],
     );
   }, []);
 
@@ -172,25 +247,62 @@ export function HomeRadarBlock({ className }: { className?: string }) {
     );
   }, []);
 
+  const handleToggleExperience = useCallback((expId: string) => {
+    setSelectedExperience((prev) =>
+      prev.includes(expId) ? prev.filter((id) => id !== expId) : [...prev, expId],
+    );
+  }, []);
+
+  const handleToggleEmployment = useCallback((empId: string) => {
+    setSelectedEmployment((prev) =>
+      prev.includes(empId) ? prev.filter((id) => id !== empId) : [...prev, empId],
+    );
+  }, []);
+
+  // Compute effective domain IDs taking exclusions into account
+  const effectiveDomainIds = useMemo(() => {
+    if (selectedDomainIds.length > 0) {
+      // If user selected explicit domains, remove any that are excluded
+      return selectedDomainIds.filter((d) => !selectedExcludedDomainIds.includes(d));
+    }
+    if (selectedExcludedDomainIds.length > 0 && domainOptions.length > 0) {
+      // If user specified exclusions without explicit inclusions, include all domains except excluded
+      return domainOptions.map((d) => d.id).filter((d) => !selectedExcludedDomainIds.includes(d));
+    }
+    return undefined;
+  }, [selectedDomainIds, selectedExcludedDomainIds, domainOptions]);
+
   // Filter payload for subscription
   const currentFilter = useMemo<SubscriptionFilter>(() => {
     return {
       roleIds: selectedRoleIds.length > 0 ? selectedRoleIds : undefined,
       skillIds: selectedSkillIds.length > 0 ? selectedSkillIds : undefined,
-      domainIds: selectedDomainIds.length > 0 ? selectedDomainIds : undefined,
+      domainIds:
+        effectiveDomainIds && effectiveDomainIds.length > 0 ? effectiveDomainIds : undefined,
+      excludedSkillIds: selectedExcludedSkillIds.length > 0 ? selectedExcludedSkillIds : undefined,
       workFormats:
         selectedWorkFormats.length > 0 ? (selectedWorkFormats as WorkFormat[]) : undefined,
       seniorities:
         selectedSeniorities.length > 0 ? (selectedSeniorities as Seniority[]) : undefined,
       englishLevels: selectedEnglish ? [selectedEnglish as EnglishLevel] : undefined,
+      employmentTypes:
+        selectedEmployment.length > 0 ? (selectedEmployment as EmploymentType[]) : undefined,
+      experienceYears: selectedExperience.length > 0 ? selectedExperience : undefined,
+      hasTestAssignment: hasNoTest ? false : undefined,
+      hasReservation: hasReservation ? true : undefined,
     };
   }, [
     selectedRoleIds,
     selectedSkillIds,
-    selectedDomainIds,
+    effectiveDomainIds,
+    selectedExcludedSkillIds,
     selectedWorkFormats,
     selectedSeniorities,
     selectedEnglish,
+    selectedEmployment,
+    selectedExperience,
+    hasNoTest,
+    hasReservation,
   ]);
 
   // Live count query
@@ -274,10 +386,19 @@ export function HomeRadarBlock({ className }: { className?: string }) {
     const params = new URLSearchParams();
     if (selectedRoleIds.length > 0) params.set("roles", selectedRoleIds.join(","));
     if (selectedSkillIds.length > 0) params.set("skills", selectedSkillIds.join(","));
-    if (selectedDomainIds.length > 0) params.set("domains", selectedDomainIds.join(","));
+    if (effectiveDomainIds && effectiveDomainIds.length > 0) {
+      params.set("domains", effectiveDomainIds.join(","));
+    }
+    if (selectedExcludedSkillIds.length > 0) {
+      params.set("excludeSkills", selectedExcludedSkillIds.join(","));
+    }
     if (selectedWorkFormats.length > 0) params.set("workFormats", selectedWorkFormats.join(","));
     if (selectedSeniorities.length > 0) params.set("seniorities", selectedSeniorities.join(","));
     if (selectedEnglish) params.set("english", selectedEnglish);
+    if (selectedEmployment.length > 0) params.set("employment", selectedEmployment.join(","));
+    if (selectedExperience.length > 0) params.set("experience", selectedExperience.join(","));
+    if (hasNoTest) params.set("test", "false");
+    if (hasReservation) params.set("reservation", "true");
 
     router.push(`/?${params.toString()}`, { scroll: false });
 
@@ -286,10 +407,15 @@ export function HomeRadarBlock({ className }: { className?: string }) {
   }, [
     selectedRoleIds,
     selectedSkillIds,
-    selectedDomainIds,
+    effectiveDomainIds,
+    selectedExcludedSkillIds,
     selectedWorkFormats,
     selectedSeniorities,
     selectedEnglish,
+    selectedEmployment,
+    selectedExperience,
+    hasNoTest,
+    hasReservation,
     router,
   ]);
 
@@ -301,7 +427,7 @@ export function HomeRadarBlock({ className }: { className?: string }) {
       )}
     >
       {/* 1. Header (Clean & Minimal) */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Tag>&gt; JOB RADAR</Tag>
         <h2 className="font-display text-2xl font-bold tracking-tight text-text-primary md:text-3xl">
           Vacancies matched to your exact stack.
@@ -393,31 +519,50 @@ export function HomeRadarBlock({ className }: { className?: string }) {
         </span>
       </div>
 
-      {/* 3. Role & Skills Selectors */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {/* 3. Core Selectors (Role + Skills + Domain in 3-column layout) */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Role Column */}
         <div className="border border-border bg-bg/50">
           <MultiSelect
-            title="Target Role"
+            title="Role"
             options={roleOptions}
             selected={selectedRoleIds}
+            selectedOptions={roleOptions}
             onToggle={handleToggleRole}
             searchable
-            searchPlaceholder="Search role (Backend, Frontend...)"
+            searchPlaceholder="Search role..."
             layout="wrap"
             max={6}
           />
         </div>
 
+        {/* Skills Column */}
         <div className="border border-border bg-bg/50">
           <MultiSelect
             title="Tech Stack"
             options={skillOptions}
             selected={selectedSkillIds}
+            selectedOptions={skillOptions}
             onToggle={handleToggleSkill}
             searchable
-            searchPlaceholder="Search skill (Go, React, Postgres...)"
+            searchPlaceholder="Search skill..."
             layout="wrap"
             max={8}
+          />
+        </div>
+
+        {/* Domain Column */}
+        <div className="border border-border bg-bg/50">
+          <MultiSelect
+            title="Domain"
+            options={domainOptions}
+            selected={selectedDomainIds}
+            selectedOptions={domainOptions}
+            onToggle={handleToggleDomain}
+            searchable
+            searchPlaceholder="Search domain..."
+            layout="wrap"
+            max={6}
           />
         </div>
       </div>
@@ -431,9 +576,9 @@ export function HomeRadarBlock({ className }: { className?: string }) {
         >
           <span className="flex items-center gap-2">
             <SlidersHorizontalIcon className="h-3.5 w-3.5 text-accent" />
-            <span className="font-bold">Additional criteria</span>
+            <span className="font-bold text-text-primary">Additional criteria</span>
             <span className="text-2xs text-text-muted">
-              (work format, domain, seniority, english)
+              (exclude domain/skills, format, seniority, experience, english, perks)
             </span>
           </span>
           {isExtraOpen ? (
@@ -444,88 +589,157 @@ export function HomeRadarBlock({ className }: { className?: string }) {
         </button>
 
         {isExtraOpen && (
-          <div className="grid grid-cols-1 gap-4 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Work Format */}
-            <EnumSection
-              title="Work Format"
-              options={WORK_FORMAT_OPTIONS}
-              multiple
-              activeIds={selectedWorkFormats}
-              onToggle={handleToggleFormat}
-            />
+          <div className="flex flex-col gap-5 border-t border-border p-4">
+            {/* Row 1: Exclusions (Domains & Skills to avoid) */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="border border-border bg-bg/50 p-1">
+                <MultiSelect
+                  title="Exclude Domains"
+                  options={excludeDomainOptions}
+                  selected={selectedExcludedDomainIds}
+                  onToggle={handleToggleExcludedDomain}
+                  searchable
+                  searchPlaceholder="Exclude domains (iGaming, Crypto...)"
+                  layout="wrap"
+                  max={6}
+                />
+              </div>
 
-            {/* Seniority */}
-            <EnumSection
-              title="Seniority"
-              options={SENIORITY_OPTIONS}
-              multiple
-              activeIds={selectedSeniorities}
-              onToggle={handleToggleSeniority}
-            />
+              <div className="border border-border bg-bg/50 p-1">
+                <MultiSelect
+                  title="Exclude Skills"
+                  options={excludeSkillOptions}
+                  selected={selectedExcludedSkillIds}
+                  onToggle={handleToggleExcludedSkill}
+                  searchable
+                  searchPlaceholder="Exclude skills (PHP, 1C...)"
+                  layout="wrap"
+                  max={6}
+                />
+              </div>
+            </div>
 
-            {/* English */}
-            <EnumSection
-              title="English"
-              options={ENGLISH_OPTIONS}
-              activeId={selectedEnglish}
-              onChange={(id) => setSelectedEnglish(id)}
-            />
-
-            {/* Domain */}
-            {domainOptions.length > 0 ? (
-              <MultiSelect
-                title="Domain"
-                options={domainOptions}
-                selected={selectedDomainIds}
-                onToggle={handleToggleDomain}
-                searchable
-                searchPlaceholder="Search domain..."
-                max={4}
+            {/* Row 2: Format, Seniority, English, Experience */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <EnumSection
+                title="Work Format"
+                options={WORK_FORMAT_OPTIONS}
+                multiple
+                activeIds={selectedWorkFormats}
+                onToggle={handleToggleFormat}
               />
-            ) : null}
+
+              <EnumSection
+                title="Seniority"
+                options={SENIORITY_OPTIONS}
+                multiple
+                activeIds={selectedSeniorities}
+                onToggle={handleToggleSeniority}
+              />
+
+              <EnumSection
+                title="Experience"
+                options={EXPERIENCE_OPTIONS}
+                multiple
+                activeIds={selectedExperience}
+                onToggle={handleToggleExperience}
+              />
+
+              <EnumSection
+                title="English"
+                options={ENGLISH_OPTIONS}
+                activeId={selectedEnglish}
+                onChange={(id) => setSelectedEnglish(id)}
+              />
+            </div>
+
+            {/* Row 3: Employment Type & Perks */}
+            <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
+              <EnumSection
+                title="Employment"
+                options={EMPLOYMENT_OPTIONS}
+                multiple
+                activeIds={selectedEmployment}
+                onToggle={handleToggleEmployment}
+              />
+
+              {/* Perks checkboxes */}
+              <div className="flex flex-col justify-center gap-3 bg-bg/40 p-3 border border-border">
+                <span className="font-mono text-2xs uppercase tracking-wider text-text-muted">
+                  Perks & Requirements:
+                </span>
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setHasNoTest((v) => !v)}
+                    className="flex items-center gap-2 font-mono text-xs text-text-secondary hover:text-text-primary select-none"
+                  >
+                    {hasNoTest ? (
+                      <CheckSquareIcon weight="fill" className="h-4 w-4 text-accent" />
+                    ) : (
+                      <SquareIcon className="h-4 w-4 text-text-muted" />
+                    )}
+                    <span>No test assignment</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setHasReservation((v) => !v)}
+                    className="flex items-center gap-2 font-mono text-xs text-text-secondary hover:text-text-primary select-none"
+                  >
+                    {hasReservation ? (
+                      <CheckSquareIcon weight="fill" className="h-4 w-4 text-accent" />
+                    ) : (
+                      <SquareIcon className="h-4 w-4 text-text-muted" />
+                    )}
+                    <span>Military reservation</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
       {/* 5. Bottom Action & Conversion Strip */}
-      <div className="flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
         {/* Live Matching Count */}
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-accent animate-pulse">🔥</span>
+        <div className="flex items-center gap-2.5 font-mono text-sm">
+          <span className="text-accent animate-pulse text-base">🔥</span>
           <span className="text-text-primary">
             {isCounting ? (
               <span className="text-text-muted">Calculating matches…</span>
             ) : liveCount !== null ? (
               <>
-                <strong className="text-accent font-bold">{liveCount}</strong> matching jobs in the
-                last 30 days
+                <strong className="text-accent font-bold text-base">{liveCount}</strong> matching
+                jobs · 0 duplicates
               </>
             ) : (
-              "Updating database..."
+              "Live feed synced"
             )}
           </span>
         </div>
 
-        {/* CTA Actions */}
-        <div className="flex items-center gap-3">
+        {/* Prominent CTA Actions */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Button
             type="button"
             variant="secondary"
-            size="sm"
+            size="md"
             onClick={handleViewInFeed}
-            className="gap-1 font-mono text-xs"
+            className="border-2 border-border-strong text-text-primary px-5 py-3 font-display font-bold text-xs uppercase tracking-wider shadow-brut-sm hover:border-accent hover:text-accent hover:shadow-brut-xs"
           >
             <span>View in feed</span>
-            <ArrowDownIcon className="h-3.5 w-3.5" />
+            <ArrowDownIcon className="h-4 w-4" />
           </Button>
 
           <Button
             type="button"
             variant="primary"
-            size="sm"
+            size="md"
             disabled={isSubmitting || selectedSkillIds.length === 0}
             onClick={handleTelegramSubscribe}
-            className="gap-2 text-xs"
+            className="border-2 border-accent bg-accent text-bg px-6 py-3 font-display font-black text-xs uppercase tracking-wider shadow-brut hover:shadow-brut-xs"
           >
             <PaperPlaneTiltIcon weight="fill" className="h-4 w-4" />
             <span>{isSubmitting ? "Connecting…" : "Get alerts in Telegram →"}</span>
