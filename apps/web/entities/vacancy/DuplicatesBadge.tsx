@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/lib/format";
+import { useAnalytics } from "@/lib/analytics/use-analytics";
 import { dedupRuleLabel } from "@/lib/api/dedup";
 import { vacanciesApi, type DedupGroupMember, type FeedDuplicateGroup } from "@/lib/api/vacancies";
 
@@ -109,7 +110,7 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
             ) : (
               <ul className="flex flex-col gap-3">
                 {group.members.map((m) => (
-                  <MemberRow key={m.vacancyId} member={m} />
+                  <MemberRow key={m.vacancyId} member={m} uniqueVacancyId={uniqueVacancyId} />
                 ))}
               </ul>
             )}
@@ -122,7 +123,13 @@ export function DuplicatesBadge({ uniqueVacancyId, count, sourceCount }: Props) 
 
 // ─── drawer internals ───────────────────────────────────────────────────
 
-function MemberRow({ member: m }: { member: DedupGroupMember }) {
+function MemberRow({
+  member: m,
+  uniqueVacancyId,
+}: {
+  member: DedupGroupMember;
+  uniqueVacancyId: string;
+}) {
   return (
     <li
       className={cn(
@@ -154,18 +161,59 @@ function MemberRow({ member: m }: { member: DedupGroupMember }) {
         </a>
       ) : null}
 
-      {m.dedupReason ? <WhyMerged reason={m.dedupReason} /> : null}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+        {m.dedupReason ? <WhyMerged reason={m.dedupReason} /> : <div />}
+        {!m.isCanonical ? (
+          <ReportNotSameJobButton uniqueVacancyId={uniqueVacancyId} vacancyId={m.vacancyId} />
+        ) : null}
+      </div>
     </li>
   );
 }
 
 export function WhyMerged({ reason }: { reason: NonNullable<DedupGroupMember["dedupReason"]> }) {
   return (
-    <div className="flex items-center gap-2 border-t border-border pt-3 font-mono text-2xs uppercase tracking-wider">
+    <div className="flex items-center gap-2 font-mono text-2xs uppercase tracking-wider">
       <span className="text-text-muted">why merged</span>
       <span className="border border-success px-2 py-[2px] text-success">
         {dedupRuleLabel(reason)}
       </span>
     </div>
+  );
+}
+
+export function ReportNotSameJobButton({
+  uniqueVacancyId,
+  vacancyId,
+}: {
+  uniqueVacancyId: string;
+  vacancyId: string;
+}) {
+  const analytics = useAnalytics();
+  const [reported, setReported] = useState(false);
+
+  const report = () => {
+    if (reported) return;
+    analytics.dedupMistakeReported(uniqueVacancyId, vacancyId);
+    setReported(true);
+  };
+
+  if (reported) {
+    return (
+      <span className="inline-flex items-center gap-1 border border-success/60 bg-success/10 px-2 py-[2px] font-mono text-2xs uppercase tracking-wider text-success">
+        ✓ reported · thanks!
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={report}
+      className="inline-flex items-center gap-1 border border-accent bg-accent/10 px-2 py-[2px] font-mono text-2xs font-semibold uppercase tracking-wider text-accent transition-[background-color,color] hover:bg-accent hover:text-bg cursor-pointer"
+      title="Report that this is not the same job"
+    >
+      not the same job?
+    </button>
   );
 }

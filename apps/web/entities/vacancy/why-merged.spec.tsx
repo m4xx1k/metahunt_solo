@@ -3,7 +3,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { WhyMerged as DashboardWhyMerged } from "@/app/dashboard/dedupe/_components/WhyMerged";
 import { dedupRuleLabel, isRuleReason } from "@/lib/api/dedup";
 
-import { WhyMerged as BadgeWhyMerged } from "./DuplicatesBadge";
+import { ReportNotSameJobButton, WhyMerged as BadgeWhyMerged } from "./DuplicatesBadge";
+
+jest.mock("@/lib/analytics/use-analytics", () => ({
+  useAnalytics: () => ({
+    dedupMistakeReported: jest.fn(),
+  }),
+}));
 
 const OLD_SHAPE = {
   matchedAgainstVacancyId: "v1",
@@ -43,5 +49,15 @@ describe("WhyMerged", () => {
     expect(isRuleReason({ ...NEW_SHAPE, rule: "semantic" })).toBe(false);
     expect(isRuleReason({ ...NEW_SHAPE, rule: "constructor" })).toBe(false);
     expect(dedupRuleLabel({ rule: "semantic" })).toBe("earlier rules");
+  });
+});
+
+describe("ReportNotSameJobButton", () => {
+  it("renders the initial 'not the same job?' button", () => {
+    const markup = renderToStaticMarkup(
+      <ReportNotSameJobButton uniqueVacancyId="u1" vacancyId="v2" />,
+    );
+    expect(markup).toContain("not the same job?");
+    expect(markup).toContain('title="Report that this is not the same job"');
   });
 });

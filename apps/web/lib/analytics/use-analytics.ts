@@ -21,6 +21,7 @@ const ANALYTICS_EVENTS = {
   vacancyFeedback: "vacancy_feedback",
   baitClick: "bait_click",
   matchFlowCompleted: "match_flow_completed",
+  dedupMistakeReported: "dedup_mistake_reported",
 } as const;
 
 export type TelegramLoginMethod = "deeplink";
@@ -109,6 +110,13 @@ export function useAnalytics() {
         excludes_count: number;
       }) {
         capture(posthog, ANALYTICS_EVENTS.matchFlowCompleted, props);
+      },
+
+      dedupMistakeReported(uniqueVacancyId: string, vacancyId: string) {
+        capture(posthog, ANALYTICS_EVENTS.dedupMistakeReported, {
+          unique_vacancy_id: uniqueVacancyId,
+          vacancy_id: vacancyId,
+        });
       },
     }),
     [posthog],
