@@ -200,8 +200,8 @@ export function ReportNotSameJobButton({
 
   if (reported) {
     return (
-      <span className="font-mono text-2xs uppercase tracking-wider text-accent">
-        reported · thanks!
+      <span className="inline-flex items-center gap-1 border border-success/60 bg-success/10 px-2 py-[2px] font-mono text-2xs uppercase tracking-wider text-success">
+        ✓ reported · thanks!
       </span>
     );
   }
@@ -210,7 +210,7 @@ export function ReportNotSameJobButton({
     <button
       type="button"
       onClick={report}
-      className="font-mono text-2xs uppercase tracking-wider text-text-muted underline-offset-2 hover:text-accent hover:underline"
+      className="inline-flex items-center gap-1 border border-accent bg-accent/10 px-2 py-[2px] font-mono text-2xs font-semibold uppercase tracking-wider text-accent transition-[background-color,color] hover:bg-accent hover:text-bg cursor-pointer"
       title="Report that this is not the same job"
     >
       not the same job?
