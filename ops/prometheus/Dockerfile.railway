@@ -1,0 +1,4 @@
+FROM prom/prometheus:latest
+COPY ops/prometheus/prometheus.prod.yml /etc/prometheus/prometheus.yml
+COPY ops/prometheus/entrypoint.sh /etc/prometheus/entrypoint.sh
+ENTRYPOINT ["/bin/sh", "/etc/prometheus/entrypoint.sh"]

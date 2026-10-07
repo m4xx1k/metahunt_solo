@@ -187,6 +187,13 @@ export function validateEnv(config: RawEnv): RawEnv {
   // Outside production the bot only talks to these chats, so a restored prod
   // copy can never message a real subscriber from a local run.
   const alertsDevChatAllowlist = asString(config.ALERTS_DEV_CHAT_ALLOWLIST) ?? "";
+  const metricsToken = asString(config.METRICS_TOKEN) ?? "";
+
+  // Observability /metrics bearer token. Required in production to protect
+  // business telemetry, AI extraction costs, and RED metrics from unauthenticated scraping.
+  if (nodeEnv === "production" && metricsToken.trim().length === 0) {
+    throw new Error("METRICS_TOKEN is required in production");
+  }
 
   return {
     ...config,
@@ -222,5 +229,6 @@ export function validateEnv(config: RawEnv): RawEnv {
     ALERTS_ENGINE: alertsEngine,
     ALERTS_V2_CHAT_IDS: alertsV2ChatIds,
     ALERTS_DEV_CHAT_ALLOWLIST: alertsDevChatAllowlist,
+    METRICS_TOKEN: metricsToken,
   };
 }

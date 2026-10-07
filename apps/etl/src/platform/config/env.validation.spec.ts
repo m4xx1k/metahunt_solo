@@ -42,4 +42,34 @@ describe("validateEnv", () => {
       );
     });
   });
+
+  describe("METRICS_TOKEN", () => {
+    it("is optional in development", () => {
+      const result = validateEnv(requiredEnv);
+      expect(result.METRICS_TOKEN).toBe("");
+    });
+
+    it("requires METRICS_TOKEN in production", () => {
+      expect(() =>
+        validateEnv({ ...requiredEnv, NODE_ENV: "production", JWT_SECRET: "strong-secret" }),
+      ).toThrow("METRICS_TOKEN is required in production");
+
+      expect(() =>
+        validateEnv({
+          ...requiredEnv,
+          NODE_ENV: "production",
+          JWT_SECRET: "strong-secret",
+          METRICS_TOKEN: "   ",
+        }),
+      ).toThrow("METRICS_TOKEN is required in production");
+
+      const validated = validateEnv({
+        ...requiredEnv,
+        NODE_ENV: "production",
+        JWT_SECRET: "strong-secret",
+        METRICS_TOKEN: "secret-token",
+      });
+      expect(validated.METRICS_TOKEN).toBe("secret-token");
+    });
+  });
 });
