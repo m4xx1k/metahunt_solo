@@ -5,7 +5,8 @@ global:
 scrape_configs:
   - job_name: "metahunt-etl"
     scrape_interval: 15s
+    scheme: https
     bearer_token_file: /etc/prometheus/bearer.token
     static_configs:
-      # Railway internal DNS for the @metahunt/etl service (listens on PORT 3000 in production Dockerfile)
-      - targets: ["etl.railway.internal:3000"]
+      # Public production endpoint on Railway (with SSL termination and port 8080 routing)
+      - targets: ["api.metahunt.app"]

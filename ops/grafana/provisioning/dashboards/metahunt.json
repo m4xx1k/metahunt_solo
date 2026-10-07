@@ -13,7 +13,7 @@
       "id": 1,
       "title": "API Traffic (Total RPS)",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -33,7 +33,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "sum(rate(http_request_duration_seconds_count[$__rate_interval])) or vector(0)",
           "legendFormat": "Total Requests/sec",
           "refId": "A"
@@ -46,7 +46,7 @@
       "id": 2,
       "title": "API p95 Latency",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "unit": "s",
@@ -69,7 +69,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[$__rate_interval])) by (le)) or vector(0)",
           "legendFormat": "Overall p95",
           "refId": "A"
@@ -82,7 +82,7 @@
       "id": 3,
       "title": "API Error Rate",
       "type": "stat",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
@@ -105,7 +105,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "(sum(rate(http_request_duration_seconds_count{status_code=~\"[45]..\"}[$__rate_interval])) or vector(0)) / (sum(rate(http_request_duration_seconds_count[$__rate_interval])) > 0 or vector(1))",
           "legendFormat": "Error %",
           "refId": "A"
@@ -120,7 +120,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -145,7 +145,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "sum(rate(http_request_duration_seconds_count[$__rate_interval])) by (route, method)",
           "legendFormat": "{{method}} {{route}}",
           "refId": "A"
@@ -155,7 +155,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -180,7 +180,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[$__rate_interval])) by (le, route))",
           "legendFormat": "{{route}}",
           "refId": "A"
@@ -197,7 +197,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 },
@@ -221,7 +221,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "max(nodejs_eventloop_lag_seconds)",
           "legendFormat": "Event Loop Lag",
           "refId": "A"
@@ -231,7 +231,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "custom": { "drawStyle": "line", "fillOpacity": 15 },
@@ -247,19 +247,19 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "max(process_resident_memory_bytes)",
           "legendFormat": "RSS (Total OS Memory)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "max(nodejs_heap_size_used_bytes)",
           "legendFormat": "V8 Heap Used",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "max(nodejs_heap_size_total_bytes)",
           "legendFormat": "V8 Heap Total",
           "refId": "C"
@@ -269,7 +269,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": {
           "custom": { "drawStyle": "line", "fillOpacity": 15 },
@@ -287,7 +287,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "max(rate(process_cpu_seconds_total[$__rate_interval])) * 100",
           "legendFormat": "CPU Usage %",
           "refId": "A"
@@ -304,7 +304,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": { "unit": "short", "color": { "mode": "thresholds" } },
         "overrides": []
@@ -320,7 +320,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "sum(increase(metahunt_ingest_records_total[$__range])) or sum(metahunt_ingest_records_total) or vector(0)",
           "legendFormat": "Total Vacancies Ingested",
           "refId": "A"
@@ -330,7 +330,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": { "unit": "currencyUSD", "color": { "mode": "thresholds" } },
         "overrides": []
@@ -346,7 +346,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "sum(increase(metahunt_extraction_cost_usd_total[$__range])) or sum(metahunt_extraction_cost_usd_total) or vector(0)",
           "legendFormat": "Estimated LLM Cost",
           "refId": "A"
@@ -356,7 +356,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
       "fieldConfig": {
         "defaults": { "unit": "short", "color": { "mode": "thresholds" } },
         "overrides": []
@@ -372,7 +372,7 @@
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
           "expr": "sum(increase(metahunt_dedup_merges_total[$__range])) or sum(metahunt_dedup_merges_total) or vector(0)",
           "legendFormat": "Deduplicated Merges",
           "refId": "A"
@@ -385,7 +385,24 @@
   "refresh": "5s",
   "schemaVersion": 39,
   "tags": ["metahunt", "observability", "red"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
   "time": { "from": "now-15m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
