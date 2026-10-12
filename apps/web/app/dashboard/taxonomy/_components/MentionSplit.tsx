@@ -88,7 +88,12 @@ export function MentionSplit({ nodeId, mentions }: { nodeId: string; mentions: N
       );
       router.refresh();
     } catch (e: unknown) {
-      setError(errorMessage(e));
+      // The alias move may have committed before reprojection failed.
+      if (!dryRun) {
+        setPreview(null);
+        router.refresh();
+      }
+      setError(dryRun ? errorMessage(e) : `${errorMessage(e)} · press reproject to retry`);
     } finally {
       setBusy(false);
     }
@@ -97,6 +102,7 @@ export function MentionSplit({ nodeId, mentions }: { nodeId: string; mentions: N
   const reproject = async () => {
     setBusy(true);
     setError(null);
+    setPreview(null);
     try {
       const result = await taxonomyApi.reproject(nodeId);
       setOutcome(`reprojected · ${summary(result)}`);
@@ -167,6 +173,7 @@ export function MentionSplit({ nodeId, mentions }: { nodeId: string; mentions: N
                       type="button"
                       onClick={() => {
                         setTargetNode({ id: m.id, name: m.canonicalName });
+                        setSuggestions([]);
                         resetPreview();
                       }}
                       className="w-full px-3 py-1 text-left text-text-secondary hover:bg-bg-card hover:text-text-primary"
@@ -184,6 +191,7 @@ export function MentionSplit({ nodeId, mentions }: { nodeId: string; mentions: N
       {error ? (
         <button
           type="button"
+          role="alert"
           onClick={() => setError(null)}
           className="border border-danger bg-bg p-2 text-left text-2xs text-danger hover:bg-danger hover:text-bg"
         >
@@ -191,8 +199,10 @@ export function MentionSplit({ nodeId, mentions }: { nodeId: string; mentions: N
         </button>
       ) : null}
 
-      {preview ? <SplitPreview preview={preview} /> : null}
-      {outcome ? <p className="border border-success p-2 text-success">{outcome}</p> : null}
+      <div aria-live="polite" className="contents">
+        {preview ? <SplitPreview preview={preview} /> : null}
+        {outcome ? <p className="border border-success p-2 text-success">{outcome}</p> : null}
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <ActionButton disabled={!ready} onClick={() => run(true)}>

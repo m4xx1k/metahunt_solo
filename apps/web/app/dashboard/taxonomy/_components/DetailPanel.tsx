@@ -38,7 +38,8 @@ export async function DetailPanel({ nodeId }: { nodeId: string }) {
     [node, fuzzy, mentions] = await Promise.all([
       taxonomyApi.node(nodeId),
       taxonomyApi.fuzzyMatches(nodeId),
-      taxonomyApi.mentions(nodeId),
+      // Mentions are optional: a failure there must not blank the panel.
+      taxonomyApi.mentions(nodeId).catch(() => null),
     ]);
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : String(e);

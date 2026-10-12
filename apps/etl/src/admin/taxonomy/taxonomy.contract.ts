@@ -3,6 +3,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
+  IsDefined,
   IsIn,
   IsOptional,
   IsString,
@@ -104,6 +105,7 @@ export class SplitNodeDto {
   @IsString({ each: true })
   aliases!: string[];
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => SplitTargetDto)
   target!: SplitTargetDto;

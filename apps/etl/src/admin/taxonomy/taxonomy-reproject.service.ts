@@ -22,13 +22,10 @@ import type {
 // Keeps each write transaction short on big nodes (.NET ≈ 1.4k vacancies).
 const REPROJECT_BATCH = 100;
 
-const linkKey = (l: SkillLink) => `${l.nodeId}|${l.isRequired}|${l.requirementGroup ?? ""}`;
-
 type Counts = Map<string, { vb: number; va: number; cb: number; ca: number }>;
 
-// Taxonomy edits change the alias mapping, then re-run each record's own
-// resolution path over the rows the edit can affect. Facts are never touched,
-// so the inverse edit restores the original links.
+// A taxonomy edit changes the alias mapping, then re-runs each record's own
+// resolution path; facts are never touched, so the inverse edit restores links.
 @Injectable()
 export class TaxonomyReprojectService {
   private readonly logger = new Logger(TaxonomyReprojectService.name);
@@ -40,9 +37,13 @@ export class TaxonomyReprojectService {
     private readonly nodes: NodeRepository,
   ) {}
 
-  // Every record linked to the node is re-resolved. Pass `executor` to run
-  // inside a caller's transaction (dry-run); otherwise each batch commits.
-  async reprojectNode(nodeId: string, executor?: Executor): Promise<ReprojectResult> {
+  // Vacancies linked to the node are fully re-resolved; CVs only when the
+  // aliases that left the node are known. `executor` = caller's tx (dry-run).
+  async reprojectNode(
+    nodeId: string,
+    executor?: Executor,
+    movedAliases: string[] = [],
+  ): Promise<ReprojectResult> {
     const db = executor ?? this.db;
     await this.findSkillNode(nodeId, db);
     const inTx = <T>(work: (tx: Executor) => Promise<T>) =>
@@ -65,6 +66,14 @@ export class TaxonomyReprojectService {
     for (let i = 0; i < vacancies.length; i += REPROJECT_BATCH) {
       const batch = vacancies.slice(i, i + REPROJECT_BATCH);
       await inTx(async (tx) => {
+        const ids = batch.map((v) => v.id);
+        // Same lock the loader takes, so a concurrent ingest waits instead of racing.
+        await tx
+          .select({ id: schema.vacancies.id })
+          .from(schema.vacancies)
+          .where(inArray(schema.vacancies.id, ids))
+          .orderBy(schema.vacancies.id)
+          .for("update");
         const beforeRows = await tx
           .select()
           .from(schema.vacancyNodes)
@@ -82,35 +91,36 @@ export class TaxonomyReprojectService {
               isRequired: r.isRequired,
               requirementGroup: r.requirementGroup ?? undefined,
             }));
-          const after = await this.vacancyLoader.relinkSkills(v.id, v.recordId, tx);
-          if (!after) {
+          const relinked = await this.vacancyLoader.relinkSkills(v.id, v.recordId, before, tx);
+          if (!relinked) {
             vacancyStats.skipped += 1;
             continue;
           }
-          const beforeKeys = new Set(before.map(linkKey));
-          const afterKeys = new Set(after.map(linkKey));
-          if (
-            beforeKeys.size === afterKeys.size &&
-            [...afterKeys].every((k) => beforeKeys.has(k))
-          ) {
-            continue;
-          }
+          if (!relinked.changed) continue;
           vacancyStats.changed += 1;
           before.forEach((l) => bump(l.nodeId, "vb"));
-          after.forEach((l) => bump(l.nodeId, "va"));
+          relinked.links.forEach((l) => bump(l.nodeId, "va"));
         }
       });
       this.logger.log(`reproject ${nodeId}: ${i + batch.length}/${vacancies.length} vacancies`);
     }
 
-    const candidates = await db
-      .select({ id: schema.candidateNodes.candidateId })
-      .from(schema.candidateNodes)
-      .where(eq(schema.candidateNodes.nodeId, nodeId));
+    const candidates =
+      movedAliases.length === 0
+        ? []
+        : await db
+            .select({ id: schema.candidateNodes.candidateId })
+            .from(schema.candidateNodes)
+            .where(eq(schema.candidateNodes.nodeId, nodeId));
     const candidateStats = { scanned: candidates.length, changed: 0 };
     await inTx(async (tx) => {
       for (const c of candidates) {
-        const { before, after } = await this.candidateLoader.relinkSkills(c.id, nodeId, tx);
+        const { before, after } = await this.candidateLoader.relinkSkills(
+          c.id,
+          nodeId,
+          movedAliases,
+          tx,
+        );
         if (before.length === after.length && after.every((id) => before.includes(id))) continue;
         candidateStats.changed += 1;
         before.forEach((id) => bump(id, "cb"));
@@ -142,18 +152,27 @@ export class TaxonomyReprojectService {
       const owned = await tx
         .select({ name: schema.nodeAliases.name })
         .from(schema.nodeAliases)
-        .where(
-          and(eq(schema.nodeAliases.nodeId, sourceId), inArray(schema.nodeAliases.name, aliases)),
-        );
+        .where(eq(schema.nodeAliases.nodeId, sourceId));
       const missing = aliases.filter((a) => !owned.some((o) => o.name === a));
       if (missing.length > 0) {
         throw new BadRequestException(`not aliases of this node: ${missing.join(", ")}`);
       }
+      // CVs match the canonical name before aliases; moving it alone would
+      // send CVs and vacancies spelling it the same way to different nodes.
+      if (
+        aliases.includes(normalizeAliasName(source.canonicalName)) &&
+        aliases.length < owned.length
+      ) {
+        throw new BadRequestException("the node's own name moves only together with all aliases");
+      }
 
       const target = targetNodeId
         ? { ...(await this.findSkillNode(targetNodeId, tx)), created: false }
-        : await this.findOrCreateTarget(targetName ?? "", tx);
+        : await this.findOrCreateTarget(targetName ?? "", aliases, tx);
       if (target.id === sourceId) throw new BadRequestException("target must differ from source");
+      if (target.status === "HIDDEN") {
+        throw new BadRequestException(`"${target.canonicalName}" is hidden; verify it first`);
+      }
 
       await tx
         .update(schema.nodeAliases)
@@ -169,7 +188,7 @@ export class TaxonomyReprojectService {
 
     if (!body.dryRun) {
       const moved = await this.db.transaction(moveAliases);
-      const reprojection = await this.reprojectNode(sourceId);
+      const reprojection = await this.reprojectNode(sourceId, undefined, aliases);
       return { dryRun: false, aliases, ...moved, ...reprojection };
     }
 
@@ -177,7 +196,12 @@ export class TaxonomyReprojectService {
     try {
       await this.db.transaction(async (tx) => {
         const moved = await moveAliases(tx);
-        preview = { dryRun: true, aliases, ...moved, ...(await this.reprojectNode(sourceId, tx)) };
+        preview = {
+          dryRun: true,
+          aliases,
+          ...moved,
+          ...(await this.reprojectNode(sourceId, tx, aliases)),
+        };
         tx.rollback();
       });
     } catch (err) {
@@ -195,7 +219,7 @@ export class TaxonomyReprojectService {
     return node;
   }
 
-  private async findOrCreateTarget(name: string, tx: Executor) {
+  private async findOrCreateTarget(name: string, movedAliases: string[], tx: Executor) {
     if (name.length === 0) throw new BadRequestException("target name must not be empty");
     const [existing] = await tx
       .select()
@@ -208,6 +232,18 @@ export class TaxonomyReprojectService {
       );
     if (existing) return { ...existing, created: false };
 
+    // A new node must own its own spelling, or vacancies keep resolving it elsewhere.
+    const selfAlias = normalizeAliasName(name);
+    const [taken] = await tx
+      .select({ nodeId: schema.nodeAliases.nodeId })
+      .from(schema.nodeAliases)
+      .where(and(eq(schema.nodeAliases.type, "SKILL"), eq(schema.nodeAliases.name, selfAlias)));
+    if (taken && !movedAliases.includes(selfAlias)) {
+      throw new BadRequestException(
+        `"${name}" is an alias of another node; move "${selfAlias}" too`,
+      );
+    }
+
     const id = await this.nodes.insertReturningId("SKILL", name, tx);
     if (!id) throw new BadRequestException(`could not create node "${name}"`);
     const [created] = await tx
@@ -215,6 +251,7 @@ export class TaxonomyReprojectService {
       .set({ status: "VERIFIED" })
       .where(eq(schema.nodes.id, id))
       .returning();
+    if (!taken) await this.nodes.linkAlias(selfAlias, "SKILL", id, tx);
     return { ...created, created: true };
   }
 

@@ -239,6 +239,37 @@ describe("TaxonomyReprojectService.split (integration)", () => {
     expect((await vacancyLinks(vacancies[1])).map((l) => l.name)).toEqual([".NET", "C#"]);
   });
 
+  it("keeps a CV's hand-confirmed source link when no CV skill moved", async () => {
+    const manual = await seedCandidate(["Docker"], [docker, dotnet]);
+
+    await service.split(dotnet, splitBody(false));
+    await service.reprojectNode(dotnet);
+
+    const links = await db
+      .select({ nodeId: schema.candidateNodes.nodeId })
+      .from(schema.candidateNodes)
+      .where(eq(schema.candidateNodes.candidateId, manual));
+    expect(links.map((l) => l.nodeId).sort()).toEqual([dotnet, docker].sort());
+  });
+
+  it("rejects a hidden target, a foreign self-alias, and moving the node's own name alone", async () => {
+    const hidden = await seedNode("Legacy", ["legacy"]);
+    await db.update(schema.nodes).set({ status: "HIDDEN" }).where(eq(schema.nodes.id, hidden));
+
+    await expect(
+      service.split(dotnet, { aliases: ["aspnet"], target: { nodeId: hidden } }),
+    ).rejects.toThrow("is hidden");
+    await expect(
+      service.split(dotnet, { aliases: ["aspnet"], target: { name: "Docker" } }),
+    ).resolves.toMatchObject({ target: { id: docker, created: false } });
+    await expect(
+      service.split(dotnet, { aliases: ["dotnet"], target: { name: "ASP.NET Core" } }),
+    ).rejects.toThrow('move "aspnetcore" too');
+    await expect(
+      service.split(dotnet, { aliases: ["net"], target: { name: "Dot Net" } }),
+    ).rejects.toThrow("own name moves only together with all aliases");
+  });
+
   it("rejects aliases the source does not own", async () => {
     await expect(
       service.split(dotnet, { aliases: ["docker"], target: { name: "Docker 2" } }),

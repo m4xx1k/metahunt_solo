@@ -8,6 +8,7 @@ import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
 import type { Executor } from "../../02-enrich/loader/repositories/executor";
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 import type { SkillRef } from "../ranking/ranking.contract";
 import { RankingService } from "../ranking/ranking.service";
 
@@ -114,12 +115,12 @@ export class CandidateLoaderService {
     return this.buildResult(id, false);
   }
 
-  // Re-resolve a stored CV after a taxonomy alias edit around `nodeId`: that
-  // link survives only if a skill still resolves to it, newly resolving nodes
-  // are added, and every other link (manual confirms included) is kept.
+  // Re-resolve a CV after `movedAliases` left `nodeId`. Only skills spelled as a
+  // moved alias count, so manual confirms and unrelated links stay untouched.
   async relinkSkills(
     candidateId: string,
     nodeId: string,
+    movedAliases: string[],
     executor: Executor = this.db,
   ): Promise<{ before: string[]; after: string[] }> {
     const [row] = await executor
@@ -131,20 +132,21 @@ export class CandidateLoaderService {
       .from(schema.candidateNodes)
       .where(eq(schema.candidateNodes.candidateId, candidateId));
     const before = links.map((l) => l.nodeId);
-    if (!row) return { before, after: before };
+    const names = row ? skillNames(row.extracted) : [];
+    const moved = new Set(movedAliases);
+    const touched = names.filter((name) => moved.has(normalizeAliasName(name)));
+    if (!row || touched.length === 0) return { before, after: before };
 
-    const { matched, unmatched } = await this.ranking.resolveSkills(
-      skillNames(row.extracted),
-      executor,
-    );
+    const full = await this.ranking.resolveSkills(names, executor);
+    const scoped = await this.ranking.resolveSkills(touched, executor);
     const rejected = new Set((row.extracted.rejectedSkillIds as string[] | undefined) ?? []);
-    const resolvedIds = new Set(matched.map((m) => m.id));
-    const after = [
-      ...before.filter((id) => id !== nodeId || resolvedIds.has(id)),
-      ...[...resolvedIds].filter((id) => !before.includes(id) && !rejected.has(id)),
-    ];
+    const keepSource = full.matched.some((m) => m.id === nodeId);
+    const added = scoped.matched
+      .map((m) => m.id)
+      .filter((id) => !before.includes(id) && !rejected.has(id));
+    const after = [...before.filter((id) => id !== nodeId || keepSource), ...added];
 
-    if (!resolvedIds.has(nodeId) && before.includes(nodeId)) {
+    if (!keepSource && before.includes(nodeId)) {
       await executor
         .delete(schema.candidateNodes)
         .where(
@@ -154,17 +156,16 @@ export class CandidateLoaderService {
           ),
         );
     }
-    const added = after.filter((id) => !before.includes(id));
     if (added.length > 0) {
       await executor
         .insert(schema.candidateNodes)
         .values(added.map((id) => ({ candidateId, nodeId: id })))
         .onConflictDoNothing();
     }
-    if (JSON.stringify(row.extracted.unmatchedSkills ?? []) !== JSON.stringify(unmatched)) {
+    if (JSON.stringify(row.extracted.unmatchedSkills ?? []) !== JSON.stringify(full.unmatched)) {
       await executor
         .update(schema.candidates)
-        .set({ extracted: { ...row.extracted, unmatchedSkills: unmatched } })
+        .set({ extracted: { ...row.extracted, unmatchedSkills: full.unmatched } })
         .where(eq(schema.candidates.id, candidateId));
     }
     return { before, after };
