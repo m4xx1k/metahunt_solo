@@ -97,6 +97,44 @@ export interface NodeDetail {
   sampleVacancies: NodeSampleVacancy[];
 }
 
+// Raw skill strings a node is made of, grouped by the alias they resolve through.
+export interface NodeMentionsAlias {
+  alias: string;
+  vacancies: number;
+  variants: { raw: string; vacancies: number }[];
+}
+
+export interface NodeMentions {
+  nodeId: string;
+  vacancies: number;
+  aliases: NodeMentionsAlias[];
+}
+
+export interface NodeLinkDelta {
+  nodeId: string;
+  name: string;
+  vacanciesBefore: number;
+  vacanciesAfter: number;
+  candidatesBefore: number;
+  candidatesAfter: number;
+}
+
+export interface ReprojectResult {
+  nodeId: string;
+  vacancies: { scanned: number; changed: number; skipped: number };
+  candidates: { scanned: number; changed: number };
+  links: NodeLinkDelta[];
+}
+
+export type SplitTarget = { name: string } | { nodeId: string };
+
+export interface SplitResult extends ReprojectResult {
+  dryRun: boolean;
+  aliases: string[];
+  source: { id: string; name: string };
+  target: { id: string; name: string; created: boolean };
+}
+
 export interface FuzzyMatch {
   id: string;
   canonicalName: string;
@@ -229,6 +267,16 @@ export const taxonomyApi = {
     mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/rename`, {
       name,
     }),
+  mentions: (id: string) =>
+    get<NodeMentions>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}/mentions`),
+  split: (id: string, aliases: string[], target: SplitTarget, dryRun: boolean) =>
+    mutate<SplitResult>("POST", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/split`, {
+      aliases,
+      target,
+      dryRun,
+    }),
+  reproject: (id: string) =>
+    mutate<ReprojectResult>("POST", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/reproject`),
   mergeInto: (sourceId: string, targetId: string) =>
     mutate<{ mergedInto: string; source: string; target: string }>(
       "POST",

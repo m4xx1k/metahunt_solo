@@ -2,6 +2,7 @@ import {
   taxonomyApi,
   type FuzzyMatchResult,
   type NodeDetail,
+  type NodeMentions,
   type NodeStatus,
 } from "@/lib/api/taxonomy";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import { formatDateTime } from "@/lib/format";
 import { ModerationActions } from "./ModerationActions";
 import { AliasList } from "./AliasList";
 import { FuzzyMatchList } from "./FuzzyMatchList";
+import { MentionSplit } from "./MentionSplit";
 import { VerifiedSearch } from "./VerifiedSearch";
 
 const STATUS_PILL: Record<NodeStatus, string> = {
@@ -29,10 +31,15 @@ const STATUS_LABEL: Record<NodeStatus, string> = {
 export async function DetailPanel({ nodeId }: { nodeId: string }) {
   let node: NodeDetail | null = null;
   let fuzzy: FuzzyMatchResult | null = null;
+  let mentions: NodeMentions | null = null;
   let error: string | null = null;
 
   try {
-    [node, fuzzy] = await Promise.all([taxonomyApi.node(nodeId), taxonomyApi.fuzzyMatches(nodeId)]);
+    [node, fuzzy, mentions] = await Promise.all([
+      taxonomyApi.node(nodeId),
+      taxonomyApi.fuzzyMatches(nodeId),
+      taxonomyApi.mentions(nodeId),
+    ]);
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : String(e);
   }
@@ -74,6 +81,12 @@ export async function DetailPanel({ nodeId }: { nodeId: string }) {
       <Section label={`aliases · ${node.aliases.length}`}>
         <AliasList aliases={node.aliases} />
       </Section>
+
+      {node.type === "SKILL" && mentions ? (
+        <Section label={`mentions · ${mentions.vacancies} vacancies`}>
+          <MentionSplit nodeId={node.id} mentions={mentions} />
+        </Section>
+      ) : null}
 
       <Section label={`used in · ${node.vacancyCount} vacancies`}>
         {node.sampleVacancies.length === 0 ? (
