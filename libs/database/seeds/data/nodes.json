@@ -461,7 +461,7 @@
     },
     {
       "name": "GitLab CI",
-      "aliases": ["gitlab", "gitlab ci", "gitlab-ci"]
+      "aliases": ["gitlab ci", "gitlab-ci"]
     },
     {
       "name": "GitHub Actions",
