@@ -20,7 +20,8 @@ import {
   parseNodeListFilters,
   parseVerifiedNodeSearch,
 } from "./taxonomy-query.parser";
-import { RenameTaxonomyNodeDto, SetNodeKindDto } from "./taxonomy.contract";
+import { TaxonomyReprojectService } from "./taxonomy-reproject.service";
+import { RenameTaxonomyNodeDto, SetNodeKindDto, SplitNodeDto } from "./taxonomy.contract";
 import { TaxonomyService } from "./taxonomy.service";
 
 @Controller("admin/taxonomy")
@@ -30,7 +31,10 @@ import { TaxonomyService } from "./taxonomy.service";
   type: ApiErrorResponseDto,
 })
 export class TaxonomyController {
-  constructor(private readonly service: TaxonomyService) {}
+  constructor(
+    private readonly service: TaxonomyService,
+    private readonly reproject: TaxonomyReprojectService,
+  ) {}
 
   @Get("coverage")
   @ApiOperation({ summary: "Get taxonomy coverage metrics" })
@@ -92,6 +96,13 @@ export class TaxonomyController {
     return this.service.getNodeDetail(id);
   }
 
+  @Get("nodes/:id/mentions")
+  @ApiOperation({ summary: "List the raw skill strings a node is made of" })
+  @ApiOkResponse({ description: "Mentions grouped by alias, with vacancy counts." })
+  getMentions(@Param("id", ParseUUIDPipe) id: string) {
+    return this.service.getMentions(id);
+  }
+
   @Get("nodes/:id/fuzzy-matches")
   @ApiOperation({ summary: "Find taxonomy merge candidates" })
   @ApiOkResponse({ description: "Potential duplicate nodes." })
@@ -139,5 +150,21 @@ export class TaxonomyController {
     @Param("targetId", ParseUUIDPipe) targetId: string,
   ) {
     return this.service.mergeInto(id, targetId);
+  }
+
+  @Post("nodes/:id/split")
+  @ApiOperation({ summary: "Move some of a node's aliases to another node and reproject" })
+  @ApiBody({ type: SplitNodeDto })
+  @ApiOkResponse({ description: "Split result (a preview when dryRun)." })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  splitNode(@Param("id", ParseUUIDPipe) id: string, @Body() body: SplitNodeDto) {
+    return this.reproject.split(id, body);
+  }
+
+  @Post("nodes/:id/reproject")
+  @ApiOperation({ summary: "Re-resolve every record linked to a node (idempotent retry)" })
+  @ApiOkResponse({ description: "Reprojection counts." })
+  reprojectNode(@Param("id", ParseUUIDPipe) id: string) {
+    return this.reproject.reprojectNode(id);
   }
 }

@@ -1,14 +1,17 @@
 import { Module } from "@nestjs/common";
 
+import { LoaderModule } from "../../02-enrich/loader/loader.module";
+import { CvModule } from "../../03-discovery/cv/cv.module";
 import { AuthModule } from "../../platform/auth/auth.module";
 import { SubscriptionRepairService } from "../../platform/subscriptions/subscription-repair.service";
 
+import { TaxonomyReprojectService } from "./taxonomy-reproject.service";
 import { TaxonomyController } from "./taxonomy.controller";
 import { TaxonomyService } from "./taxonomy.service";
 
 @Module({
-  imports: [AuthModule], // provides JwtAuthGuard + RolesGuard for @AdminOnly mutations
-  providers: [TaxonomyService, SubscriptionRepairService],
+  imports: [AuthModule, LoaderModule, CvModule], // AuthModule: guards for @AdminOnly
+  providers: [TaxonomyService, TaxonomyReprojectService, SubscriptionRepairService],
   controllers: [TaxonomyController],
   exports: [TaxonomyService],
 })

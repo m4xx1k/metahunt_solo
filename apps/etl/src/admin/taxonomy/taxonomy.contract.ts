@@ -1,4 +1,14 @@
-import { IsIn, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from "class-validator";
 
 import type { NodeType } from "@metahunt/database";
 
@@ -62,4 +72,67 @@ export interface MapNodeItem {
 export class SetNodeKindDto {
   @IsIn([...NODE_KINDS, null])
   kind!: NodeKindValue | null;
+}
+
+// Raw skill strings of the vacancies linked to a node, grouped by the alias
+// they resolve through — what the node is actually made of.
+export interface NodeMentionsAlias {
+  alias: string;
+  vacancies: number;
+  variants: { raw: string; vacancies: number }[];
+}
+
+export interface NodeMentions {
+  nodeId: string;
+  vacancies: number;
+  aliases: NodeMentionsAlias[];
+}
+
+export class SplitTargetDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsUUID()
+  nodeId?: string;
+}
+
+export class SplitNodeDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  aliases!: string[];
+
+  @ValidateNested()
+  @Type(() => SplitTargetDto)
+  target!: SplitTargetDto;
+
+  @IsOptional()
+  @IsBoolean()
+  dryRun?: boolean;
+}
+
+// Link counts per node over the records whose links changed.
+export interface NodeLinkDelta {
+  nodeId: string;
+  name: string;
+  vacanciesBefore: number;
+  vacanciesAfter: number;
+  candidatesBefore: number;
+  candidatesAfter: number;
+}
+
+export interface ReprojectResult {
+  nodeId: string;
+  vacancies: { scanned: number; changed: number; skipped: number };
+  candidates: { scanned: number; changed: number };
+  links: NodeLinkDelta[];
+}
+
+export interface SplitResult extends ReprojectResult {
+  dryRun: boolean;
+  aliases: string[];
+  source: { id: string; name: string };
+  target: { id: string; name: string; created: boolean };
 }

@@ -104,6 +104,22 @@ export class VacancyLoaderService {
     });
   }
 
+  // Re-derive a loaded vacancy's skill links from its current record, after a
+  // taxonomy alias edit. null = the record has no usable extraction (skipped).
+  async relinkSkills(
+    vacancyId: string,
+    rssRecordId: string,
+    executor: Executor,
+  ): Promise<SkillLink[] | null> {
+    const record = await this.repo.findRecord(rssRecordId);
+    const extracted = (record?.extractedData ?? null) as ExtractedVacancy | null;
+    if (!extracted?.skills) return null;
+
+    const skillLinks = await this.resolveSkillLinks(extracted, executor, rssRecordId);
+    await this.repo.replaceSkills(vacancyId, skillLinks, executor);
+    return skillLinks;
+  }
+
   // Resolve skill names to taxonomy node ids, deduped by node. Each extracted
   // requirement is a choice of one or more skills; a choice of several nodes is
   // numbered so it scores as one requirement. Distinct spellings of the same

@@ -20,6 +20,8 @@ import type {
   NodeKindValue,
   NodeListFilters,
   NodeListResult,
+  NodeMentions,
+  NodeMentionsAlias,
   NodeStatusValue,
 } from "./taxonomy.contract";
 
@@ -329,6 +331,59 @@ export class TaxonomyService {
       aliases: aliases.map((a) => ({ name: a.name, createdAt: a.createdAt })),
       vacancyCount,
       sampleVacancies: sample,
+    };
+  }
+
+  // Raw strings come from each linked vacancy's current record (the one the
+  // loader resolved), both plain entries and anyOf members; a string counts
+  // toward an alias when it normalizes to it, exactly as the loader resolves.
+  async getMentions(id: string): Promise<NodeMentions> {
+    const [node] = await this.db.select().from(schema.nodes).where(eq(schema.nodes.id, id));
+    if (!node) throw new NotFoundException(`Node ${id} not found`);
+
+    const aliases = await this.db
+      .select({ name: schema.nodeAliases.name })
+      .from(schema.nodeAliases)
+      .where(eq(schema.nodeAliases.nodeId, id));
+    const rows = await this.db.execute<{ raw: string; vacancies: string }>(sql`
+      WITH linked AS (
+        SELECT v.id, r.extracted_data->'skills' AS skills
+        FROM vacancy_nodes vn
+        JOIN vacancies v ON v.id = vn.vacancy_id
+        JOIN rss_records r ON r.id = v.last_rss_record_id
+        WHERE vn.node_id = ${id}
+      ), entries AS (
+        SELECT linked.id, e
+        FROM linked, jsonb_array_elements(
+          COALESCE(skills->'required', '[]') || COALESCE(skills->'optional', '[]')
+        ) e
+      )
+      SELECT raw, COUNT(DISTINCT id)::text AS vacancies FROM (
+        SELECT id, e #>> '{}' AS raw FROM entries WHERE jsonb_typeof(e) = 'string'
+        UNION ALL
+        SELECT id, x FROM entries, jsonb_array_elements_text(COALESCE(e->'anyOf', '[]')) x
+        WHERE jsonb_typeof(e) = 'object'
+      ) raws
+      GROUP BY raw
+    `);
+
+    const byAlias = new Map<string, NodeMentionsAlias>(
+      aliases.map((a) => [a.name, { alias: a.name, vacancies: 0, variants: [] }]),
+    );
+    for (const r of rows.rows) {
+      const entry = byAlias.get(normalizeAliasName(r.raw));
+      if (!entry) continue;
+      entry.variants.push({ raw: r.raw.trim(), vacancies: Number(r.vacancies) });
+      entry.vacancies += Number(r.vacancies);
+    }
+    for (const entry of byAlias.values()) entry.variants.sort((a, b) => b.vacancies - a.vacancies);
+
+    return {
+      nodeId: id,
+      vacancies: await countVacanciesForNode(this.db, id, node.type),
+      aliases: [...byAlias.values()].sort(
+        (a, b) => b.vacancies - a.vacancies || a.alias.localeCompare(b.alias),
+      ),
     };
   }
 

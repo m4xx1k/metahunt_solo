@@ -57,7 +57,11 @@ export class RankingService {
     private readonly analytics: AnalyticsService,
   ) {}
 
-  async resolveSkills(skills: string[]): Promise<ResolveResult> {
+  // `executor` lets a taxonomy edit resolve against its own uncommitted aliases.
+  async resolveSkills(
+    skills: string[],
+    executor: Pick<DrizzleDB, "execute"> = this.db,
+  ): Promise<ResolveResult> {
     const cleaned = [...new Set(skills.map((s) => s.trim()).filter(Boolean))];
     if (cleaned.length === 0) return { matched: [], unmatched: [] };
     const lowered = cleaned.map((s) => s.toLowerCase());
@@ -68,7 +72,7 @@ export class RankingService {
 
     // Canonical and alias hits in one shot; node_stats weight is LEFT-joined
     // (a skill on zero vacancies has no node_stats row → weight 0).
-    const result = await this.db.execute<{
+    const result = await executor.execute<{
       key: string;
       id: string;
       name: string;

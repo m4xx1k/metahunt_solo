@@ -46,6 +46,11 @@ export abstract class VacancyRepository {
     executor: Executor,
     options?: UpsertOptions,
   ): Promise<string>;
+  abstract replaceSkills(
+    vacancyId: string,
+    skillLinks: SkillLink[],
+    executor: Executor,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -160,7 +165,7 @@ export class DrizzleVacancyRepository extends VacancyRepository {
     return result.rows[0] ?? null;
   }
 
-  private async replaceSkills(
+  async replaceSkills(
     vacancyId: string,
     skillLinks: SkillLink[],
     executor: Executor,
