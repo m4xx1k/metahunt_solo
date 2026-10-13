@@ -60,10 +60,15 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
     setError(null);
   };
 
+  // The node's own name moves only with every other alias (backend rule).
+  const others = mentions.aliases.filter((a) => a.alias !== mentions.nameAlias);
+  const allOthersChecked = others.every((a) => checked.has(a.alias));
+
   const toggle = (alias: string) => {
     const next = new Set(checked);
     if (next.has(alias)) next.delete(alias);
     else next.add(alias);
+    if (!others.every((a) => next.has(a.alias))) next.delete(mentions.nameAlias);
     setChecked(next);
     setPreview(null);
     setOutcome(null);
@@ -106,21 +111,25 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
               <label
                 className={cn(
                   "flex items-baseline gap-2 px-3 py-2",
-                  isName ? "cursor-default" : "cursor-pointer",
+                  isName && !allOthersChecked ? "cursor-default" : "cursor-pointer",
                 )}
                 title={`alias key: ${a.alias}`}
               >
                 <input
                   type="checkbox"
                   checked={checked.has(a.alias)}
-                  disabled={isName || busy}
+                  disabled={(isName && !allOthersChecked) || busy}
                   onChange={() => toggle(a.alias)}
-                  className={cn("accent-accent", isName && "invisible")}
+                  className="accent-accent"
                 />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-text-primary">
                     {top?.raw ?? a.alias}
-                    {isName ? <span className="ml-2 text-text-muted">· node name</span> : null}
+                    {isName ? (
+                      <span className="ml-2 text-text-muted">
+                        · node name{allOthersChecked ? "" : " (tick all others first)"}
+                      </span>
+                    ) : null}
                   </span>
                   {rest.length > 0 ? (
                     <span className="truncate text-2xs text-text-muted">
