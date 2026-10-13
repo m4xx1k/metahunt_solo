@@ -83,6 +83,12 @@ complete. The inverse move restores every link.
 - A fresh `db:seed` fails at tracks (`Backend Engineer` ROLE missing) — same on `origin/main`.
 - Seed aliases are lowercased, not normalized: dotted spellings in the seed never match.
 - Later: rewrite `mergeInto` on the same primitive (move all aliases → hide the node).
+- Moving every alias of a node hides the emptied node in the same move (else CVs keep matching it
+  by name). Moving into a HIDDEN node is refused — verify it first.
+- A move does not block loads of *new* vacancies, which read aliases without a lock: run moves
+  with Temporal schedules paused. Step B (one SQL relink, <1 s) is the real fix.
+- CV hand-confirms are not marked: a confirmed source link on a CV that only spells a moved alias
+  is dropped by the move. Rare; revisit with CV links in step B.
 - Target search lists VERIFIED nodes only: to move into a NEW node (e.g. `Jakarta EE`), verify it
   first.
 

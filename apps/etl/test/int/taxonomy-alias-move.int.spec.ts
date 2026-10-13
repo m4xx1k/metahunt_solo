@@ -147,8 +147,8 @@ describe("TaxonomyAliasMoveService.moveAliases (integration)", () => {
       { required: ["C#", "ASP.NET Core"], optional: [] },
       { required: [{ anyOf: [".NET"] }], optional: [] },
     ]);
-    candidateBoth = await seedCandidate(["dotnet", "aspnetcore"], [dotnet, docker]);
-    candidateCoreOnly = await seedCandidate(["aspnetcore"], [dotnet]);
+    candidateBoth = await seedCandidate([".NET", "ASP.NET Core"], [dotnet, docker]);
+    candidateCoreOnly = await seedCandidate(["ASP.NET Core"], [dotnet]);
   });
 
   const moveBody = (dryRun: boolean) => ({
@@ -206,16 +206,22 @@ describe("TaxonomyAliasMoveService.moveAliases (integration)", () => {
     expect(await candNodes(candidateCoreOnly)).toEqual([applied.target.id]);
   });
 
-  it("the reverse move restores the original links", async () => {
+  it("the reverse move restores the original links and hides the emptied node", async () => {
     const original = await linkRows();
     const applied = await service.moveAliases(dotnet, moveBody(false));
+    expect(applied.source.hidden).toBe(false);
 
-    await service.moveAliases(applied.target.id, {
+    const reverse = await service.moveAliases(applied.target.id, {
       aliases: applied.aliases,
       target: { nodeId: dotnet },
     });
 
     expect((await linkRows()).rows).toEqual(original.rows);
+    expect(reverse.source.hidden).toBe(true);
+    // The hidden node no longer catches CVs by name; its dotted spelling reaches .NET by alias.
+    const ranking = new RankingService(db, new FeedService(db), noopAnalytics(db));
+    const resolved = await ranking.resolveSkills(["ASP.NET Core"]);
+    expect(resolved.matched.map((m) => m.id)).toEqual([dotnet]);
   });
 
   it("skips records without usable extraction and keeps their links", async () => {
@@ -258,7 +264,7 @@ describe("TaxonomyAliasMoveService.moveAliases (integration)", () => {
     ).rejects.toThrow('"Docker" already exists');
     await expect(
       service.moveAliases(dotnet, { aliases: ["dotnet"], target: { name: "ASP.NET Core" } }),
-    ).rejects.toThrow('move "aspnetcore" too');
+    ).rejects.toThrow('alias "aspnetcore" of this node; tick it too');
     await expect(
       service.moveAliases(dotnet, { aliases: ["net"], target: { name: "Dot Net" } }),
     ).rejects.toThrow("own name moves only together with all aliases");

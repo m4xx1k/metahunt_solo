@@ -125,7 +125,7 @@ export type MoveTarget = { name: string } | { nodeId: string };
 export interface MoveAliasesResult {
   dryRun: boolean;
   aliases: string[];
-  source: { id: string; name: string };
+  source: { id: string; name: string; hidden: boolean };
   target: { id: string; name: string; created: boolean };
   vacancies: { scanned: number; changed: number; skipped: number };
   candidates: { scanned: number; changed: number };

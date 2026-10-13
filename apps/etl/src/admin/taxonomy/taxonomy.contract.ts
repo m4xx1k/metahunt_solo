@@ -130,7 +130,8 @@ export interface NodeLinkDelta {
 export interface MoveAliasesResult {
   dryRun: boolean;
   aliases: string[];
-  source: { id: string; name: string };
+  // hidden = every alias left, so the emptied source was hidden in the same move.
+  source: { id: string; name: string; hidden: boolean };
   target: { id: string; name: string; created: boolean };
   vacancies: { scanned: number; changed: number; skipped: number };
   candidates: { scanned: number; changed: number };

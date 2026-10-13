@@ -25,7 +25,8 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<FuzzyMatch[]>([]);
+  // Tagged with their query so a stale list never shows against newer input.
+  const [found, setFound] = useState<{ q: string; matches: FuzzyMatch[] }>({ q: "", matches: [] });
   const [target, setTarget] = useState<Target | null>(null);
   const [preview, setPreview] = useState<MoveAliasesResult | null>(null);
   const [outcome, setOutcome] = useState<string | null>(null);
@@ -40,10 +41,11 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
       taxonomyApi
         .searchVerified("SKILL", q, 5)
         .then((res) => {
-          if (!ctl.signal.aborted) setSuggestions(res.matches.filter((m) => m.id !== nodeId));
+          if (!ctl.signal.aborted)
+            setFound({ q, matches: res.matches.filter((m) => m.id !== nodeId) });
         })
         .catch(() => {
-          if (!ctl.signal.aborted) setSuggestions([]);
+          if (!ctl.signal.aborted) setFound({ q, matches: [] });
         });
     }, DEBOUNCE_MS);
     return () => {
@@ -55,7 +57,6 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
   const chooseTarget = (next: Target | null) => {
     setTarget(next);
     setQuery("");
-    setSuggestions([]);
     setPreview(null);
     setError(null);
   };
@@ -89,7 +90,10 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
       setPreview(null);
       setChecked(new Set());
       setTarget(null);
-      setOutcome(`moved ${result.aliases.length} alias(es) to ${result.target.name}`);
+      setOutcome(
+        `moved ${result.aliases.length} alias(es) to ${result.target.name}` +
+          (result.source.hidden ? ` · ${result.source.name} is now empty and hidden` : ""),
+      );
       router.refresh();
     } catch (e: unknown) {
       setError(errorMessage(e));
@@ -98,7 +102,8 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
     }
   };
 
-  const exactMatch = suggestions.some((m) => m.canonicalName.toLowerCase() === q.toLowerCase());
+  const loaded = found.q === q;
+  const exactMatch = found.matches.some((m) => m.canonicalName.toLowerCase() === q.toLowerCase());
 
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
@@ -168,17 +173,14 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
               <input
                 type="text"
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  if (e.target.value.trim().length < MIN_QUERY_LEN) setSuggestions([]);
-                }}
+                onChange={(e) => setQuery(e.target.value)}
                 placeholder="search a skill, or type a new name…"
                 aria-label="move target"
                 className="border border-border bg-bg-card px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
               />
               {q.length >= MIN_QUERY_LEN ? (
                 <ul className="flex flex-col border border-border bg-bg-elev">
-                  {suggestions.map((m) => (
+                  {(loaded ? found.matches : []).map((m) => (
                     <TargetOption
                       key={m.id}
                       onClick={() =>
@@ -188,7 +190,8 @@ export function MoveAliases({ nodeId, mentions }: { nodeId: string; mentions: No
                       {m.canonicalName}
                     </TargetOption>
                   ))}
-                  {exactMatch ? null : (
+                  {loaded ? null : <li className="px-3 py-1 text-text-muted">searching…</li>}
+                  {!loaded || exactMatch ? null : (
                     <TargetOption onClick={() => chooseTarget({ kind: "new", name: q })}>
                       + create new skill “{q}”
                     </TargetOption>

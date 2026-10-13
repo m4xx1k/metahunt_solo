@@ -7,6 +7,7 @@ import type { DrizzleDB } from "@metahunt/database";
 
 import { AnalyticsService } from "../../platform/analytics/analytics.service";
 import { ELIGIBLE_POSITION } from "../../platform/shared/eligible";
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 import { uuidList } from "../../platform/shared/sql";
 import { buildWhere, FeedService, toDto, type SkillRow } from "../feed/feed.service";
 import { rankedPage } from "../score/ranked-page";
@@ -65,10 +66,13 @@ export class RankingService {
     const cleaned = [...new Set(skills.map((s) => s.trim()).filter(Boolean))];
     if (cleaned.length === 0) return { matched: [], unmatched: [] };
     const lowered = cleaned.map((s) => s.toLowerCase());
-    const inList = sql.join(
-      lowered.map((s) => sql`${s}`),
-      sql`, `,
-    );
+    // Aliases are stored normalized ("aspnetcore"), so "ASP.NET Core" must be too.
+    const keys = cleaned.map(normalizeAliasName);
+    const list = (values: string[]) =>
+      sql.join(
+        values.map((s) => sql`${s}`),
+        sql`, `,
+      );
 
     // Canonical and alias hits in one shot; node_stats weight is LEFT-joined
     // (a skill on zero vacancies has no node_stats row → weight 0).
@@ -84,35 +88,30 @@ export class RankingService {
       FROM nodes n
       LEFT JOIN node_stats ns ON ns.node_id = n.id
       WHERE n.type = 'SKILL' AND n.status <> 'HIDDEN'
-        AND lower(n.canonical_name) IN (${inList})
+        AND lower(n.canonical_name) IN (${list(lowered)})
       UNION ALL
-      SELECT lower(a.name) AS key, n.id::text AS id,
+      SELECT a.name AS key, n.id::text AS id,
              n.canonical_name AS name, ns.weight AS weight, 'alias' AS via
       FROM node_aliases a
       JOIN nodes n ON n.id = a.node_id
       LEFT JOIN node_stats ns ON ns.node_id = n.id
       WHERE a.type = 'SKILL' AND n.status <> 'HIDDEN'
-        AND lower(a.name) IN (${inList})
+        AND a.name IN (${list(keys)})
     `);
 
     // Prefer a canonical hit over an alias hit for the same input.
-    const byKey = new Map<string, SkillRef>();
+    const byCanonical = new Map<string, SkillRef>();
+    const byAlias = new Map<string, SkillRef>();
     for (const r of result.rows) {
-      if (r.via === "canonical") {
-        byKey.set(r.key, { id: r.id, name: r.name, weight: r.weight ?? 0 });
-      }
-    }
-    for (const r of result.rows) {
-      if (r.via === "alias" && !byKey.has(r.key)) {
-        byKey.set(r.key, { id: r.id, name: r.name, weight: r.weight ?? 0 });
-      }
+      const ref = { id: r.id, name: r.name, weight: r.weight ?? 0 };
+      (r.via === "canonical" ? byCanonical : byAlias).set(r.key, ref);
     }
 
     const matched: SkillRef[] = [];
     const seen = new Set<string>();
     const unmatched: string[] = [];
     cleaned.forEach((raw, i) => {
-      const hit = byKey.get(lowered[i]);
+      const hit = byCanonical.get(lowered[i]) ?? byAlias.get(keys[i]);
       if (!hit) return unmatched.push(raw);
       if (!seen.has(hit.id)) {
         seen.add(hit.id);

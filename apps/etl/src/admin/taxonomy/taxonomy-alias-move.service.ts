@@ -16,9 +16,8 @@ import type { MoveAliasesDto, MoveAliasesResult, NodeLinkDelta } from "./taxonom
 
 type Counts = Map<string, { vb: number; va: number; cb: number; ca: number }>;
 
-// The one taxonomy edit: repoint some aliases and re-resolve the affected links
-// in one transaction. Facts are never touched, so the inverse move restores
-// every link. Dry-run is the same transaction rolled back.
+// The one taxonomy edit: repoint aliases and re-resolve affected links in one tx.
+// Facts are never touched, so the inverse move restores every link; dry-run = rollback.
 @Injectable()
 export class TaxonomyAliasMoveService {
   constructor(
@@ -79,7 +78,7 @@ export class TaxonomyAliasMoveService {
 
     const target = targetNodeId
       ? { ...(await this.findSkillNode(targetNodeId, tx)), created: false }
-      : await this.createTarget(targetName ?? "", aliases, tx);
+      : await this.createTarget(targetName ?? "", sourceId, aliases, tx);
     if (target.id === sourceId) throw new BadRequestException("target must differ from source");
     if (target.status === "HIDDEN") {
       throw new BadRequestException(`"${target.canonicalName}" is hidden; verify it first`);
@@ -91,15 +90,20 @@ export class TaxonomyAliasMoveService {
       .where(
         and(eq(schema.nodeAliases.nodeId, sourceId), inArray(schema.nodeAliases.name, aliases)),
       );
+    // An emptied source would still catch CVs by its canonical name; hiding it
+    // sends them through the moved aliases like vacancies.
+    const hidden = aliases.length === owned.length;
+    if (hidden) {
+      await tx.update(schema.nodes).set({ status: "HIDDEN" }).where(eq(schema.nodes.id, sourceId));
+    }
     return {
-      source: { id: source.id, name: source.canonicalName },
+      source: { id: source.id, name: source.canonicalName, hidden },
       target: { id: target.id, name: target.canonicalName, created: target.created },
     };
   }
 
-  // Every record that mentions a moved alias is linked to the source, so
-  // re-resolving the source's records is complete. CVs re-resolve only skills
-  // spelled as a moved alias, so their manual confirms stay.
+  // Every record mentioning a moved alias is linked to the source, so
+  // re-resolving the source's records is complete.
   private async relink(nodeId: string, movedAliases: string[], tx: Executor) {
     const counts: Counts = new Map();
     const bump = (id: string, field: "vb" | "va" | "cb" | "ca") => {
@@ -108,7 +112,8 @@ export class TaxonomyAliasMoveService {
       counts.set(id, c);
     };
 
-    // Same lock the loader takes, so a concurrent ingest waits instead of racing.
+    // The loader's vacancy lock: no two writers rewrite one vacancy's links. New loads
+    // still read the old aliases until commit, so run moves with ingest paused.
     const vacancies = await tx
       .select({ id: schema.vacancies.id, recordId: schema.vacancies.lastRssRecordId })
       .from(schema.vacancies)
@@ -182,14 +187,15 @@ export class TaxonomyAliasMoveService {
 
   private async findSkillNode(id: string, db: Executor, forUpdate = false) {
     const query = db.select().from(schema.nodes).where(eq(schema.nodes.id, id));
-    const [node] = forUpdate ? await query.for("update") : await query;
+    // NO KEY: loaders inserting links to this node (FK check) must not block on it.
+    const [node] = forUpdate ? await query.for("no key update") : await query;
     if (!node) throw new NotFoundException(`Node ${id} not found`);
     if (node.type !== "SKILL") throw new BadRequestException("only SKILL aliases can be moved");
     return node;
   }
 
   // A typed name always means a new node; picking an existing one is explicit.
-  private async createTarget(name: string, movedAliases: string[], tx: Executor) {
+  private async createTarget(name: string, sourceId: string, movedAliases: string[], tx: Executor) {
     if (name.length === 0) throw new BadRequestException("target name must not be empty");
     const [existing] = await tx
       .select({ name: schema.nodes.canonicalName, status: schema.nodes.status })
@@ -215,7 +221,9 @@ export class TaxonomyAliasMoveService {
       .where(and(eq(schema.nodeAliases.type, "SKILL"), eq(schema.nodeAliases.name, selfAlias)));
     if (taken && !movedAliases.includes(selfAlias)) {
       throw new BadRequestException(
-        `"${name}" is an alias of another node; move "${selfAlias}" too`,
+        taken.nodeId === sourceId
+          ? `"${name}" is spelled like alias "${selfAlias}" of this node; tick it too`
+          : `"${name}" is already an alias of another skill; pick that skill instead`,
       );
     }
 

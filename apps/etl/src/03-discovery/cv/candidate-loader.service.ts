@@ -115,8 +115,8 @@ export class CandidateLoaderService {
     return this.buildResult(id, false);
   }
 
-  // Re-resolve a CV after `movedAliases` left `nodeId`. Only skills spelled as a
-  // moved alias count, so manual confirms and unrelated links stay untouched.
+  // Re-resolve a CV after `movedAliases` left `nodeId`; only CVs spelling a moved alias
+  // change. Confirms aren't marked, so a confirmed source link without a spelling goes.
   async relinkSkills(
     candidateId: string,
     nodeId: string,
