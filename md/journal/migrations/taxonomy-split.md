@@ -46,6 +46,7 @@ call in the other direction.
 - [x] T4 — UI in `DetailPanel` — done `1455164`, clicked headless
 - [x] T5 — seed: stop gluing sub-technologies — `98397df`, `1a41e0a` (droppable if the list changes)
 - [x] T6 — review pass — `b91d0f0`, re-proved after it
+- [ ] T6b — rework to the atomic *move aliases* primitive + simplified UI (decision 2026-10-13)
 - [ ] T7 — owner: approve the glue list and click-review locally — *done when:* list signed off,
       seed commits adjusted to match
 - [ ] T8 — prod rollout (backup → merge → pause schedules → split in UI → reproject → resume) —
@@ -62,6 +63,14 @@ call in the other direction.
   reprojected. A node's first split also fixes its share; the preview shows those rows.
 - Dry-run holds one transaction: ~9 s on `.NET`, ~22 s on `SQL`, locking the rewritten link rows.
   Run prod splits with schedules paused.
+- 2026-10-13 (owner): one atomic primitive, *move aliases*. Move + reproject run in one
+  transaction; dry-run is that transaction rolled back. The separate reproject endpoint/button,
+  batching and the half-applied state go away (the retry also skipped CVs). UI: one row per alias
+  (top spelling, other spellings muted), the node's own name not selectable alone, explicit
+  "create new" vs existing target, preview = source/target counts + drift fixed as a separate line.
+  Accepted cost: up to ~22 s of locks per apply, run with schedules paused.
+- Next (proposed, not decided): store normalized mentions per record and derive links from
+  `mentions ⋈ node_aliases`, so an alias edit is a one-row UPDATE with nothing to reproject.
 
 ## Known gaps
 
