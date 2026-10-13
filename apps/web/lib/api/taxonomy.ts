@@ -107,6 +107,7 @@ export interface NodeMentionsAlias {
 export interface NodeMentions {
   nodeId: string;
   vacancies: number;
+  nameAlias: string;
   aliases: NodeMentionsAlias[];
 }
 
@@ -119,20 +120,16 @@ export interface NodeLinkDelta {
   candidatesAfter: number;
 }
 
-export interface ReprojectResult {
-  nodeId: string;
-  vacancies: { scanned: number; changed: number; skipped: number };
-  candidates: { scanned: number; changed: number };
-  links: NodeLinkDelta[];
-}
+export type MoveTarget = { name: string } | { nodeId: string };
 
-export type SplitTarget = { name: string } | { nodeId: string };
-
-export interface SplitResult extends ReprojectResult {
+export interface MoveAliasesResult {
   dryRun: boolean;
   aliases: string[];
   source: { id: string; name: string };
   target: { id: string; name: string; created: boolean };
+  vacancies: { scanned: number; changed: number; skipped: number };
+  candidates: { scanned: number; changed: number };
+  links: NodeLinkDelta[];
 }
 
 export interface FuzzyMatch {
@@ -269,14 +266,12 @@ export const taxonomyApi = {
     }),
   mentions: (id: string) =>
     get<NodeMentions>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}/mentions`),
-  split: (id: string, aliases: string[], target: SplitTarget, dryRun: boolean) =>
-    mutate<SplitResult>("POST", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/split`, {
-      aliases,
-      target,
-      dryRun,
-    }),
-  reproject: (id: string) =>
-    mutate<ReprojectResult>("POST", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/reproject`),
+  moveAliases: (id: string, aliases: string[], target: MoveTarget, dryRun: boolean) =>
+    mutate<MoveAliasesResult>(
+      "POST",
+      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/move-aliases`,
+      { aliases, target, dryRun },
+    ),
   mergeInto: (sourceId: string, targetId: string) =>
     mutate<{ mergedInto: string; source: string; target: string }>(
       "POST",

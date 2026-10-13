@@ -6,8 +6,8 @@ import { validate } from "class-validator";
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { RolesGuard } from "../../platform/auth/roles.guard";
 
-import { TaxonomyReprojectService } from "./taxonomy-reproject.service";
-import { RenameTaxonomyNodeDto, SplitNodeDto } from "./taxonomy.contract";
+import { TaxonomyAliasMoveService } from "./taxonomy-alias-move.service";
+import { RenameTaxonomyNodeDto, MoveAliasesDto } from "./taxonomy.contract";
 import { TaxonomyController } from "./taxonomy.controller";
 import { TaxonomyService } from "./taxonomy.service";
 
@@ -34,7 +34,7 @@ describe("TaxonomyController", () => {
           provide: TaxonomyService,
           useValue: { listNodes, renameNode, setStatus },
         },
-        { provide: TaxonomyReprojectService, useValue: {} },
+        { provide: TaxonomyAliasMoveService, useValue: {} },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -112,14 +112,14 @@ describe("TaxonomyController", () => {
     });
   });
 
-  describe("POST /admin/taxonomy/nodes/:id/split", () => {
+  describe("POST /admin/taxonomy/nodes/:id/move-aliases", () => {
     it("accepts aliases with a name or nodeId target", async () => {
-      const byName = plainToInstance(SplitNodeDto, {
+      const byName = plainToInstance(MoveAliasesDto, {
         aliases: ["aspnetcore"],
         target: { name: "ASP.NET Core" },
         dryRun: true,
       });
-      const byId = plainToInstance(SplitNodeDto, {
+      const byId = plainToInstance(MoveAliasesDto, {
         aliases: ["x"],
         target: { nodeId: "1f044d63-e89f-4e4f-9465-e23b692f4060" },
       });
@@ -129,8 +129,8 @@ describe("TaxonomyController", () => {
     });
 
     it("rejects empty aliases and a malformed target", async () => {
-      const empty = plainToInstance(SplitNodeDto, { aliases: [], target: { name: "X" } });
-      const badTarget = plainToInstance(SplitNodeDto, {
+      const empty = plainToInstance(MoveAliasesDto, { aliases: [], target: { name: "X" } });
+      const badTarget = plainToInstance(MoveAliasesDto, {
         aliases: ["x"],
         target: { nodeId: "nope" },
       });

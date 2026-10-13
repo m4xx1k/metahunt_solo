@@ -86,10 +86,12 @@ export interface NodeMentionsAlias {
 export interface NodeMentions {
   nodeId: string;
   vacancies: number;
+  // The alias spelled like the node's own name — movable only with all the others.
+  nameAlias: string;
   aliases: NodeMentionsAlias[];
 }
 
-export class SplitTargetDto {
+export class MoveAliasesTargetDto {
   @IsOptional()
   @IsString()
   name?: string;
@@ -99,7 +101,7 @@ export class SplitTargetDto {
   nodeId?: string;
 }
 
-export class SplitNodeDto {
+export class MoveAliasesDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
@@ -107,8 +109,8 @@ export class SplitNodeDto {
 
   @IsDefined()
   @ValidateNested()
-  @Type(() => SplitTargetDto)
-  target!: SplitTargetDto;
+  @Type(() => MoveAliasesTargetDto)
+  target!: MoveAliasesTargetDto;
 
   @IsOptional()
   @IsBoolean()
@@ -125,16 +127,12 @@ export interface NodeLinkDelta {
   candidatesAfter: number;
 }
 
-export interface ReprojectResult {
-  nodeId: string;
-  vacancies: { scanned: number; changed: number; skipped: number };
-  candidates: { scanned: number; changed: number };
-  links: NodeLinkDelta[];
-}
-
-export interface SplitResult extends ReprojectResult {
+export interface MoveAliasesResult {
   dryRun: boolean;
   aliases: string[];
   source: { id: string; name: string };
   target: { id: string; name: string; created: boolean };
+  vacancies: { scanned: number; changed: number; skipped: number };
+  candidates: { scanned: number; changed: number };
+  links: NodeLinkDelta[];
 }

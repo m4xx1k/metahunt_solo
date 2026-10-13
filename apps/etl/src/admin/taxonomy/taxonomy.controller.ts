@@ -15,13 +15,13 @@ import { ApiBadRequestResponse, ApiBody, ApiOkResponse, ApiOperation } from "@ne
 import { ApiErrorResponseDto } from "../../platform/swagger/api-error.dto";
 import { OperatorApi } from "../../platform/swagger/operator-api.decorator";
 
+import { TaxonomyAliasMoveService } from "./taxonomy-alias-move.service";
 import {
   parseMapFilters,
   parseNodeListFilters,
   parseVerifiedNodeSearch,
 } from "./taxonomy-query.parser";
-import { TaxonomyReprojectService } from "./taxonomy-reproject.service";
-import { RenameTaxonomyNodeDto, SetNodeKindDto, SplitNodeDto } from "./taxonomy.contract";
+import { RenameTaxonomyNodeDto, MoveAliasesDto, SetNodeKindDto } from "./taxonomy.contract";
 import { TaxonomyService } from "./taxonomy.service";
 
 @Controller("admin/taxonomy")
@@ -33,7 +33,7 @@ import { TaxonomyService } from "./taxonomy.service";
 export class TaxonomyController {
   constructor(
     private readonly service: TaxonomyService,
-    private readonly reproject: TaxonomyReprojectService,
+    private readonly aliasMove: TaxonomyAliasMoveService,
   ) {}
 
   @Get("coverage")
@@ -152,19 +152,12 @@ export class TaxonomyController {
     return this.service.mergeInto(id, targetId);
   }
 
-  @Post("nodes/:id/split")
-  @ApiOperation({ summary: "Move some of a node's aliases to another node and reproject" })
-  @ApiBody({ type: SplitNodeDto })
-  @ApiOkResponse({ description: "Split result (a preview when dryRun)." })
+  @Post("nodes/:id/move-aliases")
+  @ApiOperation({ summary: "Move some of a node's aliases to another node and relink records" })
+  @ApiBody({ type: MoveAliasesDto })
+  @ApiOkResponse({ description: "Move result (a rolled-back preview when dryRun)." })
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  splitNode(@Param("id", ParseUUIDPipe) id: string, @Body() body: SplitNodeDto) {
-    return this.reproject.split(id, body);
-  }
-
-  @Post("nodes/:id/reproject")
-  @ApiOperation({ summary: "Re-resolve every record linked to a node (idempotent retry)" })
-  @ApiOkResponse({ description: "Reprojection counts." })
-  reprojectNode(@Param("id", ParseUUIDPipe) id: string) {
-    return this.reproject.reprojectNode(id);
+  moveAliases(@Param("id", ParseUUIDPipe) id: string, @Body() body: MoveAliasesDto) {
+    return this.aliasMove.moveAliases(id, body);
   }
 }

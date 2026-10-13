@@ -385,6 +385,7 @@ export class TaxonomyService {
     return {
       nodeId: id,
       vacancies: await countVacanciesForNode(this.db, id, node.type),
+      nameAlias: normalizeAliasName(node.canonicalName),
       aliases: [...byAlias.values()].sort(
         (a, b) => b.vacancies - a.vacancies || a.alias.localeCompare(b.alias),
       ),

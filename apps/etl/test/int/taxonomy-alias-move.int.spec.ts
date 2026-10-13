@@ -12,7 +12,7 @@ import { VacancyLoaderService } from "../../src/02-enrich/loader/services/vacanc
 import { CandidateLoaderService } from "../../src/03-discovery/cv/candidate-loader.service";
 import { FeedService } from "../../src/03-discovery/feed/feed.service";
 import { RankingService } from "../../src/03-discovery/ranking/ranking.service";
-import { TaxonomyReprojectService } from "../../src/admin/taxonomy/taxonomy-reproject.service";
+import { TaxonomyAliasMoveService } from "../../src/admin/taxonomy/taxonomy-alias-move.service";
 
 import { noopAnalytics } from "./analytics";
 import { makeTestDb, truncateAll } from "./db";
@@ -20,7 +20,7 @@ import { makeTestDb, truncateAll } from "./db";
 let db: DrizzleDB;
 let pool: Pool;
 let loader: VacancyLoaderService;
-let service: TaxonomyReprojectService;
+let service: TaxonomyAliasMoveService;
 
 const unusedExtractor = { extract: () => Promise.reject(new Error("not used")) };
 
@@ -38,7 +38,7 @@ function build(database: DrizzleDB) {
   );
   return {
     loader: vacancyLoader,
-    service: new TaxonomyReprojectService(database, vacancyLoader, candidateLoader, nodeRepo),
+    service: new TaxonomyAliasMoveService(database, vacancyLoader, candidateLoader, nodeRepo),
   };
 }
 
@@ -132,7 +132,7 @@ afterEach(async () => {
   await truncateAll(db);
 });
 
-describe("TaxonomyReprojectService.split (integration)", () => {
+describe("TaxonomyAliasMoveService.moveAliases (integration)", () => {
   let dotnet: string;
   let docker: string;
   let vacancies: string[];
@@ -151,7 +151,7 @@ describe("TaxonomyReprojectService.split (integration)", () => {
     candidateCoreOnly = await seedCandidate(["aspnetcore"], [dotnet]);
   });
 
-  const splitBody = (dryRun: boolean) => ({
+  const moveBody = (dryRun: boolean) => ({
     aliases: ["ASP.NET Core", "aspnet"],
     target: { name: "ASP.NET Core" },
     dryRun,
@@ -160,7 +160,7 @@ describe("TaxonomyReprojectService.split (integration)", () => {
   it("dry-run previews the diff and writes nothing", async () => {
     const before = await linkRows();
 
-    const preview = await service.split(dotnet, splitBody(true));
+    const preview = await service.moveAliases(dotnet, moveBody(true));
 
     expect(preview.target.created).toBe(true);
     expect(preview.vacancies).toEqual({ scanned: 3, changed: 2, skipped: 0 });
@@ -173,9 +173,9 @@ describe("TaxonomyReprojectService.split (integration)", () => {
     expect(aspNodes).toHaveLength(0);
   });
 
-  it("apply matches the dry-run, keeps anyOf groups, and a rerun is a no-op", async () => {
-    const preview = await service.split(dotnet, splitBody(true));
-    const applied = await service.split(dotnet, splitBody(false));
+  it("apply matches the dry-run and keeps anyOf groups", async () => {
+    const preview = await service.moveAliases(dotnet, moveBody(true));
+    const applied = await service.moveAliases(dotnet, moveBody(false));
 
     expect(applied.vacancies).toEqual(preview.vacancies);
     expect(applied.candidates).toEqual(preview.candidates);
@@ -204,18 +204,13 @@ describe("TaxonomyReprojectService.split (integration)", () => {
     // Manual Docker confirm survives; .NET stays only where a skill still resolves to it.
     expect(await candNodes(candidateBoth)).toEqual([dotnet, docker, applied.target.id].sort());
     expect(await candNodes(candidateCoreOnly)).toEqual([applied.target.id]);
-
-    const rerun = await service.reprojectNode(dotnet);
-    expect(rerun.vacancies.changed).toBe(0);
-    expect(rerun.candidates.changed).toBe(0);
-    expect(rerun.links).toEqual([]);
   });
 
-  it("the reverse split restores the original links", async () => {
+  it("the reverse move restores the original links", async () => {
     const original = await linkRows();
-    const applied = await service.split(dotnet, splitBody(false));
+    const applied = await service.moveAliases(dotnet, moveBody(false));
 
-    await service.split(applied.target.id, {
+    await service.moveAliases(applied.target.id, {
       aliases: applied.aliases,
       target: { nodeId: dotnet },
     });
@@ -233,7 +228,7 @@ describe("TaxonomyReprojectService.split (integration)", () => {
       .set({ extractedData: null })
       .where(eq(schema.rssRecords.id, vacancy.recordId));
 
-    const applied = await service.split(dotnet, splitBody(false));
+    const applied = await service.moveAliases(dotnet, moveBody(false));
 
     expect(applied.vacancies).toEqual({ scanned: 3, changed: 1, skipped: 1 });
     expect((await vacancyLinks(vacancies[1])).map((l) => l.name)).toEqual([".NET", "C#"]);
@@ -242,8 +237,7 @@ describe("TaxonomyReprojectService.split (integration)", () => {
   it("keeps a CV's hand-confirmed source link when no CV skill moved", async () => {
     const manual = await seedCandidate(["Docker"], [docker, dotnet]);
 
-    await service.split(dotnet, splitBody(false));
-    await service.reprojectNode(dotnet);
+    await service.moveAliases(dotnet, moveBody(false));
 
     const links = await db
       .select({ nodeId: schema.candidateNodes.nodeId })
@@ -252,27 +246,49 @@ describe("TaxonomyReprojectService.split (integration)", () => {
     expect(links.map((l) => l.nodeId).sort()).toEqual([dotnet, docker].sort());
   });
 
-  it("rejects a hidden target, a foreign self-alias, and moving the node's own name alone", async () => {
+  it("rejects a hidden target, an existing name typed as new, a foreign self-alias, and moving the node's own name alone", async () => {
     const hidden = await seedNode("Legacy", ["legacy"]);
     await db.update(schema.nodes).set({ status: "HIDDEN" }).where(eq(schema.nodes.id, hidden));
 
     await expect(
-      service.split(dotnet, { aliases: ["aspnet"], target: { nodeId: hidden } }),
+      service.moveAliases(dotnet, { aliases: ["aspnet"], target: { nodeId: hidden } }),
     ).rejects.toThrow("is hidden");
     await expect(
-      service.split(dotnet, { aliases: ["aspnet"], target: { name: "Docker" } }),
-    ).resolves.toMatchObject({ target: { id: docker, created: false } });
+      service.moveAliases(dotnet, { aliases: ["aspnet"], target: { name: "docker" } }),
+    ).rejects.toThrow('"Docker" already exists');
     await expect(
-      service.split(dotnet, { aliases: ["dotnet"], target: { name: "ASP.NET Core" } }),
+      service.moveAliases(dotnet, { aliases: ["dotnet"], target: { name: "ASP.NET Core" } }),
     ).rejects.toThrow('move "aspnetcore" too');
     await expect(
-      service.split(dotnet, { aliases: ["net"], target: { name: "Dot Net" } }),
+      service.moveAliases(dotnet, { aliases: ["net"], target: { name: "Dot Net" } }),
     ).rejects.toThrow("own name moves only together with all aliases");
+  });
+
+  it("a failure while relinking rolls back the alias move too", async () => {
+    const aliasesBefore = await db
+      .select()
+      .from(schema.nodeAliases)
+      .orderBy(schema.nodeAliases.name);
+    const linksBefore = await linkRows();
+    const failingCvs = { relinkSkills: () => Promise.reject(new Error("boom")) };
+    const failing = new TaxonomyAliasMoveService(
+      db,
+      loader,
+      failingCvs as unknown as CandidateLoaderService,
+      new DrizzleNodeRepository(db),
+    );
+
+    await expect(failing.moveAliases(dotnet, moveBody(false))).rejects.toThrow("boom");
+
+    expect(await db.select().from(schema.nodeAliases).orderBy(schema.nodeAliases.name)).toEqual(
+      aliasesBefore,
+    );
+    expect((await linkRows()).rows).toEqual(linksBefore.rows);
   });
 
   it("rejects aliases the source does not own", async () => {
     await expect(
-      service.split(dotnet, { aliases: ["docker"], target: { name: "Docker 2" } }),
+      service.moveAliases(dotnet, { aliases: ["docker"], target: { name: "Docker 2" } }),
     ).rejects.toThrow("not aliases of this node: docker");
   });
 });

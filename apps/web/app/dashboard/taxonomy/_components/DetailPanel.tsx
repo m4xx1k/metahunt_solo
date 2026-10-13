@@ -10,7 +10,7 @@ import { formatDateTime } from "@/lib/format";
 import { ModerationActions } from "./ModerationActions";
 import { AliasList } from "./AliasList";
 import { FuzzyMatchList } from "./FuzzyMatchList";
-import { MentionSplit } from "./MentionSplit";
+import { MoveAliases } from "./MoveAliases";
 import { VerifiedSearch } from "./VerifiedSearch";
 
 const STATUS_PILL: Record<NodeStatus, string> = {
@@ -80,14 +80,12 @@ export async function DetailPanel({ nodeId }: { nodeId: string }) {
       <ModerationActions node={node} />
 
       <Section label={`aliases · ${node.aliases.length}`}>
-        <AliasList aliases={node.aliases} />
+        {node.type === "SKILL" && mentions ? (
+          <MoveAliases nodeId={node.id} mentions={mentions} />
+        ) : (
+          <AliasList aliases={node.aliases} />
+        )}
       </Section>
-
-      {node.type === "SKILL" && mentions ? (
-        <Section label={`mentions · ${mentions.vacancies} vacancies`}>
-          <MentionSplit nodeId={node.id} mentions={mentions} />
-        </Section>
-      ) : null}
 
       <Section label={`used in · ${node.vacancyCount} vacancies`}>
         {node.sampleVacancies.length === 0 ? (
