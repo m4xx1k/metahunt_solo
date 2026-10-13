@@ -1,11 +1,13 @@
 import { BadRequestException, ParseUUIDPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 import { JwtAuthGuard } from "../../platform/auth/jwt-auth.guard";
 import { RolesGuard } from "../../platform/auth/roles.guard";
 
-import { RenameTaxonomyNodeDto } from "./taxonomy.contract";
+import { TaxonomyAliasMoveService } from "./taxonomy-alias-move.service";
+import { RenameTaxonomyNodeDto, MoveAliasesDto } from "./taxonomy.contract";
 import { TaxonomyController } from "./taxonomy.controller";
 import { TaxonomyService } from "./taxonomy.service";
 
@@ -32,6 +34,7 @@ describe("TaxonomyController", () => {
           provide: TaxonomyService,
           useValue: { listNodes, renameNode, setStatus },
         },
+        { provide: TaxonomyAliasMoveService, useValue: {} },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -106,6 +109,34 @@ describe("TaxonomyController", () => {
       await expect(new ParseUUIDPipe().transform("not-a-uuid", { type: "param" })).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe("POST /admin/taxonomy/nodes/:id/move-aliases", () => {
+    it("accepts aliases with a name or nodeId target", async () => {
+      const byName = plainToInstance(MoveAliasesDto, {
+        aliases: ["aspnetcore"],
+        target: { name: "ASP.NET Core" },
+        dryRun: true,
+      });
+      const byId = plainToInstance(MoveAliasesDto, {
+        aliases: ["x"],
+        target: { nodeId: "1f044d63-e89f-4e4f-9465-e23b692f4060" },
+      });
+
+      await expect(validate(byName)).resolves.toHaveLength(0);
+      await expect(validate(byId)).resolves.toHaveLength(0);
+    });
+
+    it("rejects empty aliases and a malformed target", async () => {
+      const empty = plainToInstance(MoveAliasesDto, { aliases: [], target: { name: "X" } });
+      const badTarget = plainToInstance(MoveAliasesDto, {
+        aliases: ["x"],
+        target: { nodeId: "nope" },
+      });
+
+      await expect(validate(empty)).resolves.toHaveLength(1);
+      await expect(validate(badTarget)).resolves.toHaveLength(1);
     });
   });
 });

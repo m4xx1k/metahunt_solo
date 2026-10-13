@@ -97,6 +97,41 @@ export interface NodeDetail {
   sampleVacancies: NodeSampleVacancy[];
 }
 
+// Raw skill strings a node is made of, grouped by the alias they resolve through.
+export interface NodeMentionsAlias {
+  alias: string;
+  vacancies: number;
+  variants: { raw: string; vacancies: number }[];
+}
+
+export interface NodeMentions {
+  nodeId: string;
+  vacancies: number;
+  nameAlias: string;
+  aliases: NodeMentionsAlias[];
+}
+
+export interface NodeLinkDelta {
+  nodeId: string;
+  name: string;
+  vacanciesBefore: number;
+  vacanciesAfter: number;
+  candidatesBefore: number;
+  candidatesAfter: number;
+}
+
+export type MoveTarget = { name: string } | { nodeId: string };
+
+export interface MoveAliasesResult {
+  dryRun: boolean;
+  aliases: string[];
+  source: { id: string; name: string; hidden: boolean };
+  target: { id: string; name: string; created: boolean };
+  vacancies: { scanned: number; changed: number; skipped: number };
+  candidates: { scanned: number; changed: number };
+  links: NodeLinkDelta[];
+}
+
 export interface FuzzyMatch {
   id: string;
   canonicalName: string;
@@ -229,6 +264,14 @@ export const taxonomyApi = {
     mutate<TrimmedNode>("PATCH", `/admin/taxonomy/nodes/${encodeURIComponent(id)}/rename`, {
       name,
     }),
+  mentions: (id: string) =>
+    get<NodeMentions>(`/admin/taxonomy/nodes/${encodeURIComponent(id)}/mentions`),
+  moveAliases: (id: string, aliases: string[], target: MoveTarget, dryRun: boolean) =>
+    mutate<MoveAliasesResult>(
+      "POST",
+      `/admin/taxonomy/nodes/${encodeURIComponent(id)}/move-aliases`,
+      { aliases, target, dryRun },
+    ),
   mergeInto: (sourceId: string, targetId: string) =>
     mutate<{ mergedInto: string; source: string; target: string }>(
       "POST",

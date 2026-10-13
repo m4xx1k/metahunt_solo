@@ -7,6 +7,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { DRIZZLE, schema } from "@metahunt/database";
 import type { DrizzleDB } from "@metahunt/database";
 
+import type { Executor } from "../../02-enrich/loader/repositories/executor";
+import { normalizeAliasName } from "../../platform/shared/normalize-alias";
 import type { SkillRef } from "../ranking/ranking.contract";
 import { RankingService } from "../ranking/ranking.service";
 
@@ -17,6 +19,12 @@ import type {
   CvIngestResult,
   SampleCandidate,
 } from "./cv.contract";
+
+function skillNames(extracted: {
+  skills?: { required?: string[] | null; optional?: string[] | null } | null;
+}): string[] {
+  return [...(extracted.skills?.required ?? []), ...(extracted.skills?.optional ?? [])];
+}
 
 // Ingest a CV: hash → (reuse | extract → resolve → store). The content hash
 // makes re-upload idempotent — the same text never hits the LLM twice. Skills
@@ -54,8 +62,7 @@ export class CandidateLoaderService {
     }
 
     const extracted = await this.extractor.extract(sourceText);
-    const skills = [...(extracted.skills?.required ?? []), ...(extracted.skills?.optional ?? [])];
-    const resolved = await this.ranking.resolveSkills(skills);
+    const resolved = await this.ranking.resolveSkills(skillNames(extracted));
 
     const id = await this.db.transaction(async (tx) => {
       const inserted = await tx
@@ -106,6 +113,62 @@ export class CandidateLoaderService {
     });
 
     return this.buildResult(id, false);
+  }
+
+  // Re-resolve a CV after `movedAliases` left `nodeId`; only CVs spelling a moved alias
+  // change. Confirms aren't marked, so a confirmed source link without a spelling goes.
+  async relinkSkills(
+    candidateId: string,
+    nodeId: string,
+    movedAliases: string[],
+    executor: Executor = this.db,
+  ): Promise<{ before: string[]; after: string[] }> {
+    const [row] = await executor
+      .select({ extracted: schema.candidates.extracted })
+      .from(schema.candidates)
+      .where(eq(schema.candidates.id, candidateId));
+    const links = await executor
+      .select({ nodeId: schema.candidateNodes.nodeId })
+      .from(schema.candidateNodes)
+      .where(eq(schema.candidateNodes.candidateId, candidateId));
+    const before = links.map((l) => l.nodeId);
+    const names = row ? skillNames(row.extracted) : [];
+    const moved = new Set(movedAliases);
+    const touched = names.filter((name) => moved.has(normalizeAliasName(name)));
+    if (!row || touched.length === 0) return { before, after: before };
+
+    const full = await this.ranking.resolveSkills(names, executor);
+    const scoped = await this.ranking.resolveSkills(touched, executor);
+    const rejected = new Set((row.extracted.rejectedSkillIds as string[] | undefined) ?? []);
+    const keepSource = full.matched.some((m) => m.id === nodeId);
+    const added = scoped.matched
+      .map((m) => m.id)
+      .filter((id) => !before.includes(id) && !rejected.has(id));
+    const after = [...before.filter((id) => id !== nodeId || keepSource), ...added];
+
+    if (!keepSource && before.includes(nodeId)) {
+      await executor
+        .delete(schema.candidateNodes)
+        .where(
+          and(
+            eq(schema.candidateNodes.candidateId, candidateId),
+            eq(schema.candidateNodes.nodeId, nodeId),
+          ),
+        );
+    }
+    if (added.length > 0) {
+      await executor
+        .insert(schema.candidateNodes)
+        .values(added.map((id) => ({ candidateId, nodeId: id })))
+        .onConflictDoNothing();
+    }
+    if (JSON.stringify(row.extracted.unmatchedSkills ?? []) !== JSON.stringify(full.unmatched)) {
+      await executor
+        .update(schema.candidates)
+        .set({ extracted: { ...row.extracted, unmatchedSkills: full.unmatched } })
+        .where(eq(schema.candidates.id, candidateId));
+    }
+    return { before, after };
   }
 
   // Makes `candidateId` this user's one active CV, deactivating any other —

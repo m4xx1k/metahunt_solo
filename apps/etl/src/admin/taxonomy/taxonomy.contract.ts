@@ -1,4 +1,15 @@
-import { IsIn, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsDefined,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from "class-validator";
 
 import type { NodeType } from "@metahunt/database";
 
@@ -62,4 +73,67 @@ export interface MapNodeItem {
 export class SetNodeKindDto {
   @IsIn([...NODE_KINDS, null])
   kind!: NodeKindValue | null;
+}
+
+// Raw skill strings of the vacancies linked to a node, grouped by the alias
+// they resolve through — what the node is actually made of.
+export interface NodeMentionsAlias {
+  alias: string;
+  vacancies: number;
+  variants: { raw: string; vacancies: number }[];
+}
+
+export interface NodeMentions {
+  nodeId: string;
+  vacancies: number;
+  // The alias spelled like the node's own name — movable only with all the others.
+  nameAlias: string;
+  aliases: NodeMentionsAlias[];
+}
+
+export class MoveAliasesTargetDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsUUID()
+  nodeId?: string;
+}
+
+export class MoveAliasesDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  aliases!: string[];
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => MoveAliasesTargetDto)
+  target!: MoveAliasesTargetDto;
+
+  @IsOptional()
+  @IsBoolean()
+  dryRun?: boolean;
+}
+
+// Link counts per node over the records whose links changed.
+export interface NodeLinkDelta {
+  nodeId: string;
+  name: string;
+  vacanciesBefore: number;
+  vacanciesAfter: number;
+  candidatesBefore: number;
+  candidatesAfter: number;
+}
+
+export interface MoveAliasesResult {
+  dryRun: boolean;
+  aliases: string[];
+  // hidden = every alias left, so the emptied source was hidden in the same move.
+  source: { id: string; name: string; hidden: boolean };
+  target: { id: string; name: string; created: boolean };
+  vacancies: { scanned: number; changed: number; skipped: number };
+  candidates: { scanned: number; changed: number };
+  links: NodeLinkDelta[];
 }

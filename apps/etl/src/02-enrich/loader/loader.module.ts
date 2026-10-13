@@ -33,6 +33,6 @@ import { VacancyLoaderService } from "./services/vacancy-loader.service";
     ...LOADER_ACTIVITIES,
   ],
   controllers: [LoaderController],
-  exports: [VacancyLoaderService, ...LOADER_ACTIVITIES],
+  exports: [VacancyLoaderService, NodeRepository, ...LOADER_ACTIVITIES],
 })
 export class LoaderModule {}
