@@ -1,4 +1,4 @@
-# taxonomy-split — split glued aliases out of a node and reproject
+# taxonomy-split — move glued aliases to their own node
 
 **Branch:** `feat/taxonomy-split`
 **Status:** in-progress — Session 1 + UI done, waiting on owner review (glue list, click-review), then prod rollout
@@ -6,8 +6,8 @@
 
 ## Outcome
 
-*(so far)* Admin can see which raw spellings make up a SKILL node, move some of them to a new or
-existing node, preview the effect (dry-run), apply it and re-run a scoped reprojection. Proven on a
+*(so far)* Admin can see which raw spellings make up a SKILL node and move some of its aliases
+to a new or existing node in one transaction, with a rolled-back preview first. Proven on a
 local restore of the 2026-10-12 prod dump. Nothing is applied on prod yet. Draft PR #233.
 
 ## Why
@@ -19,22 +19,22 @@ see what a node is made of and no way to rebuild links after an alias moves.
 ## How it works
 
 Three layers: facts (`rss_records.extracted_data`, `candidates.extracted`, never touched) →
-aliases (`node_aliases`) → projection (`vacancy_nodes`, `candidate_nodes`). A split is
-*move aliases + reproject the source node*; every record that mentions a moved alias is already
-linked to the source, so reprojecting the source's links is complete. Reverse split = the same
-call in the other direction.
+aliases (`node_aliases`) → projection (`vacancy_nodes`, `candidate_nodes`). The one edit is
+*move aliases*: repoint the chosen aliases and re-resolve every record linked to the source, in one
+transaction. Every record that mentions a moved alias is already linked to the source, so that is
+complete. The inverse move restores every link.
 
 - `GET /admin/taxonomy/nodes/:id/mentions` — raw spellings (plain + `anyOf`) per alias with
-  distinct vacancy counts, incl. zero-mention aliases.
-- `POST /admin/taxonomy/nodes/:id/split` `{ aliases, target: {name}|{nodeId}, dryRun }` — one
-  transaction; dry-run is the same code rolled back. New targets are `VERIFIED`.
-- `POST /admin/taxonomy/nodes/:id/reproject` — idempotent retry.
-- `TaxonomyReprojectService` (`apps/etl/src/admin/taxonomy/`) reuses the loader's
+  distinct vacancy counts, incl. zero-mention aliases, plus `nameAlias`.
+- `POST /admin/taxonomy/nodes/:id/move-aliases` `{ aliases, target: {name}|{nodeId}, dryRun }` —
+  one transaction; dry-run is the same transaction rolled back. A typed name always creates a new
+  `VERIFIED` node (an existing name is refused, pick it instead).
+- `TaxonomyAliasMoveService` (`apps/etl/src/admin/taxonomy/`) reuses the loader's
   `resolveSkillLinks` (`VacancyLoaderService.relinkSkills`) and `RankingService.resolveSkills`
-  (`CandidateLoaderService.relinkSkills`). Vacancies are relinked in batches of 100 under
-  `FOR UPDATE`; CVs only for skills spelled as a moved alias, hand-confirmed links kept.
-- UI: "mentions" section in `DetailPanel` (`MentionSplit.tsx`) — checkboxes → target → preview →
-  confirm → reproject.
+  (`CandidateLoaderService.relinkSkills`). CVs re-resolve only skills spelled as a moved alias,
+  so hand-confirmed links stay.
+- UI: the "aliases" section of `DetailPanel` for SKILL nodes (`MoveAliases.tsx`) — tick aliases →
+  pick an existing skill or "create new" → preview → confirm.
 
 ## Subtasks
 
@@ -46,7 +46,9 @@ call in the other direction.
 - [x] T4 — UI in `DetailPanel` — done `1455164`, clicked headless
 - [x] T5 — seed: stop gluing sub-technologies — `98397df`, `1a41e0a` (droppable if the list changes)
 - [x] T6 — review pass — `b91d0f0`, re-proved after it
-- [ ] T6b — rework to the atomic *move aliases* primitive + simplified UI (decision 2026-10-13)
+- [x] T6b — atomic *move aliases* + simplified UI — `fc3d1fa`; etl 687 / int 198
+      green; local dump: `.NET` → new `ASP.NET Core` dry-run 439 vacancies in 15 s, apply + reverse
+      move = 0 diff against `_snap_vn_preglue` / `_snap_cn_preglue`
 - [ ] T7 — owner: approve the glue list and click-review locally — *done when:* list signed off,
       seed commits adjusted to match
 - [ ] T8 — prod rollout (backup → merge → pause schedules → split in UI → reproject → resume) —
@@ -69,14 +71,20 @@ call in the other direction.
   (top spelling, other spellings muted), the node's own name not selectable alone, explicit
   "create new" vs existing target, preview = source/target counts + drift fixed as a separate line.
   Accepted cost: up to ~22 s of locks per apply, run with schedules paused.
-- Next (proposed, not decided): store normalized mentions per record and derive links from
-  `mentions ⋈ node_aliases`, so an alias edit is a one-row UPDATE with nothing to reproject.
+- Next (proposed, measured, not decided): store normalized mentions per record and derive links
+  from `mentions ⋈ node_aliases` in SQL; keep `vacancy_nodes` as the table it is and rewrite only
+  affected vacancies with one set-based statement. Measured on the local dump (2026-10-13): full
+  derive of all 248k links 0.5–0.7 s; the `.NET` → `ASP.NET Core` edit relinks 439 vacancies in
+  0.7 s (now 15 s); a pure view instead of the table makes reads 10–100× slower (0.3–0.8 s), so no.
+  Details: `.private/analysis/2026-10-13-taxonomy-next.md`.
 
 ## Known gaps
 
 - A fresh `db:seed` fails at tracks (`Backend Engineer` ROLE missing) — same on `origin/main`.
 - Seed aliases are lowercased, not normalized: dotted spellings in the seed never match.
-- Later: rewrite `mergeInto` on the same primitive (move all aliases → reproject → tombstone).
+- Later: rewrite `mergeInto` on the same primitive (move all aliases → hide the node).
+- Target search lists VERIFIED nodes only: to move into a NEW node (e.g. `Jakarta EE`), verify it
+  first.
 
 ## Links
 
